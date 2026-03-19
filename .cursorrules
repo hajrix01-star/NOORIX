@@ -1,0 +1,52 @@
+# NOORIX Project Instructions (Saudi Business Enterprise)
+
+- **System**: Smart accounting SaaS, multi-tenant. Every entity has an ID; relationships use IDs only (names are for display). Isolate all data by company_id.
+- **Architecture**: Modular Generic Architecture (Pro Lean). Modules in `src/modules/` MUST NOT import from other modules; they may only import from `core`, `utils`, `services`, `context`, `components`, `constants`. See docs/MODULE_MAP.md.
+- **Accounting (Double-Entry, Hidden)**:
+    - The system uses double-entry bookkeeping in the backend (every movement has debit_account_id and credit_account_id). The UI stays simple: one user action generates the double entry automatically.
+    - Three flows only: (1) Outflow = user picks expense + vault → system records debit expense, credit vault. (2) Inflow = user picks revenue + vault → debit vault, credit revenue. (3) Transfer = from vault A to vault B → debit vault B, credit vault A.
+    - Vaults (Khazayn) are ledger accounts (assets). Vault balance is ALWAYS calculated from the ledger entries, never stored as a separate field that is updated manually. This keeps ZATCA compliance and a single source of truth.
+- **Timezone**: STRICTLY use Saudi Arabia Time (Asia/Riyadh - UTC+3).
+- **Financial Math**: STRICTLY use `Decimal.js` for all calculations. NO float math to avoid rounding errors.
+- **Dates & Auditing**: 
+    - MUST distinguish between 'Transaction Date' (User selected date for the operation) and 'Entry Date' (System-generated immutable timestamp).
+    - 'Entry Date' is for audit trails and cannot be modified by the user.
+- **Data Integrity**: 
+    - PREVENT physical deletion of financial records. Use 'Status: Cancelled' or 'IsDeleted: true' for audit trails.
+    - All financial modules must support 'Supplier' and 'Payment Method' reconciliation logic.
+- **Performance**: 
+    - Use 'Dynamic Imports' for heavy libraries (e.g., XLSX, PDF generators).
+    - Standardize on `useQuery` (React Query) for reference data and financial stats. Use `queryClient.invalidateQueries` after mutations.
+- **Components**: 
+    - Use simple `<input type="checkbox">` for table rows to ensure maximum rendering speed.
+    - UI must show 'Total' and 'Tax' pre-calculated in the footer of any SmartTable.
+- **UI Design (NOORIX UI MANIFESTO — Mandatory)**:
+    - Tables: Outer borders + internal grid lines; header darker + bold; adequate cell padding.
+    - Mobile: No page overflow; horizontal scroll inside table only; 8px margins on mobile; ellipsis for long text.
+    - Action column: buttons in single flex row with gap; no stacking.
+    - See docs/NOORIX_UI_MANIFESTO.md.
+- **Tables — ULTIMATE UI ARCHITECTURAL STANDARD (NOORIX ERP)**:
+    - **Smart Container Fitting**: (1) All tables `width: 100%`. (2) ≤6 columns: `table-layout: auto` + `max-width: 100%` for natural sizing. (3) >6 columns (invoices, reports): `table-layout: fixed` + `min-width: 1100px` inside a scroll wrapper with `overflow-x: auto` so horizontal scroll is internal only.
+    - **Financial Alignment**: Financial columns (net, tax, total, balance, amount) MUST be `text-align: right` (header + data). Use `numeric: true` in column def. Text columns (supplier, notes, name) use truncate (`overflow: hidden`, `text-overflow: ellipsis`, `title` for full value).
+    - **Actions Column Protection**: Actions column MUST be sticky (`position: sticky; right: 0`) or always visible within frame — never hidden outside.
+    - **Professional Finish**: Unified cell padding; header background + bold; financial numbers with 2 decimals via `fmt(v, 2)`.
+- **Caching**: 
+    - Use React Query (`useQuery`, `useMutation`) for data fetching and caching. Invalidate via `queryClient.invalidateQueries` after mutations. See docs/PERFORMANCE_AND_DATA.md.
+- **Large data**: Paginate lists (page/pageSize from backend); server-side filtering; use virtualization for very large tables. See docs/PERFORMANCE_AND_DATA.md.
+- **Language & UI**: 
+    - UI must be Arabic (RTL) by default.
+    - All financial reports must be printable and exportable to Excel/PDF.
+- **Numbers & Dates (STRICT)**:
+    - ALL numbers MUST display in English numerals only (0-9). Use `toLocaleString('en')` or `fmt()` from utils/format.js.
+    - ALL dates MUST display in English format only. Use `formatSaudiDate()` from utils/saudiDate.js (which uses 'en-GB' locale). NEVER use 'ar-SA' or 'ar' for date/number display.
+- **GLOBAL SMART ALIGNMENT (Arabic & English)**:
+    - **Financial numbers**: ALWAYS `text-align: right` (decimal points align vertically). Use `fmt(v, 2)` or `fmtFinancial(v)` — two decimal places (0.00) across the system.
+    - **Text columns**: Use `text-align: start` (right in Arabic, left in English) for natural reading flow.
+    - **Padding**: Add `padding-inline-end` on financial cells to prevent sticking to edges (RTL: right side, LTR: left side).
+- **Print / Export / Import (do not forget when implementing a module)**:
+    - **Print**: Every screen with tables or reports MUST support professional printing (company name + logo in header, clean layout, @media print or print button). Single page when possible; repeat header on each page for long tables.
+    - **Export**: Every table/list/report MUST have Export to Excel and Export to PDF (company name + logo, professional formatting). Use Dynamic Imports for XLSX and PDF libraries (do not bundle in initial load).
+    - **Import**: Where the module spec requires it (e.g. bank statement upload in Reports, batch invoice import in Invoices, employee import in HR), implement file upload and processing; document in docs/modules/<MODULE>.md.
+    - See docs/NOORIX_RULES.md §5 and each module spec under docs/modules/ for details.
+- **Error codes**: Use codes from docs/ERROR_CODES.md; API returns { success, data, error, code }.
+- **Env**: API base URL via VITE_API_URL (see .env.example). Full rules and backend: docs/NOORIX_RULES.md.

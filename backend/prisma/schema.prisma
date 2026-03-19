@@ -1,0 +1,795 @@
+// NOORIX — Enterprise SaaS Schema (Multi-Tenant)
+// معمارية: Tenant → Companies → All Operational Data
+// الأمان: RLS على مستوى PostgreSQL بـ app.current_tenant_id
+// مرجع: docs/NOORIX_RULES.md §2.4، §7
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════
+// TIER 1: TENANT (المنظمة / الاشتراك)
+// الطبقة العليا — Tenant يملك Companies
+// ══════════════════════════════════════════════════
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String                           // اسم المنظمة (مثل: مجموعة أبو مسعود)
+  slug        String   @unique                 // معرّف URL فريد (abumasoud-group)
+  plan        String   @default("starter")     // starter | professional | enterprise
+  isActive    Boolean  @default(true)  @map("is_active")
+  maxCompanies Int     @default(5)     @map("max_companies")  // حد الشركات حسب الخطة
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  companies  Company[]
+  users      User[]
+
+  @@map("tenants")
+}
+
+// ══════════════════════════════════════════════════
+// TIER 2: AUTH & PERMISSIONS
+// ══════════════════════════════════════════════════
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  nameAr      String?  @map("name_ar")
+  description String?
+  permissions String[] @default([])
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")          // ⚠️ إلزامي — المستخدم ينتمي لـ Tenant واحد
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  nameAr          String?   @map("name_ar")
+  nameEn          String?   @map("name_en")
+  roleId          String    @map("role_id")
+  isActive        Boolean   @default(true)  @map("is_active")
+  lastActivityAt  DateTime? @map("last_activity_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt      @map("updated_at")
+
+  tenant        Tenant        @relation(fields: [tenantId],  references: [id], onDelete: Cascade)
+  role          Role          @relation(fields: [roleId],    references: [id], onDelete: Restrict)
+  userCompanies UserCompany[]
+  ledgerEntries LedgerEntry[] @relation("CreatedBy")
+  auditLogs     AuditLog[]
+  salesSummaries DailySalesSummary[] @relation("SalesCreatedBy")
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+// ══════════════════════════════════════════════════
+// TIER 3: COMPANY (الشركة — تحت Tenant)
+// ══════════════════════════════════════════════════
+model Company {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")              // ⚠️ إلزامي — RLS يستخدمه
+  nameAr     String   @map("name_ar")
+  nameEn     String?  @map("name_en")
+  logoUrl    String?  @map("logo_url")
+  phone      String?
+  address    String?
+  taxNumber  String?  @map("tax_number")
+  email      String?
+  isArchived Boolean  @default(false) @map("is_archived")
+  vatEnabledForSales Boolean @default(false) @map("vat_enabled_for_sales")
+  vatRatePercent     Decimal  @default(15)   @map("vat_rate_percent") @db.Decimal(5, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt      @map("updated_at")
+
+  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userCompanies       UserCompany[]
+  suppliers           Supplier[]
+  vaults              Vault[]
+  accounts            Account[]
+  invoices            Invoice[]
+  ledgerEntries       LedgerEntry[]
+  auditLogs           AuditLog[]
+  dailySalesSummaries DailySalesSummary[]
+  categories          Category[]
+  employees           Employee[]
+  payrollRuns         PayrollRun[]
+  leaves              Leave[]
+  employeeResidencies EmployeeResidency[]
+  employeeDocuments   EmployeeDocument[]
+  employeeMovements   EmployeeMovement[]
+  employeeCustomAllowances EmployeeCustomAllowance[]
+  employeeDeductions  EmployeeDeduction[]
+  fiscalPeriods       FiscalPeriod[]
+  expenseLines        ExpenseLine[]
+  orders              Order[]
+  orderProducts       OrderProduct[]
+  orderCategories     OrderCategory[]
+
+  @@index([tenantId])
+  @@map("companies")
+}
+
+// الفترات المالية — قفل التسجيل في فترات مغلقة
+model FiscalPeriod {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")     // RLS
+  companyId   String   @map("company_id")
+  nameAr      String   @map("name_ar")       // مثل: "يناير 2025"
+  nameEn      String?  @map("name_en")
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  status      String   @default("open")       // open | closed | locked
+  closedAt    DateTime? @map("closed_at")
+  closedById  String?  @map("closed_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, startDate])
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, status])
+  @@map("fiscal_periods")
+}
+
+// مفتاح عدم التكرار — منع تنفيذ نفس العملية مرتين
+model IdempotencyKey {
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")     // RLS
+  companyId    String   @map("company_id")
+  keyHash      String   @map("key_hash")      // hash من (operationType + payload)
+  resultJson   Json?    @map("result_json")   // نتيجة العملية المخزنة
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([companyId, keyHash])
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+
+// ربط المستخدم بالشركات المسموح له بها داخل الـ Tenant
+model UserCompany {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  companyId String   @map("company_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId],    references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+  @@map("user_companies")
+}
+
+// ══════════════════════════════════════════════════
+// TIER 4: OPERATIONAL DATA
+// كل جدول يحمل tenantId + companyId للـ RLS
+// tenantId = عزل على مستوى PostgreSQL
+// companyId = تصفية على مستوى التطبيق
+// ══════════════════════════════════════════════════
+
+// ── جدول الموظفين — نواة نظام HR المتكامل ─────────
+model Employee {
+  id                 String   @id @default(cuid())
+  tenantId           String   @map("tenant_id")        // RLS
+  companyId          String   @map("company_id")
+  employeeSerial     String   @map("employee_serial")  // الرقم الوظيفي (مثل MS-ST-001)
+  name               String                            // الاسم الكامل
+  nameEn             String?  @map("name_en")
+  iqamaNumber        String?  @map("iqama_number")     // رقم الإقامة
+  jobTitle           String?  @map("job_title")        // المسمى الوظيفي
+  basicSalary        Decimal  @map("basic_salary")     @db.Decimal(18, 4)
+  housingAllowance   Decimal  @default(0) @map("housing_allowance")    @db.Decimal(18, 4)
+  transportAllowance Decimal  @default(0) @map("transport_allowance")  @db.Decimal(18, 4)
+  otherAllowance     Decimal  @default(0) @map("other_allowance")      @db.Decimal(18, 4)
+  workHours          String?  @map("work_hours")       // ساعات العمل (مثل: 8 ساعات يومياً)
+  workSchedule       String?  @map("work_schedule")    // نظام الدوام (مثل: من الأحد إلى الخميس)
+  joinDate           DateTime @map("join_date")        // أساس حساب نهاية الخدمة
+  status             String   @default("active")       // active | terminated | on_leave
+  notes              String?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt      @map("updated_at")
+
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoices      Invoice[]
+  ledgerEntries LedgerEntry[]
+  payrollRuns   PayrollRunItem[]
+  leaves        Leave[]
+  residencies   EmployeeResidency[]
+  documents     EmployeeDocument[]
+  movements       EmployeeMovement[]
+  customAllowances EmployeeCustomAllowance[]
+  deductions      EmployeeDeduction[]
+
+  @@unique([companyId, employeeSerial])
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, status])
+  @@map("employees")
+}
+
+// ── مسيرة الرواتب (دفعة شهرية) ─────────────────────────────
+model PayrollRun {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  runNumber       String   @map("run_number")       // PR-2026-03
+  payrollMonth    DateTime @map("payroll_month")    // أول يوم من الشهر
+  totalAmount     Decimal  @map("total_amount")     @db.Decimal(18, 4)
+  employeeCount   Int      @map("employee_count")
+  status          String   @default("draft")        // draft | completed
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt      @map("updated_at")
+
+  company Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items   PayrollRunItem[]
+
+  @@unique([companyId, runNumber])
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, payrollMonth])
+  @@map("payroll_runs")
+}
+
+model PayrollRunItem {
+  id              String   @id @default(cuid())
+  payrollRunId    String   @map("payroll_run_id")
+  employeeId      String   @map("employee_id")
+  grossSalary     Decimal  @map("gross_salary")     @db.Decimal(18, 4)
+  allowancesAdd   Decimal  @default(0) @map("allowances_add")   @db.Decimal(18, 4)  // بدلات إضافية
+  deductions      Decimal  @default(0) @map("deductions")      @db.Decimal(18, 4)  // خصومات (جزاءات وغيرها)
+  advancesDeduct  Decimal  @default(0) @map("advances_deduct") @db.Decimal(18, 4) // خصم السلف
+  netSalary       Decimal  @map("net_salary")       @db.Decimal(18, 4)
+  notes           String?
+
+  payrollRun PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employee   Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  vaultSplits PayrollRunItemVault[]
+
+  @@unique([payrollRunId, employeeId])
+  @@index([employeeId])
+  @@map("payroll_run_items")
+}
+
+// توزيع الدفع على خزائن متعددة لكل بند في المسيرة
+model PayrollRunItemVault {
+  id              String   @id @default(cuid())
+  payrollItemId   String   @map("payroll_item_id")
+  vaultId         String   @map("vault_id")
+  amount          Decimal  @map("amount")  @db.Decimal(18, 4)
+
+  payrollItem PayrollRunItem @relation(fields: [payrollItemId], references: [id], onDelete: Cascade)
+  vault       Vault          @relation(fields: [vaultId], references: [id], onDelete: Restrict)
+
+  @@unique([payrollItemId, vaultId])
+  @@index([payrollItemId])
+  @@map("payroll_run_item_vaults")
+}
+
+// ── الإجازات ───────────────────────────────────────────────
+model Leave {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  employeeId      String   @map("employee_id")
+  leaveType       String   @map("leave_type")       // annual | sick | unpaid | other
+  startDate       DateTime @map("start_date")
+  endDate         DateTime @map("end_date")
+  daysCount       Int      @map("days_count")
+  status          String   @default("pending")       // pending | approved | rejected
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt      @map("updated_at")
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, employeeId])
+  @@index([companyId, startDate])
+  @@map("leaves")
+}
+
+// ── الإقامات ───────────────────────────────────────────────
+model EmployeeResidency {
+  id                    String    @id @default(cuid())
+  tenantId              String    @map("tenant_id")
+  companyId             String    @map("company_id")
+  employeeId            String    @map("employee_id")
+  iqamaNumber           String    @map("iqama_number")
+  issueDate             DateTime? @map("issue_date")
+  expiryDate            DateTime  @map("expiry_date")
+  status                String    @default("active")      // active | expired | renewed
+  notes                 String?
+  invoiceId             String?   @map("invoice_id")     // ربط بفاتورة الإقامة عند الإصدار
+  residencyInvoiceAmount Decimal?  @map("residency_invoice_amount") @db.Decimal(18, 4)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt      @map("updated_at")
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, employeeId])
+  @@index([companyId, expiryDate])
+  @@map("employee_residencies")
+}
+
+// ── مستندات الموظف ────────────────────────────────────────
+model EmployeeDocument {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  employeeId      String   @map("employee_id")
+  documentType    String   @map("document_type")    // contract | certificate | iqama | other
+  fileName        String   @map("file_name")
+  filePath        String?  @map("file_path")        // مسار التخزين أو رابط
+  fileSize        Int?     @map("file_size")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, employeeId])
+  @@map("employee_documents")
+}
+
+// ── سجل الترقيات والزيادات ─────────────────────────────
+model EmployeeMovement {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  employeeId      String   @map("employee_id")
+  movementType    String   @map("movement_type")   // promotion | raise | other
+  amount          Decimal? @map("amount")         @db.Decimal(18, 4)  // للزيادة
+  previousValue   String?  @map("previous_value") // القيمة السابقة (مثل الراتب القديم)
+  newValue        String?  @map("new_value")      // القيمة الجديدة
+  effectiveDate   DateTime @map("effective_date")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, employeeId])
+  @@map("employee_movements")
+}
+
+// ── بدلات مخصصة (إضافة/حذف) ─────────────────────────────
+model EmployeeCustomAllowance {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  employeeId      String   @map("employee_id")
+  nameAr          String   @map("name_ar")
+  amount          Decimal  @map("amount")  @db.Decimal(18, 4)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, employeeId])
+  @@map("employee_custom_allowances")
+}
+
+// ── سجل الخصومات ───────────────────────────────────────
+model EmployeeDeduction {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  employeeId      String   @map("employee_id")
+  deductionType   String   @map("deduction_type")  // advance | penalty | other
+  amount          Decimal  @map("amount")  @db.Decimal(18, 4)
+  transactionDate DateTime @map("transaction_date")
+  notes           String?
+  referenceId     String?  @map("reference_id")   // ربط بفاتورة سلفة إن وجدت
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, employeeId])
+  @@map("employee_deductions")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")      // RLS
+  companyId String   @map("company_id")
+  accountId String?  @map("account_id")    // ربط بجدول الحسابات — للفئات المُظهرة في P&L
+  nameAr    String   @map("name_ar")
+  nameEn    String?  @map("name_en")
+  parentId  String?  @map("parent_id")
+  type      String   @default("purchase")   // purchase | expense | sale | general
+  icon      String?
+  isActive  Boolean  @default(true)  @map("is_active")
+  sortOrder Int      @default(0)     @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  account      Account?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  parent       Category?    @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Category[]   @relation("CategoryTree")
+  suppliers    Supplier[]
+  expenseLines ExpenseLine[]
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, parentId])
+  @@index([accountId])
+  @@map("categories")
+}
+
+model Supplier {
+  id                 String   @id @default(cuid())
+  tenantId           String   @map("tenant_id")      // RLS
+  companyId          String   @map("company_id")
+  nameAr             String   @map("name_ar")
+  nameEn             String?  @map("name_en")
+  phone              String?
+  taxNumber          String?  @map("tax_number")
+  categoryId         String?  @map("category_id")           // مشتريات | مصروفات (legacy)
+  supplierCategoryId String?  @map("supplier_category_id")  // FK → Category
+  isDeleted          Boolean  @default(false) @map("is_deleted")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt      @map("updated_at")
+
+  company          Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplierCategory Category?    @relation(fields: [supplierCategoryId], references: [id], onDelete: SetNull)
+  invoices         Invoice[]
+  expenseLines     ExpenseLine[]
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, isDeleted])
+  @@map("suppliers")
+}
+
+// بند مصروف — هاتف 1، كهرب 1، إيجار محل — لكل بند سجل مدفوعات خاص
+model ExpenseLine {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  companyId     String   @map("company_id")
+  nameAr        String   @map("name_ar")         // "هاتف رقم 1"، "كهرباء الفرع 1"
+  nameEn        String?  @map("name_en")
+  kind          String   // fixed_expense | expense
+  categoryId    String   @map("category_id")
+  supplierId    String   @map("supplier_id")
+  serviceNumber String?  @map("service_number")  // رقم الخدمة/العداد
+  notes         String?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt      @map("updated_at")
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier  Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  invoices  Invoice[]
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, kind])
+  @@index([companyId, categoryId])
+  @@index([companyId, supplierId])
+  @@map("expense_lines")
+}
+
+model Account {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")      // RLS
+  companyId String   @map("company_id")
+  code      String
+  nameAr    String   @map("name_ar")
+  nameEn    String?  @map("name_en")
+  type      String   // asset | liability | equity | revenue | expense
+  icon      String?  // أيقونة للعرض (مثل: 💵، 📦)
+  taxExempt Boolean  @default(false) @map("tax_exempt")  // معفى من الضريبة افتراضياً
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vaults       Vault[]
+  ledgerDebit  LedgerEntry[] @relation("DebitAccount")
+  ledgerCredit LedgerEntry[] @relation("CreditAccount")
+  categories   Category[]
+
+  @@unique([companyId, code])
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("accounts")
+}
+
+model Vault {
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")      // RLS
+  companyId      String   @map("company_id")
+  accountId      String   @map("account_id")
+  nameAr         String   @map("name_ar")
+  nameEn         String?  @map("name_en")
+  type           String   // cash | bank | app
+  isActive       Boolean  @default(true)  @map("is_active")
+  isArchived     Boolean  @default(false) @map("is_archived")
+  isSalesChannel Boolean  @default(false) @map("is_sales_channel")
+  paymentMethod  String?  @map("payment_method")
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt      @map("updated_at")
+
+  company       Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  account       Account             @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  ledgerEntries LedgerEntry[]
+  invoices      Invoice[]
+  salesChannels DailySalesChannel[]
+  payrollItemVaults PayrollRunItemVault[]
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, isArchived])
+  @@map("vaults")
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")       // RLS
+  companyId       String    @map("company_id")
+  supplierId      String?   @map("supplier_id")     // اختياري — null للرواتب/السلفيات
+  employeeId      String?   @map("employee_id")     // مرتبط بالموظف (راتب/سلفية)
+  expenseLineId   String?   @map("expense_line_id") // ربط ببند المصروف (fixed/variable)
+  categoryId      String?   @map("category_id")     // فئة المصروف — للفلترة والتقارير
+  invoiceNumber   String    @map("invoice_number")
+  supplierInvoiceNumber String? @map("supplier_invoice_number")  // رقم الفاتورة من المورد (غير السريل الداخلي)
+  kind            String    // purchase | expense | salary | advance | hr_expense | fixed_expense
+  totalAmount     Decimal   @map("total_amount")     @db.Decimal(18, 4)
+  netAmount       Decimal   @map("net_amount")       @db.Decimal(18, 4)
+  taxAmount       Decimal   @map("tax_amount")       @db.Decimal(18, 4)
+  transactionDate DateTime  @map("transaction_date")
+  invoiceDate     DateTime? @map("invoice_date")     // تاريخ الفاتورة الأصلية
+  vaultId         String?   @map("vault_id")
+  paymentMethodId String?   @map("payment_method_id")
+  batchId         String?   @map("batch_id")
+  notes           String?  // ملاحظة / تفاصيل — اسم الموظف، الشهر، تفاصيل فواتير حكومية
+  settledAt       DateTime? @map("settled_at")      // للسلف: تاريخ التسديد (خصم من راتب أو سداد)
+  settledAmount   Decimal? @map("settled_amount")   @db.Decimal(18, 4) // للسلف: المبلغ المسدد
+  dailySalesSummaryId String? @unique @map("daily_sales_summary_id")  // للمبيعات: ربط بملخص المبيعات اليومي (واحد لواحد)
+  status          String   @default("active")       // active | cancelled
+  entryDate       DateTime @map("entry_date")       // توقيت السيرفر — غير قابل للتعديل
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt      @map("updated_at")
+
+  company       Company             @relation(fields: [companyId],  references: [id], onDelete: Cascade)
+  supplier      Supplier?           @relation(fields: [supplierId],  references: [id], onDelete: Restrict)
+  vault         Vault?              @relation(fields: [vaultId],     references: [id], onDelete: SetNull)
+  employee      Employee?           @relation(fields: [employeeId],  references: [id], onDelete: SetNull)
+  expenseLine   ExpenseLine?        @relation(fields: [expenseLineId], references: [id], onDelete: SetNull)
+  dailySalesSummary DailySalesSummary? @relation(fields: [dailySalesSummaryId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, invoiceNumber])
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, transactionDate])
+  @@index([companyId, status])
+  @@index([companyId, employeeId])
+  @@index([companyId, expenseLineId])
+  @@index([companyId, categoryId])
+  @@map("invoices")
+}
+
+model DailySalesSummary {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")      // RLS
+  companyId       String   @map("company_id")
+  summaryNumber   String   @map("summary_number")
+  transactionDate DateTime @map("transaction_date")
+  customerCount   Int      @default(0)   @map("customer_count")
+  cashOnHand      Decimal  @default(0)   @map("cash_on_hand")  @db.Decimal(18, 4)
+  totalAmount     Decimal  @default(0)   @map("total_amount")  @db.Decimal(18, 4)
+  notes           String?
+  status          String   @default("active")
+  createdById     String?  @map("created_by_id")    // ✅ بصمة المستخدم — مرتبط بـ User
+  entryDate       DateTime @map("entry_date")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt      @map("updated_at")
+
+  company      Company  @relation(fields: [companyId],   references: [id], onDelete: Cascade)
+  createdBy    User?    @relation("SalesCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  channels     DailySalesChannel[]
+  saleInvoice  Invoice?  // فاتورة مبيعات مرتبطة (للعرض الموحد في قسم الفواتير)
+
+  @@unique([companyId, summaryNumber])
+  @@index([tenantId])
+  @@index([companyId, transactionDate])
+  @@map("daily_sales_summaries")
+}
+
+model DailySalesChannel {
+  id        String  @id @default(cuid())
+  summaryId String  @map("summary_id")
+  vaultId   String  @map("vault_id")
+  amount    Decimal @default(0) @db.Decimal(18, 4)
+
+  summary DailySalesSummary @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+  vault   Vault              @relation(fields: [vaultId],   references: [id], onDelete: Restrict)
+
+  @@unique([summaryId, vaultId])
+  @@map("daily_sales_channels")
+}
+
+// جدول الحركات الموحد (القيد المزدوج)
+model LedgerEntry {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")      // RLS
+  companyId       String   @map("company_id")
+  debitAccountId  String   @map("debit_account_id")
+  creditAccountId String   @map("credit_account_id")
+  amount          Decimal  @db.Decimal(18, 4)
+  transactionDate DateTime @map("transaction_date")
+  entryDate       DateTime @map("entry_date")
+  referenceType   String   @map("reference_type")  // invoice | sale | transfer | expense | salary | advance
+  referenceId     String   @map("reference_id")
+  vaultId         String?  @map("vault_id")
+  employeeId      String?  @map("employee_id")     // مرتبط بالموظف (راتب/سلفية)
+  createdById     String?  @map("created_by_id")   // ✅ بصمة المستخدم
+  status          String   @default("active")       // active | cancelled
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  company       Company   @relation(fields: [companyId],       references: [id], onDelete: Cascade)
+  debitAccount  Account   @relation("DebitAccount",  fields: [debitAccountId],  references: [id], onDelete: Restrict)
+  creditAccount Account   @relation("CreditAccount", fields: [creditAccountId], references: [id], onDelete: Restrict)
+  vault         Vault?    @relation(fields: [vaultId],    references: [id], onDelete: SetNull)
+  employee      Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  createdBy     User?     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, transactionDate])
+  @@index([companyId, entryDate])
+  @@index([referenceType, referenceId])
+  @@index([vaultId])
+  @@index([companyId, employeeId])
+  @@map("ledger_entries")
+}
+
+// سجل التدقيق — يُسجّل بصمة المستخدم الحقيقية على كل حركة
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")      // RLS
+  companyId String   @map("company_id")
+  userId    String?  @map("user_id")        // ✅ بصمة المستخدم — لا يكون null عند الحفظ
+  action    String   // create | update | delete | cancel
+  entity    String   // invoice | ledger_entry | user | company | ...
+  entityId  String   @map("entity_id")
+  oldValue  Json?    @map("old_value")
+  newValue  Json?    @map("new_value")
+  ip        String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId],    references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, entity, entityId])
+  @@index([companyId, createdAt])
+  @@map("audit_logs")
+}
+
+// ── الطلبات (قسم داخلي — لا ربط محاسبي) ─────────────────────
+model OrderCategory {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  companyId String   @map("company_id")
+  nameAr    String   @map("name_ar")   // خضروات، لحوم، مشروبات
+  nameEn    String?  @map("name_en")
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  company  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  products OrderProduct[]
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("order_categories")
+}
+
+model OrderProduct {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  companyId   String   @map("company_id")
+  categoryId  String?  @map("category_id")
+  nameAr      String   @map("name_ar")
+  nameEn      String?  @map("name_en")
+  unit        String   @default("piece")  // piece | kg | box | dozen — افتراضي عند عدم وجود variants
+  sizes       String?  @map("sizes")      // أحجام متاحة: صغير,وسط,كبير (للتوافق مع الإصدارات القديمة)
+  packaging   String?  @map("packaging")  // التغليف (للتوافق مع الإصدارات القديمة)
+  lastPrice   Decimal  @default(0) @map("last_price") @db.Decimal(18, 4)  // سعر افتراضي عند عدم وجود variants
+  variants    Json?    @map("variants")   // [{size,packaging,unit,lastPrice},...] — تركيبات متعددة بأسعار
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category OrderCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, categoryId])
+  @@map("order_products")
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  companyId       String   @map("company_id")
+  orderNumber     String   @map("order_number")   // ORD-20260315-001
+  orderDate       DateTime @map("order_date")
+  orderType       String   @map("order_type")    // external | internal
+  pettyCashAmount Decimal? @map("petty_cash_amount") @db.Decimal(18, 4)  // للخارجي فقط
+  totalAmount     Decimal  @map("total_amount")  @db.Decimal(18, 4)
+  notes           String?
+  status          String   @default("active") @map("status")  // active | cancelled
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt      @map("updated_at")
+
+  company Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items   OrderItem[]
+
+  @@unique([companyId, orderNumber])
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, orderDate])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String   @map("order_id")
+  productId  String   @map("product_id")
+  size       String?  @map("size")       // الحجم المختار
+  packaging  String?  @map("packaging")  // التغليف المختار
+  unit       String?  @map("unit")       // الوحدة المختارة (piece|kg|box|dozen)
+  quantity   Decimal  @db.Decimal(18, 4)
+  unitPrice  Decimal  @map("unit_price") @db.Decimal(18, 4)
+  amount     Decimal  @db.Decimal(18, 4)
+
+  order   Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product OrderProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}

@@ -1,0 +1,8 @@
+-- AlterTable: إضافة حقول الصلاحيات للأدوار مع default لـ updated_at
+ALTER TABLE "roles"
+  ADD COLUMN IF NOT EXISTS "created_at"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS "updated_at"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS "description"  TEXT,
+  ADD COLUMN IF NOT EXISTS "is_system"    BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS "name_ar"      TEXT,
+  ADD COLUMN IF NOT EXISTS "permissions"  TEXT[] DEFAULT ARRAY[]::TEXT[];

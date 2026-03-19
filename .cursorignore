@@ -1,0 +1,10 @@
+﻿# CURSOR PERFORMANCE - Strict Ignore
+node_modules/
+.next/
+dist/
+build/
+.git/
+public/assets/
+storage/
+*.log
+package-lock.json

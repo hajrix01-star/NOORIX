@@ -1,0 +1,20 @@
+# Environment — لا ترفع أبداً (يحتوي مفاتيح سرية)
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

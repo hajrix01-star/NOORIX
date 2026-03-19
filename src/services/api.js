@@ -1,0 +1,629 @@
+/**
+ * Noorix API layer — واجهة موحدة لاستدعاء الـ Backend.
+ * - Base URL ديناميكي: VITE_API_URL أولاً، ثم يُستنتج من port المتصفح.
+ * - معالجة 401 عالمية → logout تلقائي.
+ * - إمساك أخطاء الشبكة → { success: false, isNetworkError: true }.
+ * - Timeout 12s لكل طلب.
+ */
+import { getAuthToken, getActiveCompanyId } from './authStore';
+
+// ── Base URL ديناميكي ─────────────────────────────────
+function resolveBaseUrl() {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname, port } = window.location;
+    // Frontend Vite dev على 5173/5174 → Backend NestJS على 3000
+    if (port === '5173' || port === '5174' || port === '5175') {
+      return `${protocol}//${hostname}:3000`;
+    }
+    // إنتاج: نفس الـ origin (Nginx reverse proxy)
+    return '';
+  }
+  return '';
+}
+
+const BASE_URL = resolveBaseUrl();
+
+// ── معالج 401 عالمي ──────────────────────────────────
+let _on401 = null;
+export function registerOn401Handler(fn) { _on401 = fn; }
+function handleUnauthorized() { if (typeof _on401 === 'function') _on401(); }
+
+// ── رؤوس الطلبات ─────────────────────────────────────
+function getAuthHeaders() {
+  const token     = getAuthToken();
+  const companyId = getActiveCompanyId();
+  const h = { 'Content-Type': 'application/json' };
+  if (token)     h['Authorization'] = `Bearer ${token}`;
+  if (companyId) h['x-company-id']  = String(companyId);
+  return h;
+}
+
+// ── fetch مع timeout وإمساك أخطاء الشبكة ────────────
+const TIMEOUT_MS = 12000;
+async function safeFetch(url, options) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { ...options, signal: ctrl.signal });
+    clearTimeout(tid);
+    return res;
+  } catch (err) {
+    clearTimeout(tid);
+    const msg = err?.name === 'AbortError' ? 'انتهت مهلة الاتصال' : 'السيرفر غير متاح';
+    throw Object.assign(new Error(msg), { isNetworkError: true });
+  }
+}
+
+// ── معالجة الاستجابة ─────────────────────────────────
+async function parseResponse(res) {
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    handleUnauthorized();
+    return { success: false, error: 'غير مصرح — يُرجى تسجيل الدخول', code: 401 };
+  }
+  if (!res.ok) {
+    const msg = Array.isArray(data?.message)
+      ? data.message.join(', ')
+      : (data?.message || res.statusText);
+    return { success: false, error: msg, code: res.status };
+  }
+  return { success: true, data: data?.data ?? data };
+}
+
+function getBase() {
+  return BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+}
+
+/**
+ * استدعاء GET.
+ */
+export async function apiGet(path, params = {}) {
+  const url = new URL(path, getBase());
+  Object.entries(params).forEach(([k, v]) => { if (v != null && v !== '') url.searchParams.set(k, v); });
+  try {
+    const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
+    return parseResponse(res);
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
+/**
+ * استدعاء POST.
+ */
+export async function apiPost(path, body = {}) {
+  const url = new URL(path, getBase());
+  try {
+    const res = await safeFetch(url.toString(), { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body) });
+    return parseResponse(res);
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
+/**
+ * استدعاء PATCH.
+ */
+export async function apiPatch(path, body = {}) {
+  const url = new URL(path, getBase());
+  try {
+    const res = await safeFetch(url.toString(), { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(body) });
+    return parseResponse(res);
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
+/**
+ * استدعاء DELETE.
+ */
+export async function apiDelete(path) {
+  const url = new URL(path, getBase());
+  try {
+    const res = await safeFetch(url.toString(), { method: 'DELETE', headers: getAuthHeaders() });
+    return parseResponse(res);
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
+// ——— فحص الاتصال ———
+export function getApiBaseUrl() { return BASE_URL || '(dynamic)'; }
+
+export async function checkApiConnection() {
+  try {
+    const base = getBase();
+    const url  = base ? `${base}/api/v1/health` : '/api/v1/health';
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 5000);
+    const res  = await fetch(url, { method: 'GET', signal: ctrl.signal }).catch(() => null);
+    clearTimeout(tid);
+    if (!res) return { ok: false, error: 'السيرفر غير متاح' };
+    return { ok: res.ok, status: res.status };
+  } catch (err) {
+    return { ok: false, error: err?.message };
+  }
+}
+
+/** جلب حالة الصحة الكاملة (يتضمن geminiAvailable) */
+export async function getHealth() {
+  try {
+    const base = getBase();
+    const url  = base ? `${base}/api/v1/health` : '/api/v1/health';
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 8000);
+    const res  = await fetch(url, { method: 'GET', headers: getAuthHeaders(), signal: ctrl.signal }).catch(() => null);
+    clearTimeout(tid);
+    if (!res) return { success: false, error: 'السيرفر غير متاح', isNetworkError: true };
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { success: false, error: data?.message || res.statusText, status: res.status };
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
+/** اختبار Gemini مباشرة — للتشخيص */
+export async function testGemini() {
+  return apiGet('/api/v1/gemini-test');
+}
+
+/**
+ * تسجيل الدخول — إرجاع { access_token, user }.
+ */
+export async function login(email, password) {
+  const res = await apiPost('/api/v1/auth/login', { email, password });
+  if (!res.success) return res;
+  return { success: true, data: res.data };
+}
+
+/**
+ * المستخدم الحالي — يتطلب JWT.
+ */
+export async function getMe() {
+  return apiGet('/api/v1/auth/me');
+}
+
+/**
+ * تغيير كلمة المرور — يتطلب JWT.
+ */
+export async function changePassword(currentPassword, newPassword) {
+  const res = await apiPost('/api/v1/auth/change-password', { currentPassword, newPassword });
+  return res;
+}
+
+/**
+ * المحادثة الذكية — إرسال استعلام والحصول على إجابة.
+ */
+export async function chatQuery(query) {
+  return apiPost('/api/v1/chat/query', { query });
+}
+
+// ——— موارد ———
+
+export async function getCompanies(includeArchived = false) {
+  return apiGet('/api/v1/companies', includeArchived ? { includeArchived: 'true' } : {});
+}
+
+export async function getCompany(id) {
+  if (!id) return { success: false, error: 'معرف الشركة مطلوب' };
+  return apiGet(`/api/v1/companies/${id}`);
+}
+
+export async function getRoles() {
+  const res = await apiGet('/api/v1/roles');
+  return { success: res.success, data: Array.isArray(res.data) ? res.data : [] };
+}
+
+export async function createRole(body) { return apiPost('/api/v1/roles', body); }
+export async function updateRole(id, body) { return apiPatch(`/api/v1/roles/${id}`, body); }
+export async function deleteRole(id) { return apiDelete(`/api/v1/roles/${id}`); }
+
+export async function getUsers() {
+  const res = await apiGet('/api/v1/users');
+  if (!res.success) return { success: false, error: res.error, data: [] };
+  return { success: true, data: Array.isArray(res.data) ? res.data : [] };
+}
+export async function createUser(body) { return apiPost('/api/v1/users', body); }
+export async function updateUser(id, body) { return apiPatch(`/api/v1/users/${id}`, body); }
+export async function archiveUser(id) { return apiPatch(`/api/v1/users/${id}/archive`, {}); }
+export async function restoreUser(id) { return apiPatch(`/api/v1/users/${id}/restore`, {}); }
+export async function deleteUser(id) { return apiDelete(`/api/v1/users/${id}`); }
+
+export async function createCompany(body) { return apiPost('/api/v1/companies', body); }
+export async function updateCompany(id, body) {
+  if (!id) return { success: false, error: 'معرف الشركة مطلوب' };
+  return apiPatch(`/api/v1/companies/${id}`, body);
+}
+export async function deleteCompany(id) {
+  if (!id) return { success: false, error: 'معرف الشركة مطلوب' };
+  return apiDelete(`/api/v1/companies/${id}`);
+}
+
+export async function getLedgerEntries(companyId, fromDate, toDate, page = 1, pageSize = 50) {
+  return apiGet('/api/v1/ledger', { companyId, fromDate, toDate, page, pageSize });
+}
+
+// ——— الحسابات والفئات ———
+export async function getAccounts(companyId) {
+  const res = await apiGet('/api/v1/accounts', { companyId });
+  return res.success && Array.isArray(res.data) ? res : { success: true, data: [] };
+}
+export async function getCategories(companyId) {
+  return apiGet('/api/v1/categories', { companyId });
+}
+export async function createCategory(body) { return apiPost('/api/v1/categories', body); }
+export async function updateCategory(id, body) { return apiPatch(`/api/v1/categories/${id}`, body); }
+export async function deleteCategory(id, companyId) {
+  return apiDelete(`/api/v1/categories/${id}?companyId=${companyId}`);
+}
+
+// ——— بنود المصاريف (ثابت/متغير) ———
+export async function getExpenseLines(companyId, kind, includeInactive = false) {
+  const params = { companyId };
+  if (kind) params.kind = kind;
+  if (includeInactive) params.includeInactive = 'true';
+  const res = await apiGet('/api/v1/expense-lines', params);
+  return res.success && Array.isArray(res.data) ? res : { success: true, data: [] };
+}
+export async function getExpenseLine(id, companyId) {
+  return apiGet(`/api/v1/expense-lines/${id}`, { companyId });
+}
+export async function getExpenseLinePayments(id, companyId, startDate, endDate, page = 1, pageSize = 50) {
+  const params = { companyId, page: String(page), pageSize: String(pageSize) };
+  if (startDate) params.startDate = String(startDate).slice(0, 10);
+  if (endDate) params.endDate = String(endDate).slice(0, 10);
+  return apiGet(`/api/v1/expense-lines/${id}/payments`, params);
+}
+export async function createExpenseLine(body) {
+  return apiPost('/api/v1/expense-lines', body);
+}
+export async function updateExpenseLine(id, body, companyId) {
+  return apiPatch(`/api/v1/expense-lines/${id}?companyId=${companyId}`, body);
+}
+export async function deactivateExpenseLine(id, companyId) {
+  return apiPatch(`/api/v1/expense-lines/${id}/deactivate?companyId=${companyId}`, {});
+}
+
+// ——— ملخصات المبيعات اليومية ———
+export async function createDailySalesSummary(body) { return apiPost('/api/v1/sales/summary', body); }
+export async function updateDailySalesSummary(id, body, companyId) {
+  return apiPatch(`/api/v1/sales/summaries/${id}?companyId=${companyId}`, body);
+}
+export async function cancelDailySalesSummary(id, companyId) {
+  return apiDelete(`/api/v1/sales/summaries/${id}?companyId=${companyId}`);
+}
+export async function getDailySalesSummaries(companyId, startDate, endDate, page = 1) {
+  const params = { companyId, page: String(page), pageSize: '500' };
+  // إرسال التاريخ بصيغة YYYY-MM-DD فقط لتجنب مشاكل التوقيت والترميز في الـ URL
+  if (startDate) params.startDate = String(startDate).slice(0, 10);
+  if (endDate)   params.endDate   = String(endDate).slice(0, 10);
+  return apiGet('/api/v1/sales/summaries', params);
+}
+
+// ——— التقارير ———
+export async function getGeneralProfitLossReport(companyId, year) {
+  return apiGet('/api/v1/reports/general-profit-loss', { companyId, year: String(year) });
+}
+export async function getGeneralProfitLossDetails(companyId, year, month, groupKey, itemKey) {
+  const params = { companyId, year: String(year), groupKey };
+  if (month != null && month !== '') params.month = String(month);
+  if (itemKey) params.itemKey = itemKey;
+  return apiGet('/api/v1/reports/general-profit-loss/details', params);
+}
+export async function getGeneralProfitLossTrend(companyId, year, groupKey, itemKey) {
+  const params = { companyId, year: String(year), groupKey };
+  if (itemKey) params.itemKey = itemKey;
+  return apiGet('/api/v1/reports/general-profit-loss/trend', params);
+}
+
+export async function getTaxVatReport(companyId, year, period) {
+  return apiGet('/api/v1/reports/tax-vat', { companyId, year: String(year), period });
+}
+
+// ——— الطلبات ———
+export async function getOrders(companyId, year, month) {
+  const res = await apiGet('/api/v1/orders', { companyId, year: String(year), month: String(month) });
+  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+}
+export async function getOrder(id, companyId) {
+  return apiGet(`/api/v1/orders/${id}`, { companyId });
+}
+export async function createOrder(body) {
+  return apiPost('/api/v1/orders', body);
+}
+export async function updateOrder(id, body, companyId) {
+  return apiPatch(`/api/v1/orders/${id}?companyId=${companyId}`, body);
+}
+export async function cancelOrder(id, companyId) {
+  return apiDelete(`/api/v1/orders/${id}?companyId=${companyId}`);
+}
+export async function getOrdersSummary(companyId, year, month) {
+  const res = await apiGet('/api/v1/orders/summary', { companyId, year: String(year), month: String(month) });
+  return res?.success ? { ...res, data: res.data ?? {} } : { success: false, data: {} };
+}
+export async function getProductPurchaseHistory(companyId, productId, year, month) {
+  const params = { companyId };
+  if (year) params.year = String(year);
+  if (month) params.month = String(month);
+  const res = await apiGet(`/api/v1/orders/product-history/${productId}`, params);
+  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+}
+export async function getCategoryPurchaseHistory(companyId, categoryId, year, month) {
+  const params = { companyId };
+  if (year) params.year = String(year);
+  if (month) params.month = String(month);
+  const res = await apiGet(`/api/v1/orders/category-history/${categoryId}`, params);
+  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+}
+export async function getOrdersItemsReport(companyId, year, month) {
+  const res = await apiGet('/api/v1/orders/items-report', { companyId, year: String(year), month: String(month) });
+  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+}
+export async function getOrderProducts(companyId) {
+  const res = await apiGet('/api/v1/orders/products', { companyId });
+  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+}
+export async function createOrderProduct(body) {
+  return apiPost('/api/v1/orders/products', body);
+}
+export async function createOrderProductsBatch(companyId, products) {
+  return apiPost('/api/v1/orders/products/batch', { companyId, products });
+}
+export async function createOrderCategoriesBatch(companyId, categories) {
+  return apiPost('/api/v1/orders/categories/batch', { companyId, categories });
+}
+export async function updateOrderProduct(id, body, companyId) {
+  return apiPatch(`/api/v1/orders/products/${id}?companyId=${companyId}`, body);
+}
+export async function getOrderCategories(companyId) {
+  const res = await apiGet('/api/v1/orders/categories', { companyId });
+  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+}
+export async function createOrderCategory(body) {
+  return apiPost('/api/v1/orders/categories', body);
+}
+export async function updateOrderCategory(id, body, companyId) {
+  return apiPatch(`/api/v1/orders/categories/${id}?companyId=${companyId}`, body);
+}
+
+// ——— الخزائن ———
+export async function getVaults(companyId, includeArchived = false, startDate, endDate) {
+  const params = { companyId, ...(includeArchived ? { includeArchived: 'true' } : {}) };
+  if (startDate) params.startDate = String(startDate).slice(0, 25);
+  if (endDate) params.endDate = String(endDate).slice(0, 25);
+  return apiGet('/api/v1/vaults', params);
+}
+export async function getVaultTransactions(vaultId, companyId, startDate, endDate, page = 1, pageSize = 50) {
+  const params = { companyId, page: String(page), pageSize: String(pageSize) };
+  if (startDate) params.startDate = startDate;
+  if (endDate)   params.endDate   = endDate;
+  return apiGet(`/api/v1/vaults/${vaultId}/transactions`, params);
+}
+export async function updateVault(id, body) { return apiPatch(`/api/v1/vaults/${id}`, body); }
+export async function archiveVault(id) { return apiPatch(`/api/v1/vaults/${id}/archive`, {}); }
+export async function deleteVault(id) { return apiDelete(`/api/v1/vaults/${id}`); }
+export async function createVault(body) { return apiPost('/api/v1/vaults', body); }
+
+// ——— الموظفون ———
+export async function getEmployees(companyId, includeTerminated = false) {
+  const res = await apiGet('/api/v1/employees', {
+    companyId: companyId || '',
+    ...(includeTerminated ? { includeTerminated: 'true' } : {}),
+  });
+  if (!res.success) return { success: false, error: res.error, data: [] };
+  return { success: true, data: Array.isArray(res.data) ? res.data : [] };
+}
+export async function getEmployee(id, companyId) {
+  if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
+  return apiGet(`/api/v1/employees/${id}`, { companyId });
+}
+export async function createEmployee(body) {
+  return apiPost('/api/v1/employees', body);
+}
+export async function createEmployeesBatch(body) {
+  return apiPost('/api/v1/employees/batch', body);
+}
+export async function updateEmployee(id, body, companyId) {
+  if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
+  return apiPatch(`/api/v1/employees/${id}?companyId=${companyId}`, body);
+}
+export async function terminateEmployee(id, companyId) {
+  if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
+  return apiPatch(`/api/v1/employees/${id}/terminate?companyId=${companyId}`, {});
+}
+
+// ——— HR: مسيرات الرواتب، الإجازات، الإقامات، المستندات ———
+export async function getPayrollRuns(companyId, year) {
+  const params = { companyId };
+  if (year) params.year = String(year);
+  return apiGet('/api/v1/hr/payroll-runs', params);
+}
+export async function getPayrollRun(id, companyId) {
+  return apiGet(`/api/v1/hr/payroll-runs/${id}`, { companyId });
+}
+export async function createPayrollRun(body) {
+  return apiPost('/api/v1/hr/payroll-runs', body);
+}
+export async function updatePayrollRunStatus(id, companyId, status) {
+  return apiPatch(`/api/v1/hr/payroll-runs/${id}/status?companyId=${companyId}`, { status });
+}
+export async function updatePayrollRun(id, companyId, body) {
+  return apiPatch(`/api/v1/hr/payroll-runs/${id}?companyId=${companyId}`, body);
+}
+export async function deletePayrollRun(id, companyId) {
+  return apiDelete(`/api/v1/hr/payroll-runs/${id}?companyId=${companyId}`);
+}
+export async function issuePayrollPayment(body) {
+  return apiPost('/api/v1/hr/payroll-runs/issue-payment', body);
+}
+
+export async function getLeaves(companyId, employeeId, year) {
+  const params = { companyId };
+  if (employeeId) params.employeeId = employeeId;
+  if (year) params.year = String(year);
+  return apiGet('/api/v1/hr/leaves', params);
+}
+export async function createLeave(body) {
+  return apiPost('/api/v1/hr/leaves', body);
+}
+export async function updateLeaveStatus(id, companyId, status) {
+  return apiPatch(`/api/v1/hr/leaves/${id}/status?companyId=${companyId}`, { status });
+}
+
+export async function getResidencies(companyId, employeeId) {
+  const params = { companyId };
+  if (employeeId) params.employeeId = employeeId;
+  return apiGet('/api/v1/hr/residencies', params);
+}
+export async function createResidency(body) {
+  return apiPost('/api/v1/hr/residencies', body);
+}
+export async function updateResidency(id, body, companyId) {
+  return apiPatch(`/api/v1/hr/residencies/${id}?companyId=${companyId}`, body);
+}
+export async function deleteResidency(id, companyId) {
+  return apiDelete(`/api/v1/hr/residencies/${id}?companyId=${companyId}`);
+}
+
+export async function getDocuments(companyId, employeeId) {
+  const params = { companyId };
+  if (employeeId) params.employeeId = employeeId;
+  return apiGet('/api/v1/hr/documents', params);
+}
+export async function createDocument(body) {
+  return apiPost('/api/v1/hr/documents', body);
+}
+export async function uploadDocument(formData) {
+  const url = new URL('/api/v1/hr/documents/upload', getBase());
+  const token = getAuthToken();
+  const companyId = getActiveCompanyId();
+  const h = {};
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  if (companyId) h['x-company-id'] = String(companyId);
+  try {
+    const res = await safeFetch(url.toString(), { method: 'POST', headers: h, body: formData });
+    return parseResponse(res);
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
+export async function uploadDocumentFile({ companyId, employeeId, documentType, file }) {
+  const url = new URL('/api/v1/hr/documents/upload-file', getBase());
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('companyId', companyId);
+  formData.append('employeeId', employeeId);
+  formData.append('documentType', documentType || 'other');
+  const h = {};
+  const token = getAuthToken();
+  const cid = getActiveCompanyId();
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  if (cid) h['x-company-id'] = String(cid);
+  try {
+    const res = await safeFetch(url.toString(), { method: 'POST', headers: h, body: formData });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { success: false, error: data?.message || data?.error || res.statusText };
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+export async function downloadDocument(id, companyId) {
+  const url = new URL(`/api/v1/hr/documents/${id}/download`, getBase());
+  url.searchParams.set('companyId', companyId);
+  const h = getAuthHeaders();
+  const res = await safeFetch(url.toString(), { method: 'GET', headers: h });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message || res.statusText || 'فشل التحميل');
+  }
+  const blob = await res.blob();
+  const disp = res.headers.get('content-disposition');
+  let fileName = 'document';
+  if (disp) {
+    const m = disp.match(/filename="?([^";]+)"?/);
+    if (m) fileName = m[1];
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+export async function deleteDocument(id, companyId) {
+  return apiDelete(`/api/v1/hr/documents/${id}?companyId=${companyId}`);
+}
+
+export async function getMovements(companyId, employeeId) {
+  const params = { companyId };
+  if (employeeId) params.employeeId = employeeId;
+  return apiGet('/api/v1/hr/movements', params);
+}
+export async function createMovement(body) {
+  return apiPost('/api/v1/hr/movements', body);
+}
+
+export async function getCustomAllowances(companyId, employeeId) {
+  const params = { companyId };
+  if (employeeId) params.employeeId = employeeId;
+  return apiGet('/api/v1/hr/allowances', params);
+}
+export async function createCustomAllowance(body) {
+  return apiPost('/api/v1/hr/allowances', body);
+}
+export async function deleteCustomAllowance(id, companyId) {
+  return apiDelete(`/api/v1/hr/allowances/${id}?companyId=${companyId}`);
+}
+
+export async function getDeductions(companyId, employeeId) {
+  const params = { companyId };
+  if (employeeId) params.employeeId = employeeId;
+  return apiGet('/api/v1/hr/deductions', params);
+}
+export async function createDeduction(body) {
+  return apiPost('/api/v1/hr/deductions', body);
+}
+
+// ——— الموردون ———
+export async function getSuppliers(companyId, page = 1, pageSize = 50) {
+  return apiGet('/api/v1/suppliers', { companyId, page, pageSize });
+}
+export async function createSupplier(body) { return apiPost('/api/v1/suppliers', body); }
+export async function updateSupplier(id, body) { return apiPatch(`/api/v1/suppliers/${id}`, body); }
+export async function deleteSupplier(id) { return apiDelete(`/api/v1/suppliers/${id}`); }
+
+// ——— الفواتير ———
+export async function createInvoice(body) { return apiPost('/api/v1/invoices', body); }
+export async function createInvoiceBatch(body) { return apiPost('/api/v1/invoices/batch', body); }
+export async function updateInvoice(id, body, companyId) {
+  return apiPatch(`/api/v1/invoices/${id}?companyId=${companyId}`, body);
+}
+export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId) {
+  const params = { companyId, page: String(page), pageSize: String(pageSize) };
+  // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
+  if (startDate) params.startDate = String(startDate).slice(0, 10);
+  if (endDate)   params.endDate   = String(endDate).slice(0, 10);
+  if (batchId)   params.batchId    = batchId;
+  if (employeeId) params.employeeId = employeeId;
+  if (kind)      params.kind       = kind;
+  if (sortBy)    params.sortBy     = sortBy;
+  if (sortDir)   params.sortDir    = sortDir;
+  if (supplierId) params.supplierId = supplierId;
+  const res = await apiGet('/api/v1/invoices', params);
+  if (!res.success) return res;
+  const data = res.data?.data ?? res.data;
+  return {
+    success: true,
+    data: {
+      items: data?.items ?? data ?? [],
+      total: data?.total ?? 0,
+      page:  data?.page ?? page,
+      pageSize: data?.pageSize ?? pageSize,
+    },
+  };
+}
