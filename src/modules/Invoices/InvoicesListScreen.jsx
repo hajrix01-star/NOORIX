@@ -2,7 +2,7 @@
  * InvoicesListScreen — قائمة الفواتير
  * يعتمد على: useInvoices | SmartTable | DateFilterBar | format | saudiDate
  */
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useMemo, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp }         from '../../context/AppContext';
@@ -46,6 +46,16 @@ export default function InvoicesListScreen() {
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
   const [searchText, setSearchText] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ((searchText || '').trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchText]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId]);
 
   const statusStyles = useMemo(() => ({
     active:    { bg: 'rgba(22,163,74,0.1)',  color: '#16a34a', label: t('statusActive') },
@@ -135,22 +145,15 @@ export default function InvoicesListScreen() {
     supplierId: filterSupplierId || undefined,
     sortBy: sortKey,
     sortDir,
+    q: debouncedQ || undefined,
   });
 
-  // بيانات مُحوَّلة لـ SmartTable
-  const tableData = useMemo(() => {
-    const mapped = (items || []).map((inv) => ({
-      ...inv,
-      supplierName: inv.kind === 'sale' ? (t('categoryTypeSale') || 'مبيعات') : (inv.supplier?.nameAr || ''),
-      notesOrEmployee: inv.notes || '',
-    }));
-    const q = (searchText || '').trim().toLowerCase();
-    if (!q) return mapped;
-    return mapped.filter((inv) =>
-      [inv.invoiceNumber, inv.supplierInvoiceNumber, inv.supplierName, inv.notesOrEmployee]
-        .some((v) => String(v || '').toLowerCase().includes(q)),
-    );
-  }, [items, t, searchText]);
+  // بيانات مُحوَّلة لـ SmartTable (البحث النصي من السيرفر عبر q)
+  const tableData = useMemo(() => (items || []).map((inv) => ({
+    ...inv,
+    supplierName: inv.kind === 'sale' ? (t('categoryTypeSale') || 'مبيعات') : (inv.supplier?.nameAr || ''),
+    notesOrEmployee: inv.notes || '',
+  })), [items, t]);
 
   const activeOnly      = tableData.filter((inv) => inv.status !== 'cancelled');
   const displayedTotal  = total || 0;
@@ -342,7 +345,7 @@ export default function InvoicesListScreen() {
             </>
           }
           searchValue={searchText}
-          onSearchChange={(val) => { setSearchText(val); setPage(1); }}
+          onSearchChange={setSearchText}
           sortKey={sortKey}
           sortDir={sortDir}
           onSort={toggleSort}

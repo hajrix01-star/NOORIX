@@ -250,6 +250,7 @@ export class InvoiceService {
     expenseLineId?: string,
     sortBy = 'transactionDate',
     sortDir: 'asc' | 'desc' | string = 'desc',
+    q?: string,
   ) {
     // معالجة التواريخ: YYYY-MM-DD → بداية اليوم ونهاية اليوم (UTC) — مطابق لـ SalesService
     const dateFilter =
@@ -272,6 +273,49 @@ export class InvoiceService {
     const categoryFilter = categoryId ? { categoryId } : {};
     const expenseLineFilter = expenseLineId ? { expenseLineId } : {};
 
+    const needle = (q || '').trim().slice(0, 120);
+    const searchFilter: Prisma.InvoiceWhereInput =
+      needle.length > 0
+        ? {
+            OR: [
+              { invoiceNumber: { contains: needle, mode: 'insensitive' } },
+              { supplierInvoiceNumber: { contains: needle, mode: 'insensitive' } },
+              { notes: { contains: needle, mode: 'insensitive' } },
+              {
+                supplier: {
+                  is: {
+                    OR: [
+                      { nameAr: { contains: needle, mode: 'insensitive' } },
+                      { nameEn: { contains: needle, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              },
+              {
+                employee: {
+                  is: {
+                    OR: [
+                      { name: { contains: needle, mode: 'insensitive' } },
+                      { nameEn: { contains: needle, mode: 'insensitive' } },
+                      { employeeSerial: { contains: needle, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              },
+              {
+                expenseLine: {
+                  is: {
+                    OR: [
+                      { nameAr: { contains: needle, mode: 'insensitive' } },
+                      { nameEn: { contains: needle, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              },
+            ],
+          }
+        : {};
+
     const where = {
       companyId,
       ...dateFilter,
@@ -281,6 +325,7 @@ export class InvoiceService {
       ...supplierFilter,
       ...categoryFilter,
       ...expenseLineFilter,
+      ...searchFilter,
     };
 
     const dir: Prisma.SortOrder = String(sortDir).toLowerCase() === 'asc' ? 'asc' : 'desc';
@@ -294,12 +339,15 @@ export class InvoiceService {
     // ضمان ثبات الترتيب: عند تساوي transactionDate يظهر آخر مُدخل أولاً افتراضياً
     orderBy.push({ createdAt: dir });
 
+    const size = Math.min(200, Math.max(1, pageSize));
+    const p = Math.max(1, page);
+
     const [items, total] = await Promise.all([
       this.prisma.invoice.findMany({
         where,
         orderBy,
-        skip:    (page - 1) * pageSize,
-        take:    pageSize,
+        skip:    (p - 1) * size,
+        take:    size,
         include: {
           supplier: true,
           employee: { select: { id: true, name: true } },
@@ -309,7 +357,7 @@ export class InvoiceService {
       this.prisma.invoice.count({ where }),
     ]);
 
-    return { items, total, page, pageSize };
+    return { items, total, page: p, pageSize: size };
   }
 
   private buildDateFilter(startDate?: string, endDate?: string) {

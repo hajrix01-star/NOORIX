@@ -811,7 +811,7 @@ export async function createInvoiceBatch(body) { return apiPost('/api/v1/invoice
 export async function updateInvoice(id, body, companyId) {
   return apiPatch(`/api/v1/invoices/${id}?companyId=${companyId}`, body);
 }
-export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId) {
+export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q) {
   const params = { companyId, page: String(page), pageSize: String(pageSize) };
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
   if (startDate) params.startDate = String(startDate).slice(0, 10);
@@ -822,6 +822,7 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
   if (sortBy)    params.sortBy     = sortBy;
   if (sortDir)   params.sortDir    = sortDir;
   if (supplierId) params.supplierId = supplierId;
+  if (q && String(q).trim()) params.q = String(q).trim();
   const res = await apiGet('/api/v1/invoices', params);
   if (!res.success) return res;
   const data = res.data?.data ?? res.data;

@@ -67,6 +67,7 @@ export class InvoiceController {
     @Query('expenseLineId') expenseLineId?: string,
     @Query('sortBy')      sortBy?:     string,
     @Query('sortDir')     sortDir?:    string,
+    @Query('q')           q?:          string,
   ) {
     return this.invoiceService.findAll(
       companyId,
@@ -82,6 +83,7 @@ export class InvoiceController {
       expenseLineId,
       sortBy,
       sortDir,
+      q,
     );
   }
 
