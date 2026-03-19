@@ -17,6 +17,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "db:seed": "prisma db seed",
+    "db:deploy": "prisma migrate deploy && prisma db seed",
     "db:delete-vip-moallim": "node prisma/delete-companies.js"
   },
   "dependencies": {
