@@ -41,6 +41,11 @@ postgresql://postgres:Hajrim2h%40%40%40@db.pfyhpebvmeluyirlhden.supabase.co:5432
 ?sslmode=require
 ```
 
+**إذا استمر الـ Crash**، جرّب تعطيل الـ Seed مؤقتاً:
+```
+APP_SKIP_SEED=true
+```
+
 مثال:
 ```
 postgresql://postgres:Hajrim2h%40%40%40@db.pfyhpebvmeluyirlhden.supabase.co:5432/postgres?sslmode=require

@@ -28,6 +28,10 @@ export class DatabaseBootstrapService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
+    if (process.env.APP_SKIP_SEED === 'true') {
+      this.logger.log('تخطي الـ Seed (APP_SKIP_SEED=true)');
+      return;
+    }
     // تشغيل غير متزامن — لا يعطل بدء التطبيق
     this.ensureSeed().catch((err) => {
       this.logger.error('فشل تشغيل الـ Seed:', err);

@@ -1,6 +1,7 @@
-// Supabase يتطلب SSL — إضافة sslmode=require إن لم يكن موجوداً
-if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('sslmode=')) {
-  process.env.DATABASE_URL += (process.env.DATABASE_URL.includes('?') ? '&' : '?') + 'sslmode=require';
+// Supabase يتطلب SSL — إضافة sslmode=require للعناوين التي تحتوي supabase
+const dbUrl = process.env.DATABASE_URL;
+if (dbUrl && dbUrl.includes('supabase') && !dbUrl.includes('sslmode=')) {
+  process.env.DATABASE_URL = dbUrl + (dbUrl.includes('?') ? '&' : '?') + 'sslmode=require';
 }
 
 import { ValidationPipe, Logger } from '@nestjs/common';
