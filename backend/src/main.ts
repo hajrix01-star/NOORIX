@@ -42,7 +42,7 @@ async function bootstrap() {
     throw err;
   });
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   logger.log(`Noorix Backend يعمل على المنفذ ${port}`);
 }
 bootstrap();

@@ -59,7 +59,7 @@ import { JwtModule }           from '@nestjs/jwt';
     ChatModule,
     OrdersModule,
     // JWT Module لـ TenantMiddleware (قراءة التوكن)
-    JwtModule.register({ secret: process.env.JWT_SECRET }),
+    JwtModule.register({ secret: process.env.JWT_SECRET ?? 'noorix-dev-secret' }),
   ],
   controllers: [AppController],
   providers:   [AppService, TenantMiddleware],

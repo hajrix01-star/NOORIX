@@ -28,12 +28,10 @@ export class DatabaseBootstrapService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    try {
-      await this.ensureSeed();
-    } catch (err) {
+    // تشغيل غير متزامن — لا يعطل بدء التطبيق
+    this.ensureSeed().catch((err) => {
       this.logger.error('فشل تشغيل الـ Seed:', err);
-      // لا نوقف التطبيق — قد تكون قاعدة البيانات غير جاهزة بعد
-    }
+    });
   }
 
   async ensureSeed() {
