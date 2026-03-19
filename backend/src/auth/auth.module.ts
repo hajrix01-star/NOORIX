@@ -1,4 +1,4 @@
-import { Module }        from '@nestjs/common';
+import { Module, Logger }        from '@nestjs/common';
 import { JwtModule }    from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController }    from './auth.controller';
@@ -7,11 +7,16 @@ import { CompanyAccessGuard } from './guards/company-access.guard';
 import { RolesGuard }        from './guards/roles.guard';
 import { JwtStrategy }       from './jwt.strategy';
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  new Logger('AuthModule').warn('⚠️ JWT_SECRET غير محدد — يُستخدم secret افتراضي (للتطوير فقط)');
+}
+
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret:      process.env.JWT_SECRET ?? 'noorix-dev-secret-change-in-production',
+      secret:      JWT_SECRET || 'noorix-dev-secret-DO-NOT-USE-IN-PROD',
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN ?? '8h' },
     }),
   ],

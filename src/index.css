@@ -863,6 +863,10 @@ html[data-card-style="10"] .noorix-stat-card {
   font-size: 14px;
   color: var(--noorix-text);
 }
+@media (max-width: 768px) {
+  .batch-purchases-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .batch-purchases-table .noorix-table { min-width: 900px; }
+}
 
 /* جدول المبيعات — تنسيق احترافي */
 .noorix-sales-table-wrapper .noorix-table-frame {
@@ -1412,16 +1416,103 @@ input:focus, select:focus, textarea:focus {
 
 /* استجابة الجوال */
 @media (max-width: 640px) {
-  .noorix-date-filter-bar { gap: 6px; padding: 8px 10px; }
-  .ndfb-mode-btn { padding: 5px 10px; font-size: 13px; min-height: 44px; min-width: 44px; }
-  .ndfb-reset-btn { margin-right: 0; min-width: 44px; min-height: 44px; }
+  .noorix-date-filter-bar { gap: 6px; padding: 8px 10px; flex-direction: column; align-items: stretch; }
+  .ndfb-mode-group { align-self: stretch; }
+  .ndfb-mode-btn { padding: 5px 10px; font-size: 13px; min-height: 44px; flex: 1; text-align: center; }
+  .ndfb-fields { flex-direction: column; align-items: stretch; }
+  .ndfb-fields input[type="date"], .ndfb-fields select { width: 100%; min-width: 0; }
+  .ndfb-reset-btn { margin-right: 0; min-width: 44px; min-height: 44px; align-self: flex-start; }
+  .ndfb-badge { align-self: flex-start; }
+
+  /* Summary Bar — stack on mobile */
+  .noorix-summary-bar--4,
+  .noorix-summary-bar--5 { grid-template-columns: repeat(2, 1fr); }
+  .noorix-summary-bar--3 { grid-template-columns: 1fr; }
+  .noorix-summary-bar__item { border-inline-start: none; border-top: 1px solid var(--noorix-border); }
+  .noorix-summary-bar__item:first-child,
+  .noorix-summary-bar__item:nth-child(2) { border-top: none; }
+  .noorix-summary-bar--3 .noorix-summary-bar__item:nth-child(2) { border-top: 1px solid var(--noorix-border); }
+
+  /* Exec Card Footer — stack on mobile */
+  .noorix-exec-card__footer { grid-template-columns: 1fr; gap: 8px; }
+  .noorix-exec-card__stat { border-left: none; padding-left: 0; padding-right: 0; flex-direction: row; justify-content: space-between; align-items: center; }
+  .noorix-exec-card__stat:last-child { border-left: none; }
+
+  /* Exec Filters — full-width selects on mobile */
+  .noorix-exec-filters { flex-direction: column; align-items: stretch; }
+  .noorix-exec-filters__select { min-width: 0; width: 100%; }
+
+  /* Exec Card Grid — single column on mobile */
+  .noorix-exec-card-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
   .noorix-topbar { padding: 8px 10px; gap: 6px; }
   .app-main__title { font-size: max(18px, 1.3rem); }
   .app-main__subtitle { font-size: max(12px, 0.9rem); }
   .noorix-date-filter-bar { padding: 8px max(10px, env(safe-area-inset-right, 0px)) 8px max(10px, env(safe-area-inset-left, 0px)); }
-  .ndfb-fields input[type="date"], .ndfb-fields select { min-width: 120px; }
+
+  .noorix-summary-bar--4,
+  .noorix-summary-bar--5 { grid-template-columns: 1fr; }
+  .noorix-summary-bar__item:nth-child(2) { border-top: 1px solid var(--noorix-border); }
+}
+
+/* ========== Mobile toolbar / action buttons — wrap & full-width ========== */
+@media (max-width: 640px) {
+  .noorix-mobile-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  .noorix-mobile-toolbar > * {
+    width: 100%;
+    min-width: 0;
+  }
+  .noorix-mobile-toolbar-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+  .noorix-mobile-toolbar-row > * {
+    min-width: 0;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* Floating Action Button — mobile only */
+.noorix-fab {
+  display: none;
+}
+@media (max-width: 768px) {
+  .noorix-fab {
+    display: flex;
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom, 16px));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    min-height: 52px;
+    padding: 12px 24px;
+    border-radius: 16px;
+    border: none;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--noorix-font-primary);
+    cursor: pointer;
+    box-shadow: 0 8px 28px rgba(37,99,235,0.35);
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    transition: transform 150ms, box-shadow 150ms;
+  }
+  .noorix-fab:active {
+    transform: translateX(-50%) scale(0.96);
+  }
 }
 
 /* ترويسة الطباعة — مخفية على الشاشة، تظهر عند الطباعة فقط */

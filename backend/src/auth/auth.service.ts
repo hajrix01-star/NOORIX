@@ -1,6 +1,7 @@
 /**
  * AuthService — مصادقة المستخدمين
  * ✅ JWT payload يحتوي على tenantId — لازم لـ TenantMiddleware + RLS
+ * ✅ Refresh Token — تجديد access token بدون إعادة تسجيل الدخول
  */
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService }   from '@nestjs/jwt';
@@ -8,12 +9,17 @@ import * as bcrypt      from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { nowSaudi }     from '../common/utils/date-utils';
 
+const BCRYPT_ROUNDS = process.env.NODE_ENV === 'production' ? 12 : 10;
+const REFRESH_TOKEN_EXPIRY = '7d';
+
 export interface JwtPayload {
-  sub:        string;
-  email:      string;
-  role:       string;
-  tenantId:   string;    // ✅ إضافة tenantId للـ JWT
-  companyIds: string[];
+  sub:         string;
+  email:       string;
+  role:        string;
+  tenantId:    string;
+  companyIds:  string[];
+  permissions: string[];
+  type?:       'access' | 'refresh';
 }
 
 @Injectable()
@@ -51,12 +57,22 @@ export class AuthService {
     if (!user || !user.isActive) throw new UnauthorizedException('UNAUTHORIZED');
     const ok = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!ok) throw new BadRequestException('كلمة المرور الحالية غير صحيحة');
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
     await this.prisma.user.update({
       where: { id: userId },
       data: { passwordHash, updatedAt: nowSaudi() },
     });
     return { success: true };
+  }
+
+  private generateTokens(payload: Omit<JwtPayload, 'type'>) {
+    const accessPayload: JwtPayload  = { ...payload, type: 'access' };
+    const refreshPayload: JwtPayload = { ...payload, type: 'refresh' };
+
+    return {
+      access_token:  this.jwtService.sign(accessPayload),
+      refresh_token: this.jwtService.sign(refreshPayload, { expiresIn: REFRESH_TOKEN_EXPIRY }),
+    };
   }
 
   async login(email: string, password: string) {
@@ -73,7 +89,6 @@ export class AuthService {
 
     let companyIds = user.userCompanies.map((uc) => uc.companyId);
     if (isSuperAdmin) {
-      // Super Admin يرى جميع شركات الـ Tenant نفسه فقط
       const all = await this.prisma.company.findMany({
         where:  { tenantId: user.tenantId, isArchived: false },
         select: { id: true },
@@ -81,16 +96,21 @@ export class AuthService {
       companyIds = all.map((c) => c.id);
     }
 
-    const payload: JwtPayload = {
-      sub:        user.id,
-      email:      user.email,
-      role:       user.role.name,
-      tenantId:   user.tenantId,   // ✅ tenantId في كل token
+    const userPermissions = Array.isArray(user.role.permissions) ? user.role.permissions as string[] : [];
+
+    const payload = {
+      sub:         user.id,
+      email:       user.email,
+      role:        user.role.name,
+      tenantId:    user.tenantId,
       companyIds,
+      permissions: userPermissions,
     };
 
+    const tokens = this.generateTokens(payload);
+
     return {
-      access_token: this.jwtService.sign(payload),
+      ...tokens,
       user: {
         id:          user.id,
         email:       user.email,
@@ -98,10 +118,71 @@ export class AuthService {
         nameEn:      user.nameEn,
         role:        user.role.name,
         roleNameAr:  user.role.nameAr,
-        permissions: user.role.permissions,
+        permissions: userPermissions,
         tenantId:    user.tenantId,
         companyIds:  payload.companyIds,
       },
     };
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      const decoded = this.jwtService.verify<JwtPayload>(refreshToken);
+
+      if (decoded.type !== 'refresh') {
+        throw new UnauthorizedException('INVALID_TOKEN_TYPE');
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: decoded.sub },
+        include: {
+          role: { select: { id: true, name: true, nameAr: true, permissions: true } },
+          userCompanies: { select: { companyId: true } },
+        },
+      });
+      if (!user || !user.isActive) throw new UnauthorizedException('USER_DISABLED');
+
+      const roleName     = (user.role?.name || '').toLowerCase();
+      const isSuperAdmin = roleName === 'super_admin' || roleName === 'owner';
+      let companyIds = user.userCompanies.map((uc) => uc.companyId);
+      if (isSuperAdmin) {
+        const all = await this.prisma.company.findMany({
+          where:  { tenantId: user.tenantId, isArchived: false },
+          select: { id: true },
+        });
+        companyIds = all.map((c) => c.id);
+      }
+
+      const userPermissions = Array.isArray(user.role.permissions) ? user.role.permissions as string[] : [];
+
+      const payload = {
+        sub:         user.id,
+        email:       user.email,
+        role:        user.role.name,
+        tenantId:    user.tenantId,
+        companyIds,
+        permissions: userPermissions,
+      };
+
+      const tokens = this.generateTokens(payload);
+
+      return {
+        ...tokens,
+        user: {
+          id:          user.id,
+          email:       user.email,
+          nameAr:      user.nameAr,
+          nameEn:      user.nameEn,
+          role:        user.role.name,
+          roleNameAr:  user.role.nameAr,
+          permissions: userPermissions,
+          tenantId:    user.tenantId,
+          companyIds:  payload.companyIds,
+        },
+      };
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
+      throw new UnauthorizedException('REFRESH_TOKEN_EXPIRED');
+    }
   }
 }

@@ -1,3 +1,6 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 // Supabase يتطلب SSL — إضافة sslmode=require للعناوين التي تحتوي supabase
 const dbUrl = process.env.DATABASE_URL;
 if (dbUrl && dbUrl.includes('supabase') && !dbUrl.includes('sslmode=')) {
@@ -6,16 +9,34 @@ if (dbUrl && dbUrl.includes('supabase') && !dbUrl.includes('sslmode=')) {
 
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
+import compression from 'compression';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+
+  // ── JWT_SECRET إلزامي في الإنتاج ──
+  if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+    logger.error('❌ JWT_SECRET غير محدد — لا يمكن التشغيل في الإنتاج بدونه');
+    process.exit(1);
+  }
+
   const port = parseInt(process.env.PORT ?? '3000', 10);
 
-  logger.log(`بدء التطبيق — PORT=${port} DATABASE_URL=${process.env.DATABASE_URL ? '✓' : '✗'}`);
+  logger.log(`بدء التطبيق — PORT=${port} DATABASE_URL=${process.env.DATABASE_URL ? '✓' : '✗'} JWT_SECRET=${process.env.JWT_SECRET ? '✓' : '⚠ dev-fallback'}`);
 
   const app = await NestFactory.create(AppModule);
+
+  // ── Helmet: حماية HTTP headers (XSS, clickjacking, MIME sniffing) ──
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }));
+
+  // ── Compression: ضغط gzip للاستجابات ──
+  app.use(compression());
 
   app.useGlobalFilters(new HttpExceptionFilter());
 
@@ -35,7 +56,6 @@ async function bootstrap() {
     }),
   );
 
-  // Graceful shutdown: تنظيف المنفذ عند الإيقاف
   app.enableShutdownHooks();
 
   const server = app.getHttpServer();
@@ -51,7 +71,7 @@ async function bootstrap() {
   });
 
   await app.listen(port, '0.0.0.0');
-  logger.log(`Noorix Backend يعمل على المنفذ ${port}`);
+  logger.log(`Noorix Backend يعمل على المنفذ ${port} — Helmet ✓ — Compression ✓ — ThrottleGuard ✓`);
 }
 
 bootstrap().catch((err) => {

@@ -332,7 +332,7 @@ export default function SalaryCalcTab() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('housingAllowance')}</label>
           <input type="number" step="0.01" min="0" value={housingAllowance} onChange={(e) => setHousingAllowance(e.target.value)} style={inputStyle} />

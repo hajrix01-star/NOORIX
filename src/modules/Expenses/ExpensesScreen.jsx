@@ -98,14 +98,14 @@ export default function ExpensesScreen() {
         </h1>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 4 }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
             style={{
-              padding: '10px 20px',
+              padding: '10px 16px',
               borderRadius: 8,
               border: activeTab === tab.id ? '2px solid var(--noorix-accent-blue)' : '1px solid var(--noorix-border)',
               background: activeTab === tab.id ? 'rgba(37,99,235,0.08)' : 'var(--noorix-bg-surface)',
@@ -113,6 +113,8 @@ export default function ExpensesScreen() {
               fontWeight: 600,
               cursor: 'pointer',
               fontSize: 14,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             {tab.icon} {tabLabels[tab.labelKey] || tab.labelKey}

@@ -233,22 +233,22 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <div>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ flex: '0 1 auto' }}>
           <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>تاريخ العملية</label>
           <input
             type="date"
             value={batchDate}
             onChange={(e) => setBatchDate(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
+            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', width: '100%' }}
           />
         </div>
-        <div>
+        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
           <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>الخزينة *</label>
           <select
             value={vaultId}
             onChange={(e) => setVaultId(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', minWidth: 200 }}
+            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', width: '100%' }}
           >
             <option value="">— اختر الخزينة —</option>
             {activeVaults.map((v) => (
@@ -259,7 +259,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
         <button
           type="button"
           onClick={addRow}
-          style={{ padding: '10px 20px', borderRadius: 8, border: '2px dashed var(--noorix-border)', background: 'transparent', cursor: 'pointer', fontSize: 14, marginTop: 20 }}
+          style={{ padding: '10px 16px', borderRadius: 8, border: '2px dashed var(--noorix-border)', background: 'transparent', cursor: 'pointer', fontSize: 14, whiteSpace: 'nowrap' }}
         >
           + إضافة صف
         </button>
@@ -280,22 +280,20 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
           <div className="noorix-summary-bar__label">الضريبة</div>
           <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(summary.totalTax)} ﷼</div>
         </div>
-        <div className="noorix-summary-bar__item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div className="noorix-summary-bar__label">الإجمالي</div>
-            <div className="noorix-summary-bar__value">{fmt(summary.total)} ﷼</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || validRows.length === 0 || !vaultId}
-            className="noorix-btn-nav noorix-btn-primary"
-            style={{ whiteSpace: 'nowrap', padding: '8px 16px' }}
-          >
-            {saveMutation.isPending ? 'جاري الحفظ...' : 'حفظ الدفعة'}
-          </button>
+        <div className="noorix-summary-bar__item">
+          <div className="noorix-summary-bar__label">الإجمالي</div>
+          <div className="noorix-summary-bar__value">{fmt(summary.total)} ﷼</div>
         </div>
       </div>
+      <button
+        type="button"
+        onClick={() => saveMutation.mutate()}
+        disabled={saveMutation.isPending || validRows.length === 0 || !vaultId}
+        className="noorix-btn-nav noorix-btn-primary"
+        style={{ width: '100%', padding: '12px 16px', marginTop: 12, fontSize: 15, fontWeight: 700 }}
+      >
+        {saveMutation.isPending ? 'جاري الحفظ...' : 'حفظ الدفعة'}
+      </button>
 
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onClose={() => setToast((p) => ({ ...p, visible: false }))} />
     </div>

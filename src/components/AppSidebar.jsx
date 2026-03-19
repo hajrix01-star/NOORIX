@@ -29,19 +29,19 @@ const SIDEBAR_LINKS = [
   { to: '/invoices', labelKey: 'invoices', icon: IconDocument, permission: 'VIEW_INVOICES' },
   { to: '/suppliers', labelKey: 'suppliersAndCategories', icon: IconTruck, permission: 'VIEW_SUPPLIERS' },
   { to: '/treasury', labelKey: 'vaults', icon: IconDollar, permission: 'VIEW_VAULTS' },
-  { to: '/expenses', labelKey: 'fixedAndVariableExpenses', icon: IconWallet, permission: 'VIEW_VAULTS' },
-  { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_SALES' },
+  { to: '/expenses', labelKey: 'fixedAndVariableExpenses', icon: IconWallet, permission: 'VIEW_EXPENSES' },
+  { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_ORDERS' },
   { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: 'EMPLOYEES_READ' },
   { to: '/reports', labelKey: 'reports', icon: IconChartBar, permission: 'VIEW_REPORTS' },
   { to: '/settings', labelKey: 'settings', icon: IconSettings, permission: 'MANAGE_SETTINGS' },
   { to: '/theme-preview', labelKey: 'themePreview', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
 ];
 
-export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCompany, companies, userRole, showCompanySwitcher }) {
+export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCompany, companies, userRole, userPermissions, showCompanySwitcher }) {
   const { t } = useTranslation();
   const navLinkClass = ({ isActive }) =>
     `app-nav-link${isActive ? ' app-nav-link--active' : ''}`;
-  const visibleLinks = SIDEBAR_LINKS.filter((link) => hasPermission(userRole, link.permission));
+  const visibleLinks = SIDEBAR_LINKS.filter((link) => hasPermission(userRole, link.permission, userPermissions));
 
   return (
     <>

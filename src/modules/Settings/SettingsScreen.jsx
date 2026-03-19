@@ -23,6 +23,8 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const appContext     = useApp();
   const userRole       = appContext?.userRole;
+  const userPermissions = appContext?.userPermissions || [];
+  const language       = appContext?.language || 'ar';
   const setActiveCompany = typeof appContext?.setActiveCompany === 'function'
     ? appContext.setActiveCompany
     : () => {};
@@ -39,8 +41,8 @@ export default function SettingsScreen() {
   ], [t]);
 
   const TABS = useMemo(
-    () => TABS_BASE.filter((tab) => !tab.permission || hasPermission(userRole, tab.permission)),
-    [userRole, TABS_BASE],
+    () => TABS_BASE.filter((tab) => !tab.permission || hasPermission(userRole, tab.permission, userPermissions)),
+    [userRole, userPermissions, TABS_BASE],
   );
 
   // جلب الشركات مشتركاً بين CompaniesTab و UsersTab
@@ -66,7 +68,7 @@ export default function SettingsScreen() {
 
       <div className="noorix-surface-card">
         {/* ── شريط التبويبات ── */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -79,6 +81,7 @@ export default function SettingsScreen() {
                 background:   activeTab === tab.id ? 'rgba(22,163,74,0.07)' : 'transparent',
                 color:        activeTab === tab.id ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)',
                 fontWeight:   activeTab === tab.id ? 700 : 500,
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               {tab.label}
@@ -98,7 +101,7 @@ export default function SettingsScreen() {
             <UsersTab userRole={userRole} activeCompanies={activeCompanies} />
           )}
           {activeTab === 'roles' && (
-            <RolesTab userRole={userRole} />
+            <RolesTab userRole={userRole} language={language} />
           )}
           {activeTab === 'backup' && (
             <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>

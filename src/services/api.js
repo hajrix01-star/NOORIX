@@ -5,7 +5,7 @@
  * - إمساك أخطاء الشبكة → { success: false, isNetworkError: true }.
  * - Timeout 12s لكل طلب.
  */
-import { getAuthToken, getActiveCompanyId } from './authStore';
+import { getAuthToken, getActiveCompanyId, getRefreshToken, setAuthToken, setRefreshToken } from './authStore';
 
 // ── Base URL ديناميكي ─────────────────────────────────
 function resolveBaseUrl() {
@@ -57,9 +57,49 @@ async function safeFetch(url, options) {
   }
 }
 
+// ── Auto-refresh: محاولة تجديد التوكن عند 401 ───────
+let _refreshPromise = null;
+async function tryRefreshToken() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return false;
+
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    try {
+      const url = new URL('/api/v1/auth/refresh', getBase());
+      const res = await safeFetch(url.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (!res.ok) return false;
+      const data = await res.json().catch(() => null);
+      if (data?.access_token) {
+        setAuthToken(data.access_token);
+        if (data.refresh_token) setRefreshToken(data.refresh_token);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
+}
+
 // ── معالجة الاستجابة ─────────────────────────────────
-async function parseResponse(res) {
+async function parseResponse(res, retryFn) {
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && retryFn) {
+    const refreshed = await tryRefreshToken();
+    if (refreshed) return retryFn();
+    handleUnauthorized();
+    return { success: false, error: 'غير مصرح — يُرجى تسجيل الدخول', code: 401 };
+  }
   if (res.status === 401) {
     handleUnauthorized();
     return { success: false, error: 'غير مصرح — يُرجى تسجيل الدخول', code: 401 };
@@ -83,9 +123,13 @@ function getBase() {
 export async function apiGet(path, params = {}) {
   const url = new URL(path, getBase());
   Object.entries(params).forEach(([k, v]) => { if (v != null && v !== '') url.searchParams.set(k, v); });
-  try {
+  const doFetch = async () => {
     const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
     return parseResponse(res);
+  };
+  try {
+    const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
+    return parseResponse(res, doFetch);
   } catch (err) {
     return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
   }
@@ -96,9 +140,13 @@ export async function apiGet(path, params = {}) {
  */
 export async function apiPost(path, body = {}) {
   const url = new URL(path, getBase());
-  try {
+  const doFetch = async () => {
     const res = await safeFetch(url.toString(), { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body) });
     return parseResponse(res);
+  };
+  try {
+    const res = await safeFetch(url.toString(), { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body) });
+    return parseResponse(res, doFetch);
   } catch (err) {
     return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
   }
@@ -109,9 +157,13 @@ export async function apiPost(path, body = {}) {
  */
 export async function apiPatch(path, body = {}) {
   const url = new URL(path, getBase());
-  try {
+  const doFetch = async () => {
     const res = await safeFetch(url.toString(), { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(body) });
     return parseResponse(res);
+  };
+  try {
+    const res = await safeFetch(url.toString(), { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(body) });
+    return parseResponse(res, doFetch);
   } catch (err) {
     return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
   }
@@ -122,9 +174,13 @@ export async function apiPatch(path, body = {}) {
  */
 export async function apiDelete(path) {
   const url = new URL(path, getBase());
-  try {
+  const doFetch = async () => {
     const res = await safeFetch(url.toString(), { method: 'DELETE', headers: getAuthHeaders() });
     return parseResponse(res);
+  };
+  try {
+    const res = await safeFetch(url.toString(), { method: 'DELETE', headers: getAuthHeaders() });
+    return parseResponse(res, doFetch);
   } catch (err) {
     return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
   }
@@ -172,11 +228,14 @@ export async function testGemini() {
 }
 
 /**
- * تسجيل الدخول — إرجاع { access_token, user }.
+ * تسجيل الدخول — إرجاع { access_token, refresh_token, user }.
  */
 export async function login(email, password) {
   const res = await apiPost('/api/v1/auth/login', { email, password });
   if (!res.success) return res;
+  if (res.data?.refresh_token) {
+    setRefreshToken(res.data.refresh_token);
+  }
   return { success: true, data: res.data };
 }
 

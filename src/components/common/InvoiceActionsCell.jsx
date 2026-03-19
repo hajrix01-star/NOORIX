@@ -24,7 +24,7 @@ const menuItemStyle = {
 };
 
 export const InvoiceActionsCell = memo(function InvoiceActionsCell({
-  row, userRole, companyId, onView, onPrint, onEdit, onDelete,
+  row, userRole, userPermissions, companyId, onView, onPrint, onEdit, onDelete,
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -32,9 +32,9 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
   const btnRef = useRef(null);
   const menuRef = useRef(null);
 
-  const canPrint = hasPermission(userRole, 'INVOICES_READ');
-  const canEdit  = hasPermission(userRole, 'INVOICES_WRITE');
-  const canDel   = hasPermission(userRole, 'INVOICES_DELETE');
+  const canPrint = hasPermission(userRole, 'INVOICES_READ', userPermissions);
+  const canEdit  = hasPermission(userRole, 'INVOICES_WRITE', userPermissions);
+  const canDel   = hasPermission(userRole, 'INVOICES_DELETE', userPermissions);
   const canView  = !!onView && canPrint;
   const showEdit = canEdit && row.status === 'active' && row.kind !== 'sale';
   const showDel  = canDel && row.status === 'active';

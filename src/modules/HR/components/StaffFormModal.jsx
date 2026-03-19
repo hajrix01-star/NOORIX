@@ -230,7 +230,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             )}
           </div>
           {isEdit && form.status === 'terminated' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('terminationReason')}</label>
                 <select value={form.terminationReason} onChange={(e) => set('terminationReason', e.target.value)} style={IS}>

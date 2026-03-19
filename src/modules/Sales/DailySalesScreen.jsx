@@ -283,15 +283,27 @@ export default function DailySalesScreen() {
 
       {/* هيدر */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-        <div>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('salesDailySummary')}</h1>
           <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('salesDailyDesc')}</p>
         </div>
-        <button type="button" className="noorix-btn-nav noorix-btn-primary"
-          onClick={() => setShowEntryModal(true)} disabled={!hasCompany}>
+        <button type="button" className="noorix-btn-nav noorix-btn-primary noorix-print-hide"
+          onClick={() => setShowEntryModal(true)} disabled={!hasCompany}
+          style={{ flexShrink: 0 }}>
           {t('addDailySummary')}
         </button>
       </div>
+
+      {/* FAB — زر إضافة عائم للجوال */}
+      {hasCompany && (
+        <button
+          type="button"
+          className="noorix-fab noorix-print-hide"
+          onClick={() => setShowEntryModal(true)}
+        >
+          + {t('addDailySummary')}
+        </button>
+      )}
 
       <DateFilterBar filter={dateFilter} />
 
@@ -320,14 +332,15 @@ export default function DailySalesScreen() {
             rowNumberWidth="1%"
             innerPadding={16}
             badge={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginRight: 'auto' }}>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>— {dateFilter.label}</span>
-              <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 999, background: 'rgba(37,99,235,0.1)', color: '#2563eb', fontWeight: 700 }}>{t('summaryCount', displayedTotal)}</span>
-              <span style={{ width: 1, height: 20, background: 'var(--noorix-border)', margin: '0 4px' }} />
-              <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={displayedTotal === 0}>📊 {t('exportExcel')}</button>
-              <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} disabled={displayedTotal === 0}>📄 {t('exportPdf')}</button>
-              <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={displayedTotal === 0}>🖨 {t('print')}</button>
-            </div>
+            <>
+              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>— {dateFilter.label}</span>
+              <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 999, background: 'rgba(37,99,235,0.1)', color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap' }}>{t('summaryCount', displayedTotal)}</span>
+              <span className="noorix-print-hide" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={displayedTotal === 0} style={{ fontSize: 12, padding: '4px 10px' }}>📊 {t('exportExcel')}</button>
+                <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} disabled={displayedTotal === 0} style={{ fontSize: 12, padding: '4px 10px' }}>📄 {t('exportPdf')}</button>
+                <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={displayedTotal === 0} style={{ fontSize: 12, padding: '4px 10px' }}>🖨 {t('print')}</button>
+              </span>
+            </>
           }
           searchValue={searchText}
           onSearchChange={setSearch}

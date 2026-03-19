@@ -110,7 +110,7 @@ export default function ReportsScreen() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 18, padding: 24 }}>
+    <div style={{ display: 'grid', gap: 18, padding: 'clamp(12px, 3vw, 24px)' }}>
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
       <div>
@@ -119,7 +119,7 @@ export default function ReportsScreen() {
       </div>
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {REPORT_TABS.map((tab) => (
             <button
               key={tab.id}
@@ -132,6 +132,7 @@ export default function ReportsScreen() {
                 background: activeTab === tab.id ? 'rgba(37,99,235,0.07)' : 'transparent',
                 color: activeTab === tab.id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
                 fontWeight: activeTab === tab.id ? 700 : 500,
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               {t(tab.labelKey)}
@@ -143,23 +144,25 @@ export default function ReportsScreen() {
           {activeTab === 'general' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-        <div>
+        <div style={{ minWidth: 0, flex: '1 1 auto' }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t('reportGeneral')}</h2>
-          <p style={{ marginTop: 6, color: 'var(--noorix-text-muted)', maxWidth: 900 }}>{t('generalReportFullDesc')}</p>
+          <p style={{ marginTop: 6, color: 'var(--noorix-text-muted)' }}>{t('generalReportFullDesc')}</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('reportYear')}</label>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flex: '0 1 auto' }}>
+          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('reportYear')}</label>
           <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
             {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </select>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('reportMonth')}</label>
+          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('reportMonth')}</label>
           <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
             <option value="">{t('allMonths')}</option>
             {EN_MONTHS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}
           </select>
-          <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</button>
-          <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} disabled={!report}>{t('exportPdf')}</button>
-          <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!report}>{t('print')}</button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={!report} style={{ fontSize: 12, padding: '6px 10px' }}>{t('exportExcel')}</button>
+            <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} disabled={!report} style={{ fontSize: 12, padding: '6px 10px' }}>{t('exportPdf')}</button>
+            <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!report} style={{ fontSize: 12, padding: '6px 10px' }}>{t('print')}</button>
+          </div>
         </div>
       </div>
 

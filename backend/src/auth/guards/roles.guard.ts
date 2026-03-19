@@ -1,11 +1,7 @@
 /**
  * RolesGuard — يفرض الأدوار والصلاحيات على الـ Endpoints.
- *
- * يدعم نمطين:
- *   @Roles('owner', 'super_admin')      → فحص الدور مباشرة
- *   @RequirePermission('INVOICES_WRITE') → فحص الصلاحية (أدق وأوسع)
- *
- * الأولوية: إذا لم يُطبَّق أي decorator → العبور (للمسارات العامة).
+ * يدعم: @Roles('owner'), @RequirePermission('INVOICES_WRITE')
+ * يقرأ الصلاحيات من JWT payload (permissions[]) — يدعم الأدوار المخصصة.
  */
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector }           from '@nestjs/core';
@@ -14,33 +10,37 @@ import { PERMISSION_KEY }      from '../decorators/require-permission.decorator'
 import { hasPermission, isSuperAdmin } from '../constants/permissions';
 import type { Permission }     from '../constants/permissions';
 
+interface RequestUser {
+  role?: string;
+  permissions?: string[];
+}
+
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const { user } = context.switchToHttp().getRequest<{ user?: { role?: string } }>();
-    const role      = (user?.role || '').toLowerCase();
+    const { user } = context.switchToHttp().getRequest<{ user?: RequestUser }>();
+    const role = (user?.role || '').toLowerCase();
+    const userPermissions = user?.permissions || [];
 
-    // ── فحص الصلاحية (Permission) ─────────────────────────
     const requiredPermission = this.reflector.getAllAndOverride<Permission>(PERMISSION_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
     if (requiredPermission) {
       if (!role) throw new ForbiddenException('غير مصادق.');
-      if (!hasPermission(role, requiredPermission)) {
+      if (!hasPermission(role, requiredPermission, userPermissions)) {
         throw new ForbiddenException(`تحتاج صلاحية: ${requiredPermission}`);
       }
       return true;
     }
 
-    // ── فحص الدور (Role) ──────────────────────────────────
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!requiredRoles?.length) return true; // لا قيود → مفتوح للجميع
+    if (!requiredRoles?.length) return true;
 
     if (!role) throw new ForbiddenException('غير مصادق.');
 

@@ -1,5 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController }    from './app.controller';
 import { AppService }       from './app.service';
 import { AccountingInitModule } from './accounting-init/accounting-init.module';
@@ -30,9 +32,16 @@ import { DatabaseModule }       from './database/database.module';
 import { TenantMiddleware }    from './common/tenant.middleware';
 import { JwtModule }           from '@nestjs/jwt';
 
+const JWT_SECRET = process.env.JWT_SECRET ?? 'noorix-dev-secret-DO-NOT-USE-IN-PROD';
+
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    // Rate Limiting: 120 طلب / 60 ثانية لكل IP
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 120,
+    }]),
     PrismaModule,
     DatabaseModule,
     AccountingInitModule,
@@ -58,11 +67,15 @@ import { JwtModule }           from '@nestjs/jwt';
     ReportsModule,
     ChatModule,
     OrdersModule,
-    // JWT Module لـ TenantMiddleware (قراءة التوكن)
-    JwtModule.register({ secret: process.env.JWT_SECRET ?? 'noorix-dev-secret' }),
+    JwtModule.register({ secret: JWT_SECRET }),
   ],
   controllers: [AppController],
-  providers:   [AppService, TenantMiddleware],
+  providers:   [
+    AppService,
+    TenantMiddleware,
+    // Rate Limiting Guard عالمي
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

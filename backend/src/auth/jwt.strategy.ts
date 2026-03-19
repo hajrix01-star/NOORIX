@@ -9,11 +9,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET ?? 'noorix-dev-secret-change-in-production',
+      secretOrKey: process.env.JWT_SECRET || 'noorix-dev-secret-DO-NOT-USE-IN-PROD',
     });
   }
 
   async validate(payload: JwtPayload) {
-    return { userId: payload.sub, email: payload.email, role: payload.role, companyIds: payload.companyIds };
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      companyIds: payload.companyIds,
+      permissions: payload.permissions || [],
+    };
   }
 }

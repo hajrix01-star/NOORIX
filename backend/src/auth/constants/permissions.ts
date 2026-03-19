@@ -1,9 +1,9 @@
 /**
- * صلاحيات Noorix — ما لا تملك صلاحية عليه لا تراه.
+ * صلاحيات Noorix — نظام صلاحيات قائم على الأقسام.
+ * الأدوار المخصصة تحمل صلاحياتها في قاعدة البيانات.
  */
 
 export const PERMISSIONS = {
-  // ─── عرض الأقسام (Sidebar) ───────────────────────────────────
   VIEW_OWNER:       'VIEW_OWNER',
   VIEW_DASHBOARD:   'VIEW_DASHBOARD',
   VIEW_CHAT:        'VIEW_CHAT',
@@ -12,56 +12,55 @@ export const PERMISSIONS = {
   VIEW_SUPPLIERS:   'VIEW_SUPPLIERS',
   VIEW_VAULTS:      'VIEW_VAULTS',
   VIEW_REPORTS:     'VIEW_REPORTS',
+  VIEW_EMPLOYEES:   'VIEW_EMPLOYEES',
+  VIEW_ORDERS:      'VIEW_ORDERS',
+  VIEW_EXPENSES:    'VIEW_EXPENSES',
 
-  // ─── فواتير ───────────────────────────────────────────────────
   INVOICES_READ:    'INVOICES_READ',
   INVOICES_WRITE:   'INVOICES_WRITE',
   INVOICES_DELETE:  'INVOICES_DELETE',
-  INVOICES_ACTIONS: 'INVOICES_ACTIONS',  // طباعة، تعديل، حذف
+  INVOICES_ACTIONS: 'INVOICES_ACTIONS',
 
-  // ─── مبيعات ───────────────────────────────────────────────────
   SALES_READ:       'SALES_READ',
   SALES_WRITE:      'SALES_WRITE',
   SALES_DELETE:     'SALES_DELETE',
-  SALES_ACTIONS:    'SALES_ACTIONS',     // طباعة، تعديل، حذف
+  SALES_ACTIONS:    'SALES_ACTIONS',
 
-  // ─── موردين ───────────────────────────────────────────────────
   SUPPLIERS_READ:   'SUPPLIERS_READ',
   SUPPLIERS_WRITE:  'SUPPLIERS_WRITE',
   SUPPLIERS_DELETE: 'SUPPLIERS_DELETE',
 
-  // ─── خزائن ────────────────────────────────────────────────────
   VAULTS_READ:      'VAULTS_READ',
   VAULTS_WRITE:     'VAULTS_WRITE',
   VAULTS_DELETE:    'VAULTS_DELETE',
 
-  // ─── تقارير ───────────────────────────────────────────────────
+  EXPENSES_READ:    'EXPENSES_READ',
+  EXPENSES_WRITE:   'EXPENSES_WRITE',
+  EXPENSES_DELETE:  'EXPENSES_DELETE',
+
+  ORDERS_READ:      'ORDERS_READ',
+  ORDERS_WRITE:     'ORDERS_WRITE',
+  ORDERS_DELETE:    'ORDERS_DELETE',
+
   REPORTS_READ:     'REPORTS_READ',
 
-  // ─── المحادثة الذكية ───────────────────────────────────────────
-  SMART_CHAT_READ:  'SMART_CHAT_READ',   // تنفيذ الاستعلامات في المحادثة الذكية
+  SMART_CHAT_READ:  'SMART_CHAT_READ',
 
-  // ─── إدارة النظام ─────────────────────────────────────────────
-  MANAGE_SETTINGS:  'MANAGE_SETTINGS',
-  MANAGE_COMPANIES: 'MANAGE_COMPANIES',
-  MANAGE_USERS:     'MANAGE_USERS',
-
-  // ─── حذف (عمليات خطرة) ────────────────────────────────────────
-  DELETE_COMPANY:   'DELETE_COMPANY',
-  USERS_DELETE:     'USERS_DELETE',
-
-  // ─── موظفون (HR) ─────────────────────────────────────────────
-  VIEW_EMPLOYEES:   'VIEW_EMPLOYEES',
   EMPLOYEES_READ:   'EMPLOYEES_READ',
   EMPLOYEES_WRITE:  'EMPLOYEES_WRITE',
   EMPLOYEES_DELETE: 'EMPLOYEES_DELETE',
 
-  // ─── HR (رواتب، إجازات، إقامات، مستندات، حركات، بدلات، خصومات) ─
   HR_READ:          'HR_READ',
   HR_WRITE:         'HR_WRITE',
   HR_DELETE:        'HR_DELETE',
 
-  // ─── قديم (للتوافق) ───────────────────────────────────────────
+  MANAGE_SETTINGS:  'MANAGE_SETTINGS',
+  MANAGE_COMPANIES: 'MANAGE_COMPANIES',
+  MANAGE_USERS:     'MANAGE_USERS',
+
+  DELETE_COMPANY:   'DELETE_COMPANY',
+  USERS_DELETE:     'USERS_DELETE',
+
   CREATE_INVOICE:   'CREATE_INVOICE',
 } as const;
 
@@ -78,7 +77,6 @@ export type RoleName = (typeof ROLES)[keyof typeof ROLES];
 
 const ALL = Object.values(PERMISSIONS);
 
-/** صلاحيات كل دور */
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   [ROLES.SUPER_ADMIN]: ALL,
   [ROLES.OWNER]:       ALL,
@@ -91,6 +89,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.VIEW_REPORTS,
     PERMISSIONS.VIEW_SALES,
     PERMISSIONS.VIEW_EMPLOYEES,
+    PERMISSIONS.VIEW_ORDERS,
+    PERMISSIONS.VIEW_EXPENSES,
     PERMISSIONS.INVOICES_READ,
     PERMISSIONS.INVOICES_WRITE,
     PERMISSIONS.INVOICES_ACTIONS,
@@ -99,6 +99,10 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.SALES_ACTIONS,
     PERMISSIONS.SUPPLIERS_READ,
     PERMISSIONS.VAULTS_READ,
+    PERMISSIONS.EXPENSES_READ,
+    PERMISSIONS.EXPENSES_WRITE,
+    PERMISSIONS.ORDERS_READ,
+    PERMISSIONS.ORDERS_WRITE,
     PERMISSIONS.REPORTS_READ,
     PERMISSIONS.EMPLOYEES_READ,
     PERMISSIONS.EMPLOYEES_WRITE,
@@ -125,9 +129,18 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   ],
 };
 
-export function hasPermission(role: string, permission: Permission): boolean {
+/**
+ * hasPermission — يدعم الفحص من الدور الثابت أو من مصفوفة صلاحيات (DB).
+ * يُستخدم في RolesGuard مع الصلاحيات المحملة في JWT.
+ */
+export function hasPermission(role: string, permission: Permission, userPermissions?: string[]): boolean {
   const r = (role || '').toLowerCase();
   if (r === ROLES.SUPER_ADMIN || r === ROLES.OWNER) return true;
+
+  if (Array.isArray(userPermissions) && userPermissions.length > 0) {
+    return userPermissions.includes(permission);
+  }
+
   const perms = ROLE_PERMISSIONS[r];
   return Array.isArray(perms) && perms.includes(permission);
 }

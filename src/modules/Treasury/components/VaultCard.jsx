@@ -30,11 +30,14 @@ const ICONS = {
   ),
 };
 
-/* ── قائمة سياق خفية ─────────────────────────────────────────── */
+/* ── قائمة سياق خفية — fixed positioning لتجنب القطع من overflow: hidden ─── */
 function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, t, lang }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const btnRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, right: 0 });
   const isArchived = vault.isArchived;
+  const isRtl = lang !== 'en';
 
   useEffect(() => {
     if (!open) return;
@@ -43,11 +46,20 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  function handleToggle() {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 6, left: rect.left, right: window.innerWidth - rect.right });
+    }
+    setOpen((p) => !p);
+  }
+
   return (
     <div ref={ref} style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        onClick={handleToggle}
         style={{
           width: 32, height: 32, borderRadius: 8, border: '1px solid var(--noorix-border)',
           background: 'var(--noorix-bg-muted)', cursor: 'pointer', display: 'flex',
@@ -63,11 +75,12 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
 
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 200,
+          position: 'fixed', top: pos.top, zIndex: 9999,
+          ...(isRtl ? { right: pos.right } : { left: pos.left }),
           background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)',
           borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
           minWidth: lang === 'en' ? 190 : 160, width: 'max-content', maxWidth: 240,
-          padding: '4px 0', direction: lang === 'en' ? 'ltr' : 'rtl',
+          padding: '4px 0', direction: isRtl ? 'rtl' : 'ltr',
         }}>
           {[
             { label: t('edit'),    action: () => { onEdit(vault); setOpen(false); }, color: 'var(--noorix-text)' },
@@ -80,7 +93,7 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
             <button
               key={label} type="button" onClick={action}
               style={{
-                display: 'block', width: '100%', textAlign: lang === 'en' ? 'left' : 'right', padding: '9px 16px',
+                display: 'block', width: '100%', textAlign: isRtl ? 'right' : 'left', padding: '9px 16px',
                 background: 'none', border: 'none', cursor: 'pointer', fontSize: 13,
                 color, fontFamily: 'inherit', whiteSpace: 'nowrap',
               }}

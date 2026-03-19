@@ -118,7 +118,7 @@ export default function ExpenseLineList({
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <select
           value={filterKind}
           onChange={(e) => onFilterKindChange(e.target.value)}
@@ -128,17 +128,18 @@ export default function ExpenseLineList({
             border: '1px solid var(--noorix-border)',
             background: 'var(--noorix-bg-surface)',
             fontSize: 14,
+            flex: '0 1 auto',
           }}
         >
-          <option value="">كل الأنواع</option>
-          <option value="fixed_expense">ثابت</option>
-          <option value="expense">متغير</option>
+          <option value="">{t('allTypes') || 'كل الأنواع'}</option>
+          <option value="fixed_expense">{t('fixedExpense') || 'ثابت'}</option>
+          <option value="expense">{t('variableExpense') || 'متغير'}</option>
         </select>
         <button
           type="button"
           onClick={onCreateLine}
           style={{
-            padding: '10px 20px',
+            padding: '10px 16px',
             borderRadius: 8,
             border: '2px solid var(--noorix-accent-blue)',
             background: 'rgba(37,99,235,0.1)',
@@ -146,27 +147,24 @@ export default function ExpenseLineList({
             fontWeight: 600,
             cursor: 'pointer',
             fontSize: 14,
+            whiteSpace: 'nowrap',
           }}
         >
-          + إضافة بند مصروف
+          + {t('addExpenseLine') || 'إضافة بند مصروف'}
         </button>
         <button
           type="button"
+          className="noorix-btn-nav"
           onClick={onRefresh}
-          style={{
-            padding: '8px 16px',
-            borderRadius: 8,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-            cursor: 'pointer',
-            fontSize: 13,
-          }}
+          style={{ fontSize: 13 }}
         >
-          تحديث
+          {t('refresh') || 'تحديث'}
         </button>
-        <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!tableData.length}>🖨 طباعة</button>
-        <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>📥 Excel</button>
-        <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'بنود المصاريف', filename: 'expense-lines.pdf' })} disabled={!tableData.length}>📄 PDF</button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!tableData.length} style={{ fontSize: 12, padding: '6px 10px' }}>🖨 {t('print') || 'طباعة'}</button>
+          <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length} style={{ fontSize: 12, padding: '6px 10px' }}>📥 Excel</button>
+          <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'بنود المصاريف', filename: 'expense-lines.pdf' })} disabled={!tableData.length} style={{ fontSize: 12, padding: '6px 10px' }}>📄 PDF</button>
+        </div>
       </div>
 
       <SmartTable

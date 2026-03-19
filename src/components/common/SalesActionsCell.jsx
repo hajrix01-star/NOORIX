@@ -19,12 +19,12 @@ const BTN = {
 };
 
 export const SalesActionsCell = memo(function SalesActionsCell({
-  summary, userRole, onPrint, onEdit, onDelete,
+  summary, userRole, userPermissions, onPrint, onEdit, onDelete,
 }) {
   const { t } = useTranslation();
-  const canPrint = hasPermission(userRole, 'SALES_READ');
-  const canEdit  = hasPermission(userRole, 'SALES_WRITE') || hasPermission(userRole, 'SALES_ACTIONS');
-  const canDel   = hasPermission(userRole, 'SALES_DELETE') || hasPermission(userRole, 'SALES_ACTIONS');
+  const canPrint = hasPermission(userRole, 'SALES_READ', userPermissions);
+  const canEdit  = hasPermission(userRole, 'SALES_WRITE', userPermissions) || hasPermission(userRole, 'SALES_ACTIONS', userPermissions);
+  const canDel   = hasPermission(userRole, 'SALES_DELETE', userPermissions) || hasPermission(userRole, 'SALES_ACTIONS', userPermissions);
   const showAny  = canPrint || canEdit || canDel;
 
   if (!showAny) return <span style={{ color: 'var(--noorix-text-muted)', fontSize: 12 }}>—</span>;

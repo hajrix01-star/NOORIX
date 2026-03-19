@@ -40,19 +40,19 @@ export default function DashboardScreen() {
   }), [year, selectedMonthNumber]);
 
   return (
-    <div style={{ display: 'grid', gap: 18, padding: 24 }}>
+    <div style={{ display: 'grid', gap: 18, padding: 'clamp(12px, 3vw, 24px)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-        <div>
+        <div style={{ minWidth: 0, flex: '1 1 auto' }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('dashboard')}</h1>
-          <p style={{ marginTop: 6, color: 'var(--noorix-text-muted)', maxWidth: 900 }}>{t('dashboardDesc')}</p>
+          <p style={{ marginTop: 6, color: 'var(--noorix-text-muted)' }}>{t('dashboardDesc')}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('reportYear')}</label>
+          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('reportYear')}</label>
           <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
             {[now.year, now.year - 1, now.year - 2].map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('reportMonth')}</label>
-          <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', minWidth: 120 }}>
+          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('reportMonth')}</label>
+          <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', minWidth: 100 }}>
             <option value="">{t('allMonths')}</option>
             {MONTH_NAMES_EN.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
           </select>
@@ -60,7 +60,7 @@ export default function DashboardScreen() {
       </div>
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {DASHBOARD_TABS.map((tab) => (
             <button
               key={tab.id}
@@ -75,6 +75,7 @@ export default function DashboardScreen() {
                 background: activeTab === tab.id ? 'rgba(37,99,235,0.07)' : 'transparent',
                 color: activeTab === tab.id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
                 fontWeight: activeTab === tab.id ? 700 : 500,
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               {t(tab.labelKey)}

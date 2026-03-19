@@ -195,7 +195,7 @@ export default function App() {
       setSidebarOpen,
       user,
       userRole: user?.role,
-      permissions: [],
+      userPermissions: user?.permissions || [],
     }),
     [activeCompany, activeCompanyId, companies, hasRealCompanies, theme, cardStyle, language, isSidebarOpen, user]
   );
@@ -258,6 +258,7 @@ export default function App() {
           setActiveCompany={setActiveCompany}
           companies={companies}
           userRole={user?.role}
+          userPermissions={user?.permissions}
           showCompanySwitcher={showCompanySwitcher}
         />
         <div className="app-main" style={serverDown ? { paddingTop: 38 } : {}}>
@@ -276,7 +277,7 @@ export default function App() {
           />
         <main className="app-main__content">
           <React.Suspense fallback={<LoadingFallback />}>
-            <PermissionGuard userRole={user?.role} isUserLoading={isUserLoading}>
+            <PermissionGuard userRole={user?.role} userPermissions={user?.permissions} isUserLoading={isUserLoading}>
               <Routes>
                 <Route path="/theme-preview" element={<ThemePreviewScreen />} />
                 <Route path="/403" element={<Forbidden403 />} />

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 import { IsString, MinLength } from 'class-validator';
 import { AuthService } from './auth.service';
 
@@ -23,13 +24,26 @@ class ChangePasswordDto {
   newPassword: string;
 }
 
+class RefreshTokenDto {
+  @IsString()
+  @MinLength(1)
+  refresh_token: string;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async login(@Body() body: LoginDto) {
     return this.authService.login(body.email, body.password);
+  }
+
+  @Post('refresh')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  async refresh(@Body() body: RefreshTokenDto) {
+    return this.authService.refreshAccessToken(body.refresh_token);
   }
 
   @Post('change-password')

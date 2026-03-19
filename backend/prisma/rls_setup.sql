@@ -5,11 +5,13 @@
 -- ============================================================
 
 -- ── دور التطبيق (Application Role) ──────────────────────────
--- إذا كان يوجد دور منفصل للتطبيق غير postgres، عدّل هنا
+-- ⚠️ غيّر كلمة المرور قبل التشغيل في الإنتاج!
+-- استخدم: ALTER ROLE noorix_app WITH PASSWORD 'your-strong-password-here';
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'noorix_app') THEN
-    CREATE ROLE noorix_app LOGIN PASSWORD 'CHANGE_ME_IN_PRODUCTION';
+    CREATE ROLE noorix_app LOGIN PASSWORD 'nrx-prod-' || md5(random()::text || clock_timestamp()::text);
+    RAISE NOTICE '⚠️ تم إنشاء دور noorix_app بكلمة مرور عشوائية — يجب تغييرها يدوياً';
   END IF;
 END
 $$;
@@ -83,6 +85,66 @@ ALTER TABLE audit_logs FORCE ROW LEVEL SECURITY;
 -- Employees
 ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employees FORCE ROW LEVEL SECURITY;
+
+-- Fiscal Periods
+ALTER TABLE fiscal_periods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fiscal_periods FORCE ROW LEVEL SECURITY;
+
+-- Expense Lines
+ALTER TABLE expense_lines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expense_lines FORCE ROW LEVEL SECURITY;
+
+-- Payroll Runs
+ALTER TABLE payroll_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payroll_runs FORCE ROW LEVEL SECURITY;
+
+-- Payroll Run Items (فرعي — يرث من payroll_runs)
+ALTER TABLE payroll_run_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payroll_run_items FORCE ROW LEVEL SECURITY;
+
+-- Payroll Run Item Vaults (فرعي — يرث من payroll_run_items)
+ALTER TABLE payroll_run_item_vaults ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payroll_run_item_vaults FORCE ROW LEVEL SECURITY;
+
+-- Leaves
+ALTER TABLE leaves ENABLE ROW LEVEL SECURITY;
+ALTER TABLE leaves FORCE ROW LEVEL SECURITY;
+
+-- Employee Residencies
+ALTER TABLE employee_residencies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_residencies FORCE ROW LEVEL SECURITY;
+
+-- Employee Documents
+ALTER TABLE employee_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_documents FORCE ROW LEVEL SECURITY;
+
+-- Employee Movements
+ALTER TABLE employee_movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_movements FORCE ROW LEVEL SECURITY;
+
+-- Employee Custom Allowances
+ALTER TABLE employee_custom_allowances ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_custom_allowances FORCE ROW LEVEL SECURITY;
+
+-- Employee Deductions
+ALTER TABLE employee_deductions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_deductions FORCE ROW LEVEL SECURITY;
+
+-- Order Categories
+ALTER TABLE order_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_categories FORCE ROW LEVEL SECURITY;
+
+-- Order Products
+ALTER TABLE order_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_products FORCE ROW LEVEL SECURITY;
+
+-- Orders
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders FORCE ROW LEVEL SECURITY;
+
+-- Order Items (فرعي — يرث من orders)
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items FORCE ROW LEVEL SECURITY;
 
 -- ── إنشاء Policies: قراءة وكتابة مقيّدة بالـ tenant_id ──────
 
@@ -261,6 +323,219 @@ CREATE POLICY tenant_isolation_modify ON employees
   FOR ALL TO PUBLIC
   USING (tenant_id = current_tenant_id())
   WITH CHECK (tenant_id = current_tenant_id());
+
+-- Fiscal Periods
+DROP POLICY IF EXISTS tenant_isolation_select ON fiscal_periods;
+DROP POLICY IF EXISTS tenant_isolation_modify ON fiscal_periods;
+CREATE POLICY tenant_isolation_select ON fiscal_periods
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON fiscal_periods
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Expense Lines
+DROP POLICY IF EXISTS tenant_isolation_select ON expense_lines;
+DROP POLICY IF EXISTS tenant_isolation_modify ON expense_lines;
+CREATE POLICY tenant_isolation_select ON expense_lines
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON expense_lines
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Payroll Runs
+DROP POLICY IF EXISTS tenant_isolation_select ON payroll_runs;
+DROP POLICY IF EXISTS tenant_isolation_modify ON payroll_runs;
+CREATE POLICY tenant_isolation_select ON payroll_runs
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON payroll_runs
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Payroll Run Items (يرث من payroll_runs)
+DROP POLICY IF EXISTS tenant_isolation_select ON payroll_run_items;
+DROP POLICY IF EXISTS tenant_isolation_modify ON payroll_run_items;
+CREATE POLICY tenant_isolation_select ON payroll_run_items
+  FOR SELECT TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM payroll_runs pr
+      WHERE pr.id = payroll_run_id AND pr.tenant_id = current_tenant_id()
+    )
+  );
+CREATE POLICY tenant_isolation_modify ON payroll_run_items
+  FOR ALL TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM payroll_runs pr
+      WHERE pr.id = payroll_run_id AND pr.tenant_id = current_tenant_id()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM payroll_runs pr
+      WHERE pr.id = payroll_run_id AND pr.tenant_id = current_tenant_id()
+    )
+  );
+
+-- Payroll Run Item Vaults (يرث من payroll_run_items → payroll_runs)
+DROP POLICY IF EXISTS tenant_isolation_select ON payroll_run_item_vaults;
+DROP POLICY IF EXISTS tenant_isolation_modify ON payroll_run_item_vaults;
+CREATE POLICY tenant_isolation_select ON payroll_run_item_vaults
+  FOR SELECT TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM payroll_run_items pri
+      JOIN payroll_runs pr ON pr.id = pri.payroll_run_id
+      WHERE pri.id = payroll_item_id AND pr.tenant_id = current_tenant_id()
+    )
+  );
+CREATE POLICY tenant_isolation_modify ON payroll_run_item_vaults
+  FOR ALL TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM payroll_run_items pri
+      JOIN payroll_runs pr ON pr.id = pri.payroll_run_id
+      WHERE pri.id = payroll_item_id AND pr.tenant_id = current_tenant_id()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM payroll_run_items pri
+      JOIN payroll_runs pr ON pr.id = pri.payroll_run_id
+      WHERE pri.id = payroll_item_id AND pr.tenant_id = current_tenant_id()
+    )
+  );
+
+-- Leaves
+DROP POLICY IF EXISTS tenant_isolation_select ON leaves;
+DROP POLICY IF EXISTS tenant_isolation_modify ON leaves;
+CREATE POLICY tenant_isolation_select ON leaves
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON leaves
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Employee Residencies
+DROP POLICY IF EXISTS tenant_isolation_select ON employee_residencies;
+DROP POLICY IF EXISTS tenant_isolation_modify ON employee_residencies;
+CREATE POLICY tenant_isolation_select ON employee_residencies
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON employee_residencies
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Employee Documents
+DROP POLICY IF EXISTS tenant_isolation_select ON employee_documents;
+DROP POLICY IF EXISTS tenant_isolation_modify ON employee_documents;
+CREATE POLICY tenant_isolation_select ON employee_documents
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON employee_documents
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Employee Movements
+DROP POLICY IF EXISTS tenant_isolation_select ON employee_movements;
+DROP POLICY IF EXISTS tenant_isolation_modify ON employee_movements;
+CREATE POLICY tenant_isolation_select ON employee_movements
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON employee_movements
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Employee Custom Allowances
+DROP POLICY IF EXISTS tenant_isolation_select ON employee_custom_allowances;
+DROP POLICY IF EXISTS tenant_isolation_modify ON employee_custom_allowances;
+CREATE POLICY tenant_isolation_select ON employee_custom_allowances
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON employee_custom_allowances
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Employee Deductions
+DROP POLICY IF EXISTS tenant_isolation_select ON employee_deductions;
+DROP POLICY IF EXISTS tenant_isolation_modify ON employee_deductions;
+CREATE POLICY tenant_isolation_select ON employee_deductions
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON employee_deductions
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Order Categories
+DROP POLICY IF EXISTS tenant_isolation_select ON order_categories;
+DROP POLICY IF EXISTS tenant_isolation_modify ON order_categories;
+CREATE POLICY tenant_isolation_select ON order_categories
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON order_categories
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Order Products
+DROP POLICY IF EXISTS tenant_isolation_select ON order_products;
+DROP POLICY IF EXISTS tenant_isolation_modify ON order_products;
+CREATE POLICY tenant_isolation_select ON order_products
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON order_products
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Orders
+DROP POLICY IF EXISTS tenant_isolation_select ON orders;
+DROP POLICY IF EXISTS tenant_isolation_modify ON orders;
+CREATE POLICY tenant_isolation_select ON orders
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON orders
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Order Items (يرث من orders)
+DROP POLICY IF EXISTS tenant_isolation_select ON order_items;
+DROP POLICY IF EXISTS tenant_isolation_modify ON order_items;
+CREATE POLICY tenant_isolation_select ON order_items
+  FOR SELECT TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM orders o
+      WHERE o.id = order_id AND o.tenant_id = current_tenant_id()
+    )
+  );
+CREATE POLICY tenant_isolation_modify ON order_items
+  FOR ALL TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM orders o
+      WHERE o.id = order_id AND o.tenant_id = current_tenant_id()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM orders o
+      WHERE o.id = order_id AND o.tenant_id = current_tenant_id()
+    )
+  );
 
 -- ── Roles: بيانات عامة (لا RLS) ────────────────────────────
 -- جدول الأدوار مشترك بين جميع الـ Tenants — لا يحتاج RLS

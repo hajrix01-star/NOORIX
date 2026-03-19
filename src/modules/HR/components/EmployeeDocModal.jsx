@@ -634,7 +634,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
           </div>
           <div style={{ padding: '12px 22px', borderBottom: '1px solid var(--noorix-border)', background: '#f8fafc' }}>
             <div style={{ fontWeight: 700, marginBottom: 8 }}>حاسبة نهاية الخدمة (تفصيل قبل الطباعة) / EOS Calculator (before print)</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>تاريخ نهاية الخدمة</label>
                 <input type="date" value={eosEndDate} onChange={(e) => setEosEndDate(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)' }} />

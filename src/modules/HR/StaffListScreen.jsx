@@ -433,17 +433,17 @@ export default function StaffListScreen({ embedded }) {
           <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('active')}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>
+              <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('active')} style={{ fontSize: 13 }}>
                 {t('activeEmployeesList')}
               </button>
-              <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('terminated')}>
+              <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('terminated')} style={{ fontSize: 13 }}>
                 {t('terminatedEmployeesList')}
               </button>
-              <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('archived')}>
+              <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('archived')} style={{ fontSize: 13 }}>
                 {t('archivedEmployeesList')}
               </button>
-              <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'employees.xlsx')}>
+              <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'employees.xlsx')} style={{ fontSize: 13 }}>
                 {t('exportExcel')}
               </button>
               <input
@@ -458,14 +458,16 @@ export default function StaffListScreen({ embedded }) {
                 className="noorix-btn-nav"
                 disabled={importing}
                 onClick={() => fileInputRef.current?.click()}
+                style={{ fontSize: 13 }}
               >
-                {importing ? t('saving') : 'استيراد من ملف'}
+                {importing ? t('saving') : (t('importFromFile') || 'استيراد من ملف')}
               </button>
             </div>
             <button
               type="button"
               className="noorix-btn-nav noorix-btn-primary"
               onClick={() => { setEditingEmployee(null); setShowForm(true); }}
+              style={{ flexShrink: 0 }}
             >
               {t('addEmployee')}
             </button>
@@ -538,7 +540,7 @@ export default function StaffListScreen({ embedded }) {
         >
           <div className="noorix-surface-card" style={{ width: '100%', maxWidth: 560, borderRadius: 14, padding: 20 }}>
             <h4 style={{ margin: '0 0 14px' }}>{t('terminateEmployee')}</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('terminationReason')}</label>
                 <select

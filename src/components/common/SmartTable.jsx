@@ -116,10 +116,10 @@ const SmartTable = memo(function SmartTable({
       {(title || badge || onSearchChange) && (
         <div style={{
           padding: '10px 16px', borderBottom: '1px solid var(--noorix-border)',
-          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
         }}>
-          {title && <span style={{ fontWeight: 700, fontSize: 15 }}>{title}</span>}
-          {badge}
+          {title && <span style={{ fontWeight: 700, fontSize: 15, flexShrink: 0 }}>{title}</span>}
+          {badge && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>{badge}</div>}
           {onSearchChange && (
             <input
               type="search"
@@ -127,9 +127,10 @@ const SmartTable = memo(function SmartTable({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t('searchPlaceholder')}
               style={{
-                marginRight: 'auto', padding: '5px 10px', borderRadius: 4, fontSize: 12.5,
+                marginInlineStart: 'auto', padding: '5px 10px', borderRadius: 4, fontSize: 12.5,
                 border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-page)',
-                minWidth: 160, outline: 'none',
+                minWidth: 120, width: '100%', maxWidth: 220, outline: 'none',
+                flex: '0 1 auto',
               }}
             />
           )}

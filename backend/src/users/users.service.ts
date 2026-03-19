@@ -3,6 +3,8 @@ import * as bcrypt from 'bcrypt';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }  from '../common/tenant-context';
 
+const BCRYPT_ROUNDS = process.env.NODE_ENV === 'production' ? 12 : 10;
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: TenantPrismaService) {}
@@ -39,7 +41,7 @@ export class UsersService {
     if (!role) throw new ConflictException('الدور غير موجود');
 
     const tenantId     = TenantContext.getTenantId();
-    const passwordHash = await bcrypt.hash(data.password, 10);
+    const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
     const user = await this.prisma.user.create({
       data: {
         tenantId,
@@ -88,7 +90,7 @@ export class UsersService {
     if (data.nameEn !== undefined) updateData.nameEn = data.nameEn?.trim() || null;
 
     if (data.password?.trim()) {
-      updateData.passwordHash = await bcrypt.hash(data.password, 10);
+      updateData.passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
     }
 
     if (data.roleName) {

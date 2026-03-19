@@ -338,17 +338,17 @@ export default function PurchasesBatchScreen() {
 
       {/* ── التبويبات ── */}
       {hasCompany && (
-        <div style={{ display: 'flex', gap: 4, borderBottom: '2px solid var(--noorix-border)', paddingBottom: 0 }}>
+        <div style={{ display: 'flex', gap: 4, borderBottom: '2px solid var(--noorix-border)', paddingBottom: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {getTabs(t).map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: '12px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                padding: '12px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer',
                 border: 'none', borderBottom: activeTab === tab.id ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
                 marginBottom: -2, background: 'transparent', color: activeTab === tab.id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-                transition: 'color 150ms, border-color 150ms',
+                transition: 'color 150ms, border-color 150ms', whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               {tab.icon} {tab.label}
@@ -365,15 +365,15 @@ export default function PurchasesBatchScreen() {
 
       {/* ── تبويب: إدخال دفعة جديدة ── */}
       {activeTab === 'entry' && hasCompany && (
-        <div className="noorix-surface-card" style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <div className="noorix-surface-card" style={{ borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           {/* شريط الأدوات */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 20, padding: '14px 12px',
+            display: 'flex', alignItems: 'center', gap: 12, padding: '14px 12px',
             background: 'var(--noorix-bg-page)', borderBottom: '1px solid var(--noorix-border)',
             flexWrap: 'wrap',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{t('transactionDateLabel')}</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('transactionDateLabel')}</label>
               <input
                 type="date"
                 value={batchDate}
@@ -385,8 +385,8 @@ export default function PurchasesBatchScreen() {
                 }}
               />
             </div>
-            <div style={{ flex: 1, minWidth: 200, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{t('shortcuts')}</span>
+            <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('shortcuts')}</span>
               {bookmarkedSuppliers.length > 0 ? (
                 bookmarkedSuppliers.map((s) => (
                   <button
@@ -396,7 +396,7 @@ export default function PurchasesBatchScreen() {
                     style={{
                       padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
                       border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-                      color: 'var(--noorix-text)',
+                      color: 'var(--noorix-text)', whiteSpace: 'nowrap',
                     }}
                   >
                     {s.nameAr || s.nameEn}
@@ -410,15 +410,8 @@ export default function PurchasesBatchScreen() {
 
           {/* جدول الإدخال */}
           <div style={{ padding: '0 12px 16px' }}>
-            {/*
-              11 عمود — توزيع ثابت بنسب مئوية يملأ العرض الكامل بدون تمرير أفقي.
-              الصافي والضريبة مدمجان في خلية واحدة لأنهما للعرض فقط.
-              # 3% | المورد 20% | رقم الفاتورة 11% | الإجمالي 8%
-              صافي/ضريبة 9% | التاريخ 8% | النوع 8% | الفئة 11%
-              ض 5% | الملاحظات 14% | × 3%
-            */}
-            <div className="noorix-surface-card noorix-table-frame batch-purchases-table" style={{ width: '100%', overflow: 'hidden' }}>
-              <table className="noorix-table" style={{ width: '100%', tableLayout: 'fixed' }}>
+            <div className="noorix-surface-card noorix-table-frame batch-purchases-table" style={{ width: '100%' }}>
+              <table className="noorix-table" style={{ width: '100%', tableLayout: 'fixed', minWidth: 900 }}>
                 <colgroup><col style={{ width: '3%' }} /><col style={{ width: '20%' }} /><col style={{ width: '11%' }} /><col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '11%' }} /><col style={{ width: '5%' }} /><col style={{ width: '14%' }} /><col style={{ width: '3%' }} /></colgroup>
                 <thead>
                   <tr>
@@ -477,13 +470,13 @@ export default function PurchasesBatchScreen() {
             />
 
             {/* أزرار الإجراءات */}
-            <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap', width: '100%' }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap', width: '100%' }}>
               <button
                 type="button"
                 className="noorix-btn-nav noorix-btn-success"
                 disabled={saveMutation.isPending || summary.count === 0}
                 onClick={() => saveMutation.mutate()}
-                style={{ flex: 1, padding: '12px 20px', fontSize: 14, fontWeight: 700, minWidth: 0 }}
+                style={{ flex: '1 1 200px', padding: '12px 20px', fontSize: 14, fontWeight: 700, minWidth: 0 }}
               >
                 {saveMutation.isPending ? t('saving') : t('saveBatch', summary.count)}
               </button>
@@ -491,7 +484,7 @@ export default function PurchasesBatchScreen() {
                 type="button"
                 className="noorix-btn-nav"
                 onClick={() => window.print()}
-                style={{ padding: '12px 20px', fontSize: 14, flexShrink: 0 }}
+                style={{ padding: '12px 20px', fontSize: 14, flexShrink: 0, flex: '0 1 auto' }}
               >
                 {t('print')}
               </button>
