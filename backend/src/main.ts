@@ -1,3 +1,8 @@
+// Supabase يتطلب SSL — إضافة sslmode=require إن لم يكن موجوداً
+if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('sslmode=')) {
+  process.env.DATABASE_URL += (process.env.DATABASE_URL.includes('?') ? '&' : '?') + 'sslmode=require';
+}
+
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -6,6 +11,8 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const port = parseInt(process.env.PORT ?? '3000', 10);
+
+  logger.log(`بدء التطبيق — PORT=${port} DATABASE_URL=${process.env.DATABASE_URL ? '✓' : '✗'}`);
 
   const app = await NestFactory.create(AppModule);
 
@@ -45,4 +52,8 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   logger.log(`Noorix Backend يعمل على المنفذ ${port}`);
 }
-bootstrap();
+
+bootstrap().catch((err) => {
+  console.error('❌ فشل بدء التطبيق:', err);
+  process.exit(1);
+});
