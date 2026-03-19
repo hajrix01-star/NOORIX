@@ -9,6 +9,7 @@ import {
   GetGeneralProfitLossTrendQueryDto,
 } from './dto/general-profit-loss.dto';
 import { GetTaxVatQueryDto } from './dto/tax-vat.dto';
+import { GetPeriodAnalyticsQueryDto } from './dto/period-analytics.dto';
 import { ReportsService } from './reports.service';
 
 @Controller('reports')
@@ -49,5 +50,11 @@ export class ReportsController {
   @RequirePermission('REPORTS_READ')
   async getTaxVat(@Query() query: GetTaxVatQueryDto) {
     return this.reportsService.getTaxVatReport(query.companyId, query.year, query.period);
+  }
+
+  @Get('period-analytics')
+  @RequirePermission('REPORTS_READ')
+  async getPeriodAnalytics(@Query() query: GetPeriodAnalyticsQueryDto) {
+    return this.reportsService.getPeriodAnalytics(query.companyId, query.startDate, query.endDate);
   }
 }

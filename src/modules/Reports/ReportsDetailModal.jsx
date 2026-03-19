@@ -2,10 +2,13 @@
  * ReportsDetailModal — نافذة تفاصيل البند في تقرير ربح وخسارة
  */
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { amountText, moneyText, percentText, truncateText, PERCENT_COLOR } from './reportHelpers';
+import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }) {
+  const navigate = useNavigate();
   const { data, isLoading, error } = useReportDetails({
     companyId,
     year,
@@ -21,6 +24,16 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     itemKey: state?.itemKey || undefined,
     enabled: !!state?.showTrend,
   });
+
+  const drillTarget = useMemo(() => {
+    if (!state || year == null) return null;
+    return buildReportDrillLink({
+      year,
+      month: state.month ?? null,
+      groupKey: state.groupKey,
+      itemKey: state.itemKey || undefined,
+    });
+  }, [state, year]);
 
   const maxAmount = useMemo(() => {
     const values = (trend?.points || []).map((point) => Math.abs(Number(point.amount || 0)));
@@ -247,6 +260,27 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                 </div>
               </div>
             )}
+
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--noorix-border)', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+              {drillTarget ? (
+                <button
+                  type="button"
+                  className="noorix-btn-primary"
+                  style={{ fontSize: 13, padding: '10px 16px', borderRadius: 10 }}
+                  onClick={() => {
+                    const qs = drillToSearchParams(drillTarget.query);
+                    navigate(`${drillTarget.path}?${qs}`);
+                    onClose();
+                  }}
+                >
+                  {drillTarget.path === '/sales' ? t('reportOpenInSales') : t('reportOpenInInvoices')}
+                </button>
+              ) : (
+                state?.itemKey?.startsWith('account:') || state?.groupKey === 'grossProfit' || state?.groupKey === 'netProfit' ? (
+                  <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('reportDrillNoLink')}</span>
+                ) : null
+              )}
+            </div>
           </>
         )}
       </div>

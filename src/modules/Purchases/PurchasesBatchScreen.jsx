@@ -2,7 +2,7 @@
  * PurchasesBatchScreen — إدخال جماعي لفواتير الموردين
  * تصميم احترافي متكامل — جدول موحد مثل الفواتير، اختصارات مدمجة، ملخص متسق
  */
-import React, { useState, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
@@ -79,10 +79,17 @@ export default function PurchasesBatchScreen() {
   const { suppliers } = useSuppliers(companyId);
   const { flatCategories = [] } = useCategories(companyId);
 
+  const [batchSearchInput, setBatchSearchInput] = useState('');
+  const [debouncedBatchQ, setDebouncedBatchQ] = useState('');
+  useEffect(() => {
+    const tm = setTimeout(() => setDebouncedBatchQ(batchSearchInput.trim()), 300);
+    return () => clearTimeout(tm);
+  }, [batchSearchInput]);
+
   const { data: batchSummaryData, isLoading: batchesLoading, isError: batchesError, error: batchesErr } = useQuery({
-    queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate],
+    queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ],
     queryFn: async () => {
-      const res = await getPurchaseBatchSummaries(companyId, dateFilter.startDate, dateFilter.endDate);
+      const res = await getPurchaseBatchSummaries(companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ || undefined);
       if (!res?.success) throw new Error(res?.error || 'فشل تحميل الدفعات');
       return res.data;
     },
@@ -111,13 +118,17 @@ export default function PurchasesBatchScreen() {
     }));
   }, [batchSummaryData]);
 
-  const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
+  const { filteredData, allFilteredData, page, setPage, sortKey, sortDir, toggleSort } =
     useTableFilter(batchesTableData, {
-      searchKeys: ['batchId', 'supplierNames'],
+      searchKeys: [],
       pageSize:   PAGE_SIZE,
       defaultSortKey: 'transactionDate',
       defaultSortDir: 'desc',
     });
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedBatchQ, setPage]);
 
   const activeOnly = allFilteredData.filter((b) => b.status !== 'cancelled');
   const displayedTotal = allFilteredData.length;
@@ -525,8 +536,8 @@ export default function PurchasesBatchScreen() {
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{t('batchCount', displayedTotal)}</span>
               </>
             }
-            searchValue={searchText}
-            onSearchChange={setSearch}
+            searchValue={batchSearchInput}
+            onSearchChange={(v) => { setBatchSearchInput(v); setPage(1); }}
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={toggleSort}

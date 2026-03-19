@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }     from '../common/tenant-context';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
@@ -8,18 +9,33 @@ import { UpdateSupplierDto } from './dto/update-supplier.dto';
 export class SuppliersService {
   constructor(private readonly prisma: TenantPrismaService) {}
 
-  async findAll(companyId: string, page = 1, pageSize = 50) {
+  async findAll(companyId: string, page = 1, pageSize = 50, q?: string) {
+    const needle = (q || '').trim().slice(0, 120);
+    const searchFilter: Prisma.SupplierWhereInput =
+      needle.length > 0
+        ? {
+            OR: [
+              { nameAr: { contains: needle, mode: 'insensitive' } },
+              { nameEn: { contains: needle, mode: 'insensitive' } },
+              { taxNumber: { contains: needle, mode: 'insensitive' } },
+              { phone: { contains: needle, mode: 'insensitive' } },
+            ],
+          }
+        : {};
+    const where = { companyId, isDeleted: false, ...searchFilter };
+    const size = Math.min(200, Math.max(1, pageSize));
+    const p = Math.max(1, page);
     const [items, total] = await Promise.all([
       this.prisma.supplier.findMany({
-        where: { companyId, isDeleted: false },
+        where,
         orderBy: { nameAr: 'asc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        skip: (p - 1) * size,
+        take: size,
         include: { supplierCategory: { include: { account: true } } },
       }),
-      this.prisma.supplier.count({ where: { companyId, isDeleted: false } }),
+      this.prisma.supplier.count({ where }),
     ]);
-    return { items, total, page, pageSize };
+    return { items, total, page: p, pageSize: size };
   }
 
   async create(dto: CreateSupplierDto) {

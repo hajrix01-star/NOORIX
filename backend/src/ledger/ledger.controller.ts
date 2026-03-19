@@ -18,6 +18,7 @@ export class LedgerController {
     @Query('toDate') toDate?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('q') q?: string,
   ) {
     const companyId = (headerCompanyId?.trim() || queryCompanyId?.trim()) || '';
     if (!companyId) return { items: [], total: 0, page: 1, pageSize: 50 };
@@ -32,6 +33,7 @@ export class LedgerController {
       end,
       page ? parseInt(page, 10) : 1,
       pageSize ? parseInt(pageSize, 10) : 50,
+      q,
     );
   }
 }

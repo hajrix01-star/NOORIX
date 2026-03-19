@@ -10,13 +10,13 @@ import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '..
  * @param {string} companyId
  * @param {{ pageSize?: number }} [opts]
  */
-export function useSuppliers(companyId, { pageSize = 200 } = {}) {
+export function useSuppliers(companyId, { pageSize = 200, q } = {}) {
   const queryClient = useQueryClient();
 
   const { data: raw = [], isLoading } = useQuery({
-    queryKey: ['suppliers', companyId],
+    queryKey: ['suppliers', companyId, pageSize, q || ''],
     queryFn: async () => {
-      const res = await getSuppliers(companyId, 1, pageSize);
+      const res = await getSuppliers(companyId, 1, pageSize, q);
       if (!res?.success) return [];
       const d = res.data?.data ?? res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);

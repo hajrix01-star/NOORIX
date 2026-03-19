@@ -7,13 +7,13 @@ import { getInvoices, createInvoice } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
 
 /**
- * @param {{ companyId: string, startDate: string, endDate: string, page?: number, pageSize?: number, kind?: string, sortBy?: string, sortDir?: 'asc'|'desc', supplierId?: string, q?: string }} params
+ * @param {{ companyId: string, startDate: string, endDate: string, page?: number, pageSize?: number, kind?: string, sortBy?: string, sortDir?: 'asc'|'desc', supplierId?: string, q?: string, categoryId?: string, expenseLineId?: string }} params
  */
-export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize = 50, kind, sortBy = 'transactionDate', sortDir = 'desc', supplierId, q }) {
+export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize = 50, kind, sortBy = 'transactionDate', sortDir = 'desc', supplierId, q, categoryId, expenseLineId }) {
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['invoices', companyId, startDate, endDate, page, pageSize, kind, sortBy, sortDir, supplierId, q],
+    queryKey: ['invoices', companyId, startDate, endDate, page, pageSize, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId],
     queryFn: async () => {
-      const res = await getInvoices(companyId, startDate, endDate, page, pageSize, null, null, kind, sortBy, sortDir, supplierId, q);
+      const res = await getInvoices(companyId, startDate, endDate, page, pageSize, null, null, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId);
       if (!res.success) throw new Error(res.error || 'فشل تحميل الفواتير');
       return res.data;
     },

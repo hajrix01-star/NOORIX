@@ -46,9 +46,10 @@ export class InvoiceController {
     @Query('companyId') companyId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate')   endDate?:   string,
+    @Query('q')         q?:         string,
   ) {
     if (!companyId) return { batches: [], rowCount: 0 };
-    return this.invoiceService.findPurchaseBatchSummaries(companyId, startDate, endDate);
+    return this.invoiceService.findPurchaseBatchSummaries(companyId, startDate, endDate, q);
   }
 
   @Get()

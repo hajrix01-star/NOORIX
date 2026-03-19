@@ -2,7 +2,8 @@
  * InvoicesListScreen — قائمة الفواتير
  * يعتمد على: useInvoices | SmartTable | DateFilterBar | format | saudiDate
  */
-import React, { memo, useMemo, useState, useEffect } from 'react';
+import React, { memo, useMemo, useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp }         from '../../context/AppContext';
@@ -35,6 +36,8 @@ const Badge = memo(function Badge({ map, value }) {
 export default function InvoicesListScreen() {
   const { activeCompanyId, userRole } = useApp();
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const urlDrillKeyRef = useRef('');
   const companyId           = activeCompanyId ?? '';
   const dateFilter          = useDateFilter();
   const queryClient         = useQueryClient();
@@ -42,11 +45,13 @@ export default function InvoicesListScreen() {
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
+  const [urlExtra, setUrlExtra] = useState({ kind: '', categoryId: '', expenseLineId: '' });
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
-  const [searchText, setSearchText] = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
+  const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
+  const [searchText, setSearchText] = useState(qInit);
+  const [debouncedQ, setDebouncedQ] = useState(qInit.trim());
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ((searchText || '').trim()), 300);
@@ -55,7 +60,49 @@ export default function InvoicesListScreen() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId]);
+  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId, urlExtra.kind, urlExtra.categoryId, urlExtra.expenseLineId]);
+
+  useEffect(() => {
+    const keys = ['from', 'to', 'kind', 'supplierId', 'categoryId', 'expenseLineId', 'q'];
+    const parts = keys.map((k) => searchParams.get(k) || '');
+    const drillKey = parts.join('\u001f');
+    if (!parts.some(Boolean)) {
+      urlDrillKeyRef.current = '';
+      return;
+    }
+    if (urlDrillKeyRef.current === drillKey) return;
+    urlDrillKeyRef.current = drillKey;
+
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
+    const kind = searchParams.get('kind') || '';
+    const supplierId = searchParams.get('supplierId') || '';
+    const categoryId = searchParams.get('categoryId') || '';
+    const expenseLineId = searchParams.get('expenseLineId') || '';
+    const q = searchParams.get('q') || '';
+    if (from && to) {
+      dateFilter.setMode('range');
+      dateFilter.setRangeStart(from.slice(0, 10));
+      dateFilter.setRangeEnd(to.slice(0, 10));
+    }
+    if (kind) {
+      if (kind.includes(',')) {
+        setFilterKind('');
+        setUrlExtra((p) => ({ ...p, kind }));
+      } else {
+        setFilterKind(kind);
+        setUrlExtra((p) => ({ ...p, kind: '' }));
+      }
+    }
+    if (supplierId) setFilterSupplierId(supplierId);
+    if (categoryId) setUrlExtra((p) => ({ ...p, categoryId }));
+    if (expenseLineId) setUrlExtra((p) => ({ ...p, expenseLineId }));
+    if (q) {
+      setSearchText(q);
+      setDebouncedQ(q.trim());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- نقرأ فقط دوال فلتر التاريخ المستقرة
+  }, [searchParams]);
 
   const statusStyles = useMemo(() => ({
     active:    { bg: 'rgba(22,163,74,0.1)',  color: '#16a34a', label: t('statusActive') },
@@ -135,17 +182,21 @@ export default function InvoicesListScreen() {
 
   const { suppliers } = useSuppliers(companyId);
 
+  const kindForApi = filterKind || urlExtra.kind || undefined;
+
   const { items, total, isLoading, isError, error } = useInvoices({
     companyId,
     startDate: dateFilter.startDate,
     endDate:   dateFilter.endDate,
     page,
     pageSize:  PAGE_SIZE,
-    kind: filterKind || undefined,
+    kind: kindForApi,
     supplierId: filterSupplierId || undefined,
     sortBy: sortKey,
     sortDir,
     q: debouncedQ || undefined,
+    categoryId: urlExtra.categoryId || undefined,
+    expenseLineId: urlExtra.expenseLineId || undefined,
   });
 
   // بيانات مُحوَّلة لـ SmartTable (البحث النصي من السيرفر عبر q)
@@ -287,6 +338,31 @@ export default function InvoicesListScreen() {
               </div>
             </div>
           </div>
+          {(urlExtra.categoryId || urlExtra.expenseLineId || urlExtra.kind) && (
+            <div
+              className="noorix-surface-card"
+              style={{
+                padding: '10px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                flexWrap: 'wrap',
+                fontSize: 12,
+                border: '1px dashed rgba(37,99,235,0.35)',
+                background: 'rgba(37,99,235,0.04)',
+              }}
+            >
+              <span style={{ color: 'var(--noorix-text-muted)' }}>{t('invoicesDrillBanner')}</span>
+              <button
+                type="button"
+                className="noorix-btn-nav"
+                onClick={() => { setUrlExtra({ kind: '', categoryId: '', expenseLineId: '' }); setPage(1); }}
+              >
+                {t('clearDrillFilters')}
+              </button>
+            </div>
+          )}
           <div className="noorix-exec-filters">
             <span className="noorix-exec-filters__icon" title={t('filterByType')} aria-hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="4 2 20 2 14 10 14 22 10 22 10 10 4 2"/></svg>
@@ -294,7 +370,7 @@ export default function InvoicesListScreen() {
             <label className="noorix-exec-filters__label">
               <select
                 value={filterKind}
-                onChange={(e) => { setFilterKind(e.target.value); setPage(1); }}
+                onChange={(e) => { setFilterKind(e.target.value); setUrlExtra((p) => ({ ...p, kind: '' })); setPage(1); }}
                 className="noorix-exec-filters__select"
               >
                 <option value="">{t('filterAllTypes')}</option>

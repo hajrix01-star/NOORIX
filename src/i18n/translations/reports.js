@@ -56,4 +56,12 @@ export default {
   uncategorized: { ar: 'غير مصنف', en: 'Uncategorized' },
   expand: { ar: 'توسيع', en: 'Expand' },
   collapse: { ar: 'طي', en: 'Collapse' },
+  reportOpenInInvoices: { ar: 'فتح في قائمة الفواتير', en: 'Open in invoices list' },
+  reportOpenInSales: { ar: 'فتح في المبيعات', en: 'Open in sales' },
+  reportDrillNoLink: { ar: 'لا يوجد ارتباط مباشر من هذا البند (مثلاً حساب محاسبي).', en: 'No direct link for this row (e.g. ledger account).' },
+  periodAnalyticsTitle: { ar: 'تحليل الفترة', en: 'Period insights' },
+  periodAnalyticsTopSuppliers: { ar: 'أعلى الموردين (مشتريات/مصروف)', en: 'Top suppliers (purchases/expense)' },
+  periodAnalyticsByKind: { ar: 'حسب نوع الفاتورة', en: 'By invoice type' },
+  invoicesDrillBanner: { ar: 'تصفية نشطة من التقرير — يمكنك إزالتها', en: 'Active filters from report — you can clear them' },
+  clearDrillFilters: { ar: 'إزالة تصفية التقرير', en: 'Clear report filters' },
 };

@@ -1,7 +1,7 @@
 /**
  * SuppliersTab — تبويبة الموردين
  */
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, memo, useEffect } from 'react';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useCategories } from '../../../hooks/useCategories';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -20,21 +20,17 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch]     = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
   const [toast, setToast]       = useState({ visible: false, message: '', type: 'success' });
   const [editingSupplier, setEditingSupplier] = useState(null);
 
-  const { suppliers, isLoading, create, update, remove } = useSuppliers(companyId);
-  const { flatCategories }                               = useCategories(companyId);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return suppliers;
-    const q = search.toLowerCase();
-    return suppliers.filter((s) =>
-      (s.nameAr || '').toLowerCase().includes(q) ||
-      (s.nameEn || '').toLowerCase().includes(q) ||
-      (s.taxNumber || '').toLowerCase().includes(q),
-    );
-  }, [suppliers, search]);
+  const { suppliers, isLoading, create, update, remove } = useSuppliers(companyId, { pageSize: 200, q: debouncedQ || undefined });
+  const { flatCategories }                               = useCategories(companyId);
 
   function handleSave(body) {
     if (!companyId) { setToast({ visible: true, message: t('pleaseSelectCompanyFirst'), type: 'error' }); return; }
@@ -101,7 +97,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
       {isLoading
         ? <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('loading')}</p>
         : <SupplierTable
-            suppliers={filtered}
+            suppliers={suppliers}
             flatCategories={flatCategories}
             onEdit={(s) => setEditingSupplier(s)}
             onDelete={handleDelete}

@@ -3,11 +3,13 @@
  */
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { PERMISSIONS } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
 import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import TaxReportTab from './TaxReportTab';
 import ReportsDetailModal from './ReportsDetailModal';
+import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
 import {
   EN_MONTHS,
   CARD_COLORS,
@@ -33,7 +35,8 @@ const REPORT_TABS = [
 ];
 
 export default function ReportsScreen() {
-  const { activeCompanyId, companies } = useApp();
+  const { activeCompanyId, companies, userPermissions } = useApp();
+  const canPeriodAnalytics = (userPermissions || []).includes(PERMISSIONS.REPORTS_READ);
   const { t, lang } = useTranslation();
   const currentYear = new Date().getUTCFullYear();
   const [activeTab, setActiveTab] = useState('general');
@@ -178,6 +181,13 @@ export default function ReportsScreen() {
             {t('reportClickHint')}
             {selectedMonthNumber && <div style={{ marginTop: 8 }}>{t('reportFocusedMonthDesc')}</div>}
           </div>
+
+          <PeriodAnalyticsStrip
+            companyId={activeCompanyId}
+            year={year}
+            month={selectedMonthNumber}
+            enabled={canPeriodAnalytics}
+          />
 
           {report && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>

@@ -1147,4 +1147,76 @@ export class ReportsService {
       },
     };
   }
+
+  /**
+   * ملخص خفيف للفترة: إجمالي حسب نوع الفاتورة + أعلى موردين مصروف/مشتريات.
+   */
+  async getPeriodAnalytics(companyId: string, startDateStr: string, endDateStr: string) {
+    const start = new Date(`${String(startDateStr).slice(0, 10)}T00:00:00.000Z`);
+    const end = new Date(`${String(endDateStr).slice(0, 10)}T23:59:59.999Z`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new BadRequestException('تواريخ غير صالحة');
+    }
+    if (start > end) {
+      throw new BadRequestException('startDate يجب أن يسبق endDate');
+    }
+
+    const baseWhere = {
+      companyId,
+      status: 'active' as const,
+      transactionDate: { gte: start, lte: end },
+    };
+
+    const byKind = await this.prisma.invoice.groupBy({
+      by: ['kind'],
+      where: baseWhere,
+      _sum: { totalAmount: true },
+      _count: { _all: true },
+    });
+
+    const totalsByKind: Record<string, { totalAmount: string; invoiceCount: number }> = {};
+    for (const row of byKind) {
+      totalsByKind[row.kind] = {
+        totalAmount: row._sum.totalAmount?.toString() ?? '0',
+        invoiceCount: row._count._all,
+      };
+    }
+
+    const outflowKinds = ['purchase', 'expense', 'fixed_expense', 'hr_expense'] as const;
+    const topGroups = await this.prisma.invoice.groupBy({
+      by: ['supplierId'],
+      where: {
+        ...baseWhere,
+        supplierId: { not: null },
+        kind: { in: [...outflowKinds] },
+      },
+      _sum: { totalAmount: true },
+      _count: { _all: true },
+      orderBy: { _sum: { totalAmount: 'desc' } },
+      take: 5,
+    });
+
+    const supplierIds = topGroups.map((g) => g.supplierId).filter((id): id is string => id != null);
+    const suppliers = supplierIds.length
+      ? await this.prisma.supplier.findMany({
+          where: { id: { in: supplierIds }, companyId, isDeleted: false },
+          select: { id: true, nameAr: true, nameEn: true },
+        })
+      : [];
+    const nameById = new Map(suppliers.map((s) => [s.id, s.nameAr || s.nameEn || s.id]));
+
+    const topSuppliers = topGroups.map((g) => ({
+      supplierId: g.supplierId as string,
+      nameAr: nameById.get(g.supplierId as string) ?? '—',
+      totalAmount: g._sum.totalAmount?.toString() ?? '0',
+      invoiceCount: g._count._all,
+    }));
+
+    return {
+      startDate: String(startDateStr).slice(0, 10),
+      endDate: String(endDateStr).slice(0, 10),
+      totalsByKind,
+      topSuppliers,
+    };
+  }
 }

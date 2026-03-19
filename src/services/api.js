@@ -302,8 +302,10 @@ export async function deleteCompany(id) {
   return apiDelete(`/api/v1/companies/${id}`);
 }
 
-export async function getLedgerEntries(companyId, fromDate, toDate, page = 1, pageSize = 50) {
-  return apiGet('/api/v1/ledger', { companyId, fromDate, toDate, page, pageSize });
+export async function getLedgerEntries(companyId, fromDate, toDate, page = 1, pageSize = 50, q) {
+  const params = { companyId, fromDate, toDate, page, pageSize };
+  if (q && String(q).trim()) params.q = String(q).trim();
+  return apiGet('/api/v1/ledger', params);
 }
 
 // ——— الحسابات والفئات ———
@@ -425,10 +427,11 @@ export async function fetchAllSalesSummariesForExport(
 }
 
 /** ملخص دفعات المشتريات في الفترة — من السيرفر (بدل صفحة فواتير واحدة) */
-export async function getPurchaseBatchSummaries(companyId, startDate, endDate) {
+export async function getPurchaseBatchSummaries(companyId, startDate, endDate, q) {
   const params = { companyId };
   if (startDate) params.startDate = String(startDate).slice(0, 10);
   if (endDate) params.endDate = String(endDate).slice(0, 10);
+  if (q && String(q).trim()) params.q = String(q).trim();
   const res = await apiGet('/api/v1/invoices/purchase-batch-summaries', params);
   if (!res.success) return { success: false, error: res.error, data: { batches: [], rowCount: 0 } };
   const raw = res.data?.data ?? res.data;
@@ -490,6 +493,19 @@ export async function getGeneralProfitLossTrend(companyId, year, groupKey, itemK
 
 export async function getTaxVatReport(companyId, year, period) {
   return apiGet('/api/v1/reports/tax-vat', { companyId, year: String(year), period });
+}
+
+/** تحليل فترة: إجماليات حسب نوع الفاتورة + أعلى موردين — يتطلب REPORTS_READ */
+export async function getPeriodAnalytics(companyId, startDate, endDate) {
+  const params = {
+    companyId,
+    startDate: String(startDate || '').slice(0, 10),
+    endDate: String(endDate || '').slice(0, 10),
+  };
+  const res = await apiGet('/api/v1/reports/period-analytics', params);
+  if (!res.success) return res;
+  const raw = res.data?.data ?? res.data;
+  return { success: true, data: raw };
 }
 
 // ——— الطلبات ———
@@ -798,8 +814,10 @@ export async function createDeduction(body) {
 }
 
 // ——— الموردون ———
-export async function getSuppliers(companyId, page = 1, pageSize = 50) {
-  return apiGet('/api/v1/suppliers', { companyId, page, pageSize });
+export async function getSuppliers(companyId, page = 1, pageSize = 50, q) {
+  const params = { companyId, page, pageSize };
+  if (q && String(q).trim()) params.q = String(q).trim();
+  return apiGet('/api/v1/suppliers', params);
 }
 export async function createSupplier(body) { return apiPost('/api/v1/suppliers', body); }
 export async function updateSupplier(id, body) { return apiPatch(`/api/v1/suppliers/${id}`, body); }
@@ -811,7 +829,7 @@ export async function createInvoiceBatch(body) { return apiPost('/api/v1/invoice
 export async function updateInvoice(id, body, companyId) {
   return apiPatch(`/api/v1/invoices/${id}?companyId=${companyId}`, body);
 }
-export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q) {
+export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId) {
   const params = { companyId, page: String(page), pageSize: String(pageSize) };
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
   if (startDate) params.startDate = String(startDate).slice(0, 10);
@@ -822,6 +840,8 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
   if (sortBy)    params.sortBy     = sortBy;
   if (sortDir)   params.sortDir    = sortDir;
   if (supplierId) params.supplierId = supplierId;
+  if (categoryId) params.categoryId = categoryId;
+  if (expenseLineId) params.expenseLineId = expenseLineId;
   if (q && String(q).trim()) params.q = String(q).trim();
   const res = await apiGet('/api/v1/invoices', params);
   if (!res.success) return res;

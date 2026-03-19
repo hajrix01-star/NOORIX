@@ -3,7 +3,8 @@
  * يعتمد على: useSales, useVaults (hooks) + SmartTable + utils/saudiDate, utils/format
  * يدعم: تصدير Excel، PDF، طباعة احترافية (اسم الشركة + شعار)
  */
-import React, { useState, useMemo, memo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, memo, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -37,6 +38,8 @@ const Badge = memo(function Badge({ map, value }) {
 export default function DailySalesScreen() {
   const { activeCompanyId, userRole, companies } = useApp();
   const { t, lang } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const urlDrillKeyRef = useRef('');
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
   const companyName = companies?.find((c) => c.id === activeCompanyId)?.nameAr || '';
@@ -47,8 +50,9 @@ export default function DailySalesScreen() {
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingSummary, setEditingSummary] = useState(null);
   const [listPage, setListPage] = useState(1);
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
+  const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
+  const [searchInput, setSearchInput] = useState(qInit);
+  const [debouncedQ, setDebouncedQ] = useState(qInit.trim());
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
   const [exportBusy, setExportBusy] = useState(false);
@@ -69,6 +73,31 @@ export default function DailySalesScreen() {
   useEffect(() => {
     setListPage(1);
   }, [debouncedQ, dateFilter.startDate, dateFilter.endDate]);
+
+  useEffect(() => {
+    const keys = ['from', 'to', 'q'];
+    const parts = keys.map((k) => searchParams.get(k) || '');
+    const drillKey = parts.join('\u001f');
+    if (!parts.some(Boolean)) {
+      urlDrillKeyRef.current = '';
+      return;
+    }
+    if (urlDrillKeyRef.current === drillKey) return;
+    urlDrillKeyRef.current = drillKey;
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
+    const q = searchParams.get('q') || '';
+    if (from && to) {
+      dateFilter.setMode('range');
+      dateFilter.setRangeStart(from.slice(0, 10));
+      dateFilter.setRangeEnd(to.slice(0, 10));
+    }
+    if (q) {
+      setSearchInput(q);
+      setDebouncedQ(q.trim());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const {
     data: salesPage,

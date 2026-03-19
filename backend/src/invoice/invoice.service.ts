@@ -378,7 +378,7 @@ export class InvoiceService {
    * ملخص دفعات المشتريات/المصروفات في الفترة — استعلام واحد ثم تجميع في الذاكرة.
    * يُستخدم بدل جلب صفحة واحدة (50) من الفواتير فقط.
    */
-  async findPurchaseBatchSummaries(companyId: string, startDate?: string, endDate?: string) {
+  async findPurchaseBatchSummaries(companyId: string, startDate?: string, endDate?: string, q?: string) {
     const dateFilter = this.buildDateFilter(startDate, endDate);
     const where: Prisma.InvoiceWhereInput = {
       companyId,
@@ -447,12 +447,26 @@ export class InvoiceService {
       });
     }
 
-    batches.sort((a, b) => {
+    const needle = (q || '').trim().toLowerCase();
+    const filteredBatches =
+      needle.length > 0
+        ? batches.filter(
+            (b) =>
+              String(b.batchId || '')
+                .toLowerCase()
+                .includes(needle) ||
+              String(b.supplierNames || '')
+                .toLowerCase()
+                .includes(needle),
+          )
+        : batches;
+
+    filteredBatches.sort((a, b) => {
       const ta = a.transactionDate ? new Date(a.transactionDate).getTime() : 0;
       const tb = b.transactionDate ? new Date(b.transactionDate).getTime() : 0;
       return tb - ta;
     });
 
-    return { batches, rowCount };
+    return { batches: filteredBatches, rowCount: filteredBatches.length };
   }
 }

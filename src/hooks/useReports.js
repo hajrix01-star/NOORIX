@@ -3,6 +3,7 @@ import {
   getGeneralProfitLossDetails,
   getGeneralProfitLossReport,
   getGeneralProfitLossTrend,
+  getPeriodAnalytics,
   getTaxVatReport,
 } from '../services/api';
 
@@ -39,6 +40,19 @@ export function useReportTrend({ companyId, year, groupKey, itemKey, enabled = t
       return res.data;
     },
     enabled: !!companyId && !!year && !!groupKey && enabled,
+  });
+}
+
+export function usePeriodAnalytics({ companyId, startDate, endDate, enabled = true }) {
+  return useQuery({
+    queryKey: ['reports', 'period-analytics', companyId, startDate, endDate],
+    queryFn: async () => {
+      const res = await getPeriodAnalytics(companyId, startDate, endDate);
+      if (!res?.success) throw new Error(res?.error || 'Failed to load analytics');
+      return res.data;
+    },
+    enabled: !!companyId && !!startDate && !!endDate && enabled,
+    staleTime: 60_000,
   });
 }
 

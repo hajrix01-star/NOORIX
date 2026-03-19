@@ -5,7 +5,9 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
+import { PERMISSIONS } from '../../../constants/permissions';
 import { useReportsGeneralProfitLoss } from '../../../hooks/useReports';
+import PeriodAnalyticsStrip from '../../Reports/PeriodAnalyticsStrip';
 import { useSales } from '../../../hooks/useSales';
 import { CARD_COLORS, CARD_BORDER_RADIUS } from '../../../utils/cardStyles';
 import { EN_MONTHS, moneyText, percentText } from '../../../modules/Reports/reportHelpers';
@@ -29,7 +31,8 @@ function formatAxisValue(n) {
 
 export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }) {
   const { t, lang } = useTranslation();
-  const { companies } = useApp();
+  const { companies, userPermissions } = useApp();
+  const canPeriodAnalytics = (userPermissions || []).includes(PERMISSIONS.REPORTS_READ);
   const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
 
   const month = selectedMonth ? Number(selectedMonth) : 1;
@@ -146,6 +149,12 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <PeriodAnalyticsStrip
+        companyId={companyId}
+        year={year}
+        month={selectedMonth ?? null}
+        enabled={canPeriodAnalytics}
+      />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
         {cards.map((card) => {
           const profitPct = (card.key === 'grossProfit' || card.key === 'netProfit') ? getCardProfitPercent(card.key) : null;
