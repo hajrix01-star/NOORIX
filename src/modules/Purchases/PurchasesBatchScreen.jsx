@@ -2,15 +2,14 @@
  * PurchasesBatchScreen — إدخال جماعي لفواتير الموردين
  * تصميم احترافي متكامل — جدول موحد مثل الفواتير، اختصارات مدمجة، ملخص متسق
  */
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, memo, useCallback } from 'react';
 import Decimal from 'decimal.js';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
-import { createInvoiceBatch, updateInvoice } from '../../services/api';
+import { createInvoiceBatch, updateInvoice, getPurchaseBatchSummaries, fetchAllInvoicesForBatch } from '../../services/api';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useCategories } from '../../hooks/useCategories';
-import { useInvoices } from '../../hooks/useInvoices';
 import { useBatchSummary } from '../../hooks/useBatchCalculation';
 import { useTableFilter } from '../../hooks/useTableFilter';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
@@ -73,57 +72,44 @@ export default function PurchasesBatchScreen() {
   const [batchDate, setBatchDate] = useState(getSaudiToday());
   const [rows, setRows]           = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [bookmarks, setBookmarks] = useState(loadBookmarks);
+  const [editingBatch, setEditingBatch] = useState(null);
+  const [printingBatch, setPrintingBatch] = useState(null);
+  const [batchActionLoading, setBatchActionLoading] = useState(null);
 
   const { suppliers } = useSuppliers(companyId);
   const { flatCategories = [] } = useCategories(companyId);
-  const { items: allInvoices, isLoading: invoicesLoading } = useInvoices({
-    companyId,
-    startDate: dateFilter.startDate,
-    endDate:   dateFilter.endDate,
+
+  const { data: batchSummaryData, isLoading: batchesLoading, isError: batchesError, error: batchesErr } = useQuery({
+    queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate],
+    queryFn: async () => {
+      const res = await getPurchaseBatchSummaries(companyId, dateFilter.startDate, dateFilter.endDate);
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الدفعات');
+      return res.data;
+    },
+    enabled: !!companyId && activeTab === 'history',
   });
 
-  const purchaseInvoices = useMemo(
-    () => allInvoices.filter((i) => i.kind === 'purchase' || i.kind === 'expense'),
-    [allInvoices],
-  );
-
-  const batchesByBatchId = useMemo(() => {
-    const map = new Map();
-    for (const inv of purchaseInvoices) {
-      const bid = inv.batchId || `single-${inv.id}`;
-      if (!map.has(bid)) map.set(bid, { batchId: inv.batchId || null, invoices: [] });
-      map.get(bid).invoices.push(inv);
-    }
-    return Array.from(map.values()).filter((b) => b.batchId).sort((a, b) => {
-      const da = a.invoices[0]?.transactionDate;
-      const db = b.invoices[0]?.transactionDate;
-      return new Date(db || 0) - new Date(da || 0);
-    });
-  }, [purchaseInvoices]);
-
-  // ── بيانات جدول الدفعات (مثل جدول الفواتير) ──
+  // ── بيانات جدول الدفعات — ملخص من السيرفر (كل الدفعات في الفترة) ──
   const statusStyles = useMemo(() => ({
     active:    { bg: 'rgba(22,163,74,0.1)',  color: '#16a34a', label: t('statusActive') },
     cancelled: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', label: t('statusCancelled') },
     partial:   { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', label: t('statusPartial') || 'جزئي' },
   }), [t]);
 
-  const batchesTableData = useMemo(() => batchesByBatchId.map((batch) => {
-    const activeCount = batch.invoices.filter((i) => i.status === 'active').length;
-    const cancelledCount = batch.invoices.filter((i) => i.status === 'cancelled').length;
-    const status = cancelledCount === 0 ? 'active' : activeCount === 0 ? 'cancelled' : 'partial';
-    const supplierNames = [...new Set(batch.invoices.map((i) => i.supplier?.nameAr || i.supplier?.nameEn || i.notes || '').filter(Boolean))].join(' | ');
-    return {
-      ...batch,
-      transactionDate: batch.invoices[0]?.transactionDate,
-      invoiceCount: batch.invoices.length,
-      supplierNames: supplierNames || '—',
-      netAmount: sumAmounts(batch.invoices, 'netAmount').toNumber(),
-      taxAmount: sumAmounts(batch.invoices, 'taxAmount').toNumber(),
-      totalAmount: sumAmounts(batch.invoices, 'totalAmount').toNumber(),
-      status,
-    };
-  }), [batchesByBatchId]);
+  const batchesTableData = useMemo(() => {
+    const list = batchSummaryData?.batches || [];
+    return list.map((b) => ({
+      batchId: b.batchId,
+      invoices: [],
+      transactionDate: b.transactionDate,
+      invoiceCount: b.invoiceCount,
+      supplierNames: b.supplierNames || '—',
+      netAmount: Number(b.netAmount) || 0,
+      taxAmount: Number(b.taxAmount) || 0,
+      totalAmount: Number(b.totalAmount) || 0,
+      status: b.status,
+    }));
+  }, [batchSummaryData]);
 
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
     useTableFilter(batchesTableData, {
@@ -138,6 +124,45 @@ export default function PurchasesBatchScreen() {
   const totalNet = activeOnly.reduce((s, b) => s + b.netAmount, 0);
   const totalTax = activeOnly.reduce((s, b) => s + b.taxAmount, 0);
   const totalAmount = activeOnly.reduce((s, b) => s + b.totalAmount, 0);
+
+  const openBatchWithInvoices = useCallback(async (row, setter) => {
+    if (!companyId || !row?.batchId) return;
+    setBatchActionLoading(row.batchId);
+    try {
+      const invoices = await fetchAllInvoicesForBatch(companyId, row.batchId, dateFilter.startDate, dateFilter.endDate);
+      setter({ ...row, batchId: row.batchId, invoices });
+    } catch (e) {
+      setToast({ visible: true, message: e?.message || t('loadDataFailed'), type: 'error' });
+    } finally {
+      setBatchActionLoading(null);
+    }
+  }, [companyId, dateFilter.startDate, dateFilter.endDate, t]);
+
+  const handleCancelBatch = useCallback(async (batch) => {
+    let invoices = batch.invoices;
+    if (!invoices?.length) {
+      try {
+        invoices = await fetchAllInvoicesForBatch(companyId, batch.batchId, dateFilter.startDate, dateFilter.endDate);
+      } catch (e) {
+        setToast({ visible: true, message: e?.message || t('loadDataFailed'), type: 'error' });
+        return;
+      }
+    }
+    if (!confirm(t('cancelBatchConfirm', batch.batchId, invoices.length))) return;
+    try {
+      for (const inv of invoices) {
+        if (inv.status === 'active') {
+          const res = await updateInvoice(inv.id, { status: 'cancelled' }, companyId);
+          if (!res?.success) throw new Error(res?.error || t('cancelFailed'));
+        }
+      }
+      invalidateOnFinancialMutation(queryClient);
+      setToast({ visible: true, message: t('batchCancelled'), type: 'success' });
+      setEditingBatch(null);
+    } catch (e) {
+      setToast({ visible: true, message: e?.message || t('cancelFailed'), type: 'error' });
+    }
+  }, [companyId, dateFilter.startDate, dateFilter.endDate, queryClient, t]);
 
   const batchesColumns = useMemo(() => [
     /* رقم الدفعة — ضيق، محتوى ثابت مثل INV-0001 */
@@ -173,21 +198,23 @@ export default function PurchasesBatchScreen() {
     /* الإجراءات — عرض محدود بالمحتوى الفعلي */
     { key: 'actions', label: t('actions'), align: 'center', shrink: true, width: '12%',
       render: (_, row) => {
-        const activeInvoices = row.invoices.filter((i) => i.status === 'active');
+        const canCancel = row.status === 'active' || row.status === 'partial';
         return (
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
             <button type="button" className="noorix-btn-nav"
-              onClick={() => setPrintingBatch(row)}
+              onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
+              disabled={batchActionLoading === row.batchId}
               style={{ padding: '4px 10px', fontSize: 11, whiteSpace: 'nowrap' }} title={t('print')}>
-              🖨 {t('print')}
+              🖨 {batchActionLoading === row.batchId ? '…' : t('print')}
             </button>
             <button type="button" className="noorix-btn-nav"
-              onClick={() => setEditingBatch(row)}
+              onClick={() => openBatchWithInvoices(row, setEditingBatch)}
+              disabled={batchActionLoading === row.batchId}
               style={{ padding: '4px 10px', fontSize: 11, whiteSpace: 'nowrap' }} title={t('edit')}>
-              ✎ {t('edit')}
+              ✎ {batchActionLoading === row.batchId ? '…' : t('edit')}
             </button>
             <button type="button" className="noorix-btn-nav"
-              onClick={() => handleCancelBatch(row)} disabled={activeInvoices.length === 0}
+              onClick={() => handleCancelBatch(row)} disabled={!canCancel || batchActionLoading === row.batchId}
               style={{ padding: '4px 10px', fontSize: 11, whiteSpace: 'nowrap', borderColor: '#fecaca', background: 'rgba(239,68,68,0.06)', color: '#dc2626' }} title={t('cancel')}>
               × {t('cancel')}
             </button>
@@ -195,7 +222,7 @@ export default function PurchasesBatchScreen() {
         );
       },
     },
-  ], [t, statusStyles]);
+  ], [t, statusStyles, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
 
   const batchesFooterCells = (
     <>
@@ -206,9 +233,6 @@ export default function PurchasesBatchScreen() {
       <td colSpan={2} />
     </>
   );
-
-  const [editingBatch, setEditingBatch] = useState(null);
-  const [printingBatch, setPrintingBatch] = useState(null);
 
   const bookmarkedSuppliers = useMemo(
     () => suppliers.filter((s) => bookmarks.includes(s.id)),
@@ -301,23 +325,6 @@ export default function PurchasesBatchScreen() {
       status: inv.status,
     };
     return updateInvoice(inv.id, payload, companyId);
-  }
-
-  async function handleCancelBatch(batch) {
-    if (!confirm(t('cancelBatchConfirm', batch.batchId, batch.invoices.length))) return;
-    try {
-      for (const inv of batch.invoices) {
-        if (inv.status === 'active') {
-          const res = await updateInvoice(inv.id, { status: 'cancelled' }, companyId);
-          if (!res?.success) throw new Error(res?.error || t('cancelFailed'));
-        }
-      }
-      invalidateOnFinancialMutation(queryClient);
-      setToast({ visible: true, message: t('batchCancelled'), type: 'success' });
-      setEditingBatch(null);
-    } catch (e) {
-      setToast({ visible: true, message: e?.message || t('cancelFailed'), type: 'error' });
-    }
   }
 
   const hasCompany = !!companyId;
@@ -507,9 +514,9 @@ export default function PurchasesBatchScreen() {
             page={page}
             pageSize={PAGE_SIZE}
             onPageChange={setPage}
-            isLoading={invoicesLoading}
-            isError={false}
-            errorMessage=""
+            isLoading={batchesLoading}
+            isError={!!batchesError}
+            errorMessage={batchesErr?.message || ''}
             footerCells={batchesFooterCells}
             title={t('tabSavedBatches')}
             badge={

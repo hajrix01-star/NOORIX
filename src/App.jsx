@@ -215,6 +215,8 @@ export default function App() {
     queryClient.invalidateQueries({ queryKey: ['sales-summaries'] });
     queryClient.invalidateQueries({ queryKey: ['employees'] });
     queryClient.invalidateQueries({ queryKey: ['employees-paged'] });
+    queryClient.invalidateQueries({ queryKey: ['purchase-batch-summaries'] });
+    queryClient.invalidateQueries({ queryKey: ['sales-summaries-paged'] });
     queryClient.invalidateQueries({ queryKey: ['payroll-runs'] });
     queryClient.invalidateQueries({ queryKey: ['leaves'] });
     queryClient.invalidateQueries({ queryKey: ['residencies'] });

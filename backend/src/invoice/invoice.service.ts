@@ -311,4 +311,100 @@ export class InvoiceService {
 
     return { items, total, page, pageSize };
   }
+
+  private buildDateFilter(startDate?: string, endDate?: string) {
+    if (!startDate && !endDate) return {};
+    return {
+      transactionDate: {
+        ...(startDate
+          ? { gte: new Date(`${String(startDate).slice(0, 10)}T00:00:00.000Z`) }
+          : {}),
+        ...(endDate
+          ? { lte: new Date(`${String(endDate).slice(0, 10)}T23:59:59.999Z`) }
+          : {}),
+      },
+    };
+  }
+
+  /**
+   * ملخص دفعات المشتريات/المصروفات في الفترة — استعلام واحد ثم تجميع في الذاكرة.
+   * يُستخدم بدل جلب صفحة واحدة (50) من الفواتير فقط.
+   */
+  async findPurchaseBatchSummaries(companyId: string, startDate?: string, endDate?: string) {
+    const dateFilter = this.buildDateFilter(startDate, endDate);
+    const where: Prisma.InvoiceWhereInput = {
+      companyId,
+      batchId: { not: null },
+      kind:    { in: ['purchase', 'expense', 'fixed_expense'] },
+      ...dateFilter,
+    };
+
+    const rowCount = await this.prisma.invoice.count({ where });
+    const MAX = 60_000;
+    if (rowCount > MAX) {
+      throw new BadRequestException(
+        `عدد فواتير الدفعات في الفترة (${rowCount}) يتجاوز الحد المسموح (${MAX}). اضيّق نطاق التاريخ.`,
+      );
+    }
+
+    const rows = await this.prisma.invoice.findMany({
+      where,
+      select: {
+        id: true,
+        batchId: true,
+        status: true,
+        transactionDate: true,
+        netAmount: true,
+        taxAmount: true,
+        totalAmount: true,
+        notes: true,
+        supplier: { select: { nameAr: true, nameEn: true } },
+      },
+      orderBy: { transactionDate: 'desc' },
+    });
+
+    const byBatch = new Map<string, typeof rows>();
+    for (const r of rows) {
+      const bid = r.batchId as string;
+      if (!byBatch.has(bid)) byBatch.set(bid, []);
+      byBatch.get(bid)!.push(r);
+    }
+
+    const batches = [];
+    for (const [batchId, invs] of byBatch) {
+      const activeCount = invs.filter((i) => i.status === 'active').length;
+      const cancelledCount = invs.filter((i) => i.status === 'cancelled').length;
+      const status =
+        cancelledCount === 0 ? 'active' : activeCount === 0 ? 'cancelled' : 'partial';
+      const supplierNames = [
+        ...new Set(
+          invs
+            .map((i) => i.supplier?.nameAr || i.supplier?.nameEn || i.notes || '')
+            .filter(Boolean),
+        ),
+      ].join(' | ');
+      const netAmount = invs.reduce((s, i) => s.plus(new Decimal(i.netAmount.toString())), new Decimal(0));
+      const taxAmount = invs.reduce((s, i) => s.plus(new Decimal(i.taxAmount.toString())), new Decimal(0));
+      const totalAmount = invs.reduce((s, i) => s.plus(new Decimal(i.totalAmount.toString())), new Decimal(0));
+      const transactionDate = invs[0]?.transactionDate;
+      batches.push({
+        batchId,
+        transactionDate,
+        invoiceCount: invs.length,
+        supplierNames: supplierNames || '—',
+        netAmount: netAmount.toFixed(4),
+        taxAmount: taxAmount.toFixed(4),
+        totalAmount: totalAmount.toFixed(4),
+        status,
+      });
+    }
+
+    batches.sort((a, b) => {
+      const ta = a.transactionDate ? new Date(a.transactionDate).getTime() : 0;
+      const tb = b.transactionDate ? new Date(b.transactionDate).getTime() : 0;
+      return tb - ta;
+    });
+
+    return { batches, rowCount };
+  }
 }

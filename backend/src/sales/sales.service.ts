@@ -53,8 +53,11 @@ export class SalesService {
     endDate?:   string,
     page       = 1,
     pageSize   = 30,
+    q?:         string,
+    sortBy = 'transactionDate',
+    sortDir: 'asc' | 'desc' | string = 'desc',
+    includeCancelled = false,
   ) {
-    // معالجة التواريخ: YYYY-MM-DD → بداية اليوم ونهاية اليوم (توقيت السعودية UTC+3)
     const dateFilter =
       startDate || endDate
         ? {
@@ -69,14 +72,42 @@ export class SalesService {
           }
         : {};
 
-    const where = { companyId, status: 'active', ...dateFilter };
+    const statusFilter: Prisma.DailySalesSummaryWhereInput = includeCancelled
+      ? { status: { in: ['active', 'cancelled'] } }
+      : { status: 'active' };
+
+    const needle = (q || '').trim();
+    const searchFilter =
+      needle.length > 0
+        ? {
+            OR: [
+              { summaryNumber: { contains: needle, mode: 'insensitive' as const } },
+              { notes: { contains: needle, mode: 'insensitive' as const } },
+            ],
+          }
+        : {};
+
+    const where = { companyId, ...statusFilter, ...dateFilter, ...searchFilter };
+
+    const dir: Prisma.SortOrder = String(sortDir).toLowerCase() === 'asc' ? 'asc' : 'desc';
+    const allowed = new Set(['transactionDate', 'summaryNumber', 'totalAmount', 'customerCount', 'createdAt']);
+    const field = allowed.has(sortBy) ? sortBy : 'transactionDate';
+    const orderBy: Prisma.DailySalesSummaryOrderByWithRelationInput[] = [
+      { [field]: dir },
+    ];
+    if (field !== 'transactionDate') {
+      orderBy.push({ transactionDate: 'desc' });
+    }
+
+    const size = Math.min(200, Math.max(1, pageSize));
+    const p = Math.max(1, page);
 
     const [items, total] = await Promise.all([
       this.prisma.dailySalesSummary.findMany({
         where,
-        orderBy: { transactionDate: 'desc' },
-        skip:    (page - 1) * pageSize,
-        take:    pageSize,
+        orderBy,
+        skip:    (p - 1) * size,
+        take:    size,
         include: {
           channels: {
             include: {
@@ -89,7 +120,7 @@ export class SalesService {
       this.prisma.dailySalesSummary.count({ where }),
     ]);
 
-    return { items, total, page, pageSize };
+    return { items, total, page: p, pageSize: size };
   }
 
   /**

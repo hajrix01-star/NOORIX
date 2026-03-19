@@ -75,14 +75,22 @@ export class SalesController {
     @Query('endDate')   endDate?:   string,
     @Query('page')      page?:      string,
     @Query('pageSize')  pageSize?:  string,
+    @Query('q')         q?:         string,
+    @Query('sortBy')    sortBy?:    string,
+    @Query('sortDir')   sortDir?:   string,
+    @Query('includeCancelled') includeCancelled?: string,
   ) {
-    if (!companyId) return { items: [], total: 0 };
+    if (!companyId) return { items: [], total: 0, page: 1, pageSize: 30 };
     return this.salesService.findAll(
       companyId,
       startDate,
       endDate,
       page     ? parseInt(page, 10)     : 1,
       pageSize ? parseInt(pageSize, 10) : 30,
+      q,
+      sortBy,
+      sortDir,
+      includeCancelled === '1' || includeCancelled === 'true',
     );
   }
 }

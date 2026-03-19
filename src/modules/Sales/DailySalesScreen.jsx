@@ -3,14 +3,13 @@
  * يعتمد على: useSales, useVaults (hooks) + SmartTable + utils/saudiDate, utils/format
  * يدعم: تصدير Excel، PDF، طباعة احترافية (اسم الشركة + شعار)
  */
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, memo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useSales } from '../../hooks/useSales';
 import { useVaults } from '../../hooks/useVaults';
-import { getCompany } from '../../services/api';
-import { useTableFilter } from '../../hooks/useTableFilter';
+import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } from '../../services/api';
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
@@ -47,9 +46,65 @@ export default function DailySalesScreen() {
   const [toast, setToast]             = useState({ visible: false, message: '', type: 'success' });
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingSummary, setEditingSummary] = useState(null);
+  const [listPage, setListPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
+  const [sortKey, setSortKey] = useState('transactionDate');
+  const [sortDir, setSortDir] = useState('desc');
+  const [exportBusy, setExportBusy] = useState(false);
 
-  const { summaries, isLoading: summariesLoading, createSummary, updateSummary, cancelSummary } = useSales({ companyId, startDate: dateFilter.startDate, endDate: dateFilter.endDate });
+  const { createSummary, updateSummary, cancelSummary } = useSales({
+    companyId,
+    startDate: dateFilter.startDate,
+    endDate: dateFilter.endDate,
+    fetchList: false,
+  });
   const { salesChannels } = useVaults({ companyId });
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(searchInput.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setListPage(1);
+  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate]);
+
+  const {
+    data: salesPage,
+    isLoading: summariesLoading,
+  } = useQuery({
+    queryKey: [
+      'sales-summaries-paged',
+      companyId,
+      dateFilter.startDate,
+      dateFilter.endDate,
+      listPage,
+      PAGE_SIZE,
+      debouncedQ,
+      sortKey,
+      sortDir,
+    ],
+    queryFn: async () => {
+      const res = await getDailySalesSummaries(
+        companyId,
+        dateFilter.startDate,
+        dateFilter.endDate,
+        listPage,
+        PAGE_SIZE,
+        debouncedQ,
+        sortKey,
+        sortDir,
+        true,
+      );
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل المبيعات');
+      return res.data;
+    },
+    enabled: !!companyId,
+  });
+
+  const listTotal = salesPage?.total ?? 0;
+  const pagedSummaries = salesPage?.items ?? [];
 
   const { data: companyData } = useQuery({
     queryKey: ['company', companyId],
@@ -120,7 +175,7 @@ export default function DailySalesScreen() {
     cancelled: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', label: t('statusCancelled') },
   }), [t]);
 
-  const tableData = useMemo(() => summaries.map((s) => {
+  const tableData = useMemo(() => pagedSummaries.map((s) => {
     const total = Number(s.totalAmount || 0);
     const cc = s.customerCount || 0;
     const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount, 2)}`).join(' | ');
@@ -129,18 +184,25 @@ export default function DailySalesScreen() {
       channelsText,
       avgPerCustomer: cc > 0 ? total / cc : 0,
     };
-  }), [summaries, lang]);
+  }), [pagedSummaries, lang]);
 
-  const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
-    useTableFilter(tableData, {
-      searchKeys: ['summaryNumber', 'channelsText', 'notes'],
-      pageSize:   PAGE_SIZE,
-      defaultSortKey: 'transactionDate',
-      defaultSortDir: 'desc',
+  const allowedSort = useMemo(() => new Set(['summaryNumber', 'transactionDate', 'totalAmount', 'customerCount']), []);
+  const toggleSort = useCallback((key) => {
+    if (!allowedSort.has(key)) return;
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return key;
+      }
+      setSortDir('desc');
+      return key;
     });
+    setListPage(1);
+  }, [allowedSort]);
 
-  const activeOnly = allFilteredData.filter((s) => s.status !== 'cancelled');
-  const displayedTotal = allFilteredData.length;
+  const filteredData = tableData;
+  const activeOnly = filteredData.filter((s) => s.status !== 'cancelled');
+  const displayedTotal = listTotal;
   const totalAmountSum = sumAmounts(activeOnly, 'totalAmount');
   const totalCustomers = activeOnly.reduce((sum, s) => sum + (s.customerCount || 0), 0);
 
@@ -149,13 +211,13 @@ export default function DailySalesScreen() {
       render: (v) => <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', whiteSpace: 'nowrap' }}>{v}</span> },
     { key: 'transactionDate', label: t('transactionDate'), sortable: true, width: '10%',
       render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{formatSaudiDate(v)}</span> },
-    { key: 'channelsText', label: t('salesChannels'), sortable: true, width: '35%',
+    { key: 'channelsText', label: t('salesChannels'), sortable: false, width: '35%',
       render: (v) => <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0 }} title={v || ''}>{v || '—'}</span> },
     { key: 'customerCount', label: t('customers'), numeric: true, sortable: true, width: '7%',
       render: (v) => <span style={{ color: '#2563eb', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span> },
     { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '10%',
       render: (v) => <span style={{ fontWeight: 700, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v, 2)}</span> },
-    { key: 'avgPerCustomer', label: t('avgPerOrder'), numeric: true, sortable: true, width: '7%',
+    { key: 'avgPerCustomer', label: t('avgPerOrder'), numeric: true, sortable: false, width: '7%',
       render: (v) => <span style={{ color: '#7c3aed', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v, 2)}</span> },
     { key: 'status', label: t('statusLabel'), width: '8%', render: (v) => <Badge map={statusStyles} value={v} /> },
     { key: 'actions', label: t('actions'), align: 'center', width: '8%',
@@ -174,7 +236,12 @@ export default function DailySalesScreen() {
   const footerCells = (
     <>
       <td />
-      <td colSpan={3} style={{ padding: '10px 12px', fontSize: 13, fontWeight: 700, color: 'var(--noorix-text)', textAlign: 'right' }}>{t('totalSummaries', activeOnly.length)}</td>
+      <td colSpan={3} style={{ padding: '10px 12px', fontSize: 13, fontWeight: 700, color: 'var(--noorix-text)', textAlign: 'right' }}>
+        {t('totalSummaries', activeOnly.length)}
+        {listTotal > PAGE_SIZE ? (
+          <span style={{ fontWeight: 500, fontSize: 11, color: 'var(--noorix-text-muted)', marginRight: 6 }}> (إجمالي الصفحة الحالية)</span>
+        ) : null}
+      </td>
       <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14, fontWeight: 700, color: '#2563eb', textAlign: 'right' }}>{totalCustomers.toLocaleString('en')}</td>
       <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14, fontWeight: 800, color: '#16a34a', textAlign: 'right' }}>{fmt(totalAmountSum.toNumber(), 2)}</td>
       <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14, fontWeight: 700, color: '#7c3aed', textAlign: 'right' }}>{totalCustomers > 0 ? fmt(totalAmountSum.toNumber() / totalCustomers, 2) : '0.00'}</td>
@@ -192,44 +259,100 @@ export default function DailySalesScreen() {
     { key: 'avgPerCustomer', label: t('avgPerOrder') },
     { key: 'status', label: t('statusLabel') },
   ];
-  const exportData = allFilteredData.map((s) => {
-    const total = Number(s.totalAmount || 0);
-    const cc = s.customerCount || 0;
-    const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount, 2)}`).join(' | ');
-    return {
-      summaryNumber: s.summaryNumber,
-      transactionDate: formatSaudiDate(s.transactionDate),
-      channelsText,
-      customerCount: cc,
-      totalAmount: fmt(total, 2),
-      avgPerCustomer: cc > 0 ? fmt(total / cc, 2) : '0.00',
-      status: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
-    };
-  });
 
-  function handleExportExcel() {
-    exportToExcel({
-      columns: exportColumns,
-      data: exportData,
-      filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}`,
-      companyName,
-      title: `${t('salesDailySummary')} — ${dateFilter.label}`,
-      logoUrl,
+  function mapSummariesToExportRows(rows) {
+    return rows.map((s) => {
+      const total = Number(s.totalAmount || 0);
+      const cc = s.customerCount || 0;
+      const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount, 2)}`).join(' | ');
+      return {
+        summaryNumber: s.summaryNumber,
+        transactionDate: formatSaudiDate(s.transactionDate),
+        channelsText,
+        customerCount: cc,
+        totalAmount: fmt(total, 2),
+        avgPerCustomer: cc > 0 ? fmt(total / cc, 2) : '0.00',
+        status: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
+      };
     });
   }
 
-  function handleExportPdf() {
-    exportToPdf({
-      columns: exportColumns,
-      data: exportData,
-      filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}`,
-      companyName,
-      title: `${t('salesDailySummary')} — ${dateFilter.label}`,
-      logoUrl,
-    });
+  async function handleExportExcel() {
+    if (!companyId) return;
+    setExportBusy(true);
+    try {
+      const all = await fetchAllSalesSummariesForExport(
+        companyId,
+        dateFilter.startDate,
+        dateFilter.endDate,
+        debouncedQ,
+        sortKey,
+        sortDir,
+      );
+      const exportData = mapSummariesToExportRows(all);
+      exportToExcel({
+        columns: exportColumns,
+        data: exportData,
+        filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}`,
+        companyName,
+        title: `${t('salesDailySummary')} — ${dateFilter.label}`,
+        logoUrl,
+      });
+    } catch (e) {
+      setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+    } finally {
+      setExportBusy(false);
+    }
   }
 
-  function handlePrint() {
+  async function handleExportPdf() {
+    if (!companyId) return;
+    setExportBusy(true);
+    try {
+      const all = await fetchAllSalesSummariesForExport(
+        companyId,
+        dateFilter.startDate,
+        dateFilter.endDate,
+        debouncedQ,
+        sortKey,
+        sortDir,
+      );
+      const exportData = mapSummariesToExportRows(all);
+      exportToPdf({
+        columns: exportColumns,
+        data: exportData,
+        filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}`,
+        companyName,
+        title: `${t('salesDailySummary')} — ${dateFilter.label}`,
+        logoUrl,
+      });
+    } catch (e) {
+      setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
+  async function handlePrint() {
+    if (!companyId) return;
+    setExportBusy(true);
+    let allFilteredData = [];
+    try {
+      allFilteredData = await fetchAllSalesSummariesForExport(
+        companyId,
+        dateFilter.startDate,
+        dateFilter.endDate,
+        debouncedQ,
+        sortKey,
+        sortDir,
+      );
+    } catch (e) {
+      setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+      setExportBusy(false);
+      return;
+    } finally {
+      setExportBusy(false);
+    }
     const channelsRows = allFilteredData.map((s) => {
       const ch = (s.channels || []).map((c) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount, 2)}`).join(' | ');
       const total = Number(s.totalAmount || 0);
@@ -320,9 +443,9 @@ export default function DailySalesScreen() {
             columns={columns}
             data={filteredData}
             total={displayedTotal}
-            page={page}
+            page={listPage}
             pageSize={PAGE_SIZE}
-            onPageChange={setPage}
+            onPageChange={setListPage}
             isLoading={summariesLoading}
             isError={false}
             errorMessage=""
@@ -336,14 +459,14 @@ export default function DailySalesScreen() {
               <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>— {dateFilter.label}</span>
               <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 999, background: 'rgba(37,99,235,0.1)', color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap' }}>{t('summaryCount', displayedTotal)}</span>
               <span className="noorix-print-hide" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={displayedTotal === 0} style={{ fontSize: 12, padding: '4px 10px' }}>📊 {t('exportExcel')}</button>
-                <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} disabled={displayedTotal === 0} style={{ fontSize: 12, padding: '4px 10px' }}>📄 {t('exportPdf')}</button>
-                <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={displayedTotal === 0} style={{ fontSize: 12, padding: '4px 10px' }}>🖨 {t('print')}</button>
+                <button type="button" className="noorix-btn-nav" onClick={() => handleExportExcel()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>📊 {exportBusy ? '…' : t('exportExcel')}</button>
+                <button type="button" className="noorix-btn-nav" onClick={() => handleExportPdf()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>📄 {exportBusy ? '…' : t('exportPdf')}</button>
+                <button type="button" className="noorix-btn-nav" onClick={() => handlePrint()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>🖨 {exportBusy ? '…' : t('print')}</button>
               </span>
             </>
           }
-          searchValue={searchText}
-          onSearchChange={setSearch}
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
           sortKey={sortKey}
           sortDir={sortDir}
           onSort={toggleSort}

@@ -17,6 +17,8 @@ export function invalidateOnFinancialMutation(queryClient) {
   queryClient.invalidateQueries({ queryKey: ['invoices'] });
   queryClient.invalidateQueries({ queryKey: ['vaults'] });
   queryClient.invalidateQueries({ queryKey: ['sales-summaries'] });
+  queryClient.invalidateQueries({ queryKey: ['sales-summaries-paged'] });
+  queryClient.invalidateQueries({ queryKey: ['purchase-batch-summaries'] });
   queryClient.invalidateQueries({ queryKey: ['ledger'] });
   queryClient.invalidateQueries({ queryKey: ['reports'] });
 }

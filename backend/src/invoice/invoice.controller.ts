@@ -40,6 +40,17 @@ export class InvoiceController {
     return this.invoiceService.createBatchWithLedger(dto, user.sub);
   }
 
+  @Get('purchase-batch-summaries')
+  @RequirePermission('INVOICES_READ')
+  async purchaseBatchSummaries(
+    @Query('companyId') companyId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate')   endDate?:   string,
+  ) {
+    if (!companyId) return { batches: [], rowCount: 0 };
+    return this.invoiceService.findPurchaseBatchSummaries(companyId, startDate, endDate);
+  }
+
   @Get()
   @RequirePermission('INVOICES_READ')
   async findAll(
