@@ -352,11 +352,6 @@ a { color: inherit; text-decoration: none; }
   justify-content: space-between;
   gap: 12px;
 }
-@media (max-width: 768px) {
-  .noorix-topbar { grid-template-columns: auto 1fr auto; padding: 10px 16px; gap: 10px; }
-  .noorix-topbar__company { font-size: 15px; max-width: 120px; }
-  .noorix-btn-nav { min-height: 44px; padding: 10px 16px; }
-}
 .app-main__title   { font-size: var(--noorix-text-h1); font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-main__subtitle { font-size: var(--noorix-text-th); color: var(--noorix-text-muted-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -1233,7 +1228,8 @@ input:focus, select:focus, textarea:focus {
 @media (max-width: 768px) {
   body { font-size: max(12px, 14px); }
   .noorix-table tbody td, .noorix-table thead th { font-size: max(12px, 14px); }
-  .app-nav-link, .ndfb-mode-btn, .noorix-btn-nav { font-size: max(12px, 14px); }
+  .app-nav-link, .ndfb-mode-btn, .noorix-btn-nav { font-size: max(12px, 13px); }
+  .noorix-btn-nav { min-height: 40px; padding: 8px 12px; }
   input, select, textarea { font-size: max(12px, 14px); }
   .app-shell {
     flex-direction: column;
@@ -1279,10 +1275,132 @@ input:focus, select:focus, textarea:focus {
     z-index: 40;
   }
 
-  .noorix-topbar { grid-template-columns: auto 1fr auto; padding: 8px 12px; margin-bottom: 12px; gap: 8px; min-height: 48px; }
-  .noorix-topbar-btn { min-height: 44px; min-width: 44px; padding: 0 10px; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
+  .noorix-topbar {
+    grid-template-columns: auto 1fr auto;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    gap: 6px;
+    min-height: 42px;
+  }
+  .noorix-topbar__logo { font-size: 14px; }
+  .noorix-topbar__company { font-size: 13px; max-width: min(42vw, 140px); }
+  .noorix-topbar-btn {
+    min-height: 36px;
+    min-width: 36px;
+    padding: 0 8px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+  }
   .user-menu-trigger-info { display: none !important; }
-  .user-menu-trigger { max-width: none !important; min-width: 44px; min-height: 44px; padding: 6px !important; }
+  .user-menu-trigger {
+    max-width: none !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 4px 6px !important;
+  }
+  .app-main__menu-button {
+    min-width: 38px;
+    min-height: 38px;
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+    border-radius: 6px;
+  }
+}
+
+/* ========== إعدادات — تبويبات قابلة للتمرير (جوال) ========== */
+.noorix-settings-card { overflow: hidden; }
+.noorix-settings-tabstrip {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--noorix-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  scrollbar-width: thin;
+  flex-shrink: 0;
+}
+.noorix-settings-tab {
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--noorix-text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: var(--noorix-font-primary);
+  cursor: pointer;
+  transition: background 140ms, color 140ms, border-color 140ms;
+}
+.noorix-settings-tab[data-active="true"] {
+  border-bottom-color: var(--noorix-accent-green);
+  background: rgba(22, 163, 74, 0.07);
+  color: var(--noorix-accent-green);
+  font-weight: 700;
+}
+.noorix-settings-tab:hover {
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text);
+}
+.noorix-settings-tab-body { padding: 20px; }
+@media (max-width: 768px) {
+  .noorix-settings-tab {
+    padding: 9px 11px;
+    font-size: 12px;
+    min-height: 40px;
+  }
+  .noorix-settings-tab-body { padding: 14px 12px; }
+}
+
+/* ========== تقويم لوحة التحكم — عرض كامل وتمرير على الجوال ========== */
+.noorix-calendar-layout {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  min-width: 0;
+  width: 100%;
+}
+@media (max-width: 768px) {
+  .noorix-calendar-layout {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .noorix-calendar-card {
+    max-width: 100% !important;
+  }
+  .noorix-calendar-side {
+    min-width: 0 !important;
+    width: 100%;
+  }
+}
+.noorix-calendar-grid-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 -2px;
+  padding: 0 2px 4px;
+}
+.noorix-calendar-grid-scroll-inner {
+  min-width: 272px;
+}
+@media (max-width: 400px) {
+  .noorix-calendar-grid-scroll-inner {
+    min-width: 300px;
+  }
 }
 
 /* ========== شبكة استجابة ========== */

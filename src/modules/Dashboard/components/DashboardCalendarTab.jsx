@@ -287,9 +287,10 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   }
 
   return (
-    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+    <div className="noorix-calendar-layout">
       {/* ── التقويم ── */}
       <div
+        className="noorix-calendar-card"
         style={{
           borderRadius: CARD_BORDER_RADIUS,
           border: '1px solid var(--noorix-border)',
@@ -298,6 +299,9 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
           padding: 16,
           maxWidth: 760,
+          width: '100%',
+          minWidth: 0,
+          boxSizing: 'border-box',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
@@ -360,6 +364,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         {isLoading ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('loading')}</div>
         ) : (
+          <div className="noorix-calendar-grid-scroll">
+            <div className="noorix-calendar-grid-scroll-inner">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
             {[0,1,2,3,4,5,6].map((d) => (
               <div key={d} style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', textAlign: 'center', padding: '6px 0' }}>{lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}</div>
@@ -429,6 +435,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
               });
             })()}
           </div>
+            </div>
+          </div>
         )}
 
         {isSelectionMode && selectedDatesSorted.length > 0 && (
@@ -480,7 +488,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
       </div>
 
       {/* ── تفاصيل اليوم + ملاحظة ── */}
-      <div style={{ minWidth: 260 }}>
+      <div className="noorix-calendar-side" style={{ minWidth: 260 }}>
         {selectedDay && (
           <CalendarDayDetailPanel
             dateStr={selectedDay.dateStr}

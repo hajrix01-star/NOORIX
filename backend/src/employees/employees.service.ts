@@ -49,7 +49,16 @@ export class EmployeesService {
     return `${safePrefix}-ST-${String(seq).padStart(3, '0')}`;
   }
 
-  async findAll(companyId: string, includeTerminated = false) {
+  private employeeListSelect = {
+    id: true, employeeSerial: true, name: true, nameEn: true, jobTitle: true,
+    basicSalary: true, housingAllowance: true, transportAllowance: true, otherAllowance: true,
+    workHours: true, workSchedule: true,
+    iqamaNumber: true, joinDate: true, status: true, notes: true,
+    createdAt: true,
+  } as const;
+
+  /** قائمة كاملة (حد أقصى) — للتوافق مع العملاء القدامى والقوائم المنسدلة */
+  async findAllLegacy(companyId: string, includeTerminated = false, maxRows = 5000) {
     const where: Prisma.EmployeeWhereInput = {
       companyId,
       ...(includeTerminated ? {} : { status: { notIn: ['terminated', 'archived'] } }),
@@ -57,14 +66,89 @@ export class EmployeesService {
     return this.prisma.employee.findMany({
       where,
       orderBy: { name: 'asc' },
-      select: {
-        id: true, employeeSerial: true, name: true, nameEn: true, jobTitle: true,
-        basicSalary: true, housingAllowance: true, transportAllowance: true, otherAllowance: true,
-        workHours: true, workSchedule: true,
-        iqamaNumber: true, joinDate: true, status: true, notes: true,
-        createdAt: true,
-      },
+      take:    maxRows,
+      select:  this.employeeListSelect,
     });
+  }
+
+  private whereForTab(
+    companyId: string,
+    tab: 'active' | 'terminated' | 'archived',
+    q?: string,
+  ): Prisma.EmployeeWhereInput {
+    const where: Prisma.EmployeeWhereInput = { companyId };
+    if (tab === 'active') {
+      where.status = { notIn: ['terminated', 'archived'] };
+    } else if (tab === 'terminated') {
+      where.status = 'terminated';
+    } else {
+      where.status = 'archived';
+    }
+    const needle = (q || '').trim();
+    if (needle.length > 0) {
+      where.OR = [
+        { name: { contains: needle, mode: 'insensitive' } },
+        { nameEn: { contains: needle, mode: 'insensitive' } },
+        { employeeSerial: { contains: needle, mode: 'insensitive' } },
+        { jobTitle: { contains: needle, mode: 'insensitive' } },
+      ];
+    }
+    return where;
+  }
+
+  private orderByFor(
+    sortBy?: string,
+    sortDir?: string,
+  ): Prisma.EmployeeOrderByWithRelationInput {
+    const dir = sortDir === 'asc' ? 'asc' : 'desc';
+    switch (sortBy) {
+      case 'employeeSerial': return { employeeSerial: dir };
+      case 'name':           return { name: dir };
+      case 'jobTitle':       return { jobTitle: dir };
+      case 'joinDate':       return { joinDate: dir };
+      case 'totalSalary':
+      case 'basicSalary':    return { basicSalary: dir };
+      case 'status':         return { status: dir };
+      default:               return { joinDate: 'desc' };
+    }
+  }
+
+  /** تصدير / تحميل مجمّع حسب التبويب (حد أقصى) */
+  async findAllBulk(companyId: string, tab: 'active' | 'terminated' | 'archived', maxRows = 10000) {
+    const where = this.whereForTab(companyId, tab);
+    return this.prisma.employee.findMany({
+      where,
+      orderBy: this.orderByFor('name', 'asc'),
+      take:    maxRows,
+      select:  this.employeeListSelect,
+    });
+  }
+
+  async findPaged(
+    companyId: string,
+    tab: 'active' | 'terminated' | 'archived',
+    page = 1,
+    pageSize = 50,
+    q?: string,
+    sortBy?: string,
+    sortDir?: string,
+  ) {
+    const size = Math.min(200, Math.max(1, pageSize));
+    const p = Math.max(1, page);
+    const where = this.whereForTab(companyId, tab, q);
+    const skip = (p - 1) * size;
+    const orderBy = this.orderByFor(sortBy, sortDir);
+    const [items, total] = await Promise.all([
+      this.prisma.employee.findMany({
+        where,
+        orderBy,
+        skip,
+        take:   size,
+        select: this.employeeListSelect,
+      }),
+      this.prisma.employee.count({ where }),
+    ]);
+    return { items, total, page: p, pageSize: size };
   }
 
   async findOne(id: string, companyId: string) {

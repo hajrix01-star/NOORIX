@@ -1,0 +1,2 @@
+# SPA fallback — يعيد توجيه كل المسارات إلى index.html (Netlify وغيرها)
+/*    /index.html   200

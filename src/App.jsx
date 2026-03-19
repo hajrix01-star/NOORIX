@@ -214,6 +214,7 @@ export default function App() {
     queryClient.invalidateQueries({ queryKey: ['categories'] });
     queryClient.invalidateQueries({ queryKey: ['sales-summaries'] });
     queryClient.invalidateQueries({ queryKey: ['employees'] });
+    queryClient.invalidateQueries({ queryKey: ['employees-paged'] });
     queryClient.invalidateQueries({ queryKey: ['payroll-runs'] });
     queryClient.invalidateQueries({ queryKey: ['leaves'] });
     queryClient.invalidateQueries({ queryKey: ['residencies'] });
@@ -279,6 +280,7 @@ export default function App() {
           <React.Suspense fallback={<LoadingFallback />}>
             <PermissionGuard userRole={user?.role} userPermissions={user?.permissions} isUserLoading={isUserLoading}>
               <Routes>
+                <Route path="/purchasing" element={<Navigate to="/purchases" replace />} />
                 <Route path="/theme-preview" element={<ThemePreviewScreen />} />
                 <Route path="/403" element={<Forbidden403 />} />
                 <Route path="/sales" element={<DailySalesScreen />} />

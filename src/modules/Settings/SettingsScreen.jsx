@@ -66,23 +66,16 @@ export default function SettingsScreen() {
         </p>
       </div>
 
-      <div className="noorix-surface-card">
-        {/* ── شريط التبويبات ── */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div className="noorix-surface-card noorix-settings-card">
+        {/* ── شريط التبويبات (قابل للتمرير أفقياً على الجوال) ── */}
+        <div className="noorix-settings-tabstrip">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              className="noorix-btn-nav"
+              className="noorix-settings-tab"
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                margin: 0, borderRadius: 0, border: 'none',
-                borderBottom: activeTab === tab.id ? '2px solid var(--noorix-accent-green)' : '2px solid transparent',
-                background:   activeTab === tab.id ? 'rgba(22,163,74,0.07)' : 'transparent',
-                color:        activeTab === tab.id ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)',
-                fontWeight:   activeTab === tab.id ? 700 : 500,
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
+              data-active={activeTab === tab.id ? 'true' : 'false'}
             >
               {tab.label}
             </button>
@@ -90,7 +83,7 @@ export default function SettingsScreen() {
         </div>
 
         {/* ── محتوى التبويب ── */}
-        <div style={{ padding: 20 }}>
+        <div className="noorix-settings-tab-body">
           {activeTab === 'companies' && (
             <CompaniesTab onCompanyCreated={(id) => setActiveCompany(id)} />
           )}

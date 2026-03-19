@@ -267,17 +267,19 @@ export function isSuperAdmin(role) {
   return r === 'super_admin' || r === 'owner';
 }
 
-/** مسارات الصفحات → صلاحية مطلوبة */
+/** مسارات الصفحات → صلاحية مطلوبة (سلسلة واحدة أو عدة صلاحيات يكفي واحدة منها) */
 export const ROUTE_PERMISSION = {
   '/owner':         PERMISSIONS.VIEW_OWNER,
   '/chat':          PERMISSIONS.VIEW_CHAT,
+  '/sales':         PERMISSIONS.VIEW_SALES,
   '/sales/new':     PERMISSIONS.VIEW_SALES,
   '/invoices':      PERMISSIONS.VIEW_INVOICES,
   '/suppliers':     PERMISSIONS.VIEW_SUPPLIERS,
   '/treasury':      PERMISSIONS.VIEW_VAULTS,
   '/expenses':      PERMISSIONS.VIEW_EXPENSES,
   '/orders':        PERMISSIONS.VIEW_ORDERS,
-  '/hr':            PERMISSIONS.VIEW_EMPLOYEES,
+  /** القائمة الجانبية تعتمد EMPLOYEES_READ؛ الحارس يقبل أيًا منهما لتفادي 403 عند الانتقال */
+  '/hr':            [PERMISSIONS.VIEW_EMPLOYEES, PERMISSIONS.EMPLOYEES_READ],
   '/reports':       PERMISSIONS.VIEW_REPORTS,
   '/settings':      PERMISSIONS.MANAGE_SETTINGS,
   '/theme-preview': PERMISSIONS.VIEW_DASHBOARD,
@@ -286,3 +288,19 @@ export const ROUTE_PERMISSION = {
 export const REDIRECT_ONLY_PATHS = new Set([
   '/', '/purchasing', '/403',
 ]);
+
+/**
+ * صلاحيات المسار الحالي (بما فيه مسارات فرعية مثل /hr/employee/:id)
+ */
+export function getRouteRequiredPermissions(pathname) {
+  if (REDIRECT_ONLY_PATHS.has(pathname)) return null;
+  const direct = ROUTE_PERMISSION[pathname];
+  if (direct != null) {
+    return Array.isArray(direct) ? direct : [direct];
+  }
+  if (pathname.startsWith('/hr/')) {
+    const hr = ROUTE_PERMISSION['/hr'];
+    return Array.isArray(hr) ? hr : [hr];
+  }
+  return null;
+}

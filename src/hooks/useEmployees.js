@@ -15,9 +15,9 @@ import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
 
 /**
  * @param {string} companyId
- * @param {{ includeTerminated?: boolean }} [opts]
+ * @param {{ includeTerminated?: boolean, fetchEnabled?: boolean }} [opts]
  */
-export function useEmployees(companyId, { includeTerminated = false } = {}) {
+export function useEmployees(companyId, { includeTerminated = false, fetchEnabled = true } = {}) {
   const queryClient = useQueryClient();
 
   const { data: employees = [], isLoading } = useQuery({
@@ -27,11 +27,12 @@ export function useEmployees(companyId, { includeTerminated = false } = {}) {
       if (!res?.success) return [];
       return Array.isArray(res.data) ? res.data : [];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && fetchEnabled,
   });
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
     queryClient.invalidateQueries({ queryKey: ['invoices'] });
     queryClient.invalidateQueries({ queryKey: ['vaults'] });
   };
@@ -55,6 +56,7 @@ export function useEmployees(companyId, { includeTerminated = false } = {}) {
     mutationFn: createAdvance,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
       invalidateOnFinancialMutation(queryClient);
     },
   });

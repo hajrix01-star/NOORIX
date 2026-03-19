@@ -1,19 +1,25 @@
 /**
  * StaffListScreen — قائمة الموظفين (احترافي كامل)
  */
-import React, { useState, useMemo, memo, useRef } from 'react';
+import React, { useState, useMemo, memo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
-import { useTableFilter } from '../../hooks/useTableFilter';
 import { fmt } from '../../utils/format';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
-import { createCustomAllowance, createEmployeesBatch, deleteCustomAllowance, getCustomAllowances } from '../../services/api';
+import {
+  createCustomAllowance,
+  createEmployeesBatch,
+  deleteCustomAllowance,
+  getCustomAllowances,
+  getEmployeesPaged,
+  getEmployeesBulk,
+} from '../../services/api';
 import SmartTable from '../../components/common/SmartTable';
 import { HRActionsCell } from './components/HRActionsCell';
 import Toast from '../../components/Toast';
@@ -99,8 +105,47 @@ export default function StaffListScreen({ embedded }) {
   const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
 
-  const { employees, isLoading, create, update, createAdvance } = useEmployees(companyId, { includeTerminated: true });
+  const { create, update, createAdvance } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: false });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
+
+  const [listPage, setListPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
+  const [sortKey, setSortKey] = useState('joinDate');
+  const [sortDir, setSortDir] = useState('desc');
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(searchInput.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setListPage(1);
+  }, [viewMode, debouncedQ]);
+
+  const {
+    data: pagedResult,
+    isLoading,
+  } = useQuery({
+    queryKey: ['employees-paged', companyId, viewMode, listPage, PAGE_SIZE, debouncedQ, sortKey, sortDir],
+    queryFn: async () => {
+      const res = await getEmployeesPaged(companyId, {
+        tab: viewMode,
+        page: listPage,
+        pageSize: PAGE_SIZE,
+        q: debouncedQ,
+        sortBy: sortKey,
+        sortDir,
+      });
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الموظفين');
+      return res;
+    },
+    enabled: !!companyId,
+  });
+
+  const listTotal = pagedResult?.total ?? 0;
+  const pagedItems = pagedResult?.items ?? [];
 
   const statusStyles = useMemo(() => ({
     active:     { bg: 'rgba(22,163,74,0.1)',  color: '#16a34a', label: t('statusActive') },
@@ -120,7 +165,7 @@ export default function StaffListScreen({ embedded }) {
   }, [customAllowances]);
 
   const tableData = useMemo(() => {
-    const withMeta = employees.map((e) => {
+    return pagedItems.map((e) => {
       const parsed = parseEmployeeNotesMeta(e.notes);
       const meta = parsed.meta || {};
       return {
@@ -131,19 +176,19 @@ export default function StaffListScreen({ embedded }) {
         terminationDate: meta.terminationDate || '',
       };
     });
-    if (viewMode === 'terminated') return withMeta.filter((e) => e.status === 'terminated');
-    if (viewMode === 'archived') return withMeta.filter((e) => e.status === 'archived');
-    return withMeta.filter((e) => e.status !== 'terminated' && e.status !== 'archived');
-  }, [employees, allowanceTotals, viewMode]);
+  }, [pagedItems, allowanceTotals]);
 
-  const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
-    useTableFilter(tableData, {
-      searchKeys: ['employeeSerial', 'name', 'jobTitle', 'terminationReason', 'terminationClause'],
-      pageSize: PAGE_SIZE,
-      defaultSortKey: 'joinDate',
-      defaultSortDir: 'desc',
-      dateKeys: ['joinDate'],
+  const toggleSort = useCallback((key) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return key;
+      }
+      setSortDir('asc');
+      return key;
     });
+    setListPage(1);
+  }, []);
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
@@ -220,17 +265,39 @@ export default function StaffListScreen({ embedded }) {
       ) },
   ], [t, statusStyles, viewMode, navigate, update]);
 
-  const exportData = allFilteredData.map((e) => ({
-    employeeSerial: e.employeeSerial,
-    name: e.name,
-    jobTitle: e.jobTitle,
-    joinDate: formatSaudiDate(e.joinDate),
-    totalSalary: fmt(e.totalSalary),
-    status: statusStyles[e.status]?.label || e.status,
-    terminationReason: e.terminationReason || '',
-    terminationClause: e.terminationClause || '',
-    terminationDate: e.terminationDate ? formatSaudiDate(e.terminationDate) : '',
-  }));
+  async function handleExportExcel() {
+    if (!companyId) return;
+    setExporting(true);
+    try {
+      const res = await getEmployeesBulk(companyId, viewMode);
+      if (!res?.success) {
+        setToast({ visible: true, message: res?.error || t('saveFailed'), type: 'error' });
+        return;
+      }
+      const rows = (res.data || []).map((e) => {
+        const parsed = parseEmployeeNotesMeta(e.notes);
+        const meta = parsed.meta || {};
+        const extra = allowanceTotals.get(e.id) || 0;
+        const ts = totalSalary(e, extra);
+        return {
+          employeeSerial: e.employeeSerial,
+          name: e.name,
+          jobTitle: e.jobTitle,
+          joinDate: formatSaudiDate(e.joinDate),
+          totalSalary: fmt(ts),
+          status: statusStyles[e.status]?.label || e.status,
+          terminationReason: meta.terminationReason || '',
+          terminationClause: meta.terminationClause || '',
+          terminationDate: meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
+        };
+      });
+      exportToExcel(rows, 'employees.xlsx');
+    } catch (e) {
+      setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function handleImportFile(file) {
     if (!file || !companyId) return;
@@ -310,6 +377,7 @@ export default function StaffListScreen({ embedded }) {
       const res = await createEmployeesBatch({ companyId, items });
       if (res?.success && res?.data) {
         queryClient.invalidateQueries({ queryKey: ['employees'] });
+        queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
         const { created, failed } = res.data;
         setToast({ visible: true, message: `تم استيراد ${created} موظف${failed > 0 ? `، فشل ${failed}` : ''}`, type: 'success' });
       } else {
@@ -366,6 +434,7 @@ export default function StaffListScreen({ embedded }) {
 
     queryClient.invalidateQueries({ queryKey: ['custom-allowances', companyId] });
     queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
   }
 
   function handleSave(payload) {
@@ -443,8 +512,14 @@ export default function StaffListScreen({ embedded }) {
               <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('archived')} style={{ fontSize: 13 }}>
                 {t('archivedEmployeesList')}
               </button>
-              <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'employees.xlsx')} style={{ fontSize: 13 }}>
-                {t('exportExcel')}
+              <button
+                type="button"
+                className="noorix-btn-nav"
+                disabled={exporting}
+                onClick={() => handleExportExcel()}
+                style={{ fontSize: 13 }}
+              >
+                {exporting ? t('loading') : t('exportExcel')}
               </button>
               <input
                 ref={fileInputRef}
@@ -479,16 +554,16 @@ export default function StaffListScreen({ embedded }) {
             rowNumberWidth="1%"
             innerPadding={8}
             columns={columns}
-            data={filteredData}
-            total={allFilteredData.length}
-            page={page}
+            data={tableData}
+            total={listTotal}
+            page={listPage}
             pageSize={PAGE_SIZE}
-            onPageChange={setPage}
+            onPageChange={setListPage}
             isLoading={isLoading}
             title={t('employeesList')}
-            badge={<span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{allFilteredData.length}</span>}
-            searchValue={searchText}
-            onSearchChange={setSearch}
+            badge={<span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{listTotal}</span>}
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={toggleSort}
