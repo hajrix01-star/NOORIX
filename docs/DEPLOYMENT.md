@@ -2,24 +2,21 @@
 
 ## Railway / بيئة الإنتاج
 
-### خطوات النشر
+### متغيرات البيئة المطلوبة
 
-1. **تأكد من متغيرات البيئة** في Railway:
-   - `DATABASE_URL` — رابط PostgreSQL
-   - `JWT_SECRET` — مفتاح JWT
-   - `VITE_API_URL` (أو `API_URL`) — رابط الـ API للواجهة
+| المتغير | الوصف |
+|---------|-------|
+| `DATABASE_URL` | رابط PostgreSQL (من Railway أو خارجي) |
+| `JWT_SECRET` | مفتاح JWT (32 حرفاً على الأقل) |
+| `VITE_API_URL` | رابط الـ Backend (عند بناء الـ Frontend) |
 
-2. **تشغيل Migrations** (عادةً تلقائي عند البناء):
-   ```bash
-   cd backend && npx prisma migrate deploy
-   ```
+### آلية التشغيل التلقائي
 
-3. **تشغيل Seed** (مهم — ينشئ المستخدم الافتراضي):
-   ```bash
-   cd backend && npx prisma db seed
-   ```
+- **Migrations**: تُنفَّذ عند البدء عبر `prisma migrate deploy`
+- **Seed**: يُنفَّذ تلقائياً عند بدء التطبيق (NestJS DatabaseBootstrapService)
+- المستخدم الافتراضي يُنشأ أو يُحدَّث في كل تشغيل
 
-### بيانات الدخول الافتراضية (بعد Seed)
+### بيانات الدخول الافتراضية
 
 | البريد | كلمة المرور |
 |--------|-------------|
@@ -27,15 +24,14 @@
 
 ⚠️ **أمان**: غيّر كلمة المرور فوراً بعد أول دخول في بيئة الإنتاج.
 
-### إذا لم يعمل Seed تلقائياً
+### فحص الاتصال والتشخيص
 
-في Railway، أضف أمر Seed إلى **Build Command** أو شغّله يدوياً من لوحة التحكم:
+افتح: `https://YOUR-BACKEND-URL/api/v1/health`
 
-```
-cd backend && npx prisma migrate deploy && npx prisma db seed && npm run build
-```
+الاستجابة تتضمن:
+- `dbConnected`: هل قاعدة البيانات متصلة
+- `adminExists`: هل المستخدم admin@noorix.sa موجود
 
-أو كأمر منفصل بعد النشر:
-```
-cd backend && npx prisma db seed
-```
+إذا كان `adminExists: false` رغم تشغيل التطبيق، تحقق من:
+1. `DATABASE_URL` صحيح ومتصل بنفس قاعدة البيانات
+2. سجلات Railway (Deploy Logs) — هل تظهر أخطاء عند البدء

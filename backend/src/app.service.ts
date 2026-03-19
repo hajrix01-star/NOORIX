@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from './prisma/prisma.service';
 import { getGeminiApiKey, getGeminiModel, isGeminiAvailable } from './config/gemini.config';
 
 function extractJson<T = Record<string, unknown>>(text: string): T | null {
@@ -42,12 +43,29 @@ function extractJson<T = Record<string, unknown>>(text: string): T | null {
 
 @Injectable()
 export class AppService {
-  getHealth() {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getHealth() {
+    let dbConnected = false;
+    let adminExists = false;
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      dbConnected = true;
+      const admin = await this.prisma.user.findUnique({
+        where: { email: 'admin@noorix.sa' },
+        select: { id: true },
+      });
+      adminExists = !!admin;
+    } catch {
+      // db error
+    }
     return {
       status: 'ok',
       service: 'noorix-backend',
       version: '0.1.0',
       geminiAvailable: isGeminiAvailable(),
+      dbConnected,
+      adminExists,
     };
   }
 

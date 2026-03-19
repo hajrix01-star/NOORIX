@@ -26,6 +26,7 @@ import { ExpenseLineModule }   from './expense-line/expense-line.module';
 import { ReportsModule }       from './reports/reports.module';
 import { ChatModule }          from './chat/chat.module';
 import { OrdersModule }         from './orders/orders.module';
+import { DatabaseModule }       from './database/database.module';
 import { TenantMiddleware }    from './common/tenant.middleware';
 import { JwtModule }           from '@nestjs/jwt';
 
@@ -33,6 +34,7 @@ import { JwtModule }           from '@nestjs/jwt';
   imports: [
     ScheduleModule.forRoot(),
     PrismaModule,
+    DatabaseModule,
     AccountingInitModule,
     AccountsModule,
     AuditModule,
