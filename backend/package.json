@@ -13,7 +13,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "start:prod:full": "prisma migrate deploy && node dist/main",
+    "start:prod:full": "npx prisma migrate deploy && node dist/main",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
@@ -38,7 +38,8 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "prisma": "^5.22.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
@@ -50,7 +51,6 @@
     "@types/passport-jwt": "^4.0.1",
     "multer": "^2.1.1",
     "pg": "^8.20.0",
-    "prisma": "^5.22.0",
     "typescript": "^5.6.3"
   }
 }
