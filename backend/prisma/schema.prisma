@@ -598,6 +598,7 @@ model Invoice {
   @@index([companyId])
   @@index([companyId, transactionDate])
   @@index([companyId, status])
+  @@index([companyId, kind, status, transactionDate])
   @@index([companyId, employeeId])
   @@index([companyId, expenseLineId])
   @@index([companyId, categoryId])

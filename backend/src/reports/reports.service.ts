@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import Decimal from 'decimal.js';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 
@@ -183,7 +184,11 @@ export class ReportsService {
       };
     }
 
-    const { categories } = await this.loadAnnualInvoices(companyId, year);
+    const catRows = await this.prisma.category.findMany({
+      where: { companyId, isActive: true },
+      select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true },
+    });
+    const categories = new Map(catRows.map((c) => [c.id, { ...c } as CategoryNode]));
     const title = this.resolveTitle(groupKey, itemKey, categories);
 
     let detailItems: Array<{
@@ -213,56 +218,7 @@ export class ReportsService {
     if (itemKey?.startsWith('account:')) {
       detailItems = await this.loadDetailFromLedger(companyId, year, month, groupKey, itemKey);
     } else {
-      const { invoices } = await this.loadAnnualInvoices(companyId, year);
-      const categoryIdsForFilter =
-        itemKey?.startsWith('category:') && groupKey === 'expenses'
-          ? this.getCategoryAndDescendantIds(itemKey.replace('category:', ''), categories)
-          : null;
-      const filteredInvoices = invoices
-        .filter((invoice) => this.resolveGroupKey(invoice.kind) === groupKey)
-        .filter((invoice) => month == null || this.getMonthIndex(invoice.transactionDate) === month - 1)
-        .filter((invoice) => {
-          if (!itemKey) return true;
-          const metaKey = this.resolveItemMeta(invoice, groupKey, categories).key;
-          if (metaKey === itemKey) return true;
-          if (categoryIdsForFilter) {
-            const catId = invoice.categoryId || invoice.expenseLine?.categoryId;
-            return catId != null && categoryIdsForFilter.has(catId);
-          }
-          return false;
-        })
-        .sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime());
-
-      detailItems = filteredInvoices.map((invoice) => {
-        const itemMeta = this.resolveItemMeta(invoice, groupKey, categories);
-        return {
-          id: invoice.id,
-          invoiceNumber: invoice.invoiceNumber,
-          supplierInvoiceNumber: invoice.supplierInvoiceNumber,
-          transactionDate: invoice.transactionDate.toISOString(),
-          kind: invoice.kind,
-          kindLabelAr: KIND_LABELS[invoice.kind]?.ar || invoice.kind,
-          kindLabelEn: KIND_LABELS[invoice.kind]?.en || invoice.kind,
-          categoryId: invoice.categoryId,
-          itemKey: itemMeta.key,
-          itemLabelAr: itemMeta.labelAr,
-          itemLabelEn: itemMeta.labelEn,
-          supplierNameAr: invoice.supplier?.nameAr || null,
-          supplierNameEn: invoice.supplier?.nameEn || null,
-          expenseLineNameAr: invoice.expenseLine?.nameAr || null,
-          expenseLineNameEn: invoice.expenseLine?.nameEn || null,
-          summaryNumber: invoice.dailySalesSummary?.summaryNumber || null,
-          channelNames: (invoice.dailySalesSummary?.channels || []).map((channel) => ({
-            nameAr: channel.vault.nameAr,
-            nameEn: channel.vault.nameEn,
-            amount: this.dec(channel.amount).toFixed(2),
-          })),
-          totalAmount: this.dec(invoice.totalAmount).toFixed(2),
-          netAmount: this.dec(invoice.netAmount).toFixed(2),
-          taxAmount: this.dec(invoice.taxAmount).toFixed(2),
-          notes: invoice.notes || null,
-        };
-      });
+      detailItems = await this.loadDetailInvoices(companyId, year, month, groupKey, itemKey, categories);
     }
 
     const allGroup = report.groups.find((row) => row.key === groupKey);
@@ -457,31 +413,98 @@ export class ReportsService {
   }
 
   /**
-   * تجميع P&L من Ledger (مصدر الحقيقة المحاسبي) + الفواتير (للتفصيل بالفئات).
-   * نهج هجين: الأرقام من Ledger، التفصيل بالفئات من الفواتير عند توفرها.
+   * تجميع P&L بأسلوب مُحسَّن: استعلامان مُجمَّعان بدلاً من تحميل كل الصفوف الفردية.
+   * القيود المحاسبية (ledger) مصدر الأرقام؛ قنوات البيع مصدر التفصيل للمبيعات.
+   * النتيجة: ~100-500 صف بدلاً من عشرات الآلاف.
    */
   private async loadAnnualLedgerAggregates(companyId: string, year: number) {
     const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
-    const [ledgerEntries, categories, expenseLines] = await Promise.all([
-      this.prisma.ledgerEntry.findMany({
-        where: {
-          companyId,
-          status: 'active',
-          transactionDate: { gte: startDate, lte: endDate },
-        },
-        select: {
-          amount: true,
-          transactionDate: true,
-          debitAccountId: true,
-          creditAccountId: true,
-          referenceType: true,
-          referenceId: true,
-          debitAccount: { select: { id: true, code: true, type: true, nameAr: true, nameEn: true } },
-          creditAccount: { select: { id: true, code: true, type: true, nameAr: true, nameEn: true } },
-        },
-      }),
+    type LedgerAggRow = {
+      debit_type: string;
+      debit_code: string;
+      debit_account_id: string;
+      debit_name_ar: string;
+      debit_name_en: string | null;
+      credit_type: string;
+      credit_account_id: string;
+      credit_name_ar: string;
+      credit_name_en: string | null;
+      inv_kind: string | null;
+      category_id: string | null;
+      expense_line_id: string | null;
+      el_name_ar: string | null;
+      el_name_en: string | null;
+      el_category_id: string | null;
+      month: number;
+      amount: string;
+    };
+
+    type ChannelAggRow = {
+      vault_id: string;
+      vault_name_ar: string;
+      vault_name_en: string | null;
+      month: number;
+      amount: string;
+    };
+
+    const [ledgerRows, channelRows, categories, expenseLines] = await Promise.all([
+      this.prisma.$queryRaw<LedgerAggRow[]>`
+        SELECT
+          da.type            AS debit_type,
+          da.code            AS debit_code,
+          da.id              AS debit_account_id,
+          da.name_ar         AS debit_name_ar,
+          da.name_en         AS debit_name_en,
+          ca.type            AS credit_type,
+          ca.id              AS credit_account_id,
+          ca.name_ar         AS credit_name_ar,
+          ca.name_en         AS credit_name_en,
+          i.kind             AS inv_kind,
+          i.category_id,
+          i.expense_line_id,
+          el.name_ar         AS el_name_ar,
+          el.name_en         AS el_name_en,
+          el.category_id     AS el_category_id,
+          EXTRACT(MONTH FROM le.transaction_date)::int AS month,
+          SUM(le.amount)::text AS amount
+        FROM ledger_entries le
+        JOIN accounts da ON da.id = le.debit_account_id
+        JOIN accounts ca ON ca.id = le.credit_account_id
+        LEFT JOIN invoices i ON (
+          i.company_id = le.company_id
+          AND (
+            (le.reference_type IN ('invoice', 'salary', 'advance') AND i.id = le.reference_id)
+            OR (le.reference_type = 'sale' AND i.daily_sales_summary_id = le.reference_id)
+          )
+        )
+        LEFT JOIN expense_lines el ON el.id = i.expense_line_id
+        WHERE le.company_id = ${companyId}
+          AND le.status = 'active'
+          AND le.transaction_date BETWEEN ${startDate} AND ${endDate}
+        GROUP BY
+          da.type, da.code, da.id, da.name_ar, da.name_en,
+          ca.type, ca.id, ca.name_ar, ca.name_en,
+          i.kind, i.category_id, i.expense_line_id,
+          el.name_ar, el.name_en, el.category_id,
+          month
+      `,
+      this.prisma.$queryRaw<ChannelAggRow[]>`
+        SELECT
+          v.id        AS vault_id,
+          v.name_ar   AS vault_name_ar,
+          v.name_en   AS vault_name_en,
+          EXTRACT(MONTH FROM dss.transaction_date)::int AS month,
+          SUM(dsc.amount)::text AS amount
+        FROM daily_sales_channels dsc
+        JOIN daily_sales_summaries dss ON dsc.summary_id = dss.id
+        JOIN vaults v ON dsc.vault_id = v.id
+        WHERE dss.company_id = ${companyId}
+          AND dss.status = 'active'
+          AND dss.transaction_date BETWEEN ${startDate} AND ${endDate}
+        GROUP BY v.id, v.name_ar, v.name_en, month
+      `,
       this.prisma.category.findMany({
         where: { companyId, isActive: true },
         select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true },
@@ -491,46 +514,6 @@ export class ReportsService {
         select: { id: true, nameAr: true, nameEn: true, categoryId: true },
       }),
     ]);
-
-    const invoiceRefIds = ledgerEntries
-      .filter((e) => ['invoice', 'salary', 'advance'].includes(e.referenceType))
-      .map((e) => e.referenceId);
-    const saleSummaryIds = ledgerEntries
-      .filter((e) => e.referenceType === 'sale')
-      .map((e) => e.referenceId);
-    const invoiceIds = [...new Set(invoiceRefIds)];
-    const summaryIds = [...new Set(saleSummaryIds)];
-
-    const orConditions = [
-      ...(invoiceIds.length ? [{ id: { in: invoiceIds } }] : []),
-      ...(summaryIds.length ? [{ dailySalesSummaryId: { in: summaryIds } }] : []),
-    ];
-    const invoices = orConditions.length
-      ? await this.prisma.invoice.findMany({
-          where: { companyId, OR: orConditions },
-          select: {
-            id: true,
-            kind: true,
-            categoryId: true,
-            dailySalesSummaryId: true,
-            expenseLine: { select: { id: true, nameAr: true, nameEn: true, categoryId: true } },
-            dailySalesSummary: {
-              select: {
-                channels: {
-                  select: {
-                    vault: { select: { id: true, nameAr: true, nameEn: true } },
-                  },
-                },
-              },
-            },
-          },
-        })
-      : [];
-
-    const invMap = new Map(invoices.map((i) => [i.id, i]));
-    const invBySummaryId = new Map(
-      invoices.filter((i) => i.dailySalesSummaryId).map((i) => [i.dailySalesSummaryId!, i]),
-    );
 
     const catMap = new Map(categories.map((c) => [c.id, { ...c } as CategoryNode]));
 
@@ -544,77 +527,76 @@ export class ReportsService {
       sortOrder: number;
     }> = [];
 
-    for (const le of ledgerEntries) {
-      const amount = this.dec(le.amount);
-      const monthIndex = new Date(le.transactionDate).getUTCMonth();
-      const da = le.debitAccount;
-      const ca = le.creditAccount;
+    for (const row of ledgerRows) {
+      const amount = this.dec(row.amount);
+      const monthIndex = Number(row.month) - 1; // EXTRACT returns 1-12
 
-      if (ca.type === 'revenue') {
-        const inv = le.referenceType === 'sale' ? invBySummaryId.get(le.referenceId) : null;
-        if (inv) {
-          const meta = this.resolveItemMeta(inv as unknown as ReportInvoice, 'sales', catMap);
+      if (row.credit_type === 'revenue') {
+        if (row.inv_kind !== 'sale') {
+          // قيد إيراد بدون فاتورة مبيعات (نادر — إدخال يدوي)
           entries.push({
             groupKey: 'sales',
             monthIndex,
             amount,
-            itemKey: meta.key,
-            labelAr: meta.labelAr,
-            labelEn: meta.labelEn,
-            sortOrder: meta.sortOrder,
-          });
-        } else {
-          entries.push({
-            groupKey: 'sales',
-            monthIndex,
-            amount,
-            itemKey: `account:${ca.id}`,
-            labelAr: ca.nameAr,
-            labelEn: ca.nameEn || ca.nameAr,
-            sortOrder: ca.code === 'REV-001' ? 0 : 999,
+            itemKey: `account:${row.credit_account_id}`,
+            labelAr: row.credit_name_ar,
+            labelEn: row.credit_name_en || row.credit_name_ar,
+            sortOrder: 999,
           });
         }
-      } else if (da.type === 'expense') {
-        const isPurchase = da.code.startsWith('PUR');
+        // inv_kind === 'sale' → يُعالج من channelRows أدناه
+      } else if (row.debit_type === 'expense') {
+        const isPurchase = row.debit_code.startsWith('PUR');
         const groupKey: GroupKey = isPurchase ? 'purchases' : 'expenses';
-        const inv = ['invoice', 'salary', 'advance'].includes(le.referenceType!)
-          ? invMap.get(le.referenceId)
-          : null;
-        if (inv) {
-          const meta = this.resolveItemMeta(inv as unknown as ReportInvoice, groupKey, catMap);
-          entries.push({
-            groupKey,
-            monthIndex,
-            amount,
-            itemKey: meta.key,
-            labelAr: meta.labelAr,
-            labelEn: meta.labelEn,
-            sortOrder: meta.sortOrder,
-          });
+
+        if (row.inv_kind !== null) {
+          const pseudoInvoice = {
+            kind: row.inv_kind,
+            categoryId: row.category_id,
+            expenseLine: row.expense_line_id
+              ? {
+                  id: row.expense_line_id,
+                  nameAr: row.el_name_ar || row.expense_line_id,
+                  nameEn: row.el_name_en,
+                  categoryId: row.el_category_id || '',
+                }
+              : null,
+            dailySalesSummary: null,
+            supplier: null,
+          };
+          const meta = this.resolveItemMeta(pseudoInvoice as unknown as ReportInvoice, groupKey, catMap);
+          entries.push({ groupKey, monthIndex, amount, itemKey: meta.key, labelAr: meta.labelAr, labelEn: meta.labelEn, sortOrder: meta.sortOrder });
         } else {
           const sortOrder = isPurchase
-            ? da.code === 'PUR-001'
-              ? 0
-              : 999
-            : parseInt(da.code.replace(/\D/g, '') || '999', 10);
+            ? row.debit_code === 'PUR-001' ? 0 : 999
+            : parseInt(row.debit_code.replace(/\D/g, '') || '999', 10);
           entries.push({
             groupKey,
             monthIndex,
             amount,
-            itemKey: `account:${da.id}`,
-            labelAr: da.nameAr,
-            labelEn: da.nameEn || da.nameAr,
+            itemKey: `account:${row.debit_account_id}`,
+            labelAr: row.debit_name_ar,
+            labelEn: row.debit_name_en || row.debit_name_ar,
             sortOrder,
           });
         }
       }
     }
 
-    return {
-      entries,
-      categories: catMap,
-      expenseLines: expenseLines as ExpenseLineNode[],
-    };
+    // تفصيل المبيعات حسب قناة الدفع (خزنة)
+    for (const ch of channelRows) {
+      entries.push({
+        groupKey: 'sales',
+        monthIndex: Number(ch.month) - 1,
+        amount: this.dec(ch.amount),
+        itemKey: `sales-channel:${ch.vault_id}`,
+        labelAr: ch.vault_name_ar,
+        labelEn: ch.vault_name_en || ch.vault_name_ar,
+        sortOrder: 0,
+      });
+    }
+
+    return { entries, categories: catMap, expenseLines: expenseLines as ExpenseLineNode[] };
   }
 
   /**
@@ -649,6 +631,7 @@ export class ReportsService {
     const entries = await this.prisma.ledgerEntry.findMany({
       where,
       orderBy: { transactionDate: 'desc' },
+      take: 500,
       select: {
         id: true,
         amount: true,
@@ -759,6 +742,120 @@ export class ReportsService {
     }
 
     return result;
+  }
+
+  /**
+   * استعلام مستهدف لتفاصيل التقرير — يُفلتر في SQL بدلاً من تحميل كل الفواتير.
+   * الحد الأقصى 500 فاتورة لكل طلب تفاصيل.
+   */
+  private async loadDetailInvoices(
+    companyId: string,
+    year: number,
+    month: number | undefined,
+    groupKey: GroupKey,
+    itemKey: string | undefined,
+    categories: Map<string, CategoryNode>,
+  ) {
+    const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+    const kindsForGroup = (Object.entries(KIND_TO_GROUP) as Array<[string, GroupKey | null]>)
+      .filter(([, g]) => g === groupKey)
+      .map(([k]) => k);
+
+    const dateFilter =
+      month != null
+        ? {
+            gte: new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0)),
+            lte: new Date(Date.UTC(year, month - 1, 31, 23, 59, 59, 999)),
+          }
+        : { gte: startDate, lte: endDate };
+
+    let where: Prisma.InvoiceWhereInput = {
+      companyId,
+      status: 'active',
+      kind: { in: kindsForGroup },
+      transactionDate: dateFilter,
+    };
+
+    if (itemKey?.startsWith('kind:')) {
+      where = { ...where, kind: itemKey.replace('kind:', '') };
+    } else if (itemKey?.startsWith('expense-line:')) {
+      where = { ...where, expenseLineId: itemKey.replace('expense-line:', '') };
+    } else if (itemKey?.startsWith('category:')) {
+      const catIds = this.getCategoryAndDescendantIds(itemKey.replace('category:', ''), categories);
+      where = {
+        ...where,
+        OR: [
+          { categoryId: { in: [...catIds] } },
+          { expenseLine: { categoryId: { in: [...catIds] } } },
+        ],
+      };
+    } else if (itemKey?.startsWith('sales-channel:')) {
+      where = {
+        ...where,
+        dailySalesSummary: { channels: { some: { vaultId: itemKey.replace('sales-channel:', '') } } },
+      };
+    }
+
+    const invoices = await this.prisma.invoice.findMany({
+      where,
+      orderBy: { transactionDate: 'desc' },
+      take: 500,
+      select: {
+        id: true,
+        invoiceNumber: true,
+        supplierInvoiceNumber: true,
+        kind: true,
+        totalAmount: true,
+        netAmount: true,
+        taxAmount: true,
+        transactionDate: true,
+        notes: true,
+        categoryId: true,
+        supplier: { select: { nameAr: true, nameEn: true } },
+        expenseLine: { select: { id: true, nameAr: true, nameEn: true, categoryId: true } },
+        dailySalesSummary: {
+          select: {
+            summaryNumber: true,
+            channels: {
+              select: { amount: true, vault: { select: { id: true, nameAr: true, nameEn: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    return invoices.map((invoice) => {
+      const itemMeta = this.resolveItemMeta(invoice as unknown as ReportInvoice, groupKey, categories);
+      return {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        supplierInvoiceNumber: invoice.supplierInvoiceNumber,
+        transactionDate: invoice.transactionDate.toISOString(),
+        kind: invoice.kind,
+        kindLabelAr: KIND_LABELS[invoice.kind]?.ar || invoice.kind,
+        kindLabelEn: KIND_LABELS[invoice.kind]?.en || invoice.kind,
+        categoryId: invoice.categoryId,
+        itemKey: itemMeta.key,
+        itemLabelAr: itemMeta.labelAr,
+        itemLabelEn: itemMeta.labelEn,
+        supplierNameAr: invoice.supplier?.nameAr || null,
+        supplierNameEn: invoice.supplier?.nameEn || null,
+        expenseLineNameAr: invoice.expenseLine?.nameAr || null,
+        expenseLineNameEn: invoice.expenseLine?.nameEn || null,
+        summaryNumber: invoice.dailySalesSummary?.summaryNumber || null,
+        channelNames: (invoice.dailySalesSummary?.channels || []).map((ch) => ({
+          nameAr: ch.vault.nameAr,
+          nameEn: ch.vault.nameEn,
+          amount: this.dec(ch.amount).toFixed(2),
+        })),
+        totalAmount: this.dec(invoice.totalAmount).toFixed(2),
+        netAmount: this.dec(invoice.netAmount).toFixed(2),
+        taxAmount: this.dec(invoice.taxAmount).toFixed(2),
+        notes: invoice.notes || null,
+      };
+    });
   }
 
   private async loadAnnualInvoices(companyId: string, year: number) {
@@ -1097,38 +1194,35 @@ export class ReportsService {
     const startDate = new Date(Date.UTC(year, startMonth, 1, 0, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, endMonth + 1, 0, 23, 59, 59, 999));
 
-    const invoices = await this.prisma.invoice.findMany({
-      where: {
-        companyId,
-        status: 'active',
-        kind: { in: ['sale', 'purchase', 'expense', 'fixed_expense'] },
-        transactionDate: { gte: startDate, lte: endDate },
-      },
-      select: { kind: true, netAmount: true, taxAmount: true },
-    });
+    type VatAggRow = { kind: string; has_tax: boolean; net_sum: string; tax_sum: string };
+    const vatRows = await this.prisma.$queryRaw<VatAggRow[]>`
+      SELECT
+        kind,
+        (tax_amount > 0) AS has_tax,
+        SUM(net_amount)::text  AS net_sum,
+        SUM(tax_amount)::text  AS tax_sum
+      FROM invoices
+      WHERE company_id = ${companyId}
+        AND status = 'active'
+        AND kind = ANY(ARRAY['sale','purchase','expense','fixed_expense']::text[])
+        AND transaction_date BETWEEN ${startDate} AND ${endDate}
+      GROUP BY kind, has_tax
+    `;
 
     const standard_sales = { amount: new Decimal(0), vat: new Decimal(0) };
     const exempt_sales = { amount: new Decimal(0), vat: new Decimal(0) };
     const standard_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
     const exempt_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
 
-    for (const inv of invoices) {
-      const net = this.dec(inv.netAmount);
-      const tax = this.dec(inv.taxAmount);
-      if (inv.kind === 'sale') {
-        if (tax.gt(0)) {
-          standard_sales.amount = standard_sales.amount.plus(net);
-          standard_sales.vat = standard_sales.vat.plus(tax);
-        } else if (net.gt(0)) {
-          exempt_sales.amount = exempt_sales.amount.plus(net);
-        }
+    for (const row of vatRows) {
+      const net = this.dec(row.net_sum);
+      const tax = this.dec(row.tax_sum);
+      if (row.kind === 'sale') {
+        if (row.has_tax) { standard_sales.amount = standard_sales.amount.plus(net); standard_sales.vat = standard_sales.vat.plus(tax); }
+        else if (net.gt(0)) { exempt_sales.amount = exempt_sales.amount.plus(net); }
       } else {
-        if (tax.gt(0)) {
-          standard_purchases.amount = standard_purchases.amount.plus(net);
-          standard_purchases.vat = standard_purchases.vat.plus(tax);
-        } else if (net.gt(0)) {
-          exempt_purchases.amount = exempt_purchases.amount.plus(net);
-        }
+        if (row.has_tax) { standard_purchases.amount = standard_purchases.amount.plus(net); standard_purchases.vat = standard_purchases.vat.plus(tax); }
+        else if (net.gt(0)) { exempt_purchases.amount = exempt_purchases.amount.plus(net); }
       }
     }
 
