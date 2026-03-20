@@ -1,7 +1,7 @@
 /**
  * ReportsScreen — التقرير العام (ربح وخسارة شهري)
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PERMISSIONS } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -61,6 +61,13 @@ export default function ReportsScreen() {
   const exportRows = useMemo(() => buildExportRows(report, lang, t, selectedMonth ? Number(selectedMonth) : null), [report, lang, t, selectedMonth]);
   const yearOptions = useMemo(() => Array.from({ length: 6 }, (_, index) => currentYear - index), [currentYear]);
   const selectedMonthNumber = selectedMonth ? Number(selectedMonth) : null;
+
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 700);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 700);
+    window.addEventListener('resize', handler, { passive: true });
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   function toggleGroup(collapseKey) {
     setCollapsedGroups((prev) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));
@@ -156,11 +163,13 @@ export default function ReportsScreen() {
           <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
             {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </select>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('reportMonth')}</label>
-          <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
-            <option value="">{t('allMonths')}</option>
-            {EN_MONTHS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}
-          </select>
+          {!isMobile && <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('reportMonth')}</label>}
+          {!isMobile && (
+            <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
+              <option value="">{t('allMonths')}</option>
+              {EN_MONTHS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}
+            </select>
+          )}
           <div style={{ display: 'flex', gap: 6 }}>
             <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={!report} style={{ fontSize: 12, padding: '6px 10px' }}>{t('exportExcel')}</button>
             <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} disabled={!report} style={{ fontSize: 12, padding: '6px 10px' }}>{t('exportPdf')}</button>
@@ -253,13 +262,21 @@ export default function ReportsScreen() {
           {!isLoading && !error && report && visibleRows.length > 0 && (
             <div style={{ maxWidth: 'min(100%, 1400px)', margin: '0 auto' }}>
               <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                {isMobile && (
+                  <div style={{ overflowX: 'auto', display: 'flex', gap: 6, padding: '10px 14px 8px', flexWrap: 'nowrap', borderBottom: '1px solid var(--noorix-border)' }}>
+                    <button type="button" onClick={() => setSelectedMonth('')} style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--noorix-border)', background: !selectedMonth ? 'var(--noorix-accent-blue)' : 'var(--noorix-bg-surface)', color: !selectedMonth ? '#fff' : 'var(--noorix-text-muted)', fontSize: 12, fontWeight: !selectedMonth ? 700 : 400, whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0 }}>{t('allMonths')}</button>
+                    {(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN).map((name, index) => (
+                      <button key={index} type="button" onClick={() => setSelectedMonth(String(index + 1))} style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--noorix-border)', background: selectedMonthNumber === index + 1 ? 'var(--noorix-accent-blue)' : 'var(--noorix-bg-surface)', color: selectedMonthNumber === index + 1 ? '#fff' : 'var(--noorix-text-muted)', fontSize: 12, fontWeight: selectedMonthNumber === index + 1 ? 700 : 400, whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0 }}>{name}</button>
+                    ))}
+                  </div>
+                )}
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', minWidth: selectedMonthNumber ? 1280 : 1200, borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                  <table style={{ width: '100%', minWidth: isMobile ? 0 : (selectedMonthNumber ? 1280 : 1200), borderCollapse: 'collapse', tableLayout: isMobile ? 'auto' : 'fixed' }}>
                     <colgroup>
-                      <col style={{ width: 200 }} />
-                      {selectedMonthNumber && <col style={{ width: 72 }} />}
-                      {(report?.months ?? []).map((m) => <col key={m.index} style={{ width: 72 }} />)}
-                      <col style={{ width: 110 }} />
+                      <col style={{ width: isMobile ? undefined : 200 }} />
+                      {selectedMonthNumber && <col style={{ width: isMobile ? undefined : 72 }} />}
+                      {!isMobile && (report?.months ?? []).map((m) => <col key={m.index} style={{ width: 72 }} />)}
+                      <col style={{ width: isMobile ? undefined : 110 }} />
                     </colgroup>
                     <thead>
                       <tr>
@@ -267,7 +284,7 @@ export default function ReportsScreen() {
                         {selectedMonthNumber && (
                           <th style={{ textAlign: 'center', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'rgba(37,99,235,0.06)' }}>{(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}</th>
                         )}
-                        {(report?.months ?? []).map((month) => (
+                        {!isMobile && (report?.months ?? []).map((month) => (
                           <th key={month.index} style={{ textAlign: 'center', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', whiteSpace: 'nowrap', background: selectedMonthNumber === month.index ? 'rgba(37,99,235,0.10)' : undefined }}>{month.label}</th>
                         ))}
                         <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'rgba(248,250,252,1)', borderInlineStart: '2px solid rgba(15,23,42,0.12)', fontWeight: 800 }}>{t('reportAnnualTotal')}</th>
@@ -362,7 +379,7 @@ export default function ReportsScreen() {
                             </td>
                           )}
 
-                          {(row.months ?? []).map((value, index) => (
+                          {!isMobile && (row.months ?? []).map((value, index) => (
                             <td key={`${row.groupKey}-${index}`} style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: selectedMonthNumber === index + 1 ? 'rgba(37,99,235,0.06)' : undefined }}>
                               <button
                                 type="button"
