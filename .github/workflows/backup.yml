@@ -2,10 +2,8 @@ name: Database Backup
 
 on:
   schedule:
-    # كل يوم الساعة 2:00 صباحاً (توقيت UTC = 5 صباحاً بتوقيت السعودية)
     - cron: '0 2 * * *'
   workflow_dispatch:
-    # تشغيل يدوي من GitHub عند الحاجة
 
 jobs:
   backup:
@@ -18,30 +16,32 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client
 
-      - name: Run pg_dump
+      - name: Parse connection URL
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          python3 - << 'EOF'
+          import os
+          from urllib.parse import urlparse, unquote
+          url = os.environ['DATABASE_URL'].split('?')[0]
+          r = urlparse(url)
+          env_file = os.environ['GITHUB_ENV']
+          with open(env_file, 'a') as f:
+              f.write(f"DB_HOST={r.hostname}\n")
+              f.write(f"DB_PORT={r.port or 5432}\n")
+              f.write(f"DB_USER={r.username}\n")
+              f.write(f"DB_NAME={r.path.lstrip('/')}\n")
+              f.write(f"PGPASSWORD={unquote(r.password or '')}\n")
+          print("Connection params parsed successfully")
+          EOF
+
+      - name: Run pg_dump
+        env:
+          PGPASSWORD: ${{ env.PGPASSWORD }}
+          PGSSLMODE: require
+        run: |
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           FILENAME="noorix_backup_${TIMESTAMP}.dump"
-
-          # تحليل الـ URL بـ Python لتجنب مشاكل %40 في كلمة المرور
-          eval $(python3 << 'PYEOF'
-import os, sys
-from urllib.parse import urlparse, unquote
-raw = os.environ['DATABASE_URL'].split('?')[0]
-r = urlparse(raw)
-print(f"export DB_HOST={r.hostname}")
-print(f"export DB_PORT={r.port or 5432}")
-print(f"export DB_USER={r.username}")
-print(f"export DB_NAME={r.path.lstrip('/')}")
-pw = unquote(r.password or '')
-# تهريب علامات الاقتباس في كلمة المرور
-pw_escaped = pw.replace("'", "'\\''")
-print(f"export PGPASSWORD='{pw_escaped}'")
-PYEOF
-          )
-          export PGSSLMODE=require
 
           pg_dump \
             --host="$DB_HOST" \
@@ -54,14 +54,13 @@ PYEOF
             --file="$FILENAME"
 
           echo "BACKUP_FILE=$FILENAME" >> $GITHUB_ENV
-          echo "✅ Backup created: $FILENAME ($(du -sh $FILENAME | cut -f1))"
+          echo "Backup: $FILENAME ($(du -sh $FILENAME | cut -f1))"
 
       - name: Upload backup as artifact
         uses: actions/upload-artifact@v4
         with:
           name: db-backup-${{ github.run_number }}
           path: ${{ env.BACKUP_FILE }}
-          # الاحتفاظ بالنسخة 90 يوماً (الحد الأقصى على الخطة المجانية)
           retention-days: 90
 
       - name: Cleanup old artifacts (keep last 30)
@@ -76,12 +75,11 @@ PYEOF
             const backups = artifacts.data.artifacts
               .filter(a => a.name.startsWith('db-backup-'))
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            // احذف ما زاد عن آخر 30 نسخة
             for (const artifact of backups.slice(30)) {
               await github.rest.actions.deleteArtifact({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 artifact_id: artifact.id,
               });
-              console.log(`Deleted old artifact: ${artifact.name}`);
+              console.log(`Deleted: ${artifact.name}`);
             }
