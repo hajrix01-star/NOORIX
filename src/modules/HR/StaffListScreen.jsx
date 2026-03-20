@@ -12,6 +12,8 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { fmt } from '../../utils/format';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
+import ImportExportModal from '../../components/ImportExportModal';
+import { formatEmployeeForExport } from '../../utils/importTemplates';
 import {
   createCustomAllowance,
   createEmployeesBatch,
@@ -95,6 +97,7 @@ export default function StaffListScreen({ embedded }) {
     date: getSaudiToday(),
   });
   const [importing, setImporting] = useState(false);
+  const [showImportExport, setShowImportExport] = useState(false);
   const terminationReasonOptions = [
     t('terminationReasonOptionArt80'),
     t('terminationReasonOptionArt77'),
@@ -501,6 +504,23 @@ export default function StaffListScreen({ embedded }) {
         <>
           <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
+          <ImportExportModal
+            isOpen={showImportExport}
+            onClose={() => setShowImportExport(false)}
+            entityType="employees"
+            companyId={companyId}
+            exportFetcher={async () => {
+              const res = await getEmployeesBulk(companyId, 'active');
+              const list = Array.isArray(res) ? res : (res?.data ?? []);
+              return list.map(formatEmployeeForExport);
+            }}
+            onImportSuccess={(count) => {
+              queryClient.invalidateQueries({ queryKey: ['employees'] });
+              queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+              setToast({ visible: true, message: `تم استيراد ${count} موظف بنجاح`, type: 'success' });
+            }}
+          />
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>
               <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('active')} style={{ fontSize: 13 }}>
@@ -515,27 +535,11 @@ export default function StaffListScreen({ embedded }) {
               <button
                 type="button"
                 className="noorix-btn-nav"
-                disabled={exporting}
-                onClick={() => handleExportExcel()}
-                style={{ fontSize: 13 }}
+                onClick={() => setShowImportExport(true)}
+                style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}
               >
-                {exporting ? t('loading') : t('exportExcel')}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                style={{ display: 'none' }}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportFile(f); }}
-              />
-              <button
-                type="button"
-                className="noorix-btn-nav"
-                disabled={importing}
-                onClick={() => fileInputRef.current?.click()}
-                style={{ fontSize: 13 }}
-              >
-                {importing ? t('saving') : (t('importFromFile') || 'استيراد من ملف')}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                استيراد / تصدير
               </button>
             </div>
             <button

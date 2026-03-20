@@ -12,12 +12,14 @@ import { useInvoices }    from '../../hooks/useInvoices';
 import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDateISO } from '../../utils/saudiDate';
-import { updateInvoice } from '../../services/api';
+import { updateInvoice, getInvoices } from '../../services/api';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable         from '../../components/common/SmartTable';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
 import { InvoiceEditModal } from './components/InvoiceEditModal';
 import Toast              from '../../components/Toast';
+import ImportExportModal  from '../../components/ImportExportModal';
+import { formatInvoiceForExport } from '../../utils/importTemplates';
 
 const PAGE_SIZE = 50;
 
@@ -49,6 +51,7 @@ export default function InvoicesListScreen() {
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
+  const [showImportExport, setShowImportExport] = useState(false);
   const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
   const [searchText, setSearchText] = useState(qInit);
   const [debouncedQ, setDebouncedQ] = useState(qInit.trim());
@@ -263,6 +266,29 @@ export default function InvoicesListScreen() {
           onClose={() => setEditingInvoice(null)}
         />
       )}
+      <ImportExportModal
+        isOpen={showImportExport}
+        onClose={() => setShowImportExport(false)}
+        entityType="invoices"
+        companyId={companyId}
+        exportFetcher={async () => {
+          const kindForExport = filterKind || (urlExtra.kind ? urlExtra.kind.split(',')[0] : '');
+          const res = await getInvoices(
+            companyId,
+            dateFilter.startDate, dateFilter.endDate,
+            1, 2000,
+            undefined, undefined,
+            kindForExport || undefined, undefined, undefined,
+            filterSupplierId || undefined, debouncedQ || undefined,
+            urlExtra.categoryId || undefined, urlExtra.expenseLineId || undefined,
+          );
+          return (res?.items ?? []).map(formatInvoiceForExport);
+        }}
+        onImportSuccess={(count) => {
+          invalidateOnFinancialMutation(queryClient);
+          setToast({ visible: true, message: `تم استيراد ${count} فاتورة بنجاح`, type: 'success' });
+        }}
+      />
 
       {companyId && (
         <>
@@ -358,6 +384,15 @@ export default function InvoicesListScreen() {
             </div>
           )}
           <div className="noorix-exec-filters">
+            <button
+              type="button"
+              className="noorix-btn-nav"
+              onClick={() => setShowImportExport(true)}
+              style={{ fontSize: 12, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              استيراد / تصدير
+            </button>
             <span className="noorix-exec-filters__icon" title={t('filterByType')} aria-hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="4 2 20 2 14 10 14 22 10 22 10 10 4 2"/></svg>
             </span>

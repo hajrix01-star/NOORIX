@@ -21,6 +21,8 @@ import SmartTable from '../../components/common/SmartTable';
 import { SalesActionsCell } from '../../components/common/SalesActionsCell';
 import { SalesEditModal } from './components/SalesEditModal';
 import { SalesEntryModal } from './components/SalesEntryModal';
+import ImportExportModal from '../../components/ImportExportModal';
+import { formatSalesForExport } from '../../utils/importTemplates';
 
 const PAGE_SIZE = 50;
 
@@ -56,6 +58,7 @@ export default function DailySalesScreen() {
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
   const [exportBusy, setExportBusy] = useState(false);
+  const [showImportExport, setShowImportExport] = useState(false);
 
   const { createSummary, updateSummary, cancelSummary } = useSales({
     companyId,
@@ -433,17 +436,40 @@ export default function DailySalesScreen() {
         />
       )}
 
+      <ImportExportModal
+        isOpen={showImportExport}
+        onClose={() => setShowImportExport(false)}
+        entityType="sales"
+        companyId={companyId}
+        exportFetcher={async () => {
+          const res = await fetchAllSalesSummariesForExport(companyId, dateFilter.startDate, dateFilter.endDate);
+          const list = Array.isArray(res) ? res : (res?.items ?? []);
+          return list.map(formatSalesForExport);
+        }}
+        onImportSuccess={() => {
+          setToast({ visible: true, message: 'تم استيراد ملخصات المبيعات بنجاح', type: 'success' });
+        }}
+      />
+
       {/* هيدر */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('salesDailySummary')}</h1>
           <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('salesDailyDesc')}</p>
         </div>
-        <button type="button" className="noorix-btn-nav noorix-btn-primary noorix-print-hide"
-          onClick={() => setShowEntryModal(true)} disabled={!hasCompany}
-          style={{ flexShrink: 0 }}>
-          {t('addDailySummary')}
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+          <button type="button" className="noorix-btn-nav noorix-print-hide"
+            onClick={() => setShowImportExport(true)} disabled={!hasCompany}
+            style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            استيراد / تصدير
+          </button>
+          <button type="button" className="noorix-btn-nav noorix-btn-primary noorix-print-hide"
+            onClick={() => setShowEntryModal(true)} disabled={!hasCompany}
+            style={{ flexShrink: 0 }}>
+            {t('addDailySummary')}
+          </button>
+        </div>
       </div>
 
       {/* FAB — زر إضافة عائم للجوال */}
