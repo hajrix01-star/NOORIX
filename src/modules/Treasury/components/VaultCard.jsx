@@ -42,8 +42,12 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
   useEffect(() => {
     if (!open) return;
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', handler, true);
+    document.addEventListener('touchstart', handler, true);
+    return () => {
+      document.removeEventListener('mousedown', handler, true);
+      document.removeEventListener('touchstart', handler, true);
+    };
   }, [open]);
 
   function handleToggle() {
@@ -59,7 +63,7 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
       <button
         ref={btnRef}
         type="button"
-        onClick={handleToggle}
+        onClick={(e) => { e.stopPropagation(); handleToggle(); }}
         style={{
           width: 32, height: 32, borderRadius: 8, border: '1px solid var(--noorix-border)',
           background: 'var(--noorix-bg-muted)', cursor: 'pointer', display: 'flex',

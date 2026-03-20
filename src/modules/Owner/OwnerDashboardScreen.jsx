@@ -2,7 +2,7 @@
  * OwnerDashboardScreen — لوحة المالك
  * مؤشرات شاملة: المبيعات الشهرية لكل شركة، الأرباح المجمعة، توزيع الأرباح
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
 import { useOwnerReports } from '../../hooks/useOwnerReports';
@@ -28,6 +28,12 @@ export default function OwnerDashboardScreen() {
   const [selectedCompanyIds, setSelectedCompanyIds] = useState(() => new Set(companies?.map((c) => c.id) || []));
 
   const companyList = companies?.filter((c) => !c.isArchived) || [];
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 700);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 700);
+    window.addEventListener('resize', handler, { passive: true });
+    return () => window.removeEventListener('resize', handler);
+  }, []);
   const idsToFetch = selectedCompanyIds.size > 0 ? [...selectedCompanyIds] : companyList.map((c) => c.id);
   const { reportsByCompany, isLoading, isError, error } = useOwnerReports({ companyIds: idsToFetch, year });
 
@@ -164,7 +170,7 @@ export default function OwnerDashboardScreen() {
 
   if (companyList.length === 0) {
     return (
-      <div style={{ padding: 24 }}>
+      <div style={{ display: 'grid', gap: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('ownerDashboard')}</h1>
         <div className="noorix-surface-card" style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)', marginTop: 16 }}>
           {t('pleaseSelectCompany')}
@@ -174,28 +180,26 @@ export default function OwnerDashboardScreen() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 24, padding: 24 }}>
+    <div style={{ display: 'grid', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-        <div>
+        <div style={{ minWidth: 0, flex: '1 1 auto' }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('ownerDashboard')}</h1>
-          <p style={{ marginTop: 6, color: 'var(--noorix-text-muted)', maxWidth: 700 }}>{t('ownerDashboardDesc')}</p>
+          <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('ownerDashboardDesc')}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('reportYear')}</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}
+            style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', fontSize: 13 }}
           >
             {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('reportMonth')}</label>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', minWidth: 120 }}
+            style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', fontSize: 13, minWidth: 90 }}
           >
             <option value="">{t('allMonths')}</option>
             {EN_MONTHS.map((m, i) => (
@@ -208,7 +212,7 @@ export default function OwnerDashboardScreen() {
       </div>
 
       {/* اختيار الشركات — أزرار عين */}
-      <div className="noorix-surface-card" style={{ padding: 16, border: '1px solid var(--noorix-border)', borderRadius: CARD_BORDER_RADIUS }}>
+      <div className="noorix-surface-card" style={{ padding: isMobile ? 12 : 16, border: '1px solid var(--noorix-border)', borderRadius: CARD_BORDER_RADIUS }}>
         <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('ownerSelectCompanies')}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
           <button type="button" className="noorix-btn-nav" onClick={selectAll} style={{ padding: '6px 10px', fontSize: 11 }}>{t('ownerAllCompanies')}</button>
@@ -300,7 +304,7 @@ export default function OwnerDashboardScreen() {
           </div>
 
           {/* المبيعات الشهرية — رسم بياني */}
-          <div className="noorix-surface-card" style={{ padding: 24, border: '1px solid var(--noorix-border)', borderRadius: CARD_BORDER_RADIUS }}>
+          <div className="noorix-surface-card" style={{ padding: isMobile ? 12 : 24, border: '1px solid var(--noorix-border)', borderRadius: CARD_BORDER_RADIUS }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{t('ownerMonthlySales')} — {year}{selectedMonthNum ? ` (${EN_MONTHS[selectedMonthNum - 1]})` : ''}</div>
             <div style={{ display: 'flex', gap: 0, minHeight: 220 }}>
               <div style={{ flexShrink: 0, width: 48, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 28 }}>
@@ -358,35 +362,35 @@ export default function OwnerDashboardScreen() {
           </div>
 
           {/* توزيع الأرباح */}
-          <div className="noorix-surface-card" style={{ padding: 24, border: '1px solid var(--noorix-border)', borderRadius: CARD_BORDER_RADIUS }}>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{t('ownerProfitDistribution')}</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="noorix-surface-card" style={{ padding: 16, border: '1px solid var(--noorix-border)', borderRadius: CARD_BORDER_RADIUS }}>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>{t('ownerProfitDistribution')}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {aggregated.byCompany
                 .filter((x) => Math.abs(x.netProfit) > 0.001)
                 .sort((a, b) => b.netProfit - a.netProfit)
                 .map((item, i) => {
                   const pct = aggregated.totalNetProfit !== 0 ? (item.netProfit / aggregated.totalNetProfit) * 100 : 0;
                   const barWidth = Math.min(100, Math.max(0, Math.abs(pct)));
+                  const profitColor = item.netProfit >= 0 ? '#16a34a' : '#dc2626';
                   return (
-                    <div key={item.companyId} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ width: 10, height: 10, borderRadius: 2, background: COLORS[i % COLORS.length], flexShrink: 0 }} />
-                      <span style={{ minWidth: 120, fontSize: 13 }}>{item.name}</span>
-                      <div style={{ flex: 1, height: 20, background: 'var(--noorix-bg-muted)', borderRadius: 4, overflow: 'hidden', display: 'flex' }}>
-                        <div
-                          style={{
-                            width: `${barWidth}%`,
-                            height: '100%',
-                            background: item.netProfit >= 0 ? '#16a34a' : '#dc2626',
-                            borderRadius: 4,
-                          }}
-                        />
+                    <div key={item.companyId}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 2, background: COLORS[i % COLORS.length], flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: profitColor }}>
+                            {fmt(item.netProfit, 2)} ﷼
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)', minWidth: 38, textAlign: 'right' }}>
+                            {aggregated.totalNetProfit !== 0 ? `${fmt(pct, 1)}%` : '—'}
+                          </span>
+                        </div>
                       </div>
-                      <span style={{ minWidth: 90, fontSize: 13, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: item.netProfit >= 0 ? '#16a34a' : '#dc2626', textAlign: 'right' }}>
-                        {fmt(item.netProfit, 2)} ﷼
-                      </span>
-                      <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)', minWidth: 45 }}>
-                        {aggregated.totalNetProfit !== 0 ? `${fmt(pct, 1)}%` : '—'}
-                      </span>
+                      <div style={{ height: 6, background: 'var(--noorix-bg-muted)', borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{ width: `${barWidth}%`, height: '100%', background: profitColor, borderRadius: 4, transition: 'width 400ms ease' }} />
+                      </div>
                     </div>
                   );
                 })}

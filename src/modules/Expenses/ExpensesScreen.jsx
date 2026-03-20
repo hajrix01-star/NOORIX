@@ -91,36 +91,38 @@ export default function ExpensesScreen() {
   }), []);
 
   return (
-    <div className="app-page" style={{ padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--noorix-text)' }}>
+    <div style={{ display: 'grid', gap: 16 }}>
+      <div>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--noorix-text)' }}>
           {t('fixedAndVariableExpenses') || 'المصاريف الثابتة والمتغيرة'}
         </h1>
+        <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
+          {t('expensesDesc') || 'إدارة المصاريف الثابتة والمتغيرة للشركة'}
+        </p>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 4 }}>
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '10px 16px',
-              borderRadius: 8,
-              border: activeTab === tab.id ? '2px solid var(--noorix-accent-blue)' : '1px solid var(--noorix-border)',
-              background: activeTab === tab.id ? 'rgba(37,99,235,0.08)' : 'var(--noorix-bg-surface)',
-              color: activeTab === tab.id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text)',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontSize: 14,
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-            }}
-          >
-            {tab.icon} {tabLabels[tab.labelKey] || tab.labelKey}
-          </button>
-        ))}
-      </div>
+      <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className="noorix-btn-nav"
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                margin: 0, borderRadius: 0, border: 'none',
+                borderBottom: activeTab === tab.id ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
+                background: activeTab === tab.id ? 'rgba(37,99,235,0.07)' : 'transparent',
+                color: activeTab === tab.id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
+                fontWeight: activeTab === tab.id ? 700 : 500,
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              {tab.icon} {t(tab.labelKey) || tab.labelKey}
+            </button>
+          ))}
+        </div>
+        <div style={{ padding: 20 }}>
 
       {activeTab === 'lines' && (
         <ExpenseLineList
@@ -167,6 +169,8 @@ export default function ExpensesScreen() {
           </div>
         </div>
       )}
+        </div>
+      </div>
 
       {selectedLineId && (
         <ExpenseLineDetailModal

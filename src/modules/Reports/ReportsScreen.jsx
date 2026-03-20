@@ -271,16 +271,16 @@ export default function ReportsScreen() {
                   </div>
                 )}
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', minWidth: isMobile ? 0 : (selectedMonthNumber ? 1280 : 1200), borderCollapse: 'collapse', tableLayout: isMobile ? 'auto' : 'fixed' }}>
+                  <table style={{ width: '100%', minWidth: isMobile ? (selectedMonthNumber ? 300 : 220) : (selectedMonthNumber ? 1280 : 1200), borderCollapse: 'collapse', tableLayout: isMobile ? 'auto' : 'fixed' }}>
                     <colgroup>
-                      <col style={{ width: isMobile ? undefined : 200 }} />
+                      <col style={{ width: isMobile ? 120 : 200 }} />
                       {selectedMonthNumber && <col style={{ width: isMobile ? undefined : 72 }} />}
                       {!isMobile && (report?.months ?? []).map((m) => <col key={m.index} style={{ width: 72 }} />)}
-                      <col style={{ width: isMobile ? undefined : 110 }} />
+                      <col style={{ width: isMobile ? 100 : 110 }} />
                     </colgroup>
                     <thead>
                       <tr>
-                        <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: 'var(--noorix-bg-surface)', zIndex: 2, fontSize: 13, fontWeight: 700, fontFamily: 'var(--noorix-font-primary)', color: '#374151', width: 200, minWidth: 200 }}>{t('reportItem')}</th>
+                        <th style={{ textAlign: 'right', padding: isMobile ? '6px 8px' : '8px 12px', borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: 'var(--noorix-bg-surface)', zIndex: 2, fontSize: isMobile ? 11 : 13, fontWeight: 700, fontFamily: 'var(--noorix-font-primary)', color: '#374151', width: isMobile ? 120 : 200, minWidth: isMobile ? 120 : 200, maxWidth: isMobile ? 120 : 300 }}>{t('reportItem')}</th>
                         {selectedMonthNumber && (
                           <th style={{ textAlign: 'center', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'rgba(37,99,235,0.06)' }}>{(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}</th>
                         )}
@@ -310,7 +310,7 @@ export default function ReportsScreen() {
                             borderTop: rowTone.borderTop || undefined,
                           }}
                         >
-                          <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: rowTone.stickyBg, fontSize: 13, fontFamily: 'var(--noorix-font-primary)', lineHeight: 1.35, width: 200, minWidth: 200, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <td style={{ padding: isMobile ? '5px 8px' : '6px 12px', borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: rowTone.stickyBg, fontSize: isMobile ? 11 : 13, fontFamily: 'var(--noorix-font-primary)', lineHeight: 1.35, width: isMobile ? 120 : 200, minWidth: isMobile ? 120 : 200, maxWidth: isMobile ? 120 : 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {canCollapse ? (
                               <button
                                 type="button"

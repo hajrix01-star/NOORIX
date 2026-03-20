@@ -104,6 +104,7 @@ export default function HRMainScreen() {
                 background: activeTab === tab.id ? 'rgba(22,163,74,0.07)' : 'transparent',
                 color: activeTab === tab.id ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)',
                 fontWeight: activeTab === tab.id ? 700 : 500,
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               {t(tab.labelKey)}
