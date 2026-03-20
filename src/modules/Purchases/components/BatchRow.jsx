@@ -140,6 +140,7 @@ export const BatchRow = memo(function BatchRow({
       <td style={cp}>
         <input
           type="date"
+          dir="ltr"
           value={row.invoiceDate}
           onChange={(e) => onUpdate(index, 'invoiceDate', e.target.value)}
           style={{ ...inputSm, width: '100%', textAlign: 'center' }}

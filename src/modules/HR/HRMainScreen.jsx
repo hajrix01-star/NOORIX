@@ -91,7 +91,7 @@ export default function HRMainScreen() {
       )}
 
       <div className="noorix-surface-card">
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', flexShrink: 0 }}>
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -112,7 +112,7 @@ export default function HRMainScreen() {
         </div>
 
         <div style={{ padding: 20 }}>
-          {activeTab === 'employees' && <StaffListScreen />}
+          {activeTab === 'employees' && <StaffListScreen embedded />}
           {activeTab === 'payroll' && <PayrollTab />}
           {activeTab === 'leave' && <LeaveTab />}
           {activeTab === 'advances' && <AdvancesTab />}

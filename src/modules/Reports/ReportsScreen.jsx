@@ -171,9 +171,9 @@ export default function ReportsScreen() {
             </select>
           )}
           <div style={{ display: 'flex', gap: 6 }}>
-            <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={!report} style={{ fontSize: 12, padding: '6px 10px' }}>{t('exportExcel')}</button>
-            <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} disabled={!report} style={{ fontSize: 12, padding: '6px 10px' }}>{t('exportPdf')}</button>
-            <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!report} style={{ fontSize: 12, padding: '6px 10px' }}>{t('print')}</button>
+            <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={!report} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>{t('exportExcel')}</button>
+            <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} disabled={!report} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>{t('exportPdf')}</button>
+            <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!report} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>{t('print')}</button>
           </div>
         </div>
       </div>

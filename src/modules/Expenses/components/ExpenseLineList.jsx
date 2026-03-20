@@ -161,9 +161,9 @@ export default function ExpenseLineList({
           {t('refresh') || 'تحديث'}
         </button>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!tableData.length} style={{ fontSize: 12, padding: '6px 10px' }}>🖨 {t('print') || 'طباعة'}</button>
-          <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length} style={{ fontSize: 12, padding: '6px 10px' }}>📥 Excel</button>
-          <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'بنود المصاريف', filename: 'expense-lines.pdf' })} disabled={!tableData.length} style={{ fontSize: 12, padding: '6px 10px' }}>📄 PDF</button>
+          <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>🖨 {t('print') || 'طباعة'}</button>
+          <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>📥 Excel</button>
+          <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'بنود المصاريف', filename: 'expense-lines.pdf' })} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>📄 PDF</button>
         </div>
       </div>
 

@@ -61,4 +61,8 @@ export default {
   movementsLabel: { ar: 'حركات', en: 'Movements' },
   customers: { ar: 'العملاء', en: 'Customers' },
   average: { ar: 'المعدل', en: 'Average' },
+  allTypes: { ar: 'كل الأنواع', en: 'All types' },
+  addExpenseLine: { ar: 'إضافة بند مصروف', en: 'Add expense line' },
+  fixedExpense: { ar: 'ثابت', en: 'Fixed' },
+  variableExpense: { ar: 'متغير', en: 'Variable' },
 };
