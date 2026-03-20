@@ -105,8 +105,8 @@ export default function TreasuryScreen() {
   const hasCompany = !!companyId;
 
   /* الإجمالي الكلي وارد/صادر */
-  const totalIn  = useMemo(() => vaultsList.filter((v) => !v.isArchived).reduce((s, v) => s + Number(v.totalIn  ?? 0), 0), [vaultsList]);
-  const totalOut = useMemo(() => vaultsList.filter((v) => !v.isArchived).reduce((s, v) => s + Number(v.totalOut ?? 0), 0), [vaultsList]);
+  const totalIn  = useMemo(() => sumAmounts(vaultsList.filter((v) => !v.isArchived), 'totalIn').toNumber(),  [vaultsList]);
+  const totalOut = useMemo(() => sumAmounts(vaultsList.filter((v) => !v.isArchived), 'totalOut').toNumber(), [vaultsList]);
 
   const gridStyle = {
     display: 'grid',

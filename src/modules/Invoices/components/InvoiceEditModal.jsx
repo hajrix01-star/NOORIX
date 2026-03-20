@@ -39,8 +39,8 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
       supplierInvoiceNumber: invoice.supplierInvoiceNumber || invoice.invoiceNumber || '',
       kind: invoice.kind || 'purchase',
       totalAmount: total > 0 ? String(total) : '',
-      netAmount: net > 0 ? net.toFixed(1) : '',
-      taxAmount: tax > 0 ? tax.toFixed(1) : '',
+      netAmount: net > 0 ? net.toFixed(2) : '',
+      taxAmount: tax > 0 ? tax.toFixed(2) : '',
       transactionDate: invoice.transactionDate ? new Date(invoice.transactionDate).toISOString().slice(0, 10) : '',
     });
   }, [invoice]);
@@ -51,7 +51,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
       const v = parseFloat(value);
       if (!isNaN(v) && v > 0) {
         const { net, tax } = splitTaxFromTotalAsNumbers(v, true);
-        setForm((p) => ({ ...p, netAmount: net.toFixed(1), taxAmount: tax.toFixed(1) }));
+        setForm((p) => ({ ...p, netAmount: net.toFixed(2), taxAmount: tax.toFixed(2) }));
       }
     }
   }

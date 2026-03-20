@@ -21,9 +21,11 @@ export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize 
     enabled: !!companyId,
   });
 
+  const zero = () => ({ net: '0', tax: '0', total: '0', count: 0 });
   return {
     items:    data?.items ?? [],
     total:    data?.total ?? 0,
+    sums:     data?.sums  ?? { all: zero(), inflow: zero(), outflow: zero() },
     isLoading,
     isError,
     error,

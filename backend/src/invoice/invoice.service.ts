@@ -342,7 +342,9 @@ export class InvoiceService {
     const size = Math.min(200, Math.max(1, pageSize));
     const p = Math.max(1, page);
 
-    const [items, total] = await Promise.all([
+    const activeWhere = { ...where, status: 'active' };
+
+    const [items, total, byKind] = await Promise.all([
       this.prisma.invoice.findMany({
         where,
         orderBy,
@@ -355,9 +357,33 @@ export class InvoiceService {
         },
       }),
       this.prisma.invoice.count({ where }),
+      this.prisma.invoice.groupBy({
+        by: ['kind'],
+        where: activeWhere,
+        _sum: { netAmount: true, taxAmount: true, totalAmount: true },
+        _count: { _all: true },
+      }),
     ]);
 
-    return { items, total, page: p, pageSize: size };
+    const zero = () => ({ net: '0', tax: '0', total: '0', count: 0 });
+    const sums = { all: zero(), inflow: zero(), outflow: zero() };
+    for (const row of byKind) {
+      const n = row._sum.netAmount?.toString()   ?? '0';
+      const x = row._sum.taxAmount?.toString()   ?? '0';
+      const t = row._sum.totalAmount?.toString() ?? '0';
+      const c = row._count._all;
+      const target = row.kind === 'sale' ? sums.inflow : sums.outflow;
+      target.net   = new Decimal(target.net).plus(n).toString();
+      target.tax   = new Decimal(target.tax).plus(x).toString();
+      target.total = new Decimal(target.total).plus(t).toString();
+      target.count += c;
+      sums.all.net   = new Decimal(sums.all.net).plus(n).toString();
+      sums.all.tax   = new Decimal(sums.all.tax).plus(x).toString();
+      sums.all.total = new Decimal(sums.all.total).plus(t).toString();
+      sums.all.count += c;
+    }
+
+    return { items, total, page: p, pageSize: size, sums };
   }
 
   private buildDateFilter(startDate?: string, endDate?: string) {

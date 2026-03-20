@@ -11,6 +11,7 @@ export default {
   statusArchived: { ar: 'مؤرشف', en: 'Archived' },
   status: { ar: 'الحالة', en: 'Status' },
   totalInvoices: { ar: 'الإجمالي ({0} فاتورة)', en: 'Total ({0} invoices)' },
+  allPages: { ar: 'كل الصفحات', en: 'all pages' },
   totalSummaries: { ar: 'الإجمالي ({0} ملخص)', en: 'Total ({0} summaries)' },
   summaryCount: { ar: '{0} ملخص', en: '{0} summaries' },
   cancelInvoiceConfirm: { ar: 'إلغاء هذه الفاتورة؟', en: 'Cancel this invoice?' },

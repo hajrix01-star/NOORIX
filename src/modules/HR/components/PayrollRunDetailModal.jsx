@@ -2,6 +2,7 @@
  * PayrollRunDetailModal — عرض تفاصيل مسيرة الراتب (جدول احترافي)
  */
 import React from 'react';
+import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getPayrollRun } from '../../../services/api';
@@ -39,9 +40,9 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
 
   const items = run.items || [];
   const statusStyle = STATUS_MAP[run.status] || STATUS_MAP.draft;
-  const totalNet = Number(run.totalAmount ?? 0);
-  const totalBeforeDeduction = items.reduce((s, row) => s + Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0), 0);
-  const totalDeductions = items.reduce((s, row) => s + Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0), 0);
+  const totalNet = new Decimal(run.totalAmount ?? 0);
+  const totalBeforeDeduction = items.reduce((s, row) => s.plus(row.grossSalary ?? 0).plus(row.allowancesAdd ?? 0), new Decimal(0));
+  const totalDeductions      = items.reduce((s, row) => s.plus(row.deductions   ?? 0).plus(row.advancesDeduct ?? 0), new Decimal(0));
 
   const handlePrint = () => {
     const monthLabel = formatSaudiDate(run.payrollMonth);

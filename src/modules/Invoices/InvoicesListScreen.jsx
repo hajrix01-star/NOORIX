@@ -184,7 +184,7 @@ export default function InvoicesListScreen() {
 
   const kindForApi = filterKind || urlExtra.kind || undefined;
 
-  const { items, total, isLoading, isError, error } = useInvoices({
+  const { items, total, sums, isLoading, isError, error } = useInvoices({
     companyId,
     startDate: dateFilter.startDate,
     endDate:   dateFilter.endDate,
@@ -199,7 +199,7 @@ export default function InvoicesListScreen() {
     expenseLineId: urlExtra.expenseLineId || undefined,
   });
 
-  // بيانات مُحوَّلة لـ SmartTable (البحث النصي من السيرفر عبر q)
+  // بيانات مُحوَّلة لـ SmartTable
   const tableData = useMemo(() => (items || []).map((inv) => ({
     ...inv,
     supplierName: inv.kind === 'sale' ? (t('categoryTypeSale') || 'مبيعات') : (inv.supplier?.nameAr || ''),
@@ -208,9 +208,6 @@ export default function InvoicesListScreen() {
 
   const activeOnly      = tableData.filter((inv) => inv.status !== 'cancelled');
   const displayedTotal  = total || 0;
-  const totalAmount     = sumAmounts(activeOnly, 'totalAmount');
-  const totalNet        = sumAmounts(activeOnly, 'netAmount');
-  const totalTax        = sumAmounts(activeOnly, 'taxAmount');
 
   const toggleSort = (key) => {
     if (key !== 'transactionDate') return;
@@ -219,22 +216,19 @@ export default function InvoicesListScreen() {
     setSortDir((prev) => (prev === 'desc' ? 'asc' : 'desc'));
   };
 
-  // فصل الداخل (مبيعات) عن الخارج (مشتريات ومصروفات)
-  const inflowInvoices  = activeOnly.filter((inv) => inv.kind === 'sale');
-  const outflowInvoices = activeOnly.filter((inv) => inv.kind !== 'sale');
-  const inflowNet       = sumAmounts(inflowInvoices, 'netAmount');
-  const inflowTax       = sumAmounts(inflowInvoices, 'taxAmount');
-  const inflowTotal     = sumAmounts(inflowInvoices, 'totalAmount');
-  const outflowNet     = sumAmounts(outflowInvoices, 'netAmount');
-  const outflowTax     = sumAmounts(outflowInvoices, 'taxAmount');
-  const outflowTotal   = sumAmounts(outflowInvoices, 'totalAmount');
+  // المجاميع الحقيقية من السيرفر (كل النتائج المُفلترة، ليس الصفحة فقط)
+  const serverAll     = sums.all;
+  const serverInflow  = sums.inflow;
+  const serverOutflow = sums.outflow;
 
   const footerCells = (
     <>
-      <td colSpan={6} style={{ padding: '6px 10px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('totalInvoices', activeOnly.length)}</td>
-      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, color: '#16a34a', textAlign: 'right' }}>{fmt(totalNet.toNumber(), 2)}</td>
-      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, color: '#d97706', textAlign: 'right' }}>{fmt(totalTax.toNumber(), 2)}</td>
-      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, color: '#7c3aed', fontWeight: 900, textAlign: 'right' }}>{fmt(totalAmount.toNumber(), 2)}</td>
+      <td colSpan={6} style={{ padding: '6px 10px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+        {t('totalInvoices', serverAll.count)} {total > PAGE_SIZE && <span style={{ opacity: 0.65, fontSize: 11 }}>({t('allPages')})</span>}
+      </td>
+      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, color: '#16a34a', textAlign: 'right' }}>{fmt(Number(serverAll.net), 2)}</td>
+      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, color: '#d97706', textAlign: 'right' }}>{fmt(Number(serverAll.tax), 2)}</td>
+      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, color: '#7c3aed', fontWeight: 900, textAlign: 'right' }}>{fmt(Number(serverAll.total), 2)}</td>
       <td colSpan={3} />
     </>
   );
@@ -286,22 +280,22 @@ export default function InvoicesListScreen() {
                 <span className="noorix-exec-card__title">{t('inbound')} — {t('categoryTypeSale')}</span>
               </div>
               <div className="noorix-exec-card__total">
-                <span className="noorix-exec-card__amount">{fmt(inflowTotal.toNumber())}</span>
+                <span className="noorix-exec-card__amount">{fmt(Number(serverInflow.total))}</span>
                 <span className="noorix-exec-card__currency">﷼</span>
               </div>
               <div className="noorix-exec-card__divider" />
               <div className="noorix-exec-card__footer">
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('validInvoices')}</span>
-                  <span className="noorix-exec-card__stat-value">{inflowInvoices.length}</span>
+                  <span className="noorix-exec-card__stat-value">{serverInflow.count}</span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('net')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(inflowNet.toNumber())} ﷼</span>
+                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverInflow.net))} ﷼</span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('tax')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(inflowTax.toNumber())} ﷼</span>
+                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverInflow.tax))} ﷼</span>
                 </div>
               </div>
             </div>
@@ -318,22 +312,22 @@ export default function InvoicesListScreen() {
                 <span className="noorix-exec-card__title">{t('outbound')} — {t('purchases')} / {t('categoryTypeExpense')}</span>
               </div>
               <div className="noorix-exec-card__total">
-                <span className="noorix-exec-card__amount">{fmt(outflowTotal.toNumber())}</span>
+                <span className="noorix-exec-card__amount">{fmt(Number(serverOutflow.total))}</span>
                 <span className="noorix-exec-card__currency">﷼</span>
               </div>
               <div className="noorix-exec-card__divider" />
               <div className="noorix-exec-card__footer">
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('validInvoices')}</span>
-                  <span className="noorix-exec-card__stat-value">{outflowInvoices.length}</span>
+                  <span className="noorix-exec-card__stat-value">{serverOutflow.count}</span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('net')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(outflowNet.toNumber())} ﷼</span>
+                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverOutflow.net))} ﷼</span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('tax')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(outflowTax.toNumber())} ﷼</span>
+                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverOutflow.tax))} ﷼</span>
                 </div>
               </div>
             </div>

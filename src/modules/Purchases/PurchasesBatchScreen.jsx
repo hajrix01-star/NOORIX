@@ -132,9 +132,9 @@ export default function PurchasesBatchScreen() {
 
   const activeOnly = allFilteredData.filter((b) => b.status !== 'cancelled');
   const displayedTotal = allFilteredData.length;
-  const totalNet = activeOnly.reduce((s, b) => s + b.netAmount, 0);
-  const totalTax = activeOnly.reduce((s, b) => s + b.taxAmount, 0);
-  const totalAmount = activeOnly.reduce((s, b) => s + b.totalAmount, 0);
+  const totalNet    = activeOnly.reduce((s, b) => s.plus(b.netAmount),    new Decimal(0));
+  const totalTax    = activeOnly.reduce((s, b) => s.plus(b.taxAmount),    new Decimal(0));
+  const totalAmount = activeOnly.reduce((s, b) => s.plus(b.totalAmount),  new Decimal(0));
 
   const openBatchWithInvoices = useCallback(async (row, setter) => {
     if (!companyId || !row?.batchId) return;
