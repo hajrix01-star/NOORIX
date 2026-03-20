@@ -2,7 +2,7 @@
  * InvoicesListScreen — قائمة الفواتير
  * يعتمد على: useInvoices | SmartTable | DateFilterBar | format | saudiDate
  */
-import React, { memo, useMemo, useState, useEffect, useRef } from 'react';
+import React, { memo, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
@@ -236,6 +236,61 @@ export default function InvoicesListScreen() {
     </>
   );
 
+  const renderMobileCard = useCallback((row) => {
+    const kindS   = kindStyles[row.kind]   || { color: '#64748b', label: row.kind };
+    const statusS = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+          <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14 }}>
+            {row.invoiceNumber || '—'}
+          </span>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{formatSaudiDateISO(row.transactionDate)}</span>
+            <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: statusS.bg, color: statusS.color }}>{statusS.label}</span>
+          </div>
+        </div>
+        <div style={{ fontSize: 13, marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ color: kindS.color, fontWeight: 600, fontSize: 12 }}>{kindS.label}</span>
+          {row.supplierName && <span style={{ color: 'var(--noorix-text-muted)' }}>— {row.supplierName}</span>}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('total')}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmount, 2)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('net')}</div>
+            <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.netAmount, 2)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('tax')}</div>
+            <div style={{ fontSize: 13, color: '#d97706', fontWeight: 600, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.taxAmount, 2)}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <InvoiceActionsCell
+            row={row}
+            userRole={userRole}
+            companyId={companyId}
+            onPrint={() => window.print()}
+            onEdit={(r) => setEditingInvoice(r)}
+            onDelete={async (r) => {
+              if (!confirm(t('cancelInvoiceConfirm'))) return;
+              const res = await updateInvoice(r.id, { status: 'cancelled' }, companyId);
+              if (res.success) {
+                queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                queryClient.invalidateQueries({ queryKey: ['vaults'] });
+                queryClient.invalidateQueries({ queryKey: ['ledger'] });
+                setToast({ visible: true, message: t('invoiceCancelled'), type: 'success' });
+              } else setToast({ visible: true, message: res.error || t('cancelFailed'), type: 'error' });
+            }}
+          />
+        </div>
+      </div>
+    );
+  }, [kindStyles, statusStyles, userRole, companyId, queryClient, t]);
+
   return (
     <div style={{ display: 'grid', gap: 18 }}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
@@ -455,6 +510,7 @@ export default function InvoicesListScreen() {
           sortDir={sortDir}
           onSort={toggleSort}
           emptyMessage={t('noInvoicesInPeriod')}
+          renderMobileCard={renderMobileCard}
         />
         </>
       )}

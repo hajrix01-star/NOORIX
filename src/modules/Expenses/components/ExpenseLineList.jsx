@@ -2,7 +2,7 @@
  * ExpenseLineList — قائمة بنود المصاريف (هاتف 1، كهرب 1، إيجار محل)
  * عند الضغط على بند → فتح تفاصيله وسجل مدفوعاته
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
@@ -98,6 +98,35 @@ export default function ExpenseLineList({
     [tableData],
   );
 
+  const renderMobileCard = useCallback((row) => {
+    const kindS = KIND_LABELS[row.kind] || { label: row.kind, bg: 'rgba(100,116,139,0.08)', color: '#64748b' };
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={() => onLineClick(row)}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--noorix-accent-blue)', fontWeight: 700, fontSize: 14, textAlign: 'start' }}
+          >
+            {row.nameAr || row.nameEn || '—'}
+          </button>
+          <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: kindS.bg, color: kindS.color, flexShrink: 0 }}>
+            {kindS.label}
+          </span>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {row.categoryName && row.categoryName !== '—' && <span>📁 {row.categoryName}</span>}
+          {row.supplierName && row.supplierName !== '—' && <span>🏢 {row.supplierName}</span>}
+          {row.serviceNumber && <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>#{row.serviceNumber}</span>}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button type="button" className="noorix-btn-nav" style={{ fontSize: 13, padding: '6px 14px', minHeight: 36 }} onClick={() => onEditLine?.(row)}>تعديل</button>
+          <button type="button" className="noorix-btn-nav" style={{ fontSize: 13, padding: '6px 14px', minHeight: 36, color: 'var(--noorix-text-danger)' }} onClick={() => onDeleteLine?.(row)}>حذف</button>
+        </div>
+      </div>
+    );
+  }, [onLineClick, onEditLine, onDeleteLine]);
+
   function handlePrint() {
     const rows = tableData.map((r) =>
       `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${(KIND_LABELS[r.kind]?.label || r.kind).replace(/</g, '&lt;')}</td><td>${(r.categoryName || '—').replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td></tr>`,
@@ -175,6 +204,7 @@ export default function ExpenseLineList({
         isLoading={isLoading}
         emptyMessage="لا توجد بنود مصاريف. أضف بنداً جديداً للبدء."
         keyExtractor={(row) => row.id}
+        renderMobileCard={renderMobileCard}
       />
     </div>
   );

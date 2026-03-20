@@ -483,6 +483,44 @@ export default function StaffListScreen({ embedded }) {
     }
   }
 
+  const renderMobileCard = useCallback((row) => {
+    const statusS = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+          <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>{row.employeeSerial || '—'}</span>
+          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: statusS.bg, color: statusS.color }}>{statusS.label}</span>
+        </div>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3 }}>{row.name || '—'}</div>
+        {row.jobTitle && <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{row.jobTitle}</div>}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('joinDate')}</div>
+            <div style={{ fontSize: 13, fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.joinDate)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('totalSalary')}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalSalary)} ﷼</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <HRActionsCell
+            row={row}
+            onView={() => navigate(`/hr/employee/${row.id}`)}
+            onEdit={() => setEditingEmployee(row)}
+            onAdvance={row.status === 'active' ? () => setAdvanceEmployee(row) : undefined}
+            onTerminate={row.status !== 'terminated' && row.status !== 'archived'
+              ? () => {
+                  setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
+                  setTerminatingEmployee(row);
+                }
+              : undefined}
+          />
+        </div>
+      </div>
+    );
+  }, [statusStyles, t, navigate]);
+
   return (
     <div style={{ display: 'grid', gap: 18 }}>
       {!embedded && (
@@ -572,6 +610,7 @@ export default function StaffListScreen({ embedded }) {
             sortDir={sortDir}
             onSort={toggleSort}
             emptyMessage={t('noEmployees')}
+            renderMobileCard={renderMobileCard}
           />
         </>
       )}

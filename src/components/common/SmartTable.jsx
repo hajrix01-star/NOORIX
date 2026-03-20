@@ -22,7 +22,7 @@
  *     emptyMessage="لا توجد بيانات"
  *   />
  */
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useState, useEffect } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 
 // ── Column Definition ────────────────────────────────────────
@@ -96,8 +96,22 @@ const SmartTable = memo(function SmartTable({
   tableLayout,             // تلقائي: auto لـ ≤6 أعمدة، fixed لـ >6
   rowNumberWidth,          // عرض عمود # (مثلاً '3%')
   getRowClassName,         // (row, index) => string — للصفوف المشطوبة (مثلاً الملغاة)
+  renderMobileCard,        // (row, index) => ReactNode — بطاقة الجوال، مفعّل تلقائياً على ≤700px
 }) {
   const { t } = useTranslation();
+
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 700px)');
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const showCards = isMobile && typeof renderMobileCard === 'function';
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const colCount   = columns.length;
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
@@ -162,8 +176,29 @@ padding: 16, margin: 12, background: 'rgba(239,68,68,0.08)',
         </div>
       )}
 
+      {/* ── بطاقات الجوال ── */}
+      {!isLoading && showCards && (
+        <div>
+          {data.length === 0 ? (
+            <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--noorix-text-muted)', fontSize: 13 }}>
+              {emptyMsg}
+            </div>
+          ) : data.map((row, i) => (
+            <div
+              key={row.id ?? i}
+              style={{
+                padding: '12px 16px',
+                borderBottom: i < data.length - 1 ? '1px solid var(--noorix-border)' : 'none',
+              }}
+            >
+              {renderMobileCard(row, i)}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── الجدول — مطاطي على الديسك توب، تمرير أفقي على الجوال فقط ── */}
-      {!isLoading && (
+      {!isLoading && !showCards && (
         <div className="noorix-table-scroll-wrapper">
           <table className="noorix-table" style={{ width: '100%', tableLayout: layout, minWidth: minW || undefined, maxWidth: !isWideTable ? '100%' : undefined }}>
             <thead>

@@ -405,6 +405,45 @@ export default function DailySalesScreen() {
     }
   }
 
+  const renderMobileCard = useCallback((row) => {
+    const statusS = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+          <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14 }}>
+            #{row.summaryNumber}
+          </span>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{formatSaudiDate(row.transactionDate)}</span>
+            <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: statusS.bg, color: statusS.color }}>{statusS.label}</span>
+          </div>
+        </div>
+        {row.channelsText && (
+          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 8, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+            {row.channelsText}
+          </div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('total')}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmount, 2)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('customers')}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', fontFamily: 'var(--noorix-font-numbers)' }}>{row.customerCount ?? 0}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('avgPerOrder')}</div>
+            <div style={{ fontSize: 13, color: '#7c3aed', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.avgPerCustomer, 2)}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleCancelSummary} />
+        </div>
+      </div>
+    );
+  }, [statusStyles, userRole, t]);
+
   return (
     <div style={{ display: 'grid', gap: 18 }}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
@@ -526,6 +565,7 @@ export default function DailySalesScreen() {
           sortDir={sortDir}
           onSort={toggleSort}
           emptyMessage={t('noSummariesInPeriod')}
+          renderMobileCard={renderMobileCard}
           />
         </div>
       )}
