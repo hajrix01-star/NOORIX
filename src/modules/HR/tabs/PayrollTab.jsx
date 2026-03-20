@@ -1,7 +1,7 @@
 /**
  * PayrollTab — مسيرات الرواتب (احترافي كامل)
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
@@ -148,6 +148,38 @@ export default function PayrollTab() {
     status: statusStyles[r.status]?.label || r.status,
   }));
 
+  const renderMobileCard = useCallback((row) => {
+    const ss = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+          <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14 }}>{row.runNumber}</span>
+          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: ss.bg, color: ss.color, flexShrink: 0 }}>{ss.label}</span>
+        </div>
+        {row.month && <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{row.month}</div>}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('payrollGross')}</div>
+            <div style={{ fontSize: 14, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.grossTotal)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('payrollNet')}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.netTotal)}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <HRActionsCell
+            row={row}
+            type="payroll"
+            onView={() => setDetailRunId(row.id)}
+            onApprove={row.status === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
+            onPay={row.status === 'completed' ? () => issuePaymentMutation.mutate({ id: row.id }) : undefined}
+          />
+        </div>
+      </div>
+    );
+  }, [statusStyles, t, updateStatusMutation, issuePaymentMutation]);
+
   function handleExportExcel() {
     exportToExcel(exportData, `payroll-runs-${year}.xlsx`);
   }
@@ -227,6 +259,7 @@ export default function PayrollTab() {
         onSort={toggleSort}
         footerCells={footerCells}
         emptyMessage={t('noDataInPeriod')}
+        renderMobileCard={renderMobileCard}
       />
 
       {showCreate && (

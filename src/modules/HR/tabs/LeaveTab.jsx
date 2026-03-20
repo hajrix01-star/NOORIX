@@ -1,7 +1,7 @@
 /**
  * LeaveTab — الإجازات (احترافي كامل)
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -119,6 +119,41 @@ export default function LeaveTab() {
     status: statusStyles[r.status]?.label || r.status,
   }));
 
+  const renderMobileCard = useCallback((row) => {
+    const ss = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>{row.employeeName}</span>
+          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: ss.bg, color: ss.color, flexShrink: 0 }}>{ss.label}</span>
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>
+          {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('startDate')}</div>
+            <div style={{ fontSize: 13, fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.startDate)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('endDate')}</div>
+            <div style={{ fontSize: 13, fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.endDate)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('daysCount')}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{row.daysCount ?? '—'}</div>
+          </div>
+        </div>
+        {row.status === 'pending' && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="noorix-btn-nav" style={{ fontSize: 13, padding: '6px 14px', minHeight: 36, color: '#16a34a' }} onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'approved' })}>{t('statusApproved')}</button>
+            <button type="button" className="noorix-btn-nav" style={{ fontSize: 13, padding: '6px 14px', minHeight: 36, color: '#ef4444' }} onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'rejected' })}>{t('statusRejected')}</button>
+          </div>
+        )}
+      </div>
+    );
+  }, [statusStyles, t, updateStatusMutation]);
+
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
@@ -165,6 +200,7 @@ export default function LeaveTab() {
         sortDir={sortDir}
         onSort={toggleSort}
         emptyMessage={t('noDataInPeriod')}
+        renderMobileCard={renderMobileCard}
       />
 
       {showAdd && (

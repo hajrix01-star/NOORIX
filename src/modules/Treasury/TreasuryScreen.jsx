@@ -167,7 +167,7 @@ export default function TreasuryScreen() {
           {/* ── بطاقة الملخص الإجمالي (للشهر/الفترة المحددة) ── */}
           {vaultsList.length > 0 && (
             <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0,
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 0,
               borderRadius: 12, border: '1px solid var(--noorix-border)',
               background: 'var(--noorix-bg-surface)', overflow: 'hidden',
             }}>

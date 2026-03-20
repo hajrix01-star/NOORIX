@@ -120,7 +120,7 @@ export default function ReportsScreen() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 18, padding: 'clamp(12px, 3vw, 24px)' }}>
+    <div style={{ display: 'grid', gap: 18 }}>
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
       <div>

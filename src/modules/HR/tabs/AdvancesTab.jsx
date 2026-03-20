@@ -1,7 +1,7 @@
 /**
  * AdvancesTab — السلفيات (احترافي كامل)
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
@@ -223,6 +223,55 @@ export default function AdvancesTab() {
           : t('advanceOutstanding'),
   }));
 
+  const settlementColors = {
+    settled: { bg: 'rgba(239,68,68,0.1)', color: '#b91c1c' },
+    partial: { bg: 'rgba(37,99,235,0.1)', color: '#2563eb' },
+    outstanding: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+    cancelled: { bg: 'rgba(100,116,139,0.1)', color: '#64748b' },
+  };
+  const settlementLabels = { settled: t('advanceSettled'), partial: t('advanceStatusPartial'), outstanding: t('advanceOutstanding'), cancelled: t('cancelled') };
+
+  const renderMobileCard = useCallback((row) => {
+    const sColor = settlementColors[row.settlementStatus] || settlementColors.outstanding;
+    const sLabel = settlementLabels[row.settlementStatus] || row.settlementStatus;
+    const settled = row.settlementStatus === 'settled';
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+          <span style={{ fontWeight: 700, fontSize: 15, textDecoration: settled ? 'line-through' : 'none', color: settled ? '#b91c1c' : 'var(--noorix-text)' }}>
+            {row.employeeName}
+          </span>
+          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: sColor.bg, color: sColor.color, flexShrink: 0, textDecoration: settled ? 'line-through' : 'none' }}>
+            {sLabel}
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{formatSaudiDate(row.transactionDate)}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('advanceAmount')}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmountNum)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('advanceSettledAmount')}</div>
+            <div style={{ fontSize: 13, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.settledAmountNum)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('advanceRemainingAmount')}</div>
+            <div style={{ fontSize: 13, color: row.remainingAmount > 0 ? '#f59e0b' : '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.remainingAmount)}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <HRActionsCell
+            row={row}
+            onEdit={() => setEditingAdvance(row)}
+            onSettle={row.settlementStatus !== 'settled' && row.settlementStatus !== 'cancelled' ? () => setSettlingAdvance(row) : undefined}
+          />
+        </div>
+      </div>
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t]);
+
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
@@ -284,6 +333,7 @@ export default function AdvancesTab() {
         onSort={toggleSort}
         footerCells={footerCells}
         emptyMessage={t('noDataInPeriod')}
+        renderMobileCard={renderMobileCard}
       />
 
       {showAdvance && (

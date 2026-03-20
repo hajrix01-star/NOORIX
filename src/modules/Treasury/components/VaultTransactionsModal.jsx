@@ -125,6 +125,26 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#dc2626' }}>{fmt(v)}</span> : <span>—</span> },
   ];
 
+  const renderMobileCard = useCallback((row) => (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ fontWeight: 700, fontSize: 13, fontFamily: 'var(--noorix-font-numbers)' }}>{row.documentNumber || row.referenceId || '—'}</span>
+        <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{formatSaudiDate(row.transactionDate)}</span>
+      </div>
+      {row.referenceType && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{row.referenceType}</div>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px' }}>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('debit')}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{row.debit != null ? fmt(row.debit) : '—'}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('credit')}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#dc2626', fontFamily: 'var(--noorix-font-numbers)' }}>{row.credit != null ? fmt(row.credit) : '—'}</div>
+        </div>
+      </div>
+    </div>
+  ), [t]);
+
   const footerCells = items.length > 0 ? (
     <>
       <td colSpan={4} style={{ padding: '10px 12px', fontWeight: 700, background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{t('total')}</td>
@@ -157,6 +177,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
           title=""
           emptyMessage={t('noDataInPeriod')}
           footerCells={footerCells}
+          renderMobileCard={renderMobileCard}
         />
       </div>
     </div>

@@ -235,6 +235,43 @@ export default function PurchasesBatchScreen() {
     },
   ], [t, statusStyles, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
 
+  const renderBatchMobileCard = useCallback((row) => {
+    const ss = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
+    const canCancel = row.status === 'active' || row.status === 'partial';
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+          <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14 }}>{row.batchId}</span>
+          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: ss.bg, color: ss.color, flexShrink: 0 }}>{ss.label}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 6 }}>
+          <span>{formatSaudiDate(row.transactionDate)}</span>
+          {row.invoiceCount > 0 && <span style={{ color: '#2563eb', fontWeight: 700 }}>{row.invoiceCount} {t('invoices')}</span>}
+        </div>
+        {row.supplierNames && <div style={{ fontSize: 13, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.supplierNames}</div>}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('net')}</div>
+            <div style={{ fontSize: 13, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700 }}>{fmt(row.netAmount)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('tax')}</div>
+            <div style={{ fontSize: 13, color: '#d97706', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.taxAmount)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('total')}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmount)}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34 }} onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId}>🖨 {t('print')}</button>
+          <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34 }} onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId}>✎ {t('edit')}</button>
+          {canCancel && <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34, borderColor: '#fecaca', background: 'rgba(239,68,68,0.06)', color: '#dc2626' }} onClick={() => handleCancelBatch(row)} disabled={batchActionLoading === row.batchId}>× {t('cancel')}</button>}
+        </div>
+      </div>
+    );
+  }, [statusStyles, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
+
   const batchesFooterCells = (
     <>
       <td colSpan={4} style={{ padding: '8px 10px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('totalBatches', activeOnly.length) || `الإجمالي (${activeOnly.length} دفعة)`}</td>
@@ -542,6 +579,7 @@ export default function PurchasesBatchScreen() {
             sortDir={sortDir}
             onSort={toggleSort}
             emptyMessage={t('noBatchesInPeriod')}
+            renderMobileCard={renderBatchMobileCard}
           />
         </div>
       )}

@@ -32,7 +32,7 @@ export default function SuppliersScreen() {
       {companyId && (
         <>
           {/* تبويبات */}
-          <div style={{ display: 'flex', borderBottom: '2px solid var(--noorix-border)', gap: 0 }}>
+          <div style={{ display: 'flex', borderBottom: '2px solid var(--noorix-border)', gap: 0, overflowX: 'auto', flexShrink: 0 }}>
             {[{ id: 'suppliers', label: t('suppliersTab') }, { id: 'categories', label: t('categoriesTab') }].map((tab) => (
               <button
                 key={tab.id}

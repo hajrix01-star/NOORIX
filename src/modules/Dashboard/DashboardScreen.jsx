@@ -40,7 +40,7 @@ export default function DashboardScreen() {
   }), [year, selectedMonthNumber]);
 
   return (
-    <div style={{ display: 'grid', gap: 18, padding: 'clamp(12px, 3vw, 24px)' }}>
+    <div style={{ display: 'grid', gap: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0, flex: '1 1 auto' }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('dashboard')}</h1>

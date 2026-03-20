@@ -1,7 +1,7 @@
 /**
  * ResidencyTab — الإقامات (احترافي كامل)
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
@@ -125,6 +125,42 @@ export default function ResidencyTab() {
     expiringSoon: isExpiringSoon(r.expiryDate) ? t('residencyExpiringSoon') : '—',
   }));
 
+  const renderMobileCard = useCallback((row) => {
+    const soon = isExpiringSoon(row.expiryDate);
+    const statusColor = row.status === 'expired'
+      ? { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', label: t('statusExpired') }
+      : row.status === 'renewed'
+        ? { bg: 'rgba(22,163,74,0.1)', color: '#16a34a', label: t('statusRenewed') }
+        : { bg: 'rgba(37,99,235,0.1)', color: '#2563eb', label: t('statusActive') };
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>{row.employeeName}</span>
+          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: statusColor.bg, color: statusColor.color, flexShrink: 0 }}>{statusColor.label}</span>
+        </div>
+        {row.iqamaNumber && (
+          <div style={{ fontSize: 12, fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{row.iqamaNumber}</div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('startDate')}</div>
+            <div style={{ fontSize: 13, fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.issueDate)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('expiryDate')}</div>
+            <div style={{ fontSize: 13, fontFamily: 'var(--noorix-font-numbers)', color: soon ? '#f59e0b' : undefined, fontWeight: soon ? 700 : undefined }}>
+              {formatSaudiDate(row.expiryDate)}
+              {soon && <span style={{ marginRight: 4, fontSize: 10, background: 'rgba(245,158,11,0.2)', padding: '1px 5px', borderRadius: 4 }}>⚠</span>}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <HRActionsCell row={row} type="residency" onEdit={() => setEditingResidency(row)} onDelete={() => { if (window.confirm(t('deleteResidencyConfirm'))) deleteMutation.mutate(row.id); }} />
+        </div>
+      </div>
+    );
+  }, [t, deleteMutation]);
+
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
@@ -171,6 +207,7 @@ export default function ResidencyTab() {
         sortDir={sortDir}
         onSort={toggleSort}
         emptyMessage={t('noDataInPeriod')}
+        renderMobileCard={renderMobileCard}
       />
 
       {showAdd && (
