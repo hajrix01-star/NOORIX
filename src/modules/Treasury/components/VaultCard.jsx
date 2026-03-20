@@ -4,6 +4,15 @@ import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS } from '../constants/treasuryConstants';
 
+/* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
+export function parseVaultType(type) {
+  if (typeof type === 'string' && type.startsWith('custom:')) {
+    const emoji = type.slice(7) || '🗂️';
+    return { isCustom: true, emoji };
+  }
+  return { isCustom: false, emoji: null };
+}
+
 /* ── أيقونات SVG ───────────────────────────────────────────── */
 const ICONS = {
   cash: (
@@ -86,7 +95,9 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
         <div style={{
           position: 'absolute',
           top: 'calc(100% + 4px)',
-          ...(isRtl ? { right: 0 } : { left: 0 }),
+          /* RTL: الزر على اليسار → القائمة تمتد يميناً داخل الكرت (left:0) */
+          /* LTR: الزر على اليمين → القائمة تمتد يساراً داخل الكرت (right:0) */
+          ...(isRtl ? { left: 0 } : { right: 0 }),
           background: 'var(--noorix-bg-surface)',
           border: '1px solid var(--noorix-border)',
           borderRadius: 12,
@@ -123,8 +134,9 @@ const VaultCard = memo(function VaultCard({
 }) {
   const { t, lang } = useTranslation();
 
-  const typeInfo    = VAULT_TYPES.find((x) => x.value === vault.type) || VAULT_TYPES[0];
-  const accentColor = TYPE_COLORS[vault.type] || '#2563eb';
+  const { isCustom, emoji: customEmoji } = parseVaultType(vault.type);
+  const typeInfo    = !isCustom ? (VAULT_TYPES.find((x) => x.value === vault.type) || VAULT_TYPES[0]) : null;
+  const accentColor = !isCustom ? (TYPE_COLORS[vault.type] || '#64748b') : '#64748b';
   const isArchived  = vault.isArchived;
   const balance     = Number(vault.balance ?? 0);
   const totalIn     = Number(vault.totalIn ?? 0);
@@ -169,7 +181,9 @@ const VaultCard = memo(function VaultCard({
             color: isArchived ? 'var(--noorix-text-muted)' : accentColor,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            {ICONS[vault.type] || ICONS.bank}
+            {isCustom
+              ? <span style={{ fontSize: 20, lineHeight: 1 }}>{customEmoji}</span>
+              : (ICONS[vault.type] || ICONS.bank)}
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

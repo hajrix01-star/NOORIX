@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS, TYPE_BG } from '../constants/treasuryConstants';
+import { parseVaultType } from './VaultCard';
+
+/* ── إيموجيات الأعمال والمال ──────────────────────────────── */
+const EMOJI_LIST = [
+  '💰','💵','💴','💶','💷','🪙','💎','💳','🏅','🥇',
+  '📊','📈','📉','🏢','🏦','🏪','🏬','💼','🗂️','📁',
+  '📦','🛒','✈️','🏠','🚗','⭐','🔑','🔒','🏆','🎯',
+  '🌍','🌐','⚙️','🔥','💡','🎲','🌟','❤️','🟦','🟩',
+  '🟨','🟥','🟧','🟪','🟫','⚫','⚪','🔵','🔴','🟤',
+];
 
 const EMPTY = { nameAr: '', nameEn: '', type: 'cash', isSalesChannel: false, paymentMethod: '', notes: '' };
 
@@ -12,19 +22,39 @@ const IST = {
 };
 const LST = { display: 'block', marginBottom: 5, fontSize: 13, fontWeight: 600 };
 
-export default function VaultFormModal({ initial, onClose, onSave, isSaving, saveError }) {
-  const { t } = useTranslation();
-  const isEdit = !!initial?.id;
-  const [form, setForm] = useState(initial ? {
+function initForm(initial) {
+  if (!initial) return { ...EMPTY };
+  const { isCustom, emoji } = parseVaultType(initial.type || 'cash');
+  return {
     nameAr:         initial.nameAr         || '',
     nameEn:         initial.nameEn         || '',
-    type:           initial.type           || 'cash',
+    type:           isCustom ? 'custom' : (initial.type || 'cash'),
+    customEmoji:    isCustom ? emoji : '💰',
     isSalesChannel: initial.isSalesChannel ?? false,
     paymentMethod:  initial.paymentMethod  || '',
     notes:          initial.notes          || '',
-  } : { ...EMPTY });
+  };
+}
+
+export default function VaultFormModal({ initial, onClose, onSave, isSaving, saveError }) {
+  const { t } = useTranslation();
+  const isEdit = !!initial?.id;
+  const [form, setForm] = useState(() => initForm(initial));
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    const saved = { ...form };
+    if (saved.type === 'custom') {
+      saved.type = `custom:${saved.customEmoji || '💰'}`;
+    }
+    delete saved.customEmoji;
+    onSave(saved);
+  };
+
+  const isCustom = form.type === 'custom';
 
   return (
     <div role="dialog" aria-modal="true"
@@ -36,37 +66,100 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         <h3 style={{ margin: '0 0 20px', fontSize: 17, fontWeight: 800 }}>
           {isEdit ? t('editVault', initial.nameAr) : t('addNewVault')}
         </h3>
-        <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} style={{ display: 'grid', gap: 14 }}>
-          {/* اسم */}
+
+        <form onSubmit={handleSave} style={{ display: 'grid', gap: 14 }}>
+
+          {/* الأسماء */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div><label style={LST}>{t('nameArLabel')}</label><input type="text" value={form.nameAr} onChange={(e) => set('nameAr', e.target.value)} required placeholder={t('vaultNamePlaceholder')} style={IST} /></div>
-            <div><label style={LST}>{t('nameEnLabel')}</label><input type="text" value={form.nameEn} onChange={(e) => set('nameEn', e.target.value)} placeholder={t('vaultNameEnPlaceholder')} style={IST} /></div>
+            <div>
+              <label style={LST}>{t('nameArLabel')}</label>
+              <input type="text" value={form.nameAr} onChange={(e) => set('nameAr', e.target.value)}
+                required placeholder={t('vaultNamePlaceholder')} style={IST} />
+            </div>
+            <div>
+              <label style={LST}>{t('nameEnLabel')}</label>
+              <input type="text" value={form.nameEn} onChange={(e) => set('nameEn', e.target.value)}
+                placeholder={t('vaultNameEnPlaceholder')} style={IST} />
+            </div>
           </div>
 
           {/* النوع */}
           <div>
             <label style={LST}>{t('vaultType')}</label>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
               {VAULT_TYPES.map((vt) => (
                 <button key={vt.value} type="button" onClick={() => set('type', vt.value)} style={{
-                  flex: 1, padding: '8px 6px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                  padding: '10px 6px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600,
                   border: `2px solid ${form.type === vt.value ? TYPE_COLORS[vt.value] : 'var(--noorix-border)'}`,
                   background: form.type === vt.value ? TYPE_BG[vt.value] : 'transparent',
                   color: form.type === vt.value ? TYPE_COLORS[vt.value] : 'var(--noorix-text-muted)',
                   transition: 'all 150ms',
                 }}>
-                  <div style={{ fontSize: 18, marginBottom: 2 }}>{vt.icon}</div>
+                  <div style={{ fontSize: 20, marginBottom: 4 }}>{vt.icon}</div>
                   <div>{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].trim()}</div>
                 </button>
               ))}
+
+              {/* نوع مخصص */}
+              <button type="button" onClick={() => set('type', 'custom')} style={{
+                padding: '10px 6px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                border: `2px solid ${isCustom ? '#64748b' : 'var(--noorix-border)'}`,
+                background: isCustom ? 'rgba(100,116,139,0.1)' : 'transparent',
+                color: isCustom ? '#475569' : 'var(--noorix-text-muted)',
+                transition: 'all 150ms',
+              }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{form.customEmoji || '🗂️'}</div>
+                <div>{t('vaultTypeCustom') || 'مخصص'}</div>
+              </button>
             </div>
+
+            {/* منتقي الإيموجي */}
+            {isCustom && (
+              <div style={{ marginTop: 10, padding: 14, borderRadius: 12, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--noorix-text-muted)' }}>
+                  {t('selectEmojiForType') || 'اختر أيقونة للنوع'}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {EMOJI_LIST.map((emoji) => (
+                    <button
+                      key={emoji} type="button"
+                      onClick={() => set('customEmoji', emoji)}
+                      style={{
+                        width: 38, height: 38, borderRadius: 8, border: 'none', cursor: 'pointer',
+                        fontSize: 20, background: form.customEmoji === emoji ? '#2563eb18' : 'transparent',
+                        outline: form.customEmoji === emoji ? '2px solid #2563eb' : '1px solid transparent',
+                        transition: 'all 100ms', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* قناة البيع */}
-          <div style={{ padding: 14, borderRadius: 10, border: `1px solid ${form.isSalesChannel ? '#16a34a44' : 'var(--noorix-border)'}`, background: form.isSalesChannel ? 'rgba(22,163,74,0.05)' : 'transparent', transition: 'all 150ms' }}>
+          <div style={{
+            padding: 14, borderRadius: 10,
+            border: `1px solid ${form.isSalesChannel ? '#16a34a44' : 'var(--noorix-border)'}`,
+            background: form.isSalesChannel ? 'rgba(22,163,74,0.05)' : 'transparent',
+            transition: 'all 150ms',
+          }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: form.isSalesChannel ? 12 : 0 }}>
-              <div onClick={() => set('isSalesChannel', !form.isSalesChannel)} style={{ width: 40, height: 22, borderRadius: 999, position: 'relative', cursor: 'pointer', flexShrink: 0, background: form.isSalesChannel ? '#16a34a' : 'var(--noorix-border)', transition: 'background 200ms' }}>
-                <div style={{ position: 'absolute', top: 2, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'right 200ms, left 200ms', ...(form.isSalesChannel ? { right: 2, left: 'auto' } : { left: 2, right: 'auto' }), boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+              <div
+                onClick={() => set('isSalesChannel', !form.isSalesChannel)}
+                style={{
+                  width: 40, height: 22, borderRadius: 999, position: 'relative', cursor: 'pointer', flexShrink: 0,
+                  background: form.isSalesChannel ? '#16a34a' : 'var(--noorix-border)', transition: 'background 200ms',
+                }}
+              >
+                <div style={{
+                  position: 'absolute', top: 2, width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                  transition: 'right 200ms, left 200ms',
+                  ...(form.isSalesChannel ? { right: 2, left: 'auto' } : { left: 2, right: 'auto' }),
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }} />
               </div>
               <span style={{ fontWeight: 700, fontSize: 13 }}>{t('enableAsSalesChannel')}</span>
               {form.isSalesChannel && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>{t('enabled')}</span>}
@@ -76,7 +169,9 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                 <label style={{ ...LST, marginBottom: 6 }}>{t('paymentMethod')}</label>
                 <select value={form.paymentMethod} onChange={(e) => set('paymentMethod', e.target.value)} style={IST}>
                   <option value="">{t('selectPaymentMethod')}</option>
-                  {PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.labelKey ? t(m.labelKey) : m.label}</option>)}
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.labelKey ? t(m.labelKey) : m.label}</option>
+                  ))}
                 </select>
               </div>
             )}
@@ -85,18 +180,23 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           {/* ملاحظات */}
           <div>
             <label style={LST}>{t('notes')}</label>
-            <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2} placeholder={t('notesPlaceholderVault')} style={{ ...IST, resize: 'vertical' }} />
+            <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)}
+              rows={2} placeholder={t('notesPlaceholderVault')} style={{ ...IST, resize: 'vertical' }} />
           </div>
 
           {saveError && (
-            <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 13 }}>{saveError}</div>
+            <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 13 }}>
+              {saveError}
+            </div>
           )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button type="submit" disabled={isSaving || !form.nameAr.trim()} className="noorix-btn-nav noorix-btn-success" style={{ flex: 1 }}>
               {isSaving ? t('saving') : isEdit ? t('saveChanges') : t('addVaultBtn')}
             </button>
-            <button type="button" onClick={onClose} className="noorix-btn-nav" disabled={isSaving}>{t('cancel')}</button>
+            <button type="button" onClick={onClose} className="noorix-btn-nav" disabled={isSaving}>
+              {t('cancel')}
+            </button>
           </div>
         </form>
       </div>
