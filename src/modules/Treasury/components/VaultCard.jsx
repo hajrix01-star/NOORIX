@@ -64,6 +64,7 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
         ref={btnRef}
         type="button"
         onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+        onTouchStart={(e) => e.stopPropagation()}
         style={{
           width: 32, height: 32, borderRadius: 8, border: '1px solid var(--noorix-border)',
           background: 'var(--noorix-bg-muted)', cursor: 'pointer', display: 'flex',
@@ -142,10 +143,10 @@ const VaultCard = memo(function VaultCard({
         overflow: 'hidden', cursor: 'pointer',
         opacity: isArchived ? 0.65 : 1,
         boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-        transition: 'box-shadow 150ms, transform 150ms',
+        transition: 'box-shadow 150ms',
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.13)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
     >
       {/* شريط لوني علوي رفيع */}
       <div style={{ height: 3, background: isArchived ? 'var(--noorix-border)' : accentColor }} />

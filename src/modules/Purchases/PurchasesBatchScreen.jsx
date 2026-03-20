@@ -393,7 +393,7 @@ export default function PurchasesBatchScreen() {
 
       {/* ── التبويبات ── */}
       {hasCompany && (
-        <div style={{ display: 'flex', gap: 4, borderBottom: '2px solid var(--noorix-border)', paddingBottom: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div className="noorix-tab-bar" style={{ display: 'flex', gap: 4, borderBottom: '2px solid var(--noorix-border)', paddingBottom: 0 }}>
           {getTabs(t).map((tab) => (
             <button
               key={tab.id}

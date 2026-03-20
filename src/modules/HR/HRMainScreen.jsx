@@ -91,7 +91,7 @@ export default function HRMainScreen() {
       )}
 
       <div className="noorix-surface-card">
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', flexShrink: 0 }}>
+        <div className="noorix-tab-bar" style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)' }}>
           {TABS.map((tab) => (
             <button
               key={tab.id}
