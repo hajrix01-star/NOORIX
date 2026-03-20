@@ -21,15 +21,33 @@ jobs:
       - name: Run pg_dump
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-          PGSSLMODE: require
         run: |
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           FILENAME="noorix_backup_${TIMESTAMP}.dump"
 
-          # إزالة ?sslmode=... من الـ URL (يُمرَّر عبر PGSSLMODE بدلاً منه)
-          CLEAN_URL="${DATABASE_URL%%\?*}"
+          # تحليل الـ URL بـ Python لتجنب مشاكل %40 في كلمة المرور
+          eval $(python3 << 'PYEOF'
+import os, sys
+from urllib.parse import urlparse, unquote
+raw = os.environ['DATABASE_URL'].split('?')[0]
+r = urlparse(raw)
+print(f"export DB_HOST={r.hostname}")
+print(f"export DB_PORT={r.port or 5432}")
+print(f"export DB_USER={r.username}")
+print(f"export DB_NAME={r.path.lstrip('/')}")
+pw = unquote(r.password or '')
+# تهريب علامات الاقتباس في كلمة المرور
+pw_escaped = pw.replace("'", "'\\''")
+print(f"export PGPASSWORD='{pw_escaped}'")
+PYEOF
+          )
+          export PGSSLMODE=require
 
-          pg_dump "$CLEAN_URL" \
+          pg_dump \
+            --host="$DB_HOST" \
+            --port="$DB_PORT" \
+            --username="$DB_USER" \
+            --dbname="$DB_NAME" \
             --no-owner \
             --no-acl \
             --format=custom \
