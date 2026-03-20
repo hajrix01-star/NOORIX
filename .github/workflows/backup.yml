@@ -21,11 +21,15 @@ jobs:
       - name: Run pg_dump
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGSSLMODE: require
         run: |
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           FILENAME="noorix_backup_${TIMESTAMP}.dump"
 
-          pg_dump "$DATABASE_URL" \
+          # إزالة ?sslmode=... من الـ URL (يُمرَّر عبر PGSSLMODE بدلاً منه)
+          CLEAN_URL="${DATABASE_URL%%\?*}"
+
+          pg_dump "$CLEAN_URL" \
             --no-owner \
             --no-acl \
             --format=custom \
