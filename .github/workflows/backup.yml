@@ -21,7 +21,7 @@ jobs:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           cat > /tmp/backup.py << 'PYEOF'
-          import os, sys, subprocess, datetime
+          import os, sys, subprocess, datetime, socket
           from urllib.parse import urlparse, unquote
 
           url = os.environ['DATABASE_URL'].split('?')[0]
@@ -30,13 +30,21 @@ jobs:
           ts    = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
           fname = f'noorix_backup_{ts}.dump'
 
+          # إجبار IPv4 — GitHub Actions لا يدعم IPv6
+          try:
+              ipv4 = socket.getaddrinfo(r.hostname, r.port or 5432, socket.AF_INET)[0][4][0]
+              print(f'Resolved {r.hostname} -> {ipv4} (IPv4)')
+          except Exception as e:
+              print(f'DNS fallback to hostname: {e}')
+              ipv4 = r.hostname
+
           env = dict(os.environ)
           env['PGPASSWORD'] = unquote(r.password or '')
           env['PGSSLMODE']  = 'require'
 
           cmd = [
               'pg_dump',
-              f'--host={r.hostname}',
+              f'--host={ipv4}',
               f'--port={r.port or 5432}',
               f'--username={r.username}',
               f'--dbname={r.path.lstrip("/")}',
