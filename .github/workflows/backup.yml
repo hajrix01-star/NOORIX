@@ -16,45 +16,47 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client
 
-      - name: Parse connection URL
+      - name: Backup database
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          python3 - << 'EOF'
-          import os
+          cat > /tmp/backup.py << 'PYEOF'
+          import os, sys, subprocess, datetime
           from urllib.parse import urlparse, unquote
+
           url = os.environ['DATABASE_URL'].split('?')[0]
-          r = urlparse(url)
-          env_file = os.environ['GITHUB_ENV']
-          with open(env_file, 'a') as f:
-              f.write(f"DB_HOST={r.hostname}\n")
-              f.write(f"DB_PORT={r.port or 5432}\n")
-              f.write(f"DB_USER={r.username}\n")
-              f.write(f"DB_NAME={r.path.lstrip('/')}\n")
-              f.write(f"PGPASSWORD={unquote(r.password or '')}\n")
-          print("Connection params parsed successfully")
-          EOF
+          r   = urlparse(url)
 
-      - name: Run pg_dump
-        env:
-          PGPASSWORD: ${{ env.PGPASSWORD }}
-          PGSSLMODE: require
-        run: |
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          FILENAME="noorix_backup_${TIMESTAMP}.dump"
+          ts    = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+          fname = f'noorix_backup_{ts}.dump'
 
-          pg_dump \
-            --host="$DB_HOST" \
-            --port="$DB_PORT" \
-            --username="$DB_USER" \
-            --dbname="$DB_NAME" \
-            --no-owner \
-            --no-acl \
-            --format=custom \
-            --file="$FILENAME"
+          env = dict(os.environ)
+          env['PGPASSWORD'] = unquote(r.password or '')
+          env['PGSSLMODE']  = 'require'
 
-          echo "BACKUP_FILE=$FILENAME" >> $GITHUB_ENV
-          echo "Backup: $FILENAME ($(du -sh $FILENAME | cut -f1))"
+          cmd = [
+              'pg_dump',
+              f'--host={r.hostname}',
+              f'--port={r.port or 5432}',
+              f'--username={r.username}',
+              f'--dbname={r.path.lstrip("/")}',
+              '--no-owner', '--no-acl', '--format=custom',
+              f'--file={fname}',
+          ]
+
+          print('Starting backup...')
+          result = subprocess.run(cmd, env=env)
+          if result.returncode != 0:
+              print('pg_dump failed', file=sys.stderr)
+              sys.exit(result.returncode)
+
+          size = os.path.getsize(fname)
+          print(f'Done: {fname} ({size:,} bytes)')
+
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f'BACKUP_FILE={fname}\n')
+          PYEOF
+          python3 /tmp/backup.py
 
       - name: Upload backup as artifact
         uses: actions/upload-artifact@v4
