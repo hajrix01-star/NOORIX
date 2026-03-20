@@ -1608,13 +1608,14 @@ input:focus, select:focus, textarea:focus {
 /* تمرير أفقي للتبويبات — يعمل عبر جميع المتصفحات بما فيها iOS Safari */
 .noorix-tab-bar {
   overflow-x: auto;
-  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
-  touch-action: pan-x pan-y;
+  touch-action: pan-x;
 }
 .noorix-tab-bar::-webkit-scrollbar { display: none; }
+/* شريط التبويبات من الموارد البشرية */
+.noorix-tab-bar-pill::-webkit-scrollbar { display: none; }
 
 /* إخفاء زر الإضافة الرئيسي على الجوال حين يوجد FAB */
 .noorix-mobile-hide { display: inline-flex; }

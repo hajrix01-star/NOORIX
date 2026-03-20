@@ -4,7 +4,7 @@ import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS } from '../constants/treasuryConstants';
 
-/* ── أيقونات SVG احترافية بدل الإيموجي ─────────────────────── */
+/* ── أيقونات SVG ───────────────────────────────────────────── */
 const ICONS = {
   cash: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
@@ -30,18 +30,18 @@ const ICONS = {
   ),
 };
 
-/* ── قائمة سياق خفية — fixed positioning لتجنب القطع من overflow: hidden ─── */
+/* ── قائمة الإجراءات — position:absolute لتجنب مشاكل fixed مع overflow ─── */
 function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, t, lang }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const btnRef = useRef(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, right: 0 });
   const isArchived = vault.isArchived;
   const isRtl = lang !== 'en';
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('mousedown', handler, true);
     document.addEventListener('touchstart', handler, true);
     return () => {
@@ -50,57 +50,60 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
     };
   }, [open]);
 
-  function handleToggle() {
-    if (!open && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 6, left: rect.left, right: window.innerWidth - rect.right });
-    }
-    setOpen((p) => !p);
-  }
+  const items = [
+    { label: t('edit'),    action: () => { onEdit(vault); setOpen(false); }, color: 'var(--noorix-text)' },
+    { label: vault.isSalesChannel ? t('salesChannelEnabled') : t('salesChannel'),
+      action: () => { onToggleSalesChannel(vault); setOpen(false); }, color: '#16a34a' },
+    { label: isArchived ? t('restore') : t('archive'),
+      action: () => { onArchive(vault); setOpen(false); }, color: '#d97706' },
+    { label: t('delete'), action: () => { onDelete(vault); setOpen(false); }, color: '#dc2626' },
+  ];
 
   return (
-    <div ref={ref} style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+    <div
+      ref={ref}
+      style={{ position: 'relative', zIndex: 10 }}
+      onClick={(e) => e.stopPropagation()}
+    >
       <button
-        ref={btnRef}
         type="button"
-        onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+        onClick={(e) => { e.stopPropagation(); setOpen((p) => !p); }}
         onTouchStart={(e) => e.stopPropagation()}
         style={{
-          width: 32, height: 32, borderRadius: 8, border: '1px solid var(--noorix-border)',
-          background: 'var(--noorix-bg-muted)', cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', color: 'var(--noorix-text-muted)',
-          transition: 'background 120ms',
+          width: 36, height: 36, borderRadius: 10, border: '1px solid var(--noorix-border)',
+          background: open ? 'var(--noorix-bg-muted)' : 'transparent',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--noorix-text-muted)', transition: 'background 120ms', flexShrink: 0,
         }}
         title={t('actions')}
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-          <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+          <circle cx="4" cy="10" r="1.8"/><circle cx="10" cy="10" r="1.8"/><circle cx="16" cy="10" r="1.8"/>
         </svg>
       </button>
 
       {open && (
         <div style={{
-          position: 'fixed', top: pos.top, zIndex: 9999,
-          ...(isRtl ? { right: pos.right } : { left: pos.left }),
-          background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)',
-          borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-          minWidth: lang === 'en' ? 190 : 160, width: 'max-content', maxWidth: 240,
-          padding: '4px 0', direction: isRtl ? 'rtl' : 'ltr',
+          position: 'absolute',
+          top: 'calc(100% + 4px)',
+          ...(isRtl ? { right: 0 } : { left: 0 }),
+          background: 'var(--noorix-bg-surface)',
+          border: '1px solid var(--noorix-border)',
+          borderRadius: 12,
+          boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
+          minWidth: 160, width: 'max-content', maxWidth: 220,
+          padding: '6px 0',
+          direction: isRtl ? 'rtl' : 'ltr',
+          zIndex: 100,
         }}>
-          {[
-            { label: t('edit'),    action: () => { onEdit(vault); setOpen(false); }, color: 'var(--noorix-text)' },
-            { label: vault.isSalesChannel ? t('salesChannelEnabled') : t('salesChannel'),
-              action: () => { onToggleSalesChannel(vault); setOpen(false); }, color: '#16a34a' },
-            { label: isArchived ? t('restore') : t('archive'),
-              action: () => { onArchive(vault); setOpen(false); }, color: '#d97706' },
-            { label: t('delete'), action: () => { onDelete(vault); setOpen(false); }, color: '#dc2626' },
-          ].map(({ label, action, color }) => (
+          {items.map(({ label, action, color }) => (
             <button
               key={label} type="button" onClick={action}
               style={{
-                display: 'block', width: '100%', textAlign: isRtl ? 'right' : 'left', padding: '9px 16px',
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 13,
-                color, fontFamily: 'inherit', whiteSpace: 'nowrap',
+                display: 'block', width: '100%',
+                textAlign: isRtl ? 'right' : 'left',
+                padding: '10px 16px', background: 'none', border: 'none',
+                cursor: 'pointer', fontSize: 13, color, fontFamily: 'inherit', whiteSpace: 'nowrap',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--noorix-bg-muted)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
@@ -120,7 +123,7 @@ const VaultCard = memo(function VaultCard({
 }) {
   const { t, lang } = useTranslation();
 
-  const typeInfo  = VAULT_TYPES.find((x) => x.value === vault.type) || VAULT_TYPES[0];
+  const typeInfo    = VAULT_TYPES.find((x) => x.value === vault.type) || VAULT_TYPES[0];
   const accentColor = TYPE_COLORS[vault.type] || '#2563eb';
   const isArchived  = vault.isArchived;
   const balance     = Number(vault.balance ?? 0);
@@ -133,6 +136,7 @@ const VaultCard = memo(function VaultCard({
   const subName     = lang === 'en' ? (vault.nameAr || typeLabel) : (vault.nameEn || typeLabel);
 
   return (
+    /* لا overflow:hidden هنا — ضروري حتى تبرز قائمة الإجراءات (position:absolute) */
     <div
       onClick={() => onClick(vault)}
       style={{
@@ -140,20 +144,24 @@ const VaultCard = memo(function VaultCard({
         border: '1px solid var(--noorix-border)',
         background: 'var(--noorix-bg-surface)',
         display: 'flex', flexDirection: 'column',
-        overflow: 'hidden', cursor: 'pointer',
+        cursor: 'pointer',
         opacity: isArchived ? 0.65 : 1,
         boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         transition: 'box-shadow 150ms',
+        position: 'relative',
       }}
       onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.13)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
     >
-      {/* شريط لوني علوي رفيع */}
-      <div style={{ height: 3, background: isArchived ? 'var(--noorix-border)' : accentColor }} />
+      {/* شريط لوني علوي — نستخدم border-radius للزوايا بدل overflow:hidden */}
+      <div style={{
+        height: 3,
+        background: isArchived ? 'var(--noorix-border)' : accentColor,
+        borderRadius: '14px 14px 0 0',
+      }} />
 
       {/* هيدر الكرت */}
       <div style={{ padding: '14px 16px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        {/* أيقونة + الاسم */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <div style={{
             width: 38, height: 38, borderRadius: 10, flexShrink: 0,
@@ -173,11 +181,10 @@ const VaultCard = memo(function VaultCard({
           </div>
         </div>
 
-        {/* قائمة الإجراءات */}
         <ActionMenu vault={vault} t={t} lang={lang} onEdit={onEdit} onToggleSalesChannel={onToggleSalesChannel} onArchive={onArchive} onDelete={onDelete} />
       </div>
 
-      {/* الرصيد — العنصر الأبرز */}
+      {/* الرصيد */}
       <div style={{ padding: '2px 16px 16px', textAlign: 'center' }}>
         <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 4, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
           {t('balance')}
@@ -192,7 +199,6 @@ const VaultCard = memo(function VaultCard({
         </div>
       </div>
 
-      {/* فاصل */}
       <div style={{ margin: '0 16px', height: 1, background: 'var(--noorix-border)' }} />
 
       {/* وارد / صادر */}
@@ -228,10 +234,7 @@ const VaultCard = memo(function VaultCard({
           display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center',
         }}>
           {vault.isSalesChannel && (
-            <span style={{
-              fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700,
-              background: '#16a34a14', color: '#16a34a', border: '1px solid #16a34a25',
-            }}>
+            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700, background: '#16a34a14', color: '#16a34a', border: '1px solid #16a34a25' }}>
               {t('salesChannel')}
             </span>
           )}
@@ -239,29 +242,18 @@ const VaultCard = memo(function VaultCard({
             const pm = PAYMENT_METHODS.find((m) => m.value === vault.paymentMethod);
             const pmLabel = pm?.labelKey ? t(pm.labelKey) : (pm?.label ?? vault.paymentMethod);
             return (
-              <span style={{
-                fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 600,
-                background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)',
-                border: '1px solid var(--noorix-border)',
-              }}>
+              <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 600, background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)', border: '1px solid var(--noorix-border)' }}>
                 {pmLabel}
               </span>
             );
           })()}
           {vault.account?.code && (
-            <span style={{
-              fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 600,
-              background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)',
-              border: '1px solid var(--noorix-border)', marginRight: 'auto',
-            }}>
+            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 600, background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)', border: '1px solid var(--noorix-border)', marginRight: 'auto' }}>
               {vault.account.code}
             </span>
           )}
           {isArchived && (
-            <span style={{
-              fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700,
-              background: '#d9780614', color: '#d97806', border: '1px solid #d9780625',
-            }}>
+            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700, background: '#d9780614', color: '#d97806', border: '1px solid #d9780625' }}>
               {t('archived')}
             </span>
           )}
