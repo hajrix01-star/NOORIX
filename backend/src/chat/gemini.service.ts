@@ -257,6 +257,111 @@ export class GeminiService {
     }
   }
 
+  /**
+   * تحليل هيكل كشف حساب بنكي — اقتراح نطاق البيانات ونوع كل عمود
+   * يُرسل أول 20 صفاً فقط لتحليل الهيكل
+   */
+  async analyzeBankStatementStructure(
+    raw: string[][],
+  ): Promise<{
+    dataStartRow: number;
+    dataEndRow: number;
+    columnTypes: Record<number, string>;
+  } | null> {
+    if (!this.apiKey) return null;
+    if (!raw?.length || !Array.isArray(raw[0])) return null;
+
+    const sample = raw.slice(0, 25).map((row) =>
+      (Array.isArray(row) ? row : []).map((c) => String(c ?? '').slice(0, 50)).join(' | '),
+    );
+    const textSample = sample.map((r, i) => `[${i}]: ${r}`).join('\n');
+    const colCount = raw[0]?.length ?? 0;
+    if (colCount === 0) return null;
+
+    const prompt = `أنت مساعد لتحليل كشوف حسابات بنكية (Excel) في نظام محاسبة سعودي.
+المهمة: من العيّنة التالية، حدد:
+1. dataStartRow: رقم صف بداية البيانات الفعلية (بعد اسم الشركة والعنوان والعناوين) — يبدأ من 0
+2. dataEndRow: رقم صف نهاية البيانات (آخر حركة)
+3. columnTypes: لكل عمود (0 إلى ${colCount - 1}) حدد النوع: "date" | "debit" | "credit" | "amount" | "description" | "balance" | "ignore"
+
+القواعد:
+- الصفوف الأولى غالباً: اسم الشركة، عنوان، فراغات — يجب تجاهلها
+- صف العناوين (التاريخ، المدين، الدائن، الوصف...) قد يكون في dataStartRow-1 أو بداخله
+- debit = عمود المبالغ المدينة (السحب)، credit = عمود المبالغ الدائنة (الإيداع)
+- amount = عمود واحد يحتوي مبالغ موجبة وسالبة (موجب=دائن، سالب=مدين)
+- إذا لم يكن العمود مهماً اختر "ignore"
+
+العيّنة (صفوف 0 إلى ${sample.length - 1}):
+---
+${textSample}
+---
+
+أرجع JSON فقط بهذا الشكل (بدون شرح):
+{"dataStartRow":عدد,"dataEndRow":عدد,"columnTypes":{"0":"نوع العمود0","1":"نوع العمود1",...}}
+مهم: columnTypes يجب أن يكون مفتاحه رقم (string) مثل "0","1","2"`;
+
+    try {
+      const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 512,
+            responseMimeType: 'application/json',
+            responseJsonSchema: {
+              type: 'object',
+              properties: {
+                dataStartRow: { type: 'number' },
+                dataEndRow: { type: 'number' },
+                columnTypes: {
+                  type: 'object',
+                  additionalProperties: { type: 'string' },
+                },
+              },
+              required: ['dataStartRow', 'dataEndRow', 'columnTypes'],
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn('[GeminiService] bank-statement analyze error:', response.status);
+        return null;
+      }
+
+      const data = (await response.json()) as any;
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) return null;
+
+      const parsed = extractJson<{
+        dataStartRow?: number;
+        dataEndRow?: number;
+        columnTypes?: Record<string, string>;
+      }>(text);
+
+      if (!parsed) return null;
+
+      const dataStartRow = Math.max(0, Math.min(raw.length - 1, Math.floor(Number(parsed.dataStartRow) || 0)));
+      const dataEndRow = Math.max(
+        dataStartRow,
+        Math.min(raw.length - 1, Math.floor(Number(parsed.dataEndRow) ?? raw.length - 1)),
+      );
+      const columnTypes: Record<number, string> = {};
+      const validTypes = ['date', 'debit', 'credit', 'amount', 'description', 'balance', 'ignore'];
+      for (let i = 0; i < colCount; i++) {
+        const t = String(parsed.columnTypes?.[String(i)] ?? 'ignore').toLowerCase();
+        columnTypes[i] = validTypes.includes(t) ? t : 'ignore';
+      }
+
+      return { dataStartRow, dataEndRow, columnTypes };
+    } catch (err) {
+      console.warn('[GeminiService] analyzeBankStatementStructure error:', err);
+      return null;
+    }
+  }
+
   private normalizePeriod(v: unknown): GeminiPeriod {
     if (v === null || v === undefined) return null;
     const s = String(v).toLowerCase();

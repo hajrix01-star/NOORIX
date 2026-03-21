@@ -9,7 +9,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useVaults } from '../../hooks/useVaults';
 import { importExcelRaw } from '../../utils/exportUtils';
 import { parseDate, parseNumber } from '../../utils/importTemplates';
-import { fetchAllSalesSummariesForExport } from '../../services/api';
+import { fetchAllSalesSummariesForExport, analyzeBankStatementStructure, getHealth } from '../../services/api';
 import { fmt } from '../../utils/format';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
@@ -63,8 +63,19 @@ export default function BankStatementAnalysisScreen() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [uploadError, setUploadError] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMessage, setAiMessage] = useState('');
 
   const fileInputRef = React.useRef(null);
+
+  const { data: healthData } = useQuery({
+    queryKey: ['health'],
+    queryFn: async () => {
+      const res = await getHealth();
+      return res?.data ?? res;
+    },
+  });
+  const geminiAvailable = !!healthData?.geminiAvailable;
 
   const handleFileSelect = useCallback(async (e) => {
     const f = e?.target?.files?.[0];
@@ -86,11 +97,41 @@ export default function BankStatementAnalysisScreen() {
       setDataStartRow(0);
       setDataEndRow(raw.length - 1);
       setColumnTypes({});
+      setAiMessage('');
       setStep('preview');
     } catch (err) {
       setUploadError(err?.message || (lang === 'ar' ? 'فشل قراءة الملف' : 'Failed to read file'));
     }
   }, [lang]);
+
+  const handleAISuggest = useCallback(async () => {
+    if (!geminiAvailable || !rawGrid?.length) return;
+    setAiLoading(true);
+    setAiMessage('');
+    try {
+      const rawForApi = rawGrid.map((row) =>
+        Array.from({ length: colCount }, (_, i) => String(row[i] ?? '')),
+      );
+      const res = await analyzeBankStatementStructure(rawForApi);
+      if (res?.success && res?.data) {
+        const { dataStartRow: start, dataEndRow: end, columnTypes: ct } = res.data;
+        setDataStartRow(start);
+        setDataEndRow(end);
+        const types = {};
+        Object.entries(ct || {}).forEach(([k, v]) => {
+          types[Number(k)] = String(v || 'ignore');
+        });
+        setColumnTypes(types);
+        setAiMessage('success');
+      } else {
+        setAiMessage('error');
+      }
+    } catch {
+      setAiMessage('error');
+    } finally {
+      setAiLoading(false);
+    }
+  }, [rawGrid, colCount, geminiAvailable]);
 
   const applyFromPreview = useCallback(() => {
     const dateCol = Object.entries(columnTypes).find(([, v]) => v === 'date')?.[0];
@@ -304,7 +345,7 @@ export default function BankStatementAnalysisScreen() {
           <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13, marginBottom: 16 }}>
             {lang === 'ar' ? 'حدد صف بداية ونهاية البيانات (تجاهل اسم الشركة والعنوان)، ثم حدد نوع كل عمود.' : 'Set data start and end rows (skip company name/address), then set each column type.'}
           </p>
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 16, alignItems: 'flex-end' }}>
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('bankStatementDataStartRow')}</label>
               <select
@@ -329,6 +370,29 @@ export default function BankStatementAnalysisScreen() {
                 ))}
               </select>
             </div>
+            {geminiAvailable && (
+              <div>
+                <button
+                  type="button"
+                  className="noorix-btn-nav"
+                  onClick={handleAISuggest}
+                  disabled={aiLoading || !rawGrid?.length}
+                  style={{
+                    padding: '10px 16px',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                    color: '#fff',
+                    fontWeight: 600,
+                  }}
+                >
+                  {aiLoading ? t('bankStatementAIApplying') : t('bankStatementAISuggest')}
+                </button>
+                {aiMessage === 'success' && <span style={{ marginInlineStart: 8, fontSize: 12, color: '#16a34a' }}>✓</span>}
+                {aiMessage === 'error' && <span style={{ marginInlineStart: 8, fontSize: 12, color: '#dc2626' }}>{t('bankStatementAIError')}</span>}
+              </div>
+            )}
+            {!geminiAvailable && (
+              <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementAINoKey')}</div>
+            )}
           </div>
           <div style={{ overflowX: 'auto', border: '1px solid var(--noorix-border)', borderRadius: 8, maxHeight: 420 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 600 }}>

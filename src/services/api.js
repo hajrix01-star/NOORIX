@@ -261,6 +261,11 @@ export async function chatQuery(query) {
   return apiPost('/api/v1/chat/query', { query });
 }
 
+/** اقتراح ذكي لهيكل كشف الحساب عبر Gemini */
+export async function analyzeBankStatementStructure(raw) {
+  return apiPost('/api/v1/chat/bank-statement-analyze', { raw });
+}
+
 // ——— موارد ———
 
 export async function getCompanies(includeArchived = false) {

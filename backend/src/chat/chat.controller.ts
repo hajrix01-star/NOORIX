@@ -5,6 +5,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { ChatService } from './chat.service';
+import { GeminiService } from './gemini.service';
 
 /** Rate limit: 30 طلب/دقيقة لكل مستخدم */
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -30,7 +31,10 @@ function checkRateLimit(userId: string): void {
 @Controller('chat')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly geminiService: GeminiService,
+  ) {}
 
   @Post('query')
   @RequirePermission('SMART_CHAT_READ')
@@ -51,6 +55,25 @@ export class ChatController {
       user.role || '',
       user.permissions,
     );
+    return { success: true, data: result };
+  }
+
+  @Post('bank-statement-analyze')
+  @RequirePermission('REPORTS_READ')
+  async analyzeBankStatement(
+    @Body() body: { raw: string[][] },
+    @CurrentUser() user: JwtUser,
+  ) {
+    if (!body?.raw || !Array.isArray(body.raw) || body.raw.length === 0) {
+      return { success: false, error: 'يجب إرسال مصفوفة raw (صفوف الكشف)', code: 400 };
+    }
+    if (!this.geminiService.isAvailable()) {
+      return { success: false, error: 'Gemini غير مُفعّل. أضف GEMINI_API_KEY في backend/.env', code: 503 };
+    }
+    const result = await this.geminiService.analyzeBankStatementStructure(body.raw);
+    if (!result) {
+      return { success: false, error: 'لم يتمكن الذكاء الاصطناعي من تحليل الهيكل', code: 500 };
+    }
     return { success: true, data: result };
   }
 }
