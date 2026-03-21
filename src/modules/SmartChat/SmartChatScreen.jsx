@@ -56,13 +56,19 @@ function ToastBanner({ message, type, isAr, onDismiss }) {
   );
 }
 
-/** كرت احترافي للردود والتقارير — عرض سطور (عنوان، اسم، مبلغ، إلخ) */
+/** كرت احترافي للردود والتقارير — عرض سطور منفصلة (عنوان، اسم، مبلغ، إلخ) */
 function ReportCard({ text, isAr, createdAt }) {
-  const lines = (text || '')
-    .split(/\s*—\s*|\n+/)
+  const raw = String(text || '').trim();
+  const lines = raw
+    .split(/\n+/)
     .map((s) => s.trim())
     .filter(Boolean);
-  const isStructured = lines.length > 1 || /—/.test(text || '');
+  const hasMultipleLines = lines.length > 1;
+  const fallbackLines = raw.includes('—')
+    ? raw.split(/\s*—\s*/).map((s) => s.trim()).filter(Boolean)
+    : lines;
+
+  const rows = hasMultipleLines ? lines : fallbackLines;
 
   return (
     <div
@@ -73,27 +79,32 @@ function ReportCard({ text, isAr, createdAt }) {
         border: '1px solid var(--noorix-border)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
         fontSize: 15,
-        lineHeight: 1.65,
+        lineHeight: 1.7,
         color: 'var(--noorix-text)',
         wordBreak: 'break-word',
+        minWidth: 200,
       }}
     >
-      {isStructured ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {lines.map((line, i) => {
+      {rows.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px', alignItems: 'baseline', direction: isAr ? 'rtl' : 'ltr' }}>
+          {rows.map((line, i) => {
             const colonIdx = line.indexOf(':');
-            const hasLabel = colonIdx > 0 && colonIdx < 40;
+            const hasLabel = colonIdx > 0 && colonIdx < 50;
             const label = hasLabel ? line.slice(0, colonIdx).trim() : null;
             const value = hasLabel ? line.slice(colonIdx + 1).trim() : line;
             return (
-              <div key={i} style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'baseline' }}>
-                {label && (
-                  <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)', fontWeight: 600, minWidth: 80 }}>
-                    {label}:
-                  </span>
+              <React.Fragment key={i}>
+                {label ? (
+                  <>
+                    <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)', fontWeight: 600 }}>
+                      {label}:
+                    </span>
+                    <span>{value}</span>
+                  </>
+                ) : (
+                  <span style={{ gridColumn: '1 / -1' }}>{value || line}</span>
                 )}
-                <span>{value || line}</span>
-              </div>
+              </React.Fragment>
             );
           })}
         </div>
@@ -101,7 +112,7 @@ function ReportCard({ text, isAr, createdAt }) {
         <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
       )}
       {createdAt && (
-        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--noorix-border)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--noorix-border)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
           {new Date(createdAt).toLocaleString(isAr ? 'ar-SA' : 'en', { dateStyle: 'short', timeStyle: 'short' })}
         </div>
       )}
