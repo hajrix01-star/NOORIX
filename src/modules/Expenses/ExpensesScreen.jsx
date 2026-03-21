@@ -2,7 +2,7 @@
  * ExpensesScreen — المصاريف الثابتة والمتغيرة
  * 4 تبويبات: أصناف المصاريف، تسجيل مصروف، إدخال جماعي، سجل المدفوعات
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
@@ -84,21 +84,14 @@ export default function ExpensesScreen() {
     showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
   };
 
-  const tabLabels = useMemo(() => ({
-    expenseLinesTab: 'أصناف المصاريف',
-    expenseEntryTab: 'تسجيل مصروف',
-    expenseBatchTab: 'إدخال جماعي',
-    paymentHistoryTab: 'سجل المدفوعات',
-  }), []);
-
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <div>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--noorix-text)' }}>
-          {t('fixedAndVariableExpenses') || 'المصاريف الثابتة والمتغيرة'}
+          {t('fixedAndVariableExpenses')}
         </h1>
         <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-          {t('expensesDesc') || 'إدارة المصاريف الثابتة والمتغيرة للشركة'}
+          {t('expensesDesc')}
         </p>
       </div>
 
@@ -119,7 +112,7 @@ export default function ExpensesScreen() {
                 whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
-              {tab.icon} {t(tab.labelKey) || tab.labelKey}
+              {tab.icon} {t(tab.labelKey)}
             </button>
           ))}
         </div>
