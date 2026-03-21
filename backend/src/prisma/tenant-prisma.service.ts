@@ -16,11 +16,18 @@ import { TenantContext }                             from '../common/tenant-cont
 
 @Injectable()
 export class TenantPrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  /** مهلة الـ transaction: 30 ثانية — الافتراضي 5s لا يكفي مع RLS + Audit + شبكة */
+  static readonly TX_TIMEOUT_MS = 30_000;
+
   constructor() {
     super({
       log: process.env.NODE_ENV === 'development'
         ? [{ level: 'warn', emit: 'event' }, { level: 'error', emit: 'event' }]
         : [{ level: 'error', emit: 'event' }],
+      transactionOptions: {
+        timeout: TenantPrismaService.TX_TIMEOUT_MS,
+        maxWait: 10_000,
+      },
     });
 
     // ── Middleware: حقن tenant_id قبل كل query ──────────────
@@ -39,6 +46,7 @@ export class TenantPrismaService extends PrismaClient implements OnModuleInit, O
         return next(params);
       }
 
+      if (TenantContext.shouldSkipSetConfig()) return next(params);
       if (TenantContext.hasContext()) {
         const tenantId = TenantContext.getTenantId();
         // set_config مع false (session-level) للـ queries خارج transaction
@@ -66,13 +74,20 @@ export class TenantPrismaService extends PrismaClient implements OnModuleInit, O
   async withTenant<T>(fn: (tx: Omit<TenantPrismaService, 'withTenant' | '$transaction' | '$connect' | '$disconnect' | '$on' | '$use' | '$extends'>) => Promise<T>): Promise<T> {
     const tenantId = TenantContext.getTenantId();
 
-    return this.$transaction(async (tx) => {
-      // حقن tenant_id كـ session variable للـ transaction كاملة
-      await tx.$executeRaw`
-        SELECT set_config('app.current_tenant_id', ${tenantId}, true)
-      `;
-      return fn(tx as unknown as Omit<TenantPrismaService, 'withTenant' | '$transaction' | '$connect' | '$disconnect' | '$on' | '$use' | '$extends'>);
-    });
+    return this.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`
+          SELECT set_config('app.current_tenant_id', ${tenantId}, true)
+        `;
+        TenantContext.setSkipSetConfigForTransaction(true);
+        try {
+          return await fn(tx as unknown as Omit<TenantPrismaService, 'withTenant' | '$transaction' | '$connect' | '$disconnect' | '$on' | '$use' | '$extends'>);
+        } finally {
+          TenantContext.setSkipSetConfigForTransaction(false);
+        }
+      },
+      { timeout: TenantPrismaService.TX_TIMEOUT_MS, maxWait: 10_000 } as { timeout?: number; maxWait?: number },
+    );
   }
 
   /**

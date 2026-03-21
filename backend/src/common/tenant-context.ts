@@ -12,6 +12,8 @@ import { AsyncLocalStorage } from 'async_hooks';
 interface TenantStore {
   tenantId: string;
   userId:   string | null;
+  /** داخل withTenant: تم ضبط tenant مسبقاً — لا حاجة لـ set_config في middleware */
+  skipSetConfig?: boolean;
 }
 
 const storage = new AsyncLocalStorage<TenantStore>();
@@ -58,5 +60,15 @@ export const TenantContext = {
    */
   tryGetTenantId(): string | null {
     return storage.getStore()?.tenantId ?? null;
+  },
+
+  /** يُستخدم داخل withTenant: تخطي set_config لأن الـ tenant مُضمَن في الـ transaction */
+  shouldSkipSetConfig(): boolean {
+    return !!storage.getStore()?.skipSetConfig;
+  },
+
+  setSkipSetConfigForTransaction(value: boolean): void {
+    const store = storage.getStore();
+    if (store) store.skipSetConfig = value;
   },
 };
