@@ -28,6 +28,11 @@ export const PERMISSION_LABELS = {
   DELETE_COMPANY:     { ar: 'حذف الشركات',            icon: '💥', group: 'عمليات خطرة' },
   USERS_DELETE:       { ar: 'حذف المستخدمين',          icon: '💥', group: 'عمليات خطرة' },
   CREATE_INVOICE:     { ar: 'إنشاء فاتورة',           icon: '📝', group: 'الفواتير'    },
+  SMART_CHAT_READ:    { ar: 'استخدام المحادثة الذكية', icon: '🤖', group: 'المحادثة'    },
+  CHAT_PRESET_ADVANCES:  { ar: 'محادثة: أمر سريع — سلف',     icon: '⚡', group: 'المحادثة' },
+  CHAT_PRESET_LEAVES:    { ar: 'محادثة: أمر سريع — إجازات', icon: '⚡', group: 'المحادثة' },
+  CHAT_PRESET_DEDUCTIONS:{ ar: 'محادثة: أمر سريع — خصومات', icon: '⚡', group: 'المحادثة' },
+  CHAT_PRESET_FAQ:       { ar: 'محادثة: الأسئلة الجاهزة',   icon: '❓', group: 'المحادثة' },
 };
 
 export const ALL_PERMISSIONS_LIST = Object.keys(PERMISSION_LABELS);

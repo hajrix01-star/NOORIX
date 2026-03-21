@@ -11,6 +11,8 @@ export const hrHandler: ChatHandler = {
       'موظفين', 'موظف', 'عدد الموظفين', 'اسم الموظف', 'أسماء الموظفين', 'قائمة الموظفين', 'employee',
       'رواتب', 'مسيرات', 'مسيرة', 'payroll', 'salary', 'إجازات', 'إجازة', 'leave',
       'إقامات', 'إقامة', 'residency', 'آخر مسيرة', 'last payroll',
+      'سلفيات', 'سلفية', 'سلف', 'advance', 'advances',
+      'خصومات', 'خصم', 'deduction', 'deductions', 'جزاء', 'penalty',
     ]) && (can(PERMISSIONS.EMPLOYEES_READ) || can(PERMISSIONS.HR_READ)),
   process: async (ctx) => {
     const { companyId, year } = ctx;
@@ -79,6 +81,45 @@ export const hrHandler: ChatHandler = {
       return {
         answerAr: `عدد طلبات الإجازة في ${year}: ${count}${pending > 0 ? ` (معلقة: ${pending})` : ''}`,
         answerEn: `Leave requests in ${year}: ${count}${pending > 0 ? ` (pending: ${pending})` : ''}`,
+      };
+    }
+
+    // سلفيات الموظفين (فواتير kind=advance)
+    if (matches(ctx.query, ['سلفيات', 'سلفية', 'سلف', 'advance', 'advances'])) {
+      const whereYear = {
+        companyId,
+        kind: 'advance',
+        status: 'active',
+        transactionDate: { gte: start, lte: end },
+      };
+      const count = await prisma.invoice.count({ where: whereYear });
+      const open = await prisma.invoice.count({
+        where: { ...whereYear, settledAt: null },
+      });
+      const sum = await prisma.invoice.aggregate({
+        where: whereYear,
+        _sum: { netAmount: true },
+      });
+      const total = Number(sum._sum.netAmount || 0);
+      return {
+        answerAr: `سلفيات الموظفين في ${year}: ${count} فاتورة${open > 0 ? ` (غير مسددة بالكامل: ${open})` : ''} — إجمالي المبالغ: ${total.toLocaleString('en')} ﷼`,
+        answerEn: `Employee advances in ${year}: ${count} invoice(s)${open > 0 ? ` (not fully settled: ${open})` : ''} — total: ${total.toLocaleString('en')} SAR`,
+      };
+    }
+
+    // خصومات الموظفين
+    if (matches(ctx.query, ['خصومات', 'خصم', 'deduction', 'deductions', 'جزاء', 'penalty'])) {
+      const count = await prisma.employeeDeduction.count({
+        where: { companyId, transactionDate: { gte: start, lte: end } },
+      });
+      const sum = await prisma.employeeDeduction.aggregate({
+        where: { companyId, transactionDate: { gte: start, lte: end } },
+        _sum: { amount: true },
+      });
+      const total = Number(sum._sum.amount || 0);
+      return {
+        answerAr: `سجلات خصومات الموظفين في ${year}: ${count} — إجمالي المبالغ: ${total.toLocaleString('en')} ﷼`,
+        answerEn: `Employee deduction records in ${year}: ${count} — total: ${total.toLocaleString('en')} SAR`,
       };
     }
 

@@ -27,9 +27,10 @@ export class ChatService {
     companyId: string,
     query: string,
     userRole: string,
+    userPermissions?: string[],
   ): Promise<{ answerAr: string; answerEn: string; meta?: { intentSource: 'gemini' | 'keyword'; intent?: string } }> {
     const q = normalizeQuery(query);
-    const can = (p: string) => hasPermission(userRole, p as any);
+    const can = (p: string) => hasPermission(userRole, p as any, userPermissions);
 
     if (!can(PERMISSIONS.SMART_CHAT_READ)) {
       return {

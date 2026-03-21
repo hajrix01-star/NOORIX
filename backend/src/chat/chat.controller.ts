@@ -39,7 +39,7 @@ export class ChatController {
     @Headers('x-company-id') headerCompanyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    checkRateLimit(user.sub || 'anon');
+    checkRateLimit(user.sub || user.userId || 'anon');
 
     const companyId = headerCompanyId || (user.companyIds && user.companyIds[0]);
     if (!companyId) {
@@ -49,6 +49,7 @@ export class ChatController {
       companyId,
       body.query || '',
       user.role || '',
+      user.permissions,
     );
     return { success: true, data: result };
   }

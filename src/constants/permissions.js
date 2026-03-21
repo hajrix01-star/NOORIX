@@ -46,6 +46,11 @@ export const PERMISSIONS = {
 
   SMART_CHAT_READ:  'SMART_CHAT_READ',
 
+  CHAT_PRESET_ADVANCES:   'CHAT_PRESET_ADVANCES',
+  CHAT_PRESET_LEAVES:     'CHAT_PRESET_LEAVES',
+  CHAT_PRESET_DEDUCTIONS: 'CHAT_PRESET_DEDUCTIONS',
+  CHAT_PRESET_FAQ:        'CHAT_PRESET_FAQ',
+
   EMPLOYEES_READ:   'EMPLOYEES_READ',
   EMPLOYEES_WRITE:  'EMPLOYEES_WRITE',
   EMPLOYEES_DELETE: 'EMPLOYEES_DELETE',
@@ -198,8 +203,12 @@ export const PERMISSION_MODULES = [
     labelEn: 'Smart Chat',
     icon: '💬',
     permissions: {
-      view:  'VIEW_CHAT',
-      read:  'SMART_CHAT_READ',
+      view:       'VIEW_CHAT',
+      read:       'SMART_CHAT_READ',
+      chatAdv:    'CHAT_PRESET_ADVANCES',
+      chatLeave:  'CHAT_PRESET_LEAVES',
+      chatDed:    'CHAT_PRESET_DEDUCTIONS',
+      chatFaq:    'CHAT_PRESET_FAQ',
     },
   },
   {
@@ -235,10 +244,14 @@ export const PERMISSION_MODULES = [
 
 /** ترجمة أعمدة الصلاحيات */
 export const PERMISSION_LEVELS = {
-  view:   { ar: 'عرض الصفحة', en: 'View Page' },
-  read:   { ar: 'قراءة البيانات', en: 'Read Data' },
-  write:  { ar: 'إنشاء وتعديل', en: 'Create & Edit' },
-  delete: { ar: 'حذف', en: 'Delete' },
+  view:       { ar: 'عرض الصفحة', en: 'View Page' },
+  read:       { ar: 'قراءة البيانات', en: 'Read Data' },
+  write:      { ar: 'إنشاء وتعديل', en: 'Create & Edit' },
+  delete:     { ar: 'حذف', en: 'Delete' },
+  chatAdv:    { ar: 'محادثة · سلف', en: 'Chat · Advances' },
+  chatLeave:  { ar: 'محادثة · إجازات', en: 'Chat · Leaves' },
+  chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
+  chatFaq:    { ar: 'محادثة · أسئلة', en: 'Chat · FAQ' },
 };
 
 /**

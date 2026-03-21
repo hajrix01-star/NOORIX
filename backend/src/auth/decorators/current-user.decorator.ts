@@ -11,11 +11,13 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export interface JwtUser {
-  sub:        string;       // userId
-  email:      string;
-  role:       string;
-  tenantId:   string;
-  companyIds: string[];
+  sub?:        string;       // userId (مرادف userId)
+  userId?:     string;
+  email:       string;
+  role:        string;
+  tenantId?:   string;
+  companyIds:  string[];
+  permissions?: string[];
 }
 
 export const CurrentUser = createParamDecorator(
