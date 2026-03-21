@@ -1,6 +1,6 @@
 /**
  * HrQuickEntrySheet — إدخال سريع من المحادثة (سلفة، إجازة، خصم، زيادة/بدلة)
- * واجهة مُحسّنة للجوال: شاشة كاملة تقريباً، حقول 16px، أزرار كبيرة، safe-area.
+ * نافذة احترافية: بطاقة مركزية، حقول منسقة، دعم RTL، مناسب للجوال 100%.
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,21 +13,12 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
-const inp = {
-  width: '100%',
-  minHeight: 48,
-  padding: '12px 14px',
-  fontSize: 16,
-  borderRadius: 10,
-  border: '1px solid var(--noorix-border)',
-  background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)',
-  boxSizing: 'border-box',
+const MODE_META = {
+  advance:   { icon: '💳', labelAr: 'صرف سلفة',      labelEn: 'Pay advance' },
+  leave:     { icon: '📅', labelAr: 'تسجيل إجازة',   labelEn: 'Add leave' },
+  deduction: { icon: '📉', labelAr: 'تسجيل خصم',    labelEn: 'Record deduction' },
+  increase:  { icon: '📈', labelAr: 'زيادة أو بدلة', labelEn: 'Raise or allowance' },
 };
-
-const lbl = { display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text)' };
-
-const block = { marginBottom: 16 };
 
 function invalidateHrQueries(qc, companyId) {
   qc.invalidateQueries({ queryKey: ['employees', companyId] });
@@ -37,20 +28,50 @@ function invalidateHrQueries(qc, companyId) {
   qc.invalidateQueries({ queryKey: ['custom-allowances', companyId] });
 }
 
+function Field({ id, label, children, error }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label htmlFor={id} style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text)' }}>
+        {label}
+      </label>
+      {children}
+      {error && (
+        <div style={{ marginTop: 4, fontSize: 12, color: 'var(--noorix-accent-red)' }}>{error}</div>
+      )}
+    </div>
+  );
+}
+
+const inputBase = {
+  width: '100%',
+  minHeight: 48,
+  padding: '12px 14px',
+  fontSize: 16,
+  borderRadius: 10,
+  border: '1px solid var(--noorix-border)',
+  background: 'var(--noorix-bg-surface)',
+  color: 'var(--noorix-text)',
+  boxSizing: 'border-box',
+  fontFamily: 'inherit',
+};
+
 /** @param {{ mode: string, companyId: string, onClose: () => void, onRecorded?: (o: { textAr: string, textEn: string }) => void }} props */
 export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
   const { t, lang } = useTranslation();
   const qc = useQueryClient();
   const isAr = lang === 'ar';
-  const { vaultsList } = useVaults({ companyId });
-  const vaults = vaultsList || [];
+  const dir = isAr ? 'rtl' : 'ltr';
 
-  const { data: employees = [] } = useQuery({
+  const { vaultsList = [], isLoading: vaultsLoading } = useVaults({ companyId });
+  const vaults = Array.isArray(vaultsList) ? vaultsList : [];
+
+  const { data: employees = [], isLoading: employeesLoading } = useQuery({
     queryKey: ['employees', companyId, false],
     queryFn: async () => {
       const res = await getEmployees(companyId, false);
       if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : [];
+      const d = res.data;
+      return Array.isArray(d) ? d : [];
     },
     enabled: !!companyId,
   });
@@ -60,14 +81,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
     [employees],
   );
 
-  /* ——— Advance ——— */
   const [advEmp, setAdvEmp] = useState('');
   const [advAmount, setAdvAmount] = useState('');
   const [advVault, setAdvVault] = useState('');
   const [advDate, setAdvDate] = useState(getSaudiToday());
   const [advNotes, setAdvNotes] = useState('');
 
-  /* ——— Leave ——— */
   const [lvEmp, setLvEmp] = useState('');
   const [lvType, setLvType] = useState('annual');
   const [lvStart, setLvStart] = useState('');
@@ -75,14 +94,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
   const [lvDays, setLvDays] = useState('');
   const [lvNotes, setLvNotes] = useState('');
 
-  /* ——— Deduction ——— */
   const [ddEmp, setDdEmp] = useState('');
   const [ddType, setDdType] = useState('penalty');
   const [ddAmount, setDdAmount] = useState('');
   const [ddDate, setDdDate] = useState(getSaudiToday());
   const [ddNotes, setDdNotes] = useState('');
 
-  /* ——— Increase: movement | allowance ——— */
   const [incTab, setIncTab] = useState('movement');
   const [mvEmp, setMvEmp] = useState('');
   const [mvType, setMvType] = useState('raise');
@@ -97,17 +114,25 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
 
   const [formError, setFormError] = useState('');
 
-  useEffect(() => {
-    setFormError('');
-  }, [mode]);
+  useEffect(() => { setFormError(''); }, [mode]);
 
   useEffect(() => {
     if (vaults[0]?.id) setAdvVault((v) => v || vaults[0].id);
   }, [vaults]);
 
+  useEffect(() => {
+    if (!lvStart || !lvEnd) return;
+    const s = new Date(lvStart);
+    const e = new Date(lvEnd);
+    if (e >= s) {
+      const days = Math.ceil((e.getTime() - s.getTime()) / 86400000) + 1;
+      setLvDays(String(days));
+    }
+  }, [lvStart, lvEnd]);
+
   const advMut = useMutation({
-    mutationFn: async (payload) => {
-      const res = await createAdvance(payload);
+    mutationFn: async (p) => {
+      const res = await createAdvance(p);
       if (!res?.success) throw new Error(res?.error || 'Request failed');
       return res;
     },
@@ -176,30 +201,37 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
     onError: (e) => setFormError(e?.message || String(e)),
   });
 
-  const submitting =
-    advMut.isPending || leaveMut.isPending || dedMut.isPending || movMut.isPending || alMut.isPending;
+  const submitting = advMut.isPending || leaveMut.isPending || dedMut.isPending || movMut.isPending || alMut.isPending;
+  const meta = MODE_META[mode] || {};
+  const title = isAr ? meta.labelAr : meta.labelEn;
+  const dataLoading = employeesLoading || (mode === 'advance' && vaultsLoading);
 
-  const title = useMemo(() => {
-    if (mode === 'advance') return isAr ? t('payAdvance') : 'Pay advance';
-    if (mode === 'leave') return isAr ? t('addLeave') : 'Add leave';
-    if (mode === 'deduction') return isAr ? t('chatRecordDeduction') : 'Record deduction';
-    if (mode === 'increase') return isAr ? t('chatRaiseOrAllowance') : 'Raise or allowance';
-    return '';
-  }, [mode, isAr, t]);
+  const empSelect = (value, onChange, id) => (
+    <select id={id} value={value} onChange={(e) => onChange(e.target.value)} required style={inputBase} disabled={dataLoading}>
+      <option value="">{isAr ? '— اختر الموظف —' : '— Select employee —'}</option>
+      {activeEmployees.map((emp) => (
+        <option key={emp.id} value={emp.id}>{emp.name || emp.nameAr || '—'}</option>
+      ))}
+    </select>
+  );
 
   const onSubmitAdvance = (e) => {
     e.preventDefault();
     setFormError('');
-    const amt = parseFloat(advAmount, 10);
+    const amt = parseFloat(String(advAmount).replace(',', '.'), 10);
     const emp = activeEmployees.find((x) => x.id === advEmp);
-    if (!advEmp || !advVault || !amt || amt <= 0) {
+    if (!advEmp || !amt || amt <= 0) {
       setFormError(t('requiredFields'));
+      return;
+    }
+    if (vaults.length === 0) {
+      setFormError(isAr ? 'لا توجد خزائن. أضف خزنة من الخزائن أولاً.' : 'No vaults. Add a vault first.');
       return;
     }
     advMut.mutate({
       employeeId: advEmp,
       companyId,
-      vaultId: advVault,
+      vaultId: advVault || vaults[0]?.id,
       amount: amt,
       transactionDate: advDate,
       notes: advNotes.trim() || `سلفة — ${emp?.name || emp?.nameAr || ''}`,
@@ -235,7 +267,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
   const onSubmitDeduction = (e) => {
     e.preventDefault();
     setFormError('');
-    const amt = parseFloat(ddAmount, 10);
+    const amt = parseFloat(String(ddAmount).replace(',', '.'), 10);
     if (!ddEmp || !amt || amt <= 0) {
       setFormError(t('requiredFields'));
       return;
@@ -257,7 +289,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
       setFormError(t('requiredFields'));
       return;
     }
-    const amt = mvAmount.trim() ? parseFloat(mvAmount, 10) : undefined;
+    const amt = mvAmount.trim() ? parseFloat(String(mvAmount).replace(',', '.'), 10) : undefined;
     movMut.mutate({
       companyId,
       employeeId: mvEmp,
@@ -273,7 +305,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
   const onSubmitAllowance = (e) => {
     e.preventDefault();
     setFormError('');
-    const amt = parseFloat(alAmount, 10);
+    const amt = parseFloat(String(alAmount).replace(',', '.'), 10);
     if (!alEmp || !alName.trim() || !amt || amt <= 0) {
       setFormError(t('requiredFields'));
       return;
@@ -286,299 +318,276 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
     });
   };
 
-  const empSelect = (value, onChange) => (
-    <select value={value} onChange={(e) => onChange(e.target.value)} required style={inp}>
-      <option value="">{isAr ? '— اختر الموظف —' : '— Select employee —'}</option>
-      {activeEmployees.map((emp) => (
-        <option key={emp.id} value={emp.id}>{emp.name || emp.nameAr || '—'}</option>
-      ))}
-    </select>
+  const segmentBtn = (tab, label) => (
+    <button
+      type="button"
+      key={tab}
+      onClick={() => { setIncTab(tab); setFormError(''); }}
+      className={incTab === tab ? 'noorix-btn-primary' : 'noorix-btn-nav'}
+      style={{
+        flex: 1,
+        minHeight: 48,
+        borderRadius: 10,
+        fontSize: 14,
+        fontWeight: 700,
+        border: incTab === tab ? undefined : '1px solid var(--noorix-border)',
+      }}
+    >
+      {label}
+    </button>
   );
-
-  const leaveDaysEffect = (start, end, setDays) => {
-    if (!start || !end) return;
-    const s = new Date(start);
-    const e = new Date(end);
-    if (e >= s) {
-      const days = Math.ceil((e - s) / (86400000)) + 1;
-      setDays(String(days));
-    }
-  };
 
   return (
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby="hr-sheet-title"
+      dir={dir}
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 1002,
-        background: 'var(--noorix-bg, #f8fafc)',
+        background: 'rgba(0,0,0,0.48)',
         display: 'flex',
-        flexDirection: 'column',
-        paddingTop: 'env(safe-area-inset-top)',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        padding: 0,
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
+      onClick={onClose}
     >
-      <header
-        style={{
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          padding: '12px 16px',
-          borderBottom: '1px solid var(--noorix-border)',
-          background: 'var(--noorix-bg-surface)',
-        }}
-      >
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{title}</h2>
-        <button
-          type="button"
-          className="noorix-btn-nav"
-          onClick={onClose}
-          style={{ minHeight: 44, minWidth: 44, padding: '10px 14px', fontSize: 15, touchAction: 'manipulation' }}
-        >
-          {isAr ? 'إغلاق' : 'Close'}
-        </button>
-      </header>
-
       <div
+        className="noorix-surface-card"
         style={{
-          flex: 1,
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          padding: 16,
-          maxWidth: 520,
           width: '100%',
+          maxWidth: 480,
+          maxHeight: 'min(92vh, 680px)',
           margin: '0 auto',
-          boxSizing: 'border-box',
+          borderRadius: '20px 20px 0 0',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 -8px 32px rgba(0,0,0,0.15)',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {formError && (
-          <div style={{ marginBottom: 16, padding: 12, borderRadius: 10, background: 'rgba(239,68,68,0.12)', color: '#b91c1c', fontSize: 14 }}>
-            {formError}
+        <header
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--noorix-border)',
+            background: 'var(--noorix-bg-surface)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 24 }}>{meta.icon}</span>
+            <h2 id="hr-sheet-title" style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--noorix-text)' }}>
+              {title}
+            </h2>
           </div>
-        )}
+          <button
+            type="button"
+            className="noorix-btn-nav"
+            onClick={onClose}
+            style={{ minHeight: 40, minWidth: 40, padding: '8px 12px', fontSize: 14 }}
+            aria-label={isAr ? 'إغلاق' : 'Close'}
+          >
+            {isAr ? '✕' : '✕'}
+          </button>
+        </header>
 
-        {mode === 'advance' && (
-          <form onSubmit={onSubmitAdvance}>
-            <div style={block}>
-              <label style={lbl}>{t('selectEmployee')}</label>
-              {empSelect(advEmp, setAdvEmp)}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            padding: 20,
+          }}
+        >
+          {dataLoading && (
+            <div style={{ textAlign: 'center', padding: 24, color: 'var(--noorix-text-muted)' }}>
+              {isAr ? 'جاري التحميل...' : 'Loading...'}
             </div>
-            <div style={block}>
-              <label style={lbl}>{t('advanceAmount')}</label>
-              <input type="number" inputMode="decimal" step="0.01" min="0" value={advAmount} onChange={(e) => setAdvAmount(e.target.value)} style={inp} placeholder="0" />
-            </div>
-            <div style={block}>
-              <label style={lbl}>{t('selectVault')}</label>
-              <select value={advVault} onChange={(e) => setAdvVault(e.target.value)} style={inp}>
-                {vaults.map((v) => (
-                  <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
-                ))}
-              </select>
-            </div>
-            <div style={block}>
-              <label style={lbl}>{t('transactionDate')}</label>
-              <input type="date" value={advDate} onChange={(e) => setAdvDate(e.target.value)} style={inp} />
-            </div>
-            <div style={block}>
-              <label style={lbl}>{t('notes')}</label>
-              <input type="text" value={advNotes} onChange={(e) => setAdvNotes(e.target.value)} style={inp} placeholder={isAr ? 'سبب أو تفاصيل' : 'Reason or details'} />
-            </div>
-            <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ width: '100%', minHeight: 52, fontSize: 16, fontWeight: 700, marginTop: 8, touchAction: 'manipulation' }}>
-              {submitting ? t('saving') : t('payAdvance')}
-            </button>
-          </form>
-        )}
+          )}
 
-        {mode === 'leave' && (
-          <form onSubmit={onSubmitLeave}>
-            <div style={block}>
-              <label style={lbl}>{t('selectEmployee')}</label>
-              {empSelect(lvEmp, setLvEmp)}
+          {formError && (
+            <div
+              style={{
+                marginBottom: 16,
+                padding: 12,
+                borderRadius: 10,
+                background: 'rgba(220,38,38,0.08)',
+                color: 'var(--noorix-accent-red)',
+                fontSize: 14,
+              }}
+            >
+              {formError}
             </div>
-            <div style={block}>
-              <label style={lbl}>{t('leaveType')}</label>
-              <select value={lvType} onChange={(e) => setLvType(e.target.value)} style={inp}>
-                {Object.keys(TYPE_MAP).map((k) => (
-                  <option key={k} value={k}>{t(TYPE_MAP[k])}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              <div>
-                <label style={lbl}>{t('startDate')}</label>
+          )}
+
+          {!dataLoading && mode === 'advance' && (
+            <form onSubmit={onSubmitAdvance}>
+              <Field id="adv-emp" label={t('selectEmployee')}>
+                {empSelect(advEmp, setAdvEmp, 'adv-emp')}
+              </Field>
+              <Field id="adv-amt" label={t('advanceAmount')}>
                 <input
-                  type="date"
-                  value={lvStart}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setLvStart(v);
-                    leaveDaysEffect(v, lvEnd, setLvDays);
-                  }}
-                  style={inp}
-                  required
+                  id="adv-amt"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  value={advAmount}
+                  onChange={(e) => setAdvAmount(e.target.value)}
+                  style={inputBase}
+                  placeholder="0"
                 />
-              </div>
-              <div>
-                <label style={lbl}>{t('endDate')}</label>
-                <input
-                  type="date"
-                  value={lvEnd}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setLvEnd(v);
-                    leaveDaysEffect(lvStart, v, setLvDays);
-                  }}
-                  style={inp}
-                  required
-                />
-              </div>
-            </div>
-            <div style={block}>
-              <label style={lbl}>{t('daysCount')}</label>
-              <input type="number" inputMode="numeric" min="1" value={lvDays} onChange={(e) => setLvDays(e.target.value)} style={inp} />
-            </div>
-            <div style={block}>
-              <label style={lbl}>{t('notes')}</label>
-              <input type="text" value={lvNotes} onChange={(e) => setLvNotes(e.target.value)} style={inp} />
-            </div>
-            <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ width: '100%', minHeight: 52, fontSize: 16, fontWeight: 700, touchAction: 'manipulation' }}>
-              {submitting ? t('saving') : t('add')}
-            </button>
-          </form>
-        )}
-
-        {mode === 'deduction' && (
-          <form onSubmit={onSubmitDeduction}>
-            <div style={block}>
-              <label style={lbl}>{t('selectEmployee')}</label>
-              {empSelect(ddEmp, setDdEmp)}
-            </div>
-            <div style={block}>
-              <label style={lbl}>{isAr ? 'نوع الخصم' : 'Deduction type'}</label>
-              <select value={ddType} onChange={(e) => setDdType(e.target.value)} style={inp}>
-                <option value="penalty">{isAr ? 'جزاء' : 'Penalty'}</option>
-                <option value="other">{isAr ? 'أخرى' : 'Other'}</option>
-                <option value="advance">{isAr ? 'مرتبط بسلفة' : 'Advance-related'}</option>
-              </select>
-            </div>
-            <div style={block}>
-              <label style={lbl}>{t('advanceAmount')}</label>
-              <input type="number" inputMode="decimal" step="0.01" min="0" value={ddAmount} onChange={(e) => setDdAmount(e.target.value)} style={inp} />
-            </div>
-            <div style={block}>
-              <label style={lbl}>{t('transactionDate')}</label>
-              <input type="date" value={ddDate} onChange={(e) => setDdDate(e.target.value)} style={inp} />
-            </div>
-            <div style={block}>
-              <label style={lbl}>{t('notes')}</label>
-              <input type="text" value={ddNotes} onChange={(e) => setDdNotes(e.target.value)} style={inp} placeholder={isAr ? 'السبب' : 'Reason'} />
-            </div>
-            <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ width: '100%', minHeight: 52, fontSize: 16, fontWeight: 700, touchAction: 'manipulation' }}>
-              {submitting ? t('saving') : (isAr ? 'حفظ الخصم' : 'Save deduction')}
-            </button>
-          </form>
-        )}
-
-        {mode === 'increase' && (
-          <div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-              <button
-                type="button"
-                onClick={() => { setIncTab('movement'); setFormError(''); }}
-                style={{
-                  flex: 1,
-                  minHeight: 48,
-                  borderRadius: 10,
-                  border: incTab === 'movement' ? '2px solid #2563eb' : '1px solid var(--noorix-border)',
-                  background: incTab === 'movement' ? 'rgba(37,99,235,0.08)' : 'var(--noorix-bg-surface)',
-                  fontWeight: 700,
-                  fontSize: 14,
-                  touchAction: 'manipulation',
-                }}
-              >
-                {isAr ? t('chatMovementSection') : 'Promotion / raise'}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setIncTab('allowance'); setFormError(''); }}
-                style={{
-                  flex: 1,
-                  minHeight: 48,
-                  borderRadius: 10,
-                  border: incTab === 'allowance' ? '2px solid #2563eb' : '1px solid var(--noorix-border)',
-                  background: incTab === 'allowance' ? 'rgba(37,99,235,0.08)' : 'var(--noorix-bg-surface)',
-                  fontWeight: 700,
-                  fontSize: 14,
-                  touchAction: 'manipulation',
-                }}
-              >
-                {isAr ? t('chatAllowanceSection') : 'Allowance'}
-              </button>
-            </div>
-
-            {incTab === 'movement' ? (
-              <form onSubmit={onSubmitMovement}>
-                <div style={block}>
-                  <label style={lbl}>{t('selectEmployee')}</label>
-                  {empSelect(mvEmp, setMvEmp)}
-                </div>
-                <div style={block}>
-                  <label style={lbl}>{isAr ? t('movementTypeLabel') : 'Type'}</label>
-                  <select value={mvType} onChange={(e) => setMvType(e.target.value)} style={inp}>
-                    <option value="raise">{isAr ? 'زيادة' : 'Raise'}</option>
-                    <option value="promotion">{isAr ? 'ترقية' : 'Promotion'}</option>
-                    <option value="other">{isAr ? 'أخرى' : 'Other'}</option>
-                  </select>
-                </div>
-                <div style={block}>
-                  <label style={lbl}>{isAr ? 'مبلغ (اختياري)' : 'Amount (optional)'}</label>
-                  <input type="number" inputMode="decimal" step="0.01" min="0" value={mvAmount} onChange={(e) => setMvAmount(e.target.value)} style={inp} />
-                </div>
-                <div style={block}>
-                  <label style={lbl}>{isAr ? t('previousValue') : 'Previous'}</label>
-                  <input type="text" value={mvPrev} onChange={(e) => setMvPrev(e.target.value)} style={inp} />
-                </div>
-                <div style={block}>
-                  <label style={lbl}>{isAr ? t('newValue') : 'New value'}</label>
-                  <input type="text" value={mvNew} onChange={(e) => setMvNew(e.target.value)} style={inp} placeholder={isAr ? 'مثال: 8000 → 9000' : 'e.g. 8000 → 9000'} />
-                </div>
-                <div style={block}>
-                  <label style={lbl}>{isAr ? t('effectiveDateLabel') : 'Effective date'}</label>
-                  <input type="date" value={mvEff} onChange={(e) => setMvEff(e.target.value)} style={inp} required />
-                </div>
-                <div style={block}>
-                  <label style={lbl}>{t('notes')}</label>
-                  <input type="text" value={mvNotes} onChange={(e) => setMvNotes(e.target.value)} style={inp} />
-                </div>
-                <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ width: '100%', minHeight: 52, fontSize: 16, fontWeight: 700, touchAction: 'manipulation' }}>
-                  {submitting ? t('saving') : (isAr ? 'حفظ' : 'Save')}
+              </Field>
+              <Field id="adv-vault" label={t('selectVault')}>
+                <select id="adv-vault" value={advVault} onChange={(e) => setAdvVault(e.target.value)} style={inputBase} required>
+                  {vaults.length === 0 && <option value="">{isAr ? '— لا توجد خزائن —' : '— No vaults —'}</option>}
+                  {vaults.map((v) => (
+                    <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field id="adv-date" label={t('transactionDate')}>
+                <input id="adv-date" type="date" value={advDate} onChange={(e) => setAdvDate(e.target.value)} style={inputBase} />
+              </Field>
+              <Field id="adv-notes" label={t('notes')}>
+                <input id="adv-notes" type="text" value={advNotes} onChange={(e) => setAdvNotes(e.target.value)} style={inputBase} placeholder={isAr ? 'سبب أو تفاصيل' : 'Reason or details'} />
+              </Field>
+              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>
+                  {t('cancel')}
                 </button>
-              </form>
-            ) : (
-              <form onSubmit={onSubmitAllowance}>
-                <div style={block}>
-                  <label style={lbl}>{t('selectEmployee')}</label>
-                  {empSelect(alEmp, setAlEmp)}
-                </div>
-                <div style={block}>
-                  <label style={lbl}>{t('customAllowanceName')}</label>
-                  <input type="text" value={alName} onChange={(e) => setAlName(e.target.value)} style={inp} placeholder={isAr ? 'مثال: بدل طبيعة عمل' : 'e.g. Field allowance'} />
-                </div>
-                <div style={block}>
-                  <label style={lbl}>{t('customAllowanceAmount')}</label>
-                  <input type="number" inputMode="decimal" step="0.01" min="0" value={alAmount} onChange={(e) => setAlAmount(e.target.value)} style={inp} />
-                </div>
-                <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ width: '100%', minHeight: 52, fontSize: 16, fontWeight: 700, touchAction: 'manipulation' }}>
-                  {submitting ? t('saving') : (isAr ? 'حفظ البدلة' : 'Save allowance')}
+                <button type="submit" className="noorix-btn-primary" disabled={submitting || vaults.length === 0} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>
+                  {submitting ? t('saving') : t('payAdvance')}
                 </button>
-              </form>
-            )}
-          </div>
-        )}
+              </div>
+            </form>
+          )}
+
+          {!dataLoading && mode === 'leave' && (
+            <form onSubmit={onSubmitLeave}>
+              <Field id="lv-emp" label={t('selectEmployee')}>
+                {empSelect(lvEmp, setLvEmp, 'lv-emp')}
+              </Field>
+              <Field id="lv-type" label={t('leaveType')}>
+                <select id="lv-type" value={lvType} onChange={(e) => setLvType(e.target.value)} style={inputBase}>
+                  {Object.keys(TYPE_MAP).map((k) => (
+                    <option key={k} value={k}>{t(TYPE_MAP[k])}</option>
+                  ))}
+                </select>
+              </Field>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                <Field id="lv-start" label={t('startDate')}>
+                  <input id="lv-start" type="date" value={lvStart} onChange={(e) => setLvStart(e.target.value)} style={inputBase} required />
+                </Field>
+                <Field id="lv-end" label={t('endDate')}>
+                  <input id="lv-end" type="date" value={lvEnd} onChange={(e) => setLvEnd(e.target.value)} style={inputBase} required />
+                </Field>
+              </div>
+              <Field id="lv-days" label={t('daysCount')}>
+                <input id="lv-days" type="number" inputMode="numeric" min="1" value={lvDays} onChange={(e) => setLvDays(e.target.value)} style={inputBase} placeholder="—" />
+              </Field>
+              <Field id="lv-notes" label={t('notes')}>
+                <input id="lv-notes" type="text" value={lvNotes} onChange={(e) => setLvNotes(e.target.value)} style={inputBase} />
+              </Field>
+              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</button>
+                <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : t('add')}</button>
+              </div>
+            </form>
+          )}
+
+          {!dataLoading && mode === 'deduction' && (
+            <form onSubmit={onSubmitDeduction}>
+              <Field id="dd-emp" label={t('selectEmployee')}>
+                {empSelect(ddEmp, setDdEmp, 'dd-emp')}
+              </Field>
+              <Field id="dd-type" label={isAr ? 'نوع الخصم' : 'Deduction type'}>
+                <select id="dd-type" value={ddType} onChange={(e) => setDdType(e.target.value)} style={inputBase}>
+                  <option value="penalty">{isAr ? 'جزاء' : 'Penalty'}</option>
+                  <option value="other">{isAr ? 'أخرى' : 'Other'}</option>
+                  <option value="advance">{isAr ? 'مرتبط بسلفة' : 'Advance-related'}</option>
+                </select>
+              </Field>
+              <Field id="dd-amt" label={t('advanceAmount')}>
+                <input id="dd-amt" type="number" inputMode="decimal" step="0.01" min="0" value={ddAmount} onChange={(e) => setDdAmount(e.target.value)} style={inputBase} />
+              </Field>
+              <Field id="dd-date" label={t('transactionDate')}>
+                <input id="dd-date" type="date" value={ddDate} onChange={(e) => setDdDate(e.target.value)} style={inputBase} />
+              </Field>
+              <Field id="dd-notes" label={t('notes')}>
+                <input id="dd-notes" type="text" value={ddNotes} onChange={(e) => setDdNotes(e.target.value)} style={inputBase} placeholder={isAr ? 'السبب' : 'Reason'} />
+              </Field>
+              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</button>
+                <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : (isAr ? 'حفظ الخصم' : 'Save deduction')}</button>
+              </div>
+            </form>
+          )}
+
+          {!dataLoading && mode === 'increase' && (
+            <div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                {segmentBtn('movement', isAr ? t('chatMovementSection') : 'Promotion / raise')}
+                {segmentBtn('allowance', isAr ? t('chatAllowanceSection') : 'Allowance')}
+              </div>
+
+              {incTab === 'movement' ? (
+                <form onSubmit={onSubmitMovement}>
+                  <Field id="mv-emp" label={t('selectEmployee')}>{empSelect(mvEmp, setMvEmp, 'mv-emp')}</Field>
+                  <Field id="mv-type" label={isAr ? t('movementTypeLabel') : 'Type'}>
+                    <select id="mv-type" value={mvType} onChange={(e) => setMvType(e.target.value)} style={inputBase}>
+                      <option value="raise">{isAr ? 'زيادة' : 'Raise'}</option>
+                      <option value="promotion">{isAr ? 'ترقية' : 'Promotion'}</option>
+                      <option value="other">{isAr ? 'أخرى' : 'Other'}</option>
+                    </select>
+                  </Field>
+                  <Field id="mv-amt" label={isAr ? 'مبلغ (اختياري)' : 'Amount (optional)'}>
+                    <input id="mv-amt" type="number" inputMode="decimal" step="0.01" min="0" value={mvAmount} onChange={(e) => setMvAmount(e.target.value)} style={inputBase} />
+                  </Field>
+                  <Field id="mv-prev" label={isAr ? t('previousValue') : 'Previous'}>
+                    <input id="mv-prev" type="text" value={mvPrev} onChange={(e) => setMvPrev(e.target.value)} style={inputBase} />
+                  </Field>
+                  <Field id="mv-new" label={isAr ? t('newValue') : 'New value'}>
+                    <input id="mv-new" type="text" value={mvNew} onChange={(e) => setMvNew(e.target.value)} style={inputBase} placeholder={isAr ? 'مثال: 8000 → 9000' : 'e.g. 8000 → 9000'} />
+                  </Field>
+                  <Field id="mv-eff" label={isAr ? t('effectiveDateLabel') : 'Effective date'}>
+                    <input id="mv-eff" type="date" value={mvEff} onChange={(e) => setMvEff(e.target.value)} style={inputBase} required />
+                  </Field>
+                  <Field id="mv-notes" label={t('notes')}>
+                    <input id="mv-notes" type="text" value={mvNotes} onChange={(e) => setMvNotes(e.target.value)} style={inputBase} />
+                  </Field>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                    <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</button>
+                    <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ' : 'Save')}</button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={onSubmitAllowance}>
+                  <Field id="al-emp" label={t('selectEmployee')}>{empSelect(alEmp, setAlEmp, 'al-emp')}</Field>
+                  <Field id="al-name" label={t('customAllowanceName')}>
+                    <input id="al-name" type="text" value={alName} onChange={(e) => setAlName(e.target.value)} style={inputBase} placeholder={isAr ? 'مثال: بدل طبيعة عمل' : 'e.g. Field allowance'} />
+                  </Field>
+                  <Field id="al-amt" label={t('customAllowanceAmount')}>
+                    <input id="al-amt" type="number" inputMode="decimal" step="0.01" min="0" value={alAmount} onChange={(e) => setAlAmount(e.target.value)} style={inputBase} />
+                  </Field>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                    <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</button>
+                    <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ البدلة' : 'Save allowance')}</button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
