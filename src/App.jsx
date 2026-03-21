@@ -16,7 +16,10 @@ const DailySalesScreen = React.lazy(() => import('./modules/Sales/DailySalesScre
 const PurchasesBatchScreen = React.lazy(() => import('./modules/Purchases/PurchasesBatchScreen'));
 const ThemePreviewScreen = React.lazy(() => import('./modules/ThemePreviewScreen'));
 const OwnerDashboardScreen = React.lazy(() => import('./modules/Owner/OwnerDashboardScreen'));
+const ReportsLayout = React.lazy(() => import('./modules/Reports/ReportsLayout'));
 const ReportsScreen = React.lazy(() => import('./modules/Reports/ReportsScreen'));
+const ReportsTaxScreen = React.lazy(() => import('./modules/Reports/ReportsTaxScreen'));
+const BankStatementAnalysisScreen = React.lazy(() => import('./modules/Reports/BankStatementAnalysisScreen'));
 const SettingsScreen = React.lazy(() => import('./modules/Settings/SettingsScreen'));
 const LoginScreen = React.lazy(() => import('./modules/Login/LoginScreen'));
 const InvoicesListScreen = React.lazy(() => import('./modules/Invoices/InvoicesListScreen'));
@@ -298,7 +301,12 @@ export default function App() {
                 <Route path="/treasury" element={<TreasuryScreen />} />
                 <Route path="/hr" element={<HRMainScreen />} />
                 <Route path="/hr/employee/:id" element={<EmployeeProfileScreen />} />
-                <Route path="/reports" element={<ReportsScreen />} />
+                <Route path="/reports" element={<ReportsLayout />}>
+                  <Route index element={<Navigate to="/reports/general" replace />} />
+                  <Route path="general" element={<ReportsScreen />} />
+                  <Route path="tax" element={<ReportsTaxScreen />} />
+                  <Route path="bank-statement" element={<BankStatementAnalysisScreen />} />
+                </Route>
                 <Route path="/settings" element={<SettingsScreen />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -7,7 +7,6 @@ import { PERMISSIONS } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
 import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
-import TaxReportTab from './TaxReportTab';
 import ReportsDetailModal from './ReportsDetailModal';
 import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
 import {
@@ -29,17 +28,11 @@ import {
 const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-const REPORT_TABS = [
-  { id: 'general', labelKey: 'reportGeneral' },
-  { id: 'tax', labelKey: 'reportTax' },
-];
-
 export default function ReportsScreen() {
   const { activeCompanyId, companies, userPermissions } = useApp();
   const canPeriodAnalytics = (userPermissions || []).includes(PERMISSIONS.REPORTS_READ);
   const { t, lang } = useTranslation();
   const currentYear = new Date().getUTCFullYear();
-  const [activeTab, setActiveTab] = useState('general');
   const [year, setYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [detailState, setDetailState] = useState(null);
@@ -120,39 +113,10 @@ export default function ReportsScreen() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
-      <div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('reports')}</h1>
-        <p style={{ marginTop: 6, color: 'var(--noorix-text-muted)', maxWidth: 900 }}>{t('reportsDesc')}</p>
-      </div>
-
-      <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="noorix-tab-bar" style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)' }}>
-          {REPORT_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className="noorix-btn-nav"
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                margin: 0, borderRadius: 0, border: 'none',
-                borderBottom: activeTab === tab.id ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
-                background: activeTab === tab.id ? 'rgba(37,99,235,0.07)' : 'transparent',
-                color: activeTab === tab.id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-                fontWeight: activeTab === tab.id ? 700 : 500,
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-            >
-              {t(tab.labelKey)}
-            </button>
-          ))}
-        </div>
-        <div style={{ padding: 24 }}>
-          {activeTab === 'tax' && <TaxReportTab />}
-          {activeTab === 'general' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: '1 1 auto' }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t('reportGeneral')}</h2>
@@ -417,9 +381,6 @@ export default function ReportsScreen() {
           )}
         </>
       )}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 /**
  * AppSidebar — القائمة الجانبية الرئيسية
  */
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
@@ -19,6 +19,7 @@ import {
   IconPeople,
   IconChartBar,
   IconSettings,
+  IconFileSpreadsheet,
 } from './SidebarIcons';
 
 const SIDEBAR_LINKS = [
@@ -33,7 +34,17 @@ const SIDEBAR_LINKS = [
   { to: '/expenses', labelKey: 'fixedAndVariableExpenses', icon: IconWallet, permission: 'VIEW_EXPENSES' },
   { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_ORDERS' },
   { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: 'EMPLOYEES_READ' },
-  { to: '/reports', labelKey: 'reports', icon: IconChartBar, permission: 'VIEW_REPORTS' },
+  {
+    to: '/reports',
+    labelKey: 'reports',
+    icon: IconChartBar,
+    permission: 'VIEW_REPORTS',
+    children: [
+      { to: '/reports/general', labelKey: 'reportGeneralReport', icon: IconChartBar },
+      { to: '/reports/tax', labelKey: 'reportTax', icon: IconDocument },
+      { to: '/reports/bank-statement', labelKey: 'reportBankStatementAnalysis', icon: IconFileSpreadsheet },
+    ],
+  },
   { to: '/settings', labelKey: 'settings', icon: IconSettings, permission: 'MANAGE_SETTINGS' },
   { to: '/theme-preview', labelKey: 'themePreview', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
 ];
@@ -110,24 +121,61 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
 
         <div className="app-sidebar__nav">
           <ul className="app-nav-list">
-            {visibleLinks.map((link) => (
-              <li key={link.to + (link.end ? '-end' : '')} className="app-nav-item">
-                <NavLink
-                  to={link.to}
-                  end={link.end}
-                  className={navLinkClass}
-                  onClick={onClose}
-                  onPointerEnter={() => prefetchRouteChunk(link.to)}
-                  onPointerDown={() => prefetchRouteChunk(link.to)}
-                  onFocus={() => prefetchRouteChunk(link.to)}
-                >
-                  <span className="app-nav-link__label">
-                    <link.icon />
-                    <span>{t(link.labelKey)}</span>
-                  </span>
-                </NavLink>
-              </li>
-            ))}
+            {visibleLinks.map((link) =>
+              link.children ? (
+                <li key={link.to} className="app-nav-item app-nav-item--has-children">
+                  <button
+                    type="button"
+                    className={`app-nav-link${location.pathname.startsWith(link.to) ? ' app-nav-link--active' : ''}`}
+                    onClick={() => setReportsOpen((p) => !p)}
+                  >
+                    <span className="app-nav-link__label">
+                      <link.icon />
+                      <span>{t(link.labelKey)}</span>
+                      <span style={{ marginInlineStart: 'auto', fontSize: 10, opacity: 0.8 }}>{reportsOpen ? '▾' : '▸'}</span>
+                    </span>
+                  </button>
+                  {reportsOpen && (
+                    <ul className="app-nav-list app-nav-list--nested">
+                      {link.children.map((child) => (
+                        <li key={child.to} className="app-nav-item">
+                          <NavLink
+                            to={child.to}
+                            className={navLinkClass}
+                            onClick={onClose}
+                            onPointerEnter={() => prefetchRouteChunk(child.to)}
+                            onPointerDown={() => prefetchRouteChunk(child.to)}
+                            onFocus={() => prefetchRouteChunk(child.to)}
+                          >
+                            <span className="app-nav-link__label">
+                              <child.icon />
+                              <span>{t(child.labelKey)}</span>
+                            </span>
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ) : (
+                <li key={link.to + (link.end ? '-end' : '')} className="app-nav-item">
+                  <NavLink
+                    to={link.to}
+                    end={link.end}
+                    className={navLinkClass}
+                    onClick={onClose}
+                    onPointerEnter={() => prefetchRouteChunk(link.to)}
+                    onPointerDown={() => prefetchRouteChunk(link.to)}
+                    onFocus={() => prefetchRouteChunk(link.to)}
+                  >
+                    <span className="app-nav-link__label">
+                      <link.icon />
+                      <span>{t(link.labelKey)}</span>
+                    </span>
+                  </NavLink>
+                </li>
+              ),
+            )}
           </ul>
         </div>
 

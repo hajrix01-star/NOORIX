@@ -16,7 +16,10 @@ const routeLoaders = {
   '/expenses': () => import('../modules/Expenses/ExpensesScreen'),
   '/orders': () => import('../modules/Orders/OrdersScreen'),
   '/hr': () => import('../modules/HR/HRMainScreen'),
-  '/reports': () => import('../modules/Reports/ReportsScreen'),
+  '/reports': () => import('../modules/Reports/ReportsLayout'),
+  '/reports/general': () => import('../modules/Reports/ReportsScreen'),
+  '/reports/tax': () => import('../modules/Reports/ReportsTaxScreen'),
+  '/reports/bank-statement': () => import('../modules/Reports/BankStatementAnalysisScreen'),
   '/settings': () => import('../modules/Settings/SettingsScreen'),
   '/theme-preview': () => import('../modules/ThemePreviewScreen'),
 };
