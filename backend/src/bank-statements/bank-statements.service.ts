@@ -6,12 +6,12 @@ import { GeminiService } from '../chat/gemini.service';
 
 /** مطابقة كلمات مفتاحية للعناوين الشائعة في كشوف الحساب */
 const HEADER_KEYWORDS: Record<string, string[]> = {
-  date: ['تاريخ', 'date', 'التاريخ', 'trans date', 'value date', 'قيمة'],
-  description: ['وصف', 'description', 'الوصف', 'بيان', 'تفاصيل', 'details', 'narration', 'مفهوم'],
-  debit: ['مدين', 'debit', 'سحب', 'خصم', 'withdraw', 'صادر'],
-  credit: ['دائن', 'credit', 'ايداع', 'إيداع', 'deposit', 'وارد', 'مبلغ'],
-  balance: ['رصيد', 'balance', 'الرصيد', 'الباقي'],
-  amount: ['مبلغ', 'amount', 'المبلغ', 'قيمة', 'value'],
+  date: ['تاريخ', 'date', 'التاريخ', 'trans date', 'value date', 'قيمة', 'يوم', 'day'],
+  description: ['وصف', 'description', 'الوصف', 'بيان', 'تفاصيل', 'details', 'narration', 'مفهوم', 'البيان', 'تفاصيل الحركة'],
+  debit: ['مدين', 'debit', 'سحب', 'خصم', 'withdraw', 'صادر', 'المدين', 'مدين'],
+  credit: ['دائن', 'credit', 'ايداع', 'إيداع', 'deposit', 'وارد', 'الدائن', 'دائن'],
+  balance: ['رصيد', 'balance', 'الرصيد', 'الباقي', 'الرصيد السابق', 'الرصيد اللاحق'],
+  amount: ['مبلغ', 'amount', 'المبلغ', 'قيمة', 'value', 'المبلغ'],
 };
 
 const AR_NUMS = '٠١٢٣٤٥٦٧٨٩';
@@ -63,28 +63,38 @@ function matchHeaderType(cell: string): string | null {
   return null;
 }
 
-/** بديل عند فشل Gemini: اكتشاف بسيط بناءً على نصوص العناوين */
+/** بديل عند فشل Gemini: مسح الصفوف للعثور على صف العناوين */
 function heuristicDetection(
   raw: string[][],
 ): { companyName: string; reportDate: string; headerRow: number; dataStartRow: number; dataEndRow: number; columnTypes: Record<number, string> } | null {
   if (!raw?.length || !Array.isArray(raw[0])) return null;
   const colCount = Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0)), 1);
-  const headerRow = 0;
-  const dataStartRow = 1;
   const dataEndRow = Math.max(1, raw.length - 1);
-  const headerCells = raw[headerRow] || [];
-  const columnTypes: Record<number, string> = {};
-  for (let i = 0; i < colCount; i++) {
-    const t = matchHeaderType(headerCells[i]);
-    if (t) columnTypes[i] = t;
-    else columnTypes[i] = 'ignore';
+  const maxScan = Math.min(15, raw.length - 1);
+
+  for (let hr = 0; hr <= maxScan; hr++) {
+    const headerCells = raw[hr] || [];
+    const columnTypes: Record<number, string> = {};
+    for (let i = 0; i < colCount; i++) {
+      const t = matchHeaderType(headerCells[i]);
+      columnTypes[i] = t || 'ignore';
+    }
+    const hasDate = Object.values(columnTypes).includes('date');
+    const hasAmount =
+      Object.values(columnTypes).some((t) => t === 'debit' || t === 'credit') ||
+      Object.values(columnTypes).includes('amount');
+    if (hasDate && hasAmount) {
+      return {
+        companyName: '',
+        reportDate: '',
+        headerRow: hr,
+        dataStartRow: hr + 1,
+        dataEndRow,
+        columnTypes,
+      };
+    }
   }
-  const hasDate = Object.values(columnTypes).includes('date');
-  const hasAmount =
-    Object.values(columnTypes).some((t) => t === 'debit' || t === 'credit') ||
-    Object.values(columnTypes).includes('amount');
-  if (!hasDate || !hasAmount) return null;
-  return { companyName: '', reportDate: '', headerRow, dataStartRow, dataEndRow, columnTypes };
+  return null;
 }
 
 @Injectable()
@@ -105,7 +115,7 @@ export class BankStatementsService {
 
     const raw = dto.raw as string[][];
     const colCount = Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0)), 1);
-    const previewRows = Math.min(20, raw.length);
+    const previewRows = Math.min(50, raw.length);
     const rawData = raw.slice(0, previewRows);
 
     const stmt = await this.prisma.bankStatement.create({

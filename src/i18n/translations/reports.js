@@ -158,4 +158,12 @@ export default {
   bankStatementNoCategories: { ar: 'لا توجد فئات. أضف فئات لتصنيف الحركات.', en: 'No categories. Add categories to classify transactions.' },
   bankStatementAddNote: { ar: 'إضافة ملاحظة', en: 'Add note' },
   bankStatementBankName: { ar: 'اسم البنك', en: 'Bank name' },
+  bankStatementNoAutoDetect: {
+    ar: 'لم يتم الاكتشاف التلقائي. غيّر «صف العناوين» و«صف بداية البيانات» حسب بنية ملفك، ثم حدد الأعمدة يدوياً.',
+    en: 'No auto-detection. Change "Header row" and "Data start row" to match your file structure, then map columns manually.',
+  },
+  bankStatementHeaderRowHint: {
+    ar: 'الصف الذي يحتوي عناوين الأعمدة (تاريخ، وصف، مدين، دائن...)',
+    en: 'Row containing column headers (date, description, debit, credit...)',
+  },
 };

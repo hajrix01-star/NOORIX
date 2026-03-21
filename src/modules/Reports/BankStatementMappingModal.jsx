@@ -38,7 +38,7 @@ export default function BankStatementMappingModal({ statement, companyId, catego
   const [startDate, setStartDate] = useState(base?.startDate?.slice(0, 10) ?? '');
   const [endDate, setEndDate] = useState(base?.endDate?.slice(0, 10) ?? '');
   const [headerRow, setHeaderRow] = useState(base?.headerRow ?? 0);
-  const [dataStartRow, setDataStartRow] = useState(base?.dataStartRow ?? 1);
+  const [dataStartRow, setDataStartRow] = useState(Math.max((base?.dataStartRow ?? 1), (base?.headerRow ?? 0) + 1));
   const [dataEndRow, setDataEndRow] = useState(base?.dataEndRow ?? Math.max(0, raw.length - 1));
   const [columnMapping, setColumnMapping] = useState(() => ({
     dateCol: base?.columnMapping?.dateCol ?? -1,
@@ -55,8 +55,10 @@ export default function BankStatementMappingModal({ statement, companyId, catego
     setBankName(resolvedStatement.bankName ?? '');
     setStartDate(resolvedStatement.startDate?.slice(0, 10) ?? '');
     setEndDate(resolvedStatement.endDate?.slice(0, 10) ?? '');
-    setHeaderRow(resolvedStatement.headerRow ?? 0);
-    setDataStartRow(resolvedStatement.dataStartRow ?? 1);
+    const hr = resolvedStatement.headerRow ?? 0;
+    const dsr = resolvedStatement.dataStartRow ?? 1;
+    setHeaderRow(hr);
+    setDataStartRow(Math.max(dsr, hr + 1));
     setDataEndRow(Math.max(resolvedStatement.dataEndRow ?? 0, raw.length - 1));
     setColumnMapping({
       dateCol: resolvedStatement.columnMapping?.dateCol ?? -1,
@@ -170,9 +172,15 @@ export default function BankStatementMappingModal({ statement, companyId, catego
               <input
                 type="number"
                 min={0}
+                max={Math.max(0, raw.length - 1)}
                 value={headerRow}
-                onChange={(e) => setHeaderRow(parseInt(e.target.value, 10) || 0)}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10) || 0;
+                  setHeaderRow(v);
+                  if (dataStartRow <= v) setDataStartRow(Math.min(v + 1, raw.length - 1));
+                }}
                 style={{ width: '100%', marginTop: 4 }}
+                title={t('bankStatementHeaderRowHint')}
               />
             </label>
             <label>
@@ -204,6 +212,24 @@ export default function BankStatementMappingModal({ statement, companyId, catego
             </label>
           </div>
 
+          {(() => {
+            const hasSuggestion = Object.values(columnMapping).some((v) => v >= 0);
+            return !hasSuggestion && raw.length > 0 ? (
+              <div
+                style={{
+                  padding: 12,
+                  background: 'rgba(234,179,8,0.12)',
+                  border: '1px solid rgba(234,179,8,0.4)',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  color: 'var(--noorix-text)',
+                  marginBottom: 8,
+                }}
+              >
+                {t('bankStatementNoAutoDetect')}
+              </div>
+            ) : null;
+          })()}
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{t('bankStatementMapColumns')}</div>
             <div style={{ display: 'grid', gridTemplateColumns: '140px repeat(auto-fill, minmax(80px, 1fr))', gap: 8, alignItems: 'center' }}>
@@ -219,11 +245,14 @@ export default function BankStatementMappingModal({ statement, companyId, catego
                     style={{ flex: 1, minWidth: 0 }}
                   >
                     <option value="">—</option>
-                    {Array.from({ length: colCount }, (_, i) => (
-                      <option key={i} value={i}>
-                        {i + 1} ({raw[0]?.[i] ?? ''})
-                      </option>
-                    ))}
+                    {Array.from({ length: colCount }, (_, i) => {
+                      const label = raw[headerRow]?.[i] ?? raw[0]?.[i] ?? '';
+                      return (
+                        <option key={i} value={i}>
+                          {i + 1} ({String(label).slice(0, 40)})
+                        </option>
+                      );
+                    })}
                   </select>
                 </label>
               ))}
