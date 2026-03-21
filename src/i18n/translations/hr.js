@@ -245,4 +245,13 @@ export default {
   residencyNew: { ar: 'إقامة جديدة', en: 'New residency' },
   view: { ar: 'عرض', en: 'View' },
   updateSalaryToEmployee: { ar: 'تحديث راتب الموظف', en: 'Update employee salary' },
+  chatRecordDeduction: { ar: 'تسجيل خصم', en: 'Record deduction' },
+  chatRaiseOrAllowance: { ar: 'زيادة أو ترقية أو بدلة', en: 'Raise, promotion, or allowance' },
+  chatMovementSection: { ar: 'زيادة / ترقية', en: 'Raise / promotion' },
+  chatAllowanceSection: { ar: 'بدلة إضافية', en: 'Extra allowance' },
+  movementTypeLabel: { ar: 'نوع الحركة', en: 'Movement type' },
+  previousValue: { ar: 'القيمة السابقة', en: 'Previous value' },
+  newValue: { ar: 'القيمة الجديدة', en: 'New value' },
+  effectiveDateLabel: { ar: 'تاريخ النفاذ', en: 'Effective date' },
+  chatQuickCommandsTitle: { ar: 'اختر إجراء الإدخال', en: 'Choose an action' },
 };
