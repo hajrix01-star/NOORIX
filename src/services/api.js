@@ -43,16 +43,17 @@ function getAuthHeaders() {
 
 // ── fetch مع timeout وإمساك أخطاء الشبكة ────────────
 const TIMEOUT_MS = 12000;
-async function safeFetch(url, options) {
+const AI_TIMEOUT_MS = 45000; // الذكاء الاصطناعي يحتاج وقتاً أطول
+async function safeFetch(url, options, timeout = TIMEOUT_MS) {
   const ctrl = new AbortController();
-  const tid  = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const tid = setTimeout(() => ctrl.abort(), timeout);
   try {
     const res = await fetch(url, { ...options, signal: ctrl.signal });
     clearTimeout(tid);
     return res;
   } catch (err) {
     clearTimeout(tid);
-    const msg = err?.name === 'AbortError' ? 'انتهت مهلة الاتصال' : 'السيرفر غير متاح';
+    const msg = err?.name === 'AbortError' ? 'انتهت مهلة الاتصال — جرّب مرة أخرى' : 'السيرفر غير متاح';
     throw Object.assign(new Error(msg), { isNetworkError: true });
   }
 }
@@ -107,8 +108,8 @@ async function parseResponse(res, retryFn) {
   if (!res.ok) {
     const msg = Array.isArray(data?.message)
       ? data.message.join(', ')
-      : (data?.message || res.statusText);
-    return { success: false, error: msg, code: res.status };
+      : (data?.message || data?.error || res.statusText);
+    return { success: false, error: String(msg || 'خطأ'), code: res.status };
   }
   return { success: true, data: data?.data ?? data };
 }
@@ -137,15 +138,18 @@ export async function apiGet(path, params = {}) {
 
 /**
  * استدعاء POST.
+ * @param {object} opts - اختياري: { timeout: عدد_الميلي ثانية } — للطلبات الثقيلة مثل تحليل الذكاء
  */
-export async function apiPost(path, body = {}) {
+export async function apiPost(path, body = {}, opts = {}) {
+  const timeout = opts.timeout ?? TIMEOUT_MS;
   const url = new URL(path, getBase());
+  const fetchOpts = { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body) };
   const doFetch = async () => {
-    const res = await safeFetch(url.toString(), { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body) });
+    const res = await safeFetch(url.toString(), fetchOpts, timeout);
     return parseResponse(res);
   };
   try {
-    const res = await safeFetch(url.toString(), { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body) });
+    const res = await safeFetch(url.toString(), fetchOpts, timeout);
     return parseResponse(res, doFetch);
   } catch (err) {
     return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
@@ -261,9 +265,9 @@ export async function chatQuery(query) {
   return apiPost('/api/v1/chat/query', { query });
 }
 
-/** اقتراح ذكي لهيكل كشف الحساب عبر Gemini */
+/** اقتراح ذكي لهيكل كشف الحساب عبر Gemini — timeout 45 ثانية للتحليل */
 export async function analyzeBankStatementStructure(raw) {
-  return apiPost('/api/v1/chat/bank-statement-analyze', { raw });
+  return apiPost('/api/v1/chat/bank-statement-analyze', { raw }, { timeout: AI_TIMEOUT_MS });
 }
 
 /** قوالب تحليل كشف الحساب (لكل بنك) */

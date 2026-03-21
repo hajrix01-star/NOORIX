@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Headers, UseGuards, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Headers,
+  UseGuards,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -65,14 +73,20 @@ export class ChatController {
     @CurrentUser() user: JwtUser,
   ) {
     if (!body?.raw || !Array.isArray(body.raw) || body.raw.length === 0) {
-      return { success: false, error: 'يجب إرسال مصفوفة raw (صفوف الكشف)', code: 400 };
+      throw new HttpException('يجب إرسال مصفوفة raw (صفوف الكشف)', HttpStatus.BAD_REQUEST);
     }
     if (!this.geminiService.isAvailable()) {
-      return { success: false, error: 'Gemini غير مُفعّل. أضف GEMINI_API_KEY في backend/.env', code: 503 };
+      throw new HttpException(
+        'Gemini غير مُفعّل. أضف GEMINI_API_KEY في backend/.env',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
     const result = await this.geminiService.analyzeBankStatementStructure(body.raw);
     if (!result) {
-      return { success: false, error: 'لم يتمكن الذكاء الاصطناعي من تحليل الهيكل', code: 500 };
+      throw new HttpException(
+        'لم يتمكن الذكاء الاصطناعي من تحليل الهيكل',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
     return { success: true, data: result };
   }

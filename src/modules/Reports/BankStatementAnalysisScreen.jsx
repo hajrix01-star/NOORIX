@@ -109,6 +109,7 @@ export default function BankStatementAnalysisScreen() {
   const [uploadError, setUploadError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [aiSuccess, setAiSuccess] = useState(false);
   const [saveTemplateName, setSaveTemplateName] = useState('');
   const [saveTemplateSuccess, setSaveTemplateSuccess] = useState(false);
 
@@ -631,7 +632,7 @@ export default function BankStatementAnalysisScreen() {
               </select>
             </div>
             {geminiAvailable && (
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <button
                   type="button"
                   className="noorix-btn-nav"
@@ -646,17 +647,42 @@ export default function BankStatementAnalysisScreen() {
                 >
                   {aiLoading ? t('bankStatementAIApplying') : t('bankStatementAISuggest')}
                 </button>
-                {aiError && (
-                  <p
+                {aiLoading && (
+                  <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                    {lang === 'ar' ? 'قد يستغرق حتى 45 ثانية...' : 'May take up to 45 seconds...'}
+                  </span>
+                )}
+                {aiSuccess && (
+                  <div
                     style={{
-                      marginTop: 8,
-                      fontSize: 12,
-                      color: '#dc2626',
-                      maxWidth: 280,
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      background: 'rgba(22,163,74,0.12)',
+                      border: '1px solid rgba(22,163,74,0.4)',
+                      color: '#16a34a',
+                      fontWeight: 600,
+                      fontSize: 13,
                     }}
                   >
+                    ✓ {t('bankStatementAISuccess')}
+                  </div>
+                )}
+                {aiError && (
+                  <div
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 8,
+                      background: 'rgba(220,38,38,0.1)',
+                      border: '1px solid rgba(220,38,38,0.35)',
+                      color: '#dc2626',
+                      fontSize: 13,
+                      maxWidth: 340,
+                    }}
+                  >
+                    <strong>{lang === 'ar' ? 'فشل الاقتراح الذكي:' : 'Smart suggestion failed:'}</strong>
+                    <br />
                     {aiError}
-                  </p>
+                  </div>
                 )}
               </div>
             )}
