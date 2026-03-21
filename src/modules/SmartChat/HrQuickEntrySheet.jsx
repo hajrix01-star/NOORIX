@@ -10,6 +10,7 @@ import { createAdvance } from '../../services/financialApi';
 import { useVaults } from '../../hooks/useVaults';
 import { getSaudiToday } from '../../utils/saudiDate';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
+import { fmt } from '../../utils/format';
 
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
@@ -113,8 +114,11 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   const [alAmount, setAlAmount] = useState('');
 
   const [formError, setFormError] = useState('');
+  const [confirmStep, setConfirmStep] = useState(false);
+  const [pendingData, setPendingData] = useState(null);
 
   useEffect(() => { setFormError(''); }, [mode]);
+  useEffect(() => { if (!confirmStep) setPendingData(null); }, [confirmStep]);
 
   useEffect(() => {
     if (vaults[0]?.id) setAdvVault((v) => v || vaults[0].id);
@@ -131,71 +135,81 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   }, [lvStart, lvEnd]);
 
   const advMut = useMutation({
-    mutationFn: async (p) => {
+    mutationFn: async (arg) => {
+      const p = arg?.payload ?? arg;
       const res = await createAdvance(p);
       if (!res?.success) throw new Error(res?.error || 'Request failed');
       return res;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       invalidateOnFinancialMutation(qc);
       invalidateHrQueries(qc, companyId);
-      onRecorded?.({ textAr: 'تم تسجيل السلفة.', textEn: 'Advance recorded.' });
+      const r = typeof variables === 'object' && variables?.report;
+      onRecorded?.(r || { textAr: 'تم تسجيل السلفة.', textEn: 'Advance recorded.' });
       onClose();
     },
     onError: (e) => setFormError(e?.message || String(e)),
   });
 
   const leaveMut = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (arg) => {
+      const body = arg?.payload ?? arg;
       const res = await createLeave(body);
       if (!res?.success) throw new Error(res?.error || 'Request failed');
       return res;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
-      onRecorded?.({ textAr: 'تم تسجيل الإجازة.', textEn: 'Leave recorded.' });
+      const r = typeof variables === 'object' && variables?.report;
+      onRecorded?.(r || { textAr: 'تم تسجيل الإجازة.', textEn: 'Leave recorded.' });
       onClose();
     },
     onError: (e) => setFormError(e?.message || String(e)),
   });
 
   const dedMut = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (arg) => {
+      const body = arg?.payload ?? arg;
       const res = await createDeduction(body);
       if (!res?.success) throw new Error(res?.error || 'Request failed');
       return res;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
-      onRecorded?.({ textAr: 'تم تسجيل الخصم.', textEn: 'Deduction recorded.' });
+      const r = typeof variables === 'object' && variables?.report;
+      onRecorded?.(r || { textAr: 'تم تسجيل الخصم.', textEn: 'Deduction recorded.' });
       onClose();
     },
     onError: (e) => setFormError(e?.message || String(e)),
   });
 
   const movMut = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (arg) => {
+      const body = arg?.payload ?? arg;
       const res = await createMovement(body);
       if (!res?.success) throw new Error(res?.error || 'Request failed');
       return res;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
-      onRecorded?.({ textAr: 'تم تسجيل الزيادة أو الترقية.', textEn: 'Promotion or raise recorded.' });
+      const r = typeof variables === 'object' && variables?.report;
+      onRecorded?.(r || { textAr: 'تم تسجيل الزيادة أو الترقية.', textEn: 'Promotion or raise recorded.' });
       onClose();
     },
     onError: (e) => setFormError(e?.message || String(e)),
   });
 
   const alMut = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (arg) => {
+      const body = arg?.payload ?? arg;
       const res = await createCustomAllowance(body);
       if (!res?.success) throw new Error(res?.error || 'Request failed');
       return res;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
-      onRecorded?.({ textAr: 'تم تسجيل البدلة الإضافية.', textEn: 'Allowance recorded.' });
+      const r = typeof variables === 'object' && variables?.report;
+      onRecorded?.(r || { textAr: 'تم تسجيل البدلة الإضافية.', textEn: 'Allowance recorded.' });
       onClose();
     },
     onError: (e) => setFormError(e?.message || String(e)),
@@ -217,6 +231,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
 
   const onSubmitAdvance = (e) => {
     e.preventDefault();
+    if (submitting) return;
     setFormError('');
     const amt = parseFloat(String(advAmount).replace(',', '.'), 10);
     const emp = activeEmployees.find((x) => x.id === advEmp);
@@ -228,7 +243,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       setFormError(isAr ? 'لا توجد خزائن. أضف خزنة من الخزائن أولاً.' : 'No vaults. Add a vault first.');
       return;
     }
-    advMut.mutate({
+    const vault = vaults.find((v) => v.id === (advVault || vaults[0]?.id));
+    const payload = {
       employeeId: advEmp,
       companyId,
       vaultId: advVault || vaults[0]?.id,
@@ -236,11 +252,18 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       transactionDate: advDate,
       notes: advNotes.trim() || `سلفة — ${emp?.name || emp?.nameAr || ''}`,
       employeeName: emp?.name || emp?.nameAr,
-    });
+    };
+    const report = {
+      textAr: `✅ سلفة: ${emp?.name || emp?.nameAr || '—'} — ${fmt(amt, 2)} ﷼ من ${vault?.nameAr || vault?.nameEn || '—'} — ${advDate}`,
+      textEn: `✅ Advance: ${emp?.name || emp?.nameEn || emp?.nameAr || '—'} — ${fmt(amt, 2)} SAR from ${vault?.nameEn || vault?.nameAr || '—'} — ${advDate}`,
+    };
+    setPendingData({ payload, report, mut: advMut });
+    setConfirmStep(true);
   };
 
   const onSubmitLeave = (e) => {
     e.preventDefault();
+    if (submitting) return;
     setFormError('');
     if (!lvEmp || !lvStart || !lvEnd) {
       setFormError(t('requiredFields'));
@@ -252,45 +275,63 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       setFormError(t('endDateBeforeStart'));
       return;
     }
-    leaveMut.mutate({
+    const emp = activeEmployees.find((x) => x.id === lvEmp);
+    const days = lvDays ? parseInt(lvDays, 10) : Math.ceil((end.getTime() - s.getTime()) / 86400000) + 1;
+    const payload = {
       companyId,
       employeeId: lvEmp,
       leaveType: lvType,
       startDate: `${lvStart}T00:00:00.000Z`,
       endDate: `${lvEnd}T00:00:00.000Z`,
-      daysCount: lvDays ? parseInt(lvDays, 10) : undefined,
+      daysCount: days,
       status: 'pending',
       notes: lvNotes || undefined,
-    });
+    };
+    const report = {
+      textAr: `✅ إجازة: ${emp?.name || emp?.nameAr || '—'} — ${days} يوم (${lvStart} → ${lvEnd})`,
+      textEn: `✅ Leave: ${emp?.name || emp?.nameEn || '—'} — ${days} days (${lvStart} → ${lvEnd})`,
+    };
+    setPendingData({ payload, report, mut: leaveMut });
+    setConfirmStep(true);
   };
 
   const onSubmitDeduction = (e) => {
     e.preventDefault();
+    if (submitting) return;
     setFormError('');
     const amt = parseFloat(String(ddAmount).replace(',', '.'), 10);
     if (!ddEmp || !amt || amt <= 0) {
       setFormError(t('requiredFields'));
       return;
     }
-    dedMut.mutate({
+    const emp = activeEmployees.find((x) => x.id === ddEmp);
+    const payload = {
       companyId,
       employeeId: ddEmp,
       deductionType: ddType,
       amount: amt,
       transactionDate: `${ddDate}T12:00:00.000Z`,
       notes: ddNotes || undefined,
-    });
+    };
+    const report = {
+      textAr: `✅ خصم: ${emp?.name || emp?.nameAr || '—'} — ${fmt(amt, 2)} ﷼ (${ddDate})`,
+      textEn: `✅ Deduction: ${emp?.name || emp?.nameEn || '—'} — ${fmt(amt, 2)} SAR (${ddDate})`,
+    };
+    setPendingData({ payload, report, mut: dedMut });
+    setConfirmStep(true);
   };
 
   const onSubmitMovement = (e) => {
     e.preventDefault();
+    if (submitting) return;
     setFormError('');
     if (!mvEmp || !mvEff) {
       setFormError(t('requiredFields'));
       return;
     }
+    const emp = activeEmployees.find((x) => x.id === mvEmp);
     const amt = mvAmount.trim() ? parseFloat(String(mvAmount).replace(',', '.'), 10) : undefined;
-    movMut.mutate({
+    const payload = {
       companyId,
       employeeId: mvEmp,
       movementType: mvType,
@@ -299,23 +340,43 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       newValue: mvNew || undefined,
       effectiveDate: `${mvEff}T12:00:00.000Z`,
       notes: mvNotes || undefined,
-    });
+    };
+    const report = {
+      textAr: `✅ ${mvType === 'raise' ? 'زيادة' : mvType === 'promotion' ? 'ترقية' : 'حركة'}: ${emp?.name || emp?.nameAr || '—'} — ${Number.isFinite(amt) ? fmt(amt, 2) + ' ﷼' : ''} (${mvEff})`,
+      textEn: `✅ ${mvType === 'raise' ? 'Raise' : mvType === 'promotion' ? 'Promotion' : 'Movement'}: ${emp?.name || emp?.nameEn || '—'} — ${Number.isFinite(amt) ? fmt(amt, 2) + ' SAR' : ''} (${mvEff})`,
+    };
+    setPendingData({ payload, report, mut: movMut });
+    setConfirmStep(true);
   };
 
   const onSubmitAllowance = (e) => {
     e.preventDefault();
+    if (submitting) return;
     setFormError('');
     const amt = parseFloat(String(alAmount).replace(',', '.'), 10);
     if (!alEmp || !alName.trim() || !amt || amt <= 0) {
       setFormError(t('requiredFields'));
       return;
     }
-    alMut.mutate({
+    const emp = activeEmployees.find((x) => x.id === alEmp);
+    const payload = {
       companyId,
       employeeId: alEmp,
       nameAr: alName.trim(),
       amount: amt,
-    });
+    };
+    const report = {
+      textAr: `✅ بدلة: ${emp?.name || emp?.nameAr || '—'} — ${alName.trim()} ${fmt(amt, 2)} ﷼`,
+      textEn: `✅ Allowance: ${emp?.name || emp?.nameEn || '—'} — ${alName.trim()} ${fmt(amt, 2)} SAR`,
+    };
+    setPendingData({ payload, report, mut: alMut });
+    setConfirmStep(true);
+  };
+
+  const handleConfirmSave = () => {
+    if (!pendingData || submitting) return;
+    const { payload, report, mut } = pendingData;
+    mut.mutate({ payload, report });
   };
 
   const segmentBtn = (tab, label) => (
@@ -409,13 +470,35 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
             padding: 20,
           }}
         >
-          {dataLoading && (
+          {confirmStep && pendingData && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--noorix-text-muted)' }}>{t('confirmSaveTitle')}</div>
+              <div style={{ padding: 16, borderRadius: 12, background: 'var(--noorix-bg-muted)', fontSize: 15, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                {isAr ? pendingData.report?.textAr : pendingData.report?.textEn}
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button type="button" className="noorix-btn-nav" onClick={() => setConfirmStep(false)} style={{ flex: 1, minHeight: 50 }}>
+                  {isAr ? 'رجوع' : 'Back'}
+                </button>
+                <button
+                  type="button"
+                  className="noorix-btn-primary"
+                  onClick={handleConfirmSave}
+                  disabled={submitting}
+                  style={{ flex: 1, minHeight: 50, fontSize: 15 }}
+                >
+                  {submitting ? (isAr ? 'جاري الحفظ...' : 'Saving...') : t('confirmSave')}
+                </button>
+              </div>
+            </div>
+          )}
+          {!confirmStep && dataLoading && (
             <div style={{ textAlign: 'center', padding: 24, color: 'var(--noorix-text-muted)' }}>
               {isAr ? 'جاري التحميل...' : 'Loading...'}
             </div>
           )}
 
-          {formError && (
+          {!confirmStep && formError && (
             <div
               style={{
                 marginBottom: 16,
@@ -430,7 +513,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
             </div>
           )}
 
-          {!dataLoading && mode === 'advance' && (
+          {!confirmStep && !dataLoading && mode === 'advance' && (
             <form onSubmit={onSubmitAdvance}>
               <Field id="adv-emp" label={t('selectEmployee')}>
                 {empSelect(advEmp, setAdvEmp, 'adv-emp')}
@@ -473,7 +556,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
             </form>
           )}
 
-          {!dataLoading && mode === 'leave' && (
+          {!confirmStep && !dataLoading && mode === 'leave' && (
             <form onSubmit={onSubmitLeave}>
               <Field id="lv-emp" label={t('selectEmployee')}>
                 {empSelect(lvEmp, setLvEmp, 'lv-emp')}
@@ -506,7 +589,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
             </form>
           )}
 
-          {!dataLoading && mode === 'deduction' && (
+          {!confirmStep && !dataLoading && mode === 'deduction' && (
             <form onSubmit={onSubmitDeduction}>
               <Field id="dd-emp" label={t('selectEmployee')}>
                 {empSelect(ddEmp, setDdEmp, 'dd-emp')}
@@ -534,7 +617,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
             </form>
           )}
 
-          {!dataLoading && mode === 'increase' && (
+          {!confirmStep && !dataLoading && mode === 'increase' && (
             <div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
                 {segmentBtn('movement', isAr ? t('chatMovementSection') : 'Promotion / raise')}

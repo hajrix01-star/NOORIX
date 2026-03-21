@@ -269,4 +269,6 @@ export default {
   chatAddFixedExpense: { ar: 'إضافة مصاريف ثابتة', en: 'Add fixed expenses' },
   chatPayFixedExpense: { ar: 'سداد مصاريف ثابتة', en: 'Payment of fixed expenses' },
   chatEditFixedExpense: { ar: 'تعديل مصاريف ثابتة', en: 'Edit fixed expenses' },
+  confirmSave: { ar: 'تأكيد الحفظ', en: 'Confirm save' },
+  confirmSaveTitle: { ar: 'مراجعة قبل الحفظ', en: 'Review before save' },
 };

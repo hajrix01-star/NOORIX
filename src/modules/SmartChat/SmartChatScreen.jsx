@@ -4,14 +4,18 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { chatQuery } from '../../services/api';
+import { chatQuery, getExpenseLines } from '../../services/api';
 import { getStoredUser } from '../../services/authStore';
 import { PERMISSIONS, hasPermission } from '../../constants/permissions';
 import { HrQuickEntrySheet } from './HrQuickEntrySheet';
 import { StaffFormModal } from '../HR/components/StaffFormModal';
 import { useEmployees } from '../../hooks/useEmployees';
+import ExpenseLineFormModal from '../Expenses/components/ExpenseLineFormModal';
+import ExpenseFormModal from '../Expenses/components/ExpenseFormModal';
+import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 
 const PERMANENT_QUESTIONS = [
   { ar: 'كم مبيعات السنة؟', en: 'What are annual sales?', domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ) },
@@ -90,6 +94,8 @@ export default function SmartChatScreen() {
   const [commandsOpen, setCommandsOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
   const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
+  const [expenseMode, setExpenseMode] = useState(null);
+  const [expenseEditLine, setExpenseEditLine] = useState(null);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   const messagesEndRef = useRef(null);
@@ -100,9 +106,19 @@ export default function SmartChatScreen() {
   const can = (p) => hasPermission(u?.role, p, u?.permissions || []);
   const { create } = useEmployees(activeCompanyId || '', { fetchEnabled: false });
 
+  const qc = useQueryClient();
   const showFaq = can(PERMISSIONS.CHAT_PRESET_FAQ) || can(PERMISSIONS.VIEW_CHAT);
   const visibleFaqQuestions = showFaq ? PERMANENT_QUESTIONS.filter((q) => q.domain(can)) : [];
   const isAr = lang === 'ar';
+
+  const { data: expenseLines = [] } = useQuery({
+    queryKey: ['expense-lines', activeCompanyId],
+    queryFn: async () => {
+      const res = await getExpenseLines(activeCompanyId || '');
+      return res?.data ?? (Array.isArray(res) ? res : []);
+    },
+    enabled: !!activeCompanyId && (expenseMode === 'editLine' || expenseMode === 'addLine' || expenseMode === 'pay'),
+  });
 
   const filteredGroups = CMD_GROUPS.map((g) => ({
     ...g,
@@ -152,8 +168,14 @@ export default function SmartChatScreen() {
     setCommandsOpen(false);
     if (cmd === 'addEmployee') {
       setAddEmployeeOpen(true);
-    } else if (cmd === 'addExpenseLine' || cmd === 'payExpense' || cmd === 'editExpenseLine') {
-      navigate('/expenses');
+    } else if (cmd === 'addExpenseLine') {
+      setExpenseEditLine(null);
+      setExpenseMode('addLine');
+    } else if (cmd === 'payExpense') {
+      setExpenseMode('pay');
+    } else if (cmd === 'editExpenseLine') {
+      setExpenseEditLine(undefined);
+      setExpenseMode('editLine');
     } else if (['advance', 'leave', 'deduction', 'increase'].includes(cmd)) {
       setEntryMode(cmd);
     }
@@ -168,7 +190,7 @@ export default function SmartChatScreen() {
   const handleSaveEmployee = (payload) => {
     const { employeeBody, customAllowances = [] } = payload?.employeeBody ? payload : { employeeBody: payload, customAllowances: [] };
     create.mutate(employeeBody, {
-      onSuccess: async (res) => {
+      onSuccess: async (res, empBody) => {
         try {
           if (res?.success === false) throw new Error(res?.error);
           const empId = res?.data?.id || res?.id;
@@ -180,7 +202,10 @@ export default function SmartChatScreen() {
           }
           setToast({ visible: true, message: t('employeeAdded'), type: 'success' });
           setAddEmployeeOpen(false);
-          setMessages((prev) => [...prev, { role: 'assistant', textAr: 'تمت إضافة الموظف بنجاح.', textEn: 'Employee added successfully.' }]);
+          const eb = empBody || employeeBody;
+          const empName = eb?.name || eb?.nameAr || eb?.nameEn || '—';
+          const salary = Number(eb?.basicSalary ?? 0);
+          setMessages((prev) => [...prev, { role: 'assistant', textAr: `✅ إضافة موظف: ${empName} — ${eb?.jobTitle || '—'} — ${salary.toLocaleString('en')} ﷼`, textEn: `✅ Employee added: ${empName} — ${eb?.jobTitle || '—'} — ${salary.toLocaleString('en')} SAR` }]);
         } catch (e) {
           setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
         }
@@ -436,6 +461,68 @@ export default function SmartChatScreen() {
           onClose={() => setAddEmployeeOpen(false)}
           isSaving={create.isPending}
         />
+      )}
+
+      {expenseMode === 'addLine' && activeCompanyId && (
+        <ExpenseLineFormModal
+          companyId={activeCompanyId}
+          editing={null}
+          onClose={() => setExpenseMode(null)}
+          onSaved={() => {
+            invalidateOnFinancialMutation(qc);
+            qc.invalidateQueries({ queryKey: ['expense-lines'] });
+            setExpenseMode(null);
+            setToast({ visible: true, message: isAr ? 'تمت إضافة بند المصروف' : 'Expense line added', type: 'success' });
+            setMessages((prev) => [...prev, { role: 'assistant', textAr: '✅ تمت إضافة بند مصروف جديد.', textEn: '✅ New expense line added.' }]);
+          }}
+        />
+      )}
+
+      {expenseMode === 'pay' && activeCompanyId && (
+        <ExpenseFormModal
+          companyId={activeCompanyId}
+          onClose={() => setExpenseMode(null)}
+          onSaved={() => {
+            invalidateOnFinancialMutation(qc);
+            setExpenseMode(null);
+            setToast({ visible: true, message: isAr ? 'تم تسجيل المصروف' : 'Expense recorded', type: 'success' });
+            setMessages((prev) => [...prev, { role: 'assistant', textAr: '✅ تم تسجيل سداد مصروف.', textEn: '✅ Expense payment recorded.' }]);
+          }}
+        />
+      )}
+
+      {expenseMode === 'editLine' && activeCompanyId && (
+        expenseEditLine === undefined ? (
+          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setExpenseMode(null)}>
+            <div className="noorix-surface-card" style={{ maxWidth: 400, width: '100%', maxHeight: '80vh', overflow: 'auto', padding: 20, borderRadius: 14 }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <strong>{t('chatEditFixedExpense')}</strong>
+                <button type="button" className="noorix-btn-nav" onClick={() => setExpenseMode(null)}>✕</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {expenseLines.filter((l) => l.isActive !== false).map((line) => (
+                  <button key={line.id} type="button" className="noorix-btn-nav" style={{ textAlign: isAr ? 'right' : 'left', padding: '12px 14px' }} onClick={() => setExpenseEditLine(line)}>
+                    {line.nameAr || line.nameEn || line.name || '—'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <ExpenseLineFormModal
+            companyId={activeCompanyId}
+            editing={expenseEditLine}
+            onClose={() => { setExpenseEditLine(undefined); setExpenseMode(null); }}
+            onSaved={() => {
+              invalidateOnFinancialMutation(qc);
+              qc.invalidateQueries({ queryKey: ['expense-lines'] });
+              setExpenseEditLine(undefined);
+              setExpenseMode(null);
+              setToast({ visible: true, message: isAr ? 'تم تعديل بند المصروف' : 'Expense line updated', type: 'success' });
+              setMessages((prev) => [...prev, { role: 'assistant', textAr: '✅ تم تعديل بند المصروف.', textEn: '✅ Expense line updated.' }]);
+            }}
+          />
+        )
       )}
 
       {toast.visible && (
