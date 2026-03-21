@@ -540,7 +540,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                 </select>
               </Field>
               <Field id="adv-date" label={t('transactionDate')}>
-                <input id="adv-date" type="date" value={advDate} onChange={(e) => setAdvDate(e.target.value)} style={inputBase} />
+                <input id="adv-date" type="date" value={advDate} onChange={(e) => setAdvDate(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" />
               </Field>
               <Field id="adv-notes" label={t('notes')}>
                 <input id="adv-notes" type="text" value={advNotes} onChange={(e) => setAdvNotes(e.target.value)} style={inputBase} placeholder={isAr ? 'سبب أو تفاصيل' : 'Reason or details'} />
@@ -570,10 +570,10 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
               </Field>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                 <Field id="lv-start" label={t('startDate')}>
-                  <input id="lv-start" type="date" value={lvStart} onChange={(e) => setLvStart(e.target.value)} style={inputBase} required />
+                  <input id="lv-start" type="date" value={lvStart} onChange={(e) => setLvStart(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" required />
                 </Field>
                 <Field id="lv-end" label={t('endDate')}>
-                  <input id="lv-end" type="date" value={lvEnd} onChange={(e) => setLvEnd(e.target.value)} style={inputBase} required />
+                  <input id="lv-end" type="date" value={lvEnd} onChange={(e) => setLvEnd(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" required />
                 </Field>
               </div>
               <Field id="lv-days" label={t('daysCount')}>
@@ -605,7 +605,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                 <input id="dd-amt" type="number" inputMode="decimal" step="0.01" min="0" value={ddAmount} onChange={(e) => setDdAmount(e.target.value)} style={inputBase} />
               </Field>
               <Field id="dd-date" label={t('transactionDate')}>
-                <input id="dd-date" type="date" value={ddDate} onChange={(e) => setDdDate(e.target.value)} style={inputBase} />
+                <input id="dd-date" type="date" value={ddDate} onChange={(e) => setDdDate(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" />
               </Field>
               <Field id="dd-notes" label={t('notes')}>
                 <input id="dd-notes" type="text" value={ddNotes} onChange={(e) => setDdNotes(e.target.value)} style={inputBase} placeholder={isAr ? 'السبب' : 'Reason'} />
@@ -644,7 +644,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                     <input id="mv-new" type="text" value={mvNew} onChange={(e) => setMvNew(e.target.value)} style={inputBase} placeholder={isAr ? 'مثال: 8000 → 9000' : 'e.g. 8000 → 9000'} />
                   </Field>
                   <Field id="mv-eff" label={isAr ? t('effectiveDateLabel') : 'Effective date'}>
-                    <input id="mv-eff" type="date" value={mvEff} onChange={(e) => setMvEff(e.target.value)} style={inputBase} required />
+                    <input id="mv-eff" type="date" value={mvEff} onChange={(e) => setMvEff(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" required />
                   </Field>
                   <Field id="mv-notes" label={t('notes')}>
                     <input id="mv-notes" type="text" value={mvNotes} onChange={(e) => setMvNotes(e.target.value)} style={inputBase} />

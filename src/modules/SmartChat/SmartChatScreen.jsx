@@ -92,6 +92,8 @@ function ReportCard({ text, isAr, createdAt }) {
             const hasLabel = colonIdx > 0 && colonIdx < 50;
             const label = hasLabel ? line.slice(0, colonIdx).trim() : null;
             const value = hasLabel ? line.slice(colonIdx + 1).trim() : line;
+            const isNumericValue = /^\d/.test(value) || /\d{4}-\d{2}-\d{2}/.test(value);
+            const valueStyle = isNumericValue ? { direction: 'ltr', unicodeBidi: 'isolate' } : {};
             return (
               <React.Fragment key={i}>
                 {label ? (
@@ -99,10 +101,10 @@ function ReportCard({ text, isAr, createdAt }) {
                     <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)', fontWeight: 600 }}>
                       {label}:
                     </span>
-                    <span>{value}</span>
+                    <span style={valueStyle}>{value}</span>
                   </>
                 ) : (
-                  <span style={{ gridColumn: '1 / -1' }}>{value || line}</span>
+                  <span style={{ gridColumn: '1 / -1', ...valueStyle }}>{value || line}</span>
                 )}
               </React.Fragment>
             );
@@ -112,8 +114,8 @@ function ReportCard({ text, isAr, createdAt }) {
         <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
       )}
       {createdAt && (
-        <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--noorix-border)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-          {new Date(createdAt).toLocaleString(isAr ? 'ar-SA' : 'en', { dateStyle: 'short', timeStyle: 'short' })}
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--noorix-border)', fontSize: 12, color: 'var(--noorix-text-muted)', direction: 'ltr' }}>
+          {new Date(createdAt).toLocaleString('en', { dateStyle: 'short', timeStyle: 'short' })}
         </div>
       )}
     </div>
@@ -365,7 +367,9 @@ export default function SmartChatScreen() {
               color: headerText,
               border: '1px solid rgba(255,255,255,0.3)',
               borderRadius: 8,
+              direction: 'ltr',
             }}
+            lang="en"
             title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
           />
           {dateFilter && (
