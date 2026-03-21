@@ -2,7 +2,7 @@
  * AppSidebar — القائمة الجانبية الرئيسية
  */
 import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
@@ -51,9 +51,27 @@ const SIDEBAR_LINKS = [
 
 export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCompany, companies, userRole, userPermissions, showCompanySwitcher }) {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const navLinkClass = ({ isActive }) =>
     `app-nav-link${isActive ? ' app-nav-link--active' : ''}`;
   const visibleLinks = SIDEBAR_LINKS.filter((link) => hasPermission(userRole, link.permission, userPermissions));
+
+  const isReportsExpanded = visibleLinks.some((l) => l.children?.some((c) => location.pathname.startsWith(c.to)));
+  const [reportsOpen, setReportsOpen] = useState(isReportsExpanded);
+  useEffect(() => {
+    if (isReportsExpanded) setReportsOpen(true);
+  }, [isReportsExpanded]);
+
+  const handleReportsParentClick = () => {
+    if (reportsOpen) {
+      setReportsOpen(false);
+    } else {
+      setReportsOpen(true);
+      navigate('/reports');
+      onClose();
+    }
+  };
 
   return (
     <>
@@ -127,7 +145,7 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                   <button
                     type="button"
                     className={`app-nav-link${location.pathname.startsWith(link.to) ? ' app-nav-link--active' : ''}`}
-                    onClick={() => setReportsOpen((p) => !p)}
+                    onClick={handleReportsParentClick}
                   >
                     <span className="app-nav-link__label">
                       <link.icon />

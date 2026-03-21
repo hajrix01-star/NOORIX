@@ -318,5 +318,8 @@ export function getRouteRequiredPermissions(pathname) {
     const hr = ROUTE_PERMISSION['/hr'];
     return Array.isArray(hr) ? hr : [hr];
   }
+  if (pathname.startsWith('/reports')) {
+    return [ROUTE_PERMISSION['/reports']];
+  }
   return null;
 }
