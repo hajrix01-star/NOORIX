@@ -116,31 +116,79 @@ model Company {
   orders              Order[]
   orderProducts       OrderProduct[]
   orderCategories     OrderCategory[]
-  bankStatementTemplates BankStatementTemplate[]
+  bankStatements      BankStatement[]
+  bankStatementCategories BankStatementCategory[]
 
   @@index([tenantId])
   @@map("companies")
 }
 
-// قالب تحليل كشف الحساب — حفظ النمط لكل بنك لتسريع التحاليل الشهرية
-model BankStatementTemplate {
-  id            String   @id @default(cuid())
-  tenantId      String   @map("tenant_id")
-  companyId     String   @map("company_id")
-  bankName      String   @map("bank_name")      // اسم البنك أو الحساب (مثل: الأهلي - الرئيسي)
-  columnTypes   Json     @map("column_types")  // { "0":"date", "1":"debit", "2":"credit", ... }
-  dataStartRow  Int      @map("data_start_row")
-  dataEndRow    Int      @map("data_end_row")
-  colCount      Int      @map("col_count")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt      @map("updated_at")
+// تحليل كشوف الحساب — كشف واحد مع حركاته
+model BankStatement {
+  id               String   @id @default(cuid())
+  tenantId         String   @map("tenant_id")
+  companyId        String   @map("company_id")
+  fileName         String   @map("file_name")
+  fileFormat       String   @map("file_format")   // excel | csv
+  companyName      String   @map("company_name")  // اسم صاحب الحساب
+  bankName         String   @map("bank_name")
+  startDate        String?  @map("start_date")
+  endDate          String?  @map("end_date")
+  status           String   @default("mapping")   // uploading | mapping | analyzing | completed | failed
+  headerRow        Int      @default(0)           @map("header_row")
+  dataStartRow     Int      @default(0)           @map("data_start_row")
+  dataEndRow       Int      @default(0)           @map("data_end_row")
+  columnMapping    Json?    @map("column_mapping") // { dateCol, descCol, debitCol, creditCol, balanceCol }
+  totalDeposits    Decimal  @default(0)           @map("total_deposits")
+  totalWithdrawals Decimal  @default(0)           @map("total_withdrawals")
+  transactionCount Int      @default(0)           @map("transaction_count")
+  rawData          Json?    @map("raw_data")      // أول N صف للعرض (اختياري)
+  createdAt        DateTime @default(now())       @map("created_at")
+  updatedAt        DateTime @updatedAt            @map("updated_at")
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company    Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions BankStatementTransaction[]
 
-  @@unique([companyId, bankName])
   @@index([tenantId])
   @@index([companyId])
-  @@map("bank_statement_templates")
+  @@index([companyId, createdAt])
+  @@map("bank_statements")
+}
+
+model BankStatementTransaction {
+  id          String   @id @default(cuid())
+  statementId String   @map("statement_id")
+  txDate      String   @map("tx_date")
+  description String  @default("")
+  categoryId  String?  @map("category_id")
+  debit       Decimal  @default(0)   @map("debit")
+  credit      Decimal  @default(0)   @map("credit")
+  balance     Decimal? @map("balance")
+  reference   String?  @map("reference")
+  note        String?  @map("note")
+  sortOrder   Int      @default(0)    @map("sort_order")
+
+  statement BankStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+  category  BankStatementCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([statementId])
+  @@map("bank_statement_transactions")
+}
+
+model BankStatementCategory {
+  id        String   @id @default(cuid())
+  companyId String   @map("company_id")
+  nameAr    String   @map("name_ar")
+  nameEn    String?  @map("name_en")
+  color     String   @default("#6366f1")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company      Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions BankStatementTransaction[]
+
+  @@index([companyId])
+  @@map("bank_statement_categories")
 }
 
 // الفترات المالية — قفل التسجيل في فترات مغلقة

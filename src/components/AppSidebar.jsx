@@ -19,7 +19,6 @@ import {
   IconPeople,
   IconChartBar,
   IconSettings,
-  IconFileSpreadsheet,
 } from './SidebarIcons';
 
 const SIDEBAR_LINKS = [
@@ -42,7 +41,7 @@ const SIDEBAR_LINKS = [
     children: [
       { to: '/reports/general', labelKey: 'reportGeneralReport', icon: IconChartBar },
       { to: '/reports/tax', labelKey: 'reportTax', icon: IconDocument },
-      { to: '/reports/bank-statement', labelKey: 'reportBankStatementAnalysis', icon: IconFileSpreadsheet },
+      { to: '/reports/bank-statement', labelKey: 'reportBankStatementAnalysis', icon: IconChartBar },
     ],
   },
   { to: '/settings', labelKey: 'settings', icon: IconSettings, permission: 'MANAGE_SETTINGS' },

@@ -2,7 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import Decimal from 'decimal.js';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { TenantContext } from '../common/tenant-context';
 
 type GroupKey = 'sales' | 'purchases' | 'expenses';
 type ReportRowKey = GroupKey | 'grossProfit' | 'netProfit';
@@ -1313,71 +1312,5 @@ export class ReportsService {
       totalsByKind,
       topSuppliers,
     };
-  }
-
-  // ── قوالب تحليل كشف الحساب (لكل بنك) ─────────────────────────
-  async getBankStatementTemplates(companyId: string) {
-    return this.prisma.bankStatementTemplate.findMany({
-      where: { companyId },
-      orderBy: { bankName: 'asc' },
-      select: {
-        id: true,
-        bankName: true,
-        columnTypes: true,
-        dataStartRow: true,
-        dataEndRow: true,
-        colCount: true,
-        createdAt: true,
-      },
-    });
-  }
-
-  async createBankStatementTemplate(
-    companyId: string,
-    dto: {
-      bankName: string;
-      columnTypes: Record<number, string>;
-      dataStartRow: number;
-      dataEndRow: number;
-      colCount: number;
-    },
-  ) {
-    const tenantId = TenantContext.getTenantId();
-    const bankName = (dto.bankName || '').trim();
-    if (!bankName) throw new BadRequestException('اسم البنك مطلوب');
-    const columnTypes = (dto.columnTypes && typeof dto.columnTypes === 'object')
-      ? Object.fromEntries(
-          Object.entries(dto.columnTypes).map(([k, v]) => [String(k), String(v || 'ignore')]),
-        )
-      : {};
-    return this.prisma.bankStatementTemplate.upsert({
-      where: {
-        companyId_bankName: { companyId, bankName },
-      },
-      create: {
-        tenantId,
-        companyId,
-        bankName,
-        columnTypes: columnTypes as object,
-        dataStartRow: Math.max(0, dto.dataStartRow ?? 0),
-        dataEndRow: Math.max(0, dto.dataEndRow ?? 0),
-        colCount: Math.max(1, dto.colCount ?? 1),
-      },
-      update: {
-        columnTypes: columnTypes as object,
-        dataStartRow: Math.max(0, dto.dataStartRow ?? 0),
-        dataEndRow: Math.max(0, dto.dataEndRow ?? 0),
-        colCount: Math.max(1, dto.colCount ?? 1),
-      },
-    });
-  }
-
-  async deleteBankStatementTemplate(companyId: string, id: string) {
-    const existing = await this.prisma.bankStatementTemplate.findFirst({
-      where: { id, companyId },
-    });
-    if (!existing) throw new BadRequestException('القالب غير موجود');
-    await this.prisma.bankStatementTemplate.delete({ where: { id } });
-    return { success: true };
   }
 }

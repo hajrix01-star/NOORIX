@@ -27,6 +27,7 @@ import { IdempotencyModule }   from './idempotency/idempotency.module';
 import { ExpenseLineModule }   from './expense-line/expense-line.module';
 import { ReportsModule }       from './reports/reports.module';
 import { ChatModule }          from './chat/chat.module';
+import { BankStatementsModule } from './bank-statements/bank-statements.module';
 import { OrdersModule }         from './orders/orders.module';
 import { DatabaseModule }       from './database/database.module';
 import { TenantMiddleware }    from './common/tenant.middleware';
@@ -66,6 +67,7 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'noorix-dev-secret-DO-NOT-USE-IN-PR
     ExpenseLineModule,
     ReportsModule,
     ChatModule,
+    BankStatementsModule,
     OrdersModule,
     JwtModule.register({ secret: JWT_SECRET }),
   ],

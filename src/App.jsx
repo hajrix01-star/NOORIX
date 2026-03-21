@@ -228,6 +228,9 @@ export default function App() {
     queryClient.invalidateQueries({ queryKey: ['orders'] });
     queryClient.invalidateQueries({ queryKey: ['order-products'] });
     queryClient.invalidateQueries({ queryKey: ['order-categories'] });
+    queryClient.invalidateQueries({ queryKey: ['bank-statements'] });
+    queryClient.invalidateQueries({ queryKey: ['bank-statements-summary'] });
+    queryClient.invalidateQueries({ queryKey: ['bank-statement-categories'] });
   }, [activeCompanyId, queryClient]);
 
   // مراقبة حالة الاتصال بالسيرفر

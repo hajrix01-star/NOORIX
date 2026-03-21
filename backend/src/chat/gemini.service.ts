@@ -259,7 +259,6 @@ export class GeminiService {
 
   /**
    * تحليل كشف حساب — خطوة 1: استخراج البيانات الوصفية ونطاق الجدول
-   * سؤال بسيط واحد لزيادة موثوقية الاستجابة
    */
   async analyzeBankStatementPhase1(raw: string[][]): Promise<{
     companyName: string;
@@ -341,13 +340,9 @@ ${textSample}
   }
 
   /**
-   * تحليل كشف حساب — خطوة 2: اقتراح نوع كل عمود بناءً على صف العناوين وعيّنة بيانات
+   * تحليل كشف حساب — خطوة 2: اقتراح نوع كل عمود
    */
-  async analyzeBankStatementPhase2(
-    raw: string[][],
-    dataStartRow: number,
-    headerRow: number,
-  ): Promise<Record<number, string> | null> {
+  async analyzeBankStatementPhase2(raw: string[][], dataStartRow: number, headerRow: number): Promise<Record<number, string> | null> {
     if (!this.apiKey) return null;
     if (!raw?.length || !Array.isArray(raw[0])) return null;
 
@@ -367,19 +362,8 @@ ${headerCells}
 عيّنة بيانات:
 ${sampleRows}
 
-لكل عمود 0 إلى ${colCount - 1} اختر نوعاً واحداً فقط:
-date | debit | credit | amount | description | balance | ignore
-
-- date: التاريخ
-- debit: المدين (سحب)
-- credit: الدائن (إيداع)
-- amount: مبلغ واحد (+ دائن - مدين)
-- description: الوصف
-- balance: الرصيد
-- ignore: تجاهل
-
-أرجع JSON فقط: {"0":"نوع","1":"نوع",...}
-المفاتيح أرقام نصية "0","1","2"...`;
+لكل عمود 0 إلى ${colCount - 1} اختر: date | debit | credit | amount | description | balance | ignore
+أرجع JSON فقط: {"0":"نوع","1":"نوع",...}`;
 
     try {
       const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
@@ -387,11 +371,7 @@ date | debit | credit | amount | description | balance | ignore
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.05,
-            maxOutputTokens: 512,
-            responseMimeType: 'application/json',
-          },
+          generationConfig: { temperature: 0.05, maxOutputTokens: 512, responseMimeType: 'application/json' },
         }),
       });
 
@@ -416,30 +396,22 @@ date | debit | credit | amount | description | balance | ignore
     }
   }
 
-  /**
-   * تحليل كشف حساب — الطلب الموحد (خطوة 1 ثم 2) للتوافق مع الـ API القديم
-   */
+  /** تحليل كشف حساب — الطلب الموحد (Phase1 + Phase2) */
   async analyzeBankStatementStructure(raw: string[][]): Promise<{
-    companyName?: string;
-    reportDate?: string;
+    companyName: string;
+    reportDate: string;
     dataStartRow: number;
     dataEndRow: number;
-    headerRow?: number;
+    headerRow: number;
     columnTypes: Record<number, string>;
   } | null> {
     const phase1 = await this.analyzeBankStatementPhase1(raw);
     if (!phase1) return null;
 
     const phase2 = await this.analyzeBankStatementPhase2(raw, phase1.dataStartRow, phase1.headerRow);
-    const columnTypes = phase2 || {};
-
     return {
-      companyName: phase1.companyName,
-      reportDate: phase1.reportDate,
-      dataStartRow: phase1.dataStartRow,
-      dataEndRow: phase1.dataEndRow,
-      headerRow: phase1.headerRow,
-      columnTypes,
+      ...phase1,
+      columnTypes: phase2 || {},
     };
   }
 

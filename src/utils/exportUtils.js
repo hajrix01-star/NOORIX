@@ -88,6 +88,40 @@ export async function importExcelRaw(file) {
   return { raw: normalized, colCount };
 }
 
+/**
+ * importBankStatementFile — قراءة Excel أو CSV كصفوف خام لتحليل الكشف
+ */
+export async function importBankStatementFile(file) {
+  const ext = (file.name || '').toLowerCase().split('.').pop();
+  if (ext === 'csv') {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    const raw = lines.map((line) => {
+      const parts = [];
+      let cur = '';
+      let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') inQ = !inQ;
+        else if ((c === ',' || c === ';' || c === '\t') && !inQ) {
+          parts.push(String(cur).replace(/^"|"$/g, '').trim());
+          cur = '';
+        } else cur += c;
+      }
+      parts.push(String(cur).replace(/^"|"$/g, '').trim());
+      return parts;
+    });
+    const colCount = raw.length ? Math.max(...raw.map((r) => r.length)) : 0;
+    const normalized = raw.map((r) => {
+      const arr = [...r];
+      while (arr.length < colCount) arr.push('');
+      return arr;
+    });
+    return { raw: normalized, colCount };
+  }
+  return importExcelRaw(file);
+}
+
 export async function exportTableToPdf({ columns, data, title = '', filename = 'export.pdf' }) {
   const { jsPDF } = await import('jspdf');
   const autoTable = (await import('jspdf-autotable')).default;

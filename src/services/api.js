@@ -43,7 +43,6 @@ function getAuthHeaders() {
 
 // ── fetch مع timeout وإمساك أخطاء الشبكة ────────────
 const TIMEOUT_MS = 12000;
-const AI_TIMEOUT_MS = 45000; // الذكاء الاصطناعي يحتاج وقتاً أطول
 async function safeFetch(url, options, timeout = TIMEOUT_MS) {
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeout);
@@ -265,23 +264,42 @@ export async function chatQuery(query) {
   return apiPost('/api/v1/chat/query', { query });
 }
 
-/** اقتراح ذكي لهيكل كشف الحساب عبر Gemini — timeout 45 ثانية للتحليل */
-export async function analyzeBankStatementStructure(raw) {
-  return apiPost('/api/v1/chat/bank-statement-analyze', { raw }, { timeout: AI_TIMEOUT_MS });
+/** تحليل كشوف الحساب */
+export async function bankStatementUpload(body) {
+  return apiPost('/api/v1/bank-statements/upload', body, { timeout: 60000 });
 }
-
-/** قوالب تحليل كشف الحساب (لكل بنك) */
-export async function getBankStatementTemplates(companyId) {
-  const res = await apiGet('/api/v1/reports/bank-statement-templates', { companyId });
+export async function bankStatementConfirmMapping(id, body) {
+  return apiPatch(`/api/v1/bank-statements/${id}/confirm-mapping`, body);
+}
+export async function bankStatementsList(companyId, params = {}) {
+  const res = await apiGet('/api/v1/bank-statements', { companyId, ...params });
   return res.success ? { success: true, data: res.data ?? [] } : res;
 }
-
-export async function createBankStatementTemplate(body) {
-  return apiPost('/api/v1/reports/bank-statement-templates', body);
+export async function bankStatementSummary(companyId) {
+  const res = await apiGet('/api/v1/bank-statements/summary', { companyId });
+  return res;
 }
-
-export async function deleteBankStatementTemplate(id, companyId) {
-  return apiDelete(`/api/v1/reports/bank-statement-templates/${id}?companyId=${companyId}`);
+export async function bankStatementGet(companyId, id) {
+  return apiGet(`/api/v1/bank-statements/${id}`, { companyId });
+}
+export async function bankStatementUpdateTxCategory(statementId, txId, companyId, categoryId) {
+  return apiPatch(`/api/v1/bank-statements/${statementId}/transactions/${txId}/category`, { companyId, categoryId });
+}
+export async function bankStatementUpdateTxNote(statementId, txId, companyId, note) {
+  return apiPatch(`/api/v1/bank-statements/${statementId}/transactions/${txId}/note`, { companyId, note });
+}
+export async function bankStatementDelete(companyId, id) {
+  return apiDelete(`/api/v1/bank-statements/${id}?companyId=${companyId}`);
+}
+export async function bankStatementCategories(companyId) {
+  const res = await apiGet('/api/v1/bank-statements/categories', { companyId });
+  return res.success ? { success: true, data: res.data ?? [] } : res;
+}
+export async function bankStatementCreateCategory(body) {
+  return apiPost('/api/v1/bank-statements/categories', body);
+}
+export async function bankStatementDeleteCategory(companyId, id) {
+  return apiDelete(`/api/v1/bank-statements/categories/${id}?companyId=${companyId}`);
 }
 
 // ——— موارد ———

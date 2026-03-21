@@ -11,5 +11,6 @@ import { GeminiService } from './gemini.service';
   imports: [PrismaModule, AuthModule, ReportsModule, VaultsModule],
   controllers: [ChatController],
   providers: [ChatService, GeminiService],
+  exports: [GeminiService],
 })
 export class ChatModule {}

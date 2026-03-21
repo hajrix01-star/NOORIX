@@ -66,28 +66,4 @@ export class ChatController {
     return { success: true, data: result };
   }
 
-  @Post('bank-statement-analyze')
-  @RequirePermission('REPORTS_READ')
-  async analyzeBankStatement(
-    @Body() body: { raw: string[][] },
-    @CurrentUser() user: JwtUser,
-  ) {
-    if (!body?.raw || !Array.isArray(body.raw) || body.raw.length === 0) {
-      throw new HttpException('يجب إرسال مصفوفة raw (صفوف الكشف)', HttpStatus.BAD_REQUEST);
-    }
-    if (!this.geminiService.isAvailable()) {
-      throw new HttpException(
-        'Gemini غير مُفعّل. أضف GEMINI_API_KEY في backend/.env',
-        HttpStatus.SERVICE_UNAVAILABLE,
-      );
-    }
-    const result = await this.geminiService.analyzeBankStatementStructure(body.raw);
-    if (!result) {
-      throw new HttpException(
-        'لم يتمكن الذكاء الاصطناعي من تحليل الهيكل',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-    return { success: true, data: result };
-  }
 }

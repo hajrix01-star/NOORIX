@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, UseGuards, Query, Body, Param } from '@nestjs/common';
+import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -56,36 +56,5 @@ export class ReportsController {
   @RequirePermission('REPORTS_READ')
   async getPeriodAnalytics(@Query() query: GetPeriodAnalyticsQueryDto) {
     return this.reportsService.getPeriodAnalytics(query.companyId, query.startDate, query.endDate);
-  }
-
-  @Get('bank-statement-templates')
-  @RequirePermission('REPORTS_READ')
-  async getBankStatementTemplates(@Query('companyId') companyId: string) {
-    return this.reportsService.getBankStatementTemplates(companyId);
-  }
-
-  @Post('bank-statement-templates')
-  @RequirePermission('REPORTS_READ')
-  async createBankStatementTemplate(
-    @Body()
-    body: {
-      companyId: string;
-      bankName: string;
-      columnTypes: Record<number, string>;
-      dataStartRow: number;
-      dataEndRow: number;
-      colCount: number;
-    },
-  ) {
-    return this.reportsService.createBankStatementTemplate(body.companyId, body);
-  }
-
-  @Delete('bank-statement-templates/:id')
-  @RequirePermission('REPORTS_READ')
-  async deleteBankStatementTemplate(
-    @Query('companyId') companyId: string,
-    @Param('id') id: string,
-  ) {
-    return this.reportsService.deleteBankStatementTemplate(companyId, id);
   }
 }
