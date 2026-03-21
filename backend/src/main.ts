@@ -17,6 +17,8 @@ if (dbUrl && dbUrl.includes('supabase')) {
 
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
@@ -35,7 +37,13 @@ async function bootstrap() {
 
   logger.log(`بدء التطبيق — PORT=${port} DATABASE_URL=${process.env.DATABASE_URL ? '✓' : '✗'} JWT_SECRET=${process.env.JWT_SECRET ? '✓' : '⚠ dev-fallback'}`);
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
+
+  // ── Body parser بحد 50MB (رفع كشوف Excel/CSV كبيرة) ──
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ limit: '50mb', extended: true }));
 
   // ── Helmet: حماية HTTP headers (XSS, clickjacking, MIME sniffing) ──
   app.use(helmet({
