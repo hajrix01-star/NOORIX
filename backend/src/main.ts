@@ -1,17 +1,21 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// Supabase: استخدام Transaction mode (6543) بدلاً من Session (5432) لتجنب MaxClientsInSessionMode
-// Session mode يحدّ الاتصالات حسب pool_size. Transaction mode يدعم عدداً أكبر.
+// Supabase: تجنب MaxClientsInSessionMode بتقليل الاتصالات واستخدام Transaction mode عند الإمكان
 const dbUrl = process.env.DATABASE_URL;
 if (dbUrl && dbUrl.includes('supabase')) {
   let url = dbUrl;
-  // استبدال المنفذ 5432 بـ 6543 للاتصال عبر Transaction mode
+  // 1) Pooler: استبدال 5432 (Session) بـ 6543 (Transaction) — يدعم عدد أكبر من الاتصالات
   if (url.includes('pooler.supabase.com') && (url.includes(':5432/') || url.match(/:5432\?/))) {
     url = url.replace(':5432/', ':6543/').replace(':5432?', ':6543?');
   }
+  // 2) Direct (db.xxx.supabase.co): إضافة connection_limit لتقليل عدد الاتصالات — الحد الافتراضي منخفض
+  const connLimit = process.env.DATABASE_CONNECTION_LIMIT || '3';
+  if (!url.includes('connection_limit=')) {
+    url += (url.includes('?') ? '&' : '?') + `connection_limit=${connLimit}`;
+  }
   if (!url.includes('sslmode=')) url += (url.includes('?') ? '&' : '?') + 'sslmode=require';
-  if (!url.includes('pgbouncer=')) url += (url.includes('?') ? '&' : '?') + 'pgbouncer=true';
+  if (url.includes('pooler') && !url.includes('pgbouncer=')) url += (url.includes('?') ? '&' : '?') + 'pgbouncer=true';
   process.env.DATABASE_URL = url;
 }
 
