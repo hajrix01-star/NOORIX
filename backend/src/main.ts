@@ -1,10 +1,14 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// Supabase يتطلب SSL — إضافة sslmode=require للعناوين التي تحتوي supabase
+// Supabase: SSL + تقليل الاتصالات لتجنب MaxClientsInSessionMode (Session mode محدود حسب pool_size)
+// المشروع يستخدم PrismaService و TenantPrismaService → ضعف الاتصالات. connection_limit=5 لكل منهما = 10 إجمالاً.
 const dbUrl = process.env.DATABASE_URL;
-if (dbUrl && dbUrl.includes('supabase') && !dbUrl.includes('sslmode=')) {
-  process.env.DATABASE_URL = dbUrl + (dbUrl.includes('?') ? '&' : '?') + 'sslmode=require';
+if (dbUrl && dbUrl.includes('supabase')) {
+  let url = dbUrl;
+  if (!url.includes('sslmode=')) url += (url.includes('?') ? '&' : '?') + 'sslmode=require';
+  if (!url.includes('connection_limit=')) url += (url.includes('?') ? '&' : '?') + 'connection_limit=5';
+  process.env.DATABASE_URL = url;
 }
 
 import { ValidationPipe, Logger } from '@nestjs/common';
