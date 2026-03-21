@@ -110,6 +110,7 @@ export default function BankStatementAnalysisScreen() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
   const [aiSuccess, setAiSuccess] = useState(false);
+  const [aiMeta, setAiMeta] = useState(null); // { companyName, reportDate, headerRow }
   const [saveTemplateName, setSaveTemplateName] = useState('');
   const [saveTemplateSuccess, setSaveTemplateSuccess] = useState(false);
 
@@ -190,20 +191,33 @@ export default function BankStatementAnalysisScreen() {
     if (!rawGrid?.length) return;
     setAiLoading(true);
     setAiError('');
+    setAiSuccess(false);
+    setAiMeta(null);
     try {
       const rawForApi = rawGrid.map((row) =>
         Array.from({ length: colCount }, (_, i) => String(row[i] ?? '')),
       );
       const res = await analyzeBankStatementStructure(rawForApi);
       if (res?.success && res?.data) {
-        const { dataStartRow: start, dataEndRow: end, columnTypes: ct } = res.data;
+        const d = res.data;
+        const start = d.dataStartRow ?? 0;
+        const end = d.dataEndRow ?? rawGrid.length - 1;
         setDataStartRow(start);
         setDataEndRow(end);
         const types = {};
-        Object.entries(ct || {}).forEach(([k, v]) => {
+        Object.entries(d.columnTypes || {}).forEach(([k, v]) => {
           types[Number(k)] = String(v || 'ignore');
         });
         setColumnTypes(types);
+        if (d.companyName || d.reportDate) {
+          setAiMeta({
+            companyName: d.companyName || '',
+            reportDate: d.reportDate || '',
+            headerRow: d.headerRow,
+          });
+        }
+        setAiSuccess(true);
+        setTimeout(() => setAiSuccess(false), 5000);
       } else {
         setAiError(res?.error || (lang === 'ar' ? 'لم يتمكن الذكاء من التحليل' : 'AI could not analyze'));
       }
@@ -569,9 +583,48 @@ export default function BankStatementAnalysisScreen() {
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{t('bankStatementFullGrid')}</h3>
           <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13, marginBottom: 16 }}>
             {lang === 'ar'
-              ? 'حدد صف بداية ونهاية البيانات (تجاهل اسم الشركة والعنوان)، ثم حدد نوع كل عمود.'
-              : 'Set data start and end rows (skip company name/address), then set each column type.'}
+              ? 'الخطوة 1: الذكاء يقترح البيانات ونطاق الجدول. الخطوة 2: راجع وأكد، ثم حدد نوع كل عمود إن لزم.'
+              : 'Step 1: AI suggests metadata and table range. Step 2: Review and confirm, then set each column type if needed.'}
           </p>
+          {aiMeta && (aiMeta.companyName || aiMeta.reportDate) && (
+            <div
+              style={{
+                padding: 16,
+                marginBottom: 16,
+                background: 'rgba(99,102,241,0.06)',
+                border: '1px solid rgba(99,102,241,0.25)',
+                borderRadius: 12,
+              }}
+            >
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{t('bankStatementAISuggestions')}</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                {aiMeta.companyName && (
+                  <div>
+                    <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementCompanyName')}: </span>
+                    <strong>{aiMeta.companyName}</strong>
+                  </div>
+                )}
+                {aiMeta.reportDate && (
+                  <div>
+                    <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementReportDateAI')}: </span>
+                    <strong>{aiMeta.reportDate}</strong>
+                  </div>
+                )}
+                <div>
+                  <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementTableRange')}: </span>
+                  <strong>
+                    {lang === 'ar' ? `صف ${dataStartRow + 1}` : `Row ${dataStartRow + 1}`} — {lang === 'ar' ? `صف ${dataEndRow + 1}` : `Row ${dataEndRow + 1}`}
+                  </strong>
+                </div>
+                {aiMeta.headerRow != null && (
+                  <div>
+                    <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementHeaderRow')}: </span>
+                    <strong>{lang === 'ar' ? `صف ${aiMeta.headerRow + 1}` : `Row ${aiMeta.headerRow + 1}`}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div
             style={{
               display: 'flex',

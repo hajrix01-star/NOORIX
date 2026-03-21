@@ -258,47 +258,38 @@ export class GeminiService {
   }
 
   /**
-   * تحليل هيكل كشف حساب بنكي — اقتراح نطاق البيانات ونوع كل عمود
-   * يُرسل أول 20 صفاً فقط لتحليل الهيكل
+   * تحليل كشف حساب — خطوة 1: استخراج البيانات الوصفية ونطاق الجدول
+   * سؤال بسيط واحد لزيادة موثوقية الاستجابة
    */
-  async analyzeBankStatementStructure(
-    raw: string[][],
-  ): Promise<{
+  async analyzeBankStatementPhase1(raw: string[][]): Promise<{
+    companyName: string;
+    reportDate: string;
     dataStartRow: number;
     dataEndRow: number;
-    columnTypes: Record<number, string>;
+    headerRow: number;
   } | null> {
     if (!this.apiKey) return null;
     if (!raw?.length || !Array.isArray(raw[0])) return null;
 
-    const sample = raw.slice(0, 25).map((row) =>
-      (Array.isArray(row) ? row : []).map((c) => String(c ?? '').slice(0, 50)).join(' | '),
+    const sample = raw.slice(0, 35).map((row) =>
+      (Array.isArray(row) ? row : []).map((c) => String(c ?? '').slice(0, 60)).join(' | '),
     );
     const textSample = sample.map((r, i) => `[${i}]: ${r}`).join('\n');
-    const colCount = raw[0]?.length ?? 0;
-    if (colCount === 0) return null;
+    const lastRow = raw.length - 1;
 
-    const prompt = `أنت مساعد لتحليل كشوف حسابات بنكية (Excel) في نظام محاسبة سعودي.
-المهمة: من العيّنة التالية، حدد:
-1. dataStartRow: رقم صف بداية البيانات الفعلية (بعد اسم الشركة والعنوان والعناوين) — يبدأ من 0
-2. dataEndRow: رقم صف نهاية البيانات (آخر حركة)
-3. columnTypes: لكل عمود (0 إلى ${colCount - 1}) حدد النوع: "date" | "debit" | "credit" | "amount" | "description" | "balance" | "ignore"
+    const prompt = `كشف حساب بنكي Excel. من العيّنة:
 
-القواعد:
-- الصفوف الأولى غالباً: اسم الشركة، عنوان، فراغات — يجب تجاهلها
-- صف العناوين (التاريخ، المدين، الدائن، الوصف...) قد يكون في dataStartRow-1 أو بداخله
-- debit = عمود المبالغ المدينة (السحب)، credit = عمود المبالغ الدائنة (الإيداع)
-- amount = عمود واحد يحتوي مبالغ موجبة وسالبة (موجب=دائن، سالب=مدين)
-- إذا لم يكن العمود مهماً اختر "ignore"
-
-العيّنة (صفوف 0 إلى ${sample.length - 1}):
----
 ${textSample}
----
 
-أرجع JSON فقط بهذا الشكل (بدون شرح):
-{"dataStartRow":عدد,"dataEndRow":عدد,"columnTypes":{"0":"نوع العمود0","1":"نوع العمود1",...}}
-مهم: columnTypes يجب أن يكون مفتاحه رقم (string) مثل "0","1","2"`;
+حدد (الأرقام تبدأ من 0):
+1. companyName: اسم الشركة من الصفوف الأولى (إن وُجد)
+2. reportDate: تاريخ التقرير بصيغة YYYY-MM إن وُجد، وإلا null
+3. headerRow: رقم صف العناوين (التاريخ، المدين، الدائن، الوصف...)
+4. dataStartRow: أول صف للحركات (بعد العناوين)
+5. dataEndRow: آخر صف للحركات (لا يتجاوز ${lastRow})
+
+أرجع JSON فقط:
+{"companyName":"...","reportDate":"..." أو null,"headerRow":عدد,"dataStartRow":عدد,"dataEndRow":عدد}`;
 
     try {
       const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
@@ -307,59 +298,149 @@ ${textSample}
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 512,
+            temperature: 0.05,
+            maxOutputTokens: 256,
             responseMimeType: 'application/json',
-            responseJsonSchema: {
-              type: 'object',
-              properties: {
-                dataStartRow: { type: 'number' },
-                dataEndRow: { type: 'number' },
-                columnTypes: {
-                  type: 'object',
-                  additionalProperties: { type: 'string' },
-                },
-              },
-              required: ['dataStartRow', 'dataEndRow', 'columnTypes'],
-            },
           },
         }),
       });
 
-      if (!response.ok) {
-        console.warn('[GeminiService] bank-statement analyze error:', response.status);
-        return null;
-      }
-
+      if (!response.ok) return null;
       const data = (await response.json()) as any;
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) return null;
 
       const parsed = extractJson<{
+        companyName?: string;
+        reportDate?: string | null;
+        headerRow?: number;
         dataStartRow?: number;
         dataEndRow?: number;
-        columnTypes?: Record<string, string>;
       }>(text);
 
-      if (!parsed) return null;
+      if (!parsed || parsed.dataStartRow == null) return null;
 
       const dataStartRow = Math.max(0, Math.min(raw.length - 1, Math.floor(Number(parsed.dataStartRow) || 0)));
       const dataEndRow = Math.max(
         dataStartRow,
-        Math.min(raw.length - 1, Math.floor(Number(parsed.dataEndRow) ?? raw.length - 1)),
+        Math.min(raw.length - 1, Math.floor(Number(parsed.dataEndRow) ?? lastRow)),
       );
-      const columnTypes: Record<number, string> = {};
-      const validTypes = ['date', 'debit', 'credit', 'amount', 'description', 'balance', 'ignore'];
-      for (let i = 0; i < colCount; i++) {
-        const t = String(parsed.columnTypes?.[String(i)] ?? 'ignore').toLowerCase();
-        columnTypes[i] = validTypes.includes(t) ? t : 'ignore';
-      }
+      const headerRow = Math.max(0, Math.min(dataStartRow, Math.floor(Number(parsed.headerRow ?? dataStartRow - 1) || 0)));
 
-      return { dataStartRow, dataEndRow, columnTypes };
+      return {
+        companyName: String(parsed.companyName ?? '').trim() || '',
+        reportDate: parsed.reportDate && String(parsed.reportDate).trim() !== 'null' ? String(parsed.reportDate).trim() : '',
+        dataStartRow,
+        dataEndRow,
+        headerRow,
+      };
     } catch (err) {
-      console.warn('[GeminiService] analyzeBankStatementStructure error:', err);
+      console.warn('[GeminiService] phase1 error:', err);
       return null;
     }
+  }
+
+  /**
+   * تحليل كشف حساب — خطوة 2: اقتراح نوع كل عمود بناءً على صف العناوين وعيّنة بيانات
+   */
+  async analyzeBankStatementPhase2(
+    raw: string[][],
+    dataStartRow: number,
+    headerRow: number,
+  ): Promise<Record<number, string> | null> {
+    if (!this.apiKey) return null;
+    if (!raw?.length || !Array.isArray(raw[0])) return null;
+
+    const colCount = Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0)), 1);
+    const headerCells = (raw[headerRow] || []).map((c, i) => `col${i}:"${String(c ?? '').slice(0, 30)}"`).join(', ');
+    const sampleRows = raw
+      .slice(dataStartRow, dataStartRow + 5)
+      .map((row, idx) => {
+        const cells = (Array.isArray(row) ? row : []).map((c, i) => `[${i}]:"${String(c ?? '').slice(0, 25)}"`).join(' ');
+        return `row${idx}: ${cells}`;
+      })
+      .join('\n');
+
+    const prompt = `كشف حساب بنكي. العناوين (صف ${headerRow}):
+${headerCells}
+
+عيّنة بيانات:
+${sampleRows}
+
+لكل عمود 0 إلى ${colCount - 1} اختر نوعاً واحداً فقط:
+date | debit | credit | amount | description | balance | ignore
+
+- date: التاريخ
+- debit: المدين (سحب)
+- credit: الدائن (إيداع)
+- amount: مبلغ واحد (+ دائن - مدين)
+- description: الوصف
+- balance: الرصيد
+- ignore: تجاهل
+
+أرجع JSON فقط: {"0":"نوع","1":"نوع",...}
+المفاتيح أرقام نصية "0","1","2"...`;
+
+    try {
+      const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.05,
+            maxOutputTokens: 512,
+            responseMimeType: 'application/json',
+          },
+        }),
+      });
+
+      if (!response.ok) return null;
+      const data = (await response.json()) as any;
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) return null;
+
+      const parsed = extractJson<Record<string, string>>(text);
+      if (!parsed || typeof parsed !== 'object') return null;
+
+      const validTypes = ['date', 'debit', 'credit', 'amount', 'description', 'balance', 'ignore'];
+      const columnTypes: Record<number, string> = {};
+      for (let i = 0; i < colCount; i++) {
+        const t = String(parsed[String(i)] ?? 'ignore').toLowerCase();
+        columnTypes[i] = validTypes.includes(t) ? t : 'ignore';
+      }
+      return columnTypes;
+    } catch (err) {
+      console.warn('[GeminiService] phase2 error:', err);
+      return null;
+    }
+  }
+
+  /**
+   * تحليل كشف حساب — الطلب الموحد (خطوة 1 ثم 2) للتوافق مع الـ API القديم
+   */
+  async analyzeBankStatementStructure(raw: string[][]): Promise<{
+    companyName?: string;
+    reportDate?: string;
+    dataStartRow: number;
+    dataEndRow: number;
+    headerRow?: number;
+    columnTypes: Record<number, string>;
+  } | null> {
+    const phase1 = await this.analyzeBankStatementPhase1(raw);
+    if (!phase1) return null;
+
+    const phase2 = await this.analyzeBankStatementPhase2(raw, phase1.dataStartRow, phase1.headerRow);
+    const columnTypes = phase2 || {};
+
+    return {
+      companyName: phase1.companyName,
+      reportDate: phase1.reportDate,
+      dataStartRow: phase1.dataStartRow,
+      dataEndRow: phase1.dataEndRow,
+      headerRow: phase1.headerRow,
+      columnTypes,
+    };
   }
 
   private normalizePeriod(v: unknown): GeminiPeriod {
