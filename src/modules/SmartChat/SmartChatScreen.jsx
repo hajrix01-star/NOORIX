@@ -152,6 +152,9 @@ export default function SmartChatScreen() {
           {isAr
             ? 'اختر أحد الأزرار (سلفة، إجازة، خصم، زيادة) للإدخال المباشر، أو استخدم الأسئلة الجاهزة، أو اكتب سؤالك.'
             : 'Tap an action button to enter data, use suggested questions, or type your question.'}
+          {typeof __BUILD_ID__ !== 'undefined' && (
+            <span style={{ fontSize: 11, opacity: 0.6, marginInlineStart: 8 }} title="Build ID">({String(__BUILD_ID__).slice(0, 7)})</span>
+          )}
         </p>
       </div>
 
