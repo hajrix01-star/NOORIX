@@ -11,17 +11,24 @@ import { exportToExcel } from './exportUtils';
 
 // ─── Low-level helpers ───────────────────────────────────────────────────────
 
-/** Parse an Excel date cell (serial number, string DD/MM/YYYY, YYYY-MM-DD) → 'YYYY-MM-DD' | null */
+const AR_NUMS = '٠١٢٣٤٥٦٧٨٩';
+function toWesternNum(str) {
+  if (str == null) return '';
+  return String(str).replace(/[٠-٩]/g, (c) => AR_NUMS.indexOf(c).toString());
+}
+
+/** Parse an Excel date cell (serial number, string DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY) → 'YYYY-MM-DD' | null */
 export function parseDate(val) {
   if (val == null || val === '') return null;
   if (typeof val === 'number') {
-    // Excel serial date (days since 1900-01-01, with Lotus 1900 leap-year bug)
     const d = new Date(Math.round((val - 25569) * 86400 * 1000));
     return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
   }
-  const str = String(val).trim();
+  const str = toWesternNum(String(val).trim());
   const dmy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+  const dmy2 = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (dmy2) return `${dmy2[3]}-${dmy2[2].padStart(2, '0')}-${dmy2[1].padStart(2, '0')}`;
   const ymd = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (ymd) return `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
   const d = new Date(str);
@@ -38,10 +45,11 @@ export function parseBoolean(val) {
   return null;
 }
 
-/** Parse a numeric cell; strips commas and whitespace → number | null */
+/** Parse a numeric cell; strips commas, Arabic numerals → number | null */
 export function parseNumber(val) {
   if (val == null || val === '') return null;
-  const n = Number(String(val).replace(/,/g, '').trim());
+  const s = toWesternNum(String(val).replace(/,/g, '').replace(/\s/g, '').trim());
+  const n = Number(s);
   return isNaN(n) ? null : n;
 }
 

@@ -54,6 +54,7 @@ export default function BankStatementAnalysisScreen() {
   const [file, setFile] = useState(null);
   const [rawRows, setRawRows] = useState([]);
   const [headers, setHeaders] = useState([]);
+  const [headerRow, setHeaderRow] = useState(0);
   const [columnMapping, setColumnMapping] = useState({});
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState(loadCategories);
@@ -62,6 +63,13 @@ export default function BankStatementAnalysisScreen() {
   const [uploadError, setUploadError] = useState('');
 
   const fileInputRef = React.useRef(null);
+
+  const loadExcel = useCallback(async (f, hRow = 0) => {
+    const rows = await importFromExcel(f, { headerRow: hRow });
+    if (!rows?.length) return { rows: [], headers: [] };
+    const hdrs = Object.keys(rows[0] || {});
+    return { rows, headers: hdrs };
+  }, []);
 
   const handleFileSelect = useCallback(async (e) => {
     const f = e?.target?.files?.[0];
@@ -72,21 +80,32 @@ export default function BankStatementAnalysisScreen() {
       return;
     }
     try {
-      const rows = await importFromExcel(f);
+      const { rows, headers: hdrs } = await loadExcel(f, 0);
       if (!rows?.length) {
         setUploadError(lang === 'ar' ? 'الملف فارغ أو بدون صفوف' : 'File is empty or has no rows');
         return;
       }
-      const hdrs = Object.keys(rows[0] || {});
       setFile(f);
       setRawRows(rows);
       setHeaders(hdrs);
+      setHeaderRow(0);
       setColumnMapping({});
       setStep('mapping');
     } catch (err) {
       setUploadError(err?.message || (lang === 'ar' ? 'فشل قراءة الملف' : 'Failed to read file'));
     }
-  }, [lang]);
+  }, [lang, loadExcel]);
+
+  const handleHeaderRowChange = useCallback(async (hRow) => {
+    if (!file) return;
+    setHeaderRow(hRow);
+    try {
+      const { rows, headers: hdrs } = await loadExcel(file, Number(hRow));
+      setRawRows(rows);
+      setHeaders(hdrs);
+      setColumnMapping({});
+    } catch (_) {}
+  }, [file, loadExcel]);
 
   const applyMapping = useCallback(() => {
     const dateKey = columnMapping.transactionDate;
@@ -104,16 +123,11 @@ export default function BankStatementAnalysisScreen() {
         const dateVal = row[dateKey];
         const amountVal = row[amountKey];
         const desc = descKey ? String(row[descKey] ?? '').trim() : '';
-        const balanceVal = balanceKey != null ? row[balanceKey] : null;
+        const balanceVal = balanceKey ? row[balanceKey] : null;
         const typeVal = typeKey ? row[typeKey] : null;
 
         const date = parseDate(dateVal);
         let amount = parseNumber(amountVal);
-
-        if (amount == null && (typeVal != null || desc)) {
-          const n = parseNumber(amountVal);
-          if (n != null) amount = n;
-        }
 
         if (typeVal != null && amount != null) {
           const s = String(typeVal).toLowerCase();
@@ -303,9 +317,23 @@ export default function BankStatementAnalysisScreen() {
       {step === 'mapping' && (
         <div className="noorix-surface-card" style={{ padding: 24 }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{t('bankStatementColumnMapping')}</h3>
-          <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13, marginBottom: 20 }}>
+          <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13, marginBottom: 12 }}>
             {t('bankStatementMapFileColumn')} → {t('bankStatementMapSystemColumn')}
           </p>
+          {headers.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: 'block' }}>{t('bankStatementHeaderRow')}</label>
+              <select
+                value={headerRow}
+                onChange={(e) => handleHeaderRowChange(Number(e.target.value))}
+                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', minWidth: 120 }}
+              >
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <option key={i} value={i}>{lang === 'ar' ? `صف ${i + 1}` : `Row ${i + 1}`}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {SYSTEM_FIELDS.map((sf) => (
               <div key={sf.key} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -317,14 +345,42 @@ export default function BankStatementAnalysisScreen() {
                 >
                   <option value="">{t('bankStatementSkipColumn')}</option>
                   {headers.map((h) => (
-                    <option key={h} value={h}>
-                      {h}
+                    <option key={String(h)} value={h}>
+                      {h || '(فارغ)'}
                     </option>
                   ))}
                 </select>
               </div>
             ))}
           </div>
+          {rawRows.length > 0 && (
+            <div style={{ marginTop: 24 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{t('bankStatementPreview')}</h4>
+              <div style={{ overflowX: 'auto', border: '1px solid var(--noorix-border)', borderRadius: 8, maxHeight: 220 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--noorix-table-header-bg)' }}>
+                      {headers.map((h) => (
+                        <th key={String(h)} style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>{h || '—'}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rawRows.slice(0, 10).map((row, i) => (
+                      <tr key={i} style={{ borderTop: '1px solid var(--noorix-border)' }}>
+                        {headers.map((h) => (
+                          <td key={String(h)} style={{ padding: '6px 10px', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {String(row[h] ?? '').slice(0, 30)}{String(row[h] ?? '').length > 30 ? '...' : ''}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 6 }}>{rawRows.length} {lang === 'ar' ? 'صف' : 'rows'} {lang === 'ar' ? 'إجمالاً' : 'total'}</p>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
             <button type="button" className="noorix-btn-nav" onClick={() => setStep('upload')} style={{ padding: '10px 18px' }}>
               {t('cancel')}
@@ -344,14 +400,31 @@ export default function BankStatementAnalysisScreen() {
 
       {step === 'analysis' && (
         <>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <button type="button" className="noorix-btn-nav" onClick={resetFlow} style={{ fontSize: 13 }}>
               {t('bankStatementUploadExcel')} ←
+            </button>
+            <button type="button" className="noorix-btn-nav" onClick={() => setStep('mapping')} style={{ fontSize: 13 }}>
+              {t('bankStatementColumnMapping')} ←
             </button>
             <button type="button" className="noorix-btn-nav" onClick={() => setShowCategoryModal(true)}>
               {t('bankStatementManageCategories')}
             </button>
+            {transactions.length > 0 && (
+              <span style={{ fontSize: 13, color: 'var(--noorix-accent-green)', fontWeight: 600 }}>
+                {t('bankStatementParsedCount', transactions.length)}
+              </span>
+            )}
           </div>
+
+          {transactions.length === 0 && (
+            <div className="noorix-surface-card" style={{ padding: 24, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#dc2626', margin: 0 }}>{t('bankStatementParseWarning')}</p>
+              <p style={{ marginTop: 8, color: 'var(--noorix-text-muted)' }}>
+                {lang === 'ar' ? 'غيّر صف العناوين أو ربط الأعمدة ثم أعد المحاولة.' : 'Change header row or column mapping and try again.'}
+              </p>
+            </div>
+          )}
 
           {showCategoryModal && (
             <div className="noorix-surface-card" style={{ padding: 24 }}>
@@ -393,6 +466,7 @@ export default function BankStatementAnalysisScreen() {
             </div>
           )}
 
+          {transactions.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
             <div className="noorix-surface-card" style={{ padding: 20, minHeight: 280 }}>
               <h4 style={{ marginBottom: 16 }}>{t('bankStatementByCategory')}</h4>
@@ -429,7 +503,9 @@ export default function BankStatementAnalysisScreen() {
               </div>
             )}
           </div>
+          )}
 
+          {transactions.length > 0 && (
           <div className="noorix-surface-card" style={{ padding: 0, overflow: 'auto', maxHeight: 400 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -465,7 +541,8 @@ export default function BankStatementAnalysisScreen() {
               </tbody>
             </table>
           </div>
-          {transactions.length > 200 && <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>عرض أول 200 حركة من أصل {transactions.length}</p>}
+          )}
+          {transactions.length > 200 && <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{lang === 'ar' ? `عرض أول 200 حركة من أصل ${transactions.length}` : `Showing first 200 of ${transactions.length} transactions`}</p>}
         </>
       )}
     </div>

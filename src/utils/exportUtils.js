@@ -27,14 +27,44 @@ export async function exportToPdf(content, filename = 'export.pdf') {
 /**
  * importFromExcel — قراءة ملف Excel وإرجاع صفوف كـ JSON
  * @param {File} file
+ * @param {{ headerRow?: number }} opts - headerRow: صف العناوين (0=الأول، 1=الثاني، ...)
  * @returns {Promise<Object[]>}
  */
-export async function importFromExcel(file) {
+export async function importFromExcel(file, opts = {}) {
   const XLSX = await import('xlsx');
   const data = await file.arrayBuffer();
-  const wb = XLSX.read(data, { type: 'array' });
+  const wb = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
   const ws = wb.Sheets[wb.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(ws);
+  const { headerRow = 0 } = opts;
+
+  if (headerRow > 0) {
+    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if (!raw.length || raw.length <= headerRow) return [];
+    const headers = raw[headerRow].map((h, i) => String(h || '').trim() || `العمود_${i + 1}`);
+    return raw.slice(headerRow + 1).map((row) => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] ?? ''; });
+      return obj;
+    });
+  }
+
+  const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+  if (rows.length && typeof rows[0] === 'object') {
+    const keys = Object.keys(rows[0]);
+    const badKeys = keys.filter((k) => !k || k.startsWith('__') || /^[A-Z]+$/.test(k));
+    if (badKeys.length === keys.length && keys.length > 0) {
+      const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      if (raw.length >= 2) {
+        const headers = raw[0].map((h, i) => String(h || '').trim() || `العمود_${i + 1}`);
+        return raw.slice(1).map((row) => {
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = row[i] ?? ''; });
+          return obj;
+        });
+      }
+    }
+  }
+  return rows;
 }
 
 export async function exportTableToPdf({ columns, data, title = '', filename = 'export.pdf' }) {
