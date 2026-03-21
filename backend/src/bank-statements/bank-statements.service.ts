@@ -66,7 +66,7 @@ function matchHeaderType(cell: string): string | null {
 /** بديل عند فشل Gemini: اكتشاف بسيط بناءً على نصوص العناوين */
 function heuristicDetection(
   raw: string[][],
-): { headerRow: number; dataStartRow: number; dataEndRow: number; columnTypes: Record<number, string> } | null {
+): { companyName: string; reportDate: string; headerRow: number; dataStartRow: number; dataEndRow: number; columnTypes: Record<number, string> } | null {
   if (!raw?.length || !Array.isArray(raw[0])) return null;
   const colCount = Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0)), 1);
   const headerRow = 0;
@@ -84,7 +84,7 @@ function heuristicDetection(
     Object.values(columnTypes).some((t) => t === 'debit' || t === 'credit') ||
     Object.values(columnTypes).includes('amount');
   if (!hasDate || !hasAmount) return null;
-  return { headerRow, dataStartRow, dataEndRow, columnTypes };
+  return { companyName: '', reportDate: '', headerRow, dataStartRow, dataEndRow, columnTypes };
 }
 
 @Injectable()

@@ -1,22 +1,32 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// Supabase: تجنب MaxClientsInSessionMode بتقليل الاتصالات واستخدام Transaction mode عند الإمكان
+// Supabase: حل نهائي لـ MaxClientsInSessionMode — تقليل الاتصالات + Transaction mode
 const dbUrl = process.env.DATABASE_URL;
 if (dbUrl && dbUrl.includes('supabase')) {
   let url = dbUrl;
-  // 1) Pooler: استبدال 5432 (Session) بـ 6543 (Transaction) — يدعم عدد أكبر من الاتصالات
-  if (url.includes('pooler.supabase.com') && (url.includes(':5432/') || url.match(/:5432\?/))) {
-    url = url.replace(':5432/', ':6543/').replace(':5432?', ':6543?');
+  const isDirect = url.includes('db.') && url.includes('supabase.co') && !url.includes('pooler');
+  const isPoolerSession = url.includes('pooler.supabase.com') && /:5432(\/|\?|$)/.test(url);
+
+  // 1) Pooler Session → Transaction: استبدال 5432 بـ 6543 (يُجنّب MaxClientsInSessionMode)
+  if (isPoolerSession) {
+    url = url.replace(/\.pooler\.supabase\.com:5432/g, '.pooler.supabase.com:6543');
   }
-  // 2) Direct (db.xxx.supabase.co): إضافة connection_limit لتقليل عدد الاتصالات — الحد الافتراضي منخفض
-  const connLimit = process.env.DATABASE_CONNECTION_LIMIT || '3';
+
+  // 2) connection_limit: Direct يستخدم 1 فقط (حد أدنى). Pooler يستخدم 2.
+  const defaultLimit = isDirect ? '1' : '2';
+  const connLimit = process.env.DATABASE_CONNECTION_LIMIT || defaultLimit;
   if (!url.includes('connection_limit=')) {
     url += (url.includes('?') ? '&' : '?') + `connection_limit=${connLimit}`;
   }
+
   if (!url.includes('sslmode=')) url += (url.includes('?') ? '&' : '?') + 'sslmode=require';
   if (url.includes('pooler') && !url.includes('pgbouncer=')) url += (url.includes('?') ? '&' : '?') + 'pgbouncer=true';
   process.env.DATABASE_URL = url;
+
+  if (isDirect && process.env.NODE_ENV === 'production') {
+    console.warn('⚠ Supabase Direct (db.xxx.supabase.co) محدود جداً. استخدم Pooler Transaction (منفذ 6543) من Project Settings → Database.');
+  }
 }
 
 import { ValidationPipe, Logger } from '@nestjs/common';

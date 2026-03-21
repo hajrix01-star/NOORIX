@@ -43,15 +43,4 @@
 MaxClientsInSessionMode: max clients reached - in Session mode max clients are limited to pool_size
 ```
 
-**السبب:** Supabase Session mode يحدّ عدد الاتصالات المتزامنة حسب pool_size. المشروع يستخدم نسختين من Prisma (PrismaService + TenantPrismaService)، وكل نسخة تفتح عدة اتصالات.
-
-**الحل المدمج (main.ts):**
-- يُضاف تلقائياً `connection_limit=3` لتقليل اتصالات Prisma.
-- إذا كان الرابط يحتوي `pooler.supabase.com:5432` يُستبدل المنفذ بـ 6543 (Transaction mode).
-
-**إذا استمر الخطأ — استخدم رابط Pooler (Transaction mode):**
-1. Supabase Dashboard → Project Settings → Database
-2. انسخ رابط **Connection Pooling** → **Transaction** (منفذ **6543**) — وليس Direct أو Session
-3. ضعه في `DATABASE_URL` على Render/Railway
-
-**اختياري:** أضف `DATABASE_CONNECTION_LIMIT=2` في متغيرات البيئة لمزيد من التقليل.
+**راجع [RENDER_SUPABASE.md](RENDER_SUPABASE.md) للحل التفصيلي.** الملخص: استخدم رابط **Pooler → Transaction** (منفذ 6543) في `DATABASE_URL`.
