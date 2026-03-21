@@ -55,8 +55,8 @@ const inputBase = {
   fontFamily: 'inherit',
 };
 
-/** @param {{ mode: string, companyId: string, onClose: () => void, onRecorded?: (o: { textAr: string, textEn: string }) => void }} props */
-export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
+/** @param {{ mode: string, companyId: string, onClose: () => void, onRecorded?: (o: { textAr: string, textEn: string }) => void, variant?: 'sheet' | 'modal' }} props */
+export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, variant = 'sheet' }) {
   const { t, lang } = useTranslation();
   const qc = useQueryClient();
   const isAr = lang === 'ar';
@@ -337,6 +337,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
     </button>
   );
 
+  const isModal = variant === 'modal';
   return (
     <div
       role="dialog"
@@ -349,10 +350,10 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
         zIndex: 1002,
         background: 'rgba(0,0,0,0.48)',
         display: 'flex',
-        alignItems: 'flex-end',
+        alignItems: isModal ? 'center' : 'flex-end',
         justifyContent: 'center',
-        padding: 0,
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        padding: isModal ? 20 : 0,
+        paddingBottom: isModal ? 20 : 'env(safe-area-inset-bottom)',
       }}
       onClick={onClose}
     >
@@ -361,13 +362,13 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
         style={{
           width: '100%',
           maxWidth: 480,
-          maxHeight: 'min(92vh, 680px)',
+          maxHeight: isModal ? 'min(90vh, 640px)' : 'min(92vh, 680px)',
           margin: '0 auto',
-          borderRadius: '20px 20px 0 0',
+          borderRadius: isModal ? 16 : '20px 20px 0 0',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 -8px 32px rgba(0,0,0,0.15)',
+          boxShadow: isModal ? '0 16px 48px rgba(0,0,0,0.2)' : '0 -8px 32px rgba(0,0,0,0.15)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
