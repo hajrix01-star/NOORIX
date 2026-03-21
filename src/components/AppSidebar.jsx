@@ -5,6 +5,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
+import { prefetchRouteChunk } from '../utils/routePrefetch';
 import {
   IconCrown,
   IconGrid,
@@ -111,7 +112,15 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
           <ul className="app-nav-list">
             {visibleLinks.map((link) => (
               <li key={link.to + (link.end ? '-end' : '')} className="app-nav-item">
-                <NavLink to={link.to} end={link.end} className={navLinkClass} onClick={onClose}>
+                <NavLink
+                  to={link.to}
+                  end={link.end}
+                  className={navLinkClass}
+                  onClick={onClose}
+                  onPointerEnter={() => prefetchRouteChunk(link.to)}
+                  onPointerDown={() => prefetchRouteChunk(link.to)}
+                  onFocus={() => prefetchRouteChunk(link.to)}
+                >
                   <span className="app-nav-link__label">
                     <link.icon />
                     <span>{t(link.labelKey)}</span>
