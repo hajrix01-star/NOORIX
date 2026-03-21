@@ -7,21 +7,22 @@ import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useVaults } from '../../hooks/useVaults';
-import { importFromExcel } from '../../utils/exportUtils';
+import { importExcelRaw } from '../../utils/exportUtils';
 import { parseDate, parseNumber } from '../../utils/importTemplates';
 import { fetchAllSalesSummariesForExport } from '../../services/api';
 import { fmt } from '../../utils/format';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const STORAGE_CATEGORIES = 'noorix_bank_statement_categories';
-const STORAGE_PREFIX = 'noorix_bank_';
 
-const SYSTEM_FIELDS = [
-  { key: 'transactionDate', labelKey: 'bankStatementDate', required: true },
-  { key: 'amount', labelKey: 'bankStatementAmount', required: true },
-  { key: 'description', labelKey: 'bankStatementDescription', required: false },
-  { key: 'balance', labelKey: 'bankStatementBalance', required: false },
-  { key: 'transactionType', labelKey: 'bankStatementType', required: false },
+const COL_TYPES = [
+  { key: 'ignore', labelKey: 'bankStatementColIgnore' },
+  { key: 'date', labelKey: 'bankStatementColDate' },
+  { key: 'debit', labelKey: 'bankStatementColDebit' },
+  { key: 'credit', labelKey: 'bankStatementColCredit' },
+  { key: 'amount', labelKey: 'bankStatementColAmount' },
+  { key: 'description', labelKey: 'bankStatementColDescription' },
+  { key: 'balance', labelKey: 'bankStatementColBalance' },
 ];
 
 function loadCategories() {
@@ -52,10 +53,11 @@ export default function BankStatementAnalysisScreen() {
 
   const [step, setStep] = useState('upload');
   const [file, setFile] = useState(null);
-  const [rawRows, setRawRows] = useState([]);
-  const [headers, setHeaders] = useState([]);
-  const [headerRow, setHeaderRow] = useState(0);
-  const [columnMapping, setColumnMapping] = useState({});
+  const [rawGrid, setRawGrid] = useState([]);
+  const [colCount, setColCount] = useState(0);
+  const [dataStartRow, setDataStartRow] = useState(0);
+  const [dataEndRow, setDataEndRow] = useState(0);
+  const [columnTypes, setColumnTypes] = useState({});
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState(loadCategories);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -63,13 +65,6 @@ export default function BankStatementAnalysisScreen() {
   const [uploadError, setUploadError] = useState('');
 
   const fileInputRef = React.useRef(null);
-
-  const loadExcel = useCallback(async (f, hRow = 0) => {
-    const rows = await importFromExcel(f, { headerRow: hRow });
-    if (!rows?.length) return { rows: [], headers: [] };
-    const hdrs = Object.keys(rows[0] || {});
-    return { rows, headers: hdrs };
-  }, []);
 
   const handleFileSelect = useCallback(async (e) => {
     const f = e?.target?.files?.[0];
@@ -80,81 +75,70 @@ export default function BankStatementAnalysisScreen() {
       return;
     }
     try {
-      const { rows, headers: hdrs } = await loadExcel(f, 0);
-      if (!rows?.length) {
+      const { raw, colCount: cols } = await importExcelRaw(f);
+      if (!raw?.length) {
         setUploadError(lang === 'ar' ? 'الملف فارغ أو بدون صفوف' : 'File is empty or has no rows');
         return;
       }
       setFile(f);
-      setRawRows(rows);
-      setHeaders(hdrs);
-      setHeaderRow(0);
-      setColumnMapping({});
-      setStep('mapping');
+      setRawGrid(raw);
+      setColCount(cols);
+      setDataStartRow(0);
+      setDataEndRow(raw.length - 1);
+      setColumnTypes({});
+      setStep('preview');
     } catch (err) {
       setUploadError(err?.message || (lang === 'ar' ? 'فشل قراءة الملف' : 'Failed to read file'));
     }
-  }, [lang, loadExcel]);
+  }, [lang]);
 
-  const handleHeaderRowChange = useCallback(async (hRow) => {
-    if (!file) return;
-    setHeaderRow(hRow);
-    try {
-      const { rows, headers: hdrs } = await loadExcel(file, Number(hRow));
-      setRawRows(rows);
-      setHeaders(hdrs);
-      setColumnMapping({});
-    } catch (_) {}
-  }, [file, loadExcel]);
+  const applyFromPreview = useCallback(() => {
+    const dateCol = Object.entries(columnTypes).find(([, v]) => v === 'date')?.[0];
+    const debitCol = Object.entries(columnTypes).find(([, v]) => v === 'debit')?.[0];
+    const creditCol = Object.entries(columnTypes).find(([, v]) => v === 'credit')?.[0];
+    const amountCol = Object.entries(columnTypes).find(([, v]) => v === 'amount')?.[0];
+    const descCol = Object.entries(columnTypes).find(([, v]) => v === 'description')?.[0];
+    const balanceCol = Object.entries(columnTypes).find(([, v]) => v === 'balance')?.[0];
 
-  const applyMapping = useCallback(() => {
-    const dateKey = columnMapping.transactionDate;
-    const amountKey = columnMapping.amount;
-    const descKey = columnMapping.description;
-    const balanceKey = columnMapping.balance;
-    const typeKey = columnMapping.transactionType;
+    const hasAmount = debitCol != null || creditCol != null || amountCol != null;
+    if (!dateCol || !hasAmount) return;
 
-    if (!dateKey || !amountKey) {
-      return;
+    const start = Math.max(0, dataStartRow);
+    const end = Math.min(rawGrid.length - 1, dataEndRow);
+
+    const mapped = [];
+    for (let i = start; i <= end; i++) {
+      const row = rawGrid[i] || [];
+      const dateVal = row[Number(dateCol)];
+      const debitVal = debitCol != null ? parseNumber(row[Number(debitCol)]) : null;
+      const creditVal = creditCol != null ? parseNumber(row[Number(creditCol)]) : null;
+      const amountVal = amountCol != null ? parseNumber(row[Number(amountCol)]) : null;
+      const desc = descCol != null ? String(row[Number(descCol)] ?? '').trim() : '';
+      const balanceVal = balanceCol != null ? row[Number(balanceCol)] : null;
+
+      const date = parseDate(dateVal);
+      let amount = null;
+      if (amountVal != null && amountVal !== 0) amount = amountVal;
+      else if (debitVal != null && debitVal > 0) amount = -debitVal;
+      else if (creditVal != null && creditVal > 0) amount = creditVal;
+      else if (debitVal != null && debitVal !== 0) amount = -Math.abs(debitVal);
+      else if (creditVal != null && creditVal !== 0) amount = Math.abs(creditVal);
+
+      if (date && amount != null && amount !== 0) {
+        mapped.push({
+          id: `row-${i}`,
+          transactionDate: date,
+          amount: Number(amount),
+          description: desc,
+          balance: balanceVal != null ? parseNumber(balanceVal) : null,
+          categoryId: null,
+        });
+      }
     }
-
-    const mapped = rawRows
-      .map((row, idx) => {
-        const dateVal = row[dateKey];
-        const amountVal = row[amountKey];
-        const desc = descKey ? String(row[descKey] ?? '').trim() : '';
-        const balanceVal = balanceKey ? row[balanceKey] : null;
-        const typeVal = typeKey ? row[typeKey] : null;
-
-        const date = parseDate(dateVal);
-        let amount = parseNumber(amountVal);
-
-        if (typeVal != null && amount != null) {
-          const s = String(typeVal).toLowerCase();
-          if (s.includes('مدين') || s.includes('debit') || s.includes('سحب')) {
-            amount = -Math.abs(amount);
-          } else if (s.includes('دائن') || s.includes('credit') || s.includes('إيداع')) {
-            amount = Math.abs(amount);
-          }
-        }
-
-        if (date && amount != null) {
-          return {
-            id: `row-${idx}`,
-            transactionDate: date,
-            amount: Number(amount),
-            description: desc,
-            balance: balanceVal != null ? parseNumber(balanceVal) : null,
-            categoryId: null,
-          };
-        }
-        return null;
-      })
-      .filter(Boolean);
 
     setTransactions(mapped);
     setStep('analysis');
-  }, [rawRows, columnMapping]);
+  }, [rawGrid, columnTypes, dataStartRow, dataEndRow]);
 
   const updateTransactionCategory = useCallback((id, categoryId) => {
     setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, categoryId } : t)));
@@ -271,9 +255,9 @@ export default function BankStatementAnalysisScreen() {
   const resetFlow = useCallback(() => {
     setStep('upload');
     setFile(null);
-    setRawRows([]);
-    setHeaders([]);
-    setColumnMapping({});
+    setRawGrid([]);
+    setColCount(0);
+    setColumnTypes({});
     setTransactions([]);
     setUploadError('');
   }, []);
@@ -314,82 +298,91 @@ export default function BankStatementAnalysisScreen() {
         </div>
       )}
 
-      {step === 'mapping' && (
+      {step === 'preview' && (
         <div className="noorix-surface-card" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{t('bankStatementColumnMapping')}</h3>
-          <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13, marginBottom: 12 }}>
-            {t('bankStatementMapFileColumn')} → {t('bankStatementMapSystemColumn')}
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{t('bankStatementFullGrid')}</h3>
+          <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13, marginBottom: 16 }}>
+            {lang === 'ar' ? 'حدد صف بداية ونهاية البيانات (تجاهل اسم الشركة والعنوان)، ثم حدد نوع كل عمود.' : 'Set data start and end rows (skip company name/address), then set each column type.'}
           </p>
-          {headers.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: 'block' }}>{t('bankStatementHeaderRow')}</label>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('bankStatementDataStartRow')}</label>
               <select
-                value={headerRow}
-                onChange={(e) => handleHeaderRowChange(Number(e.target.value))}
-                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', minWidth: 120 }}
+                value={dataStartRow}
+                onChange={(e) => { const v = Number(e.target.value); setDataStartRow(v); if (dataEndRow < v) setDataEndRow(v); }}
+                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', minWidth: 100 }}
               >
-                {[0, 1, 2, 3, 4].map((i) => (
+                {rawGrid.map((_, i) => (
                   <option key={i} value={i}>{lang === 'ar' ? `صف ${i + 1}` : `Row ${i + 1}`}</option>
                 ))}
               </select>
             </div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {SYSTEM_FIELDS.map((sf) => (
-              <div key={sf.key} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <label style={{ minWidth: 140, fontWeight: 600 }}>{t(sf.labelKey)}{sf.required ? ' *' : ''}</label>
-                <select
-                  value={columnMapping[sf.key] ?? ''}
-                  onChange={(e) => setColumnMapping((m) => ({ ...m, [sf.key]: e.target.value || null }))}
-                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', minWidth: 200 }}
-                >
-                  <option value="">{t('bankStatementSkipColumn')}</option>
-                  {headers.map((h) => (
-                    <option key={String(h)} value={h}>
-                      {h || '(فارغ)'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('bankStatementDataEndRow')}</label>
+              <select
+                value={dataEndRow}
+                onChange={(e) => setDataEndRow(Number(e.target.value))}
+                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', minWidth: 100 }}
+              >
+                {rawGrid.slice(dataStartRow).map((_, i) => (
+                  <option key={i} value={dataStartRow + i}>{lang === 'ar' ? `صف ${dataStartRow + i + 1}` : `Row ${dataStartRow + i + 1}`}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          {rawRows.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{t('bankStatementPreview')}</h4>
-              <div style={{ overflowX: 'auto', border: '1px solid var(--noorix-border)', borderRadius: 8, maxHeight: 220 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: 'var(--noorix-table-header-bg)' }}>
-                      {headers.map((h) => (
-                        <th key={String(h)} style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>{h || '—'}</th>
+          <div style={{ overflowX: 'auto', border: '1px solid var(--noorix-border)', borderRadius: 8, maxHeight: 420 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 600 }}>
+              <thead>
+                <tr style={{ background: 'var(--noorix-table-header-bg)', position: 'sticky', top: 0, zIndex: 2 }}>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', minWidth: 44 }}>{t('bankStatementRowNum')}</th>
+                  {Array.from({ length: colCount }, (_, ci) => (
+                    <th key={ci} style={{ padding: '6px 8px', textAlign: 'right', minWidth: 100 }}>
+                      <select
+                        value={columnTypes[ci] ?? 'ignore'}
+                        onChange={(e) => setColumnTypes((prev) => ({ ...prev, [ci]: e.target.value }))}
+                        style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--noorix-border)', fontSize: 11, width: '100%' }}
+                      >
+                        {COL_TYPES.map((ct) => (
+                          <option key={ct.key} value={ct.key}>{t(ct.labelKey)}</option>
+                        ))}
+                      </select>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rawGrid.map((row, ri) => {
+                  const inRange = ri >= dataStartRow && ri <= dataEndRow;
+                  return (
+                    <tr
+                      key={ri}
+                      style={{
+                        borderTop: '1px solid var(--noorix-border)',
+                        background: inRange ? 'rgba(37,99,235,0.04)' : 'transparent',
+                      }}
+                    >
+                      <td style={{ padding: '6px 10px', textAlign: 'center', fontWeight: 600, color: 'var(--noorix-text-muted)' }}>{ri + 1}</td>
+                      {Array.from({ length: colCount }, (_, ci) => (
+                        <td key={ci} style={{ padding: '6px 10px', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {String(row[ci] ?? '').slice(0, 35)}{String(row[ci] ?? '').length > 35 ? '...' : ''}
+                        </td>
                       ))}
                     </tr>
-                  </thead>
-                  <tbody>
-                    {rawRows.slice(0, 10).map((row, i) => (
-                      <tr key={i} style={{ borderTop: '1px solid var(--noorix-border)' }}>
-                        {headers.map((h) => (
-                          <td key={String(h)} style={{ padding: '6px 10px', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {String(row[h] ?? '').slice(0, 30)}{String(row[h] ?? '').length > 30 ? '...' : ''}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 6 }}>{rawRows.length} {lang === 'ar' ? 'صف' : 'rows'} {lang === 'ar' ? 'إجمالاً' : 'total'}</p>
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 8 }}>{rawGrid.length} {lang === 'ar' ? 'صف' : 'rows'} × {colCount} {lang === 'ar' ? 'عمود' : 'cols'}. {lang === 'ar' ? 'الصفوف المظللة = نطاق البيانات' : 'Highlighted rows = data range'}</p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button type="button" className="noorix-btn-nav" onClick={() => setStep('upload')} style={{ padding: '10px 18px' }}>
               {t('cancel')}
             </button>
             <button
               type="button"
               className="noorix-btn-nav"
-              onClick={applyMapping}
-              disabled={!columnMapping.transactionDate || !columnMapping.amount}
+              onClick={applyFromPreview}
+              disabled={!Object.values(columnTypes).includes('date') || (!Object.values(columnTypes).includes('debit') && !Object.values(columnTypes).includes('credit') && !Object.values(columnTypes).includes('amount'))}
               style={{ padding: '10px 18px', background: 'var(--noorix-accent-blue)', color: '#fff' }}
             >
               {t('bankStatementConfirmMapping')}
@@ -404,8 +397,8 @@ export default function BankStatementAnalysisScreen() {
             <button type="button" className="noorix-btn-nav" onClick={resetFlow} style={{ fontSize: 13 }}>
               {t('bankStatementUploadExcel')} ←
             </button>
-            <button type="button" className="noorix-btn-nav" onClick={() => setStep('mapping')} style={{ fontSize: 13 }}>
-              {t('bankStatementColumnMapping')} ←
+            <button type="button" className="noorix-btn-nav" onClick={() => setStep('preview')} style={{ fontSize: 13 }}>
+              {t('bankStatementFullGrid')} ←
             </button>
             <button type="button" className="noorix-btn-nav" onClick={() => setShowCategoryModal(true)}>
               {t('bankStatementManageCategories')}

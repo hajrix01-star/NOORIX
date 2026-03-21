@@ -67,6 +67,27 @@ export async function importFromExcel(file, opts = {}) {
   return rows;
 }
 
+/**
+ * importExcelRaw — قراءة Excel كصفوف خام (مصفوفة مصفوفات) بدون افتراض عناوين
+ * @param {File} file
+ * @returns {Promise<{ raw: any[][], colCount: number }>}
+ */
+export async function importExcelRaw(file) {
+  const XLSX = await import('xlsx');
+  const data = await file.arrayBuffer();
+  const wb = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  const rows = raw.map((r) => (Array.isArray(r) ? r : []));
+  const colCount = rows.length ? Math.max(...rows.map((r) => r.length)) : 0;
+  const normalized = rows.map((r) => {
+    const arr = [...r];
+    while (arr.length < colCount) arr.push('');
+    return arr;
+  });
+  return { raw: normalized, colCount };
+}
+
 export async function exportTableToPdf({ columns, data, title = '', filename = 'export.pdf' }) {
   const { jsPDF } = await import('jspdf');
   const autoTable = (await import('jspdf-autotable')).default;
