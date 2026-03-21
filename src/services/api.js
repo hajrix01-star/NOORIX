@@ -266,6 +266,20 @@ export async function analyzeBankStatementStructure(raw) {
   return apiPost('/api/v1/chat/bank-statement-analyze', { raw });
 }
 
+/** قوالب تحليل كشف الحساب (لكل بنك) */
+export async function getBankStatementTemplates(companyId) {
+  const res = await apiGet('/api/v1/reports/bank-statement-templates', { companyId });
+  return res.success ? { success: true, data: res.data ?? [] } : res;
+}
+
+export async function createBankStatementTemplate(body) {
+  return apiPost('/api/v1/reports/bank-statement-templates', body);
+}
+
+export async function deleteBankStatementTemplate(id, companyId) {
+  return apiDelete(`/api/v1/reports/bank-statement-templates/${id}?companyId=${companyId}`);
+}
+
 // ——— موارد ———
 
 export async function getCompanies(includeArchived = false) {

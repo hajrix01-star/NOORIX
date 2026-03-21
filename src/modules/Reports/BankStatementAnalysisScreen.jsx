@@ -1,17 +1,41 @@
 /**
- * BankStatementAnalysisScreen — تحليل كشف الحسابات
- * رفع Excel، ربط الأعمدة، تصنيف الحركات، رسوم بيانية، مقارنة مع مبيعات قنوات البنك
+ * BankStatementAnalysisScreen — التقارير التحليلية الشهرية
+ *
+ * التصميم الاحترافي:
+ * - رفع كشف شهري لكل بنك
+ * - حفظ القالب عند أول تحليل ناجح — تحاليل لاحقة تلقائية
+ * - اقتراح ذكي (Gemini) مع عرض أخطاء واضح
+ * - رسوم بيانية ومقارنة مع مبيعات قنوات البنك
  */
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useVaults } from '../../hooks/useVaults';
 import { importExcelRaw } from '../../utils/exportUtils';
 import { parseDate, parseNumber } from '../../utils/importTemplates';
-import { fetchAllSalesSummariesForExport, analyzeBankStatementStructure, getHealth } from '../../services/api';
+import {
+  fetchAllSalesSummariesForExport,
+  analyzeBankStatementStructure,
+  getHealth,
+  getBankStatementTemplates,
+  createBankStatementTemplate,
+  deleteBankStatementTemplate,
+} from '../../services/api';
 import { fmt } from '../../utils/format';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
 
 const STORAGE_CATEGORIES = 'noorix_bank_statement_categories';
 
@@ -46,12 +70,31 @@ function saveCategories(cats) {
   } catch (_) {}
 }
 
+function getMonthsForYear(year) {
+  return Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1;
+    return {
+      value: `${year}-${String(m).padStart(2, '0')}`,
+      labelAr: new Date(year, i, 1).toLocaleDateString('ar-SA', { month: 'long' }),
+      labelEn: new Date(year, i, 1).toLocaleDateString('en-US', { month: 'long' }),
+    };
+  });
+}
+
 export default function BankStatementAnalysisScreen() {
   const { activeCompanyId } = useApp();
   const { t, lang } = useTranslation();
   const { salesChannels } = useVaults({ companyId: activeCompanyId });
+  const queryClient = useQueryClient();
 
-  const [step, setStep] = useState('upload');
+  const currentYear = new Date().getFullYear();
+  const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+  const defaultMonth = `${currentYear}-${currentMonth}`;
+
+  const [step, setStep] = useState('setup');
+  const [reportMonth, setReportMonth] = useState(defaultMonth);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [bankNameForNew, setBankNameForNew] = useState('');
   const [file, setFile] = useState(null);
   const [rawGrid, setRawGrid] = useState([]);
   const [colCount, setColCount] = useState(0);
@@ -61,10 +104,13 @@ export default function BankStatementAnalysisScreen() {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState(loadCategories);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [uploadError, setUploadError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiMessage, setAiMessage] = useState('');
+  const [aiError, setAiError] = useState('');
+  const [saveTemplateName, setSaveTemplateName] = useState('');
+  const [saveTemplateSuccess, setSaveTemplateSuccess] = useState(false);
 
   const fileInputRef = React.useRef(null);
 
@@ -77,37 +123,72 @@ export default function BankStatementAnalysisScreen() {
   });
   const geminiAvailable = !!healthData?.geminiAvailable;
 
-  const handleFileSelect = useCallback(async (e) => {
-    const f = e?.target?.files?.[0];
-    if (!f) return;
-    setUploadError('');
-    if (!/\.(xlsx|xls)$/i.test(f.name)) {
-      setUploadError(lang === 'ar' ? 'يرجى رفع ملف Excel (.xlsx أو .xls)' : 'Please upload an Excel file (.xlsx or .xls)');
-      return;
-    }
-    try {
-      const { raw, colCount: cols } = await importExcelRaw(f);
-      if (!raw?.length) {
-        setUploadError(lang === 'ar' ? 'الملف فارغ أو بدون صفوف' : 'File is empty or has no rows');
+  const { data: templatesData } = useQuery({
+    queryKey: ['bank-statement-templates', activeCompanyId],
+    queryFn: () => getBankStatementTemplates(activeCompanyId),
+    enabled: !!activeCompanyId,
+  });
+  const templates = templatesData?.data ?? [];
+
+  const createTemplateMutation = useMutation({
+    mutationFn: (body) => createBankStatementTemplate(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bank-statement-templates', activeCompanyId] });
+      setSaveTemplateSuccess(true);
+      setTimeout(() => setSaveTemplateSuccess(false), 3000);
+    },
+  });
+
+  const selectedTemplate = templates.find((tp) => tp.id === selectedTemplateId);
+
+  const handleFileSelect = useCallback(
+    async (e) => {
+      const f = e?.target?.files?.[0];
+      if (!f) return;
+      setUploadError('');
+      setAiError('');
+      if (!/\.(xlsx|xls)$/i.test(f.name)) {
+        setUploadError(
+          lang === 'ar' ? 'يرجى رفع ملف Excel (.xlsx أو .xls)' : 'Please upload an Excel file (.xlsx or .xls)',
+        );
         return;
       }
-      setFile(f);
-      setRawGrid(raw);
-      setColCount(cols);
-      setDataStartRow(0);
-      setDataEndRow(raw.length - 1);
-      setColumnTypes({});
-      setAiMessage('');
-      setStep('preview');
-    } catch (err) {
-      setUploadError(err?.message || (lang === 'ar' ? 'فشل قراءة الملف' : 'Failed to read file'));
-    }
-  }, [lang]);
+      try {
+        const { raw, colCount: cols } = await importExcelRaw(f);
+        if (!raw?.length) {
+          setUploadError(lang === 'ar' ? 'الملف فارغ أو بدون صفوف' : 'File is empty or has no rows');
+          return;
+        }
+        setFile(f);
+        setRawGrid(raw);
+        setColCount(cols);
+        setDataEndRow(raw.length - 1);
+
+        if (selectedTemplate && selectedTemplate.colCount === cols) {
+          setDataStartRow(selectedTemplate.dataStartRow);
+          setDataEndRow(selectedTemplate.dataEndRow);
+          const types = {};
+          Object.entries(selectedTemplate.columnTypes || {}).forEach(([k, v]) => {
+            types[Number(k)] = String(v || 'ignore');
+          });
+          setColumnTypes(types);
+        } else {
+          setDataStartRow(0);
+          setDataEndRow(raw.length - 1);
+          setColumnTypes({});
+        }
+        setStep('preview');
+      } catch (err) {
+        setUploadError(err?.message || (lang === 'ar' ? 'فشل قراءة الملف' : 'Failed to read file'));
+      }
+    },
+    [lang, selectedTemplate],
+  );
 
   const handleAISuggest = useCallback(async () => {
-    if (!geminiAvailable || !rawGrid?.length) return;
+    if (!rawGrid?.length) return;
     setAiLoading(true);
-    setAiMessage('');
+    setAiError('');
     try {
       const rawForApi = rawGrid.map((row) =>
         Array.from({ length: colCount }, (_, i) => String(row[i] ?? '')),
@@ -122,16 +203,15 @@ export default function BankStatementAnalysisScreen() {
           types[Number(k)] = String(v || 'ignore');
         });
         setColumnTypes(types);
-        setAiMessage('success');
       } else {
-        setAiMessage('error');
+        setAiError(res?.error || (lang === 'ar' ? 'لم يتمكن الذكاء من التحليل' : 'AI could not analyze'));
       }
-    } catch {
-      setAiMessage('error');
+    } catch (err) {
+      setAiError(err?.message || (lang === 'ar' ? 'خطأ في الاتصال' : 'Connection error'));
     } finally {
       setAiLoading(false);
     }
-  }, [rawGrid, colCount, geminiAvailable]);
+  }, [rawGrid, colCount, lang]);
 
   const applyFromPreview = useCallback(() => {
     const dateCol = Object.entries(columnTypes).find(([, v]) => v === 'date')?.[0];
@@ -178,8 +258,24 @@ export default function BankStatementAnalysisScreen() {
     }
 
     setTransactions(mapped);
+    setSaveTemplateName(
+      selectedTemplate?.bankName || bankNameForNew || (lang === 'ar' ? 'بنك غير محدد' : 'Unnamed bank'),
+    );
     setStep('analysis');
-  }, [rawGrid, columnTypes, dataStartRow, dataEndRow]);
+  }, [rawGrid, columnTypes, dataStartRow, dataEndRow, selectedTemplate, bankNameForNew, lang]);
+
+  const handleSaveTemplate = useCallback(() => {
+    const name = (saveTemplateName || '').trim();
+    if (!name || !activeCompanyId) return;
+    createTemplateMutation.mutate({
+      companyId: activeCompanyId,
+      bankName: name,
+      columnTypes,
+      dataStartRow,
+      dataEndRow,
+      colCount,
+    });
+  }, [saveTemplateName, activeCompanyId, columnTypes, dataStartRow, dataEndRow, colCount, createTemplateMutation]);
 
   const updateTransactionCategory = useCallback((id, categoryId) => {
     setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, categoryId } : t)));
@@ -189,7 +285,9 @@ export default function BankStatementAnalysisScreen() {
     const name = (newCategoryName || '').trim();
     if (!name) return;
     const id = `cat-${Date.now()}`;
-    const color = ['#6366f1', '#22c55e', '#f97316', '#0ea5e9', '#e11d48', '#8b5cf6'][categories.length % 6];
+    const color = ['#6366f1', '#22c55e', '#f97316', '#0ea5e9', '#e11d48', '#8b5cf6'][
+      categories.length % 6
+    ];
     const cat = { id, nameAr: name, nameEn: name, color };
     setCategories((prev) => {
       const next = [...prev, cat];
@@ -207,7 +305,8 @@ export default function BankStatementAnalysisScreen() {
     });
   }, []);
 
-  const categoryName = (cat, lng) => (lng === 'en' ? cat?.nameEn || cat?.nameAr : cat?.nameAr || cat?.nameEn) || '—';
+  const categoryName = (cat, lng) =>
+    (lng === 'en' ? cat?.nameEn || cat?.nameAr : cat?.nameAr || cat?.nameEn) || '—';
 
   const byCategory = useMemo(() => {
     const map = {};
@@ -219,8 +318,17 @@ export default function BankStatementAnalysisScreen() {
     });
     return Object.values(map).map((x) => ({
       ...x,
-      name: x.categoryId === '__uncategorized' ? t('uncategorized') : categoryName(categories.find((c) => c.id === x.categoryId), lang),
-      fill: x.categoryId === '__uncategorized' ? '#94a3b8' : categories.find((c) => c.id === x.categoryId)?.color || '#94a3b8',
+      name:
+        x.categoryId === '__uncategorized'
+          ? t('uncategorized')
+          : categoryName(
+              categories.find((c) => c.id === x.categoryId),
+              lang,
+            ),
+      fill:
+        x.categoryId === '__uncategorized'
+          ? '#94a3b8'
+          : categories.find((c) => c.id === x.categoryId)?.color || '#94a3b8',
     }));
   }, [transactions, categories, lang, t]);
 
@@ -247,10 +355,14 @@ export default function BankStatementAnalysisScreen() {
     queryKey: ['bank-statement-compare', activeCompanyId, dateRange?.start, dateRange?.end],
     queryFn: async () => {
       if (!activeCompanyId || !dateRange) return [];
-      const items = await fetchAllSalesSummariesForExport(activeCompanyId, dateRange.start, dateRange.end);
+      const items = await fetchAllSalesSummariesForExport(
+        activeCompanyId,
+        dateRange.start,
+        dateRange.end,
+      );
       return Array.isArray(items) ? items : [];
     },
-    enabled: !!activeCompanyId && !!dateRange && dateRange.start && dateRange.end,
+    enabled: !!activeCompanyId && !!dateRange && !!dateRange.start && !!dateRange.end,
   });
 
   const bankSalesChannels = useMemo(
@@ -290,27 +402,124 @@ export default function BankStatementAnalysisScreen() {
       if (!map[dt]) map[dt] = { date: dt, statementDeposits: 0, recordedSales: 0 };
       map[dt].recordedSales = amt;
     });
-    return Object.values(map).sort((a, b) => a.date.localeCompare(b.date)).slice(-31);
+    return Object.values(map)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-31);
   }, [transactions, salesByDate]);
 
   const resetFlow = useCallback(() => {
-    setStep('upload');
+    setStep('setup');
     setFile(null);
     setRawGrid([]);
     setColCount(0);
     setColumnTypes({});
     setTransactions([]);
     setUploadError('');
+    setAiError('');
   }, []);
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div>
-        <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t('reportBankStatementAnalysis')}</h2>
-        <p style={{ marginTop: 6, color: 'var(--noorix-text-muted)' }}>{t('bankUploadDesc')}</p>
-      </div>
+  const months = useMemo(() => getMonthsForYear(parseInt(reportMonth?.slice(0, 4) || currentYear, 10)), [
+    reportMonth,
+    currentYear,
+  ]);
 
-      {step === 'upload' && (
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <header>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{t('bankStatementMonthlyTitle')}</h2>
+        <p style={{ marginTop: 8, color: 'var(--noorix-text-muted)', fontSize: 14, lineHeight: 1.5 }}>
+          {t('bankStatementMonthlyDesc')}
+        </p>
+      </header>
+
+      {step === 'setup' && (
+        <div
+          className="noorix-surface-card"
+          style={{
+            padding: 28,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 24,
+          }}
+        >
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>
+              {t('bankStatementReportMonth')}
+            </label>
+            <select
+              value={reportMonth}
+              onChange={(e) => setReportMonth(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 10,
+                border: '1px solid var(--noorix-border)',
+                fontSize: 14,
+              }}
+            >
+              {months.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {lang === 'ar' ? m.labelAr : m.labelEn} {m.value.slice(0, 4)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>
+              {t('bankStatementSelectBank')}
+            </label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <select
+                value={selectedTemplateId}
+                onChange={(e) => setSelectedTemplateId(e.target.value)}
+                style={{
+                  flex: 1,
+                  minWidth: 160,
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: '1px solid var(--noorix-border)',
+                  fontSize: 14,
+                }}
+              >
+                <option value="">{t('bankStatementNewBank')}</option>
+                {templates.map((tp) => (
+                  <option key={tp.id} value={tp.id}>
+                    {tp.bankName}
+                  </option>
+                ))}
+              </select>
+              {templates.length > 0 && (
+                <button
+                  type="button"
+                  className="noorix-btn-nav"
+                  onClick={() => setShowTemplatesModal(true)}
+                  style={{ padding: '10px 14px', fontSize: 13 }}
+                >
+                  {t('bankStatementManageTemplates')}
+                </button>
+              )}
+            </div>
+            {selectedTemplateId === '' && (
+              <input
+                type="text"
+                value={bankNameForNew}
+                onChange={(e) => setBankNameForNew(e.target.value)}
+                placeholder={lang === 'ar' ? 'اسم البنك (مثل: الأهلي - الرئيسي)' : 'Bank name (e.g. Al Ahli - Main)'}
+                style={{
+                  marginTop: 10,
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: '1px solid var(--noorix-border)',
+                  fontSize: 14,
+                }}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {step === 'setup' && (
         <div
           className="noorix-surface-card"
           style={{
@@ -322,8 +531,13 @@ export default function BankStatementAnalysisScreen() {
             transition: 'border-color 200ms, background 200ms',
           }}
           onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--noorix-accent-blue)'; }}
-          onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--noorix-border)'; }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.currentTarget.style.borderColor = 'var(--noorix-accent-blue)';
+          }}
+          onDragLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--noorix-border)';
+          }}
           onDrop={(e) => {
             e.preventDefault();
             e.currentTarget.style.borderColor = 'var(--noorix-border)';
@@ -331,11 +545,21 @@ export default function BankStatementAnalysisScreen() {
             if (f) handleFileSelect({ target: { files: [f] } });
           }}
         >
-          <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileSelect} style={{ display: 'none' }} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
           <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
-          <p style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{t('bankStatementUploadExcel')}</p>
+          <p style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>
+            {reportMonth} — {t('bankStatementUploadExcel')}
+          </p>
           <p style={{ marginTop: 8, color: 'var(--noorix-text-muted)' }}>{t('bankStatementDragDrop')}</p>
-          {uploadError && <p style={{ marginTop: 12, color: 'var(--noorix-accent-red)' }}>{uploadError}</p>}
+          {uploadError && (
+            <p style={{ marginTop: 12, color: 'var(--noorix-accent-red)', fontSize: 14 }}>{uploadError}</p>
+          )}
         </div>
       )}
 
@@ -343,30 +567,66 @@ export default function BankStatementAnalysisScreen() {
         <div className="noorix-surface-card" style={{ padding: 24 }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{t('bankStatementFullGrid')}</h3>
           <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13, marginBottom: 16 }}>
-            {lang === 'ar' ? 'حدد صف بداية ونهاية البيانات (تجاهل اسم الشركة والعنوان)، ثم حدد نوع كل عمود.' : 'Set data start and end rows (skip company name/address), then set each column type.'}
+            {lang === 'ar'
+              ? 'حدد صف بداية ونهاية البيانات (تجاهل اسم الشركة والعنوان)، ثم حدد نوع كل عمود.'
+              : 'Set data start and end rows (skip company name/address), then set each column type.'}
           </p>
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 16, alignItems: 'flex-end' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 24,
+              flexWrap: 'wrap',
+              marginBottom: 16,
+              alignItems: 'flex-end',
+            }}
+          >
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('bankStatementDataStartRow')}</label>
+              <label
+                style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}
+              >
+                {t('bankStatementDataStartRow')}
+              </label>
               <select
                 value={dataStartRow}
-                onChange={(e) => { const v = Number(e.target.value); setDataStartRow(v); if (dataEndRow < v) setDataEndRow(v); }}
-                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', minWidth: 100 }}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setDataStartRow(v);
+                  if (dataEndRow < v) setDataEndRow(v);
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: '1px solid var(--noorix-border)',
+                  minWidth: 100,
+                }}
               >
                 {rawGrid.map((_, i) => (
-                  <option key={i} value={i}>{lang === 'ar' ? `صف ${i + 1}` : `Row ${i + 1}`}</option>
+                  <option key={i} value={i}>
+                    {lang === 'ar' ? `صف ${i + 1}` : `Row ${i + 1}`}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('bankStatementDataEndRow')}</label>
+              <label
+                style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}
+              >
+                {t('bankStatementDataEndRow')}
+              </label>
               <select
                 value={dataEndRow}
                 onChange={(e) => setDataEndRow(Number(e.target.value))}
-                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', minWidth: 100 }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: '1px solid var(--noorix-border)',
+                  minWidth: 100,
+                }}
               >
                 {rawGrid.slice(dataStartRow).map((_, i) => (
-                  <option key={i} value={dataStartRow + i}>{lang === 'ar' ? `صف ${dataStartRow + i + 1}` : `Row ${dataStartRow + i + 1}`}</option>
+                  <option key={i} value={dataStartRow + i}>
+                    {lang === 'ar' ? `صف ${dataStartRow + i + 1}` : `Row ${dataStartRow + i + 1}`}
+                  </option>
                 ))}
               </select>
             </div>
@@ -378,7 +638,7 @@ export default function BankStatementAnalysisScreen() {
                   onClick={handleAISuggest}
                   disabled={aiLoading || !rawGrid?.length}
                   style={{
-                    padding: '10px 16px',
+                    padding: '10px 18px',
                     background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                     color: '#fff',
                     fontWeight: 600,
@@ -386,28 +646,70 @@ export default function BankStatementAnalysisScreen() {
                 >
                   {aiLoading ? t('bankStatementAIApplying') : t('bankStatementAISuggest')}
                 </button>
-                {aiMessage === 'success' && <span style={{ marginInlineStart: 8, fontSize: 12, color: '#16a34a' }}>✓</span>}
-                {aiMessage === 'error' && <span style={{ marginInlineStart: 8, fontSize: 12, color: '#dc2626' }}>{t('bankStatementAIError')}</span>}
+                {aiError && (
+                  <p
+                    style={{
+                      marginTop: 8,
+                      fontSize: 12,
+                      color: '#dc2626',
+                      maxWidth: 280,
+                    }}
+                  >
+                    {aiError}
+                  </p>
+                )}
               </div>
             )}
             {!geminiAvailable && (
               <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementAINoKey')}</div>
             )}
           </div>
-          <div style={{ overflowX: 'auto', border: '1px solid var(--noorix-border)', borderRadius: 8, maxHeight: 420 }}>
+          <div
+            style={{
+              overflowX: 'auto',
+              border: '1px solid var(--noorix-border)',
+              borderRadius: 8,
+              maxHeight: 420,
+            }}
+          >
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 600 }}>
               <thead>
-                <tr style={{ background: 'var(--noorix-table-header-bg)', position: 'sticky', top: 0, zIndex: 2 }}>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', minWidth: 44 }}>{t('bankStatementRowNum')}</th>
+                <tr
+                  style={{
+                    background: 'var(--noorix-table-header-bg)',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 2,
+                  }}
+                >
+                  <th
+                    style={{
+                      padding: '8px 10px',
+                      textAlign: 'center',
+                      minWidth: 44,
+                    }}
+                  >
+                    {t('bankStatementRowNum')}
+                  </th>
                   {Array.from({ length: colCount }, (_, ci) => (
                     <th key={ci} style={{ padding: '6px 8px', textAlign: 'right', minWidth: 100 }}>
                       <select
                         value={columnTypes[ci] ?? 'ignore'}
-                        onChange={(e) => setColumnTypes((prev) => ({ ...prev, [ci]: e.target.value }))}
-                        style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--noorix-border)', fontSize: 11, width: '100%' }}
+                        onChange={(e) =>
+                          setColumnTypes((prev) => ({ ...prev, [ci]: e.target.value }))
+                        }
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: 6,
+                          border: '1px solid var(--noorix-border)',
+                          fontSize: 11,
+                          width: '100%',
+                        }}
                       >
                         {COL_TYPES.map((ct) => (
-                          <option key={ct.key} value={ct.key}>{t(ct.labelKey)}</option>
+                          <option key={ct.key} value={ct.key}>
+                            {t(ct.labelKey)}
+                          </option>
                         ))}
                       </select>
                     </th>
@@ -425,10 +727,28 @@ export default function BankStatementAnalysisScreen() {
                         background: inRange ? 'rgba(37,99,235,0.04)' : 'transparent',
                       }}
                     >
-                      <td style={{ padding: '6px 10px', textAlign: 'center', fontWeight: 600, color: 'var(--noorix-text-muted)' }}>{ri + 1}</td>
+                      <td
+                        style={{
+                          padding: '6px 10px',
+                          textAlign: 'center',
+                          fontWeight: 600,
+                          color: 'var(--noorix-text-muted)',
+                        }}
+                      >
+                        {ri + 1}
+                      </td>
                       {Array.from({ length: colCount }, (_, ci) => (
-                        <td key={ci} style={{ padding: '6px 10px', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {String(row[ci] ?? '').slice(0, 35)}{String(row[ci] ?? '').length > 35 ? '...' : ''}
+                        <td
+                          key={ci}
+                          style={{
+                            padding: '6px 10px',
+                            maxWidth: 180,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {String(row[ci] ?? '').slice(0, 35)}
+                          {String(row[ci] ?? '').length > 35 ? '...' : ''}
                         </td>
                       ))}
                     </tr>
@@ -437,16 +757,36 @@ export default function BankStatementAnalysisScreen() {
               </tbody>
             </table>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 8 }}>{rawGrid.length} {lang === 'ar' ? 'صف' : 'rows'} × {colCount} {lang === 'ar' ? 'عمود' : 'cols'}. {lang === 'ar' ? 'الصفوف المظللة = نطاق البيانات' : 'Highlighted rows = data range'}</p>
+          <p
+            style={{
+              fontSize: 12,
+              color: 'var(--noorix-text-muted)',
+              marginTop: 8,
+            }}
+          >
+            {rawGrid.length} {lang === 'ar' ? 'صف' : 'rows'} × {colCount}{' '}
+            {lang === 'ar' ? 'عمود' : 'cols'}.
+            {lang === 'ar' ? ' الصفوف المظللة = نطاق البيانات' : ' Highlighted rows = data range'}
+          </p>
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-            <button type="button" className="noorix-btn-nav" onClick={() => setStep('upload')} style={{ padding: '10px 18px' }}>
+            <button
+              type="button"
+              className="noorix-btn-nav"
+              onClick={() => setStep('setup')}
+              style={{ padding: '10px 18px' }}
+            >
               {t('cancel')}
             </button>
             <button
               type="button"
               className="noorix-btn-nav"
               onClick={applyFromPreview}
-              disabled={!Object.values(columnTypes).includes('date') || (!Object.values(columnTypes).includes('debit') && !Object.values(columnTypes).includes('credit') && !Object.values(columnTypes).includes('amount'))}
+              disabled={
+                !Object.values(columnTypes).includes('date') ||
+                (!Object.values(columnTypes).includes('debit') &&
+                  !Object.values(columnTypes).includes('credit') &&
+                  !Object.values(columnTypes).includes('amount'))
+              }
               style={{ padding: '10px 18px', background: 'var(--noorix-accent-blue)', color: '#fff' }}
             >
               {t('bankStatementConfirmMapping')}
@@ -458,27 +798,115 @@ export default function BankStatementAnalysisScreen() {
       {step === 'analysis' && (
         <>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button type="button" className="noorix-btn-nav" onClick={resetFlow} style={{ fontSize: 13 }}>
+            <button
+              type="button"
+              className="noorix-btn-nav"
+              onClick={resetFlow}
+              style={{ fontSize: 13 }}
+            >
               {t('bankStatementUploadExcel')} ←
             </button>
-            <button type="button" className="noorix-btn-nav" onClick={() => setStep('preview')} style={{ fontSize: 13 }}>
+            <button
+              type="button"
+              className="noorix-btn-nav"
+              onClick={() => setStep('preview')}
+              style={{ fontSize: 13 }}
+            >
               {t('bankStatementFullGrid')} ←
             </button>
-            <button type="button" className="noorix-btn-nav" onClick={() => setShowCategoryModal(true)}>
+            <button
+              type="button"
+              className="noorix-btn-nav"
+              onClick={() => setShowCategoryModal(true)}
+            >
               {t('bankStatementManageCategories')}
             </button>
             {transactions.length > 0 && (
-              <span style={{ fontSize: 13, color: 'var(--noorix-accent-green)', fontWeight: 600 }}>
+              <span
+                style={{
+                  fontSize: 13,
+                  color: 'var(--noorix-accent-green)',
+                  fontWeight: 600,
+                }}
+              >
                 {t('bankStatementParsedCount', transactions.length)}
               </span>
             )}
           </div>
 
+          {!selectedTemplate && (
+            <div
+              className="noorix-surface-card"
+              style={{
+                padding: 20,
+                background: 'rgba(99,102,241,0.06)',
+                border: '1px solid rgba(99,102,241,0.25)',
+                borderRadius: 12,
+              }}
+            >
+              <h4 style={{ marginBottom: 12, fontSize: 14 }}>{t('bankStatementSaveTemplate')}</h4>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  value={saveTemplateName}
+                  onChange={(e) => setSaveTemplateName(e.target.value)}
+                  placeholder={lang === 'ar' ? 'اسم البنك (مثل: الأهلي - الرئيسي)' : 'Bank name (e.g. Al Ahli - Main)'}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    border: '1px solid var(--noorix-border)',
+                    flex: 1,
+                    minWidth: 200,
+                  }}
+                />
+                <button
+                  type="button"
+                  className="noorix-btn-nav"
+                  onClick={handleSaveTemplate}
+                  disabled={
+                    !(saveTemplateName || '').trim() || createTemplateMutation.isPending
+                  }
+                  style={{
+                    padding: '10px 18px',
+                    background: 'var(--noorix-accent-blue)',
+                    color: '#fff',
+                  }}
+                >
+                  {createTemplateMutation.isPending
+                    ? (lang === 'ar' ? 'جاري الحفظ...' : 'Saving...')
+                    : t('bankStatementSaveTemplate')}
+                </button>
+                {saveTemplateSuccess && (
+                  <span style={{ fontSize: 13, color: '#16a34a', fontWeight: 600 }}>
+                    ✓ {t('bankStatementTemplateSaved')}
+                  </span>
+                )}
+              </div>
+              <p style={{ marginTop: 10, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                {lang === 'ar'
+                  ? 'سيُطبَّق القالب تلقائياً عند رفع كشف الشهر القادم من نفس البنك.'
+                  : 'Template will be auto-applied when uploading next month\'s statement from the same bank.'}
+              </p>
+            </div>
+          )}
+
           {transactions.length === 0 && (
-            <div className="noorix-surface-card" style={{ padding: 24, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#dc2626', margin: 0 }}>{t('bankStatementParseWarning')}</p>
+            <div
+              className="noorix-surface-card"
+              style={{
+                padding: 24,
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: 12,
+              }}
+            >
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#dc2626', margin: 0 }}>
+                {t('bankStatementParseWarning')}
+              </p>
               <p style={{ marginTop: 8, color: 'var(--noorix-text-muted)' }}>
-                {lang === 'ar' ? 'غيّر صف العناوين أو ربط الأعمدة ثم أعد المحاولة.' : 'Change header row or column mapping and try again.'}
+                {lang === 'ar'
+                  ? 'غيّر صف العناوين أو ربط الأعمدة ثم أعد المحاولة.'
+                  : 'Change header row or column mapping and try again.'}
               </p>
             </div>
           )}
@@ -492,7 +920,12 @@ export default function BankStatementAnalysisScreen() {
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder={t('bankStatementCategoryName')}
-                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', flex: 1 }}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: '1px solid var(--noorix-border)',
+                    flex: 1,
+                  }}
                 />
                 <button type="button" className="noorix-btn-nav" onClick={addCategory}>
                   {t('bankStatementAddCategory')}
@@ -513,95 +946,235 @@ export default function BankStatementAnalysisScreen() {
                     }}
                   >
                     <span>{categoryName(c, lang)}</span>
-                    <button type="button" onClick={() => removeCategory(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>×</button>
+                    <button
+                      type="button"
+                      onClick={() => removeCategory(c.id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: 14,
+                      }}
+                    >
+                      ×
+                    </button>
                   </span>
                 ))}
               </div>
-              <button type="button" className="noorix-btn-nav" style={{ marginTop: 16 }} onClick={() => setShowCategoryModal(false)}>
+              <button
+                type="button"
+                className="noorix-btn-nav"
+                style={{ marginTop: 16 }}
+                onClick={() => setShowCategoryModal(false)}
+              >
                 {t('close')}
               </button>
             </div>
           )}
 
-          {transactions.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-            <div className="noorix-surface-card" style={{ padding: 20, minHeight: 280 }}>
-              <h4 style={{ marginBottom: 16 }}>{t('bankStatementByCategory')}</h4>
-              {byCategory.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={byCategory} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={70}>
-                      {byCategory.map((e, i) => (
-                        <Cell key={i} fill={e.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v) => fmt(v, 2) + ' ﷼'} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <p style={{ color: 'var(--noorix-text-muted)' }}>{t('uncategorized')}</p>
-              )}
-            </div>
-            {comparisonData.length > 0 && bankSalesChannels.length > 0 && (
-              <div className="noorix-surface-card" style={{ padding: 20, minHeight: 280 }}>
-                <h4 style={{ marginBottom: 16 }}>{t('bankStatementCompareWithSales')}</h4>
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={comparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => fmt(v, 0)} />
-                    <Tooltip formatter={(v) => fmt(v, 2) + ' ﷼'} />
-                    <Legend />
-                    <Bar dataKey="statementDeposits" name={t('bankStatementBankCredits')} fill="#2563eb" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="recordedSales" name={t('bankStatementSalesRecorded')} fill="#16a34a" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
+          {showTemplatesModal && (
+            <TemplatesModal
+              templates={templates}
+              onClose={() => setShowTemplatesModal(false)}
+              onDelete={(id) => {
+                deleteBankStatementTemplate(id, activeCompanyId).then(() => {
+                  queryClient.invalidateQueries({ queryKey: ['bank-statement-templates', activeCompanyId] });
+                });
+              }}
+              t={t}
+              lang={lang}
+            />
           )}
 
           {transactions.length > 0 && (
-          <div className="noorix-surface-card" style={{ padding: 0, overflow: 'auto', maxHeight: 400 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: 'var(--noorix-table-header-bg)' }}>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>{t('bankStatementDate')}</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>{t('bankStatementDescription')}</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>{t('bankStatementAmount')}</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>{t('bankStatementCategories')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.slice(0, 200).map((t) => (
-                  <tr key={t.id} style={{ borderTop: '1px solid var(--noorix-border)' }}>
-                    <td style={{ padding: '8px 12px' }}>{t.transactionDate}</td>
-                    <td style={{ padding: '8px 12px', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.description || '—'}</td>
-                    <td style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)', color: t.amount >= 0 ? '#16a34a' : '#dc2626' }}>
-                      {fmt(t.amount, 2)} ﷼
-                    </td>
-                    <td style={{ padding: '8px 12px' }}>
-                      <select
-                        value={t.categoryId ?? ''}
-                        onChange={(e) => updateTransactionCategory(t.id, e.target.value || null)}
-                        style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--noorix-border)', fontSize: 13 }}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: 16,
+              }}
+            >
+              <div className="noorix-surface-card" style={{ padding: 20, minHeight: 280 }}>
+                <h4 style={{ marginBottom: 16 }}>{t('bankStatementByCategory')}</h4>
+                {byCategory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={byCategory}
+                        dataKey="total"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={70}
                       >
-                        <option value="">{t('uncategorized')}</option>
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.id}>{categoryName(c, lang)}</option>
+                        {byCategory.map((e, i) => (
+                          <Cell key={i} fill={e.fill} />
                         ))}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </Pie>
+                      <Tooltip formatter={(v) => fmt(v, 2) + ' ﷼'} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p style={{ color: 'var(--noorix-text-muted)' }}>{t('uncategorized')}</p>
+                )}
+              </div>
+              {comparisonData.length > 0 && bankSalesChannels.length > 0 && (
+                <div className="noorix-surface-card" style={{ padding: 20, minHeight: 280 }}>
+                  <h4 style={{ marginBottom: 16 }}>{t('bankStatementCompareWithSales')}</h4>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={comparisonData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => fmt(v, 0)} />
+                      <Tooltip formatter={(v) => fmt(v, 2) + ' ﷼'} />
+                      <Legend />
+                      <Bar
+                        dataKey="statementDeposits"
+                        name={t('bankStatementBankCredits')}
+                        fill="#2563eb"
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="recordedSales"
+                        name={t('bankStatementSalesRecorded')}
+                        fill="#16a34a"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
           )}
-          {transactions.length > 200 && <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{lang === 'ar' ? `عرض أول 200 حركة من أصل ${transactions.length}` : `Showing first 200 of ${transactions.length} transactions`}</p>}
+
+          {transactions.length > 0 && (
+            <div
+              className="noorix-surface-card"
+              style={{ padding: 0, overflow: 'auto', maxHeight: 400 }}
+            >
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--noorix-table-header-bg)' }}>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>{t('bankStatementDate')}</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>{t('bankStatementDescription')}</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>{t('bankStatementAmount')}</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>{t('bankStatementCategories')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.slice(0, 200).map((tr) => (
+                    <tr key={tr.id} style={{ borderTop: '1px solid var(--noorix-border)' }}>
+                      <td style={{ padding: '8px 12px' }}>{tr.transactionDate}</td>
+                      <td
+                        style={{
+                          padding: '8px 12px',
+                          maxWidth: 200,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {tr.description || '—'}
+                      </td>
+                      <td
+                        style={{
+                          padding: '8px 12px',
+                          fontFamily: 'var(--noorix-font-numbers)',
+                          color: tr.amount >= 0 ? '#16a34a' : '#dc2626',
+                        }}
+                      >
+                        {fmt(tr.amount, 2)} ﷼
+                      </td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <select
+                          value={tr.categoryId ?? ''}
+                          onChange={(e) => updateTransactionCategory(tr.id, e.target.value || null)}
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 6,
+                            border: '1px solid var(--noorix-border)',
+                            fontSize: 13,
+                          }}
+                        >
+                          <option value="">{t('uncategorized')}</option>
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {categoryName(c, lang)}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {transactions.length > 200 && (
+            <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>
+              {lang === 'ar' ? `عرض أول 200 حركة من أصل ${transactions.length}` : `Showing first 200 of ${transactions.length} transactions`}
+            </p>
+          )}
         </>
       )}
+    </div>
+  );
+}
+
+function TemplatesModal({ templates, onClose, onDelete, t, lang }) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="noorix-surface-card"
+        style={{ padding: 24, maxWidth: 420, width: '90%' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 style={{ marginBottom: 16 }}>{t('bankStatementManageTemplates')}</h3>
+        {templates.length === 0 ? (
+          <p style={{ color: 'var(--noorix-text-muted)' }}>
+            {lang === 'ar' ? 'لا توجد قوالب محفوظة' : 'No saved templates'}
+          </p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {templates.map((tp) => (
+              <li
+                key={tp.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 0',
+                  borderTop: '1px solid var(--noorix-border)',
+                }}
+              >
+                <span>{tp.bankName}</span>
+                <button
+                  type="button"
+                  className="noorix-btn-nav"
+                  onClick={() => onDelete(tp.id)}
+                  style={{ padding: '6px 12px', fontSize: 12, color: '#dc2626' }}
+                >
+                  {t('bankStatementDeleteTemplate')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <button type="button" className="noorix-btn-nav" style={{ marginTop: 16 }} onClick={onClose}>
+          {t('close')}
+        </button>
+      </div>
     </div>
   );
 }

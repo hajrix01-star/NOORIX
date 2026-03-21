@@ -116,9 +116,31 @@ model Company {
   orders              Order[]
   orderProducts       OrderProduct[]
   orderCategories     OrderCategory[]
+  bankStatementTemplates BankStatementTemplate[]
 
   @@index([tenantId])
   @@map("companies")
+}
+
+// قالب تحليل كشف الحساب — حفظ النمط لكل بنك لتسريع التحاليل الشهرية
+model BankStatementTemplate {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  companyId     String   @map("company_id")
+  bankName      String   @map("bank_name")      // اسم البنك أو الحساب (مثل: الأهلي - الرئيسي)
+  columnTypes   Json     @map("column_types")  // { "0":"date", "1":"debit", "2":"credit", ... }
+  dataStartRow  Int      @map("data_start_row")
+  dataEndRow    Int      @map("data_end_row")
+  colCount      Int      @map("col_count")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt      @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, bankName])
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("bank_statement_templates")
 }
 
 // الفترات المالية — قفل التسجيل في فترات مغلقة
