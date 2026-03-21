@@ -11,12 +11,14 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export interface JwtUser {
-  sub?:        string;       // userId (مرادف userId)
-  userId?:     string;
-  email:       string;
-  role:        string;
-  tenantId?:   string;
-  companyIds:  string[];
+  /** معرّف المستخدم — يُملأ دائماً من JWT (payload.sub) */
+  sub: string;
+  /** مرادف لـ sub عند استراتيجيات تضع userId */
+  userId?: string;
+  email: string;
+  role: string;
+  tenantId?: string;
+  companyIds: string[];
   permissions?: string[];
 }
 
