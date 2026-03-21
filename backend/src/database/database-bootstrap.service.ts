@@ -76,6 +76,16 @@ export class DatabaseBootstrapService implements OnModuleInit {
           },
         });
         this.logger.log(`تم إنشاء دور: ${name}`);
+      } else if (name === 'owner' || name === 'super_admin') {
+        const current = (role.permissions || []) as string[];
+        const merged = [...new Set([...current, ...ALL_PERMISSIONS])];
+        if (merged.length > current.length) {
+          await this.prisma.role.update({
+            where: { id: role.id },
+            data: { permissions: merged },
+          });
+          this.logger.log(`تم تحديث صلاحيات دور: ${name}`);
+        }
       }
       roleMap[name] = role.id;
     }
