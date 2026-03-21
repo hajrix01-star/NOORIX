@@ -1,8 +1,8 @@
 /**
  * SmartChatScreen — المحادثة الذكية
- * نسق مرجعي: أوامر مجمّعة (إدارة موظفين، مصاريف ثابتة)، إدخال، نوافذ مركزية.
+ * نسق مرجعي: أوامر مجمّعة، إدخال، نوافذ مركزية، تخزين محلي مع فلتر.
  */
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
@@ -16,6 +16,7 @@ import { useEmployees } from '../../hooks/useEmployees';
 import ExpenseLineFormModal from '../Expenses/components/ExpenseLineFormModal';
 import ExpenseFormModal from '../Expenses/components/ExpenseFormModal';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
+import { loadChat, saveChat, filterByDate } from './chatStorage';
 
 const PERMANENT_QUESTIONS = [
   { ar: 'كم مبيعات السنة؟', en: 'What are annual sales?', domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ) },
@@ -55,6 +56,33 @@ function ToastBanner({ message, type, isAr, onDismiss }) {
   );
 }
 
+/** كرت احترافي للردود والتقارير */
+function ReportCard({ text, isAr, createdAt }) {
+  return (
+    <div
+      style={{
+        padding: '16px 20px',
+        borderRadius: 14,
+        background: 'var(--noorix-bg-surface)',
+        border: '1px solid var(--noorix-border)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        fontSize: 15,
+        lineHeight: 1.65,
+        color: 'var(--noorix-text)',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+      }}
+    >
+      {text}
+      {createdAt && (
+        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+          {new Date(createdAt).toLocaleString(isAr ? 'ar-SA' : 'en', { dateStyle: 'short', timeStyle: 'short' })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const CMD_GROUPS = [
   {
     id: 'employees',
@@ -87,6 +115,7 @@ export default function SmartChatScreen() {
   const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
+  const [creatorName, setCreatorName] = useState('');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
@@ -101,8 +130,10 @@ export default function SmartChatScreen() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const commandsWrapRef = useRef(null);
+  const saveTimerRef = useRef(null);
 
   const u = getStoredUser();
+  const userName = u?.nameAr || u?.nameEn || u?.name || u?.email || '';
   const can = (p) => hasPermission(u?.role, p, u?.permissions || []);
   const { create } = useEmployees(activeCompanyId || '', { fetchEnabled: false });
 
@@ -146,6 +177,43 @@ export default function SmartChatScreen() {
   }, [activeCompanyId, qc]);
 
   useEffect(() => {
+    if (!activeCompanyId) return;
+    const data = loadChat(activeCompanyId);
+    if (data?.messages?.length) {
+      setMessages(data.messages);
+      setCreatorName(data.creatorName || userName || '');
+    } else {
+      setMessages([]);
+      setCreatorName(userName || '');
+    }
+  }, [activeCompanyId]);
+
+  const addMessage = useCallback((msg) => {
+    const withMeta = { ...msg, createdAt: msg.createdAt || new Date().toISOString() };
+    setMessages((prev) => [...prev, withMeta]);
+    if (!creatorName && userName) setCreatorName(userName);
+  }, [creatorName, userName]);
+
+  const persistChat = useCallback(() => {
+    if (!activeCompanyId || !messages.length) return;
+    saveChat(activeCompanyId, {
+      creatorName: creatorName || userName,
+      creatorId: u?.id,
+      messages,
+    });
+  }, [activeCompanyId, messages, creatorName, userName, u?.id]);
+
+  useEffect(() => {
+    saveTimerRef.current = setTimeout(persistChat, 600);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [messages, persistChat]);
+
+  const displayedMessages = useMemo(() => {
+    const base = dateFilter ? filterByDate(messages, dateFilter) : messages;
+    return base.length > 100 ? base.slice(-100) : base;
+  }, [messages, dateFilter]);
+
+  useEffect(() => {
     const onDoc = (e) => {
       if (!commandsWrapRef.current?.contains(e.target)) setCommandsOpen(false);
     };
@@ -155,7 +223,7 @@ export default function SmartChatScreen() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [displayedMessages, loading]);
 
   const handleSend = async (text) => {
     const q = (text || input || '').trim();
@@ -203,7 +271,7 @@ export default function SmartChatScreen() {
 
   const onHrRecorded = (o) => {
     if (o?.textAr || o?.textEn) {
-      setMessages((prev) => [...prev, { role: 'assistant', textAr: o.textAr || o.textEn, textEn: o.textEn || o.textAr }]);
+      addMessage({ role: 'assistant', textAr: o.textAr || o.textEn, textEn: o.textEn || o.textAr });
     }
   };
 
@@ -225,7 +293,7 @@ export default function SmartChatScreen() {
           const eb = empBody || employeeBody;
           const empName = eb?.name || eb?.nameAr || eb?.nameEn || '—';
           const salary = Number(eb?.basicSalary ?? 0);
-          setMessages((prev) => [...prev, { role: 'assistant', textAr: `✅ إضافة موظف: ${empName} — ${eb?.jobTitle || '—'} — ${salary.toLocaleString('en')} ﷼`, textEn: `✅ Employee added: ${empName} — ${eb?.jobTitle || '—'} — ${salary.toLocaleString('en')} SAR` }]);
+          addMessage({ role: 'assistant', textAr: `✅ إضافة موظف: ${empName} — ${eb?.jobTitle || '—'} — ${salary.toLocaleString('en')} ﷼`, textEn: `✅ Employee added: ${empName} — ${eb?.jobTitle || '—'} — ${salary.toLocaleString('en')} SAR` });
         } catch (e) {
           setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
         }
@@ -241,23 +309,38 @@ export default function SmartChatScreen() {
     <div style={{ display: 'grid', gap: 0, padding: 0, maxWidth: 1000, margin: '0 auto', minHeight: '100%' }}>
       {/* Header */}
       <div style={{ background: headerBg, color: headerText, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderRadius: '12px 12px 0 0' }}>
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{t('smartChat')}</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{t('smartChat')}</h1>
+          {creatorName && (
+            <span style={{ fontSize: 12, opacity: 0.85 }}>{isAr ? 'بواسطة: ' : 'By: '}{creatorName}</span>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={() => setDateFilter((d) => (d ? '' : new Date().toISOString().slice(0, 10)))}
-            className="noorix-btn-nav"
-            style={{ fontSize: 12, padding: '8px 12px', minHeight: 36, background: 'rgba(255,255,255,0.15)', color: headerText, borderColor: 'rgba(255,255,255,0.3)' }}
-          >
-            📅 {t('chatFilterByDate')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setMessages([])}
-            style={{ fontSize: 12, padding: '8px 12px', minHeight: 36, background: 'rgba(220,38,38,0.3)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
-          >
-            🗑 {t('chatClear')}
-          </button>
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value || '')}
+            style={{
+              fontSize: 12,
+              padding: '8px 12px',
+              minHeight: 36,
+              background: 'rgba(255,255,255,0.15)',
+              color: headerText,
+              border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: 8,
+            }}
+            title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
+          />
+          {dateFilter && (
+            <button
+              type="button"
+              onClick={() => setDateFilter('')}
+              className="noorix-btn-nav"
+              style={{ fontSize: 12, padding: '8px 12px', minHeight: 36, background: 'rgba(255,255,255,0.15)', color: headerText }}
+            >
+              {t('chatClearFilter')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -366,37 +449,51 @@ export default function SmartChatScreen() {
         }}
       >
         <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {messages.length === 0 && (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16, color: 'var(--noorix-text-muted)', textAlign: 'center' }}>
-              <div style={{ fontSize: 15, maxWidth: 400 }}>
-                {isAr ? 'اختر من قائمة الأوامر أو اكتب سؤالك أدناه.' : 'Choose from the command list or type your question below.'}
+          {displayedMessages.length === 0 && (
+            dateFilter ? (
+              <div style={{ color: 'var(--noorix-text-muted)', fontSize: 14, textAlign: 'center', padding: 24 }}>
+                {t('chatNoMessagesOnDate')}
               </div>
-              {showFaq && (
-                <button
-                  type="button"
-                  className="noorix-btn-primary"
-                  onClick={() => setFaqOpen(true)}
-                  style={{ fontSize: 13, padding: '10px 18px' }}
-                >
-                  {isAr ? 'الأسئلة الجاهزة' : 'Suggested questions'}
-                </button>
-              )}
-            </div>
+            ) : (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16, color: 'var(--noorix-text-muted)', textAlign: 'center' }}>
+                <div style={{ fontSize: 15, maxWidth: 400 }}>
+                  {isAr ? 'اختر من قائمة الأوامر أو اكتب سؤالك أدناه.' : 'Choose from the command list or type your question below.'}
+                </div>
+                {showFaq && (
+                  <button
+                    type="button"
+                    className="noorix-btn-primary"
+                    onClick={() => setFaqOpen(true)}
+                    style={{ fontSize: 13, padding: '10px 18px' }}
+                  >
+                    {isAr ? 'الأسئلة الجاهزة' : 'Suggested questions'}
+                  </button>
+                )}
+              </div>
+            )
           )}
-          {messages.map((m, i) => (
-            <div key={i} style={{ alignSelf: m.role === 'user' ? (isAr ? 'flex-start' : 'flex-end') : (isAr ? 'flex-end' : 'flex-start'), maxWidth: '85%' }}>
-              <div
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 12,
-                  background: m.role === 'user' ? 'rgba(37,99,235,0.12)' : 'var(--noorix-bg-muted)',
-                  color: m.role === 'user' ? '#1e40af' : 'var(--noorix-text)',
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                }}
-              >
-                {m.role === 'user' ? m.text : (isAr ? m.textAr : m.textEn) || m.textAr}
-              </div>
+          {displayedMessages.map((m, i) => (
+            <div key={i} style={{ alignSelf: m.role === 'user' ? (isAr ? 'flex-start' : 'flex-end') : (isAr ? 'flex-end' : 'flex-start'), maxWidth: '90%' }}>
+              {m.role === 'user' ? (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    background: 'rgba(37,99,235,0.12)',
+                    color: '#1e40af',
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {m.text}
+                </div>
+              ) : (
+                <ReportCard
+                  text={(isAr ? m.textAr : m.textEn) || m.textAr}
+                  isAr={isAr}
+                  createdAt={m.createdAt}
+                />
+              )}
             </div>
           ))}
           {loading && (
@@ -506,7 +603,7 @@ export default function SmartChatScreen() {
             invalidateOnFinancialMutation(qc);
             setExpenseMode(null);
             setToast({ visible: true, message: isAr ? 'تم تسجيل المصروف' : 'Expense recorded', type: 'success' });
-            setMessages((prev) => [...prev, { role: 'assistant', textAr: '✅ تم تسجيل سداد مصروف.', textEn: '✅ Expense payment recorded.' }]);
+            addMessage({ role: 'assistant', textAr: '✅ تم تسجيل سداد مصروف.', textEn: '✅ Expense payment recorded.' });
           }}
         />
       )}
@@ -539,7 +636,7 @@ export default function SmartChatScreen() {
               setExpenseEditLine(undefined);
               setExpenseMode(null);
               setToast({ visible: true, message: isAr ? 'تم تعديل بند المصروف' : 'Expense line updated', type: 'success' });
-              setMessages((prev) => [...prev, { role: 'assistant', textAr: '✅ تم تعديل بند المصروف.', textEn: '✅ Expense line updated.' }]);
+              addMessage({ role: 'assistant', textAr: '✅ تم تعديل بند المصروف.', textEn: '✅ Expense line updated.' });
             }}
           />
         )
