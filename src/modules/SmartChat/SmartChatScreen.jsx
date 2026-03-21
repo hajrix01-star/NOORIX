@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { chatQuery, getExpenseLines } from '../../services/api';
+import { chatQuery, getExpenseLines, getEmployees, getVaults } from '../../services/api';
 import { getStoredUser } from '../../services/authStore';
 import { PERMISSIONS, hasPermission } from '../../constants/permissions';
 import { HrQuickEntrySheet } from './HrQuickEntrySheet';
@@ -124,6 +124,26 @@ export default function SmartChatScreen() {
     ...g,
     items: g.items.filter((it) => it.canUse(can)),
   })).filter((g) => g.items.length > 0);
+
+  useEffect(() => {
+    if (!activeCompanyId) return;
+    qc.prefetchQuery({
+      queryKey: ['employees', activeCompanyId, false],
+      queryFn: async () => {
+        const res = await getEmployees(activeCompanyId, false);
+        return res?.success ? (res.data ?? []) : [];
+      },
+    });
+    qc.prefetchQuery({
+      queryKey: ['vaults', activeCompanyId, false],
+      queryFn: async () => {
+        const res = await getVaults(activeCompanyId, false);
+        if (!res?.success) return [];
+        const d = res.data;
+        return Array.isArray(d) ? d : (d?.items ?? []);
+      },
+    });
+  }, [activeCompanyId, qc]);
 
   useEffect(() => {
     const onDoc = (e) => {

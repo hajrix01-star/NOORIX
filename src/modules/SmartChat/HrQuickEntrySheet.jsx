@@ -2,7 +2,7 @@
  * HrQuickEntrySheet — إدخال سريع من المحادثة (سلفة، إجازة، خصم، زيادة/بدلة)
  * نافذة احترافية: بطاقة مركزية، حقول منسقة، دعم RTL، مناسب للجوال 100%.
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getEmployees, createLeave, createDeduction, createMovement, createCustomAllowance } from '../../services/api';
@@ -116,6 +116,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   const [formError, setFormError] = useState('');
   const [confirmStep, setConfirmStep] = useState(false);
   const [pendingData, setPendingData] = useState(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => { setFormError(''); }, [mode]);
   useEffect(() => { if (!confirmStep) setPendingData(null); }, [confirmStep]);
@@ -134,6 +136,14 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     }
   }, [lvStart, lvEnd]);
 
+  const closeOnSuccess = (variables, fallbackReport) => {
+    setConfirmStep(false);
+    setPendingData(null);
+    const r = typeof variables === 'object' && variables?.report;
+    onRecorded?.(r || fallbackReport);
+    onCloseRef.current?.();
+  };
+
   const advMut = useMutation({
     mutationFn: async (arg) => {
       const p = arg?.payload ?? arg;
@@ -144,9 +154,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     onSuccess: (_, variables) => {
       invalidateOnFinancialMutation(qc);
       invalidateHrQueries(qc, companyId);
-      const r = typeof variables === 'object' && variables?.report;
-      onRecorded?.(r || { textAr: 'تم تسجيل السلفة.', textEn: 'Advance recorded.' });
-      onClose();
+      closeOnSuccess(variables, { textAr: 'تم تسجيل السلفة.', textEn: 'Advance recorded.' });
     },
     onError: (e) => setFormError(e?.message || String(e)),
   });
@@ -160,9 +168,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     },
     onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
-      const r = typeof variables === 'object' && variables?.report;
-      onRecorded?.(r || { textAr: 'تم تسجيل الإجازة.', textEn: 'Leave recorded.' });
-      onClose();
+      closeOnSuccess(variables, { textAr: 'تم تسجيل الإجازة.', textEn: 'Leave recorded.' });
     },
     onError: (e) => setFormError(e?.message || String(e)),
   });
@@ -176,9 +182,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     },
     onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
-      const r = typeof variables === 'object' && variables?.report;
-      onRecorded?.(r || { textAr: 'تم تسجيل الخصم.', textEn: 'Deduction recorded.' });
-      onClose();
+      closeOnSuccess(variables, { textAr: 'تم تسجيل الخصم.', textEn: 'Deduction recorded.' });
     },
     onError: (e) => setFormError(e?.message || String(e)),
   });
@@ -192,9 +196,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     },
     onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
-      const r = typeof variables === 'object' && variables?.report;
-      onRecorded?.(r || { textAr: 'تم تسجيل الزيادة أو الترقية.', textEn: 'Promotion or raise recorded.' });
-      onClose();
+      closeOnSuccess(variables, { textAr: 'تم تسجيل الزيادة أو الترقية.', textEn: 'Promotion or raise recorded.' });
     },
     onError: (e) => setFormError(e?.message || String(e)),
   });
@@ -208,9 +210,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     },
     onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
-      const r = typeof variables === 'object' && variables?.report;
-      onRecorded?.(r || { textAr: 'تم تسجيل البدلة الإضافية.', textEn: 'Allowance recorded.' });
-      onClose();
+      closeOnSuccess(variables, { textAr: 'تم تسجيل البدلة الإضافية.', textEn: 'Allowance recorded.' });
     },
     onError: (e) => setFormError(e?.message || String(e)),
   });
