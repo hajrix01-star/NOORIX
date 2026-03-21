@@ -422,6 +422,32 @@ export class HRService {
   }
 
   // ══════════════════════════════════════════════════════════
+  // ADVANCES (فواتير سلف موظفين)
+  // ══════════════════════════════════════════════════════════
+
+  async findAdvanceInvoices(companyId: string, year?: number) {
+    const where: Prisma.InvoiceWhereInput = {
+      companyId,
+      kind: 'advance',
+      status: 'active',
+    };
+    if (year) {
+      where.transactionDate = {
+        gte: new Date(`${year}-01-01`),
+        lt: new Date(`${year + 1}-01-01`),
+      };
+    }
+    return this.prisma.invoice.findMany({
+      where,
+      include: {
+        employee: { select: { id: true, name: true, nameEn: true, employeeSerial: true } },
+      },
+      orderBy: { transactionDate: 'desc' },
+      take: 500,
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════
   // LEAVES
   // ══════════════════════════════════════════════════════════
 

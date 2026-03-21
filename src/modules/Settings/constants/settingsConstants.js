@@ -33,6 +33,7 @@ export const PERMISSION_LABELS = {
   CHAT_PRESET_LEAVES:    { ar: 'محادثة: أمر سريع — إجازات', icon: '⚡', group: 'المحادثة' },
   CHAT_PRESET_DEDUCTIONS:{ ar: 'محادثة: أمر سريع — خصومات', icon: '⚡', group: 'المحادثة' },
   CHAT_PRESET_FAQ:       { ar: 'محادثة: الأسئلة الجاهزة',   icon: '❓', group: 'المحادثة' },
+  CHAT_PRESET_INCREASES: { ar: 'محادثة: زيادات وبدلات',    icon: '📈', group: 'المحادثة' },
 };
 
 export const ALL_PERMISSIONS_LIST = Object.keys(PERMISSION_LABELS);

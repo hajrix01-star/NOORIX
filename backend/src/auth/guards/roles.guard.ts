@@ -7,7 +7,8 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@
 import { Reflector }           from '@nestjs/core';
 import { ROLES_KEY }           from '../decorators/roles.decorator';
 import { PERMISSION_KEY }      from '../decorators/require-permission.decorator';
-import { hasPermission, isSuperAdmin } from '../constants/permissions';
+import { PERMISSIONS_ANY_KEY } from '../decorators/require-any-permission.decorator';
+import { hasPermission } from '../constants/permissions';
 import type { Permission }     from '../constants/permissions';
 
 interface RequestUser {
@@ -32,6 +33,19 @@ export class RolesGuard implements CanActivate {
       if (!role) throw new ForbiddenException('غير مصادق.');
       if (!hasPermission(role, requiredPermission, userPermissions)) {
         throw new ForbiddenException(`تحتاج صلاحية: ${requiredPermission}`);
+      }
+      return true;
+    }
+
+    const requiredAny = this.reflector.getAllAndOverride<Permission[]>(PERMISSIONS_ANY_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (requiredAny?.length) {
+      if (!role) throw new ForbiddenException('غير مصادق.');
+      const ok = requiredAny.some((p) => hasPermission(role, p, userPermissions));
+      if (!ok) {
+        throw new ForbiddenException(`تحتاج إحدى الصلاحيات: ${requiredAny.join(' أو ')}`);
       }
       return true;
     }

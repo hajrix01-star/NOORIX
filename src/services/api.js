@@ -685,6 +685,12 @@ export async function issuePayrollPayment(body) {
   return apiPost('/api/v1/hr/payroll-runs/issue-payment', body);
 }
 
+export async function getHrAdvances(companyId, year) {
+  const params = { companyId };
+  if (year != null) params.year = String(year);
+  return apiGet('/api/v1/hr/advances', params);
+}
+
 export async function getLeaves(companyId, employeeId, year) {
   const params = { companyId };
   if (employeeId) params.employeeId = employeeId;

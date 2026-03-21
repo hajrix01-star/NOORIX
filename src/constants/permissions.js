@@ -50,6 +50,7 @@ export const PERMISSIONS = {
   CHAT_PRESET_LEAVES:     'CHAT_PRESET_LEAVES',
   CHAT_PRESET_DEDUCTIONS: 'CHAT_PRESET_DEDUCTIONS',
   CHAT_PRESET_FAQ:        'CHAT_PRESET_FAQ',
+  CHAT_PRESET_INCREASES:  'CHAT_PRESET_INCREASES',
 
   EMPLOYEES_READ:   'EMPLOYEES_READ',
   EMPLOYEES_WRITE:  'EMPLOYEES_WRITE',
@@ -209,6 +210,7 @@ export const PERMISSION_MODULES = [
       chatLeave:  'CHAT_PRESET_LEAVES',
       chatDed:    'CHAT_PRESET_DEDUCTIONS',
       chatFaq:    'CHAT_PRESET_FAQ',
+      chatInc:    'CHAT_PRESET_INCREASES',
     },
   },
   {
@@ -252,6 +254,7 @@ export const PERMISSION_LEVELS = {
   chatLeave:  { ar: 'محادثة · إجازات', en: 'Chat · Leaves' },
   chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
   chatFaq:    { ar: 'محادثة · أسئلة', en: 'Chat · FAQ' },
+  chatInc:    { ar: 'محادثة · زيادات', en: 'Chat · Raises' },
 };
 
 /**

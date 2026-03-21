@@ -25,6 +25,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { HRService } from './hr.service';
 import { CreatePayrollRunDto } from './dto/create-payroll-run.dto';
@@ -133,11 +134,27 @@ export class HRController {
   }
 
   // ══════════════════════════════════════════════════════════
+  // ADVANCES (سلفيات)
+  // ══════════════════════════════════════════════════════════
+
+  @Get('advances')
+  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
+  findAdvances(
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+    @Query('year') yearStr?: string,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    const year = yearStr ? parseInt(yearStr, 10) : undefined;
+    return this.hrService.findAdvanceInvoices(companyId, Number.isFinite(year) ? year : undefined);
+  }
+
+  // ══════════════════════════════════════════════════════════
   // LEAVES
   // ══════════════════════════════════════════════════════════
 
   @Get('leaves')
-  @RequirePermission('HR_READ')
+  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findLeaves(
     @Query('companyId') queryCompanyId: string,
     @Headers('x-company-id') headerCompanyId: string,
@@ -327,7 +344,7 @@ export class HRController {
   // ══════════════════════════════════════════════════════════
 
   @Get('movements')
-  @RequirePermission('HR_READ')
+  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findMovements(
     @Query('companyId') queryCompanyId: string,
     @Headers('x-company-id') headerCompanyId: string,
@@ -351,7 +368,7 @@ export class HRController {
   // ══════════════════════════════════════════════════════════
 
   @Get('allowances')
-  @RequirePermission('HR_READ')
+  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findAllowances(
     @Query('companyId') queryCompanyId: string,
     @Headers('x-company-id') headerCompanyId: string,
@@ -387,7 +404,7 @@ export class HRController {
   // ══════════════════════════════════════════════════════════
 
   @Get('deductions')
-  @RequirePermission('HR_READ')
+  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findDeductions(
     @Query('companyId') queryCompanyId: string,
     @Headers('x-company-id') headerCompanyId: string,
