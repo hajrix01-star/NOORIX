@@ -254,8 +254,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       employeeName: emp?.name || emp?.nameAr,
     };
     const report = {
-      textAr: `✅ سلفة: ${emp?.name || emp?.nameAr || '—'} — ${fmt(amt, 2)} ﷼ من ${vault?.nameAr || vault?.nameEn || '—'} — ${advDate}`,
-      textEn: `✅ Advance: ${emp?.name || emp?.nameEn || emp?.nameAr || '—'} — ${fmt(amt, 2)} SAR from ${vault?.nameEn || vault?.nameAr || '—'} — ${advDate}`,
+      textAr: `النوع: سلفة\nالاسم: ${emp?.name || emp?.nameAr || '—'}\nالمبلغ: ${fmt(amt, 2)} ﷼\nالخزنة: ${vault?.nameAr || vault?.nameEn || '—'}\nالتاريخ: ${advDate}`,
+      textEn: `Type: Advance\nName: ${emp?.name || emp?.nameEn || emp?.nameAr || '—'}\nAmount: ${fmt(amt, 2)} SAR\nVault: ${vault?.nameEn || vault?.nameAr || '—'}\nDate: ${advDate}`,
     };
     setPendingData({ payload, report, mut: advMut });
     setConfirmStep(true);
@@ -288,8 +288,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       notes: lvNotes || undefined,
     };
     const report = {
-      textAr: `✅ إجازة: ${emp?.name || emp?.nameAr || '—'} — ${days} يوم (${lvStart} → ${lvEnd})`,
-      textEn: `✅ Leave: ${emp?.name || emp?.nameEn || '—'} — ${days} days (${lvStart} → ${lvEnd})`,
+      textAr: `النوع: إجازة\nالاسم: ${emp?.name || emp?.nameAr || '—'}\nالمدة: ${days} يوم\nمن: ${lvStart}\nإلى: ${lvEnd}`,
+      textEn: `Type: Leave\nName: ${emp?.name || emp?.nameEn || '—'}\nDays: ${days}\nFrom: ${lvStart}\nTo: ${lvEnd}`,
     };
     setPendingData({ payload, report, mut: leaveMut });
     setConfirmStep(true);
@@ -314,8 +314,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       notes: ddNotes || undefined,
     };
     const report = {
-      textAr: `✅ خصم: ${emp?.name || emp?.nameAr || '—'} — ${fmt(amt, 2)} ﷼ (${ddDate})`,
-      textEn: `✅ Deduction: ${emp?.name || emp?.nameEn || '—'} — ${fmt(amt, 2)} SAR (${ddDate})`,
+      textAr: `النوع: خصم\nالاسم: ${emp?.name || emp?.nameAr || '—'}\nالمبلغ: ${fmt(amt, 2)} ﷼\nالتاريخ: ${ddDate}`,
+      textEn: `Type: Deduction\nName: ${emp?.name || emp?.nameEn || '—'}\nAmount: ${fmt(amt, 2)} SAR\nDate: ${ddDate}`,
     };
     setPendingData({ payload, report, mut: dedMut });
     setConfirmStep(true);
@@ -342,8 +342,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       notes: mvNotes || undefined,
     };
     const report = {
-      textAr: `✅ ${mvType === 'raise' ? 'زيادة' : mvType === 'promotion' ? 'ترقية' : 'حركة'}: ${emp?.name || emp?.nameAr || '—'} — ${Number.isFinite(amt) ? fmt(amt, 2) + ' ﷼' : ''} (${mvEff})`,
-      textEn: `✅ ${mvType === 'raise' ? 'Raise' : mvType === 'promotion' ? 'Promotion' : 'Movement'}: ${emp?.name || emp?.nameEn || '—'} — ${Number.isFinite(amt) ? fmt(amt, 2) + ' SAR' : ''} (${mvEff})`,
+      textAr: `النوع: ${mvType === 'raise' ? 'زيادة' : mvType === 'promotion' ? 'ترقية' : 'حركة'}\nالاسم: ${emp?.name || emp?.nameAr || '—'}\n${Number.isFinite(amt) ? `المبلغ: ${fmt(amt, 2)} ﷼\n` : ''}التاريخ: ${mvEff}`,
+      textEn: `Type: ${mvType === 'raise' ? 'Raise' : mvType === 'promotion' ? 'Promotion' : 'Movement'}\nName: ${emp?.name || emp?.nameEn || '—'}\n${Number.isFinite(amt) ? `Amount: ${fmt(amt, 2)} SAR\n` : ''}Date: ${mvEff}`,
     };
     setPendingData({ payload, report, mut: movMut });
     setConfirmStep(true);
@@ -366,8 +366,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       amount: amt,
     };
     const report = {
-      textAr: `✅ بدلة: ${emp?.name || emp?.nameAr || '—'} — ${alName.trim()} ${fmt(amt, 2)} ﷼`,
-      textEn: `✅ Allowance: ${emp?.name || emp?.nameEn || '—'} — ${alName.trim()} ${fmt(amt, 2)} SAR`,
+      textAr: `النوع: بدلة\nالاسم: ${emp?.name || emp?.nameAr || '—'}\nالبند: ${alName.trim()}\nالمبلغ: ${fmt(amt, 2)} ﷼`,
+      textEn: `Type: Allowance\nName: ${emp?.name || emp?.nameEn || '—'}\nItem: ${alName.trim()}\nAmount: ${fmt(amt, 2)} SAR`,
     };
     setPendingData({ payload, report, mut: alMut });
     setConfirmStep(true);

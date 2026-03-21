@@ -56,8 +56,14 @@ function ToastBanner({ message, type, isAr, onDismiss }) {
   );
 }
 
-/** كرت احترافي للردود والتقارير */
+/** كرت احترافي للردود والتقارير — عرض سطور (عنوان، اسم، مبلغ، إلخ) */
 function ReportCard({ text, isAr, createdAt }) {
+  const lines = (text || '')
+    .split(/\s*—\s*|\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const isStructured = lines.length > 1 || /—/.test(text || '');
+
   return (
     <div
       style={{
@@ -69,13 +75,33 @@ function ReportCard({ text, isAr, createdAt }) {
         fontSize: 15,
         lineHeight: 1.65,
         color: 'var(--noorix-text)',
-        whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
       }}
     >
-      {text}
+      {isStructured ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {lines.map((line, i) => {
+            const colonIdx = line.indexOf(':');
+            const hasLabel = colonIdx > 0 && colonIdx < 40;
+            const label = hasLabel ? line.slice(0, colonIdx).trim() : null;
+            const value = hasLabel ? line.slice(colonIdx + 1).trim() : line;
+            return (
+              <div key={i} style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'baseline' }}>
+                {label && (
+                  <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)', fontWeight: 600, minWidth: 80 }}>
+                    {label}:
+                  </span>
+                )}
+                <span>{value || line}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
+      )}
       {createdAt && (
-        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--noorix-border)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
           {new Date(createdAt).toLocaleString(isAr ? 'ar-SA' : 'en', { dateStyle: 'short', timeStyle: 'short' })}
         </div>
       )}
@@ -293,7 +319,7 @@ export default function SmartChatScreen() {
           const eb = empBody || employeeBody;
           const empName = eb?.name || eb?.nameAr || eb?.nameEn || '—';
           const salary = Number(eb?.basicSalary ?? 0);
-          addMessage({ role: 'assistant', textAr: `✅ إضافة موظف: ${empName} — ${eb?.jobTitle || '—'} — ${salary.toLocaleString('en')} ﷼`, textEn: `✅ Employee added: ${empName} — ${eb?.jobTitle || '—'} — ${salary.toLocaleString('en')} SAR` });
+          addMessage({ role: 'assistant', textAr: `النوع: إضافة موظف\nالاسم: ${empName}\nالمسمى: ${eb?.jobTitle || '—'}\nالراتب: ${salary.toLocaleString('en')} ﷼`, textEn: `Type: Add employee\nName: ${empName}\nTitle: ${eb?.jobTitle || '—'}\nSalary: ${salary.toLocaleString('en')} SAR` });
         } catch (e) {
           setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
         }
@@ -590,7 +616,7 @@ export default function SmartChatScreen() {
             qc.invalidateQueries({ queryKey: ['expense-lines'] });
             setExpenseMode(null);
             setToast({ visible: true, message: isAr ? 'تمت إضافة بند المصروف' : 'Expense line added', type: 'success' });
-            setMessages((prev) => [...prev, { role: 'assistant', textAr: '✅ تمت إضافة بند مصروف جديد.', textEn: '✅ New expense line added.' }]);
+            addMessage({ role: 'assistant', textAr: 'النوع: إضافة بند مصروف\nالحالة: تمت الإضافة بنجاح', textEn: 'Type: Add expense line\nStatus: Added successfully' });
           }}
         />
       )}
@@ -603,7 +629,7 @@ export default function SmartChatScreen() {
             invalidateOnFinancialMutation(qc);
             setExpenseMode(null);
             setToast({ visible: true, message: isAr ? 'تم تسجيل المصروف' : 'Expense recorded', type: 'success' });
-            addMessage({ role: 'assistant', textAr: '✅ تم تسجيل سداد مصروف.', textEn: '✅ Expense payment recorded.' });
+            addMessage({ role: 'assistant', textAr: 'النوع: سداد مصروف\nالحالة: تم التسجيل بنجاح', textEn: 'Type: Expense payment\nStatus: Recorded successfully' });
           }}
         />
       )}
@@ -636,7 +662,7 @@ export default function SmartChatScreen() {
               setExpenseEditLine(undefined);
               setExpenseMode(null);
               setToast({ visible: true, message: isAr ? 'تم تعديل بند المصروف' : 'Expense line updated', type: 'success' });
-              addMessage({ role: 'assistant', textAr: '✅ تم تعديل بند المصروف.', textEn: '✅ Expense line updated.' });
+              addMessage({ role: 'assistant', textAr: 'النوع: تعديل بند مصروف\nالحالة: تم التعديل بنجاح', textEn: 'Type: Edit expense line\nStatus: Updated successfully' });
             }}
           />
         )
