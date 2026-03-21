@@ -5,6 +5,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementUpload } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
+import './bankStatement.css';
 
 const STEPS = [
   { id: 'upload', labelKey: 'bankStatementStepUpload' },
@@ -14,7 +15,7 @@ const STEPS = [
   { id: 'save', labelKey: 'bankStatementStepSave' },
 ];
 
-export default function BankStatementUploadModal({ companyId, onClose, onComplete, importFile, showToast }) {
+export default function BankStatementUploadModal({ companyId, onClose, onComplete, importFile = importBankStatementFile, showToast }) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
   const [step, setStep] = useState(0);
@@ -112,17 +113,11 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           </button>
         </div>
 
-        {/* خطوات التقدم */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
+        <div className="bank-statement__step-bar">
           {STEPS.map((s, i) => (
             <div
               key={s.id}
-              style={{
-                flex: 1,
-                height: 4,
-                borderRadius: 2,
-                background: i <= step ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
-              }}
+              className={`bank-statement__step ${i < step ? 'bank-statement__step--done' : ''} ${i === step ? 'bank-statement__step--active' : ''}`}
               title={t(s.labelKey)}
             />
           ))}
@@ -145,20 +140,13 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
 
         {!file ? (
           <div
+            className={`bank-statement__dropzone ${isDragging ? 'bank-statement__dropzone--dragging' : ''}`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: `2px dashed ${isDragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
-              borderRadius: 12,
-              padding: 40,
-              textAlign: 'center',
-              cursor: 'pointer',
-              background: isDragging ? 'rgba(37,99,235,0.05)' : 'var(--noorix-bg-muted)',
-            }}
           >
-            <div style={{ fontSize: 36, marginBottom: 8 }}>📄</div>
+            <div className="bank-statement__dropzone-icon">📄</div>
             <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--noorix-text)' }}>
               {t('bankStatementDragDrop')}
             </div>

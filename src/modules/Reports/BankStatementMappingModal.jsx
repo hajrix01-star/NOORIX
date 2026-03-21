@@ -5,6 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementConfirmMapping, bankStatementGet } from '../../services/api';
+import './bankStatement.css';
 
 const COL_TYPES = [
   { key: 'dateCol', labelKey: 'bankStatementColDate', required: true },
@@ -126,49 +127,29 @@ export default function BankStatementMappingModal({ statement, companyId, catego
         zIndex: 1000,
       }}
     >
-      <div
-        className="noorix-surface-card"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 'min(720px, 95vw)',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          padding: 24,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div className="noorix-surface-card bank-statement__modal" onClick={(e) => e.stopPropagation()} style={{ padding: 0 }}>
+        <div className="bank-statement__modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{t('bankStatementColumnMapping')}</h2>
           <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onClose} aria-label="إغلاق">
             ✕
           </button>
         </div>
 
-        <div style={{ display: 'grid', gap: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <label>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementCompanyName')}</span>
-              <input
-                type="text"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                style={{ width: '100%', marginTop: 4 }}
-              />
-            </label>
-            <label>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementBankName')}</span>
-              <input
-                type="text"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-                placeholder="مثال: الراجحي"
-                style={{ width: '100%', marginTop: 4 }}
-              />
-            </label>
+        <div className="bank-statement__modal-body">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="bank-statement__input-group">
+              <label>{t('bankStatementCompanyName')}</label>
+              <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+            </div>
+            <div className="bank-statement__input-group">
+              <label>{t('bankStatementBankName')}</label>
+              <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="مثال: الراجحي" />
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-            <label>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementHeaderRow')}</span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+            <div className="bank-statement__input-group">
+              <label>{t('bankStatementHeaderRow')}</label>
               <input
                 type="number"
                 min={0}
@@ -179,37 +160,24 @@ export default function BankStatementMappingModal({ statement, companyId, catego
                   setHeaderRow(v);
                   if (dataStartRow <= v) setDataStartRow(Math.min(v + 1, raw.length - 1));
                 }}
-                style={{ width: '100%', marginTop: 4 }}
                 title={t('bankStatementHeaderRowHint')}
               />
-            </label>
-            <label>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementDataStartRow')}</span>
-              <input
-                type="number"
-                min={0}
-                value={dataStartRow}
-                onChange={(e) => setDataStartRow(parseInt(e.target.value, 10) || 0)}
-                style={{ width: '100%', marginTop: 4 }}
-              />
-            </label>
-            <label>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementDataEndRow')}</span>
-              <input
-                type="number"
-                min={0}
-                value={dataEndRow}
-                onChange={(e) => setDataEndRow(parseInt(e.target.value, 10) || 0)}
-                style={{ width: '100%', marginTop: 4 }}
-              />
-            </label>
-            <label>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementDateRange')}</span>
-              <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+            </div>
+            <div className="bank-statement__input-group">
+              <label>{t('bankStatementDataStartRow')}</label>
+              <input type="number" min={0} value={dataStartRow} onChange={(e) => setDataStartRow(parseInt(e.target.value, 10) || 0)} />
+            </div>
+            <div className="bank-statement__input-group">
+              <label>{t('bankStatementDataEndRow')}</label>
+              <input type="number" min={0} value={dataEndRow} onChange={(e) => setDataEndRow(parseInt(e.target.value, 10) || 0)} />
+            </div>
+            <div className="bank-statement__input-group">
+              <label>{t('bankStatementDateRange')}</label>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ flex: 1 }} />
                 <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ flex: 1 }} />
               </div>
-            </label>
+            </div>
           </div>
 
           {(() => {
@@ -261,24 +229,22 @@ export default function BankStatementMappingModal({ statement, companyId, catego
 
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{t('bankStatementPreview')}</div>
-            <div style={{ overflow: 'auto', maxHeight: 220, border: '1px solid var(--noorix-border)', borderRadius: 8 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <div style={{ overflow: 'auto', maxHeight: 220 }}>
+              <table className="bank-statement__preview-table">
                 <thead>
-                  <tr style={{ background: 'var(--noorix-bg-muted)' }}>
-                    <th style={{ padding: '6px 8px', textAlign: 'start' }}>#</th>
+                  <tr>
+                    <th>#</th>
                     {Array.from({ length: colCount }, (_, i) => (
-                      <th key={i} style={{ padding: '6px 8px', textAlign: 'start', whiteSpace: 'nowrap' }}>
-                        {i + 1}
-                      </th>
+                      <th key={i} style={{ whiteSpace: 'nowrap' }}>{i + 1}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {previewRows.map((row, ri) => (
-                    <tr key={ri} style={{ borderTop: '1px solid var(--noorix-border)' }}>
-                      <td style={{ padding: '4px 8px', color: 'var(--noorix-text-muted)' }}>{ri + 1}</td>
+                    <tr key={ri} className={ri === headerRow ? 'bank-statement__header-row' : ''}>
+                      <td style={{ color: 'var(--noorix-text-muted)', maxWidth: 36 }}>{ri + 1}</td>
                       {Array.from({ length: colCount }, (_, ci) => (
-                        <td key={ci} style={{ padding: '4px 8px', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <td key={ci} style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {String(row[ci] ?? '')}
                         </td>
                       ))}
@@ -290,7 +256,7 @@ export default function BankStatementMappingModal({ statement, companyId, catego
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '0 24px 24px' }}>
           <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onClose}>
             {t('cancel')}
           </button>

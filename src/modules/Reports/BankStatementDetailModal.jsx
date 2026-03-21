@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementGet } from '../../services/api';
 import { fmt } from '../../utils/format';
+import './bankStatement.css';
 
 export default function BankStatementDetailModal({
   statement,
@@ -93,18 +94,8 @@ export default function BankStatementDetailModal({
         zIndex: 1000,
       }}
     >
-      <div
-        className="noorix-surface-card"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 'min(900px, 95vw)',
-          maxHeight: '90vh',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <div style={{ padding: 20, borderBottom: '1px solid var(--noorix-border)' }}>
+      <div className="noorix-surface-card bank-statement__detail-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="bank-statement__modal-header" style={{ padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
@@ -132,19 +123,12 @@ export default function BankStatementDetailModal({
           </div>
         </div>
 
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--noorix-border)' }}>
+        <div className="bank-statement__detail-tabs">
           {['transactions', 'analysis'].map((tab) => (
             <button
               key={tab}
               type="button"
-              style={{
-                padding: '12px 20px',
-                border: 'none',
-                background: activeTab === tab ? 'rgba(37,99,235,0.1)' : 'transparent',
-                color: activeTab === tab ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-                fontWeight: activeTab === tab ? 600 : 500,
-                cursor: 'pointer',
-              }}
+              className={`bank-statement__detail-tab ${activeTab === tab ? 'bank-statement__detail-tab--active' : ''}`}
               onClick={() => setActiveTab(tab)}
             >
               {tab === 'transactions' ? t('bankStatementTransactions') : t('bankStatementByCategory')}
@@ -152,7 +136,7 @@ export default function BankStatementDetailModal({
           ))}
         </div>
 
-        <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
+        <div className="bank-statement__detail-content">
           {isLoading && (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
               {t('loading') || 'جاري التحميل...'}
@@ -161,21 +145,21 @@ export default function BankStatementDetailModal({
 
           {!isLoading && activeTab === 'transactions' && (
             <div style={{ overflow: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <table className="bank-statement__tx-table">
                 <thead>
-                  <tr style={{ background: 'var(--noorix-bg-muted)' }}>
-                    <th style={{ padding: 10, textAlign: 'start' }}>{t('bankStatementDate')}</th>
-                    <th style={{ padding: 10, textAlign: 'start' }}>{t('bankStatementDescription')}</th>
-                    <th style={{ padding: 10, textAlign: 'start' }}>{t('bankStatementCategories')}</th>
-                    <th style={{ padding: 10, textAlign: 'end' }}>{t('bankStatementColDebit')}</th>
-                    <th style={{ padding: 10, textAlign: 'end' }}>{t('bankStatementColCredit')}</th>
-                    <th style={{ padding: 10, textAlign: 'end' }}>{t('bankStatementBalance')}</th>
-                    <th style={{ padding: 10, textAlign: 'start' }}>{t('note') || 'ملاحظة'}</th>
+                  <tr>
+                    <th>{t('bankStatementDate')}</th>
+                    <th>{t('bankStatementDescription')}</th>
+                    <th>{t('bankStatementCategories')}</th>
+                    <th style={{ textAlign: 'end' }}>{t('bankStatementColDebit')}</th>
+                    <th style={{ textAlign: 'end' }}>{t('bankStatementColCredit')}</th>
+                    <th style={{ textAlign: 'end' }}>{t('bankStatementBalance')}</th>
+                    <th>{t('note') || 'ملاحظة'}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {transactions.map((tx) => (
-                    <tr key={tx.id} style={{ borderTop: '1px solid var(--noorix-border)' }}>
+                    <tr key={tx.id}>
                       <td style={{ padding: 10 }}>{tx.txDate?.slice(0, 10)}</td>
                       <td style={{ padding: 10, maxWidth: 200 }}>{tx.description}</td>
                       <td style={{ padding: 10 }}>
@@ -261,18 +245,7 @@ export default function BankStatementDetailModal({
               </div>
               <div style={{ display: 'grid', gap: 10 }}>
                 {Object.entries(byCategory).map(([name, data]) => (
-                  <div
-                    key={name}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 16,
-                      padding: 12,
-                      borderRadius: 8,
-                      background: 'var(--noorix-bg-muted)',
-                      border: '1px solid var(--noorix-border)',
-                    }}
-                  >
+                  <div key={name} className="bank-statement__category-row">
                     <div style={{ flex: 1, fontWeight: 600 }}>{name}</div>
                     <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{data.count} حركة</div>
                     <div style={{ color: 'var(--noorix-error)' }}>{fmt(data.debit)}</div>
