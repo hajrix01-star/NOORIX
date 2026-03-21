@@ -221,6 +221,7 @@ export default function App() {
     queryClient.invalidateQueries({ queryKey: ['leaves'] });
     queryClient.invalidateQueries({ queryKey: ['residencies'] });
     queryClient.invalidateQueries({ queryKey: ['reports'] });
+    queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
     queryClient.invalidateQueries({ queryKey: ['orders'] });
     queryClient.invalidateQueries({ queryKey: ['order-products'] });
     queryClient.invalidateQueries({ queryKey: ['order-categories'] });

@@ -5,7 +5,8 @@
  */
 import React, { useState, useMemo, memo, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useSales } from '../../hooks/useSales';
@@ -38,6 +39,7 @@ const Badge = memo(function Badge({ map, value }) {
 
 /* ══ الشاشة الرئيسية ══════════════════════════════════════════ */
 export default function DailySalesScreen() {
+  const queryClient = useQueryClient();
   const { activeCompanyId, userRole, companies } = useApp();
   const { t, lang } = useTranslation();
   const [searchParams] = useSearchParams();
@@ -486,6 +488,7 @@ export default function DailySalesScreen() {
           return list.map(formatSalesForExport);
         }}
         onImportSuccess={() => {
+          invalidateOnFinancialMutation(queryClient);
           setToast({ visible: true, message: 'تم استيراد ملخصات المبيعات بنجاح', type: 'success' });
         }}
       />

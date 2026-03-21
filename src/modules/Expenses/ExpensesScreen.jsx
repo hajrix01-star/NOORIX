@@ -78,6 +78,7 @@ export default function ExpensesScreen() {
   };
 
   const handleFormSaved = () => {
+    invalidateOnFinancialMutation(queryClient);
     queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
     handleCloseForm();
     showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');

@@ -1,10 +1,28 @@
 /**
  * queryInvalidation — إبطال الكاش المركزي للعمليات المالية.
  * أي mutation يؤثر على الفواتير/الحركات/الخزائن يجب أن يستدعي invalidateOnFinancialMutation
- * لضمان تحديث التقارير والقوائم مباشرة دون الحاجة لتحديث يدوي.
+ * لضمان تحديث التقارير والقوائم واللوحات مباشرة (نفس نمط ERP/SaaS: إبطال بعد كل تغيير).
  *
  * @see docs/PERFORMANCE_AND_DATA.md
  */
+
+const FINANCIAL_QUERY_PREFIXES = [
+  ['invoices'],
+  ['vaults'],
+  ['sales-summaries'],
+  ['sales-summaries-paged'],
+  ['purchase-batch-summaries'],
+  ['ledger'],
+  ['reports'],
+  ['expense-lines'],
+  ['expense-line'],
+  ['expense-line-payments'],
+  ['orders'],
+  ['orders-summary'],
+  ['orders-items-report'],
+  ['product-purchase-history'],
+  ['category-purchase-history'],
+];
 
 /**
  * إبطال جميع الاستعلامات المتأثرة بتغيير مالي (فواتير، مبيعات، مشتريات، مصروفات، حركات).
@@ -14,11 +32,7 @@
  */
 export function invalidateOnFinancialMutation(queryClient) {
   if (!queryClient) return;
-  queryClient.invalidateQueries({ queryKey: ['invoices'] });
-  queryClient.invalidateQueries({ queryKey: ['vaults'] });
-  queryClient.invalidateQueries({ queryKey: ['sales-summaries'] });
-  queryClient.invalidateQueries({ queryKey: ['sales-summaries-paged'] });
-  queryClient.invalidateQueries({ queryKey: ['purchase-batch-summaries'] });
-  queryClient.invalidateQueries({ queryKey: ['ledger'] });
-  queryClient.invalidateQueries({ queryKey: ['reports'] });
+  FINANCIAL_QUERY_PREFIXES.forEach((queryKey) => {
+    queryClient.invalidateQueries({ queryKey });
+  });
 }

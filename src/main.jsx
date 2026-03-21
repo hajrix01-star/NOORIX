@@ -11,18 +11,17 @@ import './index.css';
 initGlobalCacheManager();
 
 /**
- * React Query — إعدادات هادئة:
- * - retry: لا يُعيد المحاولة على أخطاء 401/403/404 (لا فائدة منها).
- * - على أخطاء الشبكة: محاولة واحدة إضافية فقط بعد 3 ثوانٍ.
- * - staleTime: 60 ثانية لتقليل الطلبات المتكررة.
- * - refetchOnWindowFocus: false لتجنب الطلبات عند كل نقر.
+ * React Query — توازن بين الأداء والبيانات الحديثة (نمط SaaS شائع):
+ * - staleTime قصير نسبياً: إن فات إبطال مفتاح ما، تُحدَّث البيانات خلال ثوانٍ.
+ * - refetchOnWindowFocus: عند العودة للتبويب تُعاد جلب الاستعلامات «القديمة» — يقلل شعور «البيانات المتأخرة» بين الأقسام.
+ * - بعد كل mutation نستدعي invalidateOnFinancialMutation في الشاشات ذات الصلة.
  */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000,
+      staleTime: 15 * 1000,
       gcTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
       refetchOnReconnect: true,
       retry(failureCount, error) {
         // لا إعادة على أخطاء HTTP المعروفة
