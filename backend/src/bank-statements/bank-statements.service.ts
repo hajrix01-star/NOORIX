@@ -1,8 +1,18 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { GeminiService } from '../chat/gemini.service';
+
+/** مطابقة كلمات مفتاحية للعناوين الشائعة في كشوف الحساب */
+const HEADER_KEYWORDS: Record<string, string[]> = {
+  date: ['تاريخ', 'date', 'التاريخ', 'trans date', 'value date', 'قيمة'],
+  description: ['وصف', 'description', 'الوصف', 'بيان', 'تفاصيل', 'details', 'narration', 'مفهوم'],
+  debit: ['مدين', 'debit', 'سحب', 'خصم', 'withdraw', 'صادر'],
+  credit: ['دائن', 'credit', 'ايداع', 'إيداع', 'deposit', 'وارد', 'مبلغ'],
+  balance: ['رصيد', 'balance', 'الرصيد', 'الباقي'],
+  amount: ['مبلغ', 'amount', 'المبلغ', 'قيمة', 'value'],
+};
 
 const AR_NUMS = '٠١٢٣٤٥٦٧٨٩';
 function toWesternNum(str: string): string {
@@ -39,12 +49,48 @@ type ColumnMapping = {
   descCol?: number;
   debitCol?: number;
   creditCol?: number;
+  amountCol?: number; // عمود واحد: موجب=دائن، سالب=مدين
   balanceCol?: number;
   refCol?: number;
 };
 
+function matchHeaderType(cell: string): string | null {
+  const s = String(cell ?? '').toLowerCase().trim();
+  if (!s) return null;
+  for (const [type, keywords] of Object.entries(HEADER_KEYWORDS)) {
+    if (keywords.some((k) => s.includes(k.toLowerCase()))) return type;
+  }
+  return null;
+}
+
+/** بديل عند فشل Gemini: اكتشاف بسيط بناءً على نصوص العناوين */
+function heuristicDetection(
+  raw: string[][],
+): { headerRow: number; dataStartRow: number; dataEndRow: number; columnTypes: Record<number, string> } | null {
+  if (!raw?.length || !Array.isArray(raw[0])) return null;
+  const colCount = Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0)), 1);
+  const headerRow = 0;
+  const dataStartRow = 1;
+  const dataEndRow = Math.max(1, raw.length - 1);
+  const headerCells = raw[headerRow] || [];
+  const columnTypes: Record<number, string> = {};
+  for (let i = 0; i < colCount; i++) {
+    const t = matchHeaderType(headerCells[i]);
+    if (t) columnTypes[i] = t;
+    else columnTypes[i] = 'ignore';
+  }
+  const hasDate = Object.values(columnTypes).includes('date');
+  const hasAmount =
+    Object.values(columnTypes).some((t) => t === 'debit' || t === 'credit') ||
+    Object.values(columnTypes).includes('amount');
+  if (!hasDate || !hasAmount) return null;
+  return { headerRow, dataStartRow, dataEndRow, columnTypes };
+}
+
 @Injectable()
 export class BankStatementsService {
+  private readonly logger = new Logger(BankStatementsService.name);
+
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly geminiService: GeminiService,
@@ -89,29 +135,34 @@ export class BankStatementsService {
 
     if (this.geminiService.isAvailable()) {
       suggested = await this.geminiService.analyzeBankStatementStructure(raw);
-      if (suggested) {
-        const colMap: ColumnMapping = {};
-        for (const [k, v] of Object.entries(suggested.columnTypes)) {
-          const col = parseInt(k, 10);
-          if (v === 'date') colMap.dateCol = col;
-          else if (v === 'description') colMap.descCol = col;
-          else if (v === 'debit') colMap.debitCol = col;
-          else if (v === 'credit') colMap.creditCol = col;
-          else if (v === 'balance') colMap.balanceCol = col;
-        }
-        await this.prisma.bankStatement.update({
-          where: { id: stmt.id },
-          data: {
-            companyName: suggested.companyName || '',
-            startDate: suggested.reportDate ? `${suggested.reportDate}-01` : null,
-            endDate: suggested.reportDate ? `${suggested.reportDate}-28` : null,
-            headerRow: suggested.headerRow,
-            dataStartRow: suggested.dataStartRow,
-            dataEndRow: suggested.dataEndRow,
-            columnMapping: colMap as object,
-          },
-        });
+    }
+    if (!suggested) {
+      suggested = heuristicDetection(raw);
+      if (suggested) this.logger.log('Using heuristic fallback for column detection');
+    }
+    if (suggested) {
+      const colMap: ColumnMapping = {};
+      for (const [k, v] of Object.entries(suggested.columnTypes)) {
+        const col = parseInt(k, 10);
+        if (v === 'date') colMap.dateCol = col;
+        else if (v === 'description') colMap.descCol = col;
+        else if (v === 'debit') colMap.debitCol = col;
+        else if (v === 'credit') colMap.creditCol = col;
+        else if (v === 'balance') colMap.balanceCol = col;
+        else if (v === 'amount') colMap.amountCol = col;
       }
+      await this.prisma.bankStatement.update({
+        where: { id: stmt.id },
+        data: {
+          companyName: suggested.companyName || '',
+          startDate: suggested.reportDate ? `${suggested.reportDate}-01` : null,
+          endDate: suggested.reportDate ? `${suggested.reportDate}-28` : null,
+          headerRow: suggested.headerRow,
+          dataStartRow: suggested.dataStartRow,
+          dataEndRow: suggested.dataEndRow,
+          columnMapping: colMap as object,
+        },
+      });
     }
 
     return this.findOne(companyId, stmt.id);
@@ -146,10 +197,12 @@ export class BankStatementsService {
     const descCol = map.descCol ?? -1;
     const debitCol = map.debitCol ?? -1;
     const creditCol = map.creditCol ?? -1;
+    const amountCol = map.amountCol ?? -1;
     const balanceCol = map.balanceCol ?? -1;
 
-    if (dateCol < 0 || (debitCol < 0 && creditCol < 0))
-      throw new BadRequestException('يجب تحديد عمود التاريخ وعمود المدين أو الدائن');
+    const hasAmounts = debitCol >= 0 || creditCol >= 0 || amountCol >= 0;
+    if (dateCol < 0 || !hasAmounts)
+      throw new BadRequestException('يجب تحديد عمود التاريخ وعمود المدين أو الدائن أو المبلغ');
 
     const start = Math.max(0, dto.dataStartRow);
     const end = Math.min(raw.length - 1, dto.dataEndRow);
@@ -171,9 +224,15 @@ export class BankStatementsService {
       const dateVal = row[dateCol];
       const date = parseDate(dateVal);
       const desc = descCol >= 0 ? String(row[descCol] ?? '').trim() : '';
-      const debitVal = debitCol >= 0 ? parseNumber(row[debitCol]) : null;
-      const creditVal = creditCol >= 0 ? parseNumber(row[creditCol]) : null;
+      let debitVal = debitCol >= 0 ? parseNumber(row[debitCol]) : null;
+      let creditVal = creditCol >= 0 ? parseNumber(row[creditCol]) : null;
+      const amountVal = amountCol >= 0 ? parseNumber(row[amountCol]) : null;
       const balanceVal = balanceCol >= 0 ? parseNumber(row[balanceCol]) : null;
+
+      if (amountCol >= 0 && amountVal != null && amountVal !== 0) {
+        if (amountVal > 0) creditVal = amountVal;
+        else debitVal = Math.abs(amountVal);
+      }
 
       let debit = new Decimal(0);
       let credit = new Decimal(0);

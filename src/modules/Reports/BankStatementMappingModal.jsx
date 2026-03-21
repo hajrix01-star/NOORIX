@@ -11,6 +11,7 @@ const COL_TYPES = [
   { key: 'descCol', labelKey: 'bankStatementColDescription', required: false },
   { key: 'debitCol', labelKey: 'bankStatementColDebit', required: false },
   { key: 'creditCol', labelKey: 'bankStatementColCredit', required: false },
+  { key: 'amountCol', labelKey: 'bankStatementColAmount', required: false },
   { key: 'balanceCol', labelKey: 'bankStatementColBalance', required: false },
 ];
 
@@ -44,6 +45,7 @@ export default function BankStatementMappingModal({ statement, companyId, catego
     descCol: base?.columnMapping?.descCol ?? -1,
     debitCol: base?.columnMapping?.debitCol ?? -1,
     creditCol: base?.columnMapping?.creditCol ?? -1,
+    amountCol: base?.columnMapping?.amountCol ?? -1,
     balanceCol: base?.columnMapping?.balanceCol ?? -1,
   }));
 
@@ -73,7 +75,8 @@ export default function BankStatementMappingModal({ statement, companyId, catego
     setColumnMapping((prev) => ({ ...prev, [key]: value === '' || value == null ? -1 : parseInt(value, 10) }));
 
   const canConfirm =
-    columnMapping.dateCol >= 0 && (columnMapping.debitCol >= 0 || columnMapping.creditCol >= 0);
+    columnMapping.dateCol >= 0 &&
+    (columnMapping.debitCol >= 0 || columnMapping.creditCol >= 0 || columnMapping.amountCol >= 0);
 
   const handleConfirm = async () => {
     if (!canConfirm) {

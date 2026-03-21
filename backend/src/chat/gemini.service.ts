@@ -5,7 +5,7 @@
  *
  * الأمان: المفتاح في backend/.env فقط — يُقرأ عبر gemini.config.ts
  */
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { getGeminiApiKey, getGeminiModel } from '../config/gemini.config';
 
 function getGeminiUrl(): string {
@@ -257,6 +257,8 @@ export class GeminiService {
     }
   }
 
+  private readonly logger = new Logger(GeminiService.name);
+
   /**
    * تحليل كشف حساب — خطوة 1: استخراج البيانات الوصفية ونطاق الجدول
    */
@@ -304,10 +306,18 @@ ${textSample}
         }),
       });
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        const errText = await response.text();
+        this.logger.warn(`Phase1 API ${response.status}: ${errText.slice(0, 300)}`);
+        return null;
+      }
       const data = (await response.json()) as any;
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) return null;
+      if (!text) {
+        const reason = data?.candidates?.[0]?.finishReason;
+        this.logger.warn(`Phase1 no text, finishReason: ${reason}`);
+        return null;
+      }
 
       const parsed = extractJson<{
         companyName?: string;
@@ -317,7 +327,10 @@ ${textSample}
         dataEndRow?: number;
       }>(text);
 
-      if (!parsed || parsed.dataStartRow == null) return null;
+      if (!parsed || parsed.dataStartRow == null) {
+        this.logger.warn(`Phase1 parse failed or missing dataStartRow. Raw: ${text.slice(0, 200)}`);
+        return null;
+      }
 
       const dataStartRow = Math.max(0, Math.min(raw.length - 1, Math.floor(Number(parsed.dataStartRow) || 0)));
       const dataEndRow = Math.max(
@@ -334,7 +347,7 @@ ${textSample}
         headerRow,
       };
     } catch (err) {
-      console.warn('[GeminiService] phase1 error:', err);
+      this.logger.warn(`Phase1 error: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
   }
@@ -375,13 +388,23 @@ ${sampleRows}
         }),
       });
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        const errText = await response.text();
+        this.logger.warn(`Phase2 API ${response.status}: ${errText.slice(0, 300)}`);
+        return null;
+      }
       const data = (await response.json()) as any;
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) return null;
+      if (!text) {
+        this.logger.warn(`Phase2 no text`);
+        return null;
+      }
 
       const parsed = extractJson<Record<string, string>>(text);
-      if (!parsed || typeof parsed !== 'object') return null;
+      if (!parsed || typeof parsed !== 'object') {
+        this.logger.warn(`Phase2 parse failed. Raw: ${text.slice(0, 200)}`);
+        return null;
+      }
 
       const validTypes = ['date', 'debit', 'credit', 'amount', 'description', 'balance', 'ignore'];
       const columnTypes: Record<number, string> = {};
@@ -391,7 +414,7 @@ ${sampleRows}
       }
       return columnTypes;
     } catch (err) {
-      console.warn('[GeminiService] phase2 error:', err);
+      this.logger.warn(`Phase2 error: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
   }
