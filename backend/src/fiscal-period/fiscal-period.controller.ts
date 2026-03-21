@@ -1,7 +1,7 @@
 /**
  * FiscalPeriodController — إدارة الفترات المالية
  */
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { FiscalPeriodService } from './fiscal-period.service';
@@ -35,7 +35,11 @@ export class FiscalPeriodController {
     @Body() body: { companyId: string },
     @CurrentUser() user: JwtUser,
   ) {
-    return this.service.closePeriod(id, body.companyId, user.sub);
+    const userId = user.sub ?? user.userId;
+    if (!userId) {
+      throw new UnauthorizedException();
+    }
+    return this.service.closePeriod(id, body.companyId, userId);
   }
 
   @Post(':id/reopen')
