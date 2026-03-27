@@ -118,6 +118,9 @@ model Company {
   orderCategories     OrderCategory[]
   bankStatements      BankStatement[]
   bankStatementCategories BankStatementCategory[]
+  bankTreeCategories  BankTreeCategory[]
+  bankClassificationRules BankClassificationRule[]
+  bankStatementTemplates BankStatementTemplate[]
 
   @@index([tenantId])
   @@map("companies")
@@ -142,7 +145,9 @@ model BankStatement {
   totalDeposits    Decimal  @default(0)           @map("total_deposits")
   totalWithdrawals Decimal  @default(0)           @map("total_withdrawals")
   transactionCount Int      @default(0)           @map("transaction_count")
-  rawData          Json?    @map("raw_data")      // أول N صف للعرض (اختياري)
+  rawData          Json?    @map("raw_data")      // شبكة الملف كاملة (حتى حد الخادم) لإعادة الربط
+  summaryJson      Json?    @map("summary_json") // opening/closing/by_category/pos_terminals (Base44)
+  aiAnalysis       String?  @map("ai_analysis") @db.Text
   createdAt        DateTime @default(now())       @map("created_at")
   updatedAt        DateTime @updatedAt            @map("updated_at")
 
@@ -167,12 +172,82 @@ model BankStatementTransaction {
   reference   String?  @map("reference")
   note        String?  @map("note")
   sortOrder   Int      @default(0)    @map("sort_order")
+  matchKeyword       String?  @map("match_keyword")
+  classificationName String?  @map("classification_name")
+  transactionType    String?  @map("transaction_type")
+  manuallyClassified Boolean  @default(false) @map("manually_classified")
 
   statement BankStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
   category  BankStatementCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([statementId])
   @@map("bank_statement_transactions")
+}
+
+// فئات شجرية + كلمات مفتاحية (مطابقة BankCategory في Base44)
+model BankTreeCategory {
+  id                String   @id @default(cuid())
+  tenantId          String   @map("tenant_id")
+  companyId         String   @map("company_id")
+  name              String   @map("name")
+  sortOrder         Int      @default(100) @map("sort_order")
+  isActive          Boolean  @default(true) @map("is_active")
+  transactionSide   String   @default("any") @map("transaction_side")
+  transactionType   String?  @map("transaction_type")
+  parentKeywords    Json     @map("parent_keywords")
+  classifications   Json     @map("classifications")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("bank_tree_categories")
+}
+
+// قواعد تصنيف قديمة/بسيطة (مطابقة BankClassificationRule)
+model BankClassificationRule {
+  id                String   @id @default(cuid())
+  tenantId          String   @map("tenant_id")
+  companyId         String   @map("company_id")
+  keyword           String   @map("keyword")
+  matchType         String   @default("contains") @map("match_type")
+  categoryName      String   @map("category_name")
+  transactionSide   String   @default("any") @map("transaction_side")
+  transactionType   String?  @map("transaction_type")
+  isActive          Boolean  @default(true) @map("is_active")
+  priority          Int      @default(0) @map("priority")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("bank_classification_rules")
+}
+
+// قوالب أعمدة لكل بنك (مطابقة BankTemplate)
+model BankStatementTemplate {
+  id             String    @id @default(cuid())
+  tenantId       String    @map("tenant_id")
+  companyId      String    @map("company_id")
+  bankName       String    @map("bank_name")
+  customerName   String?   @map("customer_name")
+  headerRow      Int       @map("header_row")
+  dataStartRow   Int       @map("data_start_row")
+  dataEndRow     Int       @default(-1) @map("data_end_row")
+  columnsJson    Json      @map("columns_json")
+  dateFormat     String?   @map("date_format")
+  sampleHeaders  Json      @map("sample_headers")
+  isActive       Boolean   @default(true) @map("is_active")
+  usageCount     Int       @default(0) @map("usage_count")
+  lastUsedAt     DateTime? @map("last_used_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("bank_statement_templates")
 }
 
 model BankStatementCategory {

@@ -72,15 +72,27 @@ export async function importFromExcel(file, opts = {}) {
  * @param {File} file
  * @returns {Promise<{ raw: any[][], colCount: number }>}
  */
+/**
+ * اختيار الورقة ذات أكثر صفوف بيانات (مثل readExcelToJson في Base44) + cellDates للتواريخ
+ */
 export async function importExcelRaw(file) {
   const XLSX = await import('xlsx');
   const data = await file.arrayBuffer();
-  const wb = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-  const rows = raw.map((r) => (Array.isArray(r) ? r : []));
-  const colCount = rows.length ? Math.max(...rows.map((r) => r.length)) : 0;
-  const normalized = rows.map((r) => {
+  const wb = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy-mm-dd' });
+  let bestRows = [];
+  let maxDataRows = 0;
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    const rows = json.map((r) => (Array.isArray(r) ? r : []));
+    const dataRows = rows.filter((row) => row?.filter((c) => c !== '' && c != null).length >= 2);
+    if (dataRows.length > maxDataRows) {
+      maxDataRows = dataRows.length;
+      bestRows = rows;
+    }
+  }
+  const colCount = bestRows.length ? Math.max(...bestRows.map((r) => r.length)) : 0;
+  const normalized = bestRows.map((r) => {
     const arr = [...r];
     while (arr.length < colCount) arr.push('');
     return arr;

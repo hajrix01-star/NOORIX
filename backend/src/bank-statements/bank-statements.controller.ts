@@ -34,6 +34,21 @@ export class BankStatementsController {
     });
   }
 
+  @Post('suggest-header-metadata')
+  @RequirePermission('REPORTS_READ')
+  async suggestHeaderMetadata(@Body() body: { companyId: string; raw: string[][] }) {
+    if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    if (!body.raw?.length) throw new HttpException('raw مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.suggestHeaderMetadata(body.raw);
+  }
+
+  @Post(':id/reclassify')
+  @RequirePermission('REPORTS_READ')
+  async reclassify(@Param('id') id: string, @Body() body: { companyId: string }) {
+    if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.reclassifyStatement(body.companyId, id);
+  }
+
   @Patch(':id/confirm-mapping')
   @RequirePermission('REPORTS_READ')
   async confirmMapping(
@@ -75,6 +90,131 @@ export class BankStatementsController {
   async list(@Query('companyId') companyId: string, @Query('month') month?: string, @Query('bankName') bankName?: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.list(companyId, { month, bankName });
+  }
+
+  @Get('reconciliation-stats')
+  @RequirePermission('REPORTS_READ')
+  async reconciliationStats(
+    @Query('companyId') companyId: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    if (!companyId || !startDate || !endDate) {
+      throw new HttpException('companyId و startDate و endDate مطلوبة', HttpStatus.BAD_REQUEST);
+    }
+    return this.service.getReconciliationStats(companyId, startDate, endDate);
+  }
+
+  @Get('templates')
+  @RequirePermission('REPORTS_READ')
+  async listTemplates(@Query('companyId') companyId: string) {
+    if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.listTemplates(companyId);
+  }
+
+  @Patch('templates/:templateId')
+  @RequirePermission('REPORTS_READ')
+  async setTemplateIsActive(
+    @Param('templateId') templateId: string,
+    @Body() body: { companyId: string; isActive: boolean },
+  ) {
+    if (!body?.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    if (typeof body.isActive !== 'boolean') {
+      throw new HttpException('isActive مطلوب (boolean)', HttpStatus.BAD_REQUEST);
+    }
+    return this.service.setTemplateIsActive(body.companyId, templateId, body.isActive);
+  }
+
+  @Delete('templates/:templateId')
+  @RequirePermission('REPORTS_READ')
+  async deleteTemplate(@Query('companyId') companyId: string, @Param('templateId') templateId: string) {
+    if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.deleteTemplate(companyId, templateId);
+  }
+
+  @Get('tree-categories')
+  @RequirePermission('REPORTS_READ')
+  async listTreeCategories(@Query('companyId') companyId: string) {
+    if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.listTreeCategories(companyId);
+  }
+
+  @Post('tree-categories')
+  @RequirePermission('REPORTS_READ')
+  async createTreeCategory(
+    @Body()
+    body: {
+      companyId: string;
+      name: string;
+      sortOrder?: number;
+      transactionSide?: string;
+      transactionType?: string | null;
+      parentKeywords: string[];
+      classifications: { name: string; keywords: string[] }[];
+    },
+  ) {
+    if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.createTreeCategory(body.companyId, body);
+  }
+
+  @Patch('tree-categories/:cid')
+  @RequirePermission('REPORTS_READ')
+  async updateTreeCategory(
+    @Param('cid') cid: string,
+    @Body()
+    body: {
+      companyId: string;
+      name?: string;
+      sortOrder?: number;
+      isActive?: boolean;
+      transactionSide?: string;
+      transactionType?: string | null;
+      parentKeywords?: string[];
+      classifications?: { name: string; keywords: string[] }[];
+    },
+  ) {
+    if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    const { companyId, ...rest } = body;
+    return this.service.updateTreeCategory(companyId, cid, rest);
+  }
+
+  @Delete('tree-categories/:cid')
+  @RequirePermission('REPORTS_READ')
+  async deleteTreeCategory(@Query('companyId') companyId: string, @Param('cid') cid: string) {
+    if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.deleteTreeCategory(companyId, cid);
+  }
+
+  @Get('classification-rules')
+  @RequirePermission('REPORTS_READ')
+  async listRules(@Query('companyId') companyId: string) {
+    if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.listClassificationRules(companyId);
+  }
+
+  @Post('classification-rules')
+  @RequirePermission('REPORTS_READ')
+  async createRule(
+    @Body()
+    body: {
+      companyId: string;
+      keyword: string;
+      matchType?: string;
+      categoryName: string;
+      transactionSide?: string;
+      transactionType?: string | null;
+      priority?: number;
+    },
+  ) {
+    if (!body.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.createClassificationRule(body.companyId, body);
+  }
+
+  @Delete('classification-rules/:rid')
+  @RequirePermission('REPORTS_READ')
+  async deleteRule(@Query('companyId') companyId: string, @Param('rid') rid: string) {
+    if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.deleteClassificationRule(companyId, rid);
   }
 
   @Get(':id')

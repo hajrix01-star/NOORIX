@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "predev": "powershell -ExecutionPolicy Bypass -File scripts/kill-port.ps1 -Port 5173",
+    "start:dev": "npm run start:dev --prefix backend",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",

@@ -375,7 +375,8 @@ ${headerCells}
 عيّنة بيانات:
 ${sampleRows}
 
-لكل عمود 0 إلى ${colCount - 1} اختر: date | debit | credit | amount | description | balance | ignore
+لكل عمود 0 إلى ${colCount - 1} اختر: date | debit | credit | amount | description | notes | balance | reference | ignore
+(notes = ملاحظات إضافية تُدمج مع الوصف، reference = مرجع/رقم عملية)
 أرجع JSON فقط: {"0":"نوع","1":"نوع",...}`;
 
     try {
@@ -406,7 +407,17 @@ ${sampleRows}
         return null;
       }
 
-      const validTypes = ['date', 'debit', 'credit', 'amount', 'description', 'balance', 'ignore'];
+      const validTypes = [
+        'date',
+        'debit',
+        'credit',
+        'amount',
+        'description',
+        'notes',
+        'balance',
+        'reference',
+        'ignore',
+      ];
       const columnTypes: Record<number, string> = {};
       for (let i = 0; i < colCount; i++) {
         const t = String(parsed[String(i)] ?? 'ignore').toLowerCase();
@@ -415,6 +426,74 @@ ${sampleRows}
       return columnTypes;
     } catch (err) {
       this.logger.warn(`Phase2 error: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    }
+  }
+
+  /**
+   * ترويسة الكشف (عميل، بنك، فترة) — مطابقة برومبت InvokeLLM في BankColumnMapper (Base44)
+   */
+  async suggestBankStatementHeaderMetadata(raw: string[][]): Promise<{
+    customerName: string;
+    bankName: string;
+    periodFrom: string;
+    periodTo: string;
+  } | null> {
+    if (!this.apiKey || !raw?.length) return null;
+
+    const slice = raw.slice(0, Math.min(22, raw.length));
+    const headerText = slice
+      .map((row, idx) => {
+        const parts = (row || []).map((c, ci) => {
+          if (c === '' || c == null) return '';
+          const s = String(c).trim().slice(0, 120);
+          return s ? `[${ci}]${s}` : '';
+        });
+        return `سطر ${idx}: ${parts.filter(Boolean).join(' | ')}`;
+      })
+      .join('\n');
+
+    const prompt = `حلل ترويسة كشف الحساب البنكي التالي واستخرج المعلومات:
+
+${headerText}
+
+استخرج:
+- customer_name: اسم الشركة/المؤسسة/العميل صاحب الحساب (ليس اسم البنك!)
+- bank_name: اسم البنك
+- period_from: تاريخ بداية الفترة (صيغة YYYY-MM-DD)
+- period_to: تاريخ نهاية الفترة (صيغة YYYY-MM-DD)
+
+أرجع JSON فقط. إذا لم تجد معلومة اتركها فارغة "".`;
+
+    try {
+      const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.05, maxOutputTokens: 512, responseMimeType: 'application/json' },
+        }),
+      });
+      if (!response.ok) return null;
+      const data = (await response.json()) as any;
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) return null;
+      const parsed = extractJson<{
+        customer_name?: string;
+        bank_name?: string;
+        period_from?: string;
+        period_to?: string;
+      }>(text);
+      if (!parsed) return null;
+      const norm = (s: unknown) => String(s ?? '').trim().slice(0, 200);
+      return {
+        customerName: norm(parsed.customer_name),
+        bankName: norm(parsed.bank_name),
+        periodFrom: norm(parsed.period_from).slice(0, 10),
+        periodTo: norm(parsed.period_to).slice(0, 10),
+      };
+    } catch (err) {
+      this.logger.warn(`suggestBankStatementHeaderMetadata: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
   }

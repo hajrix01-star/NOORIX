@@ -268,6 +268,15 @@ export async function chatQuery(query) {
 export async function bankStatementUpload(body) {
   return apiPost('/api/v1/bank-statements/upload', body, { timeout: 60000 });
 }
+
+export async function bankStatementSuggestHeaderMetadata(companyId, raw) {
+  const slice = Array.isArray(raw) ? raw.slice(0, 24) : [];
+  return apiPost(
+    '/api/v1/bank-statements/suggest-header-metadata',
+    { companyId, raw: slice },
+    { timeout: 45000 },
+  );
+}
 export async function bankStatementConfirmMapping(id, body) {
   return apiPatch(`/api/v1/bank-statements/${id}/confirm-mapping`, body);
 }
@@ -300,6 +309,62 @@ export async function bankStatementCreateCategory(body) {
 }
 export async function bankStatementDeleteCategory(companyId, id) {
   return apiDelete(`/api/v1/bank-statements/categories/${id}?companyId=${companyId}`);
+}
+
+export async function bankStatementReclassify(companyId, statementId) {
+  return apiPost(`/api/v1/bank-statements/${statementId}/reclassify`, { companyId }, { timeout: 120000 });
+}
+
+export async function bankStatementReconciliationStats(companyId, startDate, endDate) {
+  return apiGet('/api/v1/bank-statements/reconciliation-stats', {
+    companyId,
+    startDate: String(startDate || '').slice(0, 10),
+    endDate: String(endDate || '').slice(0, 10),
+  });
+}
+
+export async function bankStatementTemplatesList(companyId) {
+  const res = await apiGet('/api/v1/bank-statements/templates', { companyId });
+  return res.success ? { success: true, data: res.data ?? [] } : res;
+}
+
+export async function bankStatementTemplateSetActive(companyId, templateId, isActive) {
+  return apiPatch(`/api/v1/bank-statements/templates/${templateId}`, { companyId, isActive });
+}
+
+/** حذف القالب نهائياً (مطابق Base44) */
+export async function bankStatementTemplateDelete(companyId, templateId) {
+  return apiDelete(`/api/v1/bank-statements/templates/${templateId}?companyId=${companyId}`);
+}
+
+export async function bankStatementTreeCategoriesList(companyId) {
+  const res = await apiGet('/api/v1/bank-statements/tree-categories', { companyId });
+  return res.success ? { success: true, data: res.data ?? [] } : res;
+}
+
+export async function bankStatementTreeCategoryCreate(body) {
+  return apiPost('/api/v1/bank-statements/tree-categories', body);
+}
+
+export async function bankStatementTreeCategoryUpdate(companyId, categoryId, patch) {
+  return apiPatch(`/api/v1/bank-statements/tree-categories/${categoryId}`, { companyId, ...patch });
+}
+
+export async function bankStatementTreeCategoryDelete(companyId, categoryId) {
+  return apiDelete(`/api/v1/bank-statements/tree-categories/${categoryId}?companyId=${companyId}`);
+}
+
+export async function bankStatementClassificationRulesList(companyId) {
+  const res = await apiGet('/api/v1/bank-statements/classification-rules', { companyId });
+  return res.success ? { success: true, data: res.data ?? [] } : res;
+}
+
+export async function bankStatementClassificationRuleCreate(body) {
+  return apiPost('/api/v1/bank-statements/classification-rules', body);
+}
+
+export async function bankStatementClassificationRuleDelete(companyId, ruleId) {
+  return apiDelete(`/api/v1/bank-statements/classification-rules/${ruleId}?companyId=${companyId}`);
 }
 
 // ——— موارد ———

@@ -1,35 +1,28 @@
 /**
- * BankStatementAnalysisScreen — تحليل كشوف الحساب
- * تبويبات: الكشوفات | دمج كشوفات | قواعد التصنيف | القوالب
- * بطاقات ملخص، رفع ملف، ربط أعمدة، قائمة كشوف، عرض تفصيلي
+ * BankStatementAnalysisScreen — تحليل كشوف الحساب (واجهة كاملة مكيّفة من المشروع السابق)
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import {
   bankStatementsList,
   bankStatementSummary,
-  bankStatementUpload,
-  bankStatementConfirmMapping,
-  bankStatementGet,
   bankStatementDelete,
   bankStatementCategories,
-  bankStatementUpdateTxCategory,
-  bankStatementUpdateTxNote,
   bankStatementCreateCategory,
-  bankStatementDeleteCategory,
 } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import Toast from '../../components/Toast';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
-import BankStatementDetailModal from './BankStatementDetailModal';
+import BankStatementDetailView from './bank/BankStatementDetailView';
+import BankStatementTemplatesPanel from './bank/BankStatementTemplatesPanel';
+import BankCategoryTreePanel from './bank/BankCategoryTreePanel';
 
 const TABS = [
   { id: 'statements', labelKey: 'bankStatementTabStatements' },
-  { id: 'merge', labelKey: 'bankStatementTabMerge' },
   { id: 'rules', labelKey: 'bankStatementTabRules' },
   { id: 'templates', labelKey: 'bankStatementTabTemplates' },
 ];
@@ -37,18 +30,24 @@ const TABS = [
 const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
 export default function BankStatementAnalysisScreen() {
-  const { activeCompanyId } = useApp();
+  const { activeCompanyId, companies } = useApp();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const companyId = activeCompanyId ?? '';
 
+  const activeCompanyName = useMemo(() => {
+    const c = (companies || []).find((x) => x.id === companyId);
+    return c?.nameAr || c?.nameEn || c?.name || '';
+  }, [companies, companyId]);
+
+  const [selectedStatementId, setSelectedStatementId] = useState(null);
   const [activeTab, setActiveTab] = useState('statements');
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [showUpload, setShowUpload] = useState(false);
   const [mappingStatement, setMappingStatement] = useState(null);
-  const [detailStatement, setDetailStatement] = useState(null);
   const [filterMonth, setFilterMonth] = useState('');
   const [filterBank, setFilterBank] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const showToast = (message, type = 'success') => setToast({ visible: true, message, type });
 
@@ -67,7 +66,7 @@ export default function BankStatementAnalysisScreen() {
       });
       return res?.data ?? [];
     },
-    enabled: !!companyId && activeTab === 'statements',
+    enabled: !!companyId && (activeTab === 'statements' || !selectedStatementId),
   });
 
   const { data: categories = [] } = useQuery({
@@ -83,81 +82,165 @@ export default function BankStatementAnalysisScreen() {
     queryClient.invalidateQueries({ queryKey: ['bank-statements'] });
     queryClient.invalidateQueries({ queryKey: ['bank-statements-summary'] });
     queryClient.invalidateQueries({ queryKey: ['bank-statement-categories'] });
+    queryClient.invalidateQueries({ queryKey: ['bank-statement'] });
   }, [queryClient]);
 
   const handleUploadComplete = (stmt, fullRaw) => {
     setShowUpload(false);
     invalidate();
     if (stmt?.status === 'mapping') setMappingStatement({ ...stmt, _fullRaw: fullRaw });
-    else setDetailStatement(stmt);
+    else {
+      setSelectedStatementId(stmt.id);
+    }
   };
 
   const handleMappingComplete = () => {
     setMappingStatement(null);
     invalidate();
-    showToast(t('bankStatementParsedCount', String(0)));
+    showToast(t('bankStatementParsedCount', '0'));
   };
 
-  const handleCloseMapping = () => setMappingStatement(null);
-  const handleOpenDetail = (stmt) => {
+  const handleSelectStatement = (stmt) => {
     if (stmt.status === 'mapping') {
       setMappingStatement(stmt);
-    } else {
-      setDetailStatement(stmt);
+      return;
     }
+    setSelectedStatementId(stmt.id);
   };
-  const handleCloseDetail = () => setDetailStatement(null);
 
   const deleteMutation = useMutation({
     mutationFn: (id) => bankStatementDelete(companyId, id),
     onSuccess: () => {
       invalidate();
-      handleCloseDetail();
+      setDeleteConfirmId(null);
+      setSelectedStatementId(null);
       showToast(t('deletedSuccessfully') || 'تم الحذف');
     },
     onError: (err) => showToast(err?.message || 'فشل الحذف', 'error'),
   });
 
-  const cards = [
-    {
-      key: 'count',
-      labelKey: 'bankStatementCardCount',
-      value: summary?.data?.statementCount ?? 0,
-      format: (v) => String(v),
-    },
-    {
-      key: 'totalDeposits',
-      labelKey: 'bankStatementCardDeposits',
-      value: summary?.data?.totalDeposits ?? 0,
-      format: (v) => fmt(Number(v)),
-    },
-    {
-      key: 'totalWithdrawals',
-      labelKey: 'bankStatementCardWithdrawals',
-      value: summary?.data?.totalWithdrawals ?? 0,
-      format: (v) => fmt(Number(v)),
-    },
-    {
-      key: 'netFlow',
-      labelKey: 'bankStatementCardNetFlow',
-      value: summary?.data?.netFlow ?? 0,
-      format: (v) => fmt(Number(v)),
-    },
-  ];
+  const completedStatements = useMemo(
+    () => statements.filter((s) => s.status === 'completed'),
+    [statements],
+  );
+
+  const quickStats = useMemo(() => {
+    const dep = completedStatements.reduce((s, x) => s + (Number(x.totalDeposits) || 0), 0);
+    const wdr = completedStatements.reduce((s, x) => s + (Number(x.totalWithdrawals) || 0), 0);
+    return { totalDeposits: dep, totalWithdrawals: wdr, netFlow: dep - wdr };
+  }, [completedStatements]);
 
   const banks = [...new Set(statements.map((s) => s.bankName).filter(Boolean))].sort();
   const months = [...new Set(statements.map((s) => s.startDate?.slice(0, 7)).filter(Boolean))].sort().reverse();
 
+  if (selectedStatementId) {
+    return (
+      <div style={{ display: 'grid', gap: 18 }}>
+        <BankStatementDetailView
+          statementId={selectedStatementId}
+          companyId={companyId}
+          companyName={activeCompanyName}
+          categories={categories}
+          onBack={() => setSelectedStatementId(null)}
+          onDelete={() => setDeleteConfirmId(selectedStatementId)}
+          createCategory={(body) => bankStatementCreateCategory({ ...body, companyId })}
+          showToast={showToast}
+          onRefresh={invalidate}
+        />
+
+        {deleteConfirmId ? (
+          <div
+            className="noorix-modal-backdrop"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.4)',
+              zIndex: 1200,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onClick={(e) => e.target === e.currentTarget && setDeleteConfirmId(null)}
+          >
+            <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 400, width: '90%' }} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ marginTop: 0 }}>{t('confirmDelete')}</h3>
+              <p style={{ color: 'var(--noorix-text-muted)', fontSize: 14 }}>{t('bankDeleteStatementConfirm')}</p>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+                <button type="button" className="noorix-btn noorix-btn--ghost" onClick={() => setDeleteConfirmId(null)}>
+                  {t('cancel')}
+                </button>
+                <button
+                  type="button"
+                  className="noorix-btn noorix-btn--primary"
+                  style={{ background: '#dc2626' }}
+                  disabled={deleteMutation.isPending}
+                  onClick={() => deleteMutation.mutate(deleteConfirmId)}
+                >
+                  {deleteMutation.isPending ? t('loading') : t('delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <Toast
+          visible={toast.visible}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((p) => ({ ...p, visible: false }))}
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'grid', gap: 18 }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--noorix-text)' }}>
-          {t('reportBankStatementAnalysis')}
-        </h1>
-        <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-          {t('bankStatementMonthlyDesc')}
-        </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--noorix-text)' }}>
+            {t('reportBankStatementAnalysis')}
+          </h1>
+          <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankStatementMonthlyDesc')}</p>
+        </div>
+        <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => setShowUpload(true)}>
+          + {t('bankStatementUploadNew')}
+        </button>
       </div>
+
+      {completedStatements.length > 0 && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+            gap: 12,
+          }}
+        >
+          {[
+            { label: t('bankStatementCardCount'), value: String(completedStatements.length), tone: 'blue' },
+            { label: t('bankStatementCardDeposits'), value: fmt(quickStats.totalDeposits), tone: 'green' },
+            { label: t('bankStatementCardWithdrawals'), value: fmt(quickStats.totalWithdrawals), tone: 'red' },
+            {
+              label: t('bankStatementCardNetFlow'),
+              value: fmt(quickStats.netFlow),
+              tone: quickStats.netFlow >= 0 ? 'green' : 'red',
+            },
+          ].map((c, i) => (
+            <div
+              key={i}
+              className="noorix-surface-card"
+              style={{
+                padding: 14,
+                borderLeft: `4px solid ${
+                  c.tone === 'blue' ? '#2563eb' : c.tone === 'green' ? '#16a34a' : '#dc2626'
+                }`,
+              }}
+            >
+              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{c.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, direction: 'ltr', textAlign: 'right' }}>{c.value}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div
@@ -194,8 +277,7 @@ export default function BankStatementAnalysisScreen() {
         <div style={{ padding: 24 }}>
           {activeTab === 'statements' && (
             <>
-              {/* بطاقات الملخص */}
-              {!summaryLoading && (
+              {!summaryLoading && statements.length > 0 && completedStatements.length === 0 && (
                 <div
                   style={{
                     display: 'grid',
@@ -204,7 +286,12 @@ export default function BankStatementAnalysisScreen() {
                     marginBottom: 20,
                   }}
                 >
-                  {cards.map((c) => (
+                  {[
+                    { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.data?.statementCount ?? 0, f: (v) => String(v) },
+                    { key: 'dep', labelKey: 'bankStatementCardDeposits', value: summary?.data?.totalDeposits ?? 0, f: (v) => fmt(Number(v)) },
+                    { key: 'wdr', labelKey: 'bankStatementCardWithdrawals', value: summary?.data?.totalWithdrawals ?? 0, f: (v) => fmt(Number(v)) },
+                    { key: 'net', labelKey: 'bankStatementCardNetFlow', value: summary?.data?.netFlow ?? 0, f: (v) => fmt(Number(v)) },
+                  ].map((c) => (
                     <div
                       key={c.key}
                       style={{
@@ -214,18 +301,13 @@ export default function BankStatementAnalysisScreen() {
                         border: '1px solid var(--noorix-border)',
                       }}
                     >
-                      <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 4 }}>
-                        {t(c.labelKey)}
-                      </div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--noorix-text)' }}>
-                        {c.format(c.value)}
-                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 4 }}>{t(c.labelKey)}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700 }}>{c.f(c.value)}</div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* حالة فارغة */}
               {!listLoading && statements.length === 0 && (
                 <div
                   style={{
@@ -237,23 +319,14 @@ export default function BankStatementAnalysisScreen() {
                   }}
                 >
                   <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}>📄</div>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--noorix-text)', marginBottom: 6 }}>
-                    {t('bankStatementEmptyTitle')}
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 16 }}>
-                    {t('bankStatementEmptyDesc')}
-                  </div>
-                  <button
-                    type="button"
-                    className="noorix-btn noorix-btn--primary"
-                    onClick={() => setShowUpload(true)}
-                  >
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{t('bankStatementEmptyTitle')}</div>
+                  <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 16 }}>{t('bankStatementEmptyDesc')}</div>
+                  <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => setShowUpload(true)}>
                     {t('bankStatementUploadNew')}
                   </button>
                 </div>
               )}
 
-              {/* قائمة الكشوف مع فلاتر */}
               {!listLoading && statements.length > 0 && (
                 <>
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
@@ -299,17 +372,9 @@ export default function BankStatementAnalysisScreen() {
                         </option>
                       ))}
                     </select>
-                    <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => setShowUpload(true)}>
-                      {t('bankStatementUploadNew')}
-                    </button>
                   </div>
 
-                  <div
-                    style={{
-                      display: 'grid',
-                      gap: 10,
-                    }}
-                  >
+                  <div style={{ display: 'grid', gap: 10 }}>
                     {statements.map((stmt) => {
                       const start = stmt.startDate?.slice(0, 10);
                       const end = stmt.endDate?.slice(0, 10);
@@ -324,8 +389,8 @@ export default function BankStatementAnalysisScreen() {
                           key={stmt.id}
                           role="button"
                           tabIndex={0}
-                          onClick={() => handleOpenDetail(stmt)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleOpenDetail(stmt)}
+                          onClick={() => handleSelectStatement(stmt)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSelectStatement(stmt)}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -339,9 +404,7 @@ export default function BankStatementAnalysisScreen() {
                         >
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                              <span style={{ fontWeight: 600, color: 'var(--noorix-text)' }}>
-                                {stmt.companyName || stmt.fileName || 'كشف'}
-                              </span>
+                              <span style={{ fontWeight: 600 }}>{stmt.companyName || stmt.fileName || 'كشف'}</span>
                               <span
                                 style={{
                                   fontSize: 11,
@@ -370,20 +433,11 @@ export default function BankStatementAnalysisScreen() {
             </>
           )}
 
-          {activeTab === 'merge' && (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
-              {t('bankStatementMergeComingSoon')}
-            </div>
-          )}
           {activeTab === 'rules' && (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
-              {t('bankStatementRulesComingSoon')}
-            </div>
+            <BankCategoryTreePanel companyId={companyId} showToast={showToast} />
           )}
           {activeTab === 'templates' && (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
-              {t('bankStatementTemplatesComingSoon')}
-            </div>
+            <BankStatementTemplatesPanel companyId={companyId} showToast={showToast} />
           )}
         </div>
       </div>
@@ -402,25 +456,8 @@ export default function BankStatementAnalysisScreen() {
         <BankStatementMappingModal
           statement={mappingStatement}
           companyId={companyId}
-          categories={categories}
-          onClose={handleCloseMapping}
+          onClose={() => setMappingStatement(null)}
           onConfirm={handleMappingComplete}
-          showToast={showToast}
-        />
-      )}
-
-      {detailStatement && (
-        <BankStatementDetailModal
-          statement={detailStatement}
-          companyId={companyId}
-          categories={categories}
-          onClose={handleCloseDetail}
-          onRefresh={invalidate}
-          onDelete={() => deleteMutation.mutate(detailStatement.id)}
-          onUpdateCategory={bankStatementUpdateTxCategory}
-          onUpdateNote={bankStatementUpdateTxNote}
-          createCategory={(body) => bankStatementCreateCategory({ ...body, companyId })}
-          deleteCategory={(id) => bankStatementDeleteCategory(companyId, id)}
           showToast={showToast}
         />
       )}
