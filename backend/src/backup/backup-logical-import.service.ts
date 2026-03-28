@@ -30,12 +30,22 @@ export class BackupLogicalImportService {
   }
 
   async importIntoNewCompany(params: {
-    snapshot: { meta?: Record<string, unknown>; data?: Record<string, unknown> };
+    snapshot: { meta?: Record<string, unknown>; data?: Record<string, unknown>; counts?: Record<string, number> };
     tenantId: string;
     nameAr: string;
     nameEn?: string | null;
     importingUserId: string;
-  }): Promise<{ newCompanyId: string }> {
+  }): Promise<{
+    newCompanyId: string;
+    nameAr: string;
+    nameEn: string | null;
+    summary: {
+      importedAt: string;
+      sourceMeta: Record<string, unknown>;
+      counts: Record<string, number>;
+      totalRecords: number;
+    };
+  }> {
     const { snapshot, tenantId, nameAr, nameEn, importingUserId } = params;
     const meta = snapshot.meta;
     const data = snapshot.data;
@@ -50,6 +60,24 @@ export class BackupLogicalImportService {
     const co = data.company as Record<string, unknown> | undefined;
     if (!co) throw new BadRequestException('بيانات الشركة مفقودة في اللقطة');
 
+    const resolvedNameEn = nameEn ?? (co.nameEn as string | null) ?? null;
+    const countsRaw = snapshot.counts;
+    const counts: Record<string, number> =
+      countsRaw && typeof countsRaw === 'object'
+        ? Object.fromEntries(
+            Object.entries(countsRaw).map(([k, v]) => [k, typeof v === 'number' ? v : Number(v) || 0]),
+          )
+        : {};
+    const totalRecords = Object.values(counts).reduce((a, b) => a + b, 0);
+    const sourceMeta: Record<string, unknown> = meta
+      ? {
+          exportedAt: meta.exportedAt,
+          version: meta.version,
+          originalCompanyId: meta.companyId,
+          format: meta.format,
+        }
+      : {};
+
     await this.prisma.$transaction(
       async (tx) => {
         await tx.company.create({
@@ -57,7 +85,7 @@ export class BackupLogicalImportService {
             id: newCompanyId,
             tenantId,
             nameAr,
-            nameEn: nameEn ?? (co.nameEn as string | null) ?? null,
+            nameEn: resolvedNameEn,
             logoUrl: (co.logoUrl as string | null) ?? null,
             phone: (co.phone as string | null) ?? null,
             address: (co.address as string | null) ?? null,
@@ -779,6 +807,16 @@ export class BackupLogicalImportService {
       { maxWait: 120000, timeout: 600000 },
     );
 
-    return { newCompanyId };
+    return {
+      newCompanyId,
+      nameAr,
+      nameEn: resolvedNameEn,
+      summary: {
+        importedAt: new Date().toISOString(),
+        sourceMeta,
+        counts,
+        totalRecords,
+      },
+    };
   }
 }
