@@ -202,8 +202,9 @@ export default function BankStatementAnalysisScreen() {
           </h1>
           <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankStatementMonthlyDesc')}</p>
         </div>
-        <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => setShowUpload(true)}>
-          + {t('bankStatementUploadNew')}
+        <button type="button" className="noorix-btn noorix-btn--primary noorix-bank-cta" onClick={() => setShowUpload(true)}>
+          <span aria-hidden style={{ fontSize: 18, lineHeight: 1, opacity: 0.95 }}>＋</span>
+          {t('bankStatementUploadNew')}
         </button>
       </div>
 
@@ -243,30 +244,14 @@ export default function BankStatementAnalysisScreen() {
       )}
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div
-          className="noorix-tab-bar"
-          style={{
-            display: 'flex',
-            gap: 0,
-            borderBottom: '1px solid var(--noorix-border)',
-            flexWrap: 'wrap',
-          }}
-        >
+        <div className="noorix-bank-tab-row" role="tablist">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              className="noorix-btn-nav"
-              style={{
-                margin: 0,
-                borderRadius: 0,
-                border: 'none',
-                borderBottom: activeTab === tab.id ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
-                background: activeTab === tab.id ? 'rgba(37,99,235,0.07)' : 'transparent',
-                color: activeTab === tab.id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-                fontWeight: activeTab === tab.id ? 700 : 500,
-                padding: '12px 18px',
-              }}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              className={`noorix-bank-tab${activeTab === tab.id ? ' noorix-bank-tab--active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
               {t(tab.labelKey)}
@@ -321,7 +306,8 @@ export default function BankStatementAnalysisScreen() {
                   <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}>📄</div>
                   <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{t('bankStatementEmptyTitle')}</div>
                   <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 16 }}>{t('bankStatementEmptyDesc')}</div>
-                  <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => setShowUpload(true)}>
+                  <button type="button" className="noorix-btn noorix-btn--primary noorix-bank-cta" onClick={() => setShowUpload(true)}>
+                    <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>＋</span>
                     {t('bankStatementUploadNew')}
                   </button>
                 </div>
@@ -333,14 +319,7 @@ export default function BankStatementAnalysisScreen() {
                     <select
                       value={filterMonth}
                       onChange={(e) => setFilterMonth(e.target.value)}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: 8,
-                        border: '1px solid var(--noorix-border)',
-                        background: 'var(--noorix-bg)',
-                        fontSize: 13,
-                        minWidth: 140,
-                      }}
+                      className="noorix-bank-filter"
                     >
                       <option value="">{t('allMonths')}</option>
                       {months.map((m) => {
@@ -356,14 +335,8 @@ export default function BankStatementAnalysisScreen() {
                     <select
                       value={filterBank}
                       onChange={(e) => setFilterBank(e.target.value)}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: 8,
-                        border: '1px solid var(--noorix-border)',
-                        background: 'var(--noorix-bg)',
-                        fontSize: 13,
-                        minWidth: 160,
-                      }}
+                      className="noorix-bank-filter"
+                      style={{ minWidth: 170 }}
                     >
                       <option value="">{t('bankStatementAllBanks')}</option>
                       {banks.map((b) => (

@@ -48,8 +48,11 @@ export class AppService {
   async getHealth() {
     let dbConnected = false;
     let adminExists = false;
+    let dbLatencyMs: number | null = null;
     try {
+      const t0 = Date.now();
       await this.prisma.$queryRaw`SELECT 1`;
+      dbLatencyMs = Date.now() - t0;
       dbConnected = true;
       const admin = await this.prisma.user.findUnique({
         where: { email: 'admin@noorix.sa' },
@@ -65,6 +68,7 @@ export class AppService {
       version: '0.1.0',
       geminiAvailable: isGeminiAvailable(),
       dbConnected,
+      dbLatencyMs,
       adminExists,
     };
   }

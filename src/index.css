@@ -534,6 +534,146 @@ a { color: inherit; text-decoration: none; }
   color: var(--noorix-text);
 }
 
+/* — أزرار BEM (noorix-btn + noorix-btn--*) — تُستخدم في تقارير/كشف الحساب */
+.noorix-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--btn-default-border);
+  background: var(--btn-default-bg);
+  color: var(--btn-default-text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--noorix-font-primary);
+  letter-spacing: 0.01em;
+  transition: background 140ms, border-color 140ms, box-shadow 160ms, transform 120ms, filter 140ms;
+  white-space: nowrap;
+}
+.noorix-btn:hover:not(:disabled) {
+  background: var(--btn-default-hover);
+  border-color: #a8bcd4;
+  box-shadow: 0 1px 4px rgba(10, 31, 68, 0.08);
+}
+.noorix-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.noorix-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+.noorix-btn--primary {
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-bg);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+}
+.noorix-btn--primary:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+  filter: brightness(1.02);
+}
+.noorix-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--noorix-text-muted);
+  box-shadow: none;
+}
+.noorix-btn--ghost:hover:not(:disabled) {
+  background: var(--btn-default-hover);
+  border-color: var(--btn-default-border);
+  color: var(--noorix-text);
+  box-shadow: none;
+}
+.noorix-btn--secondary {
+  background: var(--noorix-bg-surface);
+  border-color: var(--noorix-border);
+  color: var(--noorix-text);
+  font-weight: 600;
+  box-shadow: none;
+}
+.noorix-btn--secondary:hover:not(:disabled) {
+  background: var(--noorix-bg-muted);
+  border-color: var(--noorix-border-strong);
+}
+
+/* — تحليل كشف الحساب: دعوة للإجراء وتبويبات */
+.noorix-bank-cta.noorix-btn--primary {
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: linear-gradient(165deg, var(--btn-primary-bg) 0%, #1d4ed8 100%);
+  border-color: transparent;
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.28);
+}
+.noorix-bank-cta.noorix-btn--primary:hover:not(:disabled) {
+  border-color: transparent;
+  filter: brightness(1.06);
+  box-shadow: 0 5px 18px rgba(37, 99, 235, 0.34);
+}
+
+.noorix-bank-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--noorix-bg-muted);
+  border-bottom: 1px solid var(--noorix-border);
+}
+.noorix-bank-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 20px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--noorix-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--noorix-font-primary);
+  cursor: pointer;
+  transition: background 150ms, color 150ms, border-color 150ms, box-shadow 150ms;
+}
+.noorix-bank-tab:hover {
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+}
+.noorix-bank-tab--active {
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-accent-blue);
+  border-color: var(--noorix-border);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.06);
+}
+
+.noorix-bank-filter {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--noorix-border);
+  background: var(--noorix-bg-surface);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--noorix-font-primary);
+  color: var(--noorix-text);
+  min-width: 150px;
+  transition: border-color 140ms, box-shadow 140ms;
+}
+.noorix-bank-filter:focus {
+  outline: none;
+  border-color: var(--noorix-accent-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
 /* ========== بطاقات ========== */
 .noorix-surface-card {
   border-radius: 14px;
