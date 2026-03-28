@@ -26,12 +26,6 @@ function SendIcon() {
   );
 }
 
-function roleLabel(role, isAr) {
-  if (!isAr) return role || '—';
-  const m = { owner: 'مالك', admin: 'مسؤول', manager: 'مدير', accountant: 'محاسب', cashier: 'كاشير', viewer: 'مشاهد' };
-  return m[role] || role || '—';
-}
-
 const CHAT_PAGE_SIZE = 6;
 
 const PERMANENT_QUESTIONS = [
@@ -166,7 +160,7 @@ const CMD_GROUPS = [
 ];
 
 export default function SmartChatScreen() {
-  const { activeCompanyId, companies, user } = useApp();
+  const { activeCompanyId } = useApp();
   const { t, lang } = useTranslation();
   const [messages, setMessages] = useState([]);
   const [creatorName, setCreatorName] = useState('');
@@ -213,10 +207,6 @@ export default function SmartChatScreen() {
     items: g.items.filter((it) => it.canUse(can)),
   })).filter((g) => g.items.length > 0);
 
-  const companyName =
-    companies?.find((c) => c.id === activeCompanyId)?.nameAr ||
-    companies?.find((c) => c.id === activeCompanyId)?.name ||
-    '';
   const quickRowCols = filteredGroups.length > 0 && showFaq ? 2 : 1;
 
   useEffect(() => {
@@ -405,40 +395,9 @@ export default function SmartChatScreen() {
 
       {activeCompanyId && (
         <div className="noorix-smart-chat-sticky">
-          <header className="noorix-smart-chat-header">
-            <div>
-              <h1>{t('smartChat')}</h1>
-              <p className="noorix-smart-chat-header-sub">
-                {companyName || '—'}
-                {user?.role != null && user.role !== '' ? ` — ${roleLabel(user.role, isAr)}` : ''}
-              </p>
-              {creatorName ? (
-                <p className="noorix-smart-chat-header-creator">
-                  {isAr ? 'بواسطة: ' : 'By: '}
-                  {creatorName}
-                </p>
-              ) : null}
-            </div>
-            <div className="noorix-smart-chat-header-actions">
-              <input
-                type="date"
-                className="noorix-smart-chat-date-input"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value || '')}
-                lang="en"
-                title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
-              />
-              {dateFilter ? (
-                <button type="button" onClick={() => setDateFilter('')} className="noorix-btn-nav" style={{ fontSize: 12, padding: '8px 12px', minHeight: 36 }}>
-                  {t('chatClearFilter')}
-                </button>
-              ) : null}
-            </div>
-          </header>
-
           {(filteredGroups.length > 0 || showFaq) && (
             <div
-              className={`noorix-smart-chat-quick-row${quickRowCols === 1 ? ' noorix-smart-chat-quick-row--single' : ''}`}
+              className={`noorix-smart-chat-quick-row noorix-smart-chat-quick-row--top${quickRowCols === 1 ? ' noorix-smart-chat-quick-row--single' : ''}`}
               dir={isAr ? 'rtl' : 'ltr'}
             >
               {filteredGroups.length > 0 ? (
@@ -495,6 +454,25 @@ export default function SmartChatScreen() {
               ) : null}
             </div>
           )}
+
+          <header className="noorix-smart-chat-header" dir={isAr ? 'rtl' : 'ltr'}>
+            <h1 className="noorix-smart-chat-title">{t('smartChat')}</h1>
+            <div className="noorix-smart-chat-header-actions">
+              <input
+                type="date"
+                className="noorix-smart-chat-date-input"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value || '')}
+                lang="en"
+                title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
+              />
+              {dateFilter ? (
+                <button type="button" onClick={() => setDateFilter('')} className="noorix-btn-nav noorix-smart-chat-filter-clear">
+                  {t('chatClearFilter')}
+                </button>
+              ) : null}
+            </div>
+          </header>
         </div>
       )}
 
