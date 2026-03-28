@@ -13,4 +13,6 @@ git pull origin main
 )
 npm ci
 npm run build
-pm2 restart all --update-env
+# Noorix API: من مجلد backend الحقيقي (ليس /root/backend). احذف noorix-api القديمة من PM2 مرة واحدة إن وُجدت.
+(cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
+pm2 restart hajri-menu --update-env 2>/dev/null || true

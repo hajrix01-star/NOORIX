@@ -60,7 +60,8 @@ jobs:
               cd /var/www/noorix
               git pull origin main
               (cd backend && npm ci && npx prisma migrate deploy && npm run build)
-              pm2 restart all --update-env || pm2 restart all
+              (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
+              pm2 restart hajri-menu --update-env 2>/dev/null || true
             fi
             sudo systemctl reload nginx
             echo "Deployment completed successfully!"
