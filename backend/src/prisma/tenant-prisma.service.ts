@@ -10,14 +10,17 @@
  *
  * ملاحظة: SET LOCAL يكون مؤثراً داخل الـ transaction فقط — آمن مع connection pooling.
  */
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient }                              from '@prisma/client';
 import { TenantContext }                             from '../common/tenant-context';
+import { connectPrismaWithRetry }                    from './prisma-connect-retry';
 
 @Injectable()
 export class TenantPrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   /** مهلة الـ transaction: 30 ثانية — الافتراضي 5s لا يكفي مع RLS + Audit + شبكة */
   static readonly TX_TIMEOUT_MS = 30_000;
+
+  private readonly connectLogger = new Logger(TenantPrismaService.name);
 
   constructor() {
     super({
@@ -58,7 +61,15 @@ export class TenantPrismaService extends PrismaClient implements OnModuleInit, O
     });
   }
 
-  async onModuleInit()   { await this.$connect(); }
+  async onModuleInit() {
+    try {
+      await connectPrismaWithRetry(() => this.$connect(), TenantPrismaService.name);
+      this.connectLogger.log('اتصال TenantPrisma (RLS) نجح');
+    } catch (err) {
+      this.connectLogger.error('فشل اتصال TenantPrisma بعد كل المحاولات:', err);
+      throw err;
+    }
+  }
   async onModuleDestroy() { await this.$disconnect(); }
 
   /**

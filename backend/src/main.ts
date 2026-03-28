@@ -38,12 +38,34 @@ import compression from 'compression';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 
+const processLogger = new Logger('Process');
+
+/** رفض الوعود المرفوضة دون معالج — تسجيل فقط (لا exit) لتقليل تعطل العملية بسبب أخطاء برمجية جانبية */
+process.on('unhandledRejection', (reason: unknown) => {
+  const msg = reason instanceof Error ? reason.stack ?? reason.message : String(reason);
+  processLogger.error(`unhandledRejection — ${msg}`);
+});
+
+/**
+ * أخطاء متزامنة غير معالجة: الحالة قد تكون غير سليمة؛ نُسجّل ثم نخرج ليعيد PM2 التشغيل من جديد.
+ * (ابتلاع الخطأ هنا يسمح للعملية بالاستمرار لكنه غير موصى به في Node.)
+ */
+process.on('uncaughtException', (err: Error) => {
+  processLogger.error(`uncaughtException — ${err.message}`, err.stack);
+  setTimeout(() => process.exit(1), 750).unref();
+});
+
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   // ── JWT_SECRET إلزامي في الإنتاج ──
   if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
     logger.error('❌ JWT_SECRET غير محدد — لا يمكن التشغيل في الإنتاج بدونه');
+    process.exit(1);
+  }
+
+  if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL?.trim()) {
+    logger.error('❌ DATABASE_URL غير مُعرّف في الإنتاج');
     process.exit(1);
   }
 
@@ -93,11 +115,13 @@ async function bootstrap() {
   server.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
       logger.error(
-        `المنفذ ${port} مشغول. نفّذ: Stop-Process -Name "node" -Force ثم أعد التشغيل`,
+        `المنفذ ${port} مشغول — غالباً عمليتان PM2 تشغّلان نفس التطبيق (مثل noorix-api و noorix-backend) بنفس PORT. احذف/عطّل إحداهما أو غيّر PORT في .env.`,
       );
       process.exit(1);
+      return;
     }
-    throw err;
+    logger.error(`خطأ خادم HTTP: ${err.message}`, err.stack);
+    process.exit(1);
   });
 
   await app.listen(port, '0.0.0.0');

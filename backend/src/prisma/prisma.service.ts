@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { connectPrismaWithRetry } from './prisma-connect-retry';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -7,10 +8,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleInit() {
     try {
-      await this.$connect();
+      await connectPrismaWithRetry(() => this.$connect(), PrismaService.name);
       this.logger.log('اتصال قاعدة البيانات نجح');
     } catch (err) {
-      this.logger.error('فشل اتصال قاعدة البيانات:', err);
+      this.logger.error('فشل اتصال قاعدة البيانات بعد كل المحاولات:', err);
       throw err;
     }
   }
