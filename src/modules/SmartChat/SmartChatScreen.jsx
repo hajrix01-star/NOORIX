@@ -458,21 +458,6 @@ export default function SmartChatScreen() {
               </div>
             )}
           </div>
-
-          {/* إدخال */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              📁 {t('chatInput')}
-            </div>
-            <button
-              type="button"
-              onClick={() => setToast({ visible: true, message: isAr ? 'تحميل الملف — قريباً' : 'Upload — coming soon', type: 'info' })}
-              className="noorix-btn-nav"
-              style={{ width: '100%', justifyContent: 'flex-start', padding: '12px 14px', fontSize: 14, minHeight: 48, gap: 8 }}
-            >
-              📄 {t('chatUploadFile')}
-            </button>
-          </div>
         </div>
       )}
 
