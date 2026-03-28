@@ -371,3 +371,177 @@
 .dark .noorix-smart-chat-header h1 {
   color: #e8edf5;
 }
+
+/* ─── جوال: تخطيط محادثة كامل الشاشة، أوامر أعلى، إدخال أسفل ─── */
+@media (max-width: 768px) {
+  body.noorix-page-smart-chat .app-main {
+    min-height: 100dvh;
+    min-height: 100vh;
+  }
+
+  .noorix-smart-chat-root {
+    max-width: 100%;
+    width: 100%;
+    padding-bottom: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .noorix-smart-chat-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 35;
+    padding-bottom: 4px;
+    margin-bottom: 0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  }
+
+  .noorix-smart-chat-header {
+    padding: 8px 10px 4px;
+    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .noorix-smart-chat-header h1 {
+    font-size: 1.125rem;
+    line-height: 1.3;
+  }
+
+  .noorix-smart-chat-header-sub {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .noorix-smart-chat-header-creator {
+    font-size: 11px;
+  }
+
+  .noorix-smart-chat-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .noorix-smart-chat-date-input {
+    flex: 1;
+    min-width: 0;
+    min-height: 40px;
+    font-size: 14px;
+  }
+
+  .noorix-smart-chat-quick-row {
+    margin: 0 8px 6px;
+    gap: 6px;
+  }
+
+  .noorix-chat-gradient-btn {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 13px;
+    border-radius: 10px;
+    touch-action: manipulation;
+  }
+
+  /* لوحة أوامر — ورقة سفلية بعرض الشاشة */
+  .noorix-chat-commands-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border-radius: 16px 16px 0 0;
+    max-height: min(50dvh, 380px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    z-index: 200;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.18);
+  }
+
+  [dir='rtl'] .noorix-chat-commands-panel {
+    left: 0;
+    right: 0;
+  }
+
+  .noorix-chat-commands-group-label {
+    padding: 8px 12px;
+    font-size: 10px;
+  }
+
+  .noorix-chat-commands-item {
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 13px;
+    touch-action: manipulation;
+  }
+
+  .noorix-smart-chat-card {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 8px 0;
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+    box-shadow: 0 -1px 0 var(--noorix-border);
+  }
+
+  .noorix-smart-chat-messages {
+    padding: 12px 10px;
+    gap: 12px;
+    scroll-padding-bottom: 8px;
+  }
+
+  .noorix-chat-msg-row {
+    max-width: min(92%, 400px) !important;
+  }
+
+  .noorix-chat-bubble--user {
+    font-size: 15px !important;
+    padding: 10px 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .noorix-chat-bubble-assistant > div {
+    max-width: 100%;
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .noorix-smart-chat-load-more {
+    min-height: 40px;
+    padding: 8px 16px;
+    touch-action: manipulation;
+  }
+
+  .noorix-chat-input-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    padding: 10px 10px max(10px, env(safe-area-inset-bottom, 0px));
+    gap: 10px;
+    background: var(--noorix-bg-surface);
+    border-top: 1px solid var(--noorix-border);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.07);
+    flex-shrink: 0;
+  }
+
+  .noorix-chat-input-field {
+    min-height: 48px;
+    font-size: 16px; /* يمنع تكبير iOS عند التركيز */
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .noorix-chat-send-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 12px;
+    touch-action: manipulation;
+  }
+}

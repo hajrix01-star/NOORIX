@@ -1372,6 +1372,12 @@ input:focus, select:focus, textarea:focus {
 /* ========== استجابة الجوال — NOORIX UI MANIFESTO ========== */
 /* الحد الأدنى للخط على الجوال: 12px لقراءة سهلة ميدانياً */
 @media (max-width: 768px) {
+  body.noorix-page-smart-chat .app-main {
+    padding-left: max(6px, env(safe-area-inset-left, 0px));
+    padding-right: max(6px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+  }
+
   body { font-size: max(12px, 14px); }
   .noorix-table tbody td, .noorix-table thead th { font-size: max(12px, 14px); }
   .app-nav-link, .ndfb-mode-btn, .noorix-btn-nav { font-size: max(12px, 13px); }
@@ -1911,4 +1917,18 @@ input:focus, select:focus, textarea:focus {
     size: A4;
     margin: 15mm;
   }
+}
+
+/* ========== المحادثة الذكية — عمود يملأ ارتفاع المنطقة الرئيسية ========== */
+body.noorix-page-smart-chat .app-main__content {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+body.noorix-page-smart-chat .noorix-smart-chat-root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }

@@ -220,6 +220,11 @@ export default function SmartChatScreen() {
   const quickRowCols = filteredGroups.length > 0 && showFaq ? 2 : 1;
 
   useEffect(() => {
+    document.body.classList.add('noorix-page-smart-chat');
+    return () => document.body.classList.remove('noorix-page-smart-chat');
+  }, []);
+
+  useEffect(() => {
     if (!activeCompanyId) return;
     qc.prefetchQuery({
       queryKey: ['employees', activeCompanyId, false],
@@ -304,8 +309,8 @@ export default function SmartChatScreen() {
     const onDoc = (e) => {
       if (!commandsWrapRef.current?.contains(e.target)) setCommandsOpen(false);
     };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener('pointerdown', onDoc, true);
+    return () => document.removeEventListener('pointerdown', onDoc, true);
   }, []);
 
   useEffect(() => {
@@ -495,7 +500,7 @@ export default function SmartChatScreen() {
 
       {activeCompanyId && (
       <div className="noorix-smart-chat-card">
-        <div className="noorix-smart-chat-messages" ref={messagesScrollRef}>
+        <div className="noorix-smart-chat-messages" ref={messagesScrollRef} data-chat-scroll>
           {olderHiddenCount > 0 && (
             <button type="button" className="noorix-smart-chat-load-more" onClick={handleLoadMoreMessages}>
               {t('chatLoadMoreCount', String(olderHiddenCount))}
@@ -515,9 +520,14 @@ export default function SmartChatScreen() {
             )
           )}
           {displayedMessages.map((m, i) => (
-            <div key={i} style={{ alignSelf: m.role === 'user' ? (isAr ? 'flex-start' : 'flex-end') : (isAr ? 'flex-end' : 'flex-start'), maxWidth: '90%' }}>
+            <div
+              key={i}
+              className={`noorix-chat-msg-row noorix-chat-msg-row--${m.role === 'user' ? 'user' : 'assistant'}`}
+              style={{ alignSelf: m.role === 'user' ? (isAr ? 'flex-start' : 'flex-end') : (isAr ? 'flex-end' : 'flex-start'), maxWidth: '90%' }}
+            >
               {m.role === 'user' ? (
                 <div
+                  className="noorix-chat-bubble noorix-chat-bubble--user"
                   style={{
                     padding: '12px 16px',
                     borderRadius: 12,
@@ -530,11 +540,13 @@ export default function SmartChatScreen() {
                   {m.text}
                 </div>
               ) : (
-                <ReportCard
-                  text={(isAr ? m.textAr : m.textEn) || m.textAr}
-                  isAr={isAr}
-                  createdAt={m.createdAt}
-                />
+                <div className="noorix-chat-bubble-assistant">
+                  <ReportCard
+                    text={(isAr ? m.textAr : m.textEn) || m.textAr}
+                    isAr={isAr}
+                    createdAt={m.createdAt}
+                  />
+                </div>
               )}
             </div>
           ))}
