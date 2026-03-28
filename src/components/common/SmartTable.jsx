@@ -97,6 +97,7 @@ const SmartTable = memo(function SmartTable({
   rowNumberWidth,          // عرض عمود # (مثلاً '3%')
   getRowClassName,         // (row, index) => string — للصفوف المشطوبة (مثلاً الملغاة)
   renderMobileCard,        // (row, index) => ReactNode — بطاقة الجوال، مفعّل تلقائياً على ≤700px
+  stickyActionColumn = true, // false يزيل sticky عن عمود الإجراءات (أحياناً يتداخل مع RTL/تمرير أفقي)
 }) {
   const { t } = useTranslation();
 
@@ -210,10 +211,11 @@ padding: 16, margin: 12, background: 'rgba(239,68,68,0.08)',
                   const align = getAlign(col);
                   const isSorted = sortKey === col.key;
                   const shrink = col.shrink === true;
+                  const actionSticky = col.key === 'actions' && stickyActionColumn;
                   return (
                     <th
                       key={col.key}
-                      className={`${col.key === 'actions' ? `noorix-actions-cell noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-th-shrink' : ''}${!col.numeric && col.key !== 'actions' && !shrink ? ' noorix-cell-truncate' : ''}`}
+                      className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-th-shrink' : ''}${!col.numeric && col.key !== 'actions' && !shrink ? ' noorix-cell-truncate' : ''}`}
                       style={{
                         padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: align,
                         width: col.width ?? (shrink ? '1%' : undefined),
@@ -265,10 +267,11 @@ padding: 16, margin: 12, background: 'rgba(239,68,68,0.08)',
                     const align  = getAlign(col);
                     const family = col.numeric ? 'var(--noorix-font-numbers)' : undefined;
                     const shrink = col.shrink === true;
+                    const actionSticky = col.key === 'actions' && stickyActionColumn;
                     return (
                       <td
                         key={col.key}
-                        className={`${col.key === 'actions' ? `noorix-actions-cell noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-td-shrink' : ''}${!col.numeric && col.key !== 'actions' && !shrink ? ' noorix-cell-truncate' : ''}`}
+                        className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-td-shrink' : ''}${!col.numeric && col.key !== 'actions' && !shrink ? ' noorix-cell-truncate' : ''}`}
                         style={{
                           padding: cellPad.td,
                           fontSize: cellFs,

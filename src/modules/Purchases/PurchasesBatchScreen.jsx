@@ -191,10 +191,10 @@ export default function PurchasesBatchScreen() {
       render: (v) => (
         <span style={{ color: '#2563eb', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700 }}>{v ?? 0}</span>
       )},
-    /* المورد — عمود مرن يأخذ المساحة الفائضة */
-    { key: 'supplierNames', label: t('supplier'), sortable: true, minWidth: 140,
+    /* المورد — minWidth يضمن عدم انهيار العمود مع table-layout:auto */
+    { key: 'supplierNames', label: t('supplier'), sortable: true, minWidth: 160,
       render: (v) => (
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: 260 }}>{v || '—'}</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0 }}>{v || '—'}</span>
       )},
     /* الأعمدة المالية — ضيقة، محاذاة يمين */
     { key: 'netAmount',   label: t('net'),   numeric: true, sortable: true, shrink: true,
@@ -206,12 +206,12 @@ export default function PurchasesBatchScreen() {
     /* الحالة — شارة ضيقة */
     { key: 'status', label: t('statusLabel'), shrink: true,
       render: (v) => <Badge map={statusStyles} value={v} /> },
-    /* الإجراءات — عرض محدود بالمحتوى الفعلي */
-    { key: 'actions', label: t('actions'), align: 'center', shrink: true, width: '12%',
+    /* الإجراءات — بدون shrink + minWidth يمنع تداخل الأزرار مع بقية الأعمدة */
+    { key: 'actions', label: t('actions'), align: 'center', minWidth: 220,
       render: (_, row) => {
         const canCancel = row.status === 'active' || row.status === 'partial';
         return (
-          <div style={{ display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
+          <div className="noorix-actions-row" style={{ flexWrap: 'wrap', justifyContent: 'center', maxWidth: 280 }}>
             <button type="button" className="noorix-btn-nav"
               onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
               disabled={batchActionLoading === row.batchId}
@@ -272,13 +272,16 @@ export default function PurchasesBatchScreen() {
     );
   }, [statusStyles, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
 
+  /* صف التذييل: # + 9 أعمدة = 10 خلايا — كان colSpan الأول 4 فيفقد عمود المورد ويتداخل التنسيق */
   const batchesFooterCells = (
     <>
-      <td colSpan={4} style={{ padding: '8px 10px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('totalBatches', activeOnly.length) || `الإجمالي (${activeOnly.length} دفعة)`}</td>
-      <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a', textAlign: 'right' }}>{fmt(totalNet, 2)}</td>
-      <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: '#d97706', textAlign: 'right' }}>{fmt(totalTax, 2)}</td>
-      <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: '#7c3aed', fontWeight: 900, textAlign: 'right' }}>{fmt(totalAmount, 2)}</td>
-      <td colSpan={2} />
+      <td colSpan={5} style={{ padding: '8px 10px', fontSize: 12, color: 'var(--noorix-text-muted)', verticalAlign: 'middle' }}>
+        {t('totalBatches', activeOnly.length) || `الإجمالي (${activeOnly.length} دفعة)`}
+      </td>
+      <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a', textAlign: 'right', whiteSpace: 'nowrap' }}>{fmt(totalNet, 2)}</td>
+      <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: '#d97706', textAlign: 'right', whiteSpace: 'nowrap' }}>{fmt(totalTax, 2)}</td>
+      <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: '#7c3aed', fontWeight: 900, textAlign: 'right', whiteSpace: 'nowrap' }}>{fmt(totalAmount, 2)}</td>
+      <td colSpan={2} style={{ padding: '8px 10px' }} />
     </>
   );
 
@@ -557,7 +560,10 @@ export default function PurchasesBatchScreen() {
             columns={batchesColumns}
             data={filteredData}
             showRowNumbers
-            rowNumberWidth="1%"
+            rowNumberWidth={40}
+            tableLayout="auto"
+            tableMinWidth={1120}
+            innerPadding={8}
             total={displayedTotal}
             page={page}
             pageSize={PAGE_SIZE}
@@ -580,6 +586,7 @@ export default function PurchasesBatchScreen() {
             onSort={toggleSort}
             emptyMessage={t('noBatchesInPeriod')}
             renderMobileCard={renderBatchMobileCard}
+            stickyActionColumn={false}
           />
         </div>
       )}
