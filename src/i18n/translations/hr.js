@@ -258,7 +258,10 @@ export default {
   chatFilterByDate: { ar: 'تصفية بالتاريخ', en: 'Filter by date' },
   chatClearFilter: { ar: 'إزالة الفلتر', en: 'Clear filter' },
   chatNoMessagesOnDate: { ar: 'لا توجد رسائل في هذا التاريخ. غيّر الفلتر أو امسحه.', en: 'No messages on this date. Change or clear the filter.' },
-  chatInputPlaceholder: { ar: 'اكتب رسالتك...', en: 'Write your message...' },
+  chatInputPlaceholder: {
+    ar: 'اكتب رسالتك أو اطرح أي سؤال…',
+    en: 'Type your message or ask anything…',
+  },
   chatEmployeeMgmt: { ar: 'إدارة الموظفين', en: 'Employee management' },
   chatAddEmployee: { ar: 'إضافة موظف', en: 'Add employee' },
   chatAdvanceDeduct: { ar: 'خصم من الراتب (سلفة)', en: 'Salary deduction (Advance)' },

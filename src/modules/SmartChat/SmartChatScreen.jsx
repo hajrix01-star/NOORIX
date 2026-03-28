@@ -17,6 +17,21 @@ import ExpenseLineFormModal from '../Expenses/components/ExpenseLineFormModal';
 import ExpenseFormModal from '../Expenses/components/ExpenseFormModal';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { loadChat, saveChat, filterByDate } from './chatStorage';
+import './SmartChatScreen.css';
+
+function SendIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+    </svg>
+  );
+}
+
+function roleLabel(role, isAr) {
+  if (!isAr) return role || '—';
+  const m = { owner: 'مالك', admin: 'مسؤول', manager: 'مدير', accountant: 'محاسب', cashier: 'كاشير', viewer: 'مشاهد' };
+  return m[role] || role || '—';
+}
 
 const PERMANENT_QUESTIONS = [
   { ar: 'كم مبيعات السنة؟', en: 'What are annual sales?', domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ) },
@@ -150,7 +165,7 @@ const CMD_GROUPS = [
 ];
 
 export default function SmartChatScreen() {
-  const { activeCompanyId } = useApp();
+  const { activeCompanyId, companies, user } = useApp();
   const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
@@ -194,6 +209,12 @@ export default function SmartChatScreen() {
     ...g,
     items: g.items.filter((it) => it.canUse(can)),
   })).filter((g) => g.items.length > 0);
+
+  const companyName =
+    companies?.find((c) => c.id === activeCompanyId)?.nameAr ||
+    companies?.find((c) => c.id === activeCompanyId)?.name ||
+    '';
+  const quickRowCols = filteredGroups.length > 0 && showFaq ? 2 : 1;
 
   useEffect(() => {
     if (!activeCompanyId) return;
@@ -341,140 +362,108 @@ export default function SmartChatScreen() {
     });
   };
 
-  const headerBg = 'linear-gradient(135deg, #1a2a47 0%, #2d3e5f 100%)';
-  const headerText = '#fff';
-
   return (
-    <div style={{ display: 'grid', gap: 0, padding: 0, maxWidth: 1000, margin: '0 auto', minHeight: '100%' }}>
-      {/* Header */}
-      <div style={{ background: headerBg, color: headerText, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderRadius: '12px 12px 0 0' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{t('smartChat')}</h1>
-          {creatorName && (
-            <span style={{ fontSize: 12, opacity: 0.85 }}>{isAr ? 'بواسطة: ' : 'By: '}{creatorName}</span>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value || '')}
-            style={{
-              fontSize: 12,
-              padding: '8px 12px',
-              minHeight: 36,
-              background: 'rgba(255,255,255,0.15)',
-              color: headerText,
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: 8,
-              direction: 'ltr',
-            }}
-            lang="en"
-            title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
-          />
-          {dateFilter && (
-            <button
-              type="button"
-              onClick={() => setDateFilter('')}
-              className="noorix-btn-nav"
-              style={{ fontSize: 12, padding: '8px 12px', minHeight: 36, background: 'rgba(255,255,255,0.15)', color: headerText }}
-            >
-              {t('chatClearFilter')}
-            </button>
-          )}
-        </div>
-      </div>
-
+    <div className="noorix-smart-chat-root">
       {!activeCompanyId && (
-        <div className="noorix-surface-card" style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+        <div className="noorix-surface-card" style={{ margin: 16, padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
           {t('pleaseSelectCompany')}
         </div>
       )}
 
       {activeCompanyId && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, padding: 16, borderBottom: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-page)' }}>
-          {/* أوامر */}
-          <div ref={commandsWrapRef} style={{ position: 'relative' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              ⚡ {t('chatCommands')}
+        <>
+          <header className="noorix-smart-chat-header">
+            <div>
+              <h1>{t('smartChat')}</h1>
+              <p className="noorix-smart-chat-header-sub">
+                {companyName || '—'}
+                {user?.role != null && user.role !== '' ? ` — ${roleLabel(user.role, isAr)}` : ''}
+              </p>
+              {creatorName ? (
+                <p className="noorix-smart-chat-header-creator">
+                  {isAr ? 'بواسطة: ' : 'By: '}
+                  {creatorName}
+                </p>
+              ) : null}
             </div>
-            <button
-              type="button"
-              onClick={() => setCommandsOpen((o) => !o)}
-              className="noorix-btn-nav"
-              style={{ width: '100%', justifyContent: 'space-between', padding: '12px 14px', fontSize: 14, minHeight: 48, textAlign: isAr ? 'right' : 'left' }}
+            <div className="noorix-smart-chat-header-actions">
+              <input
+                type="date"
+                className="noorix-smart-chat-date-input"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value || '')}
+                lang="en"
+                title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
+              />
+              {dateFilter ? (
+                <button type="button" onClick={() => setDateFilter('')} className="noorix-btn-nav" style={{ fontSize: 12, padding: '8px 12px', minHeight: 36 }}>
+                  {t('chatClearFilter')}
+                </button>
+              ) : null}
+            </div>
+          </header>
+
+          {(filteredGroups.length > 0 || showFaq) && (
+            <div
+              className={`noorix-smart-chat-quick-row${quickRowCols === 1 ? ' noorix-smart-chat-quick-row--single' : ''}`}
+              dir={isAr ? 'rtl' : 'ltr'}
             >
-              <span>{isAr ? 'اختر أمراً' : 'Choose command'}</span>
-              <span>{commandsOpen ? '▲' : '▼'}</span>
-            </button>
-            {commandsOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  [isAr ? 'right' : 'left']: 0,
-                  marginTop: 4,
-                  minWidth: 280,
-                  maxHeight: 360,
-                  overflowY: 'auto',
-                  background: 'var(--noorix-bg-surface)',
-                  borderRadius: 10,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                  border: '1px solid var(--noorix-border)',
-                  zIndex: 100,
-                }}
-              >
-                {filteredGroups.map((g) => (
-                  <div key={g.id} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
-                    <div style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', background: 'var(--noorix-bg-muted)' }}>
-                      {g.icon} {isAr ? g.labelAr : g.labelEn}
+              {filteredGroups.length > 0 ? (
+                <div ref={commandsWrapRef} className="noorix-smart-chat-quick-cell">
+                  <button type="button" className="noorix-chat-gradient-btn" onClick={() => setCommandsOpen((o) => !o)}>
+                    <span className="noorix-chat-gradient-icon" aria-hidden>
+                      ⚡
+                    </span>
+                    <span className="truncate">{t('chatCommands')}</span>
+                    <span className="noorix-chat-chev">{commandsOpen ? '▲' : '▼'}</span>
+                  </button>
+                  {commandsOpen && (
+                    <div className="noorix-chat-commands-panel">
+                      {filteredGroups.map((g) => (
+                        <div key={g.id}>
+                          <div className="noorix-chat-commands-group-label">
+                            {g.icon} {isAr ? g.labelAr : g.labelEn}
+                          </div>
+                          {g.items.map((it) => (
+                            <button
+                              key={it.key}
+                              type="button"
+                              className="noorix-chat-commands-item"
+                              onClick={() => handleCommand(it.key)}
+                            >
+                              <span aria-hidden>{it.icon}</span>
+                              <span>{isAr ? it.labelAr : it.labelEn}</span>
+                            </button>
+                          ))}
+                        </div>
+                      ))}
                     </div>
-                    {g.items.map((it) => (
-                      <button
-                        key={it.key}
-                        type="button"
-                        onClick={() => handleCommand(it.key)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          width: '100%',
-                          padding: '12px 14px',
-                          fontSize: 14,
-                          border: 'none',
-                          background: 'transparent',
-                          color: 'var(--noorix-text)',
-                          cursor: 'pointer',
-                          textAlign: isAr ? 'right' : 'left',
-                          borderBottom: '1px solid var(--noorix-border)',
-                        }}
-                      >
-                        <span>{it.icon}</span>
-                        {isAr ? it.labelAr : it.labelEn}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                  )}
+                </div>
+              ) : null}
+              {showFaq ? (
+                <div className="noorix-smart-chat-quick-cell">
+                  <button
+                    type="button"
+                    className="noorix-chat-gradient-btn"
+                    onClick={() => setFaqOpen(true)}
+                    disabled={loading}
+                  >
+                    <span className="noorix-chat-gradient-icon" aria-hidden>
+                      💬
+                    </span>
+                    <span className="truncate">{isAr ? 'أسئلة جاهزة' : 'Suggested'}</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </>
       )}
 
-      {/* Chat area */}
-      <div
-        className="noorix-surface-card"
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 420,
-          overflow: 'hidden',
-          borderRadius: 0,
-          boxShadow: 'none',
-        }}
-      >
-        <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {activeCompanyId && (
+      <div className="noorix-smart-chat-card">
+        <div className="noorix-smart-chat-messages">
           {displayedMessages.length === 0 && (
             dateFilter ? (
               <div style={{ color: 'var(--noorix-text-muted)', fontSize: 14, textAlign: 'center', padding: 24 }}>
@@ -483,18 +472,8 @@ export default function SmartChatScreen() {
             ) : (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16, color: 'var(--noorix-text-muted)', textAlign: 'center' }}>
                 <div style={{ fontSize: 15, maxWidth: 400 }}>
-                  {isAr ? 'اختر من قائمة الأوامر أو اكتب سؤالك أدناه.' : 'Choose from the command list or type your question below.'}
+                  {isAr ? 'استخدم «الأوامر» أو «أسئلة جاهزة» أعلاه، أو اكتب سؤالك في الأسفل.' : 'Use Commands or Suggested above, or type your question below.'}
                 </div>
-                {showFaq && (
-                  <button
-                    type="button"
-                    className="noorix-btn-primary"
-                    onClick={() => setFaqOpen(true)}
-                    style={{ fontSize: 13, padding: '10px 18px' }}
-                  >
-                    {isAr ? 'الأسئلة الجاهزة' : 'Suggested questions'}
-                  </button>
-                )}
               </div>
             )
           )}
@@ -532,40 +511,31 @@ export default function SmartChatScreen() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div style={{ padding: 16, borderTop: '1px solid var(--noorix-border)' }}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {showFaq && (
-              <button type="button" onClick={() => setFaqOpen(true)} disabled={loading || !activeCompanyId} className="noorix-btn-nav" style={{ fontSize: 12, padding: '10px 14px', minHeight: 44 }}>
-                {isAr ? 'الأسئلة' : 'Questions'}
-              </button>
-            )}
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-              placeholder={t('chatInputPlaceholder')}
-              disabled={loading || !activeCompanyId}
-              style={{
-                flex: 1,
-                minWidth: 140,
-                minHeight: 44,
-                padding: '12px 14px',
-                fontSize: 16,
-                borderRadius: 10,
-                border: '1px solid var(--noorix-border)',
-                background: 'var(--noorix-bg-surface)',
-                color: 'var(--noorix-text)',
-                fontFamily: 'inherit',
-              }}
-            />
-            <button type="button" onClick={() => handleSend()} disabled={loading || !input.trim() || !activeCompanyId} className="noorix-btn-primary" style={{ padding: '12px 22px', minHeight: 44 }}>
-              {isAr ? 'إرسال' : 'Send'}
-            </button>
-          </div>
+        <div className="noorix-chat-input-bar">
+          <input
+            ref={inputRef}
+            type="text"
+            className="noorix-chat-input-field"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+            placeholder={t('chatInputPlaceholder')}
+            disabled={loading || !activeCompanyId}
+            aria-label={t('chatInputPlaceholder')}
+          />
+          <button
+            type="button"
+            className="noorix-chat-send-btn"
+            onClick={() => handleSend()}
+            disabled={loading || !input.trim() || !activeCompanyId}
+            title={isAr ? 'إرسال' : 'Send'}
+            aria-label={isAr ? 'إرسال' : 'Send'}
+          >
+            {loading ? <span className="noorix-chat-spinner" aria-hidden /> : <SendIcon />}
+          </button>
         </div>
       </div>
+      )}
 
       {faqOpen && (
         <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setFaqOpen(false)}>

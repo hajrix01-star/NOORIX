@@ -1,0 +1,296 @@
+/**
+ * SmartChat — نسق مرجعي يطابق النسخة القديمة (Base44): رأس فاتح، أزرار متدرجة، بطاقة + شريط إدخال.
+ */
+
+.noorix-smart-chat-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  background: var(--noorix-bg-page);
+  padding-bottom: 16px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.noorix-smart-chat-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 16px 8px;
+  flex-shrink: 0;
+}
+
+.noorix-smart-chat-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0a1f44;
+  letter-spacing: -0.02em;
+}
+
+.noorix-smart-chat-header-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--noorix-text-muted);
+}
+
+.noorix-smart-chat-header-creator {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--noorix-text-muted);
+  opacity: 0.9;
+}
+
+.noorix-smart-chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.noorix-smart-chat-date-input {
+  font-size: 12px;
+  padding: 8px 12px;
+  min-height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--noorix-border);
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  direction: ltr;
+}
+
+.noorix-smart-chat-quick-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 0 16px 8px;
+}
+
+.noorix-smart-chat-quick-row--single {
+  grid-template-columns: 1fr;
+}
+
+.noorix-smart-chat-quick-cell {
+  position: relative;
+  min-width: 0;
+}
+
+/* زر متدرج مثل QuickCommandsMenu / QuickDataEntryMenu */
+.noorix-chat-gradient-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: linear-gradient(90deg, #1e3a5f 0%, #0a1628 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.noorix-chat-gradient-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.noorix-chat-gradient-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.noorix-chat-gradient-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.noorix-chat-gradient-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.noorix-chat-gradient-btn .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.noorix-chat-chev {
+  flex-shrink: 0;
+  opacity: 0.85;
+  font-size: 10px;
+}
+
+/* لوحة الأوامر المنبثقة */
+.noorix-chat-commands-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: min(360px, 55vh);
+  overflow-y: auto;
+  background: var(--noorix-bg-surface);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--noorix-border);
+  z-index: 100;
+}
+
+.noorix-chat-commands-group-label {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--noorix-text-muted);
+  background: var(--noorix-bg-muted);
+  border-bottom: 1px solid var(--noorix-border);
+}
+
+.noorix-chat-commands-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 14px;
+  border: none;
+  border-bottom: 1px solid var(--noorix-border);
+  background: transparent;
+  color: var(--noorix-text);
+  cursor: pointer;
+  text-align: inherit;
+  font-family: inherit;
+}
+
+.noorix-chat-commands-item:hover {
+  background: var(--noorix-bg-muted);
+}
+
+.noorix-chat-commands-empty {
+  padding: 14px;
+  font-size: 13px;
+  color: var(--noorix-text-muted);
+  text-align: center;
+}
+
+/* بطاقة المحادثة */
+.noorix-smart-chat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-height: 420px;
+  margin: 0 16px;
+  background: var(--noorix-bg-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.noorix-smart-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+/* شريط الإدخال — مطابق لفكرة ChatInput القديم */
+.noorix-chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--noorix-border);
+  background: var(--noorix-bg-surface);
+  flex-shrink: 0;
+}
+
+.noorix-chat-input-field {
+  flex: 1;
+  min-width: 120px;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--noorix-border);
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  font-family: inherit;
+}
+
+.noorix-chat-input-field:focus {
+  outline: none;
+  border-color: #0a1f44;
+  box-shadow: 0 0 0 2px rgba(10, 31, 68, 0.12);
+}
+
+.noorix-chat-input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.noorix-chat-send-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: #0a1f44;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.noorix-chat-send-btn:hover:not(:disabled) {
+  background: #0d2858;
+}
+
+.noorix-chat-send-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.noorix-chat-send-btn svg {
+  display: block;
+}
+
+.noorix-chat-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: noorix-chat-spin 0.7s linear infinite;
+}
+
+@keyframes noorix-chat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* وضع داكن: عنوان الرأس يبقى واضحاً */
+.dark .noorix-smart-chat-header h1 {
+  color: #e8edf5;
+}
