@@ -93,6 +93,62 @@ export class VaultsService {
   }
 
   /**
+   * أرصدة الخزائن حتى نهاية يوم محدد (شامل) — مجموع القيود الفعّالة حتى 23:59:59 UTC لذلك اليوم.
+   * يُستخدم في تقرير نهاية اليوم لعرض «الرصيد في نهاية اليوم» وليس الرصيد اللحظي الحالي.
+   */
+  async getBalancesAsOf(companyId: string, endDate: string, includeArchived = false) {
+    const d = String(endDate).slice(0, 10);
+    const end = new Date(`${d}T23:59:59.999Z`);
+    const where = { companyId, ...(includeArchived ? {} : { isArchived: false }) };
+
+    const vaults = await this.prisma.vault.findMany({
+      where,
+      orderBy: [{ isArchived: 'asc' }, { nameAr: 'asc' }],
+      include: { account: { select: { id: true, code: true, nameAr: true } } },
+    });
+    if (vaults.length === 0) return [];
+
+    const accountIds = vaults.map((v) => v.accountId);
+    const ledgerWhere = {
+      companyId,
+      status: 'active' as const,
+      transactionDate: { lte: end },
+    };
+
+    const [debitRows, creditRows] = await Promise.all([
+      this.prisma.ledgerEntry.groupBy({
+        by:    ['debitAccountId'],
+        where: { ...ledgerWhere, debitAccountId: { in: accountIds } },
+        _sum:  { amount: true },
+      }),
+      this.prisma.ledgerEntry.groupBy({
+        by:    ['creditAccountId'],
+        where: { ...ledgerWhere, creditAccountId: { in: accountIds } },
+        _sum:  { amount: true },
+      }),
+    ]);
+
+    const debitMap = new Map<string, Decimal>(
+      debitRows.map((r) => [r.debitAccountId, new Decimal(r._sum.amount ?? 0)]),
+    );
+    const creditMap = new Map<string, Decimal>(
+      creditRows.map((r) => [r.creditAccountId, new Decimal(r._sum.amount ?? 0)]),
+    );
+
+    return vaults.map((v) => {
+      const totalIn  = debitMap.get(v.accountId)  ?? new Decimal(0);
+      const totalOut = creditMap.get(v.accountId) ?? new Decimal(0);
+      const balance  = totalIn.minus(totalOut);
+      return {
+        ...v,
+        totalIn:  totalIn.toNumber(),
+        totalOut: totalOut.toNumber(),
+        balance:  balance.toNumber(),
+      };
+    });
+  }
+
+  /**
    * جلب خزنة واحدة مع حركاتها المفلترة بالتاريخ.
    */
   async findOneWithTransactions(

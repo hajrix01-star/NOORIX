@@ -999,8 +999,19 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
       total: data?.total ?? 0,
       page:  data?.page ?? page,
       pageSize: data?.pageSize ?? pageSize,
+      sums: data?.sums,
     },
   };
+}
+
+export async function getInvoiceDayCloseReport(companyId, date) {
+  const res = await apiGet('/api/v1/invoices/day-close-report', {
+    companyId,
+    date: String(date || '').slice(0, 10),
+  });
+  if (!res.success) return res;
+  const data = res.data?.data ?? res.data;
+  return { success: true, data };
 }
 
 // ——— النسخ الاحتياطي الذكي ———

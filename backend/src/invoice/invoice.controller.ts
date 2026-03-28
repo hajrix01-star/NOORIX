@@ -6,7 +6,7 @@
  *   GET    → INVOICES_READ   (owner | super_admin | accountant | cashier)
  *   PATCH  → INVOICES_WRITE  (owner | super_admin | accountant)
  */
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard }             from '@nestjs/passport';
 import { CompanyAccessGuard }    from '../auth/guards/company-access.guard';
 import { RolesGuard }            from '../auth/guards/roles.guard';
@@ -50,6 +50,16 @@ export class InvoiceController {
   ) {
     if (!companyId) return { batches: [], rowCount: 0 };
     return this.invoiceService.findPurchaseBatchSummaries(companyId, startDate, endDate, q);
+  }
+
+  @Get('day-close-report')
+  @RequirePermission('INVOICES_READ')
+  async dayCloseReport(
+    @Query('companyId') companyId: string,
+    @Query('date')     date:      string,
+  ) {
+    if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
+    return this.invoiceService.getDayCloseReport(companyId, date);
   }
 
   @Get()

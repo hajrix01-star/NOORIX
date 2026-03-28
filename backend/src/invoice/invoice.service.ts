@@ -15,6 +15,7 @@ import { splitTax }             from '../common/utils/math-engine';
 import { TenantContext }        from '../common/tenant-context';
 import { AuditLogService }      from '../audit/audit-log.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { VaultsService }        from '../vaults/vaults.service';
 import { nowSaudi }             from '../common/utils/date-utils';
 import { CreateInvoiceDto }      from './dto/create-invoice.dto';
 import { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
@@ -26,6 +27,7 @@ export class InvoiceService {
     private readonly prisma:         TenantPrismaService,
     private readonly audit:          AuditLogService,
     private readonly financialCore:  FinancialCoreService,
+    private readonly vaultsService:  VaultsService,
   ) {}
 
   /**
@@ -397,6 +399,229 @@ export class InvoiceService {
           ? { lte: new Date(`${String(endDate).slice(0, 10)}T23:59:59.999Z`) }
           : {}),
       },
+    };
+  }
+
+  private static readonly DAY_CLOSE_OUTFLOW_KINDS = [
+    'purchase',
+    'expense',
+    'fixed_expense',
+    'hr_expense',
+    'salary',
+    'advance',
+  ] as const;
+
+  /**
+   * تقرير نهاية اليوم — ملخص مالي مضغوط ليوم واحد: فواتير، مبيعات يومية، خزائن، تحويلات، تفصيل مصروفات.
+   */
+  async getDayCloseReport(companyId: string, dateStr: string) {
+    if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
+    const d = String(dateStr || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      throw new BadRequestException('date مطلوب بصيغة YYYY-MM-DD');
+    }
+
+    const dateFilter     = this.buildDateFilter(d, d);
+    const activeDayWhere = { companyId, status: 'active' as const, ...dateFilter };
+    const MAX            = 2000;
+
+    const [
+      byKindRows,
+      invoiceCountAll,
+      invoices,
+      salesSummaries,
+      vaultsAsOf,
+      vaultsDay,
+      transferAgg,
+      byCategoryRows,
+    ] = await Promise.all([
+      this.prisma.invoice.groupBy({
+        by:     ['kind'],
+        where:  activeDayWhere,
+        _sum:   { netAmount: true, taxAmount: true, totalAmount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.invoice.count({ where: { companyId, ...dateFilter } }),
+      this.prisma.invoice.findMany({
+        where:   { companyId, ...dateFilter },
+        orderBy: [{ transactionDate: 'asc' }, { createdAt: 'asc' }],
+        take:    MAX + 1,
+        include: {
+          supplier:    { select: { nameAr: true, nameEn: true } },
+          employee:    { select: { id: true, name: true } },
+          expenseLine: { select: { id: true, nameAr: true, kind: true } },
+          vault:       { select: { id: true, nameAr: true, type: true, paymentMethod: true } },
+        },
+      }),
+      this.prisma.dailySalesSummary.findMany({
+        where:   { companyId, status: 'active', ...dateFilter },
+        include: {
+          channels: { include: { vault: { select: { nameAr: true, type: true } } } },
+        },
+        orderBy: { summaryNumber: 'asc' },
+      }),
+      this.vaultsService.getBalancesAsOf(companyId, d),
+      this.vaultsService.findAll(companyId, false, d, d),
+      this.prisma.ledgerEntry.aggregate({
+        where: { companyId, status: 'active', referenceType: 'transfer', ...dateFilter },
+        _sum:  { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.invoice.groupBy({
+        by:    ['categoryId'],
+        where: {
+          companyId,
+          status:     'active',
+          ...dateFilter,
+          kind:       { in: [...InvoiceService.DAY_CLOSE_OUTFLOW_KINDS] },
+          categoryId: { not: null },
+        },
+        _sum:   { totalAmount: true },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const invoicesTruncated = invoices.length > MAX;
+    const invoiceRows       = invoicesTruncated ? invoices.slice(0, MAX) : invoices;
+
+    const zero = () => ({ net: '0', tax: '0', total: '0', count: 0 });
+    const sums = { all: zero(), inflow: zero(), outflow: zero() };
+    const byKind: { kind: string; count: number; net: string; tax: string; total: string }[] = [];
+    for (const row of byKindRows) {
+      const n = row._sum.netAmount?.toString()   ?? '0';
+      const x = row._sum.taxAmount?.toString()   ?? '0';
+      const t = row._sum.totalAmount?.toString() ?? '0';
+      const c = row._count._all;
+      byKind.push({ kind: row.kind, count: c, net: n, tax: x, total: t });
+      const target = row.kind === 'sale' ? sums.inflow : sums.outflow;
+      target.net   = new Decimal(target.net).plus(n).toString();
+      target.tax   = new Decimal(target.tax).plus(x).toString();
+      target.total = new Decimal(target.total).plus(t).toString();
+      target.count += c;
+      sums.all.net   = new Decimal(sums.all.net).plus(n).toString();
+      sums.all.tax   = new Decimal(sums.all.tax).plus(x).toString();
+      sums.all.total = new Decimal(sums.all.total).plus(t).toString();
+      sums.all.count += c;
+    }
+    byKind.sort((a, b) => a.kind.localeCompare(b.kind));
+
+    const catIds = [...new Set(byCategoryRows.map((r) => r.categoryId).filter(Boolean))] as string[];
+    const categories =
+      catIds.length > 0
+        ? await this.prisma.category.findMany({
+            where:   { id: { in: catIds }, companyId },
+            select: { id: true, nameAr: true },
+          })
+        : [];
+    const catName = new Map(categories.map((c) => [c.id, c.nameAr]));
+
+    const expensesByCategory = byCategoryRows
+      .filter((r) => r.categoryId)
+      .map((r) => ({
+        categoryId:   r.categoryId as string,
+        nameAr:       catName.get(r.categoryId as string) ?? '—',
+        total:        (r._sum.totalAmount ?? new Prisma.Decimal(0)).toString(),
+        count:        r._count._all,
+      }))
+      .sort((a, b) => new Decimal(b.total).cmp(a.total));
+
+    const payTotals = new Map<string, Decimal>();
+    for (const inv of invoiceRows) {
+      if (inv.status !== 'active') continue;
+      if (inv.kind === 'sale') continue;
+      const label =
+        (inv.vault?.paymentMethod && String(inv.vault.paymentMethod).trim()) ||
+        (inv.vault?.nameAr && String(inv.vault.nameAr).trim()) ||
+        '—';
+      const cur = payTotals.get(label) ?? new Decimal(0);
+      payTotals.set(label, cur.plus(inv.totalAmount.toString()));
+    }
+    const outflowByPaymentMethod = [...payTotals.entries()]
+      .map(([label, dec]) => ({ label, total: dec.toFixed(4) }))
+      .sort((a, b) => new Decimal(b.total).cmp(a.total));
+
+    const vaultsAsOfLite = vaultsAsOf.map((v) => ({
+      id:       v.id,
+      nameAr:   v.nameAr,
+      type:     v.type,
+      balance:  v.balance,
+      totalIn:  v.totalIn,
+      totalOut: v.totalOut,
+    }));
+    const vaultsDayLite = vaultsDay.map((v) => ({
+      id:       v.id,
+      nameAr:   v.nameAr,
+      type:     v.type,
+      totalIn:  v.totalIn,
+      totalOut: v.totalOut,
+      netDay:   new Decimal(v.totalIn).minus(v.totalOut).toNumber(),
+    }));
+
+    const cashVaultsDay   = vaultsDay.filter((v) => v.type === 'cash');
+    const cashVaultsAsOf  = vaultsAsOf.filter((v) => v.type === 'cash');
+    const cashDayIn       = cashVaultsDay.reduce((s, v) => s.plus(v.totalIn), new Decimal(0)).toNumber();
+    const cashDayOut      = cashVaultsDay.reduce((s, v) => s.plus(v.totalOut), new Decimal(0)).toNumber();
+    const cashBalanceEod  = cashVaultsAsOf.reduce((s, v) => s.plus(v.balance), new Decimal(0)).toNumber();
+
+    const operations = invoiceRows.map((inv) => ({
+      id:              inv.id,
+      invoiceNumber:   inv.invoiceNumber,
+      kind:            inv.kind,
+      status:          inv.status,
+      totalAmount:     inv.totalAmount.toString(),
+      netAmount:       inv.netAmount.toString(),
+      taxAmount:       inv.taxAmount.toString(),
+      transactionDate: inv.transactionDate,
+      notes:           inv.notes,
+      supplierName:    inv.supplier?.nameAr || inv.supplier?.nameEn || null,
+      employeeName:    inv.employee?.name || null,
+      expenseLineName: inv.expenseLine?.nameAr || null,
+      vaultName:       inv.vault?.nameAr || null,
+      vaultType:       inv.vault?.type || null,
+      paymentChannel:  inv.vault?.paymentMethod?.trim() || inv.vault?.nameAr || null,
+    }));
+
+    const salesLite = salesSummaries.map((s) => ({
+      id:              s.id,
+      summaryNumber:   s.summaryNumber,
+      customerCount:   s.customerCount,
+      cashOnHand:      s.cashOnHand.toString(),
+      totalAmount:     s.totalAmount.toString(),
+      notes:           s.notes,
+      channels:        s.channels.map((ch) => ({
+        vaultName: ch.vault?.nameAr ?? '—',
+        vaultType: ch.vault?.type ?? null,
+        amount:    ch.amount.toString(),
+      })),
+    }));
+
+    return {
+      date: d,
+      meta: {
+        invoiceCountAll,
+        operationsReturned: invoiceRows.length,
+        invoicesTruncated,
+      },
+      sums,
+      byKind,
+      salesSummaries: salesLite,
+      expensesByCategory,
+      outflowByPaymentMethod,
+      transfers: {
+        count:  transferAgg._count._all,
+        volume: (transferAgg._sum.amount ?? new Prisma.Decimal(0)).toString(),
+      },
+      vaults: {
+        balanceEndOfDayByVault: vaultsAsOfLite,
+        movementOnDayByVault:   vaultsDayLite,
+      },
+      cash: {
+        dayTotalIn:  cashDayIn,
+        dayTotalOut: cashDayOut,
+        netDay:      new Decimal(cashDayIn).minus(cashDayOut).toNumber(),
+        balanceEndOfDayCashVaults: cashBalanceEod,
+      },
+      operations,
     };
   }
 
