@@ -82,4 +82,8 @@ export default {
   dayCloseBalance: { ar: 'الرصيد', en: 'Balance' },
   dayCloseOperationsTable: { ar: 'سجل العمليات', en: 'Operations log' },
   dayCloseCounterparty: { ar: 'الجهة / التفاصيل', en: 'Party / details' },
+  dayCloseKpiPrintCaption: { ar: 'ملخص المؤشرات المالية', en: 'Financial summary' },
+  dayCloseKpiColMetric: { ar: 'البند', en: 'Item' },
+  dayCloseKpiColValue: { ar: 'المبلغ (﷼)', en: 'Amount (SAR)' },
+  dayCloseKpiColCount: { ar: 'العدد', en: 'Count' },
 };
