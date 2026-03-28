@@ -257,6 +257,8 @@ export default {
   chatCommands: { ar: 'أوامر', en: 'Commands' },
   chatFilterByDate: { ar: 'تصفية بالتاريخ', en: 'Filter by date' },
   chatClearFilter: { ar: 'إزالة الفلتر', en: 'Clear filter' },
+  chatLoadMore: { ar: 'تحميل المزيد', en: 'Load more' },
+  chatLoadMoreCount: { ar: 'تحميل المزيد ({0} رسالة)', en: 'Load more ({0} messages)' },
   chatNoMessagesOnDate: { ar: 'لا توجد رسائل في هذا التاريخ. غيّر الفلتر أو امسحه.', en: 'No messages on this date. Change or clear the filter.' },
   chatInputPlaceholder: {
     ar: 'اكتب رسالتك أو اطرح أي سؤال…',

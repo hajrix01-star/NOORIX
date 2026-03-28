@@ -3,7 +3,6 @@
  * نسق مرجعي: أوامر مجمّعة، إدخال، نوافذ مركزية، تخزين محلي مع فلتر.
  */
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -167,7 +166,6 @@ const CMD_GROUPS = [
 export default function SmartChatScreen() {
   const { activeCompanyId, companies, user } = useApp();
   const { t, lang } = useTranslation();
-  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [creatorName, setCreatorName] = useState('');
   const [input, setInput] = useState('');
@@ -180,8 +178,11 @@ export default function SmartChatScreen() {
   const [expenseMode, setExpenseMode] = useState(null);
   const [expenseEditLine, setExpenseEditLine] = useState(null);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const [visibleMessageCount, setVisibleMessageCount] = useState(CHAT_PAGE_SIZE);
 
   const messagesEndRef = useRef(null);
+  const messagesScrollRef = useRef(null);
+  const skipScrollToEndRef = useRef(false);
   const inputRef = useRef(null);
   const commandsWrapRef = useRef(null);
   const saveTimerRef = useRef(null);
@@ -268,10 +269,34 @@ export default function SmartChatScreen() {
     return () => clearTimeout(saveTimerRef.current);
   }, [messages, persistChat]);
 
-  const displayedMessages = useMemo(() => {
+  const filteredMessages = useMemo(() => {
     const base = dateFilter ? filterByDate(messages, dateFilter) : messages;
     return base.length > 100 ? base.slice(-100) : base;
   }, [messages, dateFilter]);
+
+  useEffect(() => {
+    setVisibleMessageCount(CHAT_PAGE_SIZE);
+  }, [activeCompanyId, dateFilter]);
+
+  const displayedMessages = useMemo(() => {
+    if (filteredMessages.length <= visibleMessageCount) return filteredMessages;
+    return filteredMessages.slice(-visibleMessageCount);
+  }, [filteredMessages, visibleMessageCount]);
+
+  const olderHiddenCount = filteredMessages.length - displayedMessages.length;
+
+  const handleLoadMoreMessages = useCallback(() => {
+    const el = messagesScrollRef.current;
+    const prevScrollHeight = el?.scrollHeight ?? 0;
+    skipScrollToEndRef.current = true;
+    setVisibleMessageCount((c) => c + CHAT_PAGE_SIZE);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (el) el.scrollTop += el.scrollHeight - prevScrollHeight;
+        skipScrollToEndRef.current = false;
+      });
+    });
+  }, []);
 
   useEffect(() => {
     const onDoc = (e) => {
@@ -282,6 +307,7 @@ export default function SmartChatScreen() {
   }, []);
 
   useEffect(() => {
+    if (skipScrollToEndRef.current) return;
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [displayedMessages, loading]);
 
@@ -371,7 +397,7 @@ export default function SmartChatScreen() {
       )}
 
       {activeCompanyId && (
-        <>
+        <div className="noorix-smart-chat-sticky">
           <header className="noorix-smart-chat-header">
             <div>
               <h1>{t('smartChat')}</h1>
@@ -420,21 +446,25 @@ export default function SmartChatScreen() {
                   {commandsOpen && (
                     <div className="noorix-chat-commands-panel">
                       {filteredGroups.map((g) => (
-                        <div key={g.id}>
+                        <div key={g.id} className="noorix-chat-commands-group">
                           <div className="noorix-chat-commands-group-label">
                             {g.icon} {isAr ? g.labelAr : g.labelEn}
                           </div>
-                          {g.items.map((it) => (
-                            <button
-                              key={it.key}
-                              type="button"
-                              className="noorix-chat-commands-item"
-                              onClick={() => handleCommand(it.key)}
-                            >
-                              <span aria-hidden>{it.icon}</span>
-                              <span>{isAr ? it.labelAr : it.labelEn}</span>
-                            </button>
-                          ))}
+                          <div
+                            className={`noorix-chat-commands-grid${g.items.length === 1 ? ' noorix-chat-commands-grid--single' : ''}`}
+                          >
+                            {g.items.map((it) => (
+                              <button
+                                key={it.key}
+                                type="button"
+                                className="noorix-chat-commands-item"
+                                onClick={() => handleCommand(it.key)}
+                              >
+                                <span aria-hidden>{it.icon}</span>
+                                <span>{isAr ? it.labelAr : it.labelEn}</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -458,12 +488,17 @@ export default function SmartChatScreen() {
               ) : null}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {activeCompanyId && (
       <div className="noorix-smart-chat-card">
-        <div className="noorix-smart-chat-messages">
+        <div className="noorix-smart-chat-messages" ref={messagesScrollRef}>
+          {olderHiddenCount > 0 && (
+            <button type="button" className="noorix-smart-chat-load-more" onClick={handleLoadMoreMessages}>
+              {t('chatLoadMoreCount', String(olderHiddenCount))}
+            </button>
+          )}
           {displayedMessages.length === 0 && (
             dateFilter ? (
               <div style={{ color: 'var(--noorix-text-muted)', fontSize: 14, textAlign: 'center', padding: 24 }}>

@@ -5,13 +5,25 @@
 .noorix-smart-chat-root {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  flex: 1;
+  min-height: 0;
   max-width: 1000px;
   margin: 0 auto;
+  width: 100%;
   background: var(--noorix-bg-page);
   padding-bottom: 16px;
-  overflow: hidden;
   box-sizing: border-box;
+}
+
+/* رأس المحادثة + صف الأوامر — ثابت عند تمرير الصفحة */
+.noorix-smart-chat-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--noorix-bg-page);
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+  box-shadow: 0 6px 12px -8px rgba(0, 0, 0, 0.12);
 }
 
 .noorix-smart-chat-header {
@@ -20,7 +32,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 16px 16px 8px;
+  padding: 12px 16px 6px;
   flex-shrink: 0;
 }
 
@@ -67,7 +79,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
-  margin: 0 16px 8px;
+  margin: 0 16px 0;
+  padding: 0 0 4px;
 }
 
 .noorix-smart-chat-quick-row--single {
@@ -133,46 +146,88 @@
   font-size: 10px;
 }
 
-/* لوحة الأوامر المنبثقة */
+/* لوحة الأوامر — مدمجة بدون تمرير داخلي؛ شبكة عمودين */
 .noorix-chat-commands-panel {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  right: 0;
-  max-height: min(360px, 55vh);
-  overflow-y: auto;
+  min-width: 100%;
+  width: max(100%, 300px);
+  max-width: min(440px, calc(100vw - 32px));
   background: var(--noorix-bg-surface);
   border-radius: 10px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.14);
   border: 1px solid var(--noorix-border);
   z-index: 100;
+  overflow: hidden;
+}
+
+[dir='rtl'] .noorix-chat-commands-panel {
+  left: auto;
+  right: 0;
+}
+
+.noorix-chat-commands-group {
+  border-bottom: 1px solid var(--noorix-border);
+}
+
+.noorix-chat-commands-group:last-child {
+  border-bottom: none;
 }
 
 .noorix-chat-commands-group-label {
-  padding: 10px 14px;
-  font-size: 11px;
+  padding: 6px 10px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--noorix-text-muted);
   background: var(--noorix-bg-muted);
   border-bottom: 1px solid var(--noorix-border);
 }
 
+.noorix-chat-commands-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+@media (max-width: 380px) {
+  .noorix-chat-commands-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .noorix-chat-commands-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 14px;
-  font-size: 14px;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.25;
   border: none;
-  border-bottom: 1px solid var(--noorix-border);
+  border-bottom: 1px solid var(--noorix-border-subtle, var(--noorix-border));
+  border-inline-end: 1px solid var(--noorix-border-subtle, var(--noorix-border));
   background: transparent;
   color: var(--noorix-text);
   cursor: pointer;
   text-align: inherit;
   font-family: inherit;
+}
+
+.noorix-chat-commands-grid .noorix-chat-commands-item:nth-child(2n) {
+  border-inline-end: none;
+}
+
+.noorix-chat-commands-grid--single .noorix-chat-commands-item {
+  border-inline-end: none;
+}
+
+@media (max-width: 380px) {
+  .noorix-chat-commands-item {
+    border-inline-end: none;
+  }
 }
 
 .noorix-chat-commands-item:hover {
@@ -192,7 +247,8 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  min-height: 420px;
+  min-height: 320px;
+  max-height: min(560px, calc(100vh - 220px));
   margin: 0 16px;
   background: var(--noorix-bg-surface);
   border: 1px solid var(--noorix-border);
@@ -201,9 +257,30 @@
   overflow: hidden;
 }
 
+.noorix-smart-chat-load-more {
+  align-self: center;
+  margin-bottom: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--noorix-border);
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.noorix-smart-chat-load-more:hover {
+  background: var(--noorix-bg-surface);
+  border-color: #0a1f44;
+  color: #0a1f44;
+}
+
 .noorix-smart-chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   display: flex;
   flex-direction: column;
