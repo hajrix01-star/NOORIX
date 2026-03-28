@@ -1,14 +1,19 @@
 import type { ChatHandler } from './types';
 import { matches } from './utils';
+import { isGeminiOpenModeEnabled } from '../../config/gemini.config';
 
 export const helpHandler: ChatHandler = {
   priority: 100,
   intent: 'help',
   matchesIntent: (intent) => intent === 'help',
-  canHandle: (q) => matches(q, ['مساعدة', 'help', 'ماذا تسأل', 'اسئلة', 'أسئلة', 'ماذا يمكن', 'ماذا تعرف', 'ما الذي', 'كيف الحال', 'مرحبا', 'أهلا', 'اهلا', 'السلام عليكم', 'hello', 'hi']),
+  /** تحيات عامة لا تُطابق هنا — تمر إلى Gemini (answerGeneral) عند GEMINI_OPEN_MODE */
+  canHandle: (q) => matches(q, ['مساعدة', 'help', 'ماذا تسأل', 'اسئلة', 'أسئلة', 'ماذا يمكن', 'ماذا تعرف', 'ما الذي']),
   process: async (ctx) => {
     const q = (ctx?.query || '').toLowerCase();
     const isGreeting = /كيف الحال|مرحبا|أهلا|اهلا|السلام|hello|hi/.test(q);
+    if (isGreeting && isGeminiOpenModeEnabled()) {
+      return null;
+    }
     if (isGreeting) {
       return {
         answerAr: 'أهلاً بك! أنا مساعد نوركس. اسألني عن المبيعات، الخزائن، التقارير، الموظفين، أو اكتب "مساعدة" لرؤية الأسئلة المدعومة.',
