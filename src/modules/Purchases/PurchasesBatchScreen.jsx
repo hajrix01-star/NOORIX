@@ -10,9 +10,11 @@ import { useApp } from '../../context/AppContext';
 import { createInvoiceBatch, updateInvoice, getPurchaseBatchSummaries, fetchAllInvoicesForBatch } from '../../services/api';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useCategories } from '../../hooks/useCategories';
+import { useVaults } from '../../hooks/useVaults';
 import { useBatchSummary } from '../../hooks/useBatchCalculation';
 import { useTableFilter } from '../../hooks/useTableFilter';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
+import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { fmt, sumAmounts } from '../../utils/format';
 import Toast from '../../components/Toast';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -61,7 +63,7 @@ function getTabs(t) {
 
 /* ══ الشاشة الرئيسية — تصميم احترافي ═══════════════════════════════ */
 export default function PurchasesBatchScreen() {
-  const { activeCompanyId } = useApp();
+  const { activeCompanyId, language } = useApp();
   const { t } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const queryClient = useQueryClient();
@@ -70,6 +72,7 @@ export default function PurchasesBatchScreen() {
   const [toast, setToast]         = useState({ visible: false, message: '', type: 'success' });
   const [activeTab, setActiveTab] = useState('entry');
   const [batchDate, setBatchDate] = useState(getSaudiToday());
+  const [batchVaultId, setBatchVaultId] = useState('');
   const [rows, setRows]           = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [bookmarks, setBookmarks] = useState(loadBookmarks);
   const [editingBatch, setEditingBatch] = useState(null);
@@ -78,6 +81,17 @@ export default function PurchasesBatchScreen() {
 
   const { suppliers } = useSuppliers(companyId);
   const { flatCategories = [] } = useCategories(companyId);
+  const { vaultsList = [] } = useVaults({ companyId });
+  const activeVaults = useMemo(() => vaultsList.filter((v) => !v.isArchived), [vaultsList]);
+
+  useEffect(() => {
+    setBatchVaultId('');
+  }, [companyId]);
+
+  useEffect(() => {
+    if (batchVaultId && !activeVaults.some((v) => v.id === batchVaultId)) setBatchVaultId('');
+    if (!batchVaultId && activeVaults.length === 1) setBatchVaultId(activeVaults[0].id);
+  }, [activeVaults, batchVaultId]);
 
   const [batchSearchInput, setBatchSearchInput] = useState('');
   const [debouncedBatchQ, setDebouncedBatchQ] = useState('');
@@ -443,6 +457,29 @@ export default function PurchasesBatchScreen() {
                 }}
               />
             </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0, minWidth: 0, maxWidth: 280 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }} htmlFor="batch-purchase-vault">
+                {t('batchPurchasesPayVault')}
+              </label>
+              <select
+                id="batch-purchase-vault"
+                value={batchVaultId}
+                onChange={(e) => setBatchVaultId(e.target.value)}
+                style={{
+                  padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)',
+                  fontSize: 13, background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)',
+                  maxWidth: '100%',
+                }}
+              >
+                <option value="">{t('batchPurchasesVaultPlaceholder')}</option>
+                {activeVaults.map((v) => (
+                  <option key={v.id} value={v.id}>{vaultDisplayName(v, language)}</option>
+                ))}
+              </select>
+              <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)', lineHeight: 1.35, maxWidth: 260 }}>
+                {t('batchPurchasesPayVaultHint')}
+              </span>
+            </div>
             <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('shortcuts')}</span>
               {bookmarkedSuppliers.length > 0 ? (
@@ -465,6 +502,12 @@ export default function PurchasesBatchScreen() {
               )}
             </div>
           </div>
+
+          {activeVaults.length === 0 && (
+            <div style={{ padding: '10px 16px', fontSize: 13, color: '#b45309', background: 'rgba(245,158,11,0.12)', borderBottom: '1px solid var(--noorix-border)' }}>
+              {t('batchPurchasesNoVaults')}
+            </div>
+          )}
 
           {/* جدول الإدخال */}
           <div style={{ padding: '0 12px 16px' }}>
@@ -532,7 +575,7 @@ export default function PurchasesBatchScreen() {
               <button
                 type="button"
                 className="noorix-btn-nav noorix-btn-success"
-                disabled={saveMutation.isPending || summary.count === 0}
+                disabled={saveMutation.isPending || summary.count === 0 || !batchVaultId || activeVaults.length === 0}
                 onClick={() => saveMutation.mutate()}
                 style={{ flex: '1 1 200px', padding: '12px 20px', fontSize: 14, fontWeight: 700, minWidth: 0 }}
               >
