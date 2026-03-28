@@ -91,6 +91,40 @@ async function tryRefreshToken() {
   return _refreshPromise;
 }
 
+/**
+ * تجديد الجلسة من refresh_token — يعيد companyIds محدّثة من قاعدة البيانات (مثلاً بعد استيراد شركة).
+ * يحدّث التوكن في التخزين؛ استدعِ setToken/setUser من AuthContext لمزامنة واجهة React.
+ */
+export async function refreshAuthSession() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return { success: false, error: 'لا يوجد رمز تجديد' };
+  }
+  try {
+    const url = new URL('/api/v1/auth/refresh', getBase());
+    const res = await safeFetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = Array.isArray(data?.message)
+        ? data.message.join(', ')
+        : (data?.message || data?.error || 'فشل تجديد الجلسة');
+      return { success: false, error: String(msg) };
+    }
+    const payload = data?.data ?? data;
+    if (payload?.access_token) {
+      setAuthToken(payload.access_token);
+      if (payload.refresh_token) setRefreshToken(payload.refresh_token);
+    }
+    return { success: true, data: payload };
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال' };
+  }
+}
+
 // ── معالجة الاستجابة ─────────────────────────────────
 async function parseResponse(res, retryFn) {
   const data = await res.json().catch(() => ({}));

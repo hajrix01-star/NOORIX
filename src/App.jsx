@@ -131,8 +131,9 @@ export default function App() {
     }
     return [];
   }, [companiesFromApi, user?.companyIds]);
-  const singleCompanyId = user?.companyIds?.length === 1 ? user.companyIds[0] : null;
-  const showCompanySwitcher = !singleCompanyId && companiesList.length > 1;
+  /** القائمة الفعلية من API قد تتجاوز JWT (مثلاً بعد استيراد شركة) — لا نعتمد على companyIds القديمة لإخفاء المبدّل */
+  const singleCompanyId = companiesList.length === 1 ? companiesList[0].id : null;
+  const showCompanySwitcher = companiesList.length > 1;
 
   const [activeCompany, setActiveCompany] = useState(() => singleCompanyId || (companiesList[0]?.id ?? ''));
   useEffect(() => {

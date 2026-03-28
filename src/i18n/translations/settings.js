@@ -58,6 +58,10 @@ export default {
     ar: 'تم الاستيراد. اختر الشركة الجديدة من القائمة إن لم تظهر تلقائياً.',
     en: 'Import complete. Select the new company from the list if needed.',
   },
+  backupImportSessionHint: {
+    ar: 'لم يُحدَّث رمز الجلسة تلقائياً — سجّل الخروج ثم الدخول لرؤية الشركة الجديدة في القائمة.',
+    en: 'Session token was not refreshed — sign out and back in to see the new company in the list.',
+  },
   backupImportDefaultCo: { ar: 'شركة', en: 'Company' },
   backupImportSuffix: { ar: 'استرجاع', en: 'restored' },
   backupImportReportTitle: { ar: 'تقرير الاستيراد', en: 'Import report' },

@@ -11,8 +11,11 @@ import {
   backupRetryExternal,
   backupDownloadJobFile,
   backupImportFromJob,
+  refreshAuthSession,
 } from '../../../services/api';
 import Toast from '../../../components/Toast';
+import { useAuth } from '../../../context/AuthContext';
+import { useApp } from '../../../context/AppContext';
 
 function formatBackupDate(iso, lang) {
   if (!iso) return '—';
@@ -95,6 +98,8 @@ function statusLabel(s, t) {
 
 export default function BackupTab({ activeCompanies = [] }) {
   const { t, lang } = useTranslation();
+  const { setToken, setUser } = useAuth();
+  const setActiveCompany = useApp()?.setActiveCompany;
   const isAr = lang !== 'en';
   const qc = useQueryClient();
   const [companyId, setCompanyId] = useState(() => activeCompanies[0]?.id || '');
@@ -148,17 +153,31 @@ export default function BackupTab({ activeCompanies = [] }) {
 
   const importMut = useMutation({
     mutationFn: ({ jobId, nameAr }) => backupImportFromJob({ jobId, nameAr }),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       if (!res?.success) {
         setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
         return;
       }
       setImportModal(null);
       setImportNameAr('');
-      qc.invalidateQueries({ queryKey: ['backup-jobs'] });
-      qc.invalidateQueries({ queryKey: ['companies'] });
+      const ref = await refreshAuthSession();
+      if (ref.success && ref.data?.access_token) {
+        setToken(ref.data.access_token);
+        if (ref.data.user) setUser(ref.data.user);
+      }
+      await qc.invalidateQueries({ queryKey: ['backup-jobs'] });
+      await Promise.all([
+        qc.refetchQueries({ queryKey: ['companies'] }),
+        qc.refetchQueries({ queryKey: ['companies', false] }),
+      ]);
+      const nid = res.data?.newCompanyId;
+      if (nid && typeof setActiveCompany === 'function') setActiveCompany(nid);
       setImportReportModal(res.data || null);
-      setToast({ visible: true, message: t('backupImportOk'), type: 'success' });
+      setToast({
+        visible: true,
+        message: ref.success ? t('backupImportOk') : `${t('backupImportOk')} — ${t('backupImportSessionHint')}`,
+        type: ref.success ? 'success' : 'error',
+      });
     },
     onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
   });
