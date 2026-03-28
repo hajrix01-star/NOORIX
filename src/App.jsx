@@ -10,6 +10,7 @@ import Forbidden403 from './components/Forbidden403';
 import AppSidebar from './components/AppSidebar';
 import AppHeader from './components/AppHeader';
 import LoadingFallback from './components/LoadingFallback';
+import { prefetchRouteChunk } from './utils/routePrefetch';
 
 const DashboardScreen = React.lazy(() => import('./modules/Dashboard/DashboardScreen'));
 const DailySalesScreen = React.lazy(() => import('./modules/Sales/DailySalesScreen'));
@@ -54,12 +55,6 @@ function getInitialCardStyle() {
   return (v >= 1 && v <= 10) ? v : 1;
 }
 
-const FALLBACK_COMPANIES = [
-  { id: 'noorix', nameAr: 'شركة Noorix القابضة' },
-  { id: 'riyadh', nameAr: 'فرع الرياض' },
-  { id: 'jeddah', nameAr: 'فرع جدة' },
-];
-
 export default function App() {
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
@@ -91,6 +86,26 @@ export default function App() {
   // المستخدم يُحمَّل إذا كان مصادقاً ولم يصل بعد
   const isUserLoading = isAuthenticated && !user && (isMeLoading || !isMeFetched);
 
+  // بعد الدخول: تحميل مسبق لأهم الأقسام أثناء خمول المتصفح — يقلّل انتظار أول زيارة (lazy chunks)
+  useEffect(() => {
+    if (!isAuthenticated || !user || isLoginPage) return;
+    const routes = ['/', '/sales', '/purchases', '/invoices'];
+    const run = () => routes.forEach((to) => prefetchRouteChunk(to));
+    let idleId;
+    let timeoutId;
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(run, { timeout: 3000 });
+    } else {
+      timeoutId = window.setTimeout(run, 600);
+    }
+    return () => {
+      if (idleId != null && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId != null) window.clearTimeout(timeoutId);
+    };
+  }, [isAuthenticated, isLoginPage, user?.id]);
+
   const { data: companiesFromApi } = useQuery({
     queryKey: ['companies'],
     queryFn: async () => {
@@ -105,7 +120,17 @@ export default function App() {
     enabled: !!isAuthenticated,
   });
 
-  const companiesList = companiesFromApi?.length ? companiesFromApi : FALLBACK_COMPANIES;
+  // لا نستخدم معرفات وهمية (noorix/riyadh…) — كانت تسبب GET /companies/noorix → 500 "No Company found"
+  const companiesList = useMemo(() => {
+    if (Array.isArray(companiesFromApi) && companiesFromApi.length > 0) {
+      return companiesFromApi;
+    }
+    const ids = user?.companyIds;
+    if (Array.isArray(ids) && ids.length > 0) {
+      return ids.map((id) => ({ id, nameAr: '', nameEn: null }));
+    }
+    return [];
+  }, [companiesFromApi, user?.companyIds]);
   const singleCompanyId = user?.companyIds?.length === 1 ? user.companyIds[0] : null;
   const showCompanySwitcher = !singleCompanyId && companiesList.length > 1;
 

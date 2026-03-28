@@ -1,15 +1,29 @@
 # kill-port.ps1 - free the given TCP port (kill owning PIDs)
 param([int]$Port)
 if (-not $Port) { Write-Host "Usage: kill-port.ps1 -Port 3000"; exit 1 }
-# Force array: single PID otherwise becomes a string and foreach iterates characters
-$procs = @(netstat -ano | Select-String ":$Port\s" | ForEach-Object {
-  ($_ -split '\s+')[-1]
-} | Where-Object { $_ -match '^\d+$' } | Sort-Object -Unique)
-if ($procs.Count -eq 0) {
+
+$pids = @()
+# Windows 8+: أدق من تحليل netstat (LISTEN فقط)
+try {
+  $pids = @(
+    Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+      Select-Object -ExpandProperty OwningProcess -Unique |
+      Where-Object { $_ -and $_ -gt 0 }
+  )
+} catch { }
+
+if ($pids.Count -eq 0) {
+  # احتياط: netstat — آخر عمود PID؛ صفوف LISTENING فقط
+  $procs = @(netstat -ano | Select-String "LISTENING" | Select-String ":$Port\s" | ForEach-Object {
+    ($_ -split '\s+')[-1]
+  } | Where-Object { $_ -match '^\d+$' -and $_ -ne '0' } | Sort-Object -Unique)
+  $pids = $procs
+}
+
+if ($pids.Count -eq 0) {
   Write-Host "[OK] المنفذ $Port حر."
 } else {
-  # Loop variable must not be the built-in process id variable
-  foreach ($procId in $procs) {
+  foreach ($procId in $pids) {
     try {
       Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
       Write-Host "[KILLED] PID $procId على المنفذ $Port"
