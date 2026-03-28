@@ -2,6 +2,7 @@
  * تقرير نهاية اليوم — جداول موحّدة + طباعة نظيفة (بدون قوالب التطبيق)
  */
 import React, { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
@@ -40,6 +41,13 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
     if (isOpen) setDateStr((defaultDateYmd || saudiTodayYmd()).slice(0, 10));
   }, [isOpen, defaultDateYmd]);
 
+  useEffect(() => {
+    if (!isOpen || typeof document === 'undefined') return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['invoice-day-close', companyId, dateStr],
     queryFn: async () => {
@@ -65,13 +73,23 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
   const reportDateLabel = formatSaudiDateISO(`${dateStr}T12:00:00.000Z`);
 
-  return (
+  const modal = (
     <div
       className="day-close-overlay"
       dir="rtl"
       style={{
-        position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(15,23,42,0.45)',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 12px', overflow: 'auto',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10050,
+        background: 'rgba(15, 23, 42, 0.78)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        padding: '24px 12px',
+        overflow: 'auto',
+        isolation: 'isolate',
       }}
       role="dialog"
       aria-modal
@@ -97,7 +115,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           text-align: right; padding: 7px 10px; border: 1px solid #cbd5e1; vertical-align: top;
           line-height: 1.35; color: #0f172a;
         }
-        .day-close-report .dc-table tbody tr:nth-child(even) td { background: #f8fafc; }
+        .day-close-report .dc-table tbody tr:nth-child(even) td { background: var(--noorix-bg-page, #f8fafc); }
         .day-close-report .dc-table .dc-num { font-family: var(--noorix-font-numbers, ui-monospace, monospace); text-align: left; direction: ltr; unicode-bidi: isolate; }
         .day-close-report .dc-table .dc-muted { color: var(--dc-muted); font-size: 10px; font-weight: 500; }
         .day-close-report .dc-table .dc-empty { text-align: center; color: var(--dc-muted); font-style: italic; }
@@ -170,7 +188,23 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
         }
       `}</style>
 
-      <div className="day-close-print-root" style={{ maxWidth: 960, width: '100%', marginBottom: 32, padding: 16 }}>
+      <div
+        className="day-close-print-root"
+        style={{
+          maxWidth: 960,
+          width: '100%',
+          marginBottom: 32,
+          padding: 16,
+          position: 'relative',
+          zIndex: 1,
+          background: 'var(--noorix-bg-surface, #ffffff)',
+          color: 'var(--noorix-text, #0f172a)',
+          border: '1px solid var(--noorix-border, #e2e8f0)',
+          borderRadius: 12,
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="day-close-report">
           {/* ترويسة مطبوعة فقط */}
           <div className="day-close-print-only dc-print-block">
@@ -500,4 +534,6 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modal, document.body) : null;
 }
