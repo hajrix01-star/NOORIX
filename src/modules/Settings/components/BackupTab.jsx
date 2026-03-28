@@ -9,6 +9,8 @@ import {
   backupListJobs,
   backupRestoreReport,
   backupRetryExternal,
+  backupDownloadJobFile,
+  backupImportFromJob,
 } from '../../../services/api';
 import Toast from '../../../components/Toast';
 
@@ -36,6 +38,8 @@ export default function BackupTab({ activeCompanies = [] }) {
   const [companyId, setCompanyId] = useState(() => activeCompanies[0]?.id || '');
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [reportModal, setReportModal] = useState(null);
+  const [importModal, setImportModal] = useState(null);
+  const [importNameAr, setImportNameAr] = useState('');
 
   const { data: jobsRes, isLoading } = useQuery({
     queryKey: ['backup-jobs'],
@@ -67,6 +71,32 @@ export default function BackupTab({ activeCompanies = [] }) {
       }
       setReportModal({ jobId, payload: res.data });
     },
+  });
+
+  const downloadMut = useMutation({
+    mutationFn: async (jobId) => {
+      const r = await backupDownloadJobFile(jobId);
+      if (!r?.success) throw new Error(r?.error || 'download failed');
+      return r;
+    },
+    onSuccess: () => setToast({ visible: true, message: t('backupDownloadOk'), type: 'success' }),
+    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+  });
+
+  const importMut = useMutation({
+    mutationFn: ({ jobId, nameAr }) => backupImportFromJob({ jobId, nameAr }),
+    onSuccess: (res) => {
+      if (!res?.success) {
+        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        return;
+      }
+      setImportModal(null);
+      setImportNameAr('');
+      qc.invalidateQueries({ queryKey: ['backup-jobs'] });
+      qc.invalidateQueries({ queryKey: ['companies'] });
+      setToast({ visible: true, message: t('backupImportOk'), type: 'success' });
+    },
+    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
   });
 
   const retryMut = useMutation({
@@ -188,6 +218,29 @@ export default function BackupTab({ activeCompanies = [] }) {
                 >
                   {t('backupRestoreReport')}
                 </button>
+                {j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath && (
+                  <>
+                    <button
+                      type="button"
+                      className="noorix-btn noorix-btn--secondary"
+                      disabled={downloadMut.isPending}
+                      onClick={() => downloadMut.mutate(j.id)}
+                    >
+                      {t('backupDownload')}
+                    </button>
+                    <button
+                      type="button"
+                      className="noorix-btn noorix-btn--primary"
+                      disabled={importMut.isPending}
+                      onClick={() => {
+                        setImportNameAr(`${j.company?.nameAr || t('backupImportDefaultCo')} — ${t('backupImportSuffix')}`);
+                        setImportModal({ jobId: j.id });
+                      }}
+                    >
+                      {t('backupImportNewCompany')}
+                    </button>
+                  </>
+                )}
                 {!j.externalUploaded && j.status === 'completed' && j.localRelativePath && (
                   <button
                     type="button"
@@ -203,6 +256,64 @@ export default function BackupTab({ activeCompanies = [] }) {
           ))}
         </div>
       </div>
+
+      {importModal && (
+        <div
+          className="noorix-modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            zIndex: 1400,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={(e) => e.target === e.currentTarget && !importMut.isPending && setImportModal(null)}
+        >
+          <div
+            className="noorix-surface-card"
+            style={{ maxWidth: 440, width: '100%', padding: 20 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0 }}>{t('backupImportNewCompany')}</h3>
+            <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
+              {t('backupImportWarn')}
+            </p>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+              {t('backupImportNameLabel')}
+            </label>
+            <input
+              type="text"
+              className="noorix-bank-filter"
+              style={{ width: '100%', marginBottom: 16 }}
+              value={importNameAr}
+              onChange={(e) => setImportNameAr(e.target.value)}
+            />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="noorix-btn noorix-btn--ghost"
+                disabled={importMut.isPending}
+                onClick={() => setImportModal(null)}
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                className="noorix-btn noorix-btn--primary"
+                disabled={importMut.isPending || !importNameAr.trim()}
+                onClick={() =>
+                  importMut.mutate({ jobId: importModal.jobId, nameAr: importNameAr.trim() })
+                }
+              >
+                {importMut.isPending ? t('loading') : t('backupImportRun')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {reportModal && (
         <div

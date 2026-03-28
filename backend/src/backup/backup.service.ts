@@ -436,4 +436,41 @@ export class BackupService {
     if (!up.ok) throw new BadRequestException(up.error || 'فشل الرفع');
     return { ok: true };
   }
+
+  async loadParsedSnapshotForImport(
+    tenantId: string,
+    jobId: string,
+    allowedCompanyIds: string[] | undefined,
+  ): Promise<Record<string, unknown>> {
+    const job = await this.getJob(tenantId, jobId, allowedCompanyIds);
+    if (job.scope !== 'company_logical' || !job.localRelativePath) {
+      throw new BadRequestException('الاستيراد متاح لنسخ «شركة منطقية» فقط');
+    }
+    const abs = path.join(this.getBackupRoot(), job.localRelativePath);
+    const buf = await fs.readFile(abs);
+    const json = zlib.gunzipSync(buf).toString('utf8');
+    const parsed = JSON.parse(json) as Record<string, unknown>;
+    const meta = parsed.meta as { tenantId?: string } | undefined;
+    if (meta?.tenantId && meta.tenantId !== tenantId) {
+      throw new ForbiddenException('اللقطة لا تخص مستأجرك');
+    }
+    return parsed;
+  }
+
+  async resolveJobDownloadPath(
+    tenantId: string,
+    jobId: string,
+    allowedCompanyIds: string[] | undefined,
+  ): Promise<{ absolutePath: string; filename: string }> {
+    const job = await this.getJob(tenantId, jobId, allowedCompanyIds);
+    if (!job.localRelativePath) throw new BadRequestException('لا يوجد ملف للتنزيل');
+    const abs = path.join(this.getBackupRoot(), job.localRelativePath);
+    try {
+      await fs.access(abs);
+    } catch {
+      throw new NotFoundException('الملف غير موجود على الخادم');
+    }
+    const filename = `noorix-backup-${job.scope}-${job.id}.json.gz`;
+    return { absolutePath: abs, filename };
+  }
 }

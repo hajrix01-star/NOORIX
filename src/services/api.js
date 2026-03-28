@@ -985,3 +985,36 @@ export async function backupRestoreReport(jobId) {
 export async function backupRetryExternal(jobId) {
   return apiPost(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/retry-external`, {}, { timeout: 120000 });
 }
+
+/** تنزيل ملف النسخة (.json.gz) — يستخدم التوكن من authStore */
+export async function backupDownloadJobFile(jobId, suggestedName) {
+  try {
+    const url = new URL(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/download`, getBase());
+    const res = await fetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
+    if (res.status === 401) {
+      handleUnauthorized();
+      return { success: false, error: 'غير مصرح' };
+    }
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || res.statusText };
+    }
+    const blob = await res.blob();
+    const name = suggestedName || `noorix-backup-${jobId}.json.gz`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err?.message || 'فشل التنزيل' };
+  }
+}
+
+export async function backupImportFromJob(body) {
+  return apiPost('/api/v1/backup/import', body, { timeout: 600000 });
+}

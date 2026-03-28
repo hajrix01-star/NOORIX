@@ -1,11 +1,25 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+  StreamableFile,
+} from '@nestjs/common';
+import { createReadStream } from 'fs';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { SkipCompanyCheck } from '../auth/decorators/skip-company-check.decorator';
 import { BackupService } from './backup.service';
+import { BackupLogicalImportService } from './backup-logical-import.service';
 import { TriggerBackupDto } from './dto/trigger-backup.dto';
+import { ImportBackupDto } from './dto/import-backup.dto';
 
 type ReqUser = {
   userId?: string;
@@ -18,7 +32,10 @@ type ReqUser = {
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 @SkipCompanyCheck()
 export class BackupController {
-  constructor(private readonly backupService: BackupService) {}
+  constructor(
+    private readonly backupService: BackupService,
+    private readonly backupImportService: BackupLogicalImportService,
+  ) {}
 
   @Post('trigger')
   @RequirePermission('MANAGE_SETTINGS')
@@ -59,5 +76,41 @@ export class BackupController {
     const u = req.user;
     if (!u?.tenantId) throw new UnauthorizedException();
     return this.backupService.retryExternalUpload(u.tenantId, id, u.companyIds);
+  }
+
+  @Get('jobs/:id/download')
+  @RequirePermission('MANAGE_SETTINGS')
+  async download(@Param('id') id: string, @Req() req: { user?: ReqUser }): Promise<StreamableFile> {
+    const u = req.user;
+    if (!u?.tenantId) throw new UnauthorizedException();
+    const { absolutePath, filename } = await this.backupService.resolveJobDownloadPath(
+      u.tenantId,
+      id,
+      u.companyIds,
+    );
+    const stream = createReadStream(absolutePath);
+    return new StreamableFile(stream, {
+      type: 'application/gzip',
+      disposition: `attachment; filename="${encodeURIComponent(filename)}"`,
+    });
+  }
+
+  @Post('import')
+  @RequirePermission('MANAGE_SETTINGS')
+  async importFromJob(@Body() dto: ImportBackupDto, @Req() req: { user?: ReqUser }) {
+    const u = req.user;
+    if (!u?.tenantId || !u.userId) throw new UnauthorizedException();
+    const snapshot = await this.backupService.loadParsedSnapshotForImport(
+      u.tenantId,
+      dto.jobId,
+      u.companyIds,
+    );
+    return this.backupImportService.importIntoNewCompany({
+      snapshot,
+      tenantId: u.tenantId,
+      nameAr: dto.nameAr,
+      nameEn: dto.nameEn,
+      importingUserId: u.userId,
+    });
   }
 }

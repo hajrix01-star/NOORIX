@@ -96,6 +96,29 @@ export async function buildCompanyLogicalSnapshot(
         })
       : [];
 
+  const summaryIds = dailySalesSummaries.map((s) => s.id);
+  const dailySalesChannels =
+    summaryIds.length > 0
+      ? await prisma.dailySalesChannel.findMany({
+          where: { summaryId: { in: summaryIds } },
+        })
+      : [];
+
+  const payrollRunIds = payrollRuns.map((p) => p.id);
+  const payrollRunItems =
+    payrollRunIds.length > 0
+      ? await prisma.payrollRunItem.findMany({
+          where: { payrollRunId: { in: payrollRunIds } },
+        })
+      : [];
+  const payrollItemIds = payrollRunItems.map((i) => i.id);
+  const payrollRunItemVaults =
+    payrollItemIds.length > 0
+      ? await prisma.payrollRunItemVault.findMany({
+          where: { payrollItemId: { in: payrollItemIds } },
+        })
+      : [];
+
   const counts: Record<string, number> = {
     suppliers: suppliers.length,
     vaults: vaults.length,
@@ -126,6 +149,9 @@ export async function buildCompanyLogicalSnapshot(
     bankClassificationRules: bankClassificationRules.length,
     bankStatementTemplates: bankStatementTemplates.length,
     userCompanies: userCompanies.length,
+    dailySalesChannels: dailySalesChannels.length,
+    payrollRunItems: payrollRunItems.length,
+    payrollRunItemVaults: payrollRunItemVaults.length,
   };
 
   const data: Record<string, unknown> = {
@@ -159,12 +185,15 @@ export async function buildCompanyLogicalSnapshot(
     bankClassificationRules,
     bankStatementTemplates,
     userCompanies,
+    dailySalesChannels,
+    payrollRunItems,
+    payrollRunItemVaults,
   };
 
   return {
     meta: {
       format: 'noorix-company-logical',
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       companyId,
       tenantId: company.tenantId,
