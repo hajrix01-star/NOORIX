@@ -30,6 +30,7 @@ import { ChatModule }          from './chat/chat.module';
 import { BankStatementsModule } from './bank-statements/bank-statements.module';
 import { OrdersModule }         from './orders/orders.module';
 import { DatabaseModule }       from './database/database.module';
+import { BackupModule }         from './backup/backup.module';
 import { TenantMiddleware }    from './common/tenant.middleware';
 import { JwtModule }           from '@nestjs/jwt';
 
@@ -69,6 +70,7 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'noorix-dev-secret-DO-NOT-USE-IN-PR
     ChatModule,
     BankStatementsModule,
     OrdersModule,
+    BackupModule,
     JwtModule.register({ secret: JWT_SECRET }),
   ],
   controllers: [AppController],

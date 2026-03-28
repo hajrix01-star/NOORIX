@@ -1,0 +1,256 @@
+/**
+ * النسخ الاحتياطي — لقطة منطقية لكل شركة، سجل، تقرير استرجاع، إعادة رفع خارجي
+ */
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from '../../../i18n/useTranslation';
+import {
+  backupTriggerCompany,
+  backupListJobs,
+  backupRestoreReport,
+  backupRetryExternal,
+} from '../../../services/api';
+import Toast from '../../../components/Toast';
+
+function scopeLabel(scope, t) {
+  if (scope === 'company_logical') return t('backupScopeCompany');
+  if (scope === 'database_full') return t('backupScopeFullDb');
+  return scope;
+}
+
+function statusLabel(s, t) {
+  const m = {
+    pending: t('backupStatusPending'),
+    running: t('backupStatusRunning'),
+    completed: t('backupStatusCompleted'),
+    failed: t('backupStatusFailed'),
+    skipped_duplicate: t('backupStatusSkippedDup'),
+  };
+  return m[s] || s;
+}
+
+export default function BackupTab({ activeCompanies = [] }) {
+  const { t, lang } = useTranslation();
+  const isAr = lang !== 'en';
+  const qc = useQueryClient();
+  const [companyId, setCompanyId] = useState(() => activeCompanies[0]?.id || '');
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const [reportModal, setReportModal] = useState(null);
+
+  const { data: jobsRes, isLoading } = useQuery({
+    queryKey: ['backup-jobs'],
+    queryFn: async () => backupListJobs(50),
+    refetchInterval: 15_000,
+  });
+
+  const jobs = jobsRes?.success ? (Array.isArray(jobsRes.data) ? jobsRes.data : []) : [];
+
+  const triggerMut = useMutation({
+    mutationFn: () => backupTriggerCompany(companyId),
+    onSuccess: (res) => {
+      if (!res?.success) {
+        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ['backup-jobs'] });
+      setToast({ visible: true, message: t('backupStarted'), type: 'success' });
+    },
+    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+  });
+
+  const reportMut = useMutation({
+    mutationFn: (jobId) => backupRestoreReport(jobId),
+    onSuccess: (res, jobId) => {
+      if (!res?.success) {
+        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        return;
+      }
+      setReportModal({ jobId, payload: res.data });
+    },
+  });
+
+  const retryMut = useMutation({
+    mutationFn: (jobId) => backupRetryExternal(jobId),
+    onSuccess: (res) => {
+      if (!res?.success) {
+        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ['backup-jobs'] });
+      setToast({ visible: true, message: t('backupRetryOk'), type: 'success' });
+    },
+    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+  });
+
+  React.useEffect(() => {
+    if (!companyId && activeCompanies[0]?.id) setCompanyId(activeCompanies[0].id);
+  }, [activeCompanies, companyId]);
+
+  return (
+    <div style={{ display: 'grid', gap: 20 }}>
+      <div>
+        <h2 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800 }}>{t('backupHeading')}</h2>
+        <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.65 }}>
+          {t('backupIntro')}
+        </p>
+      </div>
+
+      <div
+        className="noorix-surface-card"
+        style={{ padding: 18, display: 'grid', gap: 14, border: '1px solid var(--noorix-border)' }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--noorix-text)' }}>{t('backupCompanySection')}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+          <select
+            className="noorix-bank-filter"
+            style={{ minWidth: 220 }}
+            value={companyId}
+            onChange={(e) => setCompanyId(e.target.value)}
+            disabled={!activeCompanies.length}
+          >
+            {activeCompanies.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nameAr || c.nameEn || c.id}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="noorix-btn noorix-btn--primary noorix-bank-cta"
+            disabled={!companyId || !activeCompanies.length || triggerMut.isPending}
+            onClick={() => triggerMut.mutate()}
+          >
+            {triggerMut.isPending ? t('loading') : t('backupRunNow')}
+          </button>
+        </div>
+        {!activeCompanies.length && (
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('noActiveCompanies')}</p>
+        )}
+        <ul style={{ margin: 0, paddingInlineStart: 20, fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.7 }}>
+          <li>{t('backupBulletDedup')}</li>
+          <li>{t('backupBulletExternal')}</li>
+          <li>{t('backupBulletResume')}</li>
+          <li>{t('backupBulletReport')}</li>
+          <li>{t('backupBulletDaily')}</li>
+        </ul>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t('backupJobHistory')}</div>
+        {isLoading && <div style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>}
+        {!isLoading && jobs.length === 0 && (
+          <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('backupNoJobs')}</div>
+        )}
+        <div style={{ display: 'grid', gap: 8 }}>
+          {jobs.map((j) => (
+            <div
+              key={j.id}
+              className="noorix-surface-card"
+              style={{
+                padding: 12,
+                display: 'grid',
+                gap: 8,
+                fontSize: 13,
+                border: '1px solid var(--noorix-border)',
+              }}
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 700 }}>
+                  {scopeLabel(j.scope, t)}
+                  {j.company ? ` — ${j.company.nameAr || j.company.nameEn || ''}` : ''}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    padding: '2px 8px',
+                    borderRadius: 8,
+                    background: 'var(--noorix-bg-muted)',
+                  }}
+                >
+                  {statusLabel(j.status, t)}
+                </span>
+              </div>
+              <div style={{ color: 'var(--noorix-text-muted)', fontSize: 12 }}>
+                {new Date(j.createdAt).toLocaleString(isAr ? 'ar-SA' : 'en-GB')}
+                {j.sizeBytes != null ? ` · ${(Number(j.sizeBytes) / 1024).toFixed(1)} KB` : ''}
+                {j.durationMs != null ? ` · ${j.durationMs} ms` : ''}
+                {j.externalUploaded ? ` · ${t('backupExternalOk')}` : j.externalError ? ` · ${t('backupExternalPending')}` : ''}
+              </div>
+              {j.errorMessage && (
+                <div style={{ color: '#b91c1c', fontSize: 12 }}>{j.errorMessage}</div>
+              )}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <button
+                  type="button"
+                  className="noorix-btn noorix-btn--secondary"
+                  disabled={reportMut.isPending}
+                  onClick={() => reportMut.mutate(j.id)}
+                >
+                  {t('backupRestoreReport')}
+                </button>
+                {!j.externalUploaded && j.status === 'completed' && j.localRelativePath && (
+                  <button
+                    type="button"
+                    className="noorix-btn noorix-btn--ghost"
+                    disabled={retryMut.isPending}
+                    onClick={() => retryMut.mutate(j.id)}
+                  >
+                    {t('backupRetryExternal')}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {reportModal && (
+        <div
+          className="noorix-modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            zIndex: 1400,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={(e) => e.target === e.currentTarget && setReportModal(null)}
+        >
+          <div
+            className="noorix-surface-card"
+            style={{ maxWidth: 520, width: '100%', maxHeight: '85vh', overflow: 'auto', padding: 20 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0 }}>{t('backupRestoreReport')}</h3>
+            <pre
+              style={{
+                fontSize: 12,
+                background: 'var(--noorix-bg-muted)',
+                padding: 12,
+                borderRadius: 10,
+                overflow: 'auto',
+                direction: 'ltr',
+                textAlign: 'left',
+              }}
+            >
+              {JSON.stringify(reportModal.payload, null, 2)}
+            </pre>
+            <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => setReportModal(null)}>
+              {t('close') || 'إغلاق'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((p) => ({ ...p, visible: false }))}
+      />
+    </div>
+  );
+}

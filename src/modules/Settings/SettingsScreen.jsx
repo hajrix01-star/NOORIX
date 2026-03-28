@@ -18,6 +18,7 @@ import UsersTab                 from './components/UsersTab';
 import RolesTab                 from './components/RolesTab';
 import TaxSettingsTab           from './components/TaxSettingsTab';
 import AISettingsTab            from './components/AISettingsTab';
+import BackupTab                from './components/BackupTab';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -36,7 +37,7 @@ export default function SettingsScreen() {
     { id: 'tax',       label: t('taxTab') },
     { id: 'users',     label: t('usersTab'),    permission: 'MANAGE_USERS' },
     { id: 'roles',     label: t('rolesTab') },
-    { id: 'backup',    label: t('backupTab') },
+    { id: 'backup',    label: t('backupTab'), permission: 'MANAGE_SETTINGS' },
     { id: 'ai',        label: t('aiTab') },
   ], [t]);
 
@@ -97,9 +98,7 @@ export default function SettingsScreen() {
             <RolesTab userRole={userRole} language={language} />
           )}
           {activeTab === 'backup' && (
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-              {t('backupDesc')}
-            </p>
+            <BackupTab activeCompanies={activeCompanies} />
           )}
           {activeTab === 'ai' && (
             <AISettingsTab />

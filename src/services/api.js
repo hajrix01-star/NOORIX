@@ -968,3 +968,20 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
     },
   };
 }
+
+// ——— النسخ الاحتياطي الذكي ———
+export async function backupTriggerCompany(companyId) {
+  return apiPost('/api/v1/backup/trigger', { scope: 'company', companyId }, { timeout: 180000 });
+}
+
+export async function backupListJobs(limit = 40) {
+  return apiGet('/api/v1/backup/jobs', { limit: String(limit) });
+}
+
+export async function backupRestoreReport(jobId) {
+  return apiGet(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/restore-report`);
+}
+
+export async function backupRetryExternal(jobId) {
+  return apiPost(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/retry-external`, {}, { timeout: 120000 });
+}

@@ -28,6 +28,7 @@ model Tenant {
 
   companies  Company[]
   users      User[]
+  backupJobs BackupJob[]
 
   @@map("tenants")
 }
@@ -69,6 +70,7 @@ model User {
   ledgerEntries LedgerEntry[] @relation("CreatedBy")
   auditLogs     AuditLog[]
   salesSummaries DailySalesSummary[] @relation("SalesCreatedBy")
+  backupJobsCreated BackupJob[] @relation("BackupCreatedBy")
 
   @@index([tenantId])
   @@map("users")
@@ -121,9 +123,41 @@ model Company {
   bankTreeCategories  BankTreeCategory[]
   bankClassificationRules BankClassificationRule[]
   bankStatementTemplates BankStatementTemplate[]
+  backupJobs             BackupJob[]
 
   @@index([tenantId])
   @@map("companies")
+}
+
+// ══════════════════════════════════════════════════
+// النسخ الاحتياطي الذكي — سجل نسخ محلي + تكامل خارجي
+// ══════════════════════════════════════════════════
+model BackupJob {
+  id                String    @id @default(cuid())
+  tenantId          String?   @map("tenant_id")
+  companyId         String?   @map("company_id")
+  scope             String    // database_full | company_logical
+  status            String    // pending | running | completed | failed | skipped_duplicate
+  contentHash       String?   @map("content_hash")
+  localRelativePath String?   @map("local_relative_path")
+  sizeBytes         BigInt?   @map("size_bytes")
+  durationMs        Int?      @map("duration_ms")
+  report            Json?
+  errorMessage      String?   @map("error_message")
+  externalUploaded  Boolean   @default(false) @map("external_uploaded")
+  externalError     String?   @map("external_error")
+  duplicateOfJobId  String?   @map("duplicate_of_job_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  completedAt       DateTime? @map("completed_at")
+  createdByUserId   String?   @map("created_by_user_id")
+
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  createdBy User?    @relation("BackupCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([companyId, createdAt])
+  @@map("backup_jobs")
 }
 
 // تحليل كشوف الحساب — كشف واحد مع حركاته
