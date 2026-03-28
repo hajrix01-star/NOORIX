@@ -53,6 +53,7 @@ export default function InvoicesListScreen() {
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
   const [showImportExport, setShowImportExport] = useState(false);
+  const [dayCloseOpen, setDayCloseOpen] = useState(false);
   const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
   const [searchText, setSearchText] = useState(qInit);
   const [debouncedQ, setDebouncedQ] = useState(qInit.trim());
