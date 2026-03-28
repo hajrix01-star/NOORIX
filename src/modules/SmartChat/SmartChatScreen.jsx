@@ -32,6 +32,8 @@ function roleLabel(role, isAr) {
   return m[role] || role || '—';
 }
 
+const CHAT_PAGE_SIZE = 6;
+
 const PERMANENT_QUESTIONS = [
   { ar: 'كم مبيعات السنة؟', en: 'What are annual sales?', domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ) },
   { ar: 'ما أرصدة الخزائن؟', en: 'What are vault balances?', domain: (c) => c(PERMISSIONS.VIEW_VAULTS) || c(PERMISSIONS.VAULTS_READ) },
