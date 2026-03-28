@@ -7,10 +7,13 @@ cd "$ROOT"
 git pull origin main
 (
   cd backend
+  rm -rf node_modules
   npm ci
+  npx prisma generate
   npx prisma migrate deploy
   npm run build
 )
+rm -rf node_modules
 npm ci
 npm run build
 # Noorix API: من مجلد backend الحقيقي (ليس /root/backend). احذف noorix-api القديمة من PM2 مرة واحدة إن وُجدت.

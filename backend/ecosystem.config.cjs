@@ -19,6 +19,7 @@ module.exports = {
       script: 'dist/main.js',
       interpreter: 'node',
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       max_restarts: 20,
       min_uptime: '10s',
