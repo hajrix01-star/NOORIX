@@ -27,11 +27,24 @@ import {
   countPosLikeTransactions,
 } from './bankAnalysisUtils';
 import { fmt } from '../../../utils/format';
+import BankStatementPieDrilldownModal from './BankStatementPieDrilldownModal';
 
 const COLORS = [
   '#2563eb', '#16a34a', '#ca8a04', '#dc2626', '#7c3aed',
   '#0891b2', '#db2777', '#4f46e5', '#ea580c', '#84cc16',
 ];
+
+const RED_PIE_TINTS = ['#dc2626', '#b91c1c', '#ef4444', '#991b1b', '#f87171'];
+const GREEN_PIE_TINTS = ['#16a34a', '#15803d', '#22c55e', '#166534', '#4ade80'];
+
+function pieSliceFill(mode, index, item) {
+  if (mode === 'combined') {
+    const pal = (item.debit || 0) >= (item.credit || 0) ? RED_PIE_TINTS : GREEN_PIE_TINTS;
+    return pal[index % pal.length];
+  }
+  if (mode === 'debit') return RED_PIE_TINTS[index % RED_PIE_TINTS.length];
+  return GREEN_PIE_TINTS[index % GREEN_PIE_TINTS.length];
+}
 
 /** جداول كبيرة تبقى بعرض الصف كاملاً؛ الرسوم والبطاقات الأصغر تُوزّع عمودين */
 const ANALYSIS_CARD_FULL_WIDTH = new Set(['category_table', 'deposits_table', 'pos_terminals']);
@@ -89,9 +102,10 @@ function DailyTooltip({ active, payload, label }) {
 }
 
 /* ── Tooltip مخصص للـ PieChart ── */
-function PieTooltip({ active, payload }) {
+function PieTooltip({ active, payload, pieMode, t }) {
   if (!active || !payload?.length) return null;
   const d = payload[0];
+  const p = d.payload;
   return (
     <div
       style={{
@@ -102,11 +116,42 @@ function PieTooltip({ active, payload }) {
         fontSize: 12,
         boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
         direction: 'rtl',
+        minWidth: 168,
       }}
     >
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>{d.name}</div>
-      <div style={{ color: d.payload?.fill }}>{fmt(d.value)}</div>
-      <div style={{ color: 'var(--noorix-text-muted)' }}>{d.payload?.percent}%</div>
+      <div style={{ fontWeight: 700, marginBottom: 6, color: 'var(--noorix-text)' }}>{d.name}</div>
+      {pieMode === 'combined' ? (
+        <>
+          <div style={{ color: '#dc2626', marginBottom: 3 }}>
+            {t('bankStatementColDebit')}:{' '}
+            <span style={{ direction: 'ltr', display: 'inline-block', fontWeight: 700 }}>{fmt(p.debit)}</span>
+          </div>
+          <div style={{ color: '#16a34a', marginBottom: 3 }}>
+            {t('bankStatementColCredit')}:{' '}
+            <span style={{ direction: 'ltr', display: 'inline-block', fontWeight: 700 }}>{fmt(p.credit)}</span>
+          </div>
+          <div
+            style={{
+              fontWeight: 700,
+              marginBottom: 4,
+              borderTop: '1px solid var(--noorix-border)',
+              paddingTop: 6,
+              marginTop: 4,
+            }}
+          >
+            {t('bankPieCenterVolume')}:{' '}
+            <span style={{ direction: 'ltr', display: 'inline-block' }}>{fmt(d.value)}</span>
+          </div>
+        </>
+      ) : (
+        <div style={{ color: p.fill, fontWeight: 700, marginBottom: 4 }}>{fmt(d.value)}</div>
+      )}
+      <div style={{ color: 'var(--noorix-text-muted)' }}>{p.percent}%</div>
+      {p.count != null ? (
+        <div style={{ color: 'var(--noorix-text-muted)', fontSize: 11, marginTop: 4 }}>
+          {t('bankStatementTransactions')}: {p.count}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -184,10 +229,15 @@ export default function BankStatementAnalysisCardsTab({
   setCategoryFilter,
   setTypeFilter,
   setActiveTab,
+  categories = [],
+  showToast,
+  onSaveTxCategory,
 }) {
   const { t } = useTranslation();
   const txs = statement?.transactions || [];
   const [addOpen, setAddOpen] = useState(false);
+  const [pieMode, setPieMode] = useState('combined');
+  const [pieDrilldownCategory, setPieDrilldownCategory] = useState(null);
 
   const dailyData = useMemo(() => buildDailyChartData(txs), [txs]);
   const alerts = useMemo(() => topDebits(txs, 10), [txs]);
@@ -195,22 +245,52 @@ export default function BankStatementAnalysisCardsTab({
   const posTerminals = useMemo(() => extractPosTerminals(txs), [txs]);
   const depositsByCategory = useMemo(() => buildDepositsByCategory(txs, t('uncategorized')), [txs, t]);
 
-  /* بيانات PieChart للسحوبات */
-  const pieData = useMemo(() => {
-    const total = Object.values(summaryByCategory).reduce((s, d) => s + d.totalDebit, 0);
-    return Object.entries(summaryByCategory)
-      .map(([name, d]) => ({
-        name,
-        value: Math.round(d.totalDebit * 100) / 100,
-        count: d.count,
-        percent: total > 0 ? ((d.totalDebit / total) * 100).toFixed(1) : '0',
-      }))
-      .filter((x) => x.value > 0)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 10);
-  }, [summaryByCategory]);
+  /* بيانات PieChart — شامل / سحوبات / إيرادات */
+  const pieDisplayData = useMemo(() => {
+    const entries = Object.entries(summaryByCategory).map(([name, d]) => ({
+      name,
+      debit: d.totalDebit,
+      credit: d.totalCredit,
+      count: d.count,
+    }));
 
-  const pieSumDebit = useMemo(() => pieData.reduce((s, p) => s + p.value, 0), [pieData]);
+    let rows;
+    if (pieMode === 'combined') {
+      rows = entries
+        .map((e) => ({
+          ...e,
+          value: Math.round((e.debit + e.credit) * 100) / 100,
+        }))
+        .filter((x) => x.value > 0);
+    } else if (pieMode === 'debit') {
+      rows = entries
+        .map((e) => ({ ...e, value: Math.round(e.debit * 100) / 100 }))
+        .filter((x) => x.value > 0);
+    } else {
+      rows = entries
+        .map((e) => ({ ...e, value: Math.round(e.credit * 100) / 100 }))
+        .filter((x) => x.value > 0);
+    }
+
+    rows.sort((a, b) => b.value - a.value);
+    rows = rows.slice(0, 10);
+    const sliceTotal = rows.reduce((s, x) => s + x.value, 0);
+    return rows.map((x) => ({
+      ...x,
+      percent: sliceTotal > 0 ? ((x.value / sliceTotal) * 100).toFixed(1) : '0',
+    }));
+  }, [summaryByCategory, pieMode]);
+
+  const pieGrandTotals = useMemo(() => {
+    const entries = Object.values(summaryByCategory);
+    const totalDebit = entries.reduce((s, d) => s + d.totalDebit, 0);
+    const totalCredit = entries.reduce((s, d) => s + d.totalCredit, 0);
+    return {
+      totalDebit,
+      totalCredit,
+      totalVolume: totalDebit + totalCredit,
+    };
+  }, [summaryByCategory]);
 
   /* أعمدة أفقية منفصلة: أوضح من دمج سحب+إيداع في نفس المخطط */
   const barRowsDebit = useMemo(
@@ -383,9 +463,48 @@ export default function BankStatementAnalysisCardsTab({
 
     /* ── دائري التصنيفات ── */
     if (cardId === 'category_pie') {
-      if (!pieData.length) return null;
+      if (Object.keys(summaryByCategory).length === 0) return null;
+      const pieTip = (props) => <PieTooltip {...props} pieMode={pieMode} t={t} />;
+      const centerTitle =
+        pieMode === 'combined'
+          ? t('bankPieCenterVolume')
+          : pieMode === 'debit'
+            ? t('bankPieCenterWithdrawals')
+            : t('bankPieCenterRevenue');
+      const centerMain =
+        pieMode === 'combined'
+          ? pieGrandTotals.totalVolume
+          : pieMode === 'debit'
+            ? pieGrandTotals.totalDebit
+            : pieGrandTotals.totalCredit;
+
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="🥧" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, alignItems: 'center' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{t('bankPieViewMode')}</span>
+            {(['combined', 'debit', 'credit']).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setPieMode(m)}
+                className="noorix-btn"
+                style={{
+                  fontSize: 12,
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  border: pieMode === m ? '2px solid var(--noorix-accent-blue)' : '1px solid var(--noorix-border)',
+                  background: pieMode === m ? 'rgba(37,99,235,0.1)' : 'var(--noorix-surface)',
+                  fontWeight: pieMode === m ? 700 : 500,
+                  cursor: 'pointer',
+                }}
+              >
+                {t(`bankPieMode_${m}`)}
+              </button>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
+            {t('bankPieLegendHint')}
+          </p>
           <div
             style={{
               display: 'flex',
@@ -395,49 +514,85 @@ export default function BankStatementAnalysisCardsTab({
             }}
           >
             <div style={{ flex: '1 1 300px', minWidth: 280, position: 'relative', height: 320 }}>
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={74}
-                    outerRadius={118}
-                    paddingAngle={2}
-                    label={({ percent }) => (percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : '')}
-                    labelLine={{ stroke: '#94a3b8', strokeWidth: 1 }}
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="#fff" strokeWidth={2} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<PieTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  textAlign: 'center',
-                  pointerEvents: 'none',
-                  maxWidth: 100,
-                }}
-              >
-                <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 600, lineHeight: 1.2 }}>
-                  إجمالي السحوبات
+              {pieDisplayData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={320}>
+                  <PieChart>
+                    <Pie
+                      data={pieDisplayData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={76}
+                      outerRadius={120}
+                      paddingAngle={2}
+                      cursor="pointer"
+                      label={({ percent }) => (percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : '')}
+                      labelLine={{ stroke: '#94a3b8', strokeWidth: 1 }}
+                      onClick={(_, index) => {
+                        const item = pieDisplayData[index];
+                        if (item?.name) setPieDrilldownCategory(item.name);
+                      }}
+                    >
+                      {pieDisplayData.map((item, i) => (
+                        <Cell
+                          key={item.name}
+                          fill={pieSliceFill(pieMode, i, item)}
+                          stroke="#fff"
+                          strokeWidth={2}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={pieTip} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div
+                  style={{
+                    height: 320,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--noorix-text-muted)',
+                    fontSize: 14,
+                    border: '1px dashed var(--noorix-border)',
+                    borderRadius: 12,
+                    background: 'var(--noorix-bg-muted)',
+                  }}
+                >
+                  {t('bankNoCategoryData')}
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 800, direction: 'ltr', color: 'var(--noorix-text)', marginTop: 4 }}>
-                  {fmt(pieSumDebit)}
+              )}
+              {pieDisplayData.length > 0 ? (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    textAlign: 'center',
+                    pointerEvents: 'none',
+                    maxWidth: 132,
+                  }}
+                >
+                  <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', fontWeight: 600, lineHeight: 1.25 }}>
+                    {centerTitle}
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, direction: 'ltr', color: 'var(--noorix-text)', marginTop: 4 }}>
+                    {fmt(centerMain)}
+                  </div>
+                  {pieMode === 'combined' && (pieGrandTotals.totalDebit > 0 || pieGrandTotals.totalCredit > 0) ? (
+                    <div style={{ fontSize: 10, marginTop: 6, lineHeight: 1.35 }}>
+                      <div style={{ color: '#dc2626', direction: 'ltr' }}>{fmt(pieGrandTotals.totalDebit)}</div>
+                      <div style={{ color: '#16a34a', direction: 'ltr' }}>{fmt(pieGrandTotals.totalCredit)}</div>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
+              ) : null}
             </div>
             <div style={{ flex: '1 1 240px', minWidth: 220, display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 10 }}>
-                مفتاح الفئات (انقر للتصفية)
+                {t('bankPieCategoryKey')}
               </div>
               <div
                 style={{
@@ -450,42 +605,73 @@ export default function BankStatementAnalysisCardsTab({
                   gap: 8,
                 }}
               >
-                {pieData.map((item, i) => (
-                  <button
-                    key={item.name}
-                    type="button"
-                    onClick={() => { setCategoryFilter(item.name); setActiveTab('transactions'); }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      fontSize: 13,
-                      cursor: 'pointer',
-                      background: 'var(--noorix-surface)',
-                      border: '1px solid var(--noorix-border)',
-                      borderRadius: 10,
-                      padding: '8px 10px',
-                      textAlign: 'right',
-                      width: '100%',
-                      color: 'inherit',
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        background: COLORS[i % COLORS.length],
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
-                      {item.name}
-                    </span>
-                    <span style={{ color: 'var(--noorix-text-muted)', flexShrink: 0, fontSize: 12 }}>{item.percent}%</span>
-                    <span style={{ fontWeight: 800, direction: 'ltr', flexShrink: 0, fontSize: 13 }}>{fmt(item.value)}</span>
-                  </button>
-                ))}
+                {pieDisplayData.length === 0 ? (
+                  <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', textAlign: 'center', padding: 12 }}>
+                    {t('bankNoCategoryData')}
+                  </span>
+                ) : (
+                  pieDisplayData.map((item, i) => {
+                    const dot = pieSliceFill(pieMode, i, item);
+                    return (
+                      <button
+                        key={item.name}
+                        type="button"
+                        onClick={() => setPieDrilldownCategory(item.name)}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'stretch',
+                          gap: 4,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          background: 'var(--noorix-surface)',
+                          border: '1px solid var(--noorix-border)',
+                          borderRadius: 10,
+                          padding: '8px 10px',
+                          textAlign: 'right',
+                          width: '100%',
+                          color: 'inherit',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
+                          <span
+                            style={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: '50%',
+                              background: dot,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                            {item.name}
+                          </span>
+                          <span style={{ color: 'var(--noorix-text-muted)', flexShrink: 0, fontSize: 12 }}>{item.percent}%</span>
+                          <span style={{ fontWeight: 800, direction: 'ltr', flexShrink: 0, fontSize: 13 }}>{fmt(item.value)}</span>
+                        </div>
+                        {pieMode === 'combined' ? (
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              gap: 8,
+                              fontSize: 11,
+                              color: 'var(--noorix-text-muted)',
+                              paddingInlineStart: 20,
+                            }}
+                          >
+                            <span style={{ color: '#dc2626' }}>
+                              {t('bankStatementColDebit')}: <strong style={{ direction: 'ltr' }}>{fmt(item.debit)}</strong>
+                            </span>
+                            <span style={{ color: '#16a34a' }}>
+                              {t('bankStatementColCredit')}: <strong style={{ direction: 'ltr' }}>{fmt(item.credit)}</strong>
+                            </span>
+                          </div>
+                        ) : null}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -908,6 +1094,18 @@ export default function BankStatementAnalysisCardsTab({
           <p style={{ fontSize: 15, fontWeight: 600 }}>{t('bankNoCardsPickAbove')}</p>
         </div>
       )}
+
+      <BankStatementPieDrilldownModal
+        open={!!pieDrilldownCategory}
+        onClose={() => setPieDrilldownCategory(null)}
+        categoryName={pieDrilldownCategory}
+        transactions={txs}
+        categories={categories}
+        uncategorizedLabel={t('uncategorized')}
+        t={t}
+        onSaveTxCategory={onSaveTxCategory}
+        showToast={showToast}
+      />
     </div>
   );
 }

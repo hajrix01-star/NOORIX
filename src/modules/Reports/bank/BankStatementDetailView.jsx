@@ -245,6 +245,12 @@ export default function BankStatementDetailView({
               setCategoryFilter={vm.setCategoryFilter}
               setTypeFilter={vm.setTypeFilter}
               setActiveTab={vm.setActiveTab}
+              categories={categories}
+              showToast={showToast}
+              onSaveTxCategory={async (txId, categoryId) => {
+                await vm.updateCategoryMutation.mutateAsync({ txId, categoryId });
+                await vm.refetch();
+              }}
             />
           )}
           {vm.activeTab === 'transactions' && (
