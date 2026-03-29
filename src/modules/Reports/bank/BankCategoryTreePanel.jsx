@@ -10,6 +10,7 @@ import {
   bankStatementTreeCategoryCreate,
   bankStatementTreeCategoryUpdate,
   bankStatementTreeCategoryDelete,
+  bankStatementTreeCategoriesSeedDefaults,
   bankStatementClassificationRulesList,
 } from '../../../services/api';
 import { TRANSACTION_TYPES, TRANSACTION_SIDES, getTransactionTypeInfo, getTransactionSideInfo } from './bankRuleConstants';
@@ -468,6 +469,20 @@ export default function BankCategoryTreePanel({ companyId, showToast }) {
     onError: (e) => showToast?.(e?.message || 'Error', 'error'),
   });
 
+  const seedDefaultsMut = useMutation({
+    mutationFn: async () => {
+      const res = await bankStatementTreeCategoriesSeedDefaults(companyId);
+      if (!res?.success) throw new Error(res?.error || 'seed');
+      return res.data ?? res;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: qKey });
+      const n = data?.created ?? 8;
+      showToast?.(t('bankTreeSeedDefaultsDone', String(n)));
+    },
+    onError: (e) => showToast?.(e?.message || t('bankTreeSeedDefaultsError'), 'error'),
+  });
+
   const groupedForMigrate = useMemo(() => {
     const groups = {};
     for (const rule of activeFlat) {
@@ -543,10 +558,20 @@ export default function BankCategoryTreePanel({ companyId, showToast }) {
         ) : null}
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, alignItems: 'center' }}>
         <button type="button" className="noorix-btn noorix-btn--primary" onClick={openNew}>
           + {t('bankTreeAddCategory')}
         </button>
+        {!isLoading && sortedCategories.length === 0 && inactiveCategories.length === 0 ? (
+          <button
+            type="button"
+            className="noorix-btn noorix-btn--secondary"
+            disabled={seedDefaultsMut.isPending}
+            onClick={() => seedDefaultsMut.mutate()}
+          >
+            {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
+          </button>
+        ) : null}
         {activeFlat.length > 0 && categories.length === 0 ? (
           <button type="button" className="noorix-btn noorix-btn--ghost" onClick={() => setShowMigrate(true)}>
             {t('bankTreeMigrateOldRules', String(activeFlat.length))}
@@ -560,10 +585,23 @@ export default function BankCategoryTreePanel({ companyId, showToast }) {
         <div className="noorix-surface-card" style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🌳</div>
           <div style={{ fontWeight: 600, marginBottom: 6 }}>{t('bankTreeEmptyTitle')}</div>
-          <div style={{ fontSize: 13, marginBottom: 16 }}>{t('bankTreeEmptyDesc')}</div>
-          <button type="button" className="noorix-btn noorix-btn--primary" onClick={openNew}>
-            {t('bankTreeCreateFirst')}
-          </button>
+          <div style={{ fontSize: 13, marginBottom: 8 }}>{t('bankTreeEmptyDesc')}</div>
+          <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 16, maxWidth: 420, marginInline: 'auto' }}>
+            {t('bankTreeSeedDefaultsHint')}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+            <button type="button" className="noorix-btn noorix-btn--primary" onClick={openNew}>
+              {t('bankTreeCreateFirst')}
+            </button>
+            <button
+              type="button"
+              className="noorix-btn noorix-btn--secondary"
+              disabled={seedDefaultsMut.isPending}
+              onClick={() => seedDefaultsMut.mutate()}
+            >
+              {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
+            </button>
+          </div>
         </div>
       ) : null}
 

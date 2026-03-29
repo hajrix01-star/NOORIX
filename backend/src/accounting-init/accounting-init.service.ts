@@ -11,6 +11,7 @@
  */
 import { Injectable } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { DEFAULT_BANK_TREE_CATEGORY_SEEDS } from '../bank-statements/default-bank-tree-categories.seed';
 
 export interface MasterAccountSeed {
   code: string;
@@ -276,11 +277,35 @@ export class AccountingInitService {
       supplierCount++;
     }
 
+    // 7. فئات شجرة تصنيف كشف الحساب (قواعد من النظام السابق)
+    await this.seedDefaultBankTreeCategories(tenantId, companyId);
+
     return {
       accounts: MASTER_ACCOUNTS.length,
       vaults: MASTER_VAULTS.length,
       categories: MASTER_CATEGORIES.length + subCount,
       suppliers: supplierCount,
     };
+  }
+
+  /** يزرع فقط إن لم تكن هناك فئات شجرية — لا يكرر عند إعادة الاستدعاء */
+  private async seedDefaultBankTreeCategories(tenantId: string, companyId: string): Promise<void> {
+    const n = await this.prisma.bankTreeCategory.count({ where: { companyId } });
+    if (n > 0) return;
+    for (const row of DEFAULT_BANK_TREE_CATEGORY_SEEDS) {
+      await this.prisma.bankTreeCategory.create({
+        data: {
+          tenantId,
+          companyId,
+          name: row.name,
+          sortOrder: row.sortOrder,
+          isActive: row.isActive,
+          transactionSide: row.transactionSide,
+          transactionType: row.transactionType,
+          parentKeywords: row.parentKeywords as object,
+          classifications: row.classifications as object,
+        },
+      });
+    }
   }
 }

@@ -234,6 +234,16 @@ export default {
   },
   bankTreeMigrateRun: { ar: 'ترحيل الآن', en: 'Migrate now' },
   bankTreeMigrateDone: { ar: 'تم إنشاء {0} فئة', en: 'Created {0} categories' },
+  bankTreeSeedDefaults: { ar: 'استيراد القواعد الافتراضية (8 فئات)', en: 'Import default rules (8 categories)' },
+  bankTreeSeedDefaultsHint: {
+    ar: 'نفس قواعد التصنيف المستوردة من النظام السابق — تُستخدم عند رفع كشف جديد و«إعادة تصنيف».',
+    en: 'Same classification rules as the legacy export — used when uploading statements and reclassifying.',
+  },
+  bankTreeSeedDefaultsDone: { ar: 'تم استيراد {0} فئة تصنيف.', en: 'Imported {0} tree categories.' },
+  bankTreeSeedDefaultsError: {
+    ar: 'توجد فئات مسبقاً أو فشل الاستيراد. احذف الفئات الحالية إن أردت الاستيراد من جديد.',
+    en: 'Categories already exist or import failed. Remove existing categories to import again.',
+  },
   bankTplColDate: { ar: 'التاريخ', en: 'Date' },
   bankTplColDescription: { ar: 'الوصف', en: 'Description' },
   bankTplColNotes: { ar: 'الملاحظات', en: 'Notes' },

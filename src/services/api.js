@@ -388,6 +388,11 @@ export async function bankStatementTreeCategoryDelete(companyId, categoryId) {
   return apiDelete(`/api/v1/bank-statements/tree-categories/${categoryId}?companyId=${companyId}`);
 }
 
+/** استيراد 8 فئات التصنيف الافتراضية — فقط إذا كانت القائمة فارغة */
+export async function bankStatementTreeCategoriesSeedDefaults(companyId) {
+  return apiPost('/api/v1/bank-statements/tree-categories/seed-defaults', { companyId });
+}
+
 export async function bankStatementClassificationRulesList(companyId) {
   const res = await apiGet('/api/v1/bank-statements/classification-rules', { companyId });
   return res.success ? { success: true, data: res.data ?? [] } : res;

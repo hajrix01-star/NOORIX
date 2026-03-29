@@ -15,6 +15,7 @@ import {
   countTemplateValidRows,
   type BankRowMapping,
 } from './bank-statement-row-parser';
+import { DEFAULT_BANK_TREE_CATEGORY_SEEDS } from './default-bank-tree-categories.seed';
 
 /** مطابقة كلمات مفتاحية للعناوين الشائعة في كشوف الحساب */
 const HEADER_KEYWORDS: Record<string, string[]> = {
@@ -664,6 +665,38 @@ export class BankStatementsService {
       where: { companyId },
       orderBy: { sortOrder: 'asc' },
     });
+  }
+
+  /**
+   * استيراد قواعد التصنيف الافتراضية — فقط إذا كانت قائمة الفئات الشجرية فارغة.
+   * (للشركات القديمة أو بعد حذف كل الفئات يدوياً)
+   */
+  async seedDefaultTreeCategoriesIfEmpty(companyId: string): Promise<{ created: number }> {
+    const tenantId = TenantContext.getTenantId();
+    const n = await this.prisma.bankTreeCategory.count({ where: { companyId } });
+    if (n > 0) {
+      throw new BadRequestException(
+        'توجد فئات تصنيف مسبقاً لهذه الشركة. احذفها أولاً أو عدّلها من الواجهة إذا أردت الاستيراد من جديد.',
+      );
+    }
+    let created = 0;
+    for (const row of DEFAULT_BANK_TREE_CATEGORY_SEEDS) {
+      await this.prisma.bankTreeCategory.create({
+        data: {
+          tenantId,
+          companyId,
+          name: row.name,
+          sortOrder: row.sortOrder,
+          isActive: row.isActive,
+          transactionSide: row.transactionSide,
+          transactionType: row.transactionType,
+          parentKeywords: row.parentKeywords as object,
+          classifications: row.classifications as object,
+        },
+      });
+      created++;
+    }
+    return { created };
   }
 
   async createTreeCategory(

@@ -185,6 +185,13 @@ export class BankStatementsController {
     return this.service.deleteTreeCategory(companyId, cid);
   }
 
+  @Post('tree-categories/seed-defaults')
+  @RequirePermission('REPORTS_READ')
+  async seedDefaultTreeCategories(@Body() body: { companyId: string }) {
+    if (!body?.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.seedDefaultTreeCategoriesIfEmpty(body.companyId);
+  }
+
   @Get('classification-rules')
   @RequirePermission('REPORTS_READ')
   async listRules(@Query('companyId') companyId: string) {
