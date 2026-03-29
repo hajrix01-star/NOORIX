@@ -478,7 +478,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                       {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
                       {formatBackupDate(sj.createdAt, lang)}
                     </span>
-                    <span className="backup-job__status" style={{ margin: 0 }}>
+                    <span className="backup-job__status" style={{ margin: 0 }} data-status={sj.status || ''}>
                       {statusLabel(sj.status, t)}
                     </span>
                   </div>
@@ -532,7 +532,9 @@ export default function BackupTab({ activeCompanies = [] }) {
                     </h4>
                     <div className="backup-job__meta">{metaParts.join(' · ')}</div>
                   </div>
-                  <span className="backup-job__status">{statusLabel(j.status, t)}</span>
+                  <span className="backup-job__status" data-status={j.status || ''}>
+                    {statusLabel(j.status, t)}
+                  </span>
                 </div>
                 {j.errorMessage && (
                   <div className="backup-job__flags" style={{ color: '#b91c1c' }}>
