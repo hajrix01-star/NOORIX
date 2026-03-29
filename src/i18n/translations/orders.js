@@ -85,13 +85,18 @@ export default {
     en: 'Export or add categories first, then use the same Arabic name in the category column.',
   },
   ordersImportProductsStep2: {
-    ar: 'احذف صف المثال أو عوّضه ببياناتك؛ عمود variants يقبل JSON لعدة تركيبات (حجم، تغليف، وحدة، سعر).',
-    en: 'Delete or replace the example row; the variants column accepts JSON for multiple price combinations.',
+    ar: 'الأعمدة: nameAr، nameEn، category، size، packaging، unit، lastPrice — كل قيمة في خلية. لعدة تركيبات لنفس الصنف: صف لاحق بـ nameAr (وnameEn وcategory) فارغ.',
+    en: 'Columns: nameAr, nameEn, category, size, packaging, unit, lastPrice — one cell each. More variants for same product: next row with empty nameAr (and nameEn, category).',
   },
   ordersImportProductsStep3: {
-    ar: 'افتح ورقة التعليمات في الملف لنسخ أمثلة جاهزة للحقل variants.',
-    en: 'Open the Instructions sheet in the file for ready-to-paste variants examples.',
+    ar: 'ملفات قديمة: عمود variants كنص JSON لا يزال مدعوماً. احذف صف المثال في القالب قبل الاستيراد الفعلي.',
+    en: 'Legacy files: variants as JSON text still supported. Remove the template example row before real import.',
   },
+  ordersSearchProducts: { ar: 'بحث في الأصناف…', en: 'Search products…' },
+  ordersSearchCategories: { ar: 'بحث في الفئات…', en: 'Search categories…' },
+  ordersImportHelpBadge: { ar: 'دليل الاستيراد', en: 'Import guide' },
+  ordersImportHelpTooltip: { ar: 'مرّر للعرض أو اضغط لتثبيت التعليمات', en: 'Hover to view or click to pin instructions' },
+  ordersImportHelpHoverHint: { ar: 'اضغط مرة أخرى على العلامة أو خارج اللوحة لإغلاق التثبيت.', en: 'Click the badge again or outside the panel to close when pinned.' },
   ordersImportCategoriesStep1: {
     ar: 'صف واحد لكل فئة: nameAr إلزامي، nameEn اختياري.',
     en: 'One row per category: nameAr required, nameEn optional.',

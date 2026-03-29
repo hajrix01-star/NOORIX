@@ -2,7 +2,7 @@
  * ItemsManageTab — تبويبة إدارة الأصناف والفئات
  * إعادة بناء مع قوائم منسدلة للأحجام والتغليف + خيار إضافة جديد
  */
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
@@ -50,6 +50,109 @@ const inputStyle = {
   color: 'var(--noorix-text)', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box',
 };
 
+/** علامة ⓘ: التمرير يعرض التعليمات؛ الضغط يثبتها حتى النقر خارجها */
+function OrdersImportHelpTrigger({ t, variant }) {
+  const [hover, setHover] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const wrapRef = useRef(null);
+  const visible = hover || pinned;
+
+  useEffect(() => {
+    if (!pinned) return undefined;
+    const onDoc = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setPinned(false);
+    };
+    const t = setTimeout(() => document.addEventListener('mousedown', onDoc), 0);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener('mousedown', onDoc);
+    };
+  }, [pinned]);
+
+  const title = variant === 'products' ? t('ordersImportGuideProductsTitle') : t('ordersImportGuideCategoriesTitle');
+
+  return (
+    <div
+      ref={wrapRef}
+      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <button
+        type="button"
+        className="noorix-btn-nav"
+        aria-expanded={visible}
+        aria-haspopup="dialog"
+        title={t('ordersImportHelpTooltip')}
+        onClick={(e) => {
+          e.stopPropagation();
+          setPinned((p) => !p);
+        }}
+        style={{
+          padding: '6px 12px',
+          fontSize: 12,
+          borderRadius: 999,
+          border: '1px solid var(--noorix-border)',
+          background: pinned ? 'rgba(22,163,74,0.12)' : 'var(--noorix-bg-muted)',
+          fontWeight: 600,
+        }}
+      >
+        ⓘ {t('ordersImportHelpBadge')}
+      </button>
+      {visible && (
+        <div
+          role="dialog"
+          aria-label={title}
+          className="noorix-print-hide"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            insetInlineEnd: 0,
+            width: 'min(420px, calc(100vw - 24px))',
+            maxHeight: 'min(440px, 72vh)',
+            overflowY: 'auto',
+            zIndex: 50,
+            padding: '14px 16px',
+            borderRadius: 12,
+            border: '1px solid var(--noorix-border)',
+            background: 'var(--noorix-bg-surface)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+            fontSize: 12,
+            lineHeight: 1.65,
+            color: 'var(--noorix-text)',
+            textAlign: 'start',
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div style={{ fontWeight: 800, marginBottom: 10, fontSize: 13 }}>{title}</div>
+          <p style={{ margin: '0 0 8px', color: 'var(--noorix-text-muted)', fontSize: 11 }}>{t('ordersImportHelpHoverHint')}</p>
+          {variant === 'products' ? (
+            <>
+              <p style={{ margin: '0 0 10px' }}>{t('ordersImportWorkbookNote')}</p>
+              <p style={{ margin: '0 0 10px' }}>{t('ordersImportTemplateHintProducts')}</p>
+              <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+                <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep1')}</li>
+                <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep2')}</li>
+                <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep3')}</li>
+              </ul>
+              <p style={{ margin: '10px 0 0', fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('ordersPresetCatalogHint')}</p>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: '0 0 10px' }}>{t('ordersImportWorkbookNote')}</p>
+              <p style={{ margin: '0 0 10px' }}>{t('ordersImportTemplateHintCategories')}</p>
+              <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+                <li style={{ marginBottom: 6 }}>{t('ordersImportCategoriesStep1')}</li>
+                <li>{t('ordersImportCategoriesStep2')}</li>
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ItemsManageTab({ companyId }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -66,6 +169,8 @@ export function ItemsManageTab({ companyId }) {
   const [sizesKey, setSizesKey] = useState(0);
   const [packagingKey, setPackagingKey] = useState(0);
   const [presetBusy, setPresetBusy] = useState(false);
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
 
   const { data: products = [] } = useOrderProducts(companyId);
   const { data: categories = [] } = useOrderCategories(companyId);
@@ -80,6 +185,32 @@ export function ItemsManageTab({ companyId }) {
 
   const sizesOptions = useMemo(() => getSizesOptions(companyId || ''), [companyId, sizesKey]);
   const packagingOptions = useMemo(() => getPackagingOptions(companyId || ''), [companyId, packagingKey]);
+
+  const filteredProducts = useMemo(() => {
+    const q = productSearchQuery.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter((p) => {
+      const cat = `${p.category?.nameAr || ''} ${p.category?.nameEn || ''}`.toLowerCase();
+      const na = String(p.nameAr || '').toLowerCase();
+      const ne = String(p.nameEn || '').toLowerCase();
+      const variants = Array.isArray(p.variants) ? p.variants : [];
+      const vtxt = variants
+        .map((v) => `${v.size || ''} ${v.packaging || ''} ${v.unit || ''} ${v.lastPrice ?? ''}`)
+        .join(' ')
+        .toLowerCase();
+      return na.includes(q) || ne.includes(q) || cat.includes(q) || vtxt.includes(q);
+    });
+  }, [products, productSearchQuery]);
+
+  const filteredCategories = useMemo(() => {
+    const q = categorySearchQuery.trim().toLowerCase();
+    if (!q) return categories;
+    return categories.filter((c) => {
+      const na = String(c.nameAr || '').toLowerCase();
+      const ne = String(c.nameEn || '').toLowerCase();
+      return na.includes(q) || ne.includes(q);
+    });
+  }, [categories, categorySearchQuery]);
 
   function handleCreateProduct() {
     if (!newProduct.nameAr?.trim()) {
@@ -170,17 +301,6 @@ export function ItemsManageTab({ companyId }) {
     setAddPackagingModal(false);
     setToast({ visible: true, message: t('ordersPackagingAdded') || 'تمت إضافة التغليف', type: 'success' });
   }
-
-  const importGuideCardStyle = useMemo(
-    () => ({
-      padding: '14px 18px',
-      borderRadius: 12,
-      border: '1px solid var(--noorix-border)',
-      borderInlineStart: '4px solid var(--noorix-accent-green)',
-      background: 'linear-gradient(135deg, rgba(22, 163, 74, 0.07) 0%, transparent 58%)',
-    }),
-    [],
-  );
 
   async function handleInsertPresetCatalog() {
     if (!companyId || presetBusy) return;
@@ -437,20 +557,12 @@ export function ItemsManageTab({ companyId }) {
 
       {activeSubTab === 'products' && (
         <div style={{ display: 'grid', gap: 20 }}>
-          <div style={importGuideCardStyle}>
-            <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: 'var(--noorix-text)' }}>{t('ordersImportGuideProductsTitle')}</div>
-            <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.55 }}>{t('ordersImportWorkbookNote')}</p>
-            <ul style={{ margin: 0, paddingInlineStart: 20, fontSize: 12, lineHeight: 1.65, color: 'var(--noorix-text)' }}>
-              <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep1')}</li>
-              <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep2')}</li>
-              <li>{t('ordersImportProductsStep3')}</li>
-            </ul>
-          </div>
           <div className="noorix-surface-card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               <h4 style={{ margin: 0, fontSize: 15 }}>+ {t('ordersAddProduct')}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <OrdersImportHelpTrigger t={t} variant="products" />
                   <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} style={{ display: 'none' }} />
                   <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
                     {presetBusy ? t('saving') : `📋 ${t('ordersPresetCatalogButton')}`}
@@ -463,9 +575,6 @@ export function ItemsManageTab({ companyId }) {
                 </div>
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--noorix-text-muted)', maxWidth: 560, textAlign: 'right', lineHeight: 1.45 }}>
                   {t('ordersPresetCatalogHint')}
-                </p>
-                <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--noorix-text-muted)', maxWidth: 560, textAlign: 'right', lineHeight: 1.45 }}>
-                  {t('ordersImportTemplateHintProducts')}
                 </p>
               </div>
             </div>
@@ -559,6 +668,16 @@ export function ItemsManageTab({ companyId }) {
           </div>
 
           <div className="noorix-surface-card" style={{ overflow: 'auto' }}>
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <input
+                type="search"
+                value={productSearchQuery}
+                onChange={(e) => setProductSearchQuery(e.target.value)}
+                placeholder={t('ordersSearchProducts')}
+                aria-label={t('ordersSearchProducts')}
+                style={{ ...inputStyle, maxWidth: 320 }}
+              />
+            </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
@@ -570,7 +689,7 @@ export function ItemsManageTab({ companyId }) {
                 </tr>
               </thead>
               <tbody>
-                {products.map((p) => {
+                {filteredProducts.map((p) => {
                   const variants = Array.isArray(p.variants) ? p.variants : [];
                   const variantsSummary = variants.length > 0
                     ? variants.map((v) => `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0, 2)}`).join(' | ')
@@ -681,25 +800,21 @@ export function ItemsManageTab({ companyId }) {
             {products.length === 0 && (
               <div style={{ padding: 30, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('ordersNoProductsYet')}</div>
             )}
+            {products.length > 0 && filteredProducts.length === 0 && (
+              <div style={{ padding: 30, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('ordersNoSearchResults')}</div>
+            )}
           </div>
         </div>
       )}
 
       {activeSubTab === 'categories' && (
         <div style={{ display: 'grid', gap: 20 }}>
-          <div style={importGuideCardStyle}>
-            <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: 'var(--noorix-text)' }}>{t('ordersImportGuideCategoriesTitle')}</div>
-            <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.55 }}>{t('ordersImportWorkbookNote')}</p>
-            <ul style={{ margin: 0, paddingInlineStart: 20, fontSize: 12, lineHeight: 1.65, color: 'var(--noorix-text)' }}>
-              <li style={{ marginBottom: 6 }}>{t('ordersImportCategoriesStep1')}</li>
-              <li>{t('ordersImportCategoriesStep2')}</li>
-            </ul>
-          </div>
           <div className="noorix-surface-card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               <h4 style={{ margin: 0, fontSize: 15 }}>+ {t('ordersAddCategory')}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <OrdersImportHelpTrigger t={t} variant="categories" />
                   <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} style={{ display: 'none' }} />
                   <button type="button" className="noorix-btn-nav" onClick={handleDownloadCategoriesImportTemplate}>
                     📄 {t('ordersDownloadImportTemplate')}
@@ -707,9 +822,6 @@ export function ItemsManageTab({ companyId }) {
                   <button type="button" className="noorix-btn-nav" onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>📥 {t('import')}</button>
                   <button type="button" className="noorix-btn-nav" onClick={handleExportCategories} disabled={categories.length === 0}>📤 {t('exportExcel')}</button>
                 </div>
-                <p style={{ margin: 0, fontSize: 11, color: 'var(--noorix-text-muted)', maxWidth: 420, textAlign: 'right', lineHeight: 1.45 }}>
-                  {t('ordersImportTemplateHintCategories')}
-                </p>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
@@ -728,6 +840,16 @@ export function ItemsManageTab({ companyId }) {
           </div>
 
           <div className="noorix-surface-card" style={{ overflow: 'auto' }}>
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <input
+                type="search"
+                value={categorySearchQuery}
+                onChange={(e) => setCategorySearchQuery(e.target.value)}
+                placeholder={t('ordersSearchCategories')}
+                aria-label={t('ordersSearchCategories')}
+                style={{ ...inputStyle, maxWidth: 320 }}
+              />
+            </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
@@ -737,7 +859,7 @@ export function ItemsManageTab({ companyId }) {
                 </tr>
               </thead>
               <tbody>
-                {categories.map((c) => (
+                {filteredCategories.map((c) => (
                   <tr key={c.id} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
                     {editingCategory?.id === c.id ? (
                       <>
@@ -767,6 +889,9 @@ export function ItemsManageTab({ companyId }) {
             </table>
             {categories.length === 0 && (
               <div style={{ padding: 30, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('ordersNoCategoriesYet')}</div>
+            )}
+            {categories.length > 0 && filteredCategories.length === 0 && (
+              <div style={{ padding: 30, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('ordersNoSearchResults')}</div>
             )}
           </div>
         </div>
