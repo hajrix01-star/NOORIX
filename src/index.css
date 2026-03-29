@@ -1409,6 +1409,8 @@ input:focus, select:focus, textarea:focus {
     width: 78vw;
     max-width: 300px;
     min-height: auto;
+    /* يجب أن يكون أعلى من أي sticky/fixed في المحتوى (z-index: 50 افتراضي) */
+    z-index: 300;
   }
   [dir='rtl'] .app-sidebar {
     right: 0;
@@ -1424,12 +1426,13 @@ input:focus, select:focus, textarea:focus {
   }
   .app-sidebar--open { transform: translateX(0) !important; }
 
+  /* backdrop يجب أن يغطي كل عناصر المحتوى الثابتة (sticky z-index: 50) */
   .app-sidebar-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(10,31,68,0.55);
     backdrop-filter: blur(4px);
-    z-index: 40;
+    z-index: 299;
   }
 
   .noorix-topbar {
