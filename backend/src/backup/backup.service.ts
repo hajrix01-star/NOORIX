@@ -9,10 +9,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import * as crypto from 'crypto';
 import * as zlib from 'zlib';
 import { promisify } from 'util';
 import { spawn } from 'child_process';
+import moment from 'moment-timezone';
 import { buildCompanyLogicalSnapshot } from './backup-company-export';
 
 const gzipAsync = promisify(zlib.gzip);
@@ -33,6 +35,85 @@ export class BackupService {
   private async ensureBackupRoot(): Promise<void> {
     const root = this.getBackupRoot();
     await fs.mkdir(root, { recursive: true });
+  }
+
+  /** صف الإعدادات الافتراضي — يُنشأ عند أول استخدام */
+  async ensureSystemBackupConfigRow() {
+    const existing = await this.prisma.systemBackupConfig.findUnique({ where: { id: 'singleton' } });
+    if (existing) return existing;
+    const legacyEnv = process.env.BACKUP_DAILY_ENABLED === 'true';
+    return this.prisma.systemBackupConfig.create({
+      data: {
+        id: 'singleton',
+        enabled: legacyEnv,
+        scheduleHour: 6,
+        scheduleMinute: 0,
+        retentionCount: 10,
+        timezone: 'Asia/Riyadh',
+      },
+    });
+  }
+
+  private async nextOrdinalCompanyLogical(tenantId: string, companyId: string): Promise<number> {
+    const a = await this.prisma.backupJob.aggregate({
+      where: { tenantId, companyId, scope: 'company_logical', ordinal: { not: null } },
+      _max: { ordinal: true },
+    });
+    return (a._max.ordinal ?? 0) + 1;
+  }
+
+  private async nextOrdinalFullDb(): Promise<number> {
+    const a = await this.prisma.backupJob.aggregate({
+      where: { scope: 'database_full', ordinal: { not: null } },
+      _max: { ordinal: true },
+    });
+    return (a._max.ordinal ?? 0) + 1;
+  }
+
+  private async pruneSystemFullBackups(retentionCount: number): Promise<void> {
+    const keep = Math.min(Math.max(retentionCount, 1), 50);
+    const root = this.getBackupRoot();
+    const victims = await this.prisma.backupJob.findMany({
+      where: {
+        scope: 'database_full',
+        status: 'completed',
+        localRelativePath: { not: null },
+      },
+      orderBy: [{ completedAt: 'desc' }, { createdAt: 'desc' }],
+      skip: keep,
+    });
+    for (const j of victims) {
+      if (j.localRelativePath) {
+        await fs.unlink(path.join(root, j.localRelativePath)).catch(() => undefined);
+      }
+      await this.prisma.backupJob.delete({ where: { id: j.id } }).catch(() => undefined);
+    }
+  }
+
+  private async verifyPgCustomDumpGz(absGzPath: string): Promise<{ ok: boolean; error?: string }> {
+    const tmp = path.join(os.tmpdir(), `noorix-pgverify-${Date.now()}-${Math.random().toString(36).slice(2)}.dump`);
+    try {
+      const buf = await fs.readFile(absGzPath);
+      const unz = zlib.gunzipSync(buf);
+      await fs.writeFile(tmp, unz);
+      await new Promise<void>((resolve, reject) => {
+        const child = spawn('pg_restore', ['-l', tmp], { stdio: ['ignore', 'pipe', 'pipe'] });
+        let err = '';
+        child.stderr?.on('data', (c) => {
+          err += String(c);
+        });
+        child.on('error', (e) => reject(new Error(`تعذّر تشغيل pg_restore: ${(e as Error).message}`)));
+        child.on('close', (code) => {
+          if (code === 0) resolve();
+          else reject(new Error(err || `pg_restore رمز ${code}`));
+        });
+      });
+      await fs.unlink(tmp).catch(() => undefined);
+      return { ok: true };
+    } catch (e) {
+      await fs.unlink(tmp).catch(() => undefined);
+      return { ok: false, error: (e as Error).message };
+    }
   }
 
   private async sha256File(filePath: string): Promise<string> {
@@ -228,6 +309,7 @@ export class BackupService {
       if (up.ok) externalUploaded = true;
       else externalError = up.error || null;
 
+      const ordinal = await this.nextOrdinalCompanyLogical(tenantId, companyId);
       await this.prisma.backupJob.update({
         where: { id: job.id },
         data: {
@@ -239,6 +321,7 @@ export class BackupService {
           completedAt: new Date(),
           externalUploaded,
           externalError,
+          ordinal,
           report: {
             counts: snapshot.counts,
             resumeHintAr: externalError
@@ -264,9 +347,40 @@ export class BackupService {
     }
   }
 
-  /** نسخة كاملة للقاعدة — للجدولة على الخادم فقط (tenantId = null) */
-  async runScheduledFullDatabaseBackup(): Promise<void> {
-    if (process.env.BACKUP_DAILY_ENABLED !== 'true') return;
+  /**
+   * جدولة يومية: يُستدعى كل دقيقة — يتحقق من التوقيت بتوقيت الرياض (أو timezone في الإعدادات).
+   */
+  async maybeRunScheduledFullDatabaseBackup(): Promise<void> {
+    const cfg = await this.ensureSystemBackupConfigRow();
+    if (!cfg.enabled) return;
+
+    const tz = cfg.timezone || 'Asia/Riyadh';
+    const m = moment.tz(tz);
+    const ymd = m.format('YYYY-MM-DD');
+    const h = m.hour();
+    const mi = m.minute();
+
+    if (h !== cfg.scheduleHour || mi !== cfg.scheduleMinute) return;
+    if (cfg.lastRunDayRiyadh === ymd) return;
+
+    await this.prisma.systemBackupConfig.update({
+      where: { id: 'singleton' },
+      data: { lastRunDayRiyadh: ymd },
+    });
+
+    await this.runFullDatabaseBackup({ manual: false, retentionCount: cfg.retentionCount });
+  }
+
+  /**
+   * نسخة كاملة للقاعدة — tenantId = null.
+   * manual=true يتجاوز التحقق من enabled ويُشغَّل من الواجهة (مالك/مدير).
+   */
+  async runFullDatabaseBackup(opts: { manual?: boolean; retentionCount?: number } = {}): Promise<{ jobId: string }> {
+    const cfg = await this.ensureSystemBackupConfigRow();
+    const retention = opts.retentionCount ?? cfg.retentionCount ?? 10;
+    if (!opts.manual && !cfg.enabled) {
+      return { jobId: '' };
+    }
 
     await this.ensureBackupRoot();
     const job = await this.prisma.backupJob.create({
@@ -305,7 +419,7 @@ export class BackupService {
             report: { messageAr: 'تكرار — نفس hash نسخة سابقة' },
           },
         });
-        return;
+        return { jobId: job.id };
       }
 
       const st = await fs.stat(finalAbs);
@@ -318,6 +432,7 @@ export class BackupService {
       if (up.ok) externalUploaded = true;
       else externalError = up.error || null;
 
+      const ordinal = await this.nextOrdinalFullDb();
       await this.prisma.backupJob.update({
         where: { id: job.id },
         data: {
@@ -329,9 +444,11 @@ export class BackupService {
           completedAt: new Date(),
           externalUploaded,
           externalError,
+          ordinal,
         },
       });
-      this.logger.log(`Full DB backup completed: ${finalRel} (${st.size} bytes)`);
+      await this.pruneSystemFullBackups(retention);
+      this.logger.log(`Full DB backup completed: ${finalRel} (${st.size} bytes) #${ordinal}`);
     } catch (e) {
       const msg = (e as Error).message;
       this.logger.error(`Full DB backup failed: ${msg}`);
@@ -345,6 +462,12 @@ export class BackupService {
         },
       });
     }
+    return { jobId: job.id };
+  }
+
+  /** يُستدعى من المجدول — يتحقق من الساعة بتوقيت الإعدادات */
+  async runScheduledFullDatabaseBackup(): Promise<void> {
+    await this.maybeRunScheduledFullDatabaseBackup();
   }
 
   async listJobs(tenantId: string, allowedCompanyIds: string[] | undefined, limit = 40) {
@@ -472,5 +595,110 @@ export class BackupService {
     }
     const filename = `noorix-backup-${job.scope}-${job.id}.json.gz`;
     return { absolutePath: abs, filename };
+  }
+
+  async getSystemBackupConfig() {
+    const c = await this.ensureSystemBackupConfigRow();
+    return {
+      enabled: c.enabled,
+      scheduleHour: c.scheduleHour,
+      scheduleMinute: c.scheduleMinute,
+      retentionCount: c.retentionCount,
+      timezone: c.timezone,
+      lastRunDayRiyadh: c.lastRunDayRiyadh,
+    };
+  }
+
+  async updateSystemBackupConfig(dto: {
+    enabled?: boolean;
+    scheduleHour?: number;
+    scheduleMinute?: number;
+    retentionCount?: number;
+  }) {
+    await this.ensureSystemBackupConfigRow();
+    return this.prisma.systemBackupConfig.update({
+      where: { id: 'singleton' },
+      data: {
+        ...(dto.enabled !== undefined ? { enabled: dto.enabled } : {}),
+        ...(dto.scheduleHour !== undefined ? { scheduleHour: dto.scheduleHour } : {}),
+        ...(dto.scheduleMinute !== undefined ? { scheduleMinute: dto.scheduleMinute } : {}),
+        ...(dto.retentionCount !== undefined ? { retentionCount: dto.retentionCount } : {}),
+      },
+    });
+  }
+
+  async listSystemFullJobs(limit = 20) {
+    const take = Math.min(Math.max(limit, 1), 50);
+    return this.prisma.backupJob.findMany({
+      where: { scope: 'database_full' },
+      orderBy: { createdAt: 'desc' },
+      take,
+    });
+  }
+
+  async verifyDatabaseFullJob(jobId: string) {
+    const job = await this.prisma.backupJob.findFirst({
+      where: { id: jobId, scope: 'database_full' },
+    });
+    if (!job) throw new NotFoundException('النسخة غير موجودة');
+    if (job.status !== 'completed' || !job.localRelativePath) {
+      throw new BadRequestException('التحقق متاح للنسخ المكتملة التي يوجد لها ملف');
+    }
+    const abs = path.join(this.getBackupRoot(), job.localRelativePath);
+    try {
+      await fs.access(abs);
+    } catch {
+      throw new NotFoundException('الملف غير موجود على الخادم');
+    }
+    const v = await this.verifyPgCustomDumpGz(abs);
+    const now = new Date();
+    await this.prisma.backupJob.update({
+      where: { id: job.id },
+      data: {
+        verifyOk: v.ok,
+        verifyError: v.ok ? null : v.error ?? 'فشل',
+        verifiedAt: now,
+      },
+    });
+    if (!v.ok) throw new BadRequestException(v.error || 'فشل التحقق من النسخة');
+    return { ok: true, jobId: job.id };
+  }
+
+  async verifyCompanyLogicalJob(
+    tenantId: string,
+    jobId: string,
+    allowedCompanyIds: string[] | undefined,
+  ) {
+    const job = await this.getJob(tenantId, jobId, allowedCompanyIds);
+    if (job.scope !== 'company_logical' || !job.localRelativePath) {
+      throw new BadRequestException('التحقق متاح لنسخ الشركة المكتملة فقط');
+    }
+    if (job.status !== 'completed') {
+      throw new BadRequestException('التحقق متاح للنسخ المكتملة فقط');
+    }
+    const abs = path.join(this.getBackupRoot(), job.localRelativePath);
+    try {
+      await fs.access(abs);
+    } catch {
+      throw new NotFoundException('الملف غير موجود على الخادم');
+    }
+    const now = new Date();
+    try {
+      const buf = await fs.readFile(abs);
+      const json = zlib.gunzipSync(buf).toString('utf8');
+      JSON.parse(json);
+      await this.prisma.backupJob.update({
+        where: { id: job.id },
+        data: { verifyOk: true, verifyError: null, verifiedAt: now },
+      });
+      return { ok: true, jobId: job.id };
+    } catch (e) {
+      const msg = (e as Error).message;
+      await this.prisma.backupJob.update({
+        where: { id: job.id },
+        data: { verifyOk: false, verifyError: msg, verifiedAt: now },
+      });
+      throw new BadRequestException(`ملف لقطة تالف أو غير صالح: ${msg}`);
+    }
   }
 }

@@ -150,6 +150,11 @@ model BackupJob {
   createdAt         DateTime  @default(now()) @map("created_at")
   completedAt       DateTime? @map("completed_at")
   createdByUserId   String?   @map("created_by_user_id")
+  /// رقم تسلسلي للعرض: لـ database_full عالمي، لـ company_logical لكل شركة ضمن المستأجر
+  ordinal           Int?      @map("ordinal")
+  verifiedAt        DateTime? @map("verified_at")
+  verifyOk          Boolean?  @map("verify_ok")
+  verifyError       String?   @map("verify_error") @db.Text
 
   tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
@@ -158,6 +163,21 @@ model BackupJob {
   @@index([tenantId, createdAt])
   @@index([companyId, createdAt])
   @@map("backup_jobs")
+}
+
+/// إعدادات النسخ التلقائي لقاعدة البيانات الكاملة — صف واحد (id = singleton)
+model SystemBackupConfig {
+  id               String   @id @default("singleton")
+  enabled          Boolean  @default(false)
+  scheduleHour     Int      @default(6) @map("schedule_hour")
+  scheduleMinute   Int      @default(0) @map("schedule_minute")
+  retentionCount   Int      @default(10) @map("retention_count")
+  timezone         String   @default("Asia/Riyadh")
+  lastRunDayRiyadh String?  @map("last_run_day_riyadh")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("system_backup_config")
 }
 
 // تحليل كشوف الحساب — كشف واحد مع حركاته

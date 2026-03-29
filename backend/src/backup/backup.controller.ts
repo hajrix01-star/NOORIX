@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -20,6 +21,8 @@ import { BackupService } from './backup.service';
 import { BackupLogicalImportService } from './backup-logical-import.service';
 import { TriggerBackupDto } from './dto/trigger-backup.dto';
 import { ImportBackupDto } from './dto/import-backup.dto';
+import { UpdateSystemBackupConfigDto } from './dto/update-system-backup-config.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 type ReqUser = {
   userId?: string;
@@ -60,6 +63,68 @@ export class BackupController {
       ...j,
       sizeBytes: j.sizeBytes != null ? j.sizeBytes.toString() : null,
     }));
+  }
+
+  @Get('system/config')
+  @Roles('owner', 'super_admin')
+  async getSystemBackupConfig(@Req() req: { user?: ReqUser }) {
+    if (!req.user?.tenantId) throw new UnauthorizedException();
+    return this.backupService.getSystemBackupConfig();
+  }
+
+  @Patch('system/config')
+  @Roles('owner', 'super_admin')
+  async patchSystemBackupConfig(
+    @Body() dto: UpdateSystemBackupConfigDto,
+    @Req() req: { user?: ReqUser },
+  ) {
+    if (!req.user?.tenantId) throw new UnauthorizedException();
+    const row = await this.backupService.updateSystemBackupConfig(dto);
+    return {
+      enabled: row.enabled,
+      scheduleHour: row.scheduleHour,
+      scheduleMinute: row.scheduleMinute,
+      retentionCount: row.retentionCount,
+      timezone: row.timezone,
+      lastRunDayRiyadh: row.lastRunDayRiyadh,
+    };
+  }
+
+  @Get('system/jobs')
+  @Roles('owner', 'super_admin')
+  async listSystemJobs(@Req() req: { user?: ReqUser }, @Query('limit') limit?: string) {
+    if (!req.user?.tenantId) throw new UnauthorizedException();
+    const jobs = await this.backupService.listSystemFullJobs(limit ? parseInt(limit, 10) : 20);
+    return jobs.map((j) => ({
+      ...j,
+      sizeBytes: j.sizeBytes != null ? j.sizeBytes.toString() : null,
+    }));
+  }
+
+  @Post('system/run-now')
+  @Roles('owner', 'super_admin')
+  async runSystemBackupNow(@Req() req: { user?: ReqUser }) {
+    if (!req.user?.tenantId) throw new UnauthorizedException();
+    const cfg = await this.backupService.getSystemBackupConfig();
+    return this.backupService.runFullDatabaseBackup({
+      manual: true,
+      retentionCount: cfg.retentionCount,
+    });
+  }
+
+  @Post('system/jobs/:id/verify')
+  @Roles('owner', 'super_admin')
+  async verifySystemJob(@Param('id') id: string, @Req() req: { user?: ReqUser }) {
+    if (!req.user?.tenantId) throw new UnauthorizedException();
+    return this.backupService.verifyDatabaseFullJob(id);
+  }
+
+  @Post('jobs/:id/verify')
+  @RequirePermission('MANAGE_SETTINGS')
+  async verifyCompanyJob(@Param('id') id: string, @Req() req: { user?: ReqUser }) {
+    const u = req.user;
+    if (!u?.tenantId) throw new UnauthorizedException();
+    return this.backupService.verifyCompanyLogicalJob(u.tenantId, id, u.companyIds);
   }
 
   @Get('jobs/:id/restore-report')

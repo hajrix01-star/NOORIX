@@ -1090,3 +1090,27 @@ export async function backupDownloadJobFile(jobId, suggestedName) {
 export async function backupImportFromJob(body) {
   return apiPost('/api/v1/backup/import', body, { timeout: 600000 });
 }
+
+export async function backupGetSystemConfig() {
+  return apiGet('/api/v1/backup/system/config');
+}
+
+export async function backupPatchSystemConfig(body) {
+  return apiPatch('/api/v1/backup/system/config', body);
+}
+
+export async function backupListSystemJobs(limit = 20) {
+  return apiGet('/api/v1/backup/system/jobs', { limit: String(limit) });
+}
+
+export async function backupRunSystemNow() {
+  return apiPost('/api/v1/backup/system/run-now', {}, { timeout: 600000 });
+}
+
+export async function backupVerifySystemJob(jobId) {
+  return apiPost(`/api/v1/backup/system/jobs/${encodeURIComponent(jobId)}/verify`, {}, { timeout: 180000 });
+}
+
+export async function backupVerifyCompanyJob(jobId) {
+  return apiPost(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/verify`, {}, { timeout: 180000 });
+}

@@ -12,6 +12,12 @@ import {
   backupDownloadJobFile,
   backupImportFromJob,
   refreshAuthSession,
+  backupGetSystemConfig,
+  backupPatchSystemConfig,
+  backupListSystemJobs,
+  backupRunSystemNow,
+  backupVerifySystemJob,
+  backupVerifyCompanyJob,
 } from '../../../services/api';
 import Toast from '../../../components/Toast';
 import { useAuth } from '../../../context/AuthContext';
@@ -24,6 +30,26 @@ function formatBackupDate(iso, lang) {
   } catch {
     return String(iso);
   }
+}
+
+/** اسم افتراضي للاستيراد: شركة — تاريخ النسخة — #رقم */
+function defaultImportCompanyName(j, t, lang) {
+  const co = j.company?.nameAr || t('backupImportDefaultCo');
+  const raw = j.completedAt || j.createdAt;
+  let dateStr = '—';
+  if (raw) {
+    try {
+      dateStr = new Date(raw).toLocaleDateString(lang === 'en' ? 'en-GB' : 'ar-SA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } catch {
+      dateStr = String(raw);
+    }
+  }
+  const ord = j.ordinal != null ? ` — #${j.ordinal}` : '';
+  return `${co} — ${dateStr}${ord}`;
 }
 
 function statLabel(t, key) {
@@ -98,7 +124,8 @@ function statusLabel(s, t) {
 
 export default function BackupTab({ activeCompanies = [] }) {
   const { t, lang } = useTranslation();
-  const { setToken, setUser } = useAuth();
+  const { user, setToken, setUser } = useAuth();
+  const canSystemBackup = ['owner', 'super_admin'].includes(String(user?.role || '').toLowerCase());
   const setActiveCompany = useApp()?.setActiveCompany;
   const isAr = lang !== 'en';
   const qc = useQueryClient();
@@ -108,12 +135,46 @@ export default function BackupTab({ activeCompanies = [] }) {
   const [importModal, setImportModal] = useState(null);
   const [importReportModal, setImportReportModal] = useState(null);
   const [importNameAr, setImportNameAr] = useState('');
+  const [sysForm, setSysForm] = useState({
+    enabled: false,
+    scheduleHour: 6,
+    scheduleMinute: 0,
+    retentionCount: 10,
+  });
 
   const { data: jobsRes, isLoading } = useQuery({
     queryKey: ['backup-jobs'],
     queryFn: async () => backupListJobs(50),
     refetchInterval: 15_000,
   });
+
+  const { data: sysCfgRes } = useQuery({
+    queryKey: ['backup-system-config'],
+    queryFn: () => backupGetSystemConfig(),
+    enabled: canSystemBackup,
+  });
+
+  const { data: sysJobsRes, isLoading: sysJobsLoading } = useQuery({
+    queryKey: ['backup-system-jobs'],
+    queryFn: () => backupListSystemJobs(15),
+    enabled: canSystemBackup,
+    refetchInterval: 20_000,
+  });
+
+  React.useEffect(() => {
+    if (!sysCfgRes?.success || !sysCfgRes.data) return;
+    const d = sysCfgRes.data;
+    if (typeof d !== 'object' || d.enabled === undefined) return;
+    const h = Number(d.scheduleHour);
+    const m = Number(d.scheduleMinute);
+    const r = Number(d.retentionCount);
+    setSysForm({
+      enabled: !!d.enabled,
+      scheduleHour: Number.isFinite(h) ? h : 6,
+      scheduleMinute: Number.isFinite(m) ? m : 0,
+      retentionCount: Math.min(50, Math.max(1, Number.isFinite(r) ? r : 10)),
+    });
+  }, [sysCfgRes]);
 
   const jobs = jobsRes?.success ? (Array.isArray(jobsRes.data) ? jobsRes.data : []) : [];
 
@@ -195,6 +256,59 @@ export default function BackupTab({ activeCompanies = [] }) {
     onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
   });
 
+  const saveSysMut = useMutation({
+    mutationFn: (body) => backupPatchSystemConfig(body),
+    onSuccess: (res) => {
+      if (!res?.success) {
+        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ['backup-system-config'] });
+      setToast({ visible: true, message: t('backupSettingsSaved'), type: 'success' });
+    },
+    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+  });
+
+  const runSysMut = useMutation({
+    mutationFn: () => backupRunSystemNow(),
+    onSuccess: (res) => {
+      if (!res?.success) {
+        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ['backup-system-jobs'] });
+      qc.invalidateQueries({ queryKey: ['backup-jobs'] });
+      setToast({ visible: true, message: t('backupStarted'), type: 'success' });
+    },
+    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+  });
+
+  const verifySysMut = useMutation({
+    mutationFn: (jobId) => backupVerifySystemJob(jobId),
+    onSuccess: (res) => {
+      if (!res?.success) {
+        setToast({ visible: true, message: res?.error || t('backupVerifyBad'), type: 'error' });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ['backup-system-jobs'] });
+      setToast({ visible: true, message: t('backupVerifyOk'), type: 'success' });
+    },
+    onError: (e) => setToast({ visible: true, message: e?.message || t('backupVerifyBad'), type: 'error' }),
+  });
+
+  const verifyCoMut = useMutation({
+    mutationFn: (jobId) => backupVerifyCompanyJob(jobId),
+    onSuccess: (res) => {
+      if (!res?.success) {
+        setToast({ visible: true, message: res?.error || t('backupVerifyBad'), type: 'error' });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ['backup-jobs'] });
+      setToast({ visible: true, message: t('backupVerifyOk'), type: 'success' });
+    },
+    onError: (e) => setToast({ visible: true, message: e?.message || t('backupVerifyBad'), type: 'error' }),
+  });
+
   React.useEffect(() => {
     if (!companyId && activeCompanies[0]?.id) setCompanyId(activeCompanies[0].id);
   }, [activeCompanies, companyId]);
@@ -248,6 +362,155 @@ export default function BackupTab({ activeCompanies = [] }) {
         </ul>
       </div>
 
+      {canSystemBackup && (
+        <div
+          className="noorix-surface-card"
+          style={{ padding: 18, display: 'grid', gap: 14, border: '1px solid var(--noorix-border)' }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--noorix-text)' }}>{t('backupSystemHeading')}</div>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.65 }}>
+            {t('backupSystemIntro')}
+          </p>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={sysForm.enabled}
+              onChange={(e) => setSysForm((p) => ({ ...p, enabled: e.target.checked }))}
+            />
+            {t('backupSystemEnabled')}
+          </label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: 'var(--noorix-text-muted)' }}>
+                {t('backupSystemHour')}
+              </div>
+              <input
+                type="number"
+                min={0}
+                max={23}
+                className="noorix-bank-filter"
+                style={{ width: 72 }}
+                value={sysForm.scheduleHour}
+                onChange={(e) =>
+                  setSysForm((p) => ({ ...p, scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) }))
+                }
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: 'var(--noorix-text-muted)' }}>
+                {t('backupSystemMinute')}
+              </div>
+              <input
+                type="number"
+                min={0}
+                max={59}
+                className="noorix-bank-filter"
+                style={{ width: 72 }}
+                value={sysForm.scheduleMinute}
+                onChange={(e) =>
+                  setSysForm((p) => ({ ...p, scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)) }))
+                }
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: 'var(--noorix-text-muted)' }}>
+                {t('backupSystemRetention')}
+              </div>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                className="noorix-bank-filter"
+                style={{ width: 72 }}
+                value={sysForm.retentionCount}
+                onChange={(e) =>
+                  setSysForm((p) => ({
+                    ...p,
+                    retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 10)),
+                  }))
+                }
+              />
+            </div>
+          </div>
+          {sysCfgRes?.success && sysCfgRes.data?.lastRunDayRiyadh != null && (
+            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+              {t('backupSystemLastRun')}: <strong dir="ltr">{sysCfgRes.data.lastRunDayRiyadh}</strong>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <button
+              type="button"
+              className="noorix-btn noorix-btn--secondary"
+              disabled={saveSysMut.isPending}
+              onClick={() =>
+                saveSysMut.mutate({
+                  enabled: sysForm.enabled,
+                  scheduleHour: sysForm.scheduleHour,
+                  scheduleMinute: sysForm.scheduleMinute,
+                  retentionCount: sysForm.retentionCount,
+                })
+              }
+            >
+              {saveSysMut.isPending ? t('loading') : t('backupSystemSave')}
+            </button>
+            <button
+              type="button"
+              className="noorix-btn noorix-btn--primary"
+              disabled={runSysMut.isPending}
+              onClick={() => runSysMut.mutate()}
+            >
+              {runSysMut.isPending ? t('loading') : t('backupSystemRunNow')}
+            </button>
+          </div>
+
+          <div style={{ fontSize: 13, fontWeight: 700, marginTop: 8 }}>{t('backupSystemJobs')}</div>
+          {sysJobsLoading && <div style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>}
+          {!sysJobsLoading && (!sysJobsRes?.success || !(Array.isArray(sysJobsRes.data) ? sysJobsRes.data : []).length) && (
+            <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('backupSystemNoJobs')}</div>
+          )}
+          <div style={{ display: 'grid', gap: 8 }}>
+            {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
+              <div
+                key={sj.id}
+                className="noorix-surface-card"
+                style={{
+                  padding: 10,
+                  fontSize: 12,
+                  border: '1px solid var(--noorix-border)',
+                  display: 'grid',
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' }}>
+                  <span dir="ltr" style={{ fontWeight: 700 }}>
+                    {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
+                    {formatBackupDate(sj.createdAt, lang)}
+                  </span>
+                  <span>{statusLabel(sj.status, t)}</span>
+                </div>
+                {sj.verifyOk === true && (
+                  <span style={{ color: '#15803d', fontSize: 11 }}>{t('backupVerifyOk')}</span>
+                )}
+                {sj.verifyOk === false && sj.verifyError && (
+                  <span style={{ color: '#b91c1c', fontSize: 11 }}>{sj.verifyError}</span>
+                )}
+                {sj.status === 'completed' && sj.localRelativePath && (
+                  <button
+                    type="button"
+                    className="noorix-btn noorix-btn--ghost"
+                    style={{ alignSelf: 'flex-start' }}
+                    disabled={verifySysMut.isPending}
+                    onClick={() => verifySysMut.mutate(sj.id)}
+                  >
+                    {t('backupVerify')}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t('backupJobHistory')}</div>
         {isLoading && <div style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>}
@@ -271,6 +534,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                 <span style={{ fontWeight: 700 }}>
                   {scopeLabel(j.scope, t)}
                   {j.company ? ` — ${j.company.nameAr || j.company.nameEn || ''}` : ''}
+                  {j.ordinal != null ? ` · ${t('backupOrdinalLabel')} ${j.ordinal}` : ''}
                 </span>
                 <span
                   style={{
@@ -291,6 +555,12 @@ export default function BackupTab({ activeCompanies = [] }) {
               </div>
               {j.errorMessage && (
                 <div style={{ color: '#b91c1c', fontSize: 12 }}>{j.errorMessage}</div>
+              )}
+              {j.verifyOk === true && (
+                <div style={{ color: '#15803d', fontSize: 11 }}>{t('backupVerifyOk')}</div>
+              )}
+              {j.verifyOk === false && j.verifyError && (
+                <div style={{ color: '#b91c1c', fontSize: 11 }}>{j.verifyError}</div>
               )}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 <button
@@ -316,13 +586,23 @@ export default function BackupTab({ activeCompanies = [] }) {
                       className="noorix-btn noorix-btn--primary"
                       disabled={importMut.isPending}
                       onClick={() => {
-                        setImportNameAr(`${j.company?.nameAr || t('backupImportDefaultCo')} — ${t('backupImportSuffix')}`);
+                        setImportNameAr(defaultImportCompanyName(j, t, lang));
                         setImportModal({ jobId: j.id });
                       }}
                     >
                       {t('backupImportNewCompany')}
                     </button>
                   </>
+                )}
+                {j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath && (
+                  <button
+                    type="button"
+                    className="noorix-btn noorix-btn--ghost"
+                    disabled={verifyCoMut.isPending}
+                    onClick={() => verifyCoMut.mutate(j.id)}
+                  >
+                    {t('backupVerify')}
+                  </button>
                 )}
                 {!j.externalUploaded && j.status === 'completed' && j.localRelativePath && (
                   <button

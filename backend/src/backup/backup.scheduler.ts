@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { BackupService } from './backup.service';
 
 /**
- * نسخ يومي كامل للقاعدة على القرص المحلي + رفع خارجي عند التفعيل.
- * يُفعَّل بـ BACKUP_DAILY_ENABLED=true على الخادم (ليس من الواجهة).
+ * يتحقق كل دقيقة من إعدادات النسخ التلقائي (جدول system_backup_config):
+ * التوقيت بتوقيت الرياض (أو timezone المخزّن)، الاحتفاظ بآخر N نسخة، إلخ.
  */
 @Injectable()
 export class BackupSchedulerService {
@@ -12,12 +12,12 @@ export class BackupSchedulerService {
 
   constructor(private readonly backupService: BackupService) {}
 
-  @Cron('0 3 * * *')
-  async handleDailyBackup(): Promise<void> {
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleScheduledBackupTick(): Promise<void> {
     try {
       await this.backupService.runScheduledFullDatabaseBackup();
     } catch (e) {
-      this.logger.error(`Daily backup scheduler error: ${(e as Error).message}`);
+      this.logger.error(`Backup scheduler tick error: ${(e as Error).message}`);
     }
   }
 }
