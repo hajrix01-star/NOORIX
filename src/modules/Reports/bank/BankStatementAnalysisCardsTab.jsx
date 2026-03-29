@@ -16,7 +16,6 @@ import {
   Tooltip,
   CartesianGrid,
   ReferenceLine,
-  Legend,
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { AVAILABLE_ANALYSIS_CARDS } from './useBankStatementView';
@@ -33,6 +32,18 @@ const COLORS = [
   '#2563eb', '#16a34a', '#ca8a04', '#dc2626', '#7c3aed',
   '#0891b2', '#db2777', '#4f46e5', '#ea580c', '#84cc16',
 ];
+
+function truncateLabel(str, max = 20) {
+  const s = String(str || '');
+  if (s.length <= max) return s;
+  return `${s.slice(0, max - 1)}…`;
+}
+
+function estimateYAxisWidth(labels, minW = 140, maxW = 280) {
+  if (!labels.length) return minW;
+  const longest = Math.max(...labels.map((x) => String(x).length));
+  return Math.min(maxW, Math.max(minW, 12 + Math.round(longest * 7.2)));
+}
 
 /* ── Tooltip مخصص للـ AreaChart ── */
 function DailyTooltip({ active, payload, label }) {
@@ -98,50 +109,52 @@ function PieTooltip({ active, payload }) {
 }
 
 /* ── غلاف بطاقة موحد ── */
-function AnalysisCard({ cardId, title, icon, onRemove, children }) {
-  const [hovered, setHovered] = useState(false);
+function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }) {
   return (
     <div
       className="noorix-surface-card"
-      style={{ padding: 0, overflow: 'hidden', position: 'relative' }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: 0,
+        overflow: 'hidden',
+        position: 'relative',
+        borderRadius: 14,
+        border: '1px solid var(--noorix-border)',
+        boxShadow: '0 4px 18px rgba(15, 23, 42, 0.06)',
+      }}
     >
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '14px 18px 12px',
+          gap: 12,
+          padding: '14px 18px',
           borderBottom: '1px solid var(--noorix-border)',
-          background: 'var(--noorix-bg-muted)',
+          background: 'linear-gradient(180deg, var(--noorix-bg-muted) 0%, var(--noorix-surface) 100%)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>{icon}</span>
-          <span style={{ fontWeight: 700, fontSize: 14 }}>{title}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+          <span style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.35 }}>{title}</span>
         </div>
         <button
           type="button"
+          className="noorix-btn noorix-btn--ghost"
           onClick={() => onRemove(cardId)}
           style={{
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            color: '#dc2626',
-            opacity: hovered ? 1 : 0,
-            transition: 'opacity 0.2s',
-            padding: '2px 6px',
-            borderRadius: 6,
-            fontSize: 16,
-            lineHeight: 1,
+            fontSize: 12,
+            color: '#64748b',
+            border: '1px solid var(--noorix-border)',
+            borderRadius: 8,
+            padding: '6px 12px',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
           }}
-          title="حذف البطاقة"
         >
-          ×
+          {removeLabel}
         </button>
       </div>
-      <div style={{ padding: 16 }}>{children}</div>
+      <div style={{ padding: '18px 20px' }}>{children}</div>
     </div>
   );
 }
@@ -193,18 +206,45 @@ export default function BankStatementAnalysisCardsTab({
       .slice(0, 10);
   }, [summaryByCategory]);
 
-  /* بيانات BarChart */
-  const barData = useMemo(() => {
-    return Object.entries(summaryByCategory)
-      .map(([name, d]) => ({
-        name: name.length > 14 ? `${name.slice(0, 13)}…` : name,
-        fullName: name,
-        debit: Math.round(d.totalDebit),
-        credit: Math.round(d.totalCredit),
-      }))
-      .sort((a, b) => b.debit - a.debit)
-      .slice(0, 8);
-  }, [summaryByCategory]);
+  const pieSumDebit = useMemo(() => pieData.reduce((s, p) => s + p.value, 0), [pieData]);
+
+  /* أعمدة أفقية منفصلة: أوضح من دمج سحب+إيداع في نفس المخطط */
+  const barRowsDebit = useMemo(
+    () =>
+      Object.entries(summaryByCategory)
+        .map(([name, d]) => ({
+          fullName: name,
+          name: truncateLabel(name, 26),
+          value: Math.round(d.totalDebit),
+        }))
+        .filter((x) => x.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8),
+    [summaryByCategory],
+  );
+
+  const barRowsCredit = useMemo(
+    () =>
+      Object.entries(summaryByCategory)
+        .map(([name, d]) => ({
+          fullName: name,
+          name: truncateLabel(name, 26),
+          value: Math.round(d.totalCredit),
+        }))
+        .filter((x) => x.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8),
+    [summaryByCategory],
+  );
+
+  const barDebitAxisW = useMemo(
+    () => estimateYAxisWidth(barRowsDebit.map((r) => r.name)),
+    [barRowsDebit],
+  );
+  const barCreditAxisW = useMemo(
+    () => estimateYAxisWidth(barRowsCredit.map((r) => r.name)),
+    [barRowsCredit],
+  );
 
   /* جدول الفئات (للسحوبات والإيداعات) */
   const categoryRows = useMemo(() => {
@@ -230,7 +270,7 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'cash_flow') {
       if (dailyData.length < 2) return null;
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCashFlow')} icon="📈" onRemove={setCardToDelete}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCashFlow')} icon="📈" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div style={{ width: '100%', height: 260 }}>
             <ResponsiveContainer>
               <AreaChart data={dailyData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -271,53 +311,48 @@ export default function BankStatementAnalysisCardsTab({
     /* ── التنبيهات: أكبر السحوبات ── */
     if (cardId === 'alerts') {
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardAlerts')} icon="⚠️" onRemove={setCardToDelete}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardAlerts')} icon="⚠️" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {alerts.length === 0 ? (
             <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>لا توجد سحوبات.</p>
           ) : (
-            <div style={{ display: 'grid', gap: 8 }}>
-              {alerts.map((tx, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '8px 12px',
-                    borderRadius: 8,
-                    background: 'var(--noorix-bg-muted)',
-                    border: '1px solid var(--noorix-border)',
-                    gap: 10,
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, truncate: true, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {(tx.description || '').slice(0, 60)}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 2 }}>{tx.txDate}</div>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 800,
-                      color: '#dc2626',
-                      direction: 'ltr',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {fmt(Number(tx.debit))}
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                className="noorix-btn noorix-btn--ghost"
-                style={{ fontSize: 12, marginTop: 4, alignSelf: 'flex-start' }}
-                onClick={() => { setTypeFilter('debit'); setActiveTab('transactions'); }}
-              >
-                عرض كل السحوبات ←
-              </button>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div style={{ overflow: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
+                      <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>التاريخ</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>الوصف</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap' }}>المبلغ</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700, width: 100 }}>إجراء</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {alerts.map((tx, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 ? 'var(--noorix-bg-muted)' : 'transparent' }}>
+                        <td style={{ padding: '8px 10px', whiteSpace: 'nowrap', color: 'var(--noorix-text-muted)', verticalAlign: 'middle' }}>{tx.txDate}</td>
+                        <td style={{ padding: '8px 10px', maxWidth: 360, verticalAlign: 'middle' }}>
+                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.description || ''}>
+                            {tx.description || '—'}
+                          </div>
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', direction: 'ltr', fontWeight: 800, color: '#dc2626', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          {fmt(Number(tx.debit))}
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center', verticalAlign: 'middle' }}>
+                          <button
+                            type="button"
+                            className="noorix-btn noorix-btn--ghost"
+                            style={{ fontSize: 11, padding: '4px 8px' }}
+                            onClick={() => { setTypeFilter('debit'); setActiveTab('transactions'); }}
+                          >
+                            {t('bankViewTransactions')}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </AnalysisCard>
@@ -327,7 +362,7 @@ export default function BankStatementAnalysisCardsTab({
     /* ── لمحة نقاط البيع ── */
     if (cardId === 'pos_hint') {
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosHint')} icon="💳" onRemove={setCardToDelete}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosHint')} icon="💳" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 100, textAlign: 'center', padding: '12px 16px', background: 'var(--noorix-bg-muted)', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
               <div style={{ fontSize: 28, fontWeight: 800, color: '#2563eb' }}>{posCount}</div>
@@ -346,89 +381,191 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'category_pie') {
       if (!pieData.length) return null;
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="🥧" onRemove={setCardToDelete}>
-          <div style={{ width: '100%', height: 220 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={88}
-                  paddingAngle={2}
-                >
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<PieTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div style={{ display: 'grid', gap: 6, marginTop: 12 }}>
-            {pieData.map((item, i) => (
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="🥧" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'stretch',
+              gap: 24,
+            }}
+          >
+            <div style={{ flex: '1 1 300px', minWidth: 280, position: 'relative', height: 320 }}>
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={74}
+                    outerRadius={118}
+                    paddingAngle={2}
+                    label={({ percent }) => (percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : '')}
+                    labelLine={{ stroke: '#94a3b8', strokeWidth: 1 }}
+                  >
+                    {pieData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="#fff" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<PieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
               <div
-                key={item.name}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontSize: 12,
-                  cursor: 'pointer',
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center',
+                  pointerEvents: 'none',
+                  maxWidth: 100,
                 }}
-                onClick={() => { setCategoryFilter(item.name); setActiveTab('transactions'); }}
-                title="انقر لفلترة العمليات"
               >
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: '50%',
-                    background: COLORS[i % COLORS.length],
-                    flexShrink: 0,
-                  }}
-                />
-                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
-                <span style={{ color: 'var(--noorix-text-muted)', flexShrink: 0 }}>{item.percent}%</span>
-                <span style={{ fontWeight: 700, direction: 'ltr', flexShrink: 0 }}>{fmt(item.value)}</span>
+                <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 600, lineHeight: 1.2 }}>
+                  إجمالي السحوبات
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, direction: 'ltr', color: 'var(--noorix-text)', marginTop: 4 }}>
+                  {fmt(pieSumDebit)}
+                </div>
               </div>
-            ))}
+            </div>
+            <div style={{ flex: '1 1 240px', minWidth: 220, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 10 }}>
+                مفتاح الفئات (انقر للتصفية)
+              </div>
+              <div
+                style={{
+                  border: '1px solid var(--noorix-border)',
+                  borderRadius: 12,
+                  padding: 12,
+                  background: 'var(--noorix-bg-muted)',
+                  flex: 1,
+                  display: 'grid',
+                  gap: 8,
+                }}
+              >
+                {pieData.map((item, i) => (
+                  <button
+                    key={item.name}
+                    type="button"
+                    onClick={() => { setCategoryFilter(item.name); setActiveTab('transactions'); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      background: 'var(--noorix-surface)',
+                      border: '1px solid var(--noorix-border)',
+                      borderRadius: 10,
+                      padding: '8px 10px',
+                      textAlign: 'right',
+                      width: '100%',
+                      color: 'inherit',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: COLORS[i % COLORS.length],
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                      {item.name}
+                    </span>
+                    <span style={{ color: 'var(--noorix-text-muted)', flexShrink: 0, fontSize: 12 }}>{item.percent}%</span>
+                    <span style={{ fontWeight: 800, direction: 'ltr', flexShrink: 0, fontSize: 13 }}>{fmt(item.value)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </AnalysisCard>
       );
     }
 
-    /* ── أعمدة التصنيفات ── */
+    /* ── أعمدة التصنيفات (سحوبات / إيداعات منفصلة) ── */
     if (cardId === 'category_bar') {
-      if (!barData.length) return null;
-      return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryBar')} icon="📊" onRemove={setCardToDelete}>
-          <div style={{ width: '100%', height: 280 }}>
-            <ResponsiveContainer>
-              <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
-                <YAxis type="category" dataKey="name" width={108} tick={{ fontSize: 10 }} />
-                <Tooltip
-                  formatter={(v, name) => [fmt(Number(v)), name === 'debit' ? 'سحوبات' : 'إيداعات']}
-                  labelFormatter={(_, p) => p?.[0]?.payload?.fullName || ''}
-                />
-                <Bar dataKey="debit" fill="#dc2626" name="سحوبات" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="credit" fill="#16a34a" name="إيداعات" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <span style={{ width: 12, height: 12, borderRadius: 3, background: '#dc2626', display: 'inline-block' }} />
-              <span>سحوبات</span>
+      if (!barRowsDebit.length && !barRowsCredit.length) return null;
+
+      const renderBarBlock = (rows, blockTitle, color, yAxisW) => {
+        if (!rows.length) return null;
+        const h = Math.max(168, 52 + rows.length * 46);
+        return (
+          <div style={{ marginBottom: 8 }}>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: 'var(--noorix-text-muted)',
+                marginBottom: 10,
+                paddingBottom: 6,
+                borderBottom: '1px solid var(--noorix-border)',
+              }}
+            >
+              {blockTitle}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <span style={{ width: 12, height: 12, borderRadius: 3, background: '#16a34a', display: 'inline-block' }} />
-              <span>إيداعات</span>
+            <div style={{ width: '100%', height: h }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={rows} layout="vertical" margin={{ left: 4, right: 32, top: 6, bottom: 6 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    tick={{ fontSize: 11, fill: 'var(--noorix-text-muted)' }}
+                    tickFormatter={(v) => (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={yAxisW}
+                    tick={{ fontSize: 12, fill: 'var(--noorix-text)' }}
+                    interval={0}
+                  />
+                  <Tooltip
+                    formatter={(v) => [fmt(Number(v)), blockTitle]}
+                    labelFormatter={(_, p) => p?.[0]?.payload?.fullName || ''}
+                    contentStyle={{
+                      borderRadius: 10,
+                      border: '1px solid var(--noorix-border)',
+                      fontSize: 12,
+                      direction: 'rtl',
+                    }}
+                  />
+                  <Bar dataKey="value" fill={color} radius={[0, 6, 6, 0]} barSize={28} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryBar')} icon="📊" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+          {renderBarBlock(barRowsDebit, 'أعلى الفئات — السحوبات', '#dc2626', barDebitAxisW)}
+          {renderBarBlock(barRowsCredit, 'أعلى الفئات — الإيداعات', '#16a34a', barCreditAxisW)}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: 28,
+              marginTop: 16,
+              paddingTop: 16,
+              borderTop: '1px solid var(--noorix-border)',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: '#dc2626', display: 'inline-block' }} />
+              <span style={{ fontWeight: 600 }}>سحوبات</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: '#16a34a', display: 'inline-block' }} />
+              <span style={{ fontWeight: 600 }}>إيداعات</span>
             </div>
           </div>
         </AnalysisCard>
@@ -438,7 +575,7 @@ export default function BankStatementAnalysisCardsTab({
     /* ── جدول الفئات ── */
     if (cardId === 'category_table') {
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryTable')} icon="📋" onRemove={setCardToDelete}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryTable')} icon="📋" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div style={{ overflow: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 540 }}>
               <thead>
@@ -516,7 +653,7 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'deposits_table') {
       const totalDep = depositsByCategory.reduce((s, r) => s + r.total, 0);
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardDepositsTable')} icon="💰" onRemove={setCardToDelete}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardDepositsTable')} icon="💰" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {depositsByCategory.length === 0 ? (
             <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>لا توجد إيداعات.</p>
           ) : (
@@ -582,68 +719,57 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'pos_terminals') {
       const totalPOS = posTerminals.reduce((s, t) => s + t.total, 0);
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosTerminals')} icon="🏪" onRemove={setCardToDelete}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosTerminals')} icon="🏪" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {posTerminals.length === 0 ? (
             <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>
               لم يتم الكشف عن أجهزة نقاط بيع في هذا الكشف.
             </p>
           ) : (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
-                <div style={{ padding: '10px 14px', background: 'var(--noorix-bg-muted)', borderRadius: 10, border: '1px solid var(--noorix-border)', textAlign: 'center' }}>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+                <div style={{ padding: '12px 14px', background: 'var(--noorix-bg-muted)', borderRadius: 12, border: '1px solid var(--noorix-border)', textAlign: 'center' }}>
                   <div style={{ fontSize: 22, fontWeight: 800, color: '#16a34a' }}>{posTerminals.reduce((s, t) => s + t.count, 0)}</div>
-                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 2 }}>عدد العمليات</div>
+                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4 }}>عدد العمليات</div>
                 </div>
-                <div style={{ padding: '10px 14px', background: 'var(--noorix-bg-muted)', borderRadius: 10, border: '1px solid var(--noorix-border)', textAlign: 'center' }}>
+                <div style={{ padding: '12px 14px', background: 'var(--noorix-bg-muted)', borderRadius: 12, border: '1px solid var(--noorix-border)', textAlign: 'center' }}>
                   <div style={{ fontSize: 18, fontWeight: 800, color: '#16a34a', direction: 'ltr' }}>{fmt(totalPOS)}</div>
-                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 2 }}>إجمالي المبيعات</div>
+                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4 }}>إجمالي المبيعات</div>
                 </div>
               </div>
-              {posTerminals.slice(0, 6).map((term, i) => {
-                const pct = totalPOS > 0 ? (term.total / totalPOS) * 100 : 0;
-                return (
-                  <div
-                    key={term.terminalId}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '8px 12px',
-                      background: 'var(--noorix-bg-muted)',
-                      borderRadius: 8,
-                      border: '1px solid var(--noorix-border)',
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: i === 0 ? '#2563eb' : i === 1 ? '#16a34a' : '#94a3b8',
-                        color: '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {i + 1}
-                    </span>
-                    <code style={{ fontSize: 11, background: 'var(--noorix-border)', padding: '2px 6px', borderRadius: 4, flexShrink: 0 }}>
-                      …{term.terminalId.slice(-6)}
-                    </code>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <ProgressBar value={term.total} max={totalPOS} color={COLORS[i % COLORS.length]} />
-                    </div>
-                    <div style={{ textAlign: 'left', flexShrink: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#16a34a', direction: 'ltr' }}>{fmt(term.total)}</div>
-                      <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>{term.count} عملية · {pct.toFixed(1)}%</div>
-                    </div>
-                  </div>
-                );
-              })}
+              <div style={{ overflow: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
+                      <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, width: 40 }}>#</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>الجهاز</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700 }}>العمليات</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>المبلغ</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>النسبة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {posTerminals.slice(0, 8).map((term, i) => {
+                      const pct = totalPOS > 0 ? (term.total / totalPOS) * 100 : 0;
+                      return (
+                        <tr key={term.terminalId} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 ? 'var(--noorix-bg-muted)' : 'transparent' }}>
+                          <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{i + 1}</td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <code style={{ fontSize: 11, background: 'var(--noorix-border)', padding: '4px 8px', borderRadius: 6 }}>…{term.terminalId.slice(-8)}</code>
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>{term.count}</td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', direction: 'ltr', fontWeight: 800, color: '#16a34a' }}>{fmt(term.total)}</td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                              <ProgressBar value={term.total} max={totalPOS} color={COLORS[i % COLORS.length]} />
+                              <span style={{ minWidth: 36, fontSize: 11, color: 'var(--noorix-text-muted)' }}>{pct.toFixed(1)}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </AnalysisCard>
