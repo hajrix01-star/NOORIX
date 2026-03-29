@@ -100,6 +100,26 @@ export default {
     ar: 'بعد الاستيراد اربط الأصناف من عمود category في قالب الأصناف.',
     en: 'After import, link products via the category column in the products template.',
   },
+  ordersPresetCatalogButton: {
+    ar: 'إدراج قائمة الأصناف المقترحة (~٥٠ صنفاً)',
+    en: 'Insert suggested catalog (~50 items)',
+  },
+  ordersPresetCatalogHint: {
+    ar: 'يُنشئ الفئات الناقصة ثم يضيف الأصناف غير الموجودة مسبقاً (بدون أسعار — يمكنك تعديلها لاحقاً). تصنيف «جرجير» تحت خضروات وفواكه.',
+    en: 'Creates missing categories then adds products not already listed (no prices — edit later). Rocket leaves under Vegetables & fruit.',
+  },
+  ordersPresetInserted: {
+    ar: 'تمت إضافة {0} صنفاً جديداً. تخطّي {1} (موجود مسبقاً). فئات أُضيفت: {2}.',
+    en: 'Added {0} new products. Skipped {1} (already exist). Categories added: {2}.',
+  },
+  ordersPresetAllExist: {
+    ar: 'جميع أصناف القائمة موجودة مسبقاً — لم يُضف شيء.',
+    en: 'All catalog products already exist — nothing added.',
+  },
+  ordersPresetCategoriesOnly: {
+    ar: 'تمت إضافة {0} فئة جديدة. أصناف القائمة كلها كانت موجودة مسبقاً.',
+    en: 'Added {0} new categories. All catalog products were already present.',
+  },
   ordersDeleteConfirm: { ar: 'إلغاء الطلب "{0}"؟', en: 'Cancel order "{0}"?' },
   ordersOrderCancelled: { ar: 'تم إلغاء الطلب', en: 'Order cancelled' },
   ordersOrderUpdated: { ar: 'تم تحديث الطلب بنجاح', en: 'Order updated successfully' },

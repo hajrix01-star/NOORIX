@@ -3,6 +3,7 @@
  * إعادة بناء مع قوائم منسدلة للأحجام والتغليف + خيار إضافة جديد
  */
 import React, { useState, useRef, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
   useOrderProducts,
@@ -34,6 +35,13 @@ import {
 } from '../constants/importTemplate';
 import { AddSizeModal } from './AddSizeModal';
 import { AddPackagingModal } from './AddPackagingModal';
+import { BROASTED_PRESET_ORDER_PRODUCTS } from '../data/broastedPresetCatalog';
+import {
+  getOrderCategories,
+  getOrderProducts,
+  createOrderCategoriesBatch,
+  createOrderProductsBatch,
+} from '../../../services/api';
 
 const inputStyle = {
   width: '100%', padding: '9px 12px', borderRadius: 8,
@@ -43,6 +51,7 @@ const inputStyle = {
 
 export function ItemsManageTab({ companyId }) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [activeSubTab, setActiveSubTab] = useState('products');
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [editingProduct, setEditingProduct] = useState(null);
@@ -55,6 +64,7 @@ export function ItemsManageTab({ companyId }) {
   const [newPackaging, setNewPackaging] = useState({ ar: '', en: '' });
   const [sizesKey, setSizesKey] = useState(0);
   const [packagingKey, setPackagingKey] = useState(0);
+  const [presetBusy, setPresetBusy] = useState(false);
 
   const { data: products = [] } = useOrderProducts(companyId);
   const { data: categories = [] } = useOrderCategories(companyId);
@@ -170,6 +180,55 @@ export function ItemsManageTab({ companyId }) {
     }),
     [],
   );
+
+  async function handleInsertPresetCatalog() {
+    if (!companyId || presetBusy) return;
+    setPresetBusy(true);
+    try {
+      let catRes = await getOrderCategories(companyId);
+      const catMap = new Map((catRes?.data ?? []).map((c) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]));
+      const presetCategoryNames = [...new Set(BROASTED_PRESET_ORDER_PRODUCTS.map((p) => p.categoryAr))];
+      const missingCats = presetCategoryNames.filter((n) => !catMap.has(String(n).trim().toLowerCase()));
+      let catsAdded = 0;
+      if (missingCats.length) {
+        const batchRes = await createOrderCategoriesBatch(companyId, missingCats.map((nameAr) => ({ nameAr })));
+        if (!batchRes?.success) throw new Error(batchRes?.error || t('addFailed'));
+        catsAdded = missingCats.length;
+        catRes = await getOrderCategories(companyId);
+        (catRes?.data ?? []).forEach((c) => catMap.set(String(c.nameAr ?? '').trim().toLowerCase(), c.id));
+      }
+      let prodRes = await getOrderProducts(companyId);
+      const existingNames = new Set((prodRes?.data ?? []).map((p) => String(p.nameAr ?? '').trim().toLowerCase()));
+      const productsPayload = BROASTED_PRESET_ORDER_PRODUCTS.filter((p) => !existingNames.has(p.nameAr.trim().toLowerCase())).map((p) => ({
+        nameAr: p.nameAr,
+        categoryId: catMap.get(p.categoryAr.trim().toLowerCase()) || undefined,
+      }));
+      let added = 0;
+      if (productsPayload.length) {
+        const batchRes = await createOrderProductsBatch(companyId, productsPayload);
+        if (!batchRes?.success) throw new Error(batchRes?.error || t('addFailed'));
+        added = productsPayload.length;
+      }
+      queryClient.invalidateQueries({ queryKey: ['order-products', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['order-categories', companyId] });
+      const skipped = BROASTED_PRESET_ORDER_PRODUCTS.length - added;
+      if (added === 0 && catsAdded === 0) {
+        setToast({ visible: true, message: t('ordersPresetAllExist'), type: 'success' });
+      } else if (added === 0 && catsAdded > 0) {
+        setToast({ visible: true, message: t('ordersPresetCategoriesOnly', String(catsAdded)), type: 'success' });
+      } else {
+        setToast({
+          visible: true,
+          message: t('ordersPresetInserted', String(added), String(skipped), String(catsAdded)),
+          type: 'success',
+        });
+      }
+    } catch (e) {
+      setToast({ visible: true, message: e?.message || t('addFailed'), type: 'error' });
+    } finally {
+      setPresetBusy(false);
+    }
+  }
 
   async function handleDownloadProductsImportTemplate() {
     try {
@@ -388,13 +447,19 @@ export function ItemsManageTab({ companyId }) {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
                   <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} style={{ display: 'none' }} />
+                  <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
+                    {presetBusy ? t('saving') : `📋 ${t('ordersPresetCatalogButton')}`}
+                  </button>
                   <button type="button" className="noorix-btn-nav" onClick={handleDownloadProductsImportTemplate}>
                     📄 {t('ordersDownloadImportTemplate')}
                   </button>
                   <button type="button" className="noorix-btn-nav" onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>📥 {t('import')}</button>
                   <button type="button" className="noorix-btn-nav" onClick={handleExportProducts} disabled={products.length === 0}>📤 {t('exportExcel')}</button>
                 </div>
-                <p style={{ margin: 0, fontSize: 11, color: 'var(--noorix-text-muted)', maxWidth: 520, textAlign: 'right', lineHeight: 1.45 }}>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--noorix-text-muted)', maxWidth: 560, textAlign: 'right', lineHeight: 1.45 }}>
+                  {t('ordersPresetCatalogHint')}
+                </p>
+                <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--noorix-text-muted)', maxWidth: 560, textAlign: 'right', lineHeight: 1.45 }}>
                   {t('ordersImportTemplateHintProducts')}
                 </p>
               </div>

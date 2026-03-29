@@ -725,10 +725,10 @@ export async function createOrderProduct(body) {
   return apiPost('/api/v1/orders/products', body);
 }
 export async function createOrderProductsBatch(companyId, products) {
-  return apiPost('/api/v1/orders/products/batch', { companyId, products });
+  return apiPost('/api/v1/orders/products/batch', { companyId, products }, { timeout: 90000 });
 }
 export async function createOrderCategoriesBatch(companyId, categories) {
-  return apiPost('/api/v1/orders/categories/batch', { companyId, categories });
+  return apiPost('/api/v1/orders/categories/batch', { companyId, categories }, { timeout: 60000 });
 }
 export async function updateOrderProduct(id, body, companyId) {
   return apiPatch(`/api/v1/orders/products/${id}?companyId=${companyId}`, body);
