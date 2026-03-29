@@ -406,6 +406,31 @@ export async function bankStatementClassificationRuleDelete(companyId, ruleId) {
   return apiDelete(`/api/v1/bank-statements/classification-rules/${ruleId}?companyId=${companyId}`);
 }
 
+/** تصدير حزمة قواعد التصنيف (فئات شجرية + قواعد مسطّحة) — JSON */
+export async function bankStatementClassificationRulesExportPack(companyId) {
+  const res = await apiGet('/api/v1/bank-statements/classification-rules/export-pack', { companyId });
+  if (!res.success) return res;
+  return { success: true, data: res.data };
+}
+
+/** استيراد حزمة من ملف JSON — mode: merge | replace */
+export async function bankStatementClassificationRulesImportPack(companyId, pack, mode = 'merge') {
+  return apiPost('/api/v1/bank-statements/classification-rules/import-pack', {
+    companyId,
+    mode,
+    pack,
+  });
+}
+
+/** نسخ القواعد من شركة أخرى في نفس المستأجر — mode: merge | replace */
+export async function bankStatementClassificationRulesImportFromCompany(companyId, sourceCompanyId, mode = 'merge') {
+  return apiPost('/api/v1/bank-statements/classification-rules/import-from-company', {
+    companyId,
+    sourceCompanyId,
+    mode,
+  });
+}
+
 // ——— موارد ———
 
 export async function getCompanies(includeArchived = false) {

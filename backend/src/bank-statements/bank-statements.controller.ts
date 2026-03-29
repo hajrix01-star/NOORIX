@@ -7,10 +7,12 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -192,6 +194,13 @@ export class BankStatementsController {
     return this.service.seedDefaultTreeCategoriesIfEmpty(body.companyId);
   }
 
+  @Get('classification-rules/export-pack')
+  @RequirePermission('REPORTS_READ')
+  async exportClassificationPack(@Query('companyId') companyId: string) {
+    if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    return this.service.exportClassificationPack(companyId);
+  }
+
   @Get('classification-rules')
   @RequirePermission('REPORTS_READ')
   async listRules(@Query('companyId') companyId: string) {
@@ -222,6 +231,34 @@ export class BankStatementsController {
   async deleteRule(@Query('companyId') companyId: string, @Param('rid') rid: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.deleteClassificationRule(companyId, rid);
+  }
+
+  @Post('classification-rules/import-pack')
+  @RequirePermission('REPORTS_READ')
+  async importClassificationPack(
+    @Body() body: { companyId: string; mode?: string; pack: unknown },
+  ) {
+    if (!body?.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    if (body.pack == null) throw new HttpException('pack مطلوب', HttpStatus.BAD_REQUEST);
+    const mode = body.mode === 'replace' ? 'replace' : 'merge';
+    return this.service.importClassificationPack(body.companyId, body.pack, mode);
+  }
+
+  @Post('classification-rules/import-from-company')
+  @RequirePermission('REPORTS_READ')
+  async importClassificationFromCompany(
+    @Body() body: { companyId: string; sourceCompanyId: string; mode?: string },
+    @Req() req: Request & { user: { companyIds?: string[]; role?: string } },
+  ) {
+    if (!body?.companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
+    if (!body?.sourceCompanyId) throw new HttpException('sourceCompanyId مطلوب', HttpStatus.BAD_REQUEST);
+    const mode = body.mode === 'replace' ? 'replace' : 'merge';
+    return this.service.importClassificationFromCompany(
+      body.companyId,
+      body.sourceCompanyId,
+      mode,
+      req.user || {},
+    );
   }
 
   @Get(':id')

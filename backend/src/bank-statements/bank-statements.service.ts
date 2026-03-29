@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -16,6 +16,38 @@ import {
   type BankRowMapping,
 } from './bank-statement-row-parser';
 import { DEFAULT_BANK_TREE_CATEGORY_SEEDS } from './default-bank-tree-categories.seed';
+import { isSuperAdmin } from '../auth/constants/permissions';
+
+const CLASSIFICATION_PACK_VERSION = 1;
+const IMPORT_MAX_TREE = 400;
+const IMPORT_MAX_RULES = 8000;
+
+export type BankClassificationPackRow = {
+  name: string;
+  sortOrder: number;
+  isActive: boolean;
+  transactionSide: string;
+  transactionType: string | null;
+  parentKeywords: string[];
+  classifications: { name: string; keywords: string[] }[];
+};
+
+export type BankClassificationRulePackRow = {
+  keyword: string;
+  matchType: string;
+  categoryName: string;
+  transactionSide: string;
+  transactionType: string | null;
+  isActive: boolean;
+  priority: number;
+};
+
+export type BankClassificationExportPack = {
+  version: number;
+  exportedAt: string;
+  treeCategories: BankClassificationPackRow[];
+  classificationRules: BankClassificationRulePackRow[];
+};
 
 /** مطابقة كلمات مفتاحية للعناوين الشائعة في كشوف الحساب */
 const HEADER_KEYWORDS: Record<string, string[]> = {
@@ -797,6 +829,243 @@ export class BankStatementsService {
     const n = await this.prisma.bankClassificationRule.deleteMany({ where: { id, companyId } });
     if (n.count === 0) throw new BadRequestException('السجل غير موجود');
     return { success: true };
+  }
+
+  private normalizeParentKeywordsJson(raw: unknown): string[] {
+    if (!Array.isArray(raw)) return [];
+    return raw.map((x) => String(x ?? '').trim()).filter(Boolean);
+  }
+
+  private normalizeClassificationsJson(raw: unknown): { name: string; keywords: string[] }[] {
+    if (!Array.isArray(raw)) return [];
+    return raw.map((c: { name?: unknown; keywords?: unknown }) => ({
+      name: String(c?.name ?? '').trim(),
+      keywords: Array.isArray(c?.keywords)
+        ? c.keywords.map((k: unknown) => String(k ?? '').toLowerCase().trim()).filter(Boolean)
+        : [],
+    }));
+  }
+
+  async exportClassificationPack(companyId: string): Promise<BankClassificationExportPack> {
+    const trees = await this.listTreeCategories(companyId);
+    const rules = await this.listClassificationRules(companyId);
+    return {
+      version: CLASSIFICATION_PACK_VERSION,
+      exportedAt: new Date().toISOString(),
+      treeCategories: trees.map((t) => ({
+        name: t.name,
+        sortOrder: t.sortOrder,
+        isActive: t.isActive,
+        transactionSide: t.transactionSide,
+        transactionType: t.transactionType,
+        parentKeywords: this.normalizeParentKeywordsJson(t.parentKeywords),
+        classifications: this.normalizeClassificationsJson(t.classifications),
+      })),
+      classificationRules: rules.map((r) => ({
+        keyword: r.keyword,
+        matchType: r.matchType,
+        categoryName: r.categoryName,
+        transactionSide: r.transactionSide,
+        transactionType: r.transactionType,
+        isActive: r.isActive,
+        priority: r.priority,
+      })),
+    };
+  }
+
+  private parseClassificationPack(pack: unknown): BankClassificationExportPack {
+    if (!pack || typeof pack !== 'object') {
+      throw new BadRequestException('ملف الحزمة غير صالح.');
+    }
+    const p = pack as Record<string, unknown>;
+    if (p.version !== CLASSIFICATION_PACK_VERSION) {
+      throw new BadRequestException('إصدار حزمة التصنيف غير مدعوم (يتوقع الإصدار 1).');
+    }
+    const rawTree = Array.isArray(p.treeCategories) ? p.treeCategories : [];
+    const rawRules = Array.isArray(p.classificationRules) ? p.classificationRules : [];
+    if (rawTree.length > IMPORT_MAX_TREE) {
+      throw new BadRequestException(`عدد فئات الشجرة يتجاوز الحد (${IMPORT_MAX_TREE}).`);
+    }
+    if (rawRules.length > IMPORT_MAX_RULES) {
+      throw new BadRequestException(`عدد القواعد يتجاوز الحد (${IMPORT_MAX_RULES}).`);
+    }
+
+    const treeCategories: BankClassificationPackRow[] = [];
+    for (const row of rawTree) {
+      if (!row || typeof row !== 'object') continue;
+      const o = row as Record<string, unknown>;
+      const name = String(o.name ?? '').trim();
+      if (!name) continue;
+      const classifications = this.normalizeClassificationsJson(o.classifications);
+      if (!classifications.length || classifications.every((c) => !c.keywords.length)) {
+        throw new BadRequestException(`فئة الشجرة «${name}» بلا كلمات مفتاحية في التصنيفات.`);
+      }
+      treeCategories.push({
+        name,
+        sortOrder: Number.isFinite(Number(o.sortOrder)) ? Number(o.sortOrder) : 100,
+        isActive: o.isActive !== false,
+        transactionSide: String(o.transactionSide ?? 'any') || 'any',
+        transactionType: o.transactionType == null || o.transactionType === '' ? null : String(o.transactionType),
+        parentKeywords: Array.isArray(o.parentKeywords)
+          ? o.parentKeywords.map((x: unknown) => String(x ?? '').toLowerCase().trim()).filter(Boolean)
+          : [],
+        classifications,
+      });
+    }
+
+    const classificationRules: BankClassificationRulePackRow[] = [];
+    for (const row of rawRules) {
+      if (!row || typeof row !== 'object') continue;
+      const o = row as Record<string, unknown>;
+      const keyword = String(o.keyword ?? '').trim();
+      const categoryName = String(o.categoryName ?? '').trim();
+      if (!keyword || !categoryName) continue;
+      classificationRules.push({
+        keyword,
+        matchType: String(o.matchType ?? 'contains') || 'contains',
+        categoryName,
+        transactionSide: String(o.transactionSide ?? 'any') || 'any',
+        transactionType: o.transactionType == null || o.transactionType === '' ? null : String(o.transactionType),
+        isActive: o.isActive !== false,
+        priority: Number.isFinite(Number(o.priority)) ? Number(o.priority) : 0,
+      });
+    }
+
+    return {
+      version: CLASSIFICATION_PACK_VERSION,
+      exportedAt: typeof p.exportedAt === 'string' ? p.exportedAt : new Date().toISOString(),
+      treeCategories,
+      classificationRules,
+    };
+  }
+
+  private assertSourceCompanyAccessible(
+    sourceCompanyId: string,
+    targetCompanyId: string,
+    user: { companyIds?: string[]; role?: string },
+  ) {
+    if (sourceCompanyId === targetCompanyId) {
+      throw new BadRequestException('شركة المصدر يجب أن تختلف عن الشركة الحالية.');
+    }
+    if (!isSuperAdmin(String(user?.role || '').toLowerCase())) {
+      const ids = user?.companyIds || [];
+      if (!ids.includes(sourceCompanyId)) {
+        throw new ForbiddenException('غير مصرح لك بالوصول لشركة المصدر.');
+      }
+    }
+  }
+
+  async importClassificationFromCompany(
+    targetCompanyId: string,
+    sourceCompanyId: string,
+    mode: 'merge' | 'replace',
+    user: { companyIds?: string[]; role?: string },
+  ) {
+    const tenantId = TenantContext.getTenantId();
+    this.assertSourceCompanyAccessible(sourceCompanyId, targetCompanyId, user);
+
+    const source = await this.prisma.company.findFirst({
+      where: { id: sourceCompanyId },
+      select: { id: true, tenantId: true },
+    });
+    const target = await this.prisma.company.findFirst({
+      where: { id: targetCompanyId },
+      select: { id: true, tenantId: true },
+    });
+    if (!source || !target || source.tenantId !== tenantId || target.tenantId !== tenantId) {
+      throw new BadRequestException('الشركتان يجب أن تنتميان لنفس المستأجر.');
+    }
+
+    const pack = await this.exportClassificationPack(sourceCompanyId);
+    return this.importClassificationPack(targetCompanyId, pack, mode);
+  }
+
+  async importClassificationPack(
+    companyId: string,
+    pack: unknown,
+    mode: 'merge' | 'replace',
+  ): Promise<{
+    success: true;
+    treeCreated: number;
+    treeSkipped: number;
+    rulesCreated: number;
+    rulesSkipped: number;
+  }> {
+    const tenantId = TenantContext.getTenantId();
+    const data = this.parseClassificationPack(pack);
+
+    if (mode === 'replace') {
+      await this.prisma.bankTreeCategory.deleteMany({ where: { companyId } });
+      await this.prisma.bankClassificationRule.deleteMany({ where: { companyId } });
+    }
+
+    let treeCreated = 0;
+    let treeSkipped = 0;
+    const existingTreeNames = new Set(
+      (await this.prisma.bankTreeCategory.findMany({ where: { companyId }, select: { name: true } })).map((x) =>
+        x.name.trim().toLowerCase(),
+      ),
+    );
+
+    for (const row of data.treeCategories) {
+      const key = row.name.trim().toLowerCase();
+      if (mode === 'merge' && existingTreeNames.has(key)) {
+        treeSkipped += 1;
+        continue;
+      }
+      existingTreeNames.add(key);
+      await this.prisma.bankTreeCategory.create({
+        data: {
+          tenantId,
+          companyId,
+          name: row.name,
+          sortOrder: row.sortOrder,
+          isActive: row.isActive,
+          transactionSide: row.transactionSide,
+          transactionType: row.transactionType,
+          parentKeywords: row.parentKeywords as object,
+          classifications: row.classifications as object,
+        },
+      });
+      treeCreated += 1;
+    }
+
+    const existingRuleKeys = new Set<string>();
+    if (mode === 'merge') {
+      const rdb = await this.prisma.bankClassificationRule.findMany({ where: { companyId } });
+      for (const r of rdb) {
+        existingRuleKeys.add(
+          `${r.keyword.toLowerCase()}|${r.categoryName.toLowerCase()}|${r.matchType}|${r.transactionSide}`,
+        );
+      }
+    }
+
+    let rulesCreated = 0;
+    let rulesSkipped = 0;
+    for (const row of data.classificationRules) {
+      const rk = `${row.keyword.toLowerCase()}|${row.categoryName.toLowerCase()}|${row.matchType}|${row.transactionSide}`;
+      if (mode === 'merge' && existingRuleKeys.has(rk)) {
+        rulesSkipped += 1;
+        continue;
+      }
+      existingRuleKeys.add(rk);
+      await this.prisma.bankClassificationRule.create({
+        data: {
+          tenantId,
+          companyId,
+          keyword: row.keyword,
+          matchType: row.matchType,
+          categoryName: row.categoryName,
+          transactionSide: row.transactionSide,
+          transactionType: row.transactionType,
+          isActive: row.isActive,
+          priority: row.priority,
+        },
+      });
+      rulesCreated += 1;
+    }
+
+    return { success: true, treeCreated, treeSkipped, rulesCreated, rulesSkipped };
   }
 
   // ── داخلي: قالب بعد التأكيد + تصنيف + ملخص (مطابقة تدفق Base44) ──

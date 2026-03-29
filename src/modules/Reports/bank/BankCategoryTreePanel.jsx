@@ -1,6 +1,6 @@
 /**
  * مطابق CategoryTreeManager.jsx + CategoryCard + CategoryFormDialog في Base44
- * (بدون استيراد من شركة أخرى — لا يوجد API مطابق)
+ * + تصدير/استيراد حزمة القواعد (فئات شجرية + قواعد مسطّحة) من ملف أو من شركة أخرى.
  */
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,9 @@ import {
   bankStatementTreeCategoryDelete,
   bankStatementTreeCategoriesSeedDefaults,
   bankStatementClassificationRulesList,
+  bankStatementClassificationRulesExportPack,
+  bankStatementClassificationRulesImportPack,
+  bankStatementClassificationRulesImportFromCompany,
 } from '../../../services/api';
 import { TRANSACTION_TYPES, TRANSACTION_SIDES, getTransactionTypeInfo, getTransactionSideInfo } from './bankRuleConstants';
 
@@ -407,13 +410,25 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
   );
 }
 
-export default function BankCategoryTreePanel({ companyId, showToast }) {
+export default function BankCategoryTreePanel({ companyId, companies = [], showToast }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [showMigrate, setShowMigrate] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importSource, setImportSource] = useState('company');
+  const [importMode, setImportMode] = useState('merge');
+  const [importSourceCompanyId, setImportSourceCompanyId] = useState('');
+  const [importFile, setImportFile] = useState(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+
+  const otherCompanies = useMemo(
+    () => (companies || []).filter((c) => c.id && c.id !== companyId),
+    [companies, companyId],
+  );
 
   const qKey = ['bank-tree-categories', companyId];
   const { data: categories = [], isLoading } = useQuery({
@@ -538,6 +553,89 @@ export default function BankCategoryTreePanel({ companyId, showToast }) {
     setShowForm(true);
   }, []);
 
+  const invalidateRulesQueries = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ['bank-tree-categories', companyId] });
+    qc.invalidateQueries({ queryKey: ['bank-classification-rules', companyId] });
+  }, [qc, companyId]);
+
+  const handleExportRules = async () => {
+    setExportBusy(true);
+    try {
+      const res = await bankStatementClassificationRulesExportPack(companyId);
+      if (!res.success) throw new Error(res.error || 'export');
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `noorix-bank-rules-${String(companyId).slice(-8)}-${new Date().toISOString().slice(0, 10)}.json`;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast?.(t('bankRulesExportDone'));
+    } catch (e) {
+      showToast?.(e?.message || 'Error', 'error');
+    } finally {
+      setExportBusy(false);
+    }
+  };
+
+  const openImportModal = () => {
+    const hasOthers = otherCompanies.length > 0;
+    setImportSource(hasOthers ? 'company' : 'file');
+    setImportMode('merge');
+    setImportFile(null);
+    setImportSourceCompanyId(otherCompanies[0]?.id || '');
+    setShowImportModal(true);
+  };
+
+  const runPackImport = async () => {
+    if (importMode === 'replace' && !window.confirm(t('bankRulesImportReplaceConfirm'))) return;
+    setImportBusy(true);
+    try {
+      let res;
+      if (importSource === 'company') {
+        if (!importSourceCompanyId) {
+          showToast?.(t('bankRulesSelectCompany'), 'error');
+          return;
+        }
+        res = await bankStatementClassificationRulesImportFromCompany(companyId, importSourceCompanyId, importMode);
+      } else {
+        if (!importFile) {
+          showToast?.(t('bankRulesPickFile'), 'error');
+          return;
+        }
+        const text = await importFile.text();
+        let pack;
+        try {
+          pack = JSON.parse(text);
+        } catch {
+          throw new Error(t('bankRulesInvalidFile'));
+        }
+        res = await bankStatementClassificationRulesImportPack(companyId, pack, importMode);
+      }
+      if (!res.success) throw new Error(res.error || 'import');
+      const d = res.data ?? res;
+      showToast?.(
+        t(
+          'bankRulesImportDone',
+          String(d.treeCreated ?? 0),
+          String(d.treeSkipped ?? 0),
+          String(d.rulesCreated ?? 0),
+          String(d.rulesSkipped ?? 0),
+        ),
+      );
+      setShowImportModal(false);
+      setImportFile(null);
+      invalidateRulesQueries();
+    } catch (e) {
+      showToast?.(e?.message || 'Error', 'error');
+    } finally {
+      setImportBusy(false);
+    }
+  };
+
   if (!companyId) return null;
 
   return (
@@ -577,6 +675,12 @@ export default function BankCategoryTreePanel({ companyId, showToast }) {
             {t('bankTreeMigrateOldRules', String(activeFlat.length))}
           </button>
         ) : null}
+        <button type="button" className="noorix-btn noorix-btn--secondary" disabled={exportBusy} onClick={handleExportRules}>
+          {exportBusy ? '…' : t('bankRulesExport')}
+        </button>
+        <button type="button" className="noorix-btn noorix-btn--secondary" onClick={openImportModal}>
+          {t('bankRulesImport')}
+        </button>
       </div>
 
       {isLoading ? <p style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}…</p> : null}
@@ -677,6 +781,77 @@ export default function BankCategoryTreePanel({ companyId, showToast }) {
               </button>
               <button type="button" className="noorix-btn noorix-btn--primary" disabled={migrating} onClick={runMigrate}>
                 {migrating ? t('loading') : t('bankTreeMigrateRun')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showImportModal ? (
+        <div
+          className="noorix-modal-backdrop"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
+          onClick={(e) => e.target === e.currentTarget && !importBusy && setShowImportModal(false)}
+        >
+          <div className="noorix-surface-card" style={{ padding: 22, maxWidth: 440, width: '100%' }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>{t('bankRulesImport')}</h3>
+            <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
+              {otherCompanies.length > 0 ? (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="radio" name="impSrc" checked={importSource === 'company'} onChange={() => setImportSource('company')} />
+                  {t('bankRulesImportSourceCompany')}
+                </label>
+              ) : (
+                <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', margin: 0 }}>{t('bankRulesNoOtherCompanies')}</p>
+              )}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                <input type="radio" name="impSrc" checked={importSource === 'file'} onChange={() => setImportSource('file')} />
+                {t('bankRulesImportSourceFile')}
+              </label>
+              {importSource === 'company' && otherCompanies.length > 0 ? (
+                <select
+                  value={importSourceCompanyId}
+                  onChange={(e) => setImportSourceCompanyId(e.target.value)}
+                  style={{ ...inputStyle, marginTop: 0 }}
+                >
+                  <option value="">{t('bankRulesSelectCompany')}</option>
+                  {otherCompanies.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nameAr || c.nameEn || c.name || c.id}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+              {importSource === 'file' ? (
+                <div>
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    style={{ fontSize: 13, maxWidth: '100%' }}
+                  />
+                  {importFile ? (
+                    <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>{importFile.name}</div>
+                  ) : null}
+                </div>
+              ) : null}
+              <div style={{ borderTop: '1px solid var(--noorix-border)', paddingTop: 10, display: 'grid', gap: 8 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="radio" name="impMode" checked={importMode === 'merge'} onChange={() => setImportMode('merge')} />
+                  {t('bankRulesImportModeMerge')}
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="radio" name="impMode" checked={importMode === 'replace'} onChange={() => setImportMode('replace')} />
+                  {t('bankRulesImportModeReplace')}
+                </label>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
+              <button type="button" className="noorix-btn noorix-btn--ghost" disabled={importBusy} onClick={() => setShowImportModal(false)}>
+                {t('cancel')}
+              </button>
+              <button type="button" className="noorix-btn noorix-btn--primary" disabled={importBusy} onClick={runPackImport}>
+                {importBusy ? t('loading') : t('bankRulesImportRun')}
               </button>
             </div>
           </div>

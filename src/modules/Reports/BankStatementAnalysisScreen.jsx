@@ -407,7 +407,7 @@ export default function BankStatementAnalysisScreen() {
           )}
 
           {activeTab === 'rules' && (
-            <BankCategoryTreePanel companyId={companyId} showToast={showToast} />
+            <BankCategoryTreePanel companyId={companyId} companies={companies} showToast={showToast} />
           )}
           {activeTab === 'templates' && (
             <BankStatementTemplatesPanel companyId={companyId} showToast={showToast} />
