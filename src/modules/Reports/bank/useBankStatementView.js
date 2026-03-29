@@ -25,9 +25,11 @@ export const AVAILABLE_ANALYSIS_CARDS = [
   { id: 'category_pie', nameKey: 'bankCardCategoryPie', icon: '🥧' },
   { id: 'category_bar', nameKey: 'bankCardCategoryBar', icon: '📊' },
   { id: 'category_table', nameKey: 'bankCardCategoryTable', icon: '📋' },
+  { id: 'deposits_table', nameKey: 'bankCardDepositsTable', icon: '💰' },
+  { id: 'pos_terminals', nameKey: 'bankCardPosTerminals', icon: '🏪' },
 ];
 
-export const DEFAULT_ACTIVE_CARDS = ['cash_flow', 'alerts', 'category_pie', 'category_bar'];
+export const DEFAULT_ACTIVE_CARDS = ['cash_flow', 'alerts', 'category_pie', 'category_bar', 'category_table'];
 
 function loadSavedCards() {
   try {

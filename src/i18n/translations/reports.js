@@ -316,6 +316,8 @@ export default {
   bankCardCategoryPie: { ar: 'توزيع الفئات (دائري)', en: 'Categories (pie)' },
   bankCardCategoryBar: { ar: 'أعلى الفئات (أعمدة)', en: 'Top categories (bars)' },
   bankCardCategoryTable: { ar: 'جدول الفئات', en: 'Category table' },
+  bankCardDepositsTable: { ar: 'جدول تفصيل الإيداعات', en: 'Deposits breakdown table' },
+  bankCardPosTerminals: { ar: 'تحليل أجهزة نقاط البيع', en: 'POS terminals analysis' },
   bankRemoveCard: { ar: 'إزالة البطاقة', en: 'Remove card' },
   bankChartNeedMoreData: { ar: 'نقاط بيانات غير كافية لرسم المنحنى.', en: 'Not enough data points for the chart.' },
   bankCumulative: { ar: 'تراكمي', en: 'Cumulative' },

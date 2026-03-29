@@ -79,26 +79,79 @@ export default function BankStatementDetailView({
         margin: 0,
         borderRadius: 0,
         border: 'none',
-        borderBottom: vm.activeTab === id ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
-        background: vm.activeTab === id ? 'rgba(37,99,235,0.07)' : 'transparent',
+        borderBottom: vm.activeTab === id ? '3px solid var(--noorix-accent-blue)' : '3px solid transparent',
+        background: vm.activeTab === id ? 'rgba(37,99,235,0.08)' : 'transparent',
         color: vm.activeTab === id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
         fontWeight: vm.activeTab === id ? 700 : 500,
-        padding: '12px 16px',
+        padding: '13px 20px',
         fontSize: 13,
+        whiteSpace: 'nowrap',
+        transition: 'all 0.2s',
       }}
       onClick={() => vm.setActiveTab(id)}
     >
       {label}
-      {count != null ? ` (${count})` : ''}
+      {count != null ? (
+        <span
+          style={{
+            marginInlineStart: 6,
+            background: vm.activeTab === id ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
+            color: vm.activeTab === id ? '#fff' : 'var(--noorix-text-muted)',
+            borderRadius: 10,
+            padding: '1px 7px',
+            fontSize: 11,
+            fontWeight: 700,
+          }}
+        >
+          {count}
+        </span>
+      ) : null}
     </button>
   );
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between' }}>
-        <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onBack}>
-          ← {t('bankBackToList')}
+    <div style={{ display: 'grid', gap: 20 }}>
+      {/* ── رأس الصفحة: زر الرجوع + أدوات ── */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 10,
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '14px 18px',
+          background: 'var(--noorix-surface)',
+          borderRadius: 14,
+          border: '1px solid var(--noorix-border)',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+        }}
+      >
+        {/* زر الرجوع */}
+        <button
+          type="button"
+          onClick={onBack}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '9px 18px',
+            borderRadius: 10,
+            border: '1.5px solid var(--noorix-border)',
+            background: 'var(--noorix-bg-muted)',
+            cursor: 'pointer',
+            fontWeight: 700,
+            fontSize: 14,
+            color: 'var(--noorix-text)',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--noorix-accent-blue)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'var(--noorix-accent-blue)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--noorix-bg-muted)'; e.currentTarget.style.color = 'var(--noorix-text)'; e.currentTarget.style.borderColor = 'var(--noorix-border)'; }}
+        >
+          <span style={{ fontSize: 18, lineHeight: 1 }}>←</span>
+          {t('bankBackToList')}
         </button>
+
+        {/* أدوات */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           <button
             type="button"
@@ -106,12 +159,12 @@ export default function BankStatementDetailView({
             disabled={vm.reclassifyMutation.isPending}
             onClick={() => {
               vm.reclassifyMutation.mutate(undefined, {
-                onSuccess: () => showToast?.(t('bankReclassifyDone') || 'تم'),
+                onSuccess: () => showToast?.(t('bankReclassifyDone') || 'تم إعادة التصنيف'),
                 onError: (e) => showToast?.(e?.message || 'Error', 'error'),
               });
             }}
           >
-            {vm.reclassifyMutation.isPending ? t('loading') : t('bankReclassify')}
+            {vm.reclassifyMutation.isPending ? '⟳ ' + t('loading') : '🔄 ' + t('bankReclassify')}
           </button>
           <button
             type="button"
@@ -126,7 +179,7 @@ export default function BankStatementDetailView({
               })
             }
           >
-            {t('bankExportExcel')}
+            📥 {t('bankExportExcel')}
           </button>
           <button
             type="button"
@@ -140,30 +193,44 @@ export default function BankStatementDetailView({
               })
             }
           >
-            {t('bankPrint')}
+            🖨️ {t('bankPrint')}
           </button>
           {onDelete ? (
-            <button type="button" className="noorix-btn" style={{ borderColor: '#dc2626', color: '#dc2626' }} onClick={onDelete}>
-              {t('delete')}
+            <button
+              type="button"
+              className="noorix-btn"
+              style={{ borderColor: '#dc2626', color: '#dc2626' }}
+              onClick={onDelete}
+            >
+              🗑️ {t('delete')}
             </button>
           ) : null}
         </div>
       </div>
 
+      {/* ── بطاقات الملخص ── */}
       <BankStatementSummaryCards statement={stmt} t={t} />
 
+      {/* ── التبويبات ── */}
       <div
         className="noorix-surface-card"
         style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--noorix-border)' }}
       >
         <div
           className="noorix-tab-bar"
-          style={{ display: 'flex', flexWrap: 'wrap', gap: 0, borderBottom: '1px solid var(--noorix-border)' }}
+          style={{
+            display: 'flex',
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+            gap: 0,
+            borderBottom: '2px solid var(--noorix-border)',
+            background: 'var(--noorix-bg-muted)',
+          }}
         >
-          {tabBtn('analysis', t('bankTabAnalysis'))}
-          {tabBtn('transactions', t('bankTabTransactions'), stmt.transactions?.length)}
-          {tabBtn('reconciliation', t('bankTabReconciliation'))}
-          {tabBtn('sales', t('bankTabSalesCompare'))}
+          {tabBtn('analysis', '📊 ' + t('bankTabAnalysis'))}
+          {tabBtn('transactions', '📋 ' + t('bankTabTransactions'), stmt.transactions?.length)}
+          {tabBtn('reconciliation', '✅ ' + t('bankTabReconciliation'))}
+          {tabBtn('sales', '📈 ' + t('bankTabSalesCompare'))}
         </div>
         <div style={{ padding: 20 }}>
           {vm.activeTab === 'analysis' && (

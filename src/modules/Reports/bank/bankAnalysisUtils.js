@@ -1,5 +1,5 @@
 /**
- * أدواء مساعدة لتحليل كشوف الحساب — منطق محض بدون React
+ * أدوات مساعدة لتحليل كشوف الحساب — منطق محض بدون React
  */
 
 export function num(v) {
@@ -13,6 +13,39 @@ export function getTxKey(tx) {
   if (tx?.id) return tx.id;
   return `${tx?.txDate || ''}_${(tx?.description || '').slice(0, 40)}_${num(tx?.debit)}_${num(tx?.credit)}_${num(tx?.balance)}`;
 }
+
+/**
+ * قائمة التصنيفات الافتراضية — مستوردة من المشروع السابق
+ * تُستخدم كـ fallback عند عدم وجود فئات مخصصة في قاعدة البيانات
+ */
+export const FALLBACK_CATEGORIES = [
+  'مبيعات نقاط البيع',
+  'تطبيقات توصيل',
+  'تحويل',
+  'تحويل فوري',
+  'رواتب',
+  'إيجار',
+  'كهرباء',
+  'مياه',
+  'فواتير سداد',
+  'اتصالات',
+  'رسوم بنكية',
+  'سحب نقدي',
+  'إيداع نقدي',
+  'زكاة وضريبة',
+  'ضرائب',
+  'رسوم جوازات',
+  'مخالفات مرورية',
+  'رسوم بلدية',
+  'تأمينات',
+  'تأمينات اجتماعية',
+  'موردين أغذية',
+  'مشتريات',
+  'مصروفات أخرى',
+  'إيرادات أخرى',
+  'رسوم حكومية',
+  'غير مصنف',
+];
 
 export function buildSummaryByCategory(transactions, uncategorizedLabel) {
   const map = {};
@@ -101,6 +134,61 @@ export function buildCashFlowSeries(transactions) {
       cumulative: cum,
     };
   });
+}
+
+/**
+ * تجميع العمليات حسب التاريخ لرسم AreaChart (إيداعات + سحوبات يومياً)
+ */
+export function buildDailyChartData(transactions) {
+  const byDate = {};
+  for (const tx of transactions || []) {
+    const date = tx.txDate || '';
+    if (!date) continue;
+    if (!byDate[date]) {
+      byDate[date] = { date, deposits: 0, withdrawals: 0, balance: 0 };
+    }
+    byDate[date].deposits += num(tx.credit);
+    byDate[date].withdrawals += num(tx.debit);
+    if (num(tx.balance) > 0) byDate[date].balance = num(tx.balance);
+  }
+  return Object.values(byDate)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+    .map((d) => ({
+      ...d,
+      dateLabel: d.date.length >= 8 ? d.date.slice(5) : d.date,
+      net: d.deposits - d.withdrawals,
+    }));
+}
+
+/** استخراج أجهزة نقاط البيع من أوصاف العمليات */
+export function extractPosTerminals(transactions) {
+  const terminals = {};
+  const re = /Term\s*:?\s*(\d{8,16})/i;
+  for (const tx of transactions || []) {
+    const match = String(tx.description || '').match(re);
+    if (match && num(tx.credit) > 0) {
+      const id = match[1];
+      if (!terminals[id]) terminals[id] = { terminalId: id, count: 0, total: 0 };
+      terminals[id].count++;
+      terminals[id].total += num(tx.credit);
+    }
+  }
+  return Object.values(terminals).sort((a, b) => b.total - a.total);
+}
+
+/** تجميع الإيداعات حسب الفئة */
+export function buildDepositsByCategory(transactions, uncategorizedLabel = '—') {
+  const map = {};
+  for (const tx of transactions || []) {
+    if (num(tx.credit) <= 0) continue;
+    const name = tx.category?.nameAr || tx.category?.nameEn || uncategorizedLabel;
+    if (!map[name]) map[name] = { count: 0, total: 0 };
+    map[name].count++;
+    map[name].total += num(tx.credit);
+  }
+  return Object.entries(map)
+    .map(([name, d]) => ({ name, count: d.count, total: d.total }))
+    .sort((a, b) => b.total - a.total);
 }
 
 /** أكبر عمليات السحب (للتنبيهات) */
