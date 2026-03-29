@@ -4,7 +4,6 @@
 export default {
   settingsDesc: { ar: 'إدارة الشركات، المستخدمين، الأدوار والصلاحيات، وربط الذكاء الاصطناعي.', en: 'Manage companies, users, roles and permissions, and AI integration.' },
   companiesTab: { ar: 'إدارة الشركات', en: 'Company management' },
-  accountCategoriesTab: { ar: 'التصنيفات', en: 'Categories' },
   usersTab: { ar: 'المستخدمين', en: 'Users' },
   rolesTab: { ar: 'الأدوار والصلاحيات', en: 'Roles & permissions' },
   taxTab: { ar: 'إعدادات الضريبة', en: 'Tax settings' },
@@ -178,7 +177,6 @@ export default {
   comparisonTable: { ar: 'جدول المقارنة التفصيلي', en: 'Detailed comparison table' },
   permission: { ar: 'الصلاحية', en: 'Permission' },
   otherGroup: { ar: 'أخرى', en: 'Other' },
-  accountCategoriesDesc: { ar: 'فئات الحسابات المرتبطة بدليل الحسابات — تظهر في تقارير الأرباح والخسائر.', en: 'Account categories linked to chart of accounts — appear in P&L reports.' },
   addCustomCategory: { ar: '+ إضافة فئة مخصصة', en: '+ Add custom category' },
   addCategoryAndAccount: { ar: 'إضافة فئة وحساب جديد', en: 'Add category and account' },
   categoryNameRequiredShort: { ar: 'اسم الفئة مطلوب', en: 'Category name is required' },

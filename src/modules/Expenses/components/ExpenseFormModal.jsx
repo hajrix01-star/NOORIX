@@ -31,8 +31,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
     enabled: !!companyId,
   });
 
-  const { vaultsList = [] } = useVaults({ companyId });
-  const activeVaults = vaultsList.filter((v) => !v.isArchived);
+  const { paymentVaults: activeVaults = [] } = useVaults({ companyId });
 
   const selectedLine = expenseLines.find((l) => l.id === form.expenseLineId);
 

@@ -63,8 +63,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   const isAr = lang === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
 
-  const { vaultsList = [], isLoading: vaultsLoading } = useVaults({ companyId });
-  const vaults = Array.isArray(vaultsList) ? vaultsList : [];
+  const { paymentVaults = [], isLoading: vaultsLoading } = useVaults({ companyId });
+  const vaults = paymentVaults;
 
   const { data: employees = [], isLoading: employeesLoading } = useQuery({
     queryKey: ['employees', companyId, false],

@@ -35,8 +35,8 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const { vaultsList } = useVaults({ companyId: cid });
-  const vaults = vaultsList || [];
+  const { paymentVaults = [] } = useVaults({ companyId: cid });
+  const vaults = paymentVaults;
 
   const { data: employees = [] } = useQuery({
     queryKey: ['employees', cid, false],

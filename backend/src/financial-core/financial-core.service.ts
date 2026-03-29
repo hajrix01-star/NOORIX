@@ -145,8 +145,8 @@ export class FinancialCoreService {
       const invoiceNumber = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
       await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
 
-      if (dto.kind === 'purchase' && dto.vaultId) {
-        await this._assertVaultUsableForPurchasePayment(tx, dto.companyId, dto.vaultId);
+      if (dto.vaultId) {
+        await this._assertVaultUsableForPaymentOutflow(tx, dto.companyId, dto.vaultId);
       }
 
       // ── [A] Resolve Accounts ─────────────────────────────
@@ -254,8 +254,8 @@ export class FinancialCoreService {
         const { entryDate, txDate } = this._buildDates(dto.transactionDate);
         const serial = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
         await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
-        if (dto.kind === 'purchase' && dto.vaultId) {
-          await this._assertVaultUsableForPurchasePayment(tx, dto.companyId, dto.vaultId);
+        if (dto.vaultId) {
+          await this._assertVaultUsableForPaymentOutflow(tx, dto.companyId, dto.vaultId);
         }
         const creditAccountId = await this._getVaultAccount(tx, dto.companyId, dto.vaultId);
         const debitAccountId  = dto.debitAccountId
@@ -1005,8 +1005,8 @@ export class FinancialCoreService {
     }
   }
 
-  /** مشتريات (دفعة/فاتورة): خزنة غير مؤرشفة ومسموح إظهارها كسداد */
-  private async _assertVaultUsableForPurchasePayment(tx: TxClient, companyId: string, vaultId: string) {
+  /** أي صرف (مشتريات، مصاريف، رواتب، سلف، …): خزنة غير مؤرشفة ومفعّل لها الظهور كسداد */
+  private async _assertVaultUsableForPaymentOutflow(tx: TxClient, companyId: string, vaultId: string) {
     const v = await tx.vault.findFirst({
       where: { id: vaultId, companyId },
       select: { id: true, nameAr: true, showAsPaymentMethod: true, isArchived: true },
@@ -1015,24 +1015,26 @@ export class FinancialCoreService {
       throw new NotFoundException(`الخزنة غير موجودة أو لا تنتمي لهذه الشركة`);
     }
     if (v.isArchived) {
-      throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة ولا يمكن السداد منها في المشتريات.`);
+      throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة ولا يمكن السداد منها.`);
     }
     if (v.showAsPaymentMethod === false) {
-      throw new BadRequestException(`الخزينة «${v.nameAr}» غير متاحة كطريقة سداد في المشتريات.`);
+      throw new BadRequestException(
+        `الخزينة «${v.nameAr}» غير متاحة للسداد. فعّل «الظهور كطريقة سداد» من شاشة الخزائن.`,
+      );
     }
   }
 
   private async _getVaultAccount(tx: TxClient, companyId: string, vaultId?: string): Promise<string> {
     if (!vaultId) {
-      // إذا لم تُحدَّد الخزنة، جلب أول خزنة نشطة للشركة كـ fallback
+      // إذا لم تُحدَّد الخزنة، جلب أول خزينة نشطة مفعّل لها السداد في الواجهة
       const defaultVault = await tx.vault.findFirst({
-        where:   { companyId, isActive: true, isArchived: false },
+        where:   { companyId, isActive: true, isArchived: false, showAsPaymentMethod: true },
         select:  { accountId: true },
         orderBy: { createdAt: 'asc' },
       });
       if (!defaultVault) {
         throw new BadRequestException(
-          `لا توجد خزائن للشركة ${companyId}. يرجى إنشاء خزينة أولاً.`,
+          `لا توجد خزينة متاحة للسداد للشركة ${companyId}. أضف خزينة أو فعّل «الظهور كطريقة سداد» من شاشة الخزائن.`,
         );
       }
       return defaultVault.accountId;

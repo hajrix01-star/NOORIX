@@ -3,10 +3,9 @@
  * مسؤولية واحدة: تبديل التبويبات وتمرير الـ context للمكونات الفرعية.
  *
  * التبويبات:
- *   CompaniesTab         → إدارة الشركات
- *   TaxSettingsTab       → الضريبة
- *   AccountCategoriesTab → تصنيفات الحسابات (مشتريات / مصروفات / مبيعات)
- *   UsersTab             → المستخدمون والأدوار
+ *   CompaniesTab   → إدارة الشركات
+ *   TaxSettingsTab → الضريبة
+ *   UsersTab       → المستخدمون والأدوار
  *   RolesTab             → الأدوار والصلاحيات
  */
 import React, { useState, useMemo } from 'react';
@@ -19,7 +18,6 @@ import CompaniesTab             from './components/CompaniesTab';
 import UsersTab                 from './components/UsersTab';
 import RolesTab                 from './components/RolesTab';
 import TaxSettingsTab           from './components/TaxSettingsTab';
-import AccountCategoriesTab     from './components/AccountCategoriesTab';
 import AISettingsTab            from './components/AISettingsTab';
 import BackupTab                from './components/BackupTab';
 
@@ -38,7 +36,6 @@ export default function SettingsScreen() {
   const TABS_BASE = useMemo(() => [
     { id: 'companies', label: t('companiesTab') },
     { id: 'tax',       label: t('taxTab') },
-    { id: 'accountCategories', label: t('accountCategoriesTab') },
     { id: 'users',     label: t('usersTab'),    permission: 'MANAGE_USERS' },
     { id: 'roles',     label: t('rolesTab') },
     { id: 'backup',    label: t('backupTab'), permission: 'MANAGE_SETTINGS' },
@@ -94,9 +91,6 @@ export default function SettingsScreen() {
           )}
           {activeTab === 'tax' && (
             <TaxSettingsTab />
-          )}
-          {activeTab === 'accountCategories' && (
-            <AccountCategoriesTab />
           )}
           {activeTab === 'users' && (
             <UsersTab userRole={userRole} activeCompanies={activeCompanies} />

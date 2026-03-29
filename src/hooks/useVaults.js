@@ -38,6 +38,12 @@ export function useVaults({ companyId, includeArchived = false }) {
     [vaultsList],
   );
 
+  /** خزائن تظهر في قوائم السداد (مبيعات، مشتريات، مصاريف، HR، استيراد، …) */
+  const paymentVaults = useMemo(
+    () => vaultsList.filter((v) => !v.isArchived && v.showAsPaymentMethod !== false),
+    [vaultsList],
+  );
+
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['vaults', companyId] });
 
@@ -64,6 +70,7 @@ export function useVaults({ companyId, includeArchived = false }) {
   return {
     vaultsList,
     salesChannels,
+    paymentVaults,
     isLoading,
     create:  createMutation,
     update:  updateMutation,

@@ -41,6 +41,26 @@ export class HRService {
   // PAYROLL RUNS
   // ══════════════════════════════════════════════════════════
 
+  private async assertVaultsUsableForPayment(companyId: string, vaultIds: string[]): Promise<void> {
+    const ids = [...new Set(vaultIds.filter(Boolean))];
+    if (!ids.length) return;
+    const vaults = await this.prisma.vault.findMany({
+      where: { id: { in: ids }, companyId },
+      select: { id: true, nameAr: true, showAsPaymentMethod: true, isArchived: true },
+    });
+    const byId = new Map(vaults.map((v) => [v.id, v]));
+    for (const id of ids) {
+      const v = byId.get(id);
+      if (!v) throw new BadRequestException('خزنة غير موجودة أو لا تنتمي للشركة.');
+      if (v.isArchived) throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة.`);
+      if (v.showAsPaymentMethod === false) {
+        throw new BadRequestException(
+          `الخزينة «${v.nameAr}» غير متاحة للسداد. فعّل «الظهور كطريقة سداد» من شاشة الخزائن.`,
+        );
+      }
+    }
+  }
+
   private async generateRunNumber(companyId: string): Promise<string> {
     const now = nowSaudi();
     const yy = String(now.getFullYear()).slice(-2);
@@ -90,6 +110,9 @@ export class HRService {
     payrollMonth.setHours(0, 0, 0, 0);
 
     const runNumber = await this.generateRunNumber(dto.companyId);
+    const splitVaultIds = dto.items.flatMap((it) => (it.vaultSplits ?? []).map((vs) => vs.vaultId));
+    await this.assertVaultsUsableForPayment(dto.companyId, splitVaultIds);
+
     let totalAmount = 0;
     const itemsData: Array<{
       employeeId: string;
@@ -301,7 +324,7 @@ export class HRService {
         }
       } else {
         const defaultVault = await this.prisma.vault.findFirst({
-          where: { companyId: run.companyId, isActive: true, isArchived: false },
+          where: { companyId: run.companyId, isActive: true, isArchived: false, showAsPaymentMethod: true },
           select: { id: true },
         });
         if (!defaultVault) {

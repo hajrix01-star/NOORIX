@@ -13,7 +13,6 @@ import {
 } from '../../services/api';
 import { useCategories } from '../../hooks/useCategories';
 import { useSuppliers } from '../../hooks/useSuppliers';
-import { useVaults } from '../../hooks/useVaults';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import Toast from '../../components/Toast';

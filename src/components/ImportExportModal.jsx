@@ -218,8 +218,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     }
     Promise.all(promises)
       .then(([vaultsRes, suppliersRes, categoriesRes, expLinesRes]) => {
+        const rawVaults = Array.isArray(vaultsRes) ? vaultsRes : (vaultsRes?.items ?? []);
         setLookups({
-          vaults: Array.isArray(vaultsRes) ? vaultsRes : (vaultsRes?.items ?? []),
+          vaults: rawVaults.filter((v) => v.showAsPaymentMethod !== false),
           suppliers: Array.isArray(suppliersRes) ? suppliersRes : (suppliersRes?.items ?? []),
           categories: Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes?.items ?? []),
           expenseLines: Array.isArray(expLinesRes) ? expLinesRes : (expLinesRes?.items ?? []),

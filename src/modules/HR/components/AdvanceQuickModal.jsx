@@ -11,8 +11,8 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 
 export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }) {
   const { t } = useTranslation();
-  const { vaultsList } = useVaults({ companyId });
-  const vaults = vaultsList || [];
+  const { paymentVaults = [] } = useVaults({ companyId });
+  const vaults = paymentVaults;
   const [employee, setEmployee] = useState(initialEmployee);
   const [employeeId, setEmployeeId] = useState(initialEmployee?.id || '');
   const [amount, setAmount] = useState('');

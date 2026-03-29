@@ -36,8 +36,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
     enabled: !!companyId,
   });
 
-  const { vaultsList = [] } = useVaults({ companyId });
-  const activeVaults = vaultsList.filter((v) => !v.isArchived);
+  const { paymentVaults: activeVaults = [] } = useVaults({ companyId });
 
   const validRows = useMemo(() => {
     return rows.filter((r) => {
