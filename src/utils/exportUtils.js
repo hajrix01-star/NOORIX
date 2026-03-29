@@ -1,6 +1,103 @@
 /**
  * exportUtils — تصدير Excel و PDF (Dynamic Imports)
  */
+import {
+  ORDER_PRODUCTS_TEMPLATE_MARKER_AR,
+  ORDER_CATEGORIES_TEMPLATE_MARKER_AR,
+} from '../modules/Orders/constants/importTemplate';
+
+function setSheetColWidths(ws, widths) {
+  ws['!cols'] = widths.map((wch) => ({ wch }));
+}
+
+/**
+ * قالب استيراد أصناف الطلبات — ورقة بيانات + ورقة تعليمات، أعمدة بعرض مناسب
+ */
+export async function exportOrdersProductsImportTemplate(filename = 'order-products-import-template.xlsx') {
+  const XLSX = await import('xlsx');
+  const variantsExample = JSON.stringify([
+    { size: 'كبير', packaging: 'كرتون', unit: 'piece', lastPrice: '18.5' },
+    { size: 'وسط', packaging: 'علبة', unit: 'piece', lastPrice: '12' },
+  ]);
+  const dataRows = [
+    {
+      nameAr: ORDER_PRODUCTS_TEMPLATE_MARKER_AR,
+      nameEn: 'Example item (delete row)',
+      category: 'ألبان',
+      variants: variantsExample,
+    },
+    ...Array.from({ length: 12 }, () => ({ nameAr: '', nameEn: '', category: '', variants: '' })),
+  ];
+  const wsData = XLSX.utils.json_to_sheet(dataRows);
+  setSheetColWidths(wsData, [28, 24, 18, 56]);
+
+  const instructions = [
+    ['قالب استيراد الأصناف — Noorix'],
+    ['Orders › Manage Items › Products'],
+    [''],
+    ['■ ترتيب العمل الموصى به'],
+    ['1) عرّف الفئات أولاً (تبويب الفئات أو استيراد فئات)، ثم اكتب في العمود category نفس اسم الفئة بالعربي كما في النظام.'],
+    ['2) احذف صف المثال بالكامل قبل الاستيراد الفعلي، أو استبدله ببياناتك.'],
+    ['3) احفظ الملف بصيغة .xlsx ثم من التطبيق اضغط «استيراد».'],
+    [''],
+    ['■ معاني الأعمدة (ورقة «أصناف»)'],
+    ['• nameAr — اسم الصنف بالعربية (إلزامي).'],
+    ['• nameEn — اسم بالإنجليزي (اختياري).'],
+    ['• category — اسم الفئة بالعربي للربط (يُفضّل أن تكون الفئة موجودة مسبقاً).'],
+    ['• variants — مصفوفة JSON لتركيبات السعر: الحجم، التغليف، الوحدة، آخر سعر.'],
+    [''],
+    ['■ حقل variants — نسخة جاهزة (سطر واحد في الخلية)'],
+    [variantsExample],
+    [''],
+    ['■ الوحدة unit'],
+    ['استخدم واحدة من: piece (حبة) · kg (كيلو) · box (كرتون) · dozen (درزن).'],
+  ];
+  const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
+  setSheetColWidths(wsInstr, [92]);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsData, 'أصناف');
+  XLSX.utils.book_append_sheet(wb, wsInstr, 'تعليمات');
+  XLSX.writeFile(wb, filename);
+}
+
+/**
+ * قالب استيراد فئات الطلبات — ورقة بيانات + ورقة تعليمات
+ */
+export async function exportOrdersCategoriesImportTemplate(filename = 'order-categories-import-template.xlsx') {
+  const XLSX = await import('xlsx');
+  const dataRows = [
+    {
+      nameAr: ORDER_CATEGORIES_TEMPLATE_MARKER_AR,
+      nameEn: 'Example category (delete row)',
+    },
+    ...Array.from({ length: 15 }, () => ({ nameAr: '', nameEn: '' })),
+  ];
+  const wsData = XLSX.utils.json_to_sheet(dataRows);
+  setSheetColWidths(wsData, [32, 28]);
+
+  const instructions = [
+    ['قالب استيراد الفئات — Noorix'],
+    ['Orders › Manage Items › Categories'],
+    [''],
+    ['■ الخطوات'],
+    ['1) احذف صف المثال أو استبدله بفئاتكم.'],
+    ['2) nameAr إلزامي؛ nameEn اختياري.'],
+    ['3) بعد الاستيراد يمكن ربط الأصناف بهذه الفئات من عمود category في قالب الأصناف.'],
+    [''],
+    ['■ الأعمدة'],
+    ['• nameAr — اسم الفئة بالعربية.'],
+    ['• nameEn — اسم بالإنجليزي (اختياري).'],
+  ];
+  const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
+  setSheetColWidths(wsInstr, [88]);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsData, 'فئات');
+  XLSX.utils.book_append_sheet(wb, wsInstr, 'تعليمات');
+  XLSX.writeFile(wb, filename);
+}
+
 export async function exportToExcel(data, filename = 'export.xlsx') {
   const XLSX = await import('xlsx');
   const rows = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);

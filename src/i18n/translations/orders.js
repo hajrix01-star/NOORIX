@@ -64,6 +64,42 @@ export default {
   importFailed: { ar: 'فشل الاستيراد', en: 'Import failed' },
   ordersImportNoValidRows: { ar: 'لا توجد صفوف صالحة (nameAr مطلوب)', en: 'No valid rows (nameAr required)' },
   ordersImportSuccess: { ar: 'تم استيراد {0} عنصر بنجاح', en: 'Imported {0} items successfully' },
+  ordersDownloadImportTemplate: { ar: 'تحميل قالب الاستيراد', en: 'Download import template' },
+  ordersImportTemplateReady: { ar: 'تم تنزيل ملف القالب.', en: 'Template file downloaded.' },
+  ordersImportTemplateHintProducts: {
+    ar: 'ملف .xlsx: ورقة «أصناف» للبيانات و«تعليمات» للشرح. الأعمدة: nameAr، nameEn، category، variants (JSON). تفاصيل إضافية في الدليل أعلاه.',
+    en: '.xlsx with «Products» data sheet and «Instructions». Columns: nameAr, nameEn, category, variants (JSON). See the guide above.',
+  },
+  ordersImportTemplateHintCategories: {
+    ar: 'ملف .xlsx: ورقة «فئات» ثم «تعليمات». الأعمدة: nameAr (مطلوب)، nameEn.',
+    en: '.xlsx with «Categories» then «Instructions». Columns: nameAr (required), nameEn.',
+  },
+  ordersImportWorkbookNote: {
+    ar: 'الملف يحتوي ورقتين: الأولى للبيانات (يُستورد منها)، والثانية «تعليمات» للمرجع فقط.',
+    en: 'The workbook has two sheets: the first is data (imported), the second «Instructions» is reference only.',
+  },
+  ordersImportGuideProductsTitle: { ar: 'دليل استيراد الأصناف', en: 'Product import guide' },
+  ordersImportGuideCategoriesTitle: { ar: 'دليل استيراد الفئات', en: 'Category import guide' },
+  ordersImportProductsStep1: {
+    ar: 'صدّر أو أضف الفئات أولاً، ثم اكتب في عمود category نفس الاسم بالعربي كما في النظام.',
+    en: 'Export or add categories first, then use the same Arabic name in the category column.',
+  },
+  ordersImportProductsStep2: {
+    ar: 'احذف صف المثال أو عوّضه ببياناتك؛ عمود variants يقبل JSON لعدة تركيبات (حجم، تغليف، وحدة، سعر).',
+    en: 'Delete or replace the example row; the variants column accepts JSON for multiple price combinations.',
+  },
+  ordersImportProductsStep3: {
+    ar: 'افتح ورقة التعليمات في الملف لنسخ أمثلة جاهزة للحقل variants.',
+    en: 'Open the Instructions sheet in the file for ready-to-paste variants examples.',
+  },
+  ordersImportCategoriesStep1: {
+    ar: 'صف واحد لكل فئة: nameAr إلزامي، nameEn اختياري.',
+    en: 'One row per category: nameAr required, nameEn optional.',
+  },
+  ordersImportCategoriesStep2: {
+    ar: 'بعد الاستيراد اربط الأصناف من عمود category في قالب الأصناف.',
+    en: 'After import, link products via the category column in the products template.',
+  },
   ordersDeleteConfirm: { ar: 'إلغاء الطلب "{0}"؟', en: 'Cancel order "{0}"?' },
   ordersOrderCancelled: { ar: 'تم إلغاء الطلب', en: 'Order cancelled' },
   ordersOrderUpdated: { ar: 'تم تحديث الطلب بنجاح', en: 'Order updated successfully' },

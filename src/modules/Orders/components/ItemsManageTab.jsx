@@ -15,7 +15,12 @@ import {
   useUpdateOrderCategoryMutation,
 } from '../../../hooks/useOrders';
 import { fmt } from '../../../utils/format';
-import { exportToExcel, importFromExcel } from '../../../utils/exportUtils';
+import {
+  exportToExcel,
+  importFromExcel,
+  exportOrdersProductsImportTemplate,
+  exportOrdersCategoriesImportTemplate,
+} from '../../../utils/exportUtils';
 import Toast from '../../../components/Toast';
 import {
   getSizesOptions,
@@ -23,6 +28,10 @@ import {
   addCustomSize,
   addCustomPackaging,
 } from '../constants/orderDefaults';
+import {
+  ORDER_PRODUCTS_TEMPLATE_MARKER_AR,
+  ORDER_CATEGORIES_TEMPLATE_MARKER_AR,
+} from '../constants/importTemplate';
 import { AddSizeModal } from './AddSizeModal';
 import { AddPackagingModal } from './AddPackagingModal';
 
@@ -151,6 +160,35 @@ export function ItemsManageTab({ companyId }) {
     setToast({ visible: true, message: t('ordersPackagingAdded') || 'تمت إضافة التغليف', type: 'success' });
   }
 
+  const importGuideCardStyle = useMemo(
+    () => ({
+      padding: '14px 18px',
+      borderRadius: 12,
+      border: '1px solid var(--noorix-border)',
+      borderInlineStart: '4px solid var(--noorix-accent-green)',
+      background: 'linear-gradient(135deg, rgba(22, 163, 74, 0.07) 0%, transparent 58%)',
+    }),
+    [],
+  );
+
+  async function handleDownloadProductsImportTemplate() {
+    try {
+      await exportOrdersProductsImportTemplate('order-products-import-template.xlsx');
+      setToast({ visible: true, message: t('ordersImportTemplateReady'), type: 'success' });
+    } catch (e) {
+      setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
+    }
+  }
+
+  async function handleDownloadCategoriesImportTemplate() {
+    try {
+      await exportOrdersCategoriesImportTemplate('order-categories-import-template.xlsx');
+      setToast({ visible: true, message: t('ordersImportTemplateReady'), type: 'success' });
+    } catch (e) {
+      setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
+    }
+  }
+
   async function handleExportProducts() {
     try {
       const rows = products.map((p) => {
@@ -187,6 +225,7 @@ export function ItemsManageTab({ companyId }) {
       const catByName = new Map(categories.map((c) => [c.nameAr?.toLowerCase(), c.id]));
       const toCreate = rows
         .filter((r) => r.nameAr || r.name_ar)
+        .filter((r) => String(r.nameAr ?? r.name_ar ?? '').trim() !== ORDER_PRODUCTS_TEMPLATE_MARKER_AR)
         .map((r) => {
           const catName = String(r.category ?? r.categoryName ?? '').trim().toLowerCase();
           const categoryId = catName ? catByName.get(catName) : undefined;
@@ -230,6 +269,7 @@ export function ItemsManageTab({ companyId }) {
       const rows = await importFromExcel(file);
       const toCreate = rows
         .filter((r) => r.nameAr || r.name_ar)
+        .filter((r) => String(r.nameAr ?? r.name_ar ?? '').trim() !== ORDER_CATEGORIES_TEMPLATE_MARKER_AR)
         .map((r) => ({
           nameAr: String(r.nameAr ?? r.name_ar ?? '').trim(),
           nameEn: String(r.nameEn ?? r.name_en ?? '').trim() || undefined,
@@ -333,13 +373,30 @@ export function ItemsManageTab({ companyId }) {
 
       {activeSubTab === 'products' && (
         <div style={{ display: 'grid', gap: 20 }}>
+          <div style={importGuideCardStyle}>
+            <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: 'var(--noorix-text)' }}>{t('ordersImportGuideProductsTitle')}</div>
+            <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.55 }}>{t('ordersImportWorkbookNote')}</p>
+            <ul style={{ margin: 0, paddingInlineStart: 20, fontSize: 12, lineHeight: 1.65, color: 'var(--noorix-text)' }}>
+              <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep1')}</li>
+              <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep2')}</li>
+              <li>{t('ordersImportProductsStep3')}</li>
+            </ul>
+          </div>
           <div className="noorix-surface-card" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               <h4 style={{ margin: 0, fontSize: 15 }}>+ {t('ordersAddProduct')}</h4>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} style={{ display: 'none' }} />
-                <button type="button" className="noorix-btn-nav" onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>📥 {t('import')}</button>
-                <button type="button" className="noorix-btn-nav" onClick={handleExportProducts} disabled={products.length === 0}>📤 {t('exportExcel')}</button>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
+                  <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} style={{ display: 'none' }} />
+                  <button type="button" className="noorix-btn-nav" onClick={handleDownloadProductsImportTemplate}>
+                    📄 {t('ordersDownloadImportTemplate')}
+                  </button>
+                  <button type="button" className="noorix-btn-nav" onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>📥 {t('import')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={handleExportProducts} disabled={products.length === 0}>📤 {t('exportExcel')}</button>
+                </div>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--noorix-text-muted)', maxWidth: 520, textAlign: 'right', lineHeight: 1.45 }}>
+                  {t('ordersImportTemplateHintProducts')}
+                </p>
               </div>
             </div>
             <div style={{ display: 'grid', gap: 16 }}>
@@ -560,13 +617,29 @@ export function ItemsManageTab({ companyId }) {
 
       {activeSubTab === 'categories' && (
         <div style={{ display: 'grid', gap: 20 }}>
+          <div style={importGuideCardStyle}>
+            <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: 'var(--noorix-text)' }}>{t('ordersImportGuideCategoriesTitle')}</div>
+            <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.55 }}>{t('ordersImportWorkbookNote')}</p>
+            <ul style={{ margin: 0, paddingInlineStart: 20, fontSize: 12, lineHeight: 1.65, color: 'var(--noorix-text)' }}>
+              <li style={{ marginBottom: 6 }}>{t('ordersImportCategoriesStep1')}</li>
+              <li>{t('ordersImportCategoriesStep2')}</li>
+            </ul>
+          </div>
           <div className="noorix-surface-card" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               <h4 style={{ margin: 0, fontSize: 15 }}>+ {t('ordersAddCategory')}</h4>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} style={{ display: 'none' }} />
-                <button type="button" className="noorix-btn-nav" onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>📥 {t('import')}</button>
-                <button type="button" className="noorix-btn-nav" onClick={handleExportCategories} disabled={categories.length === 0}>📤 {t('exportExcel')}</button>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
+                  <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} style={{ display: 'none' }} />
+                  <button type="button" className="noorix-btn-nav" onClick={handleDownloadCategoriesImportTemplate}>
+                    📄 {t('ordersDownloadImportTemplate')}
+                  </button>
+                  <button type="button" className="noorix-btn-nav" onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>📥 {t('import')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={handleExportCategories} disabled={categories.length === 0}>📤 {t('exportExcel')}</button>
+                </div>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--noorix-text-muted)', maxWidth: 420, textAlign: 'right', lineHeight: 1.45 }}>
+                  {t('ordersImportTemplateHintCategories')}
+                </p>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
