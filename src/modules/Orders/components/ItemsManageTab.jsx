@@ -35,12 +35,13 @@ import {
 } from '../constants/importTemplate';
 import { AddSizeModal } from './AddSizeModal';
 import { AddPackagingModal } from './AddPackagingModal';
-import { BROASTED_PRESET_ORDER_PRODUCTS } from '../data/broastedPresetCatalog';
+import { BROASTED_PRESET_ORDER_PRODUCTS, presetRowToProductPayload } from '../data/broastedPresetCatalog';
 import {
   getOrderCategories,
   getOrderProducts,
   createOrderCategoriesBatch,
   createOrderProductsBatch,
+  updateOrderProduct,
 } from '../../../services/api';
 
 const inputStyle = {
@@ -197,29 +198,63 @@ export function ItemsManageTab({ companyId }) {
         catRes = await getOrderCategories(companyId);
         (catRes?.data ?? []).forEach((c) => catMap.set(String(c.nameAr ?? '').trim().toLowerCase(), c.id));
       }
-      let prodRes = await getOrderProducts(companyId);
-      const existingNames = new Set((prodRes?.data ?? []).map((p) => String(p.nameAr ?? '').trim().toLowerCase()));
-      const productsPayload = BROASTED_PRESET_ORDER_PRODUCTS.filter((p) => !existingNames.has(p.nameAr.trim().toLowerCase())).map((p) => ({
-        nameAr: p.nameAr,
-        categoryId: catMap.get(p.categoryAr.trim().toLowerCase()) || undefined,
-      }));
+
+      const prodRes = await getOrderProducts(companyId);
+      const productList = prodRes?.data ?? [];
+      const byNameLower = new Map(productList.map((p) => [String(p.nameAr ?? '').trim().toLowerCase(), p]));
+
+      const updateTasks = [];
+      for (const row of BROASTED_PRESET_ORDER_PRODUCTS) {
+        const key = row.nameAr.trim().toLowerCase();
+        const ex = byNameLower.get(key);
+        if (!ex) continue;
+        const cid = catMap.get(row.categoryAr.trim().toLowerCase());
+        const { variants, lastPrice, unit } = presetRowToProductPayload(row);
+        updateTasks.push({
+          id: ex.id,
+          body: { categoryId: cid ?? null, variants, lastPrice, unit },
+        });
+      }
+
+      const CHUNK = 6;
+      let updated = 0;
+      for (let i = 0; i < updateTasks.length; i += CHUNK) {
+        const chunk = updateTasks.slice(i, i + CHUNK);
+        const results = await Promise.all(chunk.map(({ id, body }) => updateOrderProduct(id, body, companyId)));
+        for (const r of results) {
+          if (!r?.success) throw new Error(r?.error || t('updateFailed'));
+        }
+        updated += chunk.length;
+      }
+
+      const existingKeys = new Set(productList.map((p) => String(p.nameAr ?? '').trim().toLowerCase()));
+      const productsPayload = BROASTED_PRESET_ORDER_PRODUCTS.filter((p) => !existingKeys.has(p.nameAr.trim().toLowerCase())).map((p) => {
+        const { variants, lastPrice, unit } = presetRowToProductPayload(p);
+        return {
+          nameAr: p.nameAr,
+          categoryId: catMap.get(p.categoryAr.trim().toLowerCase()) || undefined,
+          variants,
+          lastPrice,
+          unit,
+        };
+      });
+
       let added = 0;
       if (productsPayload.length) {
         const batchRes = await createOrderProductsBatch(companyId, productsPayload);
         if (!batchRes?.success) throw new Error(batchRes?.error || t('addFailed'));
         added = productsPayload.length;
       }
+
       queryClient.invalidateQueries({ queryKey: ['order-products', companyId] });
       queryClient.invalidateQueries({ queryKey: ['order-categories', companyId] });
-      const skipped = BROASTED_PRESET_ORDER_PRODUCTS.length - added;
-      if (added === 0 && catsAdded === 0) {
-        setToast({ visible: true, message: t('ordersPresetAllExist'), type: 'success' });
-      } else if (added === 0 && catsAdded > 0) {
-        setToast({ visible: true, message: t('ordersPresetCategoriesOnly', String(catsAdded)), type: 'success' });
+
+      if (added === 0 && updated === 0 && catsAdded === 0) {
+        setToast({ visible: true, message: t('ordersPresetNothingDone'), type: 'success' });
       } else {
         setToast({
           visible: true,
-          message: t('ordersPresetInserted', String(added), String(skipped), String(catsAdded)),
+          message: t('ordersPresetDone', String(added), String(updated), String(catsAdded)),
           type: 'success',
         });
       }

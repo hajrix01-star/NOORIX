@@ -101,12 +101,20 @@ export default {
     en: 'After import, link products via the category column in the products template.',
   },
   ordersPresetCatalogButton: {
-    ar: 'إدراج قائمة الأصناف المقترحة (~٥٠ صنفاً)',
-    en: 'Insert suggested catalog (~50 items)',
+    ar: 'مزامنة قائمة الأصناف والأسعار (~٥٠ صنفاً)',
+    en: 'Sync suggested catalog & prices (~50 items)',
   },
   ordersPresetCatalogHint: {
-    ar: 'يُنشئ الفئات الناقصة ثم يضيف الأصناف غير الموجودة مسبقاً (بدون أسعار — يمكنك تعديلها لاحقاً). تصنيف «جرجير» تحت خضروات وفواكه.',
-    en: 'Creates missing categories then adds products not already listed (no prices — edit later). Rocket leaves under Vegetables & fruit.',
+    ar: 'يُنشئ الفئات الناقصة، يضيف الأصناف الجديدة، ويحدّث الموجود منها (فئة، وحدة معروضة، متوسط سعر). أعد الضغط بعد تعديل القائمة في النظام.',
+    en: 'Creates missing categories, adds new products, and updates matches (category, unit label, average price). Press again after catalog changes in code.',
+  },
+  ordersPresetDone: {
+    ar: 'تم: إضافة {0} صنفاً، تحديث {1} صنفاً، فئات جديدة {2}.',
+    en: 'Done: added {0} products, updated {1}, new categories {2}.',
+  },
+  ordersPresetNothingDone: {
+    ar: 'لا توجد تغييرات (القائمة فارغة أو لا تطابق).',
+    en: 'No changes (empty or no matching preset).',
   },
   ordersPresetInserted: {
     ar: 'تمت إضافة {0} صنفاً جديداً. تخطّي {1} (موجود مسبقاً). فئات أُضيفت: {2}.',
