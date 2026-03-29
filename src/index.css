@@ -1521,6 +1521,260 @@ input:focus, select:focus, textarea:focus {
   .noorix-settings-tab-body { padding: 14px 12px; }
 }
 
+/* ========== تبويب النسخ الاحتياطي — عرض مضغوط، مركزي، متجاوب ========== */
+.backup-tab {
+  max-width: 42rem;
+  margin-inline: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-sizing: border-box;
+}
+.backup-tab__intro h2 {
+  margin: 0 0 4px;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.backup-tab__intro p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--noorix-text-muted);
+}
+
+.backup-tab__config-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 900px) {
+  .backup-tab__config-grid--dual {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.backup-panel {
+  border: 1px solid var(--noorix-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  background: var(--noorix-bg, #fff);
+}
+.backup-panel--system {
+  background: var(--noorix-bg, #fff);
+  background: color-mix(in srgb, var(--noorix-accent-green, #16a34a) 6%, var(--noorix-bg, #fff));
+}
+.backup-panel__title {
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0;
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--noorix-border);
+  color: var(--noorix-text);
+}
+
+.backup-run-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.backup-run-row select.noorix-bank-filter {
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.backup-hint-list {
+  margin: 0;
+  padding-inline-start: 1.1rem;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--noorix-text-muted);
+}
+
+.backup-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.backup-check-row input {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.backup-form-grid {
+  display: grid;
+  gap: 8px 10px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 400px) {
+  .backup-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 5.75rem));
+  }
+}
+.backup-field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--noorix-text-muted);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.backup-field input.noorix-bank-filter {
+  width: 100%;
+  max-width: 5.75rem;
+  min-height: 36px;
+}
+
+.backup-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.backup-tab .backup-actions-row .noorix-btn,
+.backup-tab .backup-job-actions .noorix-btn {
+  font-size: 12px;
+  padding: 6px 11px;
+  min-height: 32px;
+}
+
+.backup-meta-line {
+  font-size: 11px;
+  color: var(--noorix-text-muted);
+  line-height: 1.45;
+}
+
+.backup-subtitle {
+  font-size: 11px;
+  font-weight: 800;
+  margin: 4px 0 0;
+  color: var(--noorix-text-muted);
+}
+
+.backup-sys-jobs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.backup-sys-job {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--noorix-border);
+  font-size: 11px;
+  background: var(--noorix-bg-muted);
+}
+@media (min-width: 480px) {
+  .backup-sys-job {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.backup-log-title {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 8px 0 6px;
+}
+
+.backup-job-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.backup-job {
+  border: 1px solid var(--noorix-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  background: var(--noorix-bg, #fff);
+}
+.backup-job__head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+@media (min-width: 560px) {
+  .backup-job__head {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+}
+.backup-job__text {
+  min-width: 0;
+  flex: 1;
+}
+.backup-job__title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+  word-break: break-word;
+}
+.backup-job__meta {
+  font-size: 11px;
+  color: var(--noorix-text-muted);
+  line-height: 1.45;
+  margin-top: 3px;
+}
+.backup-job__status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--noorix-bg-muted);
+  white-space: nowrap;
+  align-self: flex-start;
+}
+.backup-job__flags {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.backup-job-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px solid var(--noorix-border);
+}
+
+@media (max-width: 480px) {
+  .backup-tab {
+    max-width: 100%;
+  }
+  .backup-panel {
+    padding: 10px 12px;
+  }
+}
+
 /* ========== تقويم لوحة التحكم — عرض كامل وتمرير على الجوال ========== */
 .noorix-calendar-layout {
   display: flex;

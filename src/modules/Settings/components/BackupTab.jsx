@@ -32,6 +32,15 @@ function formatBackupDate(iso, lang) {
   }
 }
 
+function formatFileSize(bytes) {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n < 0) return '';
+  if (n < 1024) return `${Math.round(n)} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(n / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
 /** اسم افتراضي للاستيراد: شركة — تاريخ النسخة — #رقم */
 function defaultImportCompanyName(j, t, lang) {
   const co = j.company?.nameAr || t('backupImportDefaultCo');
@@ -314,311 +323,288 @@ export default function BackupTab({ activeCompanies = [] }) {
   }, [activeCompanies, companyId]);
 
   return (
-    <div style={{ display: 'grid', gap: 20 }}>
-      <div>
-        <h2 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800 }}>{t('backupHeading')}</h2>
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.65 }}>
-          {t('backupIntro')}
-        </p>
+    <div className="backup-tab">
+      <div className="backup-tab__intro">
+        <h2>{t('backupHeading')}</h2>
+        <p>{t('backupIntro')}</p>
       </div>
 
-      <div
-        className="noorix-surface-card"
-        style={{ padding: 18, display: 'grid', gap: 14, border: '1px solid var(--noorix-border)' }}
-      >
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--noorix-text)' }}>{t('backupCompanySection')}</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-          <select
-            className="noorix-bank-filter"
-            style={{ minWidth: 220 }}
-            value={companyId}
-            onChange={(e) => setCompanyId(e.target.value)}
-            disabled={!activeCompanies.length}
-          >
-            {activeCompanies.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nameAr || c.nameEn || c.id}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="noorix-btn noorix-btn--primary noorix-bank-cta"
-            disabled={!companyId || !activeCompanies.length || triggerMut.isPending}
-            onClick={() => triggerMut.mutate()}
-          >
-            {triggerMut.isPending ? t('loading') : t('backupRunNow')}
-          </button>
-        </div>
-        {!activeCompanies.length && (
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('noActiveCompanies')}</p>
-        )}
-        <ul style={{ margin: 0, paddingInlineStart: 20, fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.7 }}>
-          <li>{t('backupBulletDedup')}</li>
-          <li>{t('backupBulletExternal')}</li>
-          <li>{t('backupBulletResume')}</li>
-          <li>{t('backupBulletReport')}</li>
-          <li>{t('backupBulletDaily')}</li>
-        </ul>
-      </div>
-
-      {canSystemBackup && (
-        <div
-          className="noorix-surface-card"
-          style={{ padding: 18, display: 'grid', gap: 14, border: '1px solid var(--noorix-border)' }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--noorix-text)' }}>{t('backupSystemHeading')}</div>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.65 }}>
-            {t('backupSystemIntro')}
-          </p>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={sysForm.enabled}
-              onChange={(e) => setSysForm((p) => ({ ...p, enabled: e.target.checked }))}
-            />
-            {t('backupSystemEnabled')}
-          </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: 'var(--noorix-text-muted)' }}>
-                {t('backupSystemHour')}
-              </div>
-              <input
-                type="number"
-                min={0}
-                max={23}
-                className="noorix-bank-filter"
-                style={{ width: 72 }}
-                value={sysForm.scheduleHour}
-                onChange={(e) =>
-                  setSysForm((p) => ({ ...p, scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) }))
-                }
-              />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: 'var(--noorix-text-muted)' }}>
-                {t('backupSystemMinute')}
-              </div>
-              <input
-                type="number"
-                min={0}
-                max={59}
-                className="noorix-bank-filter"
-                style={{ width: 72 }}
-                value={sysForm.scheduleMinute}
-                onChange={(e) =>
-                  setSysForm((p) => ({ ...p, scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)) }))
-                }
-              />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: 'var(--noorix-text-muted)' }}>
-                {t('backupSystemRetention')}
-              </div>
-              <input
-                type="number"
-                min={1}
-                max={50}
-                className="noorix-bank-filter"
-                style={{ width: 72 }}
-                value={sysForm.retentionCount}
-                onChange={(e) =>
-                  setSysForm((p) => ({
-                    ...p,
-                    retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 10)),
-                  }))
-                }
-              />
-            </div>
-          </div>
-          {sysCfgRes?.success && sysCfgRes.data?.lastRunDayRiyadh != null && (
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-              {t('backupSystemLastRun')}: <strong dir="ltr">{sysCfgRes.data.lastRunDayRiyadh}</strong>
-            </div>
-          )}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            <button
-              type="button"
-              className="noorix-btn noorix-btn--secondary"
-              disabled={saveSysMut.isPending}
-              onClick={() =>
-                saveSysMut.mutate({
-                  enabled: sysForm.enabled,
-                  scheduleHour: sysForm.scheduleHour,
-                  scheduleMinute: sysForm.scheduleMinute,
-                  retentionCount: sysForm.retentionCount,
-                })
-              }
+      <div className={`backup-tab__config-grid${canSystemBackup ? ' backup-tab__config-grid--dual' : ''}`}>
+        <section className="backup-panel" aria-labelledby="backup-company-title">
+          <h3 id="backup-company-title" className="backup-panel__title">
+            {t('backupCompanySection')}
+          </h3>
+          <div className="backup-run-row">
+            <select
+              className="noorix-bank-filter"
+              value={companyId}
+              onChange={(e) => setCompanyId(e.target.value)}
+              disabled={!activeCompanies.length}
+              aria-label={t('backupCompanySection')}
             >
-              {saveSysMut.isPending ? t('loading') : t('backupSystemSave')}
-            </button>
+              {activeCompanies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nameAr || c.nameEn || c.id}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               className="noorix-btn noorix-btn--primary"
-              disabled={runSysMut.isPending}
-              onClick={() => runSysMut.mutate()}
+              disabled={!companyId || !activeCompanies.length || triggerMut.isPending}
+              onClick={() => triggerMut.mutate()}
             >
-              {runSysMut.isPending ? t('loading') : t('backupSystemRunNow')}
+              {triggerMut.isPending ? t('loading') : t('backupRunNow')}
             </button>
           </div>
-
-          <div style={{ fontSize: 13, fontWeight: 700, marginTop: 8 }}>{t('backupSystemJobs')}</div>
-          {sysJobsLoading && <div style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>}
-          {!sysJobsLoading && (!sysJobsRes?.success || !(Array.isArray(sysJobsRes.data) ? sysJobsRes.data : []).length) && (
-            <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('backupSystemNoJobs')}</div>
+          {!activeCompanies.length && (
+            <p className="backup-meta-line" style={{ margin: 0 }}>
+              {t('noActiveCompanies')}
+            </p>
           )}
-          <div style={{ display: 'grid', gap: 8 }}>
-            {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
-              <div
-                key={sj.id}
-                className="noorix-surface-card"
-                style={{
-                  padding: 10,
-                  fontSize: 12,
-                  border: '1px solid var(--noorix-border)',
-                  display: 'grid',
-                  gap: 6,
-                }}
-              >
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' }}>
-                  <span dir="ltr" style={{ fontWeight: 700 }}>
-                    {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
-                    {formatBackupDate(sj.createdAt, lang)}
-                  </span>
-                  <span>{statusLabel(sj.status, t)}</span>
-                </div>
-                {sj.verifyOk === true && (
-                  <span style={{ color: '#15803d', fontSize: 11 }}>{t('backupVerifyOk')}</span>
-                )}
-                {sj.verifyOk === false && sj.verifyError && (
-                  <span style={{ color: '#b91c1c', fontSize: 11 }}>{sj.verifyError}</span>
-                )}
-                {sj.status === 'completed' && sj.localRelativePath && (
-                  <button
-                    type="button"
-                    className="noorix-btn noorix-btn--ghost"
-                    style={{ alignSelf: 'flex-start' }}
-                    disabled={verifySysMut.isPending}
-                    onClick={() => verifySysMut.mutate(sj.id)}
-                  >
-                    {t('backupVerify')}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+          <ul className="backup-hint-list">
+            <li>{t('backupBulletDedup')}</li>
+            <li>{t('backupBulletExternal')}</li>
+            <li>{t('backupBulletResume')}</li>
+            <li>{t('backupBulletReport')}</li>
+            <li>{t('backupBulletDaily')}</li>
+          </ul>
+        </section>
 
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t('backupJobHistory')}</div>
-        {isLoading && <div style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>}
-        {!isLoading && jobs.length === 0 && (
-          <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('backupNoJobs')}</div>
-        )}
-        <div style={{ display: 'grid', gap: 8 }}>
-          {jobs.map((j) => (
-            <div
-              key={j.id}
-              className="noorix-surface-card"
-              style={{
-                padding: 12,
-                display: 'grid',
-                gap: 8,
-                fontSize: 13,
-                border: '1px solid var(--noorix-border)',
-              }}
-            >
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 700 }}>
-                  {scopeLabel(j.scope, t)}
-                  {j.company ? ` — ${j.company.nameAr || j.company.nameEn || ''}` : ''}
-                  {j.ordinal != null ? ` · ${t('backupOrdinalLabel')} ${j.ordinal}` : ''}
-                </span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    padding: '2px 8px',
-                    borderRadius: 8,
-                    background: 'var(--noorix-bg-muted)',
-                  }}
-                >
-                  {statusLabel(j.status, t)}
-                </span>
+        {canSystemBackup && (
+          <section className="backup-panel backup-panel--system" aria-labelledby="backup-system-title">
+            <h3 id="backup-system-title" className="backup-panel__title">
+              {t('backupSystemHeading')}
+            </h3>
+            <p className="backup-meta-line" style={{ margin: 0 }}>
+              {t('backupSystemIntro')}
+            </p>
+            <label className="backup-check-row">
+              <input
+                type="checkbox"
+                checked={sysForm.enabled}
+                onChange={(e) => setSysForm((p) => ({ ...p, enabled: e.target.checked }))}
+              />
+              <span>{t('backupSystemEnabled')}</span>
+            </label>
+            <div className="backup-form-grid">
+              <div className="backup-field">
+                <label htmlFor="backup-h">{t('backupSystemHour')}</label>
+                <input
+                  id="backup-h"
+                  type="number"
+                  min={0}
+                  max={23}
+                  className="noorix-bank-filter"
+                  value={sysForm.scheduleHour}
+                  onChange={(e) =>
+                    setSysForm((p) => ({ ...p, scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) }))
+                  }
+                />
               </div>
-              <div style={{ color: 'var(--noorix-text-muted)', fontSize: 12 }}>
-                {new Date(j.createdAt).toLocaleString(isAr ? 'ar-SA' : 'en-GB')}
-                {j.sizeBytes != null ? ` · ${(Number(j.sizeBytes) / 1024).toFixed(1)} KB` : ''}
-                {j.durationMs != null ? ` · ${j.durationMs} ms` : ''}
-                {j.externalUploaded ? ` · ${t('backupExternalOk')}` : j.externalError ? ` · ${t('backupExternalPending')}` : ''}
+              <div className="backup-field">
+                <label htmlFor="backup-m">{t('backupSystemMinute')}</label>
+                <input
+                  id="backup-m"
+                  type="number"
+                  min={0}
+                  max={59}
+                  className="noorix-bank-filter"
+                  value={sysForm.scheduleMinute}
+                  onChange={(e) =>
+                    setSysForm((p) => ({ ...p, scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)) }))
+                  }
+                />
               </div>
-              {j.errorMessage && (
-                <div style={{ color: '#b91c1c', fontSize: 12 }}>{j.errorMessage}</div>
-              )}
-              {j.verifyOk === true && (
-                <div style={{ color: '#15803d', fontSize: 11 }}>{t('backupVerifyOk')}</div>
-              )}
-              {j.verifyOk === false && j.verifyError && (
-                <div style={{ color: '#b91c1c', fontSize: 11 }}>{j.verifyError}</div>
-              )}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <button
-                  type="button"
-                  className="noorix-btn noorix-btn--secondary"
-                  disabled={reportMut.isPending}
-                  onClick={() => reportMut.mutate(j.id)}
-                >
-                  {t('backupRestoreReport')}
-                </button>
-                {j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath && (
-                  <>
-                    <button
-                      type="button"
-                      className="noorix-btn noorix-btn--secondary"
-                      disabled={downloadMut.isPending}
-                      onClick={() => downloadMut.mutate(j.id)}
-                    >
-                      {t('backupDownload')}
-                    </button>
-                    <button
-                      type="button"
-                      className="noorix-btn noorix-btn--primary"
-                      disabled={importMut.isPending}
-                      onClick={() => {
-                        setImportNameAr(defaultImportCompanyName(j, t, lang));
-                        setImportModal({ jobId: j.id });
-                      }}
-                    >
-                      {t('backupImportNewCompany')}
-                    </button>
-                  </>
-                )}
-                {j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath && (
-                  <button
-                    type="button"
-                    className="noorix-btn noorix-btn--ghost"
-                    disabled={verifyCoMut.isPending}
-                    onClick={() => verifyCoMut.mutate(j.id)}
-                  >
-                    {t('backupVerify')}
-                  </button>
-                )}
-                {!j.externalUploaded && j.status === 'completed' && j.localRelativePath && (
-                  <button
-                    type="button"
-                    className="noorix-btn noorix-btn--ghost"
-                    disabled={retryMut.isPending}
-                    onClick={() => retryMut.mutate(j.id)}
-                  >
-                    {t('backupRetryExternal')}
-                  </button>
-                )}
+              <div className="backup-field">
+                <label htmlFor="backup-ret">{t('backupSystemRetention')}</label>
+                <input
+                  id="backup-ret"
+                  type="number"
+                  min={1}
+                  max={50}
+                  className="noorix-bank-filter"
+                  value={sysForm.retentionCount}
+                  onChange={(e) =>
+                    setSysForm((p) => ({
+                      ...p,
+                      retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 10)),
+                    }))
+                  }
+                />
               </div>
             </div>
-          ))}
-        </div>
+            {sysCfgRes?.success && sysCfgRes.data?.lastRunDayRiyadh != null && (
+              <div className="backup-meta-line">
+                {t('backupSystemLastRun')}: <strong dir="ltr">{sysCfgRes.data.lastRunDayRiyadh}</strong>
+              </div>
+            )}
+            <div className="backup-actions-row">
+              <button
+                type="button"
+                className="noorix-btn noorix-btn--secondary"
+                disabled={saveSysMut.isPending}
+                onClick={() =>
+                  saveSysMut.mutate({
+                    enabled: sysForm.enabled,
+                    scheduleHour: sysForm.scheduleHour,
+                    scheduleMinute: sysForm.scheduleMinute,
+                    retentionCount: sysForm.retentionCount,
+                  })
+                }
+              >
+                {saveSysMut.isPending ? t('loading') : t('backupSystemSave')}
+              </button>
+              <button
+                type="button"
+                className="noorix-btn noorix-btn--primary"
+                disabled={runSysMut.isPending}
+                onClick={() => runSysMut.mutate()}
+              >
+                {runSysMut.isPending ? t('loading') : t('backupSystemRunNow')}
+              </button>
+            </div>
+
+            <h4 className="backup-subtitle">{t('backupSystemJobs')}</h4>
+            {sysJobsLoading && <div className="backup-meta-line">{t('loading')}</div>}
+            {!sysJobsLoading && (!sysJobsRes?.success || !(Array.isArray(sysJobsRes.data) ? sysJobsRes.data : []).length) && (
+              <div className="backup-meta-line">{t('backupSystemNoJobs')}</div>
+            )}
+            <div className="backup-sys-jobs">
+              {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
+                <div key={sj.id} className="backup-sys-job">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 10px', minWidth: 0 }}>
+                    <span dir="ltr" style={{ fontWeight: 700 }}>
+                      {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
+                      {formatBackupDate(sj.createdAt, lang)}
+                    </span>
+                    <span className="backup-job__status" style={{ margin: 0 }}>
+                      {statusLabel(sj.status, t)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch' }}>
+                    {sj.verifyOk === true && (
+                      <span style={{ color: '#15803d', fontSize: 11 }}>{t('backupVerifyOk')}</span>
+                    )}
+                    {sj.verifyOk === false && sj.verifyError && (
+                      <span style={{ color: '#b91c1c', fontSize: 11, wordBreak: 'break-word' }}>{sj.verifyError}</span>
+                    )}
+                    {sj.status === 'completed' && sj.localRelativePath && (
+                      <button
+                        type="button"
+                        className="noorix-btn noorix-btn--ghost"
+                        disabled={verifySysMut.isPending}
+                        onClick={() => verifySysMut.mutate(sj.id)}
+                      >
+                        {t('backupVerify')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
+
+      <section className="backup-tab__log" aria-labelledby="backup-log-title">
+        <h3 id="backup-log-title" className="backup-log-title">
+          {t('backupJobHistory')}
+        </h3>
+        {isLoading && <div className="backup-meta-line">{t('loading')}</div>}
+        {!isLoading && jobs.length === 0 && <div className="backup-meta-line">{t('backupNoJobs')}</div>}
+        <div className="backup-job-list">
+          {jobs.map((j) => {
+            const metaParts = [
+              new Date(j.createdAt).toLocaleString(isAr ? 'ar-SA' : 'en-GB'),
+              j.sizeBytes != null ? formatFileSize(j.sizeBytes) : '',
+              j.durationMs != null ? `${j.durationMs} ms` : '',
+              j.externalUploaded ? t('backupExternalOk') : j.externalError ? t('backupExternalPending') : '',
+            ].filter(Boolean);
+            return (
+              <article key={j.id} className="backup-job">
+                <div className="backup-job__head">
+                  <div className="backup-job__text">
+                    <h4 className="backup-job__title">
+                      {scopeLabel(j.scope, t)}
+                      {j.company ? ` — ${j.company.nameAr || j.company.nameEn || ''}` : ''}
+                      {j.ordinal != null ? ` · ${t('backupOrdinalLabel')} ${j.ordinal}` : ''}
+                    </h4>
+                    <div className="backup-job__meta">{metaParts.join(' · ')}</div>
+                  </div>
+                  <span className="backup-job__status">{statusLabel(j.status, t)}</span>
+                </div>
+                {j.errorMessage && (
+                  <div className="backup-job__flags" style={{ color: '#b91c1c' }}>
+                    {j.errorMessage}
+                  </div>
+                )}
+                {j.verifyOk === true && (
+                  <div className="backup-job__flags" style={{ color: '#15803d' }}>
+                    {t('backupVerifyOk')}
+                  </div>
+                )}
+                {j.verifyOk === false && j.verifyError && (
+                  <div className="backup-job__flags" style={{ color: '#b91c1c' }}>
+                    {j.verifyError}
+                  </div>
+                )}
+                <div className="backup-job-actions">
+                  <button
+                    type="button"
+                    className="noorix-btn noorix-btn--secondary"
+                    disabled={reportMut.isPending}
+                    onClick={() => reportMut.mutate(j.id)}
+                  >
+                    {t('backupRestoreReport')}
+                  </button>
+                  {j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath && (
+                    <>
+                      <button
+                        type="button"
+                        className="noorix-btn noorix-btn--secondary"
+                        disabled={downloadMut.isPending}
+                        onClick={() => downloadMut.mutate(j.id)}
+                      >
+                        {t('backupDownload')}
+                      </button>
+                      <button
+                        type="button"
+                        className="noorix-btn noorix-btn--primary"
+                        disabled={importMut.isPending}
+                        onClick={() => {
+                          setImportNameAr(defaultImportCompanyName(j, t, lang));
+                          setImportModal({ jobId: j.id });
+                        }}
+                      >
+                        {t('backupImportNewCompany')}
+                      </button>
+                      <button
+                        type="button"
+                        className="noorix-btn noorix-btn--ghost"
+                        disabled={verifyCoMut.isPending}
+                        onClick={() => verifyCoMut.mutate(j.id)}
+                      >
+                        {t('backupVerify')}
+                      </button>
+                    </>
+                  )}
+                  {!j.externalUploaded && j.status === 'completed' && j.localRelativePath && (
+                    <button
+                      type="button"
+                      className="noorix-btn noorix-btn--ghost"
+                      disabled={retryMut.isPending}
+                      onClick={() => retryMut.mutate(j.id)}
+                    >
+                      {t('backupRetryExternal')}
+                    </button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
 
       {importModal && (
         <div
@@ -637,10 +623,10 @@ export default function BackupTab({ activeCompanies = [] }) {
         >
           <div
             className="noorix-surface-card"
-            style={{ maxWidth: 440, width: '100%', padding: 20 }}
+            style={{ width: 'min(100%, 26rem)', maxWidth: '100%', padding: 18, boxSizing: 'border-box' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginTop: 0 }}>{t('backupImportNewCompany')}</h3>
+            <h3 style={{ marginTop: 0, fontSize: '1.05rem' }}>{t('backupImportNewCompany')}</h3>
             <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
               {t('backupImportWarn')}
             </p>
@@ -695,10 +681,17 @@ export default function BackupTab({ activeCompanies = [] }) {
         >
           <div
             className="noorix-surface-card"
-            style={{ maxWidth: 560, width: '100%', maxHeight: '88vh', overflow: 'auto', padding: 22 }}
+            style={{
+              width: 'min(100%, 36rem)',
+              maxWidth: '100%',
+              maxHeight: '88vh',
+              overflow: 'auto',
+              padding: 18,
+              boxSizing: 'border-box',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginTop: 0, marginBottom: 8 }}>{t('backupRestoreReport')}</h3>
+            <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: '1.05rem' }}>{t('backupRestoreReport')}</h3>
             <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
               {isAr ? reportModal.payload?.messageAr : reportModal.payload?.messageEn || reportModal.payload?.messageAr}
             </p>
@@ -814,10 +807,17 @@ export default function BackupTab({ activeCompanies = [] }) {
         >
           <div
             className="noorix-surface-card"
-            style={{ maxWidth: 560, width: '100%', maxHeight: '88vh', overflow: 'auto', padding: 22 }}
+            style={{
+              width: 'min(100%, 36rem)',
+              maxWidth: '100%',
+              maxHeight: '88vh',
+              overflow: 'auto',
+              padding: 18,
+              boxSizing: 'border-box',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginTop: 0, marginBottom: 8 }}>{t('backupImportReportTitle')}</h3>
+            <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: '1.05rem' }}>{t('backupImportReportTitle')}</h3>
             <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
               {t('backupImportOk')}
             </p>
