@@ -125,6 +125,7 @@ export default function PurchasesBatchScreen() {
       transactionDate: b.transactionDate,
       invoiceCount: b.invoiceCount,
       supplierNames: b.supplierNames || '—',
+      vaultName: b.vaultName || '—',
       netAmount: Number(b.netAmount) || 0,
       taxAmount: Number(b.taxAmount) || 0,
       totalAmount: Number(b.totalAmount) || 0,
@@ -210,6 +211,10 @@ export default function PurchasesBatchScreen() {
       render: (v) => (
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0 }}>{v || '—'}</span>
       )},
+    { key: 'vaultName', label: t('vault'), sortable: true, shrink: true, minWidth: 120,
+      render: (v) => (
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0, maxWidth: 200 }}>{v || '—'}</span>
+      )},
     /* الأعمدة المالية — ضيقة، محاذاة يمين */
     { key: 'netAmount',   label: t('net'),   numeric: true, sortable: true, shrink: true,
       render: (v) => <span style={{ color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
@@ -262,7 +267,10 @@ export default function PurchasesBatchScreen() {
           <span>{formatSaudiDate(row.transactionDate)}</span>
           {row.invoiceCount > 0 && <span style={{ color: '#2563eb', fontWeight: 700 }}>{row.invoiceCount} {t('invoices')}</span>}
         </div>
-        {row.supplierNames && <div style={{ fontSize: 13, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.supplierNames}</div>}
+        {row.supplierNames && <div style={{ fontSize: 13, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.supplierNames}</div>}
+        <div style={{ fontSize: 12, marginBottom: 8, color: 'var(--noorix-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {t('vault')}: {row.vaultName || '—'}
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('net')}</div>
@@ -286,10 +294,10 @@ export default function PurchasesBatchScreen() {
     );
   }, [statusStyles, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
 
-  /* صف التذييل: # + 9 أعمدة = 10 خلايا — كان colSpan الأول 4 فيفقد عمود المورد ويتداخل التنسيق */
+  /* صف التذييل: # + batchId + تاريخ + عدد + مورد + خزنة + صافي + ضريبة + إجمالي + حالة + إجراءات = 11 عموداً */
   const batchesFooterCells = (
     <>
-      <td colSpan={5} style={{ padding: '8px 10px', fontSize: 12, color: 'var(--noorix-text-muted)', verticalAlign: 'middle' }}>
+      <td colSpan={6} style={{ padding: '8px 10px', fontSize: 12, color: 'var(--noorix-text-muted)', verticalAlign: 'middle' }}>
         {t('totalBatches', activeOnly.length) || `الإجمالي (${activeOnly.length} دفعة)`}
       </td>
       <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a', textAlign: 'right', whiteSpace: 'nowrap' }}>{fmt(totalNet, 2)}</td>
@@ -321,6 +329,7 @@ export default function PurchasesBatchScreen() {
       const res = await createInvoiceBatch({
         companyId,
         transactionDate: batchDate,
+        vaultId: batchVaultId || undefined,
         idempotencyKey,
         items: valid.map((r) => {
           let notes = r.notes?.trim();
@@ -605,7 +614,7 @@ export default function PurchasesBatchScreen() {
             showRowNumbers
             rowNumberWidth={40}
             tableLayout="auto"
-            tableMinWidth={1120}
+            tableMinWidth={1240}
             innerPadding={8}
             total={displayedTotal}
             page={page}

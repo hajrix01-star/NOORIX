@@ -173,6 +173,36 @@
   right: 0;
 }
 
+/* طبقة معتمة + لوحة مركزية فوق السايدبار (جوال) — portal إلى document.body */
+.noorix-chat-commands-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10040;
+  background: rgba(15, 23, 42, 0.45);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.noorix-chat-commands-panel--portal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translate(-50%, -50%);
+  width: min(440px, calc(100vw - 24px)) !important;
+  min-width: 0 !important;
+  max-width: min(440px, calc(100vw - 24px)) !important;
+  max-height: min(75vh, 520px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  z-index: 10041;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+}
+
+[dir='rtl'] .noorix-chat-commands-panel--portal {
+  left: 50%;
+  right: auto;
+}
+
 .noorix-chat-commands-group {
   border-bottom: 1px solid var(--noorix-border);
 }
@@ -463,8 +493,8 @@
     touch-action: manipulation;
   }
 
-  /* لوحة أوامر تحت الزر مباشرة، بعرض خلية كاملة (= عرض الصف) */
-  .noorix-chat-commands-panel {
+  /* لوحة مدمجة تحت الزر (لم تعد تُستخدم مع portal؛ يبقى للتوافق إن وُجدت نسخة غير portal) */
+  .noorix-chat-commands-panel:not(.noorix-chat-commands-panel--portal) {
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
@@ -482,7 +512,7 @@
     box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
   }
 
-  [dir='rtl'] .noorix-chat-commands-panel {
+  [dir='rtl'] .noorix-chat-commands-panel:not(.noorix-chat-commands-panel--portal) {
     left: 0;
     right: 0;
   }

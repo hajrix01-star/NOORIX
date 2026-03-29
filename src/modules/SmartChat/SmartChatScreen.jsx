@@ -3,6 +3,7 @@
  * نسق مرجعي: أوامر مجمّعة، إدخال، نوافذ مركزية، تخزين محلي مع فلتر.
  */
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -181,6 +182,7 @@ export default function SmartChatScreen() {
   const skipScrollToEndRef = useRef(false);
   const inputRef = useRef(null);
   const commandsWrapRef = useRef(null);
+  const commandsPanelRef = useRef(null);
   const saveTimerRef = useRef(null);
 
   const u = getStoredUser();
@@ -402,39 +404,13 @@ export default function SmartChatScreen() {
             >
               {filteredGroups.length > 0 ? (
                 <div ref={commandsWrapRef} className="noorix-smart-chat-quick-cell">
-                  <button type="button" className="noorix-chat-gradient-btn" onClick={() => setCommandsOpen((o) => !o)}>
+                  <button type="button" className="noorix-chat-gradient-btn" onClick={() => setCommandsOpen((o) => !o)} aria-expanded={commandsOpen}>
                     <span className="noorix-chat-gradient-icon" aria-hidden>
                       ⚡
                     </span>
                     <span className="truncate">{t('chatCommands')}</span>
                     <span className="noorix-chat-chev">{commandsOpen ? '▲' : '▼'}</span>
                   </button>
-                  {commandsOpen && (
-                    <div className="noorix-chat-commands-panel">
-                      {filteredGroups.map((g) => (
-                        <div key={g.id} className="noorix-chat-commands-group">
-                          <div className="noorix-chat-commands-group-label">
-                            {g.icon} {isAr ? g.labelAr : g.labelEn}
-                          </div>
-                          <div
-                            className={`noorix-chat-commands-grid${g.items.length === 1 ? ' noorix-chat-commands-grid--single' : ''}`}
-                          >
-                            {g.items.map((it) => (
-                              <button
-                                key={it.key}
-                                type="button"
-                                className="noorix-chat-commands-item"
-                                onClick={() => handleCommand(it.key)}
-                              >
-                                <span aria-hidden>{it.icon}</span>
-                                <span>{isAr ? it.labelAr : it.labelEn}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ) : null}
               {showFaq ? (
@@ -565,7 +541,7 @@ export default function SmartChatScreen() {
       )}
 
       {faqOpen && (
-        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setFaqOpen(false)}>
+        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 10050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setFaqOpen(false)}>
           <div className="noorix-surface-card" style={{ maxWidth: 520, width: '100%', maxHeight: 'min(80vh, 560px)', overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 14, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 700, fontSize: 16 }}>{isAr ? 'أسئلة جاهزة' : 'Suggested questions'}</span>
@@ -633,7 +609,7 @@ export default function SmartChatScreen() {
 
       {expenseMode === 'editLine' && activeCompanyId && (
         expenseEditLine === undefined ? (
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setExpenseMode(null)}>
+          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 10051, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setExpenseMode(null)}>
             <div className="noorix-surface-card" style={{ maxWidth: 400, width: '100%', maxHeight: '80vh', overflow: 'auto', padding: 20, borderRadius: 14 }} onClick={(e) => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <strong>{t('chatEditFixedExpense')}</strong>
@@ -664,6 +640,51 @@ export default function SmartChatScreen() {
           />
         )
       )}
+
+      {activeCompanyId && commandsOpen && filteredGroups.length > 0
+        ? createPortal(
+            <>
+              <div
+                className="noorix-chat-commands-backdrop"
+                role="presentation"
+                aria-hidden
+                onClick={() => setCommandsOpen(false)}
+              />
+              <div
+                ref={commandsPanelRef}
+                className="noorix-chat-commands-panel noorix-chat-commands-panel--portal"
+                role="dialog"
+                aria-modal="true"
+                aria-label={isAr ? 'أوامر المحادثة' : 'Chat commands'}
+                dir={isAr ? 'rtl' : 'ltr'}
+              >
+                {filteredGroups.map((g) => (
+                  <div key={g.id} className="noorix-chat-commands-group">
+                    <div className="noorix-chat-commands-group-label">
+                      {g.icon} {isAr ? g.labelAr : g.labelEn}
+                    </div>
+                    <div
+                      className={`noorix-chat-commands-grid${g.items.length === 1 ? ' noorix-chat-commands-grid--single' : ''}`}
+                    >
+                      {g.items.map((it) => (
+                        <button
+                          key={it.key}
+                          type="button"
+                          className="noorix-chat-commands-item"
+                          onClick={() => handleCommand(it.key)}
+                        >
+                          <span aria-hidden>{it.icon}</span>
+                          <span>{isAr ? it.labelAr : it.labelEn}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
 
       {toast.visible && (
         <ToastBanner message={toast.message} type={toast.type} isAr={isAr} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />

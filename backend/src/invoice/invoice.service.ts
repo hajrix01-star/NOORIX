@@ -658,6 +658,7 @@ export class InvoiceService {
         totalAmount: true,
         notes: true,
         supplier: { select: { nameAr: true, nameEn: true } },
+        vault:     { select: { nameAr: true, nameEn: true } },
       },
       orderBy: { transactionDate: 'desc' },
     });
@@ -686,11 +687,20 @@ export class InvoiceService {
       const taxAmount = invs.reduce((s, i) => s.plus(new Decimal(i.taxAmount.toString())), new Decimal(0));
       const totalAmount = invs.reduce((s, i) => s.plus(new Decimal(i.totalAmount.toString())), new Decimal(0));
       const transactionDate = invs[0]?.transactionDate;
+      const vaultLabels = [
+        ...new Set(
+          invs
+            .map((i) => i.vault?.nameAr || i.vault?.nameEn || '')
+            .filter(Boolean),
+        ),
+      ];
+      const vaultName = vaultLabels.length ? vaultLabels.join(' | ') : '—';
       batches.push({
         batchId,
         transactionDate,
         invoiceCount: invs.length,
         supplierNames: supplierNames || '—',
+        vaultName,
         netAmount: netAmount.toFixed(4),
         taxAmount: taxAmount.toFixed(4),
         totalAmount: totalAmount.toFixed(4),
@@ -707,6 +717,9 @@ export class InvoiceService {
                 .toLowerCase()
                 .includes(needle) ||
               String(b.supplierNames || '')
+                .toLowerCase()
+                .includes(needle) ||
+              String(b.vaultName || '')
                 .toLowerCase()
                 .includes(needle),
           )
