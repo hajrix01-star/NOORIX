@@ -33,6 +33,9 @@ const COLORS = [
   '#0891b2', '#db2777', '#4f46e5', '#ea580c', '#84cc16',
 ];
 
+/** جداول كبيرة تبقى بعرض الصف كاملاً؛ الرسوم والبطاقات الأصغر تُوزّع عمودين */
+const ANALYSIS_CARD_FULL_WIDTH = new Set(['category_table', 'deposits_table', 'pos_terminals']);
+
 function truncateLabel(str, max = 20) {
   const s = String(str || '');
   if (s.length <= max) return s;
@@ -120,6 +123,7 @@ function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }) 
         borderRadius: 14,
         border: '1px solid var(--noorix-border)',
         boxShadow: '0 4px 18px rgba(15, 23, 42, 0.06)',
+        height: '100%',
       }}
     >
       <div
@@ -871,8 +875,32 @@ export default function BankStatementAnalysisCardsTab({
         </div>
       </div>
 
-      {/* البطاقات */}
-      {activeCards.map((id) => renderCard(id))}
+      {/* البطاقات — عمودان تلقائياً عندما تسمح الشاشة (min ~400px لكل عمود) */}
+      <div
+        style={{
+          display: 'grid',
+          gap: 18,
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
+          alignItems: 'stretch',
+        }}
+      >
+        {activeCards.map((id) => {
+          const card = renderCard(id);
+          if (!card) return null;
+          const fullRow = ANALYSIS_CARD_FULL_WIDTH.has(id);
+          return (
+            <div
+              key={id}
+              style={{
+                minWidth: 0,
+                ...(fullRow ? { gridColumn: '1 / -1' } : {}),
+              }}
+            >
+              {card}
+            </div>
+          );
+        })}
+      </div>
 
       {!activeCards.length && (
         <div style={{ textAlign: 'center', padding: 48, color: 'var(--noorix-text-muted)' }}>
