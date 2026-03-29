@@ -17,10 +17,14 @@ import {
 } from '../../../hooks/useOrders';
 import { fmt } from '../../../utils/format';
 import {
-  exportToExcel,
   importFromExcel,
   exportOrdersProductsImportTemplate,
   exportOrdersCategoriesImportTemplate,
+  exportOrderProductsWorkbook,
+  exportOrderCategoriesWorkbook,
+  filterOrderProductsTemplateRows,
+  groupOrderProductImportRows,
+  orderProductImportGroupsToPayload,
 } from '../../../utils/exportUtils';
 import Toast from '../../../components/Toast';
 import {
@@ -29,10 +33,6 @@ import {
   addCustomSize,
   addCustomPackaging,
 } from '../constants/orderDefaults';
-import {
-  ORDER_PRODUCTS_TEMPLATE_MARKER_AR,
-  ORDER_CATEGORIES_TEMPLATE_MARKER_AR,
-} from '../constants/importTemplate';
 import { AddSizeModal } from './AddSizeModal';
 import { AddPackagingModal } from './AddPackagingModal';
 import { BROASTED_PRESET_ORDER_PRODUCTS, presetRowToProductPayload } from '../data/broastedPresetCatalog';
@@ -285,16 +285,7 @@ export function ItemsManageTab({ companyId }) {
 
   async function handleExportProducts() {
     try {
-      const rows = products.map((p) => {
-        const variants = Array.isArray(p.variants) ? p.variants : [];
-        return {
-          nameAr: p.nameAr,
-          nameEn: p.nameEn || '',
-          category: p.category?.nameAr || p.category?.nameEn || '',
-          variants: variants.length > 0 ? JSON.stringify(variants.map((v) => ({ size: v.size, packaging: v.packaging, unit: v.unit, lastPrice: String(v.lastPrice ?? 0) }))) : '',
-        };
-      });
-      await exportToExcel(rows, 'order-products.xlsx');
+      await exportOrderProductsWorkbook(products, 'order-products.xlsx');
       setToast({ visible: true, message: t('exportSuccess'), type: 'success' });
     } catch (e) {
       setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
@@ -303,8 +294,7 @@ export function ItemsManageTab({ companyId }) {
 
   async function handleExportCategories() {
     try {
-      const rows = categories.map((c) => ({ nameAr: c.nameAr, nameEn: c.nameEn || '' }));
-      await exportToExcel(rows, 'order-categories.xlsx');
+      await exportOrderCategoriesWorkbook(categories, 'order-categories.xlsx');
       setToast({ visible: true, message: t('exportSuccess'), type: 'success' });
     } catch (e) {
       setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
@@ -315,31 +305,11 @@ export function ItemsManageTab({ companyId }) {
     const file = e?.target?.files?.[0];
     if (!file) return;
     try {
-      const rows = await importFromExcel(file);
-      const catByName = new Map(categories.map((c) => [c.nameAr?.toLowerCase(), c.id]));
-      const toCreate = rows
-        .filter((r) => r.nameAr || r.name_ar)
-        .filter((r) => String(r.nameAr ?? r.name_ar ?? '').trim() !== ORDER_PRODUCTS_TEMPLATE_MARKER_AR)
-        .map((r) => {
-          const catName = String(r.category ?? r.categoryName ?? '').trim().toLowerCase();
-          const categoryId = catName ? catByName.get(catName) : undefined;
-          let variants;
-          try {
-            variants = r.variants ? JSON.parse(r.variants) : undefined;
-            if (Array.isArray(variants)) {
-              variants = variants.map((v) => ({ size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', lastPrice: String(v.lastPrice ?? 0) }));
-            }
-          } catch {
-            variants = undefined;
-          }
-          return {
-            nameAr: String(r.nameAr ?? r.name_ar ?? '').trim(),
-            nameEn: String(r.nameEn ?? r.name_en ?? '').trim() || undefined,
-            categoryId: categoryId || undefined,
-            variants,
-          };
-        })
-        .filter((r) => r.nameAr);
+      const rawRows = await importFromExcel(file);
+      const filtered = filterOrderProductsTemplateRows(rawRows);
+      const catByName = new Map(categories.map((c) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]));
+      const groups = groupOrderProductImportRows(filtered);
+      const toCreate = orderProductImportGroupsToPayload(groups, catByName);
       if (toCreate.length === 0) {
         setToast({ visible: true, message: t('ordersImportNoValidRows'), type: 'error' });
         return;
@@ -361,9 +331,9 @@ export function ItemsManageTab({ companyId }) {
     if (!file) return;
     try {
       const rows = await importFromExcel(file);
-      const toCreate = rows
+      const filtered = filterOrderCategoriesTemplateRows(rows);
+      const toCreate = filtered
         .filter((r) => r.nameAr || r.name_ar)
-        .filter((r) => String(r.nameAr ?? r.name_ar ?? '').trim() !== ORDER_CATEGORIES_TEMPLATE_MARKER_AR)
         .map((r) => ({
           nameAr: String(r.nameAr ?? r.name_ar ?? '').trim(),
           nameEn: String(r.nameEn ?? r.name_en ?? '').trim() || undefined,

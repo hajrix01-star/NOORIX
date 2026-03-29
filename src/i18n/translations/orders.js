@@ -67,12 +67,12 @@ export default {
   ordersDownloadImportTemplate: { ar: 'تحميل قالب الاستيراد', en: 'Download import template' },
   ordersImportTemplateReady: { ar: 'تم تنزيل ملف القالب.', en: 'Template file downloaded.' },
   ordersImportTemplateHintProducts: {
-    ar: 'ملف .xlsx: ورقة «أصناف» للبيانات و«تعليمات» للشرح. الأعمدة: nameAr، nameEn، category، variants (JSON). تفاصيل إضافية في الدليل أعلاه.',
-    en: '.xlsx with «Products» data sheet and «Instructions». Columns: nameAr, nameEn, category, variants (JSON). See the guide above.',
+    ar: 'ملف .xlsx: صف عناوين ثم كل عمود في خلية (nameAr، nameEn، category، size، packaging، unit، lastPrice). تركيبات إضافية لنفس الصنف: صفوف لاحقة بـ nameAr فارغ. يُدعم أيضاً عمود variants كنص JSON للملفات القديمة.',
+    en: 'Headers row then one cell per column (nameAr, nameEn, category, size, packaging, unit, lastPrice). More variants: follow-up rows with empty nameAr. Legacy JSON variants column still supported.',
   },
   ordersImportTemplateHintCategories: {
-    ar: 'ملف .xlsx: ورقة «فئات» ثم «تعليمات». الأعمدة: nameAr (مطلوب)، nameEn.',
-    en: '.xlsx with «Categories» then «Instructions». Columns: nameAr (required), nameEn.',
+    ar: 'ورقة «فئات»: صف العناوين nameAr | nameEn ثم البيانات، كل قيمة في خلية منفصلة.',
+    en: '«Categories» sheet: header row nameAr | nameEn, then one value per cell.',
   },
   ordersImportWorkbookNote: {
     ar: 'الملف يحتوي ورقتين: الأولى للبيانات (يُستورد منها)، والثانية «تعليمات» للمرجع فقط.',

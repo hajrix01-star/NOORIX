@@ -10,50 +10,245 @@ function setSheetColWidths(ws, widths) {
   ws['!cols'] = widths.map((wch) => ({ wch }));
 }
 
+/** رؤوس أعمدة أصناف الطلبات — خلية لكل قيمة (بدون JSON في خلية واحدة) */
+export const ORDER_PRODUCTS_EXCEL_HEADERS = ['nameAr', 'nameEn', 'category', 'size', 'packaging', 'unit', 'lastPrice'];
+
+/** رؤوس أعمدة فئات الطلبات */
+export const ORDER_CATEGORIES_EXCEL_HEADERS = ['nameAr', 'nameEn'];
+
 /**
- * قالب استيراد أصناف الطلبات — ورقة بيانات + ورقة تعليمات، أعمدة بعرض مناسب
+ * صفوف مصفوفة لـ Excel: صف عناوين + بيانات؛ تركيبات متعددة = صفوف لاحقة بـ nameAr فارغ
+ */
+export function flattenOrderProductsToAoA(products) {
+  const aoa = [ORDER_PRODUCTS_EXCEL_HEADERS];
+  for (const p of products || []) {
+    const cat = p.category?.nameAr || p.category?.nameEn || '';
+    const variants = Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : null;
+    if (variants) {
+      variants.forEach((v, i) => {
+        aoa.push([
+          i === 0 ? (p.nameAr ?? '') : '',
+          i === 0 ? (p.nameEn ?? '') : '',
+          i === 0 ? cat : '',
+          v.size ?? '',
+          v.packaging ?? '',
+          v.unit ?? 'piece',
+          String(v.lastPrice ?? 0),
+        ]);
+      });
+    } else {
+      aoa.push([
+        p.nameAr ?? '',
+        p.nameEn ?? '',
+        cat,
+        '',
+        '',
+        p.unit ?? 'piece',
+        String(p.lastPrice ?? 0),
+      ]);
+    }
+  }
+  return aoa;
+}
+
+export function flattenOrderCategoriesToAoA(categories) {
+  return [ORDER_CATEGORIES_EXCEL_HEADERS, ...(categories || []).map((c) => [c.nameAr ?? '', c.nameEn ?? ''])];
+}
+
+export async function exportOrderProductsWorkbook(products, filename = 'order-products.xlsx') {
+  const XLSX = await import('xlsx');
+  const aoa = flattenOrderProductsToAoA(products);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  setSheetColWidths(ws, [26, 22, 20, 16, 16, 11, 12]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'أصناف');
+  XLSX.writeFile(wb, filename);
+}
+
+export async function exportOrderCategoriesWorkbook(categories, filename = 'order-categories.xlsx') {
+  const XLSX = await import('xlsx');
+  const aoa = flattenOrderCategoriesToAoA(categories);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  setSheetColWidths(ws, [32, 28]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'فئات');
+  XLSX.writeFile(wb, filename);
+}
+
+function rowHasOrderProductVariantData(r) {
+  const lp = parseFloat(String(r.lastPrice ?? r.last_price ?? '').replace(',', '.'), 10);
+  return Boolean(
+    String(r.size ?? '').trim()
+    || String(r.packaging ?? '').trim()
+    || String(r.unit ?? '').trim()
+    || (Number.isFinite(lp) && lp > 0),
+  );
+}
+
+/** يتخطى صف المثال وصفوف التركيبة التابعة له فقط؛ صف فارغ ينهي تخطي المثال */
+export function filterOrderProductsTemplateRows(rows, markerAr = ORDER_PRODUCTS_TEMPLATE_MARKER_AR) {
+  const out = [];
+  let afterMarker = false;
+  for (const r of rows) {
+    const nameAr = String(r.nameAr ?? r.name_ar ?? '').trim();
+    if (nameAr === markerAr) {
+      afterMarker = true;
+      continue;
+    }
+    if (afterMarker) {
+      if (nameAr) {
+        afterMarker = false;
+      } else if (rowHasOrderProductVariantData(r)) {
+        continue;
+      } else {
+        afterMarker = false;
+      }
+    }
+    out.push(r);
+  }
+  return out;
+}
+
+export function filterOrderCategoriesTemplateRows(rows, markerAr = ORDER_CATEGORIES_TEMPLATE_MARKER_AR) {
+  return rows.filter((r) => String(r.nameAr ?? r.name_ar ?? '').trim() !== markerAr);
+}
+
+function looksLikeLegacyVariantsCell(val) {
+  const s = String(val ?? '').trim();
+  if (!s || s[0] !== '[') return false;
+  try {
+    const j = JSON.parse(s);
+    return Array.isArray(j);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * تجميع صفوف الاستيراد: مجموعة «مسطّحة» (أعمدة منفصلة) أو «legacy» (عمود variants JSON)
+ * @returns {Array<{ type: 'flat', nameAr: string, nameEn: string, category: string, variantRows: object[] } | { type: 'legacy', row: object }>}
+ */
+export function groupOrderProductImportRows(rows) {
+  const groups = [];
+  let flat = null;
+  for (const r of rows) {
+    if (looksLikeLegacyVariantsCell(r.variants)) {
+      if (flat) {
+        groups.push({ type: 'flat', ...flat });
+        flat = null;
+      }
+      groups.push({ type: 'legacy', row: r });
+      continue;
+    }
+    const nameAr = String(r.nameAr ?? r.name_ar ?? '').trim();
+    if (nameAr) {
+      if (flat) groups.push({ type: 'flat', ...flat });
+      flat = {
+        nameAr,
+        nameEn: String(r.nameEn ?? r.name_en ?? '').trim(),
+        category: String(r.category ?? r.categoryName ?? '').trim(),
+        variantRows: [r],
+      };
+    } else if (flat) {
+      flat.variantRows.push(r);
+    }
+  }
+  if (flat) groups.push({ type: 'flat', ...flat });
+  return groups;
+}
+
+/**
+ * تحويل المجموعات إلى payload للـ API (createProductsBatch)
+ * @param {Map<string,string>} catByName — مفتاح اسم الفئة بالعربي (حروف صغيرة)
+ */
+export function orderProductImportGroupsToPayload(groups, catByName) {
+  const out = [];
+  for (const g of groups) {
+    if (g.type === 'legacy') {
+      const r = g.row;
+      const nameAr = String(r.nameAr ?? r.name_ar ?? '').trim();
+      if (!nameAr) continue;
+      const catName = String(r.category ?? r.categoryName ?? '').trim().toLowerCase();
+      const categoryId = catName ? catByName.get(catName) : undefined;
+      let variants;
+      try {
+        const parsed = JSON.parse(String(r.variants).trim());
+        if (Array.isArray(parsed)) {
+          variants = parsed.map((v) => ({
+            size: v.size || '',
+            packaging: v.packaging || '',
+            unit: v.unit || 'piece',
+            lastPrice: String(v.lastPrice ?? 0),
+          }));
+        }
+      } catch {
+        variants = undefined;
+      }
+      out.push({
+        nameAr,
+        nameEn: String(r.nameEn ?? r.name_en ?? '').trim() || undefined,
+        categoryId: categoryId || undefined,
+        variants,
+      });
+      continue;
+    }
+    const catName = g.category.trim().toLowerCase();
+    const categoryId = catName ? catByName.get(catName) : undefined;
+    const variants = g.variantRows.map((r) => ({
+      size: String(r.size ?? '').trim(),
+      packaging: String(r.packaging ?? '').trim(),
+      unit: String(r.unit ?? 'piece').trim() || 'piece',
+      lastPrice: String(r.lastPrice ?? r.last_price ?? 0),
+    }));
+    const nonEmpty = variants.filter(
+      (v) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || parseFloat(v.lastPrice) > 0,
+    );
+    const finalVariants = nonEmpty.length > 0 ? nonEmpty : [{ size: '', packaging: '', unit: 'piece', lastPrice: variants[0] ? variants[0].lastPrice : '0' }];
+    out.push({
+      nameAr: g.nameAr,
+      nameEn: g.nameEn || undefined,
+      categoryId: categoryId || undefined,
+      variants: finalVariants,
+    });
+  }
+  return out.filter((p) => p.nameAr);
+}
+
+/**
+ * قالب استيراد أصناف الطلبات — صف عناوين + خلايا منفصلة؛ مثال بتركيبتين على صفّين
  */
 export async function exportOrdersProductsImportTemplate(filename = 'order-products-import-template.xlsx') {
   const XLSX = await import('xlsx');
-  const variantsExample = JSON.stringify([
-    { size: 'كبير', packaging: 'كرتون', unit: 'piece', lastPrice: '18.5' },
-    { size: 'وسط', packaging: 'علبة', unit: 'piece', lastPrice: '12' },
-  ]);
-  const dataRows = [
-    {
-      nameAr: ORDER_PRODUCTS_TEMPLATE_MARKER_AR,
-      nameEn: 'Example item (delete row)',
-      category: 'ألبان',
-      variants: variantsExample,
-    },
-    ...Array.from({ length: 12 }, () => ({ nameAr: '', nameEn: '', category: '', variants: '' })),
+  const emptyRow = () => ['', '', '', '', '', '', ''];
+  const aoa = [
+    ORDER_PRODUCTS_EXCEL_HEADERS,
+    [ORDER_PRODUCTS_TEMPLATE_MARKER_AR, 'Example item (delete row)', 'ألبان', 'كبير', 'كرتون', 'piece', '18.5'],
+    ['', '', '', 'وسط', 'علبة', 'piece', '12'],
+    ...Array.from({ length: 12 }, emptyRow),
   ];
-  const wsData = XLSX.utils.json_to_sheet(dataRows);
-  setSheetColWidths(wsData, [28, 24, 18, 56]);
+  const wsData = XLSX.utils.aoa_to_sheet(aoa);
+  setSheetColWidths(wsData, [26, 22, 20, 16, 16, 11, 12]);
 
   const instructions = [
-    ['قالب استيراد الأصناف — Noorix'],
-    ['Orders › Manage Items › Products'],
-    [''],
-    ['■ ترتيب العمل الموصى به'],
-    ['1) عرّف الفئات أولاً (تبويب الفئات أو استيراد فئات)، ثم اكتب في العمود category نفس اسم الفئة بالعربي كما في النظام.'],
-    ['2) احذف صف المثال بالكامل قبل الاستيراد الفعلي، أو استبدله ببياناتك.'],
-    ['3) احفظ الملف بصيغة .xlsx ثم من التطبيق اضغط «استيراد».'],
-    [''],
-    ['■ معاني الأعمدة (ورقة «أصناف»)'],
-    ['• nameAr — اسم الصنف بالعربية (إلزامي).'],
-    ['• nameEn — اسم بالإنجليزي (اختياري).'],
-    ['• category — اسم الفئة بالعربي للربط (يُفضّل أن تكون الفئة موجودة مسبقاً).'],
-    ['• variants — مصفوفة JSON لتركيبات السعر: الحجم، التغليف، الوحدة، آخر سعر.'],
-    [''],
-    ['■ حقل variants — نسخة جاهزة (سطر واحد في الخلية)'],
-    [variantsExample],
-    [''],
-    ['■ الوحدة unit'],
-    ['استخدم واحدة من: piece (حبة) · kg (كيلو) · box (كرتون) · dozen (درزن).'],
+    ['البند', 'الشرح'],
+    ['قالب استيراد الأصناف — Noorix', ''],
+    ['الورقة الأولى «أصناف»', 'صف 1 = عناوين الأعمدة؛ كل قيمة في خلية منفصلة.'],
+    ['', ''],
+    ['ترتيب العمل', '1) أنشئ الفئات أولاً  2) احذف صفوف المثال (المحددة بعلامة)  3) استورد من التطبيق'],
+    ['', ''],
+    ['nameAr', 'اسم الصنف بالعربية — إلزامي في أول صف لكل صنف.'],
+    ['nameEn', 'اسم إنجليزي اختياري.'],
+    ['category', 'اسم الفئة بالعربي كما في النظام.'],
+    ['size', 'الحجم أو وصف الوحدة المعروض (خلية منفصلة).'],
+    ['packaging', 'التغليف (خلية منفصلة).'],
+    ['unit', 'piece | kg | box | dozen'],
+    ['lastPrice', 'آخر سعر رقمي.'],
+    ['', ''],
+    ['تركيبات متعددة', 'لنفس الصنف: اترك nameAr وnameEn وcategory فارغة في الصف التالي واملأ size/packaging/unit/lastPrice فقط.'],
+    ['ملفات قديمة', 'عمود variants كنص JSON لا يزال مدعوماً إن وُجد.'],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
-  setSheetColWidths(wsInstr, [92]);
+  setSheetColWidths(wsInstr, [28, 62]);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, wsData, 'أصناف');
@@ -62,35 +257,29 @@ export async function exportOrdersProductsImportTemplate(filename = 'order-produ
 }
 
 /**
- * قالب استيراد فئات الطلبات — ورقة بيانات + ورقة تعليمات
+ * قالب استيراد فئات الطلبات — صف عناوين + خلايا منفصلة
  */
 export async function exportOrdersCategoriesImportTemplate(filename = 'order-categories-import-template.xlsx') {
   const XLSX = await import('xlsx');
-  const dataRows = [
-    {
-      nameAr: ORDER_CATEGORIES_TEMPLATE_MARKER_AR,
-      nameEn: 'Example category (delete row)',
-    },
-    ...Array.from({ length: 15 }, () => ({ nameAr: '', nameEn: '' })),
+  const aoa = [
+    ORDER_CATEGORIES_EXCEL_HEADERS,
+    [ORDER_CATEGORIES_TEMPLATE_MARKER_AR, 'Example category (delete row)'],
+    ...Array.from({ length: 15 }, () => ['', '']),
   ];
-  const wsData = XLSX.utils.json_to_sheet(dataRows);
+  const wsData = XLSX.utils.aoa_to_sheet(aoa);
   setSheetColWidths(wsData, [32, 28]);
 
   const instructions = [
-    ['قالب استيراد الفئات — Noorix'],
-    ['Orders › Manage Items › Categories'],
-    [''],
-    ['■ الخطوات'],
-    ['1) احذف صف المثال أو استبدله بفئاتكم.'],
-    ['2) nameAr إلزامي؛ nameEn اختياري.'],
-    ['3) بعد الاستيراد يمكن ربط الأصناف بهذه الفئات من عمود category في قالب الأصناف.'],
-    [''],
-    ['■ الأعمدة'],
-    ['• nameAr — اسم الفئة بالعربية.'],
-    ['• nameEn — اسم بالإنجليزي (اختياري).'],
+    ['البند', 'الشرح'],
+    ['قالب استيراد الفئات — Noorix', ''],
+    ['الورقة «فئات»', 'صف 1: nameAr | nameEn — كل قيمة في خلية.'],
+    ['nameAr', 'اسم الفئة بالعربية (إلزامي).'],
+    ['nameEn', 'اسم إنجليزي اختياري.'],
+    ['', ''],
+    ['بعد الاستيراد', 'اربط الأصناف من عمود category في ملف الأصناف.'],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
-  setSheetColWidths(wsInstr, [88]);
+  setSheetColWidths(wsInstr, [22, 58]);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, wsData, 'فئات');
