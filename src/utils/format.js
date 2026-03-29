@@ -21,11 +21,6 @@ export function fmt(n, decimals = 1) {
   });
 }
 
-/** تنسيق مالي موحد — خانتان عشريتان (0.00) لاصطفاف عمودي دقيق */
-export function fmtFinancial(n) {
-  return fmt(n, 2);
-}
-
 /**
  * حساب الضريبة العكسية للتنسيق والعرض.
  */

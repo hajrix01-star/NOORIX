@@ -719,6 +719,8 @@ model Vault {
   isActive       Boolean  @default(true)  @map("is_active")
   isArchived     Boolean  @default(false) @map("is_archived")
   isSalesChannel Boolean  @default(false) @map("is_sales_channel")
+  /// عند false تُخفى الخزينة من اختيار السداد في المبيعات والمشتريات (دون حذفها)
+  showAsPaymentMethod Boolean @default(true) @map("show_as_payment_method")
   paymentMethod  String?  @map("payment_method")
   notes          String?
   createdAt      DateTime @default(now()) @map("created_at")

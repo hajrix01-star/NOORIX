@@ -4,7 +4,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getOrders,
-  getOrder,
   createOrder,
   updateOrder,
   cancelOrder,
@@ -29,18 +28,6 @@ export function useOrders(companyId, year, month) {
       return res.data ?? [];
     },
     enabled: !!companyId && !!year && !!month,
-  });
-}
-
-export function useOrder(id, companyId, enabled = true) {
-  return useQuery({
-    queryKey: ['orders', id, companyId],
-    queryFn: async () => {
-      const res = await getOrder(id, companyId);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الطلب');
-      return res.data;
-    },
-    enabled: !!id && !!companyId && enabled,
   });
 }
 

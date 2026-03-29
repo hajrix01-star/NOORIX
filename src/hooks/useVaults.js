@@ -31,7 +31,10 @@ export function useVaults({ companyId, includeArchived = false }) {
   });
 
   const salesChannels = useMemo(
-    () => vaultsList.filter((v) => v.isSalesChannel && !v.isArchived),
+    () =>
+      vaultsList.filter(
+        (v) => v.isSalesChannel && v.showAsPaymentMethod !== false && !v.isArchived,
+      ),
     [vaultsList],
   );
 

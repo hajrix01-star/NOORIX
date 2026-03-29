@@ -82,7 +82,10 @@ export default function PurchasesBatchScreen() {
   const { suppliers } = useSuppliers(companyId);
   const { flatCategories = [] } = useCategories(companyId);
   const { vaultsList = [] } = useVaults({ companyId });
-  const activeVaults = useMemo(() => vaultsList.filter((v) => !v.isArchived), [vaultsList]);
+  const activeVaults = useMemo(
+    () => vaultsList.filter((v) => !v.isArchived && v.showAsPaymentMethod !== false),
+    [vaultsList],
+  );
 
   useEffect(() => {
     setBatchVaultId('');

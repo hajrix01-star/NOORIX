@@ -12,7 +12,9 @@ const EMOJI_LIST = [
   '🟨','🟥','🟧','🟪','🟫','⚫','⚪','🔵','🔴','🟤',
 ];
 
-const EMPTY = { nameAr: '', nameEn: '', type: 'cash', isSalesChannel: false, paymentMethod: '', notes: '' };
+const EMPTY = {
+  nameAr: '', nameEn: '', type: 'cash', isSalesChannel: false, showAsPaymentMethod: true, paymentMethod: '', notes: '',
+};
 
 const IST = {
   width: '100%', padding: '9px 12px', borderRadius: 8,
@@ -31,6 +33,7 @@ function initForm(initial) {
     type:           isCustom ? 'custom' : (initial.type || 'cash'),
     customEmoji:    isCustom ? emoji : '💰',
     isSalesChannel: initial.isSalesChannel ?? false,
+    showAsPaymentMethod: initial.showAsPaymentMethod !== false,
     paymentMethod:  initial.paymentMethod  || '',
     notes:          initial.notes          || '',
   };
@@ -175,6 +178,38 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                 </select>
               </div>
             )}
+          </div>
+
+          {/* إظهار كطريقة سداد في المبيعات والمشتريات */}
+          <div style={{
+            padding: 14, borderRadius: 10,
+            border: `1px solid ${form.showAsPaymentMethod ? 'var(--noorix-border)' : '#f59e0b44'}`,
+            background: form.showAsPaymentMethod ? 'transparent' : 'rgba(245,158,11,0.06)',
+            transition: 'all 150ms',
+          }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 0 }}>
+              <div
+                onClick={() => set('showAsPaymentMethod', !form.showAsPaymentMethod)}
+                style={{
+                  width: 40, height: 22, borderRadius: 999, position: 'relative', cursor: 'pointer', flexShrink: 0,
+                  background: form.showAsPaymentMethod ? '#2563eb' : 'var(--noorix-border)', transition: 'background 200ms',
+                }}
+              >
+                <div style={{
+                  position: 'absolute', top: 2, width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                  transition: 'right 200ms, left 200ms',
+                  ...(form.showAsPaymentMethod ? { right: 2, left: 'auto' } : { left: 2, right: 'auto' }),
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }} />
+              </div>
+              <span style={{ fontWeight: 700, fontSize: 13 }}>{t('showAsPaymentMethodLabel')}</span>
+              {!form.showAsPaymentMethod && (
+                <span style={{ fontSize: 12, color: '#d97706', fontWeight: 600 }}>{t('hiddenFromSalesPurchasesShort')}</span>
+              )}
+            </label>
+            <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.45 }}>
+              {t('showAsPaymentMethodHint')}
+            </p>
           </div>
 
           {/* ملاحظات */}

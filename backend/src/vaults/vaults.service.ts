@@ -307,6 +307,7 @@ export class VaultsService {
           nameEn:         (dto.nameEn ?? '').trim() || null,
           type:           dto.type,
           isSalesChannel: dto.isSalesChannel ?? false,
+          showAsPaymentMethod: dto.showAsPaymentMethod ?? true,
           paymentMethod:  dto.paymentMethod  ?? null,
           notes:          (dto.notes ?? '').trim() || null,
         },
@@ -339,6 +340,7 @@ export class VaultsService {
     nameEn?:         string | null;
     type?:           string;
     isSalesChannel?: boolean;
+    showAsPaymentMethod?: boolean;
     paymentMethod?:  string | null;
     notes?:          string | null;
   }, userId?: string) {
@@ -353,6 +355,7 @@ export class VaultsService {
         ...(data.nameEn         !== undefined ? { nameEn:         data.nameEn?.trim() || null } : {}),
         ...(data.type           !== undefined ? { type:           data.type                   } : {}),
         ...(data.isSalesChannel !== undefined ? { isSalesChannel: data.isSalesChannel         } : {}),
+        ...(data.showAsPaymentMethod !== undefined ? { showAsPaymentMethod: data.showAsPaymentMethod } : {}),
         ...(data.paymentMethod  !== undefined ? { paymentMethod:  data.paymentMethod || null  } : {}),
         ...(data.notes          !== undefined ? { notes:          data.notes?.trim() || null  } : {}),
       },

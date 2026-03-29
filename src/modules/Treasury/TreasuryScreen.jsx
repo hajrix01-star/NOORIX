@@ -62,6 +62,12 @@ export default function TreasuryScreen() {
     onError:   (e) => notify(e?.message || t('updateFailed'), 'error'),
   });
 
+  const togglePaymentMethodMutation = useMutation({
+    mutationFn: (v) => updateVault(v.id, { showAsPaymentMethod: !(v.showAsPaymentMethod !== false) }),
+    onSuccess: () => { invalidate(); notify(t('paymentMethodVisibilityUpdated')); },
+    onError:   (e) => notify(e?.message || t('updateFailed'), 'error'),
+  });
+
   const archiveMutation = useMutation({
     mutationFn: (id) => archiveVault(id),
     onSuccess: (_, id) => {
@@ -95,11 +101,12 @@ export default function TreasuryScreen() {
   );
 
   const cardHandlers = (vault) => ({
-    onEdit:              (x) => { setEditVault(x); setSaveError(''); },
+    onEdit:               (x) => { setEditVault(x); setSaveError(''); },
     onToggleSalesChannel: (x) => toggleSalesMutation.mutate(x),
-    onArchive:           (x) => archiveMutation.mutate(x.id),
-    onDelete:            handleDelete,
-    onClick:             (x) => setSelectedVault(x),
+    onTogglePaymentMethod: (x) => togglePaymentMethodMutation.mutate(x),
+    onArchive:            (x) => archiveMutation.mutate(x.id),
+    onDelete:             handleDelete,
+    onClick:              (x) => setSelectedVault(x),
   });
 
   const hasCompany = !!companyId;

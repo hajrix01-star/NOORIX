@@ -2,9 +2,8 @@
  * useInvoices — جلب الفواتير مع فلترة التاريخ والتصفح.
  * يدعم placeholderData لمنع وميض البيانات عند التنقل بين الصفحات.
  */
-import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
-import { getInvoices, createInvoice } from '../services/api';
-import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
+import { useQuery } from '@tanstack/react-query';
+import { getInvoices } from '../services/api';
 
 /**
  * @param {{ companyId: string, startDate: string, endDate: string, page?: number, pageSize?: number, kind?: string, sortBy?: string, sortDir?: 'asc'|'desc', supplierId?: string, q?: string, categoryId?: string, expenseLineId?: string }} params
@@ -30,16 +29,4 @@ export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize 
     isError,
     error,
   };
-}
-
-/**
- * useSaveInvoice — mutation لحفظ فاتورة مفردة أو دفعة.
- */
-export function useSaveInvoice(companyId) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createInvoice,
-    onSuccess: () => invalidateOnFinancialMutation(queryClient),
-  });
 }

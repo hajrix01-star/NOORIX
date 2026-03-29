@@ -145,6 +145,10 @@ export class FinancialCoreService {
       const invoiceNumber = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
       await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
 
+      if (dto.kind === 'purchase' && dto.vaultId) {
+        await this._assertVaultUsableForPurchasePayment(tx, dto.companyId, dto.vaultId);
+      }
+
       // ── [A] Resolve Accounts ─────────────────────────────
       const creditAccountId = await this._getVaultAccount(tx, dto.companyId, dto.vaultId);
       const debitAccountId  = dto.debitAccountId
@@ -250,6 +254,9 @@ export class FinancialCoreService {
         const { entryDate, txDate } = this._buildDates(dto.transactionDate);
         const serial = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
         await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
+        if (dto.kind === 'purchase' && dto.vaultId) {
+          await this._assertVaultUsableForPurchasePayment(tx, dto.companyId, dto.vaultId);
+        }
         const creditAccountId = await this._getVaultAccount(tx, dto.companyId, dto.vaultId);
         const debitAccountId  = dto.debitAccountId
           ?? await this._getDefaultExpenseAccount(tx, dto.companyId, dto.kind);
@@ -401,6 +408,12 @@ export class FinancialCoreService {
       // ── [C] الحصول على accountId لكل خزنة قناة بيع ────────
       const activeChannels = dto.channels.filter(
         (ch: { vaultId: string; amount: string }) => new Prisma.Decimal(ch.amount || '0').gt(0),
+      );
+
+      await this._assertVaultsUsableAsSalesPayment(
+        tx,
+        dto.companyId,
+        activeChannels.map((ch: { vaultId: string; amount: string }) => ch.vaultId),
       );
 
       const vaultAccounts = await Promise.all(
@@ -588,6 +601,12 @@ export class FinancialCoreService {
       if (!summary) {
         throw new NotFoundException('الملخص غير موجود أو تم إلغاؤه.');
       }
+
+      await this._assertVaultsUsableAsSalesPayment(
+        tx,
+        companyId,
+        activeChannels.map((ch: SalesChannelDto) => ch.vaultId),
+      );
 
       // ── [A] إلغاء القيود القديمة ─────────────────────────
       await tx.ledgerEntry.updateMany({
@@ -959,6 +978,49 @@ export class FinancialCoreService {
   // ══════════════════════════════════════════════════════════
   // PRIVATE: Account Resolution (مركزي — لا تكرار)
   // ══════════════════════════════════════════════════════════
+
+  /** قنوات المبيعات: خزنة مفعّلة كقناة + مسموح إظهارها كطريقة سداد */
+  private async _assertVaultsUsableAsSalesPayment(tx: TxClient, companyId: string, vaultIds: string[]) {
+    const ids = [...new Set(vaultIds.filter(Boolean))];
+    if (!ids.length) return;
+    const vaults = await tx.vault.findMany({
+      where: { id: { in: ids }, companyId },
+      select: { id: true, nameAr: true, isSalesChannel: true, showAsPaymentMethod: true, isArchived: true },
+    });
+    const byId = new Map(vaults.map((v) => [v.id, v]));
+    for (const id of ids) {
+      const v = byId.get(id);
+      if (!v) {
+        throw new NotFoundException(`الخزنة غير موجودة أو لا تنتمي لهذه الشركة`);
+      }
+      if (v.isArchived) {
+        throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة ولا يمكن استخدامها في المبيعات.`);
+      }
+      if (!v.isSalesChannel) {
+        throw new BadRequestException(`الخزينة «${v.nameAr}» ليست قناة بيع مفعّلة.`);
+      }
+      if (v.showAsPaymentMethod === false) {
+        throw new BadRequestException(`الخزينة «${v.nameAr}» غير متاحة كطريقة سداد في المبيعات.`);
+      }
+    }
+  }
+
+  /** مشتريات (دفعة/فاتورة): خزنة غير مؤرشفة ومسموح إظهارها كسداد */
+  private async _assertVaultUsableForPurchasePayment(tx: TxClient, companyId: string, vaultId: string) {
+    const v = await tx.vault.findFirst({
+      where: { id: vaultId, companyId },
+      select: { id: true, nameAr: true, showAsPaymentMethod: true, isArchived: true },
+    });
+    if (!v) {
+      throw new NotFoundException(`الخزنة غير موجودة أو لا تنتمي لهذه الشركة`);
+    }
+    if (v.isArchived) {
+      throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة ولا يمكن السداد منها في المشتريات.`);
+    }
+    if (v.showAsPaymentMethod === false) {
+      throw new BadRequestException(`الخزينة «${v.nameAr}» غير متاحة كطريقة سداد في المشتريات.`);
+    }
+  }
 
   private async _getVaultAccount(tx: TxClient, companyId: string, vaultId?: string): Promise<string> {
     if (!vaultId) {

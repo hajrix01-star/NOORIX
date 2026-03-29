@@ -40,7 +40,7 @@ const ICONS = {
 };
 
 /* ── قائمة الإجراءات — position:absolute لتجنب مشاكل fixed مع overflow ─── */
-function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, t, lang }) {
+function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod, onArchive, onDelete, t, lang }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const isArchived = vault.isArchived;
@@ -59,10 +59,13 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
     };
   }, [open]);
 
+  const paymentOn = vault.showAsPaymentMethod !== false;
   const items = [
     { label: t('edit'),    action: () => { onEdit(vault); setOpen(false); }, color: 'var(--noorix-text)' },
     { label: vault.isSalesChannel ? t('salesChannelEnabled') : t('salesChannel'),
       action: () => { onToggleSalesChannel(vault); setOpen(false); }, color: '#16a34a' },
+    { label: paymentOn ? t('hidePaymentMethodOption') : t('showPaymentMethodOption'),
+      action: () => { onTogglePaymentMethod(vault); setOpen(false); }, color: '#2563eb' },
     { label: isArchived ? t('restore') : t('archive'),
       action: () => { onArchive(vault); setOpen(false); }, color: '#d97706' },
     { label: t('delete'), action: () => { onDelete(vault); setOpen(false); }, color: '#dc2626' },
@@ -130,7 +133,7 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onArchive, onDelete, 
 
 /* ══ الكرت الرئيسي ══════════════════════════════════════════════ */
 const VaultCard = memo(function VaultCard({
-  vault, onEdit, onToggleSalesChannel, onArchive, onDelete, onClick,
+  vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod, onArchive, onDelete, onClick,
 }) {
   const { t, lang } = useTranslation();
 
@@ -195,7 +198,7 @@ const VaultCard = memo(function VaultCard({
           </div>
         </div>
 
-        <ActionMenu vault={vault} t={t} lang={lang} onEdit={onEdit} onToggleSalesChannel={onToggleSalesChannel} onArchive={onArchive} onDelete={onDelete} />
+        <ActionMenu vault={vault} t={t} lang={lang} onEdit={onEdit} onToggleSalesChannel={onToggleSalesChannel} onTogglePaymentMethod={onTogglePaymentMethod} onArchive={onArchive} onDelete={onDelete} />
       </div>
 
       {/* الرصيد */}
@@ -242,7 +245,7 @@ const VaultCard = memo(function VaultCard({
       </div>
 
       {/* فوتر: شارات الحالة */}
-      {(vault.isSalesChannel || vault.account?.code || isArchived) && (
+      {(vault.isSalesChannel || vault.account?.code || isArchived || vault.showAsPaymentMethod === false) && (
         <div style={{
           padding: '8px 16px', borderTop: '1px solid var(--noorix-border)',
           display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center',
@@ -250,6 +253,11 @@ const VaultCard = memo(function VaultCard({
           {vault.isSalesChannel && (
             <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700, background: '#16a34a14', color: '#16a34a', border: '1px solid #16a34a25' }}>
               {t('salesChannel')}
+            </span>
+          )}
+          {vault.showAsPaymentMethod === false && (
+            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700, background: '#f59e0b14', color: '#d97706', border: '1px solid #f59e0b30' }}>
+              {t('paymentMethodHiddenBadge')}
             </span>
           )}
           {vault.isSalesChannel && vault.paymentMethod && (() => {

@@ -323,49 +323,56 @@ export class OrdersService {
 
   async createProductsBatch(companyId: string, products: { nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }> }[]) {
     const tenantId = TenantContext.getTenantId();
-    const created = [];
+    const data: Prisma.OrderProductCreateManyInput[] = [];
     for (const dto of products) {
       if (!dto.nameAr?.trim()) continue;
       const variantsData = dto.variants?.length
         ? dto.variants.map((v) => ({ size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', lastPrice: v.lastPrice || '0' }))
         : null;
-      const p = await this.prisma.orderProduct.create({
-        data: {
-          tenantId,
-          companyId,
-          nameAr: dto.nameAr.trim(),
-          nameEn: dto.nameEn?.trim() || null,
-          unit: dto.unit || 'piece',
-          sizes: dto.sizes?.trim() || null,
-          packaging: dto.packaging?.trim() || null,
-          categoryId: dto.categoryId || null,
-          lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
-          variants: variantsData as object,
-        } as any,
-        include: { category: true },
+      data.push({
+        tenantId,
+        companyId,
+        nameAr: dto.nameAr.trim(),
+        nameEn: dto.nameEn?.trim() || null,
+        unit: dto.unit || 'piece',
+        sizes: dto.sizes?.trim() || null,
+        packaging: dto.packaging?.trim() || null,
+        categoryId: dto.categoryId || null,
+        lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
+        variants: variantsData === null ? Prisma.DbNull : (variantsData as Prisma.InputJsonValue),
       });
-      created.push(p);
     }
-    return created;
+    if (data.length === 0) return [];
+    const inserted = await this.prisma.orderProduct.createManyAndReturn({
+      data,
+    });
+    const withCategory = await this.prisma.orderProduct.findMany({
+      where: { id: { in: inserted.map((r) => r.id) } },
+      include: { category: true },
+    });
+    const byId = new Map(withCategory.map((r) => [r.id, r]));
+    return inserted.map((r) => {
+      const row = byId.get(r.id);
+      if (!row) throw new Error('orderProduct batch: missing row after insert');
+      return row;
+    });
   }
 
   async createCategoriesBatch(companyId: string, categories: { nameAr: string; nameEn?: string; sortOrder?: number }[]) {
     const tenantId = TenantContext.getTenantId();
-    const created = [];
+    const data: Prisma.OrderCategoryCreateManyInput[] = [];
     for (const dto of categories) {
       if (!dto.nameAr?.trim()) continue;
-      const c = await this.prisma.orderCategory.create({
-        data: {
-          tenantId,
-          companyId,
-          nameAr: dto.nameAr.trim(),
-          nameEn: dto.nameEn?.trim() || null,
-          sortOrder: dto.sortOrder ?? 0,
-        },
+      data.push({
+        tenantId,
+        companyId,
+        nameAr: dto.nameAr.trim(),
+        nameEn: dto.nameEn?.trim() || null,
+        sortOrder: dto.sortOrder ?? 0,
       });
-      created.push(c);
     }
-    return created;
+    if (data.length === 0) return [];
+    return this.prisma.orderCategory.createManyAndReturn({ data });
   }
 
   async createProduct(companyId: string, dto: {

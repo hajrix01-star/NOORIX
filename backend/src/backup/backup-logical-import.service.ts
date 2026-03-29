@@ -197,6 +197,7 @@ export class BackupLogicalImportService {
               isActive: v.isActive !== false,
               isArchived: Boolean(v.isArchived),
               isSalesChannel: Boolean(v.isSalesChannel),
+              showAsPaymentMethod: (v as { showAsPaymentMethod?: boolean }).showAsPaymentMethod !== false,
               paymentMethod: (v.paymentMethod as string | null) ?? null,
               notes: (v.notes as string | null) ?? null,
               createdAt: ddate(v.createdAt),

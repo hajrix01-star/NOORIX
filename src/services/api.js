@@ -683,9 +683,6 @@ export async function getOrders(companyId, year, month) {
   const res = await apiGet('/api/v1/orders', { companyId, year: String(year), month: String(month) });
   return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
 }
-export async function getOrder(id, companyId) {
-  return apiGet(`/api/v1/orders/${id}`, { companyId });
-}
 export async function createOrder(body) {
   return apiPost('/api/v1/orders', body);
 }

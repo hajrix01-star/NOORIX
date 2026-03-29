@@ -8,6 +8,7 @@ export const createVaultSchema = z.object({
     errorMap: () => ({ message: 'نوع الخزنة: cash أو bank أو app' }),
   }).default('cash'),
   isSalesChannel: z.boolean().optional().default(false),
+  showAsPaymentMethod: z.boolean().optional().default(true),
   paymentMethod:  z.string().optional().nullable(),
   notes:          z.string().optional().nullable(),
 });
@@ -17,6 +18,7 @@ export const updateVaultSchema = z.object({
   nameEn:         z.string().optional().nullable(),
   type:           z.enum(['cash', 'bank', 'app']).optional(),
   isSalesChannel: z.boolean().optional(),
+  showAsPaymentMethod: z.boolean().optional(),
   paymentMethod:  z.string().optional().nullable(),
   notes:          z.string().optional().nullable(),
 });
