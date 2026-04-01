@@ -293,6 +293,9 @@ export default function EmployeeProfileScreen() {
     if (Number(employee.transportAllowance ?? 0) > 0) {
       rows.push({ label: t('transportAllowance'), amount: Number(employee.transportAllowance ?? 0) });
     }
+    if (Number(employee.otherAllowance ?? 0) > 0) {
+      rows.push({ label: t('otherAllowance'), amount: Number(employee.otherAllowance ?? 0) });
+    }
     for (const allowance of customAllowances) {
       rows.push({ label: allowance.nameAr || t('customAllowanceName'), amount: Number(allowance.amount ?? 0) });
     }
