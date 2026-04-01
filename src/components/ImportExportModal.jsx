@@ -609,7 +609,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                   حمّل قالب Excel الجاهز، افتحه في Excel أو Google Sheets، أضف بياناتك ثم احفظه.
                   {entityType === 'invoices' && ' أسماء الموردين والصناديق يجب أن تتطابق مع الأسماء المسجلة في النظام.'}
                   {entityType === 'sales' && ' أعمدة القنوات تتطابق مع أسماء الصناديق في نظامك.'}
-                  {entityType === 'employees' && ' أعمدة الموظفين ثابتة (الاسم بالعربية، تاريخ الالتحاق، الراتب الأساسي، …) — لا تغيّر عناوين الأعمدة في الصف الأول. رقم الإقامة يجب أن يكون فريداً لكل موظف أو اتركه فارغاً.'}
+                  {entityType === 'employees' && ' للقبول في الفحص: الاسم بالعربية أو الإنجليزية (أحدهما كافٍ). باقي الأعمدة اختيارية؛ التاريخ والراتب والبدلات تُستبدل بقيم افتراضية إن وُجدت فارغة.'}
                 </p>
                 <button type="button" style={S.btnSecondary} onClick={handleDownloadTemplate} disabled={lookupsLoading}>
                   {lookupsLoading ? '⏳ تحميل…' : '⬇ تحميل قالب Excel'}

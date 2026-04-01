@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useMemo } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCompanies, getMe, checkApiConnection } from './services/api';
@@ -229,8 +229,8 @@ export default function App() {
     [activeCompany, activeCompanyId, companies, hasRealCompanies, theme, cardStyle, language, isSidebarOpen, user]
   );
 
-  // مزامنة الشركة النشطة مع api.js ليرسل x-company-id في كل طلب
-  useEffect(() => {
+  // مزامنة فورية مع api.js قبل الرسم/الطلبات — يقلل خلط x-company-id مع ?companyId
+  useLayoutEffect(() => {
     setActiveCompanyId(activeCompanyId || '');
   }, [activeCompanyId]);
 

@@ -185,6 +185,11 @@ export class EmployeesService {
 
     const employeeSerial = await this.generateEmployeeSerial(dto.companyId);
 
+    const basicVal = dto.basicSalary ?? 0;
+    const joinRaw = dto.joinDate?.trim();
+    let joinDateVal = joinRaw ? new Date(joinRaw) : new Date();
+    if (Number.isNaN(joinDateVal.getTime())) joinDateVal = new Date();
+
     const emp = await this.prisma.employee.create({
       data: {
         tenantId,
@@ -194,13 +199,13 @@ export class EmployeesService {
         nameEn:             dto.nameEn             ?? null,
         iqamaNumber:        dto.iqamaNumber        ?? null,
         jobTitle:           dto.jobTitle           ?? null,
-        basicSalary:        new Prisma.Decimal(dto.basicSalary),
+        basicSalary:        new Prisma.Decimal(basicVal),
         housingAllowance:   new Prisma.Decimal(dto.housingAllowance   ?? 0),
         transportAllowance: new Prisma.Decimal(dto.transportAllowance ?? 0),
         otherAllowance:     new Prisma.Decimal(dto.otherAllowance     ?? 0),
         workHours:          dto.workHours   ?? null,
         workSchedule:       dto.workSchedule ?? null,
-        joinDate:           new Date(dto.joinDate),
+        joinDate:           joinDateVal,
         status:             dto.status ?? 'active',
         notes:              dto.notes  ?? null,
       },

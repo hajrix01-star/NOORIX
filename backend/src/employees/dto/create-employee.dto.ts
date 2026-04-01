@@ -23,10 +23,15 @@ export class CreateEmployeeDto {
   @MaxLength(80)
   jobTitle?: string;
 
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  @Transform(({ value }) => Number(value))
-  basicSalary: number;
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return 0;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  })
+  basicSalary?: number;
 
   @IsOptional()
   @IsNumber()
@@ -46,8 +51,9 @@ export class CreateEmployeeDto {
   @Transform(({ value }) => Number(value ?? 0))
   otherAllowance?: number;
 
+  @IsOptional()
   @IsDateString()
-  joinDate: string;
+  joinDate?: string;
 
   @IsOptional()
   @IsString()

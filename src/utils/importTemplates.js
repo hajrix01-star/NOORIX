@@ -152,7 +152,7 @@ export async function downloadEmployeeTemplate() {
       'بدلات أخرى': 0,
       'تاريخ الالتحاق': '2024-01-01',
       'ساعات العمل': '8 ساعات',
-      'ملاحظات': 'مثال: رقم الإقامة فارغ أو فريد لكل موظف — تكرار نفس الرقم في كل الصفوف يرفض الاستيراد.',
+      'ملاحظات': 'مثال: يكفي الاسم عربي أو إنجليزي؛ باقي الحقول اختيارية.',
     },
   ];
   await exportToExcel(rows, 'template-employees.xlsx');
@@ -280,28 +280,27 @@ export function validateInvoiceRows(rows, { suppliers = [], vaults = [], categor
  * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
  */
 export function validateEmployeeRows(rows) {
-  const iqamaCounts = new Map();
-  for (const row of rows) {
-    const iq = String(row['رقم الإقامة'] ?? row['iqamaNumber'] ?? '').trim();
-    if (iq) iqamaCounts.set(iq, (iqamaCounts.get(iq) || 0) + 1);
-  }
+  const today = new Date().toISOString().slice(0, 10);
 
   return rows.map((row, i) => {
     const errors = [];
     const warnings = [];
     const rowNum = i + 2;
 
-    const name = String(row['الاسم بالعربية'] ?? row['name'] ?? '').trim();
-    if (!name) errors.push('الاسم بالعربية مطلوب');
+    const nameAr = String(row['الاسم بالعربية'] ?? row['name'] ?? '').trim();
+    const nameEn = String(row['الاسم بالإنجليزية'] ?? row['nameEn'] ?? '').trim() || undefined;
+    const displayName = nameAr || nameEn || '';
+    if (!displayName) {
+      errors.push('يجب إدخال الاسم بالعربية أو بالإنجليزية (أحدهما على الأقل)');
+    }
 
-    const basicSalary = parseNumber(row['الراتب الأساسي'] ?? row['basicSalary']);
-    if (basicSalary === null || basicSalary < 0) errors.push('الراتب الأساسي يجب أن يكون صفراً أو أكبر');
+    const basicRaw = parseNumber(row['الراتب الأساسي'] ?? row['basicSalary']);
+    const basicSalary = basicRaw === null || basicRaw < 0 ? 0 : basicRaw;
 
     const joinDateRaw = row['تاريخ الالتحاق'] ?? row['joinDate'];
-    const joinDate = parseDate(joinDateRaw);
-    if (!joinDate) errors.push('تاريخ الالتحاق مطلوب أو غير صحيح');
+    let joinDate = parseDate(joinDateRaw);
+    if (!joinDate) joinDate = today;
 
-    const nameEn = String(row['الاسم بالإنجليزية'] ?? row['nameEn'] ?? '').trim() || undefined;
     let iqamaNumber = String(row['رقم الإقامة'] ?? row['iqamaNumber'] ?? '').trim() || undefined;
     const jobTitle = String(row['المسمى الوظيفي'] ?? row['jobTitle'] ?? '').trim() || undefined;
     const housingAllowance = Math.max(0, parseNumber(row['بدل السكن'] ?? row['housingAllowance'] ?? 0) ?? 0);
@@ -310,12 +309,8 @@ export function validateEmployeeRows(rows) {
     const workHours = String(row['ساعات العمل'] ?? row['workHours'] ?? '').trim() || undefined;
     const notes = String(row['ملاحظات'] ?? row['notes'] ?? '').trim() || undefined;
 
-    if (iqamaNumber && iqamaCounts.get(iqamaNumber) > 1) {
-      errors.push('رقم الإقامة مكرر في الملف — اتركه فارغاً أو استخدم رقماً مختلفاً لكل موظف (تكرار القالب يسبب رفض الاستيراد في السيرفر).');
-    }
-
     if (iqamaNumber && !/^\d{10}$/.test(iqamaNumber)) {
-      warnings.push(`رقم الإقامة "${iqamaNumber}" يجب أن يتكون من 10 أرقام؛ إن لم يكن صحيحاً اترك الحقل فارغاً لتجنب الرفض.`);
+      warnings.push(`رقم الإقامة "${iqamaNumber}" ليس 10 أرقام — يُفضّل تصحيحه أو تركه فارغاً.`);
     }
 
     return {
@@ -324,7 +319,19 @@ export function validateEmployeeRows(rows) {
       warnings,
       valid: errors.length === 0,
       payload: errors.length === 0
-        ? { name, nameEn, iqamaNumber, jobTitle, basicSalary: basicSalary ?? 0, housingAllowance, transportAllowance, otherAllowance, joinDate, workHours, notes }
+        ? {
+            name: displayName,
+            nameEn,
+            iqamaNumber,
+            jobTitle,
+            basicSalary,
+            housingAllowance,
+            transportAllowance,
+            otherAllowance,
+            joinDate,
+            workHours,
+            notes,
+          }
         : null,
     };
   });

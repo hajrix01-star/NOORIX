@@ -27,6 +27,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
+import { preferQueryCompanyId } from '../common/utils/company-request';
 import { HRService } from './hr.service';
 import { CreatePayrollRunDto } from './dto/create-payroll-run.dto';
 import { UpdatePayrollRunDto, UpdatePayrollRunStatusDto } from './dto/update-payroll-run.dto';
@@ -45,7 +46,7 @@ export class HRController {
   constructor(private readonly hrService: HRService) {}
 
   private resolveCompanyId(header?: string, query?: string): string {
-    return (header?.trim() || query?.trim()) || '';
+    return preferQueryCompanyId(query, header);
   }
 
   // ══════════════════════════════════════════════════════════

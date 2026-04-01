@@ -1,6 +1,7 @@
 import { Controller, Get, Headers, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
+import { preferQueryCompanyId } from '../common/utils/company-request';
 import { LedgerService } from './ledger.service';
 
 @Controller('ledger')
@@ -20,7 +21,7 @@ export class LedgerController {
     @Query('pageSize') pageSize?: string,
     @Query('q') q?: string,
   ) {
-    const companyId = (headerCompanyId?.trim() || queryCompanyId?.trim()) || '';
+    const companyId = preferQueryCompanyId(queryCompanyId, headerCompanyId);
     if (!companyId) return { items: [], total: 0, page: 1, pageSize: 50 };
 
     // دعم كلا الصيغتين: startDate/endDate و fromDate/toDate

@@ -6,6 +6,7 @@ import { RolesGuard }         from '../auth/guards/roles.guard';
 import { RequirePermission }  from '../auth/decorators/require-permission.decorator';
 import { createSupplierSchema } from './dto/create-supplier.dto';
 import { updateSupplierSchema } from './dto/update-supplier.dto';
+import { preferQueryCompanyId } from '../common/utils/company-request';
 import { SuppliersService }   from './suppliers.service';
 
 @Controller('suppliers')
@@ -22,7 +23,7 @@ export class SuppliersController {
     @Query('pageSize')       pageSize?:       string,
     @Query('q')              q?:              string,
   ) {
-    const companyId = (headerCompanyId?.trim() || queryCompanyId?.trim()) || '';
+    const companyId = preferQueryCompanyId(queryCompanyId, headerCompanyId);
     if (!companyId) return { items: [], total: 0, page: 1, pageSize: 50 };
     return this.suppliersService.findAll(
       companyId,

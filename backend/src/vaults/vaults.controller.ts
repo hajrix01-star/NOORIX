@@ -20,15 +20,15 @@ import { CurrentUser, JwtUser }  from '../auth/decorators/current-user.decorator
 import { RequirePermission }     from '../auth/decorators/require-permission.decorator';
 import { createVaultSchema, updateVaultSchema } from './dto/create-vault.dto';
 import { VaultsService }         from './vaults.service';
+import { preferQueryCompanyId }  from '../common/utils/company-request';
 
 @Controller('vaults')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class VaultsController {
   constructor(private readonly vaultsService: VaultsService) {}
 
-  // ── مساعد: استخراج companyId ────────────────────────────
   private resolveCompanyId(header?: string, query?: string): string {
-    return (header?.trim() || query?.trim()) || '';
+    return preferQueryCompanyId(query, header);
   }
 
   @Get()
