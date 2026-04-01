@@ -10,15 +10,8 @@ import { getPayrollRuns } from '../../../services/api';
 import { createPayrollRun } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import Decimal from 'decimal.js';
-
-function totalSalary(emp) {
-  const basic = new Decimal(emp.basicSalary ?? 0);
-  const housing = new Decimal(emp.housingAllowance ?? 0);
-  const transport = new Decimal(emp.transportAllowance ?? 0);
-  const other = new Decimal(emp.otherAllowance ?? 0);
-  return basic.plus(housing).plus(transport).plus(other).toNumber();
-}
+import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
+import { fixedMonthlyPayPackage } from '../utils/employeeSalaryMath';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -62,6 +55,17 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
 
   const monthStart = payrollMonth ? new Date(payrollMonth) : null;
   const monthStr = monthStart ? `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}` : '';
+
+  const { allowances: allCustomAllowances = [] } = useCustomAllowances(cid);
+
+  const allowanceTotals = useMemo(() => {
+    const map = new Map();
+    for (const row of allCustomAllowances) {
+      if (!row.employeeId) continue;
+      map.set(row.employeeId, (map.get(row.employeeId) || 0) + (Number(row.amount) || 0));
+    }
+    return map;
+  }, [allCustomAllowances]);
 
   const { data: advances = [] } = useQuery({
     queryKey: ['invoices', cid, 'advance', monthStr],
@@ -123,7 +127,8 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
 
   const initItems = () => {
     const list = activeEmployees.map((emp) => {
-      const gross = totalSalary(emp);
+      const customSum = allowanceTotals.get(emp.id) || 0;
+      const gross = fixedMonthlyPayPackage(emp, customSum);
       const advMeta = getAdvanceMetaForEmployee(emp.id);
       const advancesDeduct = Number(advMeta.dueAmount || 0);
       const baseBeforeDeduction = gross;
@@ -150,7 +155,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
       initItems();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeEmployees.length, monthStr, advancesByEmployee]);
+  }, [activeEmployees.length, monthStr, advancesByEmployee, allowanceTotals]);
 
   const updateItem = (idx, field, value) => {
     const num = parseFloat(value) || 0;
@@ -192,7 +197,8 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
     if (idx >= 0) {
       setItems((prev) => prev.filter((_, i) => i !== idx));
     } else {
-      const gross = totalSalary(emp);
+      const customSum = allowanceTotals.get(emp.id) || 0;
+      const gross = fixedMonthlyPayPackage(emp, customSum);
       setItems((prev) => [...prev, {
         employeeId: emp.id,
         employeeName: emp.name || emp.nameAr || '—',
@@ -262,6 +268,9 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
         <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>{t('createPayrollRun')}</h3>
 
         <form onSubmit={handleSubmit}>
+          <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.55 }}>
+            {t('payrollGrossFixedPackageHint')}
+          </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
             <div>
               <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('payrollMonth')}</label>

@@ -22,43 +22,18 @@ import {
 } from '../../services/api';
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { fmt } from '../../utils/format';
-import Decimal from 'decimal.js';
 import SmartTable from '../../components/common/SmartTable';
+import {
+  parseWorkHours,
+  overtimePay,
+  totalSalary,
+  SAUDI_STANDARD_HOURS,
+} from './utils/employeeSalaryMath';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
 import Toast from '../../components/Toast';
 
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
-const SAUDI_STANDARD_HOURS = 8;
-const SAUDI_DAYS_PER_MONTH = 30;
-const WORK_DAYS_PER_MONTH = 26;
-
-function parseWorkHours(str) {
-  if (!str) return SAUDI_STANDARD_HOURS;
-  const m = String(str).match(/(\d+(?:\.\d+)?)/);
-  return m ? Math.max(1, Math.min(12, parseFloat(m[1]))) : SAUDI_STANDARD_HOURS;
-}
-
-function overtimePay(emp, customTotal = 0) {
-  const basic = new Decimal(emp?.basicSalary ?? 0);
-  const housing = new Decimal(emp?.housingAllowance ?? 0);
-  const transport = new Decimal(emp?.transportAllowance ?? 0);
-  const other = new Decimal(emp?.otherAllowance ?? 0);
-  const actualWage = basic.plus(housing).plus(transport).plus(other).plus(customTotal || 0);
-  const overtimeHoursPerDay = Math.max(0, parseWorkHours(emp?.workHours) - SAUDI_STANDARD_HOURS);
-  if (overtimeHoursPerDay <= 0) return 0;
-  const actualHourlyRate = actualWage.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
-  const basicHourlyRate = basic.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
-  return actualHourlyRate.plus(basicHourlyRate.times(0.5)).times(overtimeHoursPerDay).times(WORK_DAYS_PER_MONTH).toNumber();
-}
-
-function totalSalary(emp, customTotal = 0) {
-  const basic = new Decimal(emp?.basicSalary ?? 0);
-  const housing = new Decimal(emp?.housingAllowance ?? 0);
-  const transport = new Decimal(emp?.transportAllowance ?? 0);
-  const other = new Decimal(emp?.otherAllowance ?? 0);
-  return basic.plus(housing).plus(transport).plus(other).plus(customTotal || 0).plus(overtimePay(emp, customTotal)).toNumber();
-}
 
 export default function EmployeeProfileScreen() {
   const { id } = useParams();

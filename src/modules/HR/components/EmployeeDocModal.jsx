@@ -8,10 +8,12 @@ import { fmt } from '../../../utils/format';
 import Decimal from 'decimal.js';
 import { uploadDocumentFile } from '../../../services/api';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
+import {
+  parseWorkHours,
+  overtimePay,
+  SAUDI_STANDARD_HOURS,
+} from '../utils/employeeSalaryMath';
 
-const SAUDI_STANDARD_HOURS = 8;
-const SAUDI_DAYS_PER_MONTH = 30;
-const WORK_DAYS_PER_MONTH = 26;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ALLOWANCE_NAME_EN_MAP = {
   'بدل سكن': 'Housing Allowance',
@@ -31,12 +33,6 @@ const ALLOWANCE_NAME_EN_MAP = {
   'بدل إضافي': 'Additional Allowance',
   'بدل اضافي': 'Additional Allowance',
 };
-
-function parseWorkHours(str) {
-  if (!str) return SAUDI_STANDARD_HOURS;
-  const m = String(str).match(/(\d+(?:\.\d+)?)/);
-  return m ? Math.max(1, Math.min(12, parseFloat(m[1]))) : SAUDI_STANDARD_HOURS;
-}
 
 function translateAllowanceToEnglish(nameAr = '') {
   const normalized = String(nameAr || '').trim();
@@ -94,12 +90,10 @@ function buildSalaryRows(employee, customAllowances = []) {
       });
     }
   }
-  const actualWage = rows.reduce((sum, row) => sum + row.amount, 0);
+  const customTotal = customAllowances.reduce((s, row) => s + (Number(row.amount) || 0), 0);
   const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
   if (overtimeHoursPerDay > 0) {
-    const actualHourlyRate = new Decimal(actualWage).div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
-    const basicHourlyRate = basic.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
-    const overtimeAmount = actualHourlyRate.plus(basicHourlyRate.times(0.5)).times(overtimeHoursPerDay).times(WORK_DAYS_PER_MONTH).toNumber();
+    const overtimeAmount = overtimePay(employee, customTotal);
     rows.push({ ar: `مقابل الأوفر تايم (${fmt(overtimeHoursPerDay)} ساعة/يوم)`, en: `Overtime Pay (${fmt(overtimeHoursPerDay)} hr/day)`, amount: overtimeAmount });
   }
   const total = rows.reduce((sum, row) => sum + row.amount, 0);

@@ -12,15 +12,9 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { fmt } from '../../../utils/format';
+import { parseWorkHours } from '../utils/employeeSalaryMath';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const SAUDI_STANDARD_HOURS = 8;
-
-function parseWorkHours(str) {
-  if (!str) return SAUDI_STANDARD_HOURS;
-  const m = String(str).match(/(\d+(?:\.\d+)?)/);
-  return m ? Math.max(1, Math.min(12, parseFloat(m[1]))) : SAUDI_STANDARD_HOURS;
-}
 
 function calculateServiceDays(joinDate, endDate) {
   const start = new Date(joinDate);

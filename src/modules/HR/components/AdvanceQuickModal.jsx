@@ -8,6 +8,7 @@ import { useVaults } from '../../../hooks/useVaults';
 import { useQuery } from '@tanstack/react-query';
 import { getEmployees } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
+import { roundMoney2 } from '../../../utils/moneyInput';
 
 export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }) {
   const { t } = useTranslation();
@@ -45,7 +46,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const amt = parseFloat(amount);
+    const amt = roundMoney2(amount);
     const empId = initialEmployee ? initialEmployee.id : employeeId;
     const selectedEmp = initialEmployee ?? activeEmployees.find((em) => em.id === empId);
     const empName = selectedEmp?.name || selectedEmp?.nameAr || '';

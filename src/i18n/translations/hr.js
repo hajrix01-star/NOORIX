@@ -231,6 +231,10 @@ export default {
   exportPdf: { ar: 'تصدير PDF', en: 'Export PDF' },
   payrollCreated: { ar: 'تم إنشاء مسيرة الراتب بنجاح', en: 'Payroll run created successfully' },
   payrollMonthExists: { ar: 'مسيرة لهذا الشهر موجودة مسبقاً', en: 'Payroll run for this month already exists' },
+  payrollGrossFixedPackageHint: {
+    ar: 'عمود الإجمالي الافتراضي = الراتب الأساسي والبدلات المسجلة للموظف + البدلات المخصصة. أجر الأوفر تايم لا يُدخل تلقائياً (يختلف شهرياً) — أضفه عند الحاجة في عمود «البدلات» أو عدّل الإجمالي يدوياً.',
+    en: 'Default gross = basic salary, recorded allowances, and custom allowances. Overtime is not auto-included (varies by month) — add it under Allowances or edit gross manually if needed.',
+  },
   refresh: { ar: 'تحديث', en: 'Refresh' },
   create: { ar: 'إنشاء', en: 'Create' },
   statusPending: { ar: 'قيد المراجعة', en: 'Pending' },

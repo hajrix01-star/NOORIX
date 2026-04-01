@@ -15,17 +15,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateEmployee } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import Toast from '../../../components/Toast';
-
-const SAUDI_STANDARD_HOURS = 8;
-const SAUDI_DAYS_PER_MONTH = 30;   // المعيار السعودي: 30 يوم (بما فيها العطل)
-const WORK_DAYS_PER_MONTH = 26;    // أيام العمل الفعلية شهرياً
-
-/** استخراج عدد الساعات من نص (مثل "8" أو "8 ساعات يومياً") */
-function parseWorkHours(str) {
-  if (!str) return SAUDI_STANDARD_HOURS;
-  const m = String(str).match(/(\d+(?:\.\d+)?)/);
-  return m ? Math.max(1, Math.min(12, parseFloat(m[1]))) : SAUDI_STANDARD_HOURS;
-}
+import {
+  SAUDI_STANDARD_HOURS,
+  SAUDI_DAYS_PER_MONTH,
+  WORK_DAYS_PER_MONTH,
+  parseWorkHours,
+} from '../utils/employeeSalaryMath';
 
 function toDecimal(value) {
   return new Decimal(value || 0);
