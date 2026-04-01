@@ -464,7 +464,7 @@ export class HRService {
       for (const adv of advances) {
         if (remainingToDeduct <= 0) break;
         const deferMonth = parseDeferredMonth(adv.notes);
-        if (deferMonth && deferMonth === runMonth) continue;
+        if (deferMonth && deferMonth > runMonth) continue;
 
         const total = Number(adv.totalAmount ?? 0);
         const settled = Number(adv.settledAmount ?? 0);

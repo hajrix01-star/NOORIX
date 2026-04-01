@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
-import { getEmployees, getInvoices } from '../../../services/api';
+import { getEmployees, getInvoices, getLeaves } from '../../../services/api';
 import { getPayrollRun, getPayrollRuns } from '../../../services/api';
 import { createPayrollRun, updatePayrollRun } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
@@ -22,14 +22,31 @@ function extractAdvanceDates(notes) {
   return String(notes || '').replace('تواريخ السلف:', '').trim();
 }
 
+function getDefaultPayrollMonth() {
+  const base = new Date();
+  base.setDate(1);
+  base.setMonth(base.getMonth() - 1);
+  return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
+function monthRange(dateStr) {
+  const start = new Date(dateStr);
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 1);
+  end.setDate(0);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
 export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose }) {
   const { t } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
   const isEditMode = !!runId;
 
-  const now = new Date();
-  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const defaultMonth = getDefaultPayrollMonth();
 
   const [payrollMonth, setPayrollMonth] = useState(defaultMonth);
   const [notes, setNotes] = useState('');
@@ -92,6 +109,16 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     enabled: !!cid,
   });
 
+  const { data: leaves = [] } = useQuery({
+    queryKey: ['leaves', cid, 'payroll-form'],
+    queryFn: async () => {
+      const res = await getLeaves(cid);
+      if (!res?.success) return [];
+      return Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
+    },
+    enabled: !!cid,
+  });
+
   const existingMonthSet = useMemo(() => {
     const set = new Set();
     (existingRuns || []).forEach((r) => {
@@ -108,15 +135,33 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     return (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
   }, [employees]);
 
+  const employeesOnLeaveSet = useMemo(() => {
+    const { start, end } = monthRange(payrollMonth || defaultMonth);
+    const set = new Set();
+    for (const leave of leaves || []) {
+      if (!leave?.employeeId || leave.status !== 'approved') continue;
+      const leaveStart = new Date(leave.startDate);
+      const leaveEnd = new Date(leave.endDate);
+      if (leaveStart <= end && leaveEnd >= start) {
+        set.add(leave.employeeId);
+      }
+    }
+    return set;
+  }, [leaves, payrollMonth, defaultMonth]);
+
+  const eligibleEmployees = useMemo(() => {
+    return activeEmployees.filter((e) => e.status !== 'on_leave' && !employeesOnLeaveSet.has(e.id));
+  }, [activeEmployees, employeesOnLeaveSet]);
+
   const displayEmployees = useMemo(() => {
     const map = new Map();
-    activeEmployees.forEach((emp) => map.set(emp.id, emp));
+    eligibleEmployees.forEach((emp) => map.set(emp.id, emp));
     items.forEach((item) => {
       if (!item.employeeId || map.has(item.employeeId)) return;
       map.set(item.employeeId, { id: item.employeeId, name: item.employeeName, nameAr: item.employeeName });
     });
     return Array.from(map.values());
-  }, [activeEmployees, items]);
+  }, [eligibleEmployees, items]);
 
   const advancesByEmployee = useMemo(() => {
     const map = new Map();
@@ -127,7 +172,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       const remaining = Math.max(0, total - settled);
       if (remaining <= 0) continue;
       const deferMonth = parseDeferredMonth(inv.notes);
-      const isDeferred = deferMonth && deferMonth === monthStr;
+      const isDeferred = !!deferMonth && deferMonth > monthStr;
       const row = {
         id: inv.id,
         transactionDate: inv.transactionDate,
@@ -152,7 +197,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   }
 
   const initItems = () => {
-    const list = activeEmployees.map((emp) => {
+    const list = eligibleEmployees.map((emp) => {
       const customSum = allowanceTotals.get(emp.id) || 0;
       const gross = totalSalary(emp, customSum);
       const advMeta = getAdvanceMetaForEmployee(emp.id);
@@ -204,11 +249,11 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   React.useEffect(() => {
     if (isEditMode) return;
-    if (activeEmployees.length > 0 && (items.length === 0 || monthStr)) {
+    if (eligibleEmployees.length > 0 && (items.length === 0 || monthStr)) {
       initItems();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeEmployees.length, monthStr, advancesByEmployee, allowanceTotals, isEditMode]);
+  }, [eligibleEmployees.length, monthStr, advancesByEmployee, allowanceTotals, isEditMode]);
 
   React.useEffect(() => {
     if (!isEditMode || !editingRun) return;
