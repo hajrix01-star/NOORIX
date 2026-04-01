@@ -28,9 +28,12 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, right: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, right: 0, openUpward: false });
   const btnRef = useRef(null);
   const menuRef = useRef(null);
+  const MENU_WIDTH = 176;
+  const MENU_MAX_HEIGHT = 280;
+  const VIEWPORT_GAP = 10;
 
   const canPrint = hasPermission(userRole, 'INVOICES_READ', userPermissions);
   const canEdit  = hasPermission(userRole, 'INVOICES_WRITE', userPermissions);
@@ -43,7 +46,18 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
   useEffect(() => {
     if (open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, left: r.left, right: r.right });
+      const estimatedHeight = Math.min(MENU_MAX_HEIGHT, 180);
+      const spaceBelow = window.innerHeight - r.bottom;
+      const spaceAbove = r.top;
+      const openUpward = spaceBelow < estimatedHeight + VIEWPORT_GAP && spaceAbove > spaceBelow;
+      const top = openUpward
+        ? Math.max(VIEWPORT_GAP, r.top - estimatedHeight - 4)
+        : Math.min(window.innerHeight - estimatedHeight - VIEWPORT_GAP, r.bottom + 4);
+      const safeLeft = Math.min(
+        Math.max(VIEWPORT_GAP, r.left),
+        Math.max(VIEWPORT_GAP, window.innerWidth - MENU_WIDTH - VIEWPORT_GAP),
+      );
+      setPos({ top, left: safeLeft, right: safeLeft + r.width, openUpward });
     }
   }, [open]);
 
@@ -75,16 +89,17 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
         position: 'fixed',
         zIndex: 9999,
         top: pos.top,
-        ...(isRtl ? { right: window.innerWidth - pos.right } : { left: pos.left }),
+        ...(isRtl ? { right: Math.max(VIEWPORT_GAP, window.innerWidth - pos.left - MENU_WIDTH) } : { left: pos.left }),
         minWidth: 150,
-        maxHeight: 280,
+        width: MENU_WIDTH,
+        maxHeight: MENU_MAX_HEIGHT,
         overflowY: 'auto',
         padding: 6,
-        borderRadius: 8,
+        borderRadius: 10,
         background: 'var(--noorix-bg-surface)',
         color: 'var(--noorix-text)',
         border: '1px solid var(--noorix-border)',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+        boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
       }}
     >
       {canView && (

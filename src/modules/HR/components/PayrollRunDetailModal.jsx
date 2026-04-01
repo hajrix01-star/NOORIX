@@ -140,15 +140,15 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   };
 
   const columns = [
-    { key: 'employeeName', label: t('employeeName'), minWidth: 180, render: (_, row) => row.employee?.name || row.employee?.nameAr || '—' },
-    { key: 'advanceDates', label: t('payrollAdvanceDates'), minWidth: 170, render: (_, row) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
-    { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v) },
-    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: 130, minWidth: 120, render: (_, row) => hrFmt(Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0)) },
-    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v ?? 0) },
-    { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v ?? 0) },
-    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v ?? 0) },
-    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: 130, minWidth: 120, render: (_, row) => hrFmt(Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0)) },
-    { key: 'netSalary', label: t('netSalary'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v) },
+    { key: 'employeeName', label: t('employeeName'), width: '18%', minWidth: 150, render: (_, row) => row.employee?.name || row.employee?.nameAr || '—' },
+    { key: 'advanceDates', label: t('payrollAdvanceDates'), width: '16%', minWidth: 120, render: (_, row) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
+    { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: '9%', minWidth: 84, render: (v) => hrFmt(v) },
+    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: '11%', minWidth: 96, render: (_, row) => hrFmt(Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0)) },
+    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, width: '8%', minWidth: 76, render: (v) => hrFmt(v ?? 0) },
+    { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: '8%', minWidth: 76, render: (v) => hrFmt(v ?? 0) },
+    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: '8%', minWidth: 76, render: (v) => hrFmt(v ?? 0) },
+    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: '11%', minWidth: 96, render: (_, row) => hrFmt(Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0)) },
+    { key: 'netSalary', label: t('netSalary'), numeric: true, width: '11%', minWidth: 90, render: (v) => hrFmt(v) },
   ];
 
   const footerCells = (
@@ -159,8 +159,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   );
 
   return (
-    <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
-      <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 720, width: '95%', maxHeight: '90vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 12 }} onClick={onClose}>
+      <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 1380, width: 'min(97vw, 1380px)', maxHeight: '92vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div>
             <h3 style={{ margin: '0 0 4px', fontSize: 18 }}>{run.runNumber || '—'}</h3>
