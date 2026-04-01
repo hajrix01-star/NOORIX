@@ -29,12 +29,9 @@ import { StaffFormModal } from './components/StaffFormModal';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
-import Decimal from 'decimal.js';
+import { overtimePay, totalSalary } from './utils/employeeSalaryMath';
 
 const PAGE_SIZE = 50;
-const SAUDI_STANDARD_HOURS = 8;
-const SAUDI_DAYS_PER_MONTH = 30;
-const WORK_DAYS_PER_MONTH = 26;
 
 const Badge = memo(function Badge({ map, value }) {
   const s = map[value] || { bg: 'rgba(100,116,139,0.08)', color: '#64748b', label: value };
@@ -47,39 +44,6 @@ const Badge = memo(function Badge({ map, value }) {
     </span>
   );
 });
-
-function parseWorkHours(str) {
-  if (!str) return SAUDI_STANDARD_HOURS;
-  const m = String(str).match(/(\d+(?:\.\d+)?)/);
-  return m ? Math.max(1, Math.min(12, parseFloat(m[1]))) : SAUDI_STANDARD_HOURS;
-}
-
-function overtimePay(emp, extraAllowances = 0) {
-  const basic = new Decimal(emp.basicSalary ?? 0);
-  const housing = new Decimal(emp.housingAllowance ?? 0);
-  const transport = new Decimal(emp.transportAllowance ?? 0);
-  const other = new Decimal(emp.otherAllowance ?? 0);
-  const actualWage = basic.plus(housing).plus(transport).plus(other).plus(extraAllowances || 0);
-  const overtimeHoursPerDay = Math.max(0, parseWorkHours(emp.workHours) - SAUDI_STANDARD_HOURS);
-  if (overtimeHoursPerDay <= 0) return 0;
-  const actualHourlyRate = actualWage.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
-  const basicHourlyRate = basic.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
-  return actualHourlyRate.plus(basicHourlyRate.times(0.5)).times(overtimeHoursPerDay).times(WORK_DAYS_PER_MONTH).toNumber();
-}
-
-function totalSalary(emp, extraAllowances = 0) {
-  const basic = new Decimal(emp.basicSalary ?? 0);
-  const housing = new Decimal(emp.housingAllowance ?? 0);
-  const transport = new Decimal(emp.transportAllowance ?? 0);
-  const other = new Decimal(emp.otherAllowance ?? 0);
-  return basic
-    .plus(housing)
-    .plus(transport)
-    .plus(other)
-    .plus(extraAllowances || 0)
-    .plus(overtimePay(emp, extraAllowances))
-    .toNumber();
-}
 
 export default function StaffListScreen({ embedded }) {
   const navigate = useNavigate();

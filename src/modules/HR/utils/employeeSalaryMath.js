@@ -1,12 +1,51 @@
 /**
  * ثوابت ومعادلات الراتب الشهري (متوافقة مع المادة 107 في الواجهة).
- * الأوفر تايم: تقدير شهري بافتراض 26 يوم عمل؛ لا يُستخدم في حزمة المسيرة الافتراضية.
+ *
+ * المعيار: 8 ساعات/يوم. فوقها = أوفر تايم.
+ * أيام ضرب الأوفر شهرياً تختلف حسب الاتفاق: غالباً 26 (شهر 30 ناقص ~4 أيام راحة)
+ * أو 30 (دوام كامل الشهر) — تُخزَّن لكل موظف في workSchedule كـ [NOORIX_WD:26] أو :30.
  */
 import Decimal from 'decimal.js';
 
 export const SAUDI_STANDARD_HOURS = 8;
 export const SAUDI_DAYS_PER_MONTH = 30;
-export const WORK_DAYS_PER_MONTH = 26;
+
+/** افتراض عند عدم وجود وسوم: نمط «4 أيام إجازة بالشهر» ≈ 26 يوم عمل */
+export const DEFAULT_OVERTIME_WORK_DAYS = 26;
+/** اسم قديم للتوافق مع الاستيرادات */
+export const WORK_DAYS_PER_MONTH = DEFAULT_OVERTIME_WORK_DAYS;
+
+const NOORIX_WD_RE = /\[NOORIX_WD:(\d{1,2})\]/;
+
+/** إزالة وسوم أيام الأوفر من نص نظام الدوام (للعرض في النماذج). */
+export function stripOvertimeWorkDaysTag(schedule) {
+  return String(schedule || '').replace(NOORIX_WD_RE, '').replace(/\s+/g, ' ').trim();
+}
+
+/** قراءة أيام العمل الشهرية المستخدمة في ضرب الأوفر تايم (1–31). */
+export function parseOvertimeWorkDaysPerMonth(emp) {
+  const sch = String(emp?.workSchedule || '');
+  const m = sch.match(NOORIX_WD_RE);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (Number.isFinite(n)) return Math.min(31, Math.max(1, n));
+  }
+  return DEFAULT_OVERTIME_WORK_DAYS;
+}
+
+const MAX_SCHEDULE_LEN = 120;
+
+/** دمج نظام الدوام مع وسيم أيام الأوفر (يُستبدل الوسم السابق إن وُجد). */
+export function mergeOvertimeWorkDaysIntoSchedule(schedule, days) {
+  const d = Math.min(31, Math.max(1, Math.round(Number(days)) || DEFAULT_OVERTIME_WORK_DAYS));
+  const tag = `[NOORIX_WD:${d}]`;
+  let base = stripOvertimeWorkDaysTag(schedule);
+  const maxBase = MAX_SCHEDULE_LEN - tag.length - (base ? 1 : 0);
+  if (maxBase < 0) return tag.slice(0, MAX_SCHEDULE_LEN);
+  if (base.length > maxBase) base = base.slice(0, maxBase).trim();
+  const combined = base ? `${base} ${tag}`.trim() : tag;
+  return combined.length > MAX_SCHEDULE_LEN ? combined.slice(0, MAX_SCHEDULE_LEN) : combined;
+}
 
 export function parseWorkHours(str) {
   if (!str) return SAUDI_STANDARD_HOURS;
@@ -31,6 +70,7 @@ export function baseSalaryComponentsDecimal(emp) {
 }
 
 export function overtimePayDecimal(emp, customTotal = 0) {
+  const workDays = parseOvertimeWorkDaysPerMonth(emp);
   const basic = new Decimal(emp?.basicSalary ?? 0);
   const housing = new Decimal(emp?.housingAllowance ?? 0);
   const transport = new Decimal(emp?.transportAllowance ?? 0);
@@ -44,7 +84,7 @@ export function overtimePayDecimal(emp, customTotal = 0) {
   return actualHourlyRate
     .plus(basicHourlyRate.times(0.5))
     .times(overtimeHoursPerDay)
-    .times(WORK_DAYS_PER_MONTH);
+    .times(workDays);
 }
 
 export function overtimePay(emp, customTotal = 0) {
@@ -63,8 +103,7 @@ export function totalSalary(emp, customTotal = 0) {
 }
 
 /**
- * حزمة الراتب الثابتة للمسيرة: بدون أوفرتايم (يُضاف شهرياً حسب العمل الفعلي).
- * = أساسي + بدلات الحقول + بدلات مخصصة.
+ * حزمة بدون أوفرتايم (أساسي + بدلات + مخصصة) — للمقارنة أو تقارير؛ المسيرة تستخدم totalSalary.
  */
 export function fixedMonthlyPayPackageDecimal(emp, customTotal = 0) {
   return baseSalaryComponentsDecimal(emp).plus(customTotal || 0);

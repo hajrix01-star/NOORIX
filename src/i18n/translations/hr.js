@@ -232,8 +232,17 @@ export default {
   payrollCreated: { ar: 'تم إنشاء مسيرة الراتب بنجاح', en: 'Payroll run created successfully' },
   payrollMonthExists: { ar: 'مسيرة لهذا الشهر موجودة مسبقاً', en: 'Payroll run for this month already exists' },
   payrollGrossFixedPackageHint: {
-    ar: 'عمود الإجمالي الافتراضي = الراتب الأساسي والبدلات المسجلة للموظف + البدلات المخصصة. أجر الأوفر تايم لا يُدخل تلقائياً (يختلف شهرياً) — أضفه عند الحاجة في عمود «البدلات» أو عدّل الإجمالي يدوياً.',
-    en: 'Default gross = basic salary, recorded allowances, and custom allowances. Overtime is not auto-included (varies by month) — add it under Allowances or edit gross manually if needed.',
+    ar: 'الإجمالي الافتراضي = الراتب + البدلات + البدلات المخصصة + أجر الأوفر تايم المحسوب تلقائياً (ساعات اليوم فوق 8 × أيام الدوام المخزنة لكل موظف: 26 أو 30…). يمكنك التعديل يدوياً أو إضافة مبالغ في عمود البدلات.',
+    en: 'Default gross = salary + allowances + custom allowances + auto overtime (daily hours over 8 × each employee’s stored work days: 26 or 30…). Edit manually or use the Allowances column as needed.',
+  },
+  overtimeWorkDaysPerMonth: { ar: 'أيام العمل لحساب الأوفر تايم (شهرياً)', en: 'Work days for monthly overtime' },
+  overtimeWorkDaysHelp: {
+    ar: '26 ≈ شهر 30 يوم مع ~4 أيام راحة (نمط شائع). 30 = دوام كل أيام الشهر. يُحفظ تلقائياً مع الموظف ويُستخدم في الملف والمسيرة.',
+    en: '26 ≈ 30-day month with ~4 rest days. 30 = full month. Stored on the employee and used in profile and payroll.',
+  },
+  salaryCalcOvertimeWorkDaysHint: {
+    ar: 'يُحفظ مع الموظف عند «تحديث الراتب». مثال: 12 ساعة × 30 يوم = ضرب الأوفر في 30؛ 8 ساعات × ~26 يوم عمل = 26.',
+    en: 'Saved on the employee when you update salary. E.g. 12h × 30 days → use 30; 8h × ~26 work days → 26.',
   },
   refresh: { ar: 'تحديث', en: 'Refresh' },
   create: { ar: 'إنشاء', en: 'Create' },

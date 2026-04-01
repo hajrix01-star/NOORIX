@@ -11,7 +11,7 @@ import { createPayrollRun } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
-import { fixedMonthlyPayPackage } from '../utils/employeeSalaryMath';
+import { totalSalary } from '../utils/employeeSalaryMath';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -128,7 +128,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
   const initItems = () => {
     const list = activeEmployees.map((emp) => {
       const customSum = allowanceTotals.get(emp.id) || 0;
-      const gross = fixedMonthlyPayPackage(emp, customSum);
+      const gross = totalSalary(emp, customSum);
       const advMeta = getAdvanceMetaForEmployee(emp.id);
       const advancesDeduct = Number(advMeta.dueAmount || 0);
       const baseBeforeDeduction = gross;
@@ -198,7 +198,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
       setItems((prev) => prev.filter((_, i) => i !== idx));
     } else {
       const customSum = allowanceTotals.get(emp.id) || 0;
-      const gross = fixedMonthlyPayPackage(emp, customSum);
+      const gross = totalSalary(emp, customSum);
       setItems((prev) => [...prev, {
         employeeId: emp.id,
         employeeName: emp.name || emp.nameAr || '—',

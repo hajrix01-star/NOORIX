@@ -18,8 +18,10 @@ import Toast from '../../../components/Toast';
 import {
   SAUDI_STANDARD_HOURS,
   SAUDI_DAYS_PER_MONTH,
-  WORK_DAYS_PER_MONTH,
+  DEFAULT_OVERTIME_WORK_DAYS,
   parseWorkHours,
+  parseOvertimeWorkDaysPerMonth,
+  mergeOvertimeWorkDaysIntoSchedule,
 } from '../utils/employeeSalaryMath';
 
 function toDecimal(value) {
@@ -38,7 +40,7 @@ export default function SalaryCalcTab() {
 
   const [targetTotal, setTargetTotal] = useState('');
   const [hoursPerDay, setHoursPerDay] = useState(String(SAUDI_STANDARD_HOURS));
-  const [daysPerMonth, setDaysPerMonth] = useState(String(WORK_DAYS_PER_MONTH));
+  const [daysPerMonth, setDaysPerMonth] = useState(String(DEFAULT_OVERTIME_WORK_DAYS));
   const [vacationDays, setVacationDays] = useState('0');
   const [housingAllowance, setHousingAllowance] = useState('0');
   const [transportAllowance, setTransportAllowance] = useState('0');
@@ -65,7 +67,7 @@ export default function SalaryCalcTab() {
     const actualWage = basic.plus(editableAllowances).plus(customTotal || 0);
     const dailyHours = Math.max(1, Math.min(12, parseFloat(hoursValue) || SAUDI_STANDARD_HOURS));
     const overtimeHoursPerDay = Math.max(0, dailyHours - SAUDI_STANDARD_HOURS);
-    const workDays = Math.max(1, parseFloat(workDaysValue) || WORK_DAYS_PER_MONTH);
+    const workDays = Math.max(1, parseFloat(workDaysValue) || DEFAULT_OVERTIME_WORK_DAYS);
     if (overtimeHoursPerDay <= 0) return actualWage;
     const actualHourlyRate = actualWage.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
     const basicHourlyRate = basic.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
@@ -74,23 +76,25 @@ export default function SalaryCalcTab() {
     return actualWage.plus(overtimePay);
   }
 
-  // عند اختيار موظف: تحميل بياناته الحالية داخل الحاسبة بشكل ديناميكي
+  // عند اختيار موظف: تحميل ساعاته وأيام الأوفر المخزنة ثم الإجمالي المستهدف
   useEffect(() => {
     if (!selectedEmployee) return;
     const e = employees.find((x) => x.id === selectedEmployee);
     if (e) {
       const dailyHours = parseWorkHours(e.workHours);
+      const wd = parseOvertimeWorkDaysPerMonth(e);
       const customTotal = new Decimal(allowanceTotals.get(e.id) || 0);
       setHoursPerDay(String(dailyHours));
+      setDaysPerMonth(String(wd));
       setHousingAllowance(String(e.housingAllowance ?? 0));
       setTransportAllowance(String(e.transportAllowance ?? 0));
       setOtherAllowance(String(e.otherAllowance ?? 0));
-      setTargetTotal(computeTargetFromCurrentEmployee(e, customTotal, dailyHours, daysPerMonth).toDecimalPlaces(2).toString());
+      setTargetTotal(computeTargetFromCurrentEmployee(e, customTotal, dailyHours, wd).toDecimalPlaces(2).toString());
     }
   }, [selectedEmployee, employees, allowanceTotals]);
 
   const hours = Math.max(1, Math.min(12, parseFloat(hoursPerDay) || SAUDI_STANDARD_HOURS));
-  const workDays = Math.max(1, parseFloat(daysPerMonth) || WORK_DAYS_PER_MONTH);
+  const workDays = Math.max(1, parseFloat(daysPerMonth) || DEFAULT_OVERTIME_WORK_DAYS);
   const vacDays = parseFloat(vacationDays) || 0;
   const overtimeHoursPerDay = Math.max(0, hours - SAUDI_STANDARD_HOURS);
   const totalTarget = toDecimal(targetTotal);
@@ -140,6 +144,7 @@ export default function SalaryCalcTab() {
         transportAllowance: transport.toDecimalPlaces(2).toNumber(),
         otherAllowance: other.toDecimalPlaces(2).toNumber(),
         workHours: String(Math.round(hours * 10) / 10),
+        workSchedule: mergeOvertimeWorkDaysIntoSchedule(emp.workSchedule || '', workDays),
       },
     });
   }
@@ -285,7 +290,7 @@ export default function SalaryCalcTab() {
           <option value="">— {t('salaryCalcSelectOrEnter') || 'اختر أو أدخل يدوياً'} —</option>
           {employees.map((e) => (
             <option key={e.id} value={e.id}>
-              {e.name || e.nameAr || e.id} — {fmt(computeTargetFromCurrentEmployee(e, new Decimal(allowanceTotals.get(e.id) || 0), parseWorkHours(e.workHours), workDays).toNumber())} ر.س
+              {e.name || e.nameAr || e.id} — {fmt(computeTargetFromCurrentEmployee(e, new Decimal(allowanceTotals.get(e.id) || 0), parseWorkHours(e.workHours), parseOvertimeWorkDaysPerMonth(e)).toNumber())} ر.س
               {e.workHours ? ` (${parseWorkHours(e.workHours)} ${t('salaryCalcHour')})` : ''}
             </option>
           ))}
@@ -323,7 +328,10 @@ export default function SalaryCalcTab() {
         </div>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('salaryCalcDaysPerMonth')} <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 400 }}>({t('salaryCalcForDeduction') || 'للخصم'})</span></label>
-          <input type="number" min="1" value={daysPerMonth} onChange={(e) => setDaysPerMonth(e.target.value)} style={inputStyle} />
+          <input type="number" min="1" max="31" value={daysPerMonth} onChange={(e) => setDaysPerMonth(e.target.value)} style={inputStyle} />
+          <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6, lineHeight: 1.45 }}>
+            {t('salaryCalcOvertimeWorkDaysHint')}
+          </div>
         </div>
       </div>
 

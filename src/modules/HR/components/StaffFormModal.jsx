@@ -8,6 +8,12 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { moneyFieldString, roundMoney2 } from '../../../utils/moneyInput';
+import {
+  stripOvertimeWorkDaysTag,
+  parseOvertimeWorkDaysPerMonth,
+  mergeOvertimeWorkDaysIntoSchedule,
+  DEFAULT_OVERTIME_WORK_DAYS,
+} from '../utils/employeeSalaryMath';
 
 const IS = {
   width: '100%', padding: '9px 12px', borderRadius: 8,
@@ -49,12 +55,14 @@ export const StaffFormModal = memo(function StaffFormModal({
   const [form, setForm] = useState(EMPTY);
   const [customAllowances, setCustomAllowances] = useState([]);
   const [allowanceError, setAllowanceError] = useState('');
+  const [overtimeWorkDays, setOvertimeWorkDays] = useState(String(DEFAULT_OVERTIME_WORK_DAYS));
   const { allowances } = useCustomAllowances(companyId, employee?.id);
 
   useEffect(() => {
     if (employee) {
       const parsed = parseEmployeeNotesMeta(employee.notes);
       const meta = parsed.meta || {};
+      setOvertimeWorkDays(String(parseOvertimeWorkDaysPerMonth(employee)));
       setForm({
         name: employee.name || '',
         nameEn: employee.nameEn || '',
@@ -65,7 +73,7 @@ export const StaffFormModal = memo(function StaffFormModal({
         transportAllowance: moneyFieldString(employee.transportAllowance ?? 0),
         otherAllowance: moneyFieldString(employee.otherAllowance ?? 0),
         workHours: employee.workHours || '',
-        workSchedule: employee.workSchedule || '',
+        workSchedule: stripOvertimeWorkDaysTag(employee.workSchedule || ''),
         joinDate: employee.joinDate ? new Date(employee.joinDate).toISOString().slice(0, 10) : getSaudiToday(),
         status: employee.status || 'active',
         notes: parsed.notesText || '',
@@ -74,6 +82,7 @@ export const StaffFormModal = memo(function StaffFormModal({
         terminationDate: meta.terminationDate || '',
       });
     } else {
+      setOvertimeWorkDays(String(DEFAULT_OVERTIME_WORK_DAYS));
       setForm({ ...EMPTY, joinDate: getSaudiToday() });
     }
   }, [employee]);
@@ -126,7 +135,10 @@ export const StaffFormModal = memo(function StaffFormModal({
       joinDate: form.joinDate,
       status: form.status,
       workHours: form.workHours?.trim() || undefined,
-      workSchedule: form.workSchedule?.trim() || undefined,
+      workSchedule: mergeOvertimeWorkDaysIntoSchedule(
+        form.workSchedule?.trim() || '',
+        parseInt(String(overtimeWorkDays), 10) || DEFAULT_OVERTIME_WORK_DAYS,
+      ),
     };
     const meta = {
       terminationReason: form.status === 'terminated' ? form.terminationReason?.trim() : undefined,
@@ -211,12 +223,30 @@ export const StaffFormModal = memo(function StaffFormModal({
               <input type="number" step="0.01" min="0" value={form.transportAllowance} onChange={(e) => set('transportAllowance', e.target.value)} style={IS} />
             </div>
             <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('otherAllowance')}</label>
+              <input type="number" step="0.01" min="0" value={form.otherAllowance} onChange={(e) => set('otherAllowance', e.target.value)} style={IS} />
+            </div>
+            <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('workHours')}</label>
               <input value={form.workHours} onChange={(e) => set('workHours', e.target.value)} placeholder={t('workHoursPlaceholder')} style={IS} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('workSchedule')}</label>
               <input value={form.workSchedule} onChange={(e) => set('workSchedule', e.target.value)} placeholder={t('workSchedulePlaceholder')} style={IS} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('overtimeWorkDaysPerMonth')}</label>
+              <input
+                type="number"
+                min={1}
+                max={31}
+                value={overtimeWorkDays}
+                onChange={(e) => setOvertimeWorkDays(e.target.value)}
+                style={IS}
+              />
+              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4, lineHeight: 1.45 }}>
+                {t('overtimeWorkDaysHelp')}
+              </div>
             </div>
             {isEdit && (
               <div>
