@@ -1,6 +1,6 @@
 /**
  * useInvoices — جلب الفواتير مع فلترة التاريخ والتصفح.
- * يدعم placeholderData لمنع وميض البيانات عند التنقل بين الصفحات.
+ * placeholderData فقط داخل نفس الشركة (تصفح الصفحات/الفلاتر) — لا عرض فواتير شركة سابقة عند تبديل الشركة.
  */
 import { useQuery } from '@tanstack/react-query';
 import { getInvoices } from '../services/api';
@@ -16,7 +16,11 @@ export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize 
       if (!res.success) throw new Error(res.error || 'فشل تحميل الفواتير');
       return res.data;
     },
-    placeholderData: (prev) => prev, // لا وميض عند تغيير الصفحة
+    placeholderData: (previousData, previousQuery) => {
+      const prevCompany = previousQuery?.queryKey?.[1];
+      if (prevCompany !== companyId) return undefined;
+      return previousData;
+    },
     enabled: !!companyId,
   });
 
