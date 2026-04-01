@@ -96,9 +96,9 @@ export class VaultsService {
     const vaults = await this.prisma.vault.findMany({
       where: {
         companyId,
+        isActive: true,
         isArchived: false,
         isSalesChannel: true,
-        showAsPaymentMethod: true,
       },
       orderBy: [{ nameAr: 'asc' }],
       include: { account: { select: { id: true, code: true, nameAr: true } } },

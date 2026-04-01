@@ -32,14 +32,14 @@ export function useVaults({ companyId, includeArchived = false }) {
   const salesChannels = useMemo(
     () =>
       vaultsList.filter(
-        (v) => v.isSalesChannel && v.showAsPaymentMethod !== false && !v.isArchived,
+        (v) => v.isActive !== false && v.isSalesChannel && !v.isArchived,
       ),
     [vaultsList],
   );
 
   /** خزائن تظهر في قوائم السداد (مبيعات، مشتريات، مصاريف، HR، استيراد، …) */
   const paymentVaults = useMemo(
-    () => vaultsList.filter((v) => !v.isArchived && v.showAsPaymentMethod !== false),
+    () => vaultsList.filter((v) => v.isActive !== false && !v.isArchived && v.showAsPaymentMethod !== false),
     [vaultsList],
   );
 

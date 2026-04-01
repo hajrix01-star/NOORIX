@@ -979,13 +979,13 @@ export class FinancialCoreService {
   // PRIVATE: Account Resolution (مركزي — لا تكرار)
   // ══════════════════════════════════════════════════════════
 
-  /** قنوات المبيعات: خزنة مفعّلة كقناة + مسموح إظهارها كطريقة سداد */
+  /** قنوات المبيعات: يكفي أن تكون الخزنة مفعّلة كقناة بيع وغير مؤرشفة */
   private async _assertVaultsUsableAsSalesPayment(tx: TxClient, companyId: string, vaultIds: string[]) {
     const ids = [...new Set(vaultIds.filter(Boolean))];
     if (!ids.length) return;
     const vaults = await tx.vault.findMany({
       where: { id: { in: ids }, companyId },
-      select: { id: true, nameAr: true, isSalesChannel: true, showAsPaymentMethod: true, isArchived: true },
+      select: { id: true, nameAr: true, isSalesChannel: true, isArchived: true },
     });
     const byId = new Map(vaults.map((v) => [v.id, v]));
     for (const id of ids) {
@@ -998,9 +998,6 @@ export class FinancialCoreService {
       }
       if (!v.isSalesChannel) {
         throw new BadRequestException(`الخزينة «${v.nameAr}» ليست قناة بيع مفعّلة.`);
-      }
-      if (v.showAsPaymentMethod === false) {
-        throw new BadRequestException(`الخزينة «${v.nameAr}» غير متاحة كطريقة سداد في المبيعات.`);
       }
     }
   }

@@ -15,8 +15,8 @@ export default {
   paymentMethodHiddenBadge: { ar: 'مخفية من السداد', en: 'Hidden from payment pickers' },
   showAsPaymentMethodLabel: { ar: 'الظهور كطريقة سداد', en: 'Show as payment option' },
   showAsPaymentMethodHint: {
-    ar: 'عند الإيقاف تختفي الخزينة من كل قوائم السداد في النظام (مبيعات، مشتريات، مصاريف، موارد بشرية، استيراد، …) دون حذفها.',
-    en: 'When off, this vault is hidden from all payment pickers (sales, purchases, expenses, HR, import, etc.); the vault is not deleted.',
+    ar: 'عند الإيقاف تختفي الخزينة من قوائم السداد والصرف في النظام مثل المشتريات والمصاريف والموارد البشرية والاستيراد، لكنها تبقى ظاهرة كقناة بيع إذا كانت مفعلة لذلك.',
+    en: 'When off, this vault is hidden from payment and outflow pickers such as purchases, expenses, HR, and import, but it still appears in sales if enabled as a sales channel.',
   },
   hiddenFromSalesPurchasesShort: { ar: 'مخفية', en: 'Hidden' },
   vaultRestored: { ar: 'تم استعادة الخزنة.', en: 'Vault restored.' },
