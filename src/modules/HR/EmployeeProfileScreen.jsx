@@ -18,6 +18,7 @@ import {
   createDocument,
   uploadDocumentFile,
   downloadDocument,
+  deleteEmployee,
 } from '../../services/api';
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { fmt } from '../../utils/format';
@@ -62,9 +63,10 @@ function totalSalary(emp, customTotal = 0) {
 export default function EmployeeProfileScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { activeCompanyId, companies } = useApp();
+  const { activeCompanyId, companies, userPermissions } = useApp();
   const { t } = useTranslation();
   const companyId = activeCompanyId ?? '';
+  const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
   const activeCompany = companies?.find((c) => c.id === companyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
@@ -210,6 +212,22 @@ export default function EmployeeProfileScreen() {
   }, [hrInvoicesData, deductions, t]);
   const queryClient = useQueryClient();
 
+  async function handlePermanentDeleteFromProfile() {
+    if (!employee?.id || !companyId) return;
+    if (!window.confirm(t('deleteEmployeePermanentConfirm', employee.name || ''))) return;
+    if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
+    const res = await deleteEmployee(employee.id, companyId);
+    if (!res?.success) {
+      setToast({ visible: true, message: res?.error || t('updateFailed'), type: 'error' });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['employees'] });
+    queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+    invalidateOnFinancialMutation(queryClient);
+    setToast({ visible: true, message: t('employeeDeletedPermanent'), type: 'success' });
+    navigate('/hr');
+  }
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['employee', id] });
     queryClient.invalidateQueries({ queryKey: ['custom-allowances', companyId, id] });
@@ -313,6 +331,16 @@ export default function EmployeeProfileScreen() {
               onClick={() => setShowAdvance(true)}
             >
               {t('payAdvance')}
+            </button>
+          )}
+          {canDeleteEmployee && (
+            <button
+              type="button"
+              className="noorix-btn-nav"
+              style={{ color: '#b91c1c', borderColor: '#fecaca' }}
+              onClick={handlePermanentDeleteFromProfile}
+            >
+              {t('deleteEmployeePermanent')}
             </button>
           )}
         </div>

@@ -10,6 +10,7 @@ import { createAdvance } from '../../services/financialApi';
 import { useVaults } from '../../hooks/useVaults';
 import { getSaudiToday } from '../../utils/saudiDate';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
+import { roundMoney2 } from '../../utils/moneyInput';
 import { fmt } from '../../utils/format';
 
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
@@ -354,7 +355,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     if (submitting) return;
     setFormError('');
     const amt = parseFloat(String(alAmount).replace(',', '.'), 10);
-    if (!alEmp || !alName.trim() || !amt || amt <= 0) {
+    const amtRounded = roundMoney2(amt);
+    if (!alEmp || !alName.trim() || !amtRounded || amtRounded <= 0) {
       setFormError(t('requiredFields'));
       return;
     }
@@ -363,11 +365,11 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       companyId,
       employeeId: alEmp,
       nameAr: alName.trim(),
-      amount: amt,
+      amount: amtRounded,
     };
     const report = {
-      textAr: `النوع: بدلة\nالاسم: ${emp?.name || emp?.nameAr || '—'}\nالبند: ${alName.trim()}\nالمبلغ: ${fmt(amt, 2)} ﷼`,
-      textEn: `Type: Allowance\nName: ${emp?.name || emp?.nameEn || '—'}\nItem: ${alName.trim()}\nAmount: ${fmt(amt, 2)} SAR`,
+      textAr: `النوع: بدلة\nالاسم: ${emp?.name || emp?.nameAr || '—'}\nالبند: ${alName.trim()}\nالمبلغ: ${fmt(amtRounded, 2)} ﷼`,
+      textEn: `Type: Allowance\nName: ${emp?.name || emp?.nameEn || '—'}\nItem: ${alName.trim()}\nAmount: ${fmt(amtRounded, 2)} SAR`,
     };
     setPendingData({ payload, report, mut: alMut });
     setConfirmStep(true);

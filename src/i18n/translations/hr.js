@@ -40,6 +40,13 @@ export default {
   terminateEmployee: { ar: 'فصل الموظف', en: 'Terminate employee' },
   archiveEmployee: { ar: 'أرشفة الموظف', en: 'Archive employee' },
   restoreEmployee: { ar: 'استرجاع الموظف', en: 'Restore employee' },
+  deleteEmployeePermanent: { ar: 'حذف نهائي من النظام', en: 'Permanently delete from system' },
+  deleteEmployeePermanentConfirm: {
+    ar: 'حذف "{0}" نهائياً من قاعدة البيانات؟ لا يمكن التراجع. تُحذف سجلات الموظف المرتبطة (إجازات، مسيرات، مستندات، …) وتبقى الفواتير المحاسبية مع إلغاء الربط بالموظف.',
+    en: 'Permanently delete "{0}"? Cannot undo. Related HR records are removed; accounting invoices remain unlinked from the employee.',
+  },
+  deleteEmployeePermanentSecond: { ar: 'تأكيد نهائي: هل أنت متأكد تماماً؟', en: 'Final confirmation: are you absolutely sure?' },
+  employeeDeletedPermanent: { ar: 'تم حذف الموظف نهائياً', en: 'Employee permanently deleted' },
   activeEmployeesList: { ar: 'الموظفون النشطون', en: 'Active employees' },
   terminatedEmployeesList: { ar: 'قائمة المفصولين', en: 'Terminated employees' },
   archivedEmployeesList: { ar: 'الأرشيف', en: 'Archived employees' },

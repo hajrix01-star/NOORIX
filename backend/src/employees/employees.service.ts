@@ -13,6 +13,7 @@ import { nowSaudi }        from '../common/utils/date-utils';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { CreateBatchEmployeesDto } from './dto/create-batch-employees.dto';
+import { toMoneyDecimal2 } from '../common/utils/money-decimal';
 
 const DEFAULT_PREFIX = 'EMP';
 
@@ -199,10 +200,10 @@ export class EmployeesService {
         nameEn:             dto.nameEn             ?? null,
         iqamaNumber:        dto.iqamaNumber        ?? null,
         jobTitle:           dto.jobTitle           ?? null,
-        basicSalary:        new Prisma.Decimal(basicVal),
-        housingAllowance:   new Prisma.Decimal(dto.housingAllowance   ?? 0),
-        transportAllowance: new Prisma.Decimal(dto.transportAllowance ?? 0),
-        otherAllowance:     new Prisma.Decimal(dto.otherAllowance     ?? 0),
+        basicSalary:        toMoneyDecimal2(basicVal),
+        housingAllowance:   toMoneyDecimal2(dto.housingAllowance   ?? 0),
+        transportAllowance: toMoneyDecimal2(dto.transportAllowance ?? 0),
+        otherAllowance:     toMoneyDecimal2(dto.otherAllowance     ?? 0),
         workHours:          dto.workHours   ?? null,
         workSchedule:       dto.workSchedule ?? null,
         joinDate:           joinDateVal,
@@ -228,6 +229,7 @@ export class EmployeesService {
       created: 0,
       failed: 0,
       errors: [] as { index: number; name: string; message: string }[],
+      warnings: [] as { index: number; name: string; message: string }[],
     };
     for (let i = 0; i < dto.items.length; i++) {
       const item = dto.items[i];
@@ -236,15 +238,61 @@ export class EmployeesService {
         await this.create(fullDto, userId);
         results.created++;
       } catch (e: any) {
-        results.failed++;
-        results.errors.push({
-          index: i,
-          name: item.name || '',
-          message: e?.message || 'خطأ',
-        });
+        const msg = String(e?.message || '');
+        const dupIqama =
+          !!item.iqamaNumber?.trim() &&
+          (msg.includes('مسجل مسبقاً') || msg.includes('already registered') || msg.includes('رقم الإقامة'));
+        if (dupIqama) {
+          try {
+            const retry: CreateEmployeeDto = {
+              ...item,
+              companyId: dto.companyId,
+              iqamaNumber: undefined,
+            };
+            await this.create(retry, userId);
+            results.created++;
+            results.warnings.push({
+              index: i,
+              name: item.name || '',
+              message: `رقم الإقامة ${item.iqamaNumber} مسجل مسبقاً — تم إنشاء الموظف بدون رقم إقامة (يمكنك إضافته من التعديل).`,
+            });
+          } catch (e2: any) {
+            results.failed++;
+            results.errors.push({
+              index: i,
+              name: item.name || '',
+              message: e2?.message || 'خطأ',
+            });
+          }
+        } else {
+          results.failed++;
+          results.errors.push({
+            index: i,
+            name: item.name || '',
+            message: msg || 'خطأ',
+          });
+        }
       }
     }
     return results;
+  }
+
+  /** حذف فيزيائي من قاعدة البيانات — بيانات مرتبطة (إجازات، مسيرات، …) تُحذف تلقائياً؛ فواتير/قيود تُفك ارتباطها (SetNull). */
+  async removePermanently(id: string, companyId: string, userId?: string) {
+    const existing = await this.prisma.employee.findFirst({ where: { id, companyId } });
+    if (!existing) throw new NotFoundException(`الموظف ${id} غير موجود.`);
+
+    await this.prisma.employee.delete({ where: { id } });
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'delete',
+      entity: 'employee',
+      entityId: id,
+      oldValue: { name: existing.name, employeeSerial: existing.employeeSerial },
+    });
+    return { ok: true };
   }
 
   async update(id: string, dto: UpdateEmployeeDto, companyId: string, userId?: string) {
@@ -258,10 +306,10 @@ export class EmployeesService {
         ...(dto.nameEn             !== undefined && { nameEn:             dto.nameEn }),
         ...(dto.iqamaNumber        !== undefined && { iqamaNumber:        dto.iqamaNumber }),
         ...(dto.jobTitle           !== undefined && { jobTitle:           dto.jobTitle }),
-        ...(dto.basicSalary        !== undefined && { basicSalary:        new Prisma.Decimal(dto.basicSalary) }),
-        ...(dto.housingAllowance   !== undefined && { housingAllowance:   new Prisma.Decimal(dto.housingAllowance) }),
-        ...(dto.transportAllowance !== undefined && { transportAllowance: new Prisma.Decimal(dto.transportAllowance) }),
-        ...(dto.otherAllowance     !== undefined && { otherAllowance:     new Prisma.Decimal(dto.otherAllowance) }),
+        ...(dto.basicSalary        !== undefined && { basicSalary:        toMoneyDecimal2(dto.basicSalary) }),
+        ...(dto.housingAllowance   !== undefined && { housingAllowance:   toMoneyDecimal2(dto.housingAllowance) }),
+        ...(dto.transportAllowance !== undefined && { transportAllowance: toMoneyDecimal2(dto.transportAllowance) }),
+        ...(dto.otherAllowance     !== undefined && { otherAllowance:     toMoneyDecimal2(dto.otherAllowance) }),
         ...(dto.workHours          !== undefined && { workHours:          dto.workHours }),
         ...(dto.workSchedule       !== undefined && { workSchedule:       dto.workSchedule }),
         ...(dto.joinDate           !== undefined && { joinDate:           new Date(dto.joinDate) }),

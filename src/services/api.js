@@ -827,6 +827,12 @@ export async function terminateEmployee(id, companyId) {
   return apiPatch(`/api/v1/employees/${id}/terminate?companyId=${companyId}`, {});
 }
 
+/** حذف الموظف نهائياً من قاعدة البيانات — يتطلب صلاحية EMPLOYEES_DELETE */
+export async function deleteEmployee(id, companyId) {
+  if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
+  return apiDelete(`/api/v1/employees/${encodeURIComponent(id)}?companyId=${encodeURIComponent(companyId)}`);
+}
+
 // ——— HR: مسيرات الرواتب، الإجازات، الإقامات، المستندات ———
 export async function getPayrollRuns(companyId, year) {
   const params = { companyId };

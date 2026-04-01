@@ -17,6 +17,7 @@ import { formatEmployeeForExport } from '../../utils/importTemplates';
 import {
   createCustomAllowance,
   deleteCustomAllowance,
+  deleteEmployee,
   getCustomAllowances,
   getEmployeesPaged,
   getEmployeesBulk,
@@ -27,6 +28,7 @@ import Toast from '../../components/Toast';
 import { StaffFormModal } from './components/StaffFormModal';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
+import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
 import Decimal from 'decimal.js';
 
 const PAGE_SIZE = 50;
@@ -81,7 +83,7 @@ function totalSalary(emp, extraAllowances = 0) {
 
 export default function StaffListScreen({ embedded }) {
   const navigate = useNavigate();
-  const { activeCompanyId, companies } = useApp();
+  const { activeCompanyId, companies, userPermissions } = useApp();
   const { t } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
@@ -104,6 +106,7 @@ export default function StaffListScreen({ embedded }) {
     t('terminationReasonOptionAbsence'),
   ];
   const queryClient = useQueryClient();
+  const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
 
   const { create, update, createAdvance } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: false });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
@@ -190,6 +193,22 @@ export default function StaffListScreen({ embedded }) {
     setListPage(1);
   }, []);
 
+  const handlePermanentDelete = useCallback(async (row) => {
+    if (!companyId || !row?.id) return;
+    if (!window.confirm(t('deleteEmployeePermanentConfirm', row.name || ''))) return;
+    if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
+    const res = await deleteEmployee(row.id, companyId);
+    if (!res?.success) {
+      setToast({ visible: true, message: res?.error || t('updateFailed'), type: 'error' });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['employees'] });
+    queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['employee', row.id, companyId] });
+    invalidateOnFinancialMutation(queryClient);
+    setToast({ visible: true, message: t('employeeDeletedPermanent'), type: 'success' });
+  }, [companyId, t, queryClient]);
+
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
       render: (v) => <span className="noorix-cell-ellipsis" style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, display: 'inline-block', maxWidth: '100%' }} title={v || ''}>{v || '—'}</span> },
@@ -261,9 +280,10 @@ export default function StaffListScreen({ embedded }) {
                 );
               }
             : undefined}
+          onPermanentDelete={canDeleteEmployee ? handlePermanentDelete : undefined}
         />
       ) },
-  ], [t, statusStyles, viewMode, navigate, update]);
+  ], [t, statusStyles, viewMode, navigate, update, canDeleteEmployee, handlePermanentDelete]);
 
   async function handleExportExcel() {
     if (!companyId) return;
@@ -314,7 +334,7 @@ export default function StaffListScreen({ embedded }) {
     for (const currentRow of currentRows) {
       const desiredRow = desiredRows.find((row) => row.id === currentRow.id);
       const changed = desiredRow
-        && (desiredRow.nameAr !== currentRow.nameAr || Number(desiredRow.amount) !== Number(currentRow.amount));
+        && (desiredRow.nameAr !== currentRow.nameAr || !moneyAmountsEqual(desiredRow.amount, currentRow.amount));
       if (!desiredIds.has(currentRow.id) || changed) {
         const delRes = await deleteCustomAllowance(currentRow.id, companyId);
         if (delRes?.success === false) {
@@ -326,13 +346,13 @@ export default function StaffListScreen({ embedded }) {
     for (const row of desiredRows) {
       const existing = row.id ? currentById.get(row.id) : null;
       const changed = existing
-        && (row.nameAr !== existing.nameAr || Number(row.amount) !== Number(existing.amount));
+        && (row.nameAr !== existing.nameAr || !moneyAmountsEqual(row.amount, existing.amount));
       if (!row.id || changed) {
         const createRes = await createCustomAllowance({
           companyId,
           employeeId,
           nameAr: row.nameAr,
-          amount: row.amount,
+          amount: roundMoney2(row.amount),
         });
         if (createRes?.success === false) {
           throw new Error(createRes?.error || `فشل حفظ البدلة: ${row.nameAr}`);
@@ -420,11 +440,12 @@ export default function StaffListScreen({ embedded }) {
                   setTerminatingEmployee(row);
                 }
               : undefined}
+            onPermanentDelete={canDeleteEmployee ? handlePermanentDelete : undefined}
           />
         </div>
       </div>
     );
-  }, [statusStyles, t, navigate]);
+  }, [statusStyles, t, navigate, canDeleteEmployee, handlePermanentDelete]);
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>

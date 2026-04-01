@@ -35,6 +35,7 @@ export const HRActionsCell = memo(function HRActionsCell({
   onArchive,
   onRestore,
   onDelete,
+  onPermanentDelete,
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -54,6 +55,7 @@ export const HRActionsCell = memo(function HRActionsCell({
   if (onArchive) items.push({ key: 'archive', label: t('archiveEmployee'), fn: onArchive, color: '#64748b' });
   if (onRestore) items.push({ key: 'restore', label: t('restoreEmployee'), fn: onRestore, color: '#16a34a' });
   if (onDelete) items.push({ key: 'delete', label: t('delete'), fn: onDelete, color: '#dc2626' });
+  if (onPermanentDelete) items.push({ key: 'permdelete', label: t('deleteEmployeePermanent'), fn: onPermanentDelete, color: '#7f1d1d' });
 
   useEffect(() => {
     if (open && btnRef.current) {

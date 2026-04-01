@@ -1,5 +1,5 @@
 import {
-  Body, Controller, Get, Param, Patch, Post, Query, UseGuards,
+  Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards,
 } from '@nestjs/common';
 import { AuthGuard }          from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
@@ -87,5 +87,15 @@ export class EmployeesController {
     @CurrentUser()      user: JwtUser,
   ) {
     return this.svc.terminate(id, companyId, user.sub);
+  }
+
+  @Delete(':id')
+  @RequirePermission('EMPLOYEES_DELETE')
+  remove(
+    @Param('id')        id: string,
+    @Query('companyId') companyId: string,
+    @CurrentUser()      user: JwtUser,
+  ) {
+    return this.svc.removePermanently(id, companyId, user.sub);
   }
 }

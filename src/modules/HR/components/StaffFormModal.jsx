@@ -7,6 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
+import { moneyFieldString, roundMoney2 } from '../../../utils/moneyInput';
 
 const IS = {
   width: '100%', padding: '9px 12px', borderRadius: 8,
@@ -59,10 +60,10 @@ export const StaffFormModal = memo(function StaffFormModal({
         nameEn: employee.nameEn || '',
         jobTitle: employee.jobTitle || '',
         iqamaNumber: employee.iqamaNumber || '',
-        basicSalary: String(employee.basicSalary ?? 0),
-        housingAllowance: String(employee.housingAllowance ?? 0),
-        transportAllowance: String(employee.transportAllowance ?? 0),
-        otherAllowance: String(employee.otherAllowance ?? 0),
+        basicSalary: moneyFieldString(employee.basicSalary ?? 0),
+        housingAllowance: moneyFieldString(employee.housingAllowance ?? 0),
+        transportAllowance: moneyFieldString(employee.transportAllowance ?? 0),
+        otherAllowance: moneyFieldString(employee.otherAllowance ?? 0),
         workHours: employee.workHours || '',
         workSchedule: employee.workSchedule || '',
         joinDate: employee.joinDate ? new Date(employee.joinDate).toISOString().slice(0, 10) : getSaudiToday(),
@@ -87,7 +88,7 @@ export const StaffFormModal = memo(function StaffFormModal({
         id: row.id,
         rowId: row.id || makeRowId(),
         nameAr: row.nameAr || '',
-        amount: String(row.amount ?? ''),
+        amount: moneyFieldString(row.amount ?? ''),
       })),
     );
   }, [employee, allowances]);
@@ -107,10 +108,10 @@ export const StaffFormModal = memo(function StaffFormModal({
     e.preventDefault();
     setAllowanceError('');
     if (!form.name.trim()) return;
-    const basic = parseFloat(form.basicSalary) || 0;
-    const housing = parseFloat(form.housingAllowance) || 0;
-    const transport = parseFloat(form.transportAllowance) || 0;
-    const other = parseFloat(form.otherAllowance) || 0;
+    const basic = roundMoney2(form.basicSalary);
+    const housing = roundMoney2(form.housingAllowance);
+    const transport = roundMoney2(form.transportAllowance);
+    const other = roundMoney2(form.otherAllowance);
     if (basic < 0 || housing < 0 || transport < 0 || other < 0) return;
 
     const body = {
@@ -139,7 +140,7 @@ export const StaffFormModal = memo(function StaffFormModal({
     const preparedAllowances = customAllowances.map((row) => ({
       id: row.id,
       nameAr: String(row.nameAr || '').trim(),
-      amount: parseFloat(row.amount) || 0,
+      amount: roundMoney2(row.amount),
       hasAnyValue: !!String(row.nameAr || '').trim() || !!String(row.amount || '').trim(),
     }));
     const invalidAllowance = preparedAllowances.find((row) => row.hasAnyValue && (!row.nameAr || row.amount <= 0));

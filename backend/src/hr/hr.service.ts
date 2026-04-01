@@ -28,6 +28,7 @@ import type { CreateMovementDto } from './dto/create-movement.dto';
 import type { CreateAllowanceDto } from './dto/create-allowance.dto';
 import type { CreateDeductionDto } from './dto/create-deduction.dto';
 import type { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
+import { toMoneyDecimal2 } from '../common/utils/money-decimal';
 
 @Injectable()
 export class HRService {
@@ -820,7 +821,7 @@ export class HRService {
         companyId: dto.companyId,
         employeeId: dto.employeeId,
         nameAr: dto.nameAr,
-        amount: new Prisma.Decimal(dto.amount),
+        amount: toMoneyDecimal2(dto.amount),
       },
       include: { employee: true },
     });

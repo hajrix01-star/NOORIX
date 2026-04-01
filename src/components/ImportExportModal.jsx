@@ -185,6 +185,19 @@ function appendEmployeesBatchErrors(batchErrors, slice, errors) {
   }
 }
 
+function appendEmployeesBatchWarnings(batchWarnings, slice, warnings) {
+  if (!Array.isArray(batchWarnings)) return;
+  for (const w of batchWarnings) {
+    if (w && typeof w === 'object' && typeof w.index === 'number') {
+      const rowEntry = slice[w.index];
+      warnings.push({
+        rowNum: rowEntry?.rowNum ?? w.index + 2,
+        message: w.message || '',
+      });
+    }
+  }
+}
+
 /** شريط مراحل الاستيراد — يوضح أين المستخدم في التدفق */
 function ImportPhaseSteps({ phase, importing }) {
   const steps = [
@@ -312,7 +325,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
   const [parsedRows, setParsedRows] = useState([]);
   const [validationResults, setValidationResults] = useState([]);
   const [importing, setImporting] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [] });
+  const [progress, setProgress] = useState({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [], warnings: [] });
   const [showAllErrors, setShowAllErrors] = useState(false);
 
   // Export state
@@ -359,7 +372,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       setParsedRows([]);
       setValidationResults([]);
       setImporting(false);
-      setProgress({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [] });
+      setProgress({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [], warnings: [] });
       setShowAllErrors(false);
       abortRef.current = false;
     }
@@ -435,11 +448,12 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     abortRef.current = false;
     setImporting(true);
     const total = validResults.length;
-    setProgress({ current: 0, total, succeeded: 0, failed: 0, errors: [] });
+    setProgress({ current: 0, total, succeeded: 0, failed: 0, errors: [], warnings: [] });
 
     let succeeded = 0;
     let failed = 0;
     const errors = [];
+    const importWarnings = [];
 
     if (entityType === 'invoices') {
       // Send in parallel batches of 8
@@ -459,7 +473,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
             errors.push({ rowNum, message: res.reason?.message ?? 'خطأ غير معروف' });
           }
         });
-        setProgress({ current: i + slice.length, total, succeeded, failed, errors: [...errors] });
+        setProgress({ current: i + slice.length, total, succeeded, failed, errors: [...errors], warnings: [...importWarnings] });
       }
     } else if (entityType === 'employees') {
       const batchSize = 50;
@@ -480,6 +494,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           succeeded += Number(br.created) || 0;
           failed += Number(br.failed) || 0;
           appendEmployeesBatchErrors(br.errors, slice, errors);
+          appendEmployeesBatchWarnings(br.warnings, slice, importWarnings);
         } else {
           for (const r of slice) {
             let r2;
@@ -498,10 +513,11 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               succeeded += Number(br.created) || 0;
               failed += Number(br.failed) || 0;
               appendEmployeesBatchErrors(br.errors, [r], errors);
+              appendEmployeesBatchWarnings(br.warnings, [r], importWarnings);
             }
           }
         }
-        setProgress({ current: i + slice.length, total, succeeded, failed, errors: [...errors] });
+        setProgress({ current: i + slice.length, total, succeeded, failed, errors: [...errors], warnings: [...importWarnings] });
       }
     } else if (entityType === 'sales') {
       // Sequential — each day is a unique summary
@@ -515,7 +531,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           failed++;
           errors.push({ rowNum: r.rowNum, message: err?.message ?? 'خطأ غير معروف' });
         }
-        setProgress({ current: i + 1, total, succeeded, failed, errors: [...errors] });
+        setProgress({ current: i + 1, total, succeeded, failed, errors: [...errors], warnings: [...importWarnings] });
       }
     }
 
@@ -528,6 +544,12 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
   async function handleDownloadErrorReport() {
     const rows = progress.errors.map((e) => ({ 'رقم الصف': e.rowNum, 'الخطأ': e.message }));
     await exportToExcel(rows, 'import-errors.xlsx');
+  }
+
+  async function handleDownloadWarningsReport() {
+    const list = progress.warnings || [];
+    const rows = list.map((w) => ({ 'رقم الصف': w.rowNum, 'التحذير': w.message }));
+    await exportToExcel(rows, 'import-warnings.xlsx');
   }
 
   async function handleDownloadValidationErrors() {
@@ -721,6 +743,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                     <StatBadge count={progress.succeeded} label="نجح" color="#16a34a" />
                     {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="#dc2626" />}
+                    {(progress.warnings || []).length > 0 && (
+                      <StatBadge count={(progress.warnings || []).length} label="تحذيرات من الخادم" color="#d97706" />
+                    )}
                   </div>
                   <button type="button" style={{ ...S.btnGhost, alignSelf: 'flex-start', color: '#dc2626', borderColor: '#dc2626' }} onClick={() => { abortRef.current = true; }}>
                     إيقاف
@@ -735,7 +760,27 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                     <StatBadge count={progress.succeeded} label="تم بنجاح" color="#16a34a" />
                     {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="#dc2626" />}
+                    {(progress.warnings || []).length > 0 && (
+                      <StatBadge count={(progress.warnings || []).length} label="تحذيرات" color="#d97706" />
+                    )}
                   </div>
+
+                  {(progress.warnings || []).length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 200, overflowY: 'auto', marginTop: 8 }}>
+                      {(progress.warnings || []).slice(0, 20).map((w, i) => (
+                        <div key={i} style={S.warnRow}>
+                          <span style={{ fontWeight: 700, color: '#d97706' }}>صف {w.rowNum}</span>
+                          <span style={{ color: '#92400e' }}>⚠ {w.message}</span>
+                        </div>
+                      ))}
+                      {(progress.warnings || []).length > 20 && (
+                        <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>… و {(progress.warnings || []).length - 20} تحذير آخر</span>
+                      )}
+                      <button type="button" style={{ ...S.btnGhost, alignSelf: 'flex-start' }} onClick={handleDownloadWarningsReport}>
+                        ⬇ تحميل تقرير التحذيرات
+                      </button>
+                    </div>
+                  )}
 
                   {progress.errors.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 200, overflowY: 'auto' }}>
@@ -756,7 +801,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button type="button" style={S.btnPrimary} onClick={onClose}>إغلاق</button>
-                    <button type="button" style={S.btnSecondary} onClick={() => { setPhase('idle'); setParsedRows([]); setValidationResults([]); setProgress({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [] }); }}>
+                    <button type="button" style={S.btnSecondary} onClick={() => { setPhase('idle'); setParsedRows([]); setValidationResults([]); setProgress({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [], warnings: [] }); }}>
                       استيراد ملف آخر
                     </button>
                   </div>
