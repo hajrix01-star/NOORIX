@@ -34,6 +34,7 @@ export default function PayrollTab() {
   const companyLogo = activeCompany?.logoUrl || '';
   const [year, setYear] = useState(new Date().getFullYear());
   const [showCreate, setShowCreate] = useState(false);
+  const [editingRunId, setEditingRunId] = useState(null);
   const [detailRunId, setDetailRunId] = useState(null);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const queryClient = useQueryClient();
@@ -125,6 +126,7 @@ export default function PayrollTab() {
           row={row}
           type="payroll"
           onView={() => setDetailRunId(row.id)}
+          onEdit={row.status === 'draft' ? () => setEditingRunId(row.id) : undefined}
           onApprove={row.status === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
           onPay={row.status === 'completed' ? () => issuePaymentMutation.mutate({ id: row.id }) : undefined}
         />
@@ -172,6 +174,7 @@ export default function PayrollTab() {
             row={row}
             type="payroll"
             onView={() => setDetailRunId(row.id)}
+            onEdit={row.status === 'draft' ? () => setEditingRunId(row.id) : undefined}
             onApprove={row.status === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
             onPay={row.status === 'completed' ? () => issuePaymentMutation.mutate({ id: row.id }) : undefined}
           />
@@ -271,6 +274,20 @@ export default function PayrollTab() {
             setToast({ visible: true, message: t('payrollCreated'), type: 'success' });
           }}
           onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {editingRunId && (
+        <PayrollRunFormModal
+          companyId={companyId}
+          runId={editingRunId}
+          onCreate={() => {
+            queryClient.invalidateQueries({ queryKey: ['payroll-runs', companyId] });
+            queryClient.invalidateQueries({ queryKey: ['payroll-run', editingRunId, companyId] });
+            invalidateOnFinancialMutation(queryClient);
+            setToast({ visible: true, message: t('payrollUpdated') || t('savedSuccessfully'), type: 'success' });
+          }}
+          onClose={() => setEditingRunId(null)}
         />
       )}
 

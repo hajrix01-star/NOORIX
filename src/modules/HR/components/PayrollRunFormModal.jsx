@@ -1,13 +1,13 @@
 /**
- * PayrollRunFormModal — إنشاء مسيرة راتب جديدة
+ * PayrollRunFormModal — إنشاء/تعديل مسيرة راتب
  */
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getEmployees, getInvoices } from '../../../services/api';
-import { getPayrollRuns } from '../../../services/api';
-import { createPayrollRun } from '../../../services/api';
+import { getPayrollRun, getPayrollRuns } from '../../../services/api';
+import { createPayrollRun, updatePayrollRun } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
@@ -18,10 +18,15 @@ function parseDeferredMonth(notes) {
   return m ? m[1] : '';
 }
 
-export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
+function extractAdvanceDates(notes) {
+  return String(notes || '').replace('تواريخ السلف:', '').trim();
+}
+
+export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose }) {
   const { t } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
+  const isEditMode = !!runId;
 
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
@@ -53,6 +58,16 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
     enabled: !!cid && !!payrollMonth,
   });
 
+  const { data: editingRun, isLoading: isLoadingRun } = useQuery({
+    queryKey: ['payroll-run', runId, cid],
+    queryFn: async () => {
+      const res = await getPayrollRun(runId, cid);
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل المسيرة');
+      return res.data;
+    },
+    enabled: !!cid && !!runId,
+  });
+
   const monthStart = payrollMonth ? new Date(payrollMonth) : null;
   const monthStr = monthStart ? `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}` : '';
 
@@ -80,17 +95,28 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
   const existingMonthSet = useMemo(() => {
     const set = new Set();
     (existingRuns || []).forEach((r) => {
+      if (runId && r.id === runId) return;
       const m = r.payrollMonth ? new Date(r.payrollMonth) : null;
       if (m) set.add(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`);
     });
     return set;
-  }, [existingRuns]);
+  }, [existingRuns, runId]);
 
   const alreadyExists = monthStr && existingMonthSet.has(monthStr);
 
   const activeEmployees = useMemo(() => {
     return (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
   }, [employees]);
+
+  const displayEmployees = useMemo(() => {
+    const map = new Map();
+    activeEmployees.forEach((emp) => map.set(emp.id, emp));
+    items.forEach((item) => {
+      if (!item.employeeId || map.has(item.employeeId)) return;
+      map.set(item.employeeId, { id: item.employeeId, name: item.employeeName, nameAr: item.employeeName });
+    });
+    return Array.from(map.values());
+  }, [activeEmployees, items]);
 
   const advancesByEmployee = useMemo(() => {
     const map = new Map();
@@ -150,12 +176,44 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
     setItems(list);
   };
 
+  const loadEditingItems = React.useCallback(() => {
+    if (!editingRun) return;
+    const loadedMonth = editingRun.payrollMonth ? `${String(editingRun.payrollMonth).slice(0, 10)}` : defaultMonth;
+    setPayrollMonth(loadedMonth);
+    setNotes(editingRun.notes || '');
+    const loadedItems = (editingRun.items || []).map((row) => {
+      const employeeId = row.employeeId || row.employee?.id || '';
+      const employeeName = row.employee?.name || row.employee?.nameAr || row.employeeName || '—';
+      const advanceDates = extractAdvanceDates(row.notes);
+      const advancesDeduct = Number(row.advancesDeduct ?? 0);
+      return {
+        employeeId,
+        employeeName,
+        grossSalary: Number(row.grossSalary ?? 0),
+        allowancesAdd: Number(row.allowancesAdd ?? 0),
+        deductions: Number(row.deductions ?? 0),
+        advancesDeduct,
+        netSalary: Number(row.netSalary ?? 0),
+        deferAdvances: advancesDeduct <= 0 && !!parseDeferredMonth(row.notes),
+        advanceDates,
+        notes: row.notes || '',
+      };
+    });
+    setItems(loadedItems);
+  }, [defaultMonth, editingRun]);
+
   React.useEffect(() => {
+    if (isEditMode) return;
     if (activeEmployees.length > 0 && (items.length === 0 || monthStr)) {
       initItems();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeEmployees.length, monthStr, advancesByEmployee, allowanceTotals]);
+  }, [activeEmployees.length, monthStr, advancesByEmployee, allowanceTotals, isEditMode]);
+
+  React.useEffect(() => {
+    if (!isEditMode || !editingRun) return;
+    loadEditingItems();
+  }, [isEditMode, editingRun, loadEditingItems]);
 
   const updateItem = (idx, field, value) => {
     const num = parseFloat(value) || 0;
@@ -199,15 +257,19 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
     } else {
       const customSum = allowanceTotals.get(emp.id) || 0;
       const gross = totalSalary(emp, customSum);
+      const advMeta = getAdvanceMetaForEmployee(emp.id);
+      const advancesDeduct = Number(advMeta.dueAmount || 0);
       setItems((prev) => [...prev, {
         employeeId: emp.id,
         employeeName: emp.name || emp.nameAr || '—',
         grossSalary: gross,
         allowancesAdd: 0,
         deductions: 0,
-        advancesDeduct: 0,
-        netSalary: gross,
-        notes: '',
+        advancesDeduct,
+        netSalary: Math.max(0, gross - advancesDeduct),
+        deferAdvances: false,
+        advanceDates: advMeta.datesLabel,
+        notes: advMeta.datesLabel ? `تواريخ السلف: ${advMeta.datesLabel}` : '',
       }]);
     }
   };
@@ -241,8 +303,10 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
         })),
         notes: notes || undefined,
       };
-      const res = await createPayrollRun(payload);
-      if (!res?.success) throw new Error(res?.error || 'فشل إنشاء المسيرة');
+      const res = isEditMode
+        ? await updatePayrollRun(runId, cid, payload)
+        : await createPayrollRun(payload);
+      if (!res?.success) throw new Error(res?.error || (isEditMode ? 'فشل تعديل المسيرة' : 'فشل إنشاء المسيرة'));
       onCreate?.();
       onClose?.();
     } catch (err) {
@@ -262,6 +326,25 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
     }
   };
 
+  const modalTitle = isEditMode ? `${t('edit')} ${t('hrTabPayroll')}` : t('createPayrollRun');
+  const primaryLabel = submitting
+    ? t('saving')
+    : (isEditMode ? (t('save') || 'حفظ') : (t('create') || 'إنشاء'));
+
+  if (isEditMode && isLoadingRun) {
+    return (
+      <div
+        className="modal-overlay"
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 12 }}
+        onClick={onClose}
+      >
+        <div className="noorix-surface-card" style={{ padding: 24, minWidth: 320 }} onClick={(e) => e.stopPropagation()}>
+          {t('loading')}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="modal-overlay"
@@ -278,7 +361,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
       >
         <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--noorix-border)', flexShrink: 0 }}>
           <h3 id="prfm-modal-title" style={{ margin: 0, fontSize: 19, fontWeight: 800, letterSpacing: '-0.02em' }}>
-            {t('createPayrollRun')}
+            {modalTitle}
           </h3>
           <p style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6, maxWidth: '72ch' }}>
             {t('payrollGrossFixedPackageHint')}
@@ -327,7 +410,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
             }}
           >
             <span style={{ fontSize: 14, fontWeight: 700 }}>{t('employeesList')} ({items.length})</span>
-            <button type="button" className="noorix-btn-nav" onClick={initItems}>
+            <button type="button" className="noorix-btn-nav" onClick={isEditMode ? loadEditingItems : initItems}>
               {t('refresh') || 'تحديث'}
             </button>
           </div>
@@ -347,7 +430,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
                 </tr>
               </thead>
               <tbody>
-                {activeEmployees.map((emp) => {
+                {displayEmployees.map((emp) => {
                   const idx = items.findIndex((i) => i.employeeId === emp.id);
                   const included = idx >= 0;
                   return (
@@ -468,7 +551,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
                 style={{ background: 'var(--btn-primary-bg)', color: '#fff', minWidth: 120, fontWeight: 700 }}
                 disabled={submitting || items.length === 0 || alreadyExists}
               >
-                {submitting ? t('saving') : t('create') || 'إنشاء'}
+                {primaryLabel}
               </button>
             </div>
           </div>
