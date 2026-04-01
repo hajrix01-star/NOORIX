@@ -289,18 +289,23 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     }
     setSubmitting(true);
     try {
-      const payload = {
+      const itemsPayload = items.map((i) => ({
+        employeeId: i.employeeId,
+        grossSalary: i.grossSalary,
+        allowancesAdd: i.allowancesAdd,
+        deductions: i.deductions,
+        advancesDeduct: i.advancesDeduct,
+        netSalary: i.netSalary,
+        notes: i.notes || undefined,
+      }));
+      const payload = isEditMode ? {
+        payrollMonth: `${payrollMonth}T00:00:00.000Z`,
+        items: itemsPayload,
+        notes: notes || undefined,
+      } : {
         companyId: cid,
         payrollMonth: `${payrollMonth}T00:00:00.000Z`,
-        items: items.map((i) => ({
-          employeeId: i.employeeId,
-          grossSalary: i.grossSalary,
-          allowancesAdd: i.allowancesAdd,
-          deductions: i.deductions,
-          advancesDeduct: i.advancesDeduct,
-          netSalary: i.netSalary,
-          notes: i.notes || undefined,
-        })),
+        items: itemsPayload,
         notes: notes || undefined,
       };
       const res = isEditMode

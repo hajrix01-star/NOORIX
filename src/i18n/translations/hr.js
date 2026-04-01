@@ -231,6 +231,8 @@ export default {
   exportPdf: { ar: 'تصدير PDF', en: 'Export PDF' },
   payrollCreated: { ar: 'تم إنشاء مسيرة الراتب بنجاح', en: 'Payroll run created successfully' },
   payrollUpdated: { ar: 'تم تعديل مسيرة الراتب بنجاح', en: 'Payroll run updated successfully' },
+  payrollDeleted: { ar: 'تم حذف مسيرة الراتب', en: 'Payroll run deleted' },
+  deletePayrollRunConfirm: { ar: 'هل تريد حذف مسيرة الراتب هذه؟', en: 'Do you want to delete this payroll run?' },
   payrollMonthExists: { ar: 'مسيرة لهذا الشهر موجودة مسبقاً', en: 'Payroll run for this month already exists' },
   payrollGrossFixedPackageHint: {
     ar: 'الإجمالي الافتراضي = الراتب + البدلات + البدلات المخصصة + أجر الأوفر تايم المحسوب تلقائياً (ساعات اليوم فوق 8 × أيام الدوام المخزنة لكل موظف: 26 أو 30…). يمكنك التعديل يدوياً أو إضافة مبالغ في عمود البدلات.',

@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment } from '../../../services/api';
+import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
@@ -84,6 +84,21 @@ export default function PayrollTab() {
     onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
   });
 
+  const deleteRunMutation = useMutation({
+    mutationFn: ({ id }) => deletePayrollRun(id, companyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payroll-runs', companyId] });
+      invalidateOnFinancialMutation(queryClient);
+      setToast({ visible: true, message: t('payrollDeleted') || t('deletedSuccessfully'), type: 'success' });
+    },
+    onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
+  });
+
+  const handleDeleteDraft = useCallback((id) => {
+    if (!window.confirm(t('deletePayrollRunConfirm') || 'هل تريد حذف مسيرة الراتب هذه؟')) return;
+    deleteRunMutation.mutate({ id });
+  }, [deleteRunMutation, t]);
+
   const items = data ?? [];
   const statusStyles = useMemo(() => ({
     draft: { bg: STATUS_MAP.draft.bg, color: STATUS_MAP.draft.color, label: t(STATUS_MAP.draft.labelKey) },
@@ -127,11 +142,12 @@ export default function PayrollTab() {
           type="payroll"
           onView={() => setDetailRunId(row.id)}
           onEdit={row.status === 'draft' ? () => setEditingRunId(row.id) : undefined}
+          onDelete={row.status === 'draft' ? () => handleDeleteDraft(row.id) : undefined}
           onApprove={row.status === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
           onPay={row.status === 'completed' ? () => issuePaymentMutation.mutate({ id: row.id }) : undefined}
         />
       ) },
-  ], [t, statusStyles, updateStatusMutation, issuePaymentMutation]);
+  ], [t, statusStyles, updateStatusMutation, issuePaymentMutation, handleDeleteDraft]);
 
   const footerCells = (
     <>
@@ -175,13 +191,14 @@ export default function PayrollTab() {
             type="payroll"
             onView={() => setDetailRunId(row.id)}
             onEdit={row.status === 'draft' ? () => setEditingRunId(row.id) : undefined}
+            onDelete={row.status === 'draft' ? () => handleDeleteDraft(row.id) : undefined}
             onApprove={row.status === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
             onPay={row.status === 'completed' ? () => issuePaymentMutation.mutate({ id: row.id }) : undefined}
           />
         </div>
       </div>
     );
-  }, [statusStyles, t, updateStatusMutation, issuePaymentMutation]);
+  }, [statusStyles, t, updateStatusMutation, issuePaymentMutation, handleDeleteDraft]);
 
   function handleExportExcel() {
     exportToExcel(exportData, `payroll-runs-${year}.xlsx`);

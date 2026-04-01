@@ -242,15 +242,61 @@ export class HRService {
   ) {
     const existing = await this.prisma.payrollRun.findFirst({
       where: { id, companyId },
+      include: { items: { include: { vaultSplits: true } } },
     });
     if (!existing) throw new NotFoundException(`مسيرة الرواتب ${id} غير موجودة.`);
     if (existing.status === 'completed') {
       throw new BadRequestException('لا يمكن تعديل مسيرة مكتملة.');
     }
 
+    const data: Prisma.PayrollRunUpdateInput = {
+      ...(dto.notes !== undefined && { notes: dto.notes }),
+    };
+
+    if (dto.payrollMonth) {
+      const payrollMonth = new Date(dto.payrollMonth);
+      payrollMonth.setDate(1);
+      payrollMonth.setHours(0, 0, 0, 0);
+      data.payrollMonth = payrollMonth;
+    }
+
+    if (dto.items) {
+      this.assertPayrollItemsNetConsistent(dto.items);
+      const splitVaultIds = dto.items.flatMap((it) => (it.vaultSplits ?? []).map((vs) => vs.vaultId));
+      await this.assertVaultsUsableForPayment(companyId, splitVaultIds);
+
+      let totalAmount = 0;
+      data.employeeCount = dto.items.length;
+      data.items = {
+        deleteMany: {},
+        create: dto.items.map((item) => {
+          totalAmount += Number(item.netSalary ?? 0);
+          return {
+            employeeId: item.employeeId,
+            grossSalary: new Prisma.Decimal(item.grossSalary),
+            allowancesAdd: new Prisma.Decimal(item.allowancesAdd ?? 0),
+            deductions: new Prisma.Decimal(item.deductions ?? 0),
+            advancesDeduct: new Prisma.Decimal(item.advancesDeduct ?? 0),
+            netSalary: new Prisma.Decimal(item.netSalary),
+            notes: item.notes,
+            vaultSplits: item.vaultSplits?.length
+              ? {
+                create: item.vaultSplits.map((vs) => ({
+                  vaultId: vs.vaultId,
+                  amount: new Prisma.Decimal(vs.amount),
+                })),
+              }
+              : undefined,
+          };
+        }),
+      };
+      data.totalAmount = new Prisma.Decimal(totalAmount);
+    }
+
     const updated = await this.prisma.payrollRun.update({
       where: { id },
-      data: { ...(dto.notes !== undefined && { notes: dto.notes }) },
+      data,
+      include: { items: { include: { employee: true } } },
     });
 
     await this.audit.log({
@@ -259,8 +305,18 @@ export class HRService {
       action: 'update',
       entity: 'payroll_run',
       entityId: id,
-      oldValue: { notes: existing.notes },
-      newValue: { notes: updated.notes },
+      oldValue: {
+        notes: existing.notes,
+        payrollMonth: existing.payrollMonth,
+        employeeCount: existing.employeeCount,
+        totalAmount: existing.totalAmount,
+      },
+      newValue: {
+        notes: updated.notes,
+        payrollMonth: updated.payrollMonth,
+        employeeCount: updated.employeeCount,
+        totalAmount: updated.totalAmount,
+      },
     });
 
     return updated;
