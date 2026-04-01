@@ -2,7 +2,8 @@
  * VaultsController — إدارة الخزائن
  *
  * الصلاحيات:
- *   GET         → VAULTS_READ   (الكل)
+ *   GET         → VAULTS_READ   (إدارة الخزائن)
+ *   GET/payment-options و GET/sales-channels → متاحة تشغيلياً للمستخدم المصادق داخل الشركة
  *   POST        → VAULTS_WRITE  (owner | super_admin | accountant)
  *   PATCH/:id   → VAULTS_WRITE  (owner | super_admin | accountant)
  *   PATCH/archive → VAULTS_WRITE
@@ -18,7 +19,6 @@ import { CompanyAccessGuard }    from '../auth/guards/company-access.guard';
 import { RolesGuard }            from '../auth/guards/roles.guard';
 import { CurrentUser, JwtUser }  from '../auth/decorators/current-user.decorator';
 import { RequirePermission }     from '../auth/decorators/require-permission.decorator';
-import { RequireAnyPermission }  from '../auth/decorators/require-any-permission.decorator';
 import { createVaultSchema, updateVaultSchema } from './dto/create-vault.dto';
 import { VaultsService }         from './vaults.service';
 import { preferQueryCompanyId }  from '../common/utils/company-request';
@@ -52,7 +52,6 @@ export class VaultsController {
   }
 
   @Get('sales-channels')
-  @RequireAnyPermission('VIEW_SALES', 'SALES_READ', 'SALES_WRITE')
   async findSalesChannels(
     @Query('companyId') queryCompanyId: string,
     @Headers('x-company-id') headerCompanyId: string,
@@ -63,18 +62,6 @@ export class VaultsController {
   }
 
   @Get('payment-options')
-  @RequireAnyPermission(
-    'VIEW_INVOICES',
-    'INVOICES_READ',
-    'INVOICES_WRITE',
-    'VIEW_EXPENSES',
-    'EXPENSES_READ',
-    'EXPENSES_WRITE',
-    'HR_READ',
-    'HR_WRITE',
-    'EMPLOYEES_READ',
-    'EMPLOYEES_WRITE',
-  )
   async findPaymentOptions(
     @Query('companyId') queryCompanyId: string,
     @Headers('x-company-id') headerCompanyId: string,
