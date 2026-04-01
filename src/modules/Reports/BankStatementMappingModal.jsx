@@ -152,6 +152,10 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
         .filter((r) => r && r.some((c) => c !== '' && c != null)),
     [raw, dataStartRow],
   );
+  const previewTableMinWidth = useMemo(
+    () => Math.max(520, (headers.length + 1) * 120),
+    [headers.length],
+  );
 
   const totalDataRows = useMemo(() => countDataRowsFrom(raw, dataStartRow), [raw, dataStartRow]);
 
@@ -370,7 +374,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
             <span style={{ fontWeight: 400, color: 'var(--noorix-text-muted)', fontSize: 12 }}>{t('bankMapPreviewHint')}</span>
           </div>
           <div style={{ overflow: 'auto', maxHeight: 300 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <table style={{ width: '100%', minWidth: previewTableMinWidth, borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: 'var(--noorix-bg-muted)' }}>
                   <th style={{ padding: '8px 6px', width: 36 }}>#</th>

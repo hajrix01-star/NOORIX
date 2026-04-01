@@ -7,6 +7,7 @@ import {
   createDailySalesSummary,
   updateDailySalesSummary,
   cancelDailySalesSummary,
+  deleteDailySalesSummary,
 } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
 
@@ -59,11 +60,17 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
     onSuccess: invalidate,
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: ({ id, companyId: cid }) => deleteDailySalesSummary(id, cid),
+    onSuccess: invalidate,
+  });
+
   return {
     summaries,
     isLoading,
     createSummary: createMutation,
     updateSummary: updateMutation,
     cancelSummary: cancelMutation,
+    deleteSummary: deleteMutation,
   };
 }

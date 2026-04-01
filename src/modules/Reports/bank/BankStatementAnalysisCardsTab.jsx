@@ -1019,6 +1019,7 @@ export default function BankStatementAnalysisCardsTab({
           </button>
           {addOpen && availableToAdd.length > 0 && (
             <div
+              className="bank-analysis-add-menu"
               style={{
                 position: 'absolute',
                 top: '110%',

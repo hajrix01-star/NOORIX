@@ -38,6 +38,8 @@ export default {
   fixedExpenseType: { ar: 'مصروف ثابت/حكومي', en: 'Fixed/Govt expense' },
   notesRequiredForNoSupplier: { ar: 'تفاصيل مطلوبة بدون مورد', en: 'Details required when no supplier' },
   invoiceCancelled: { ar: 'تم إلغاء الفاتورة', en: 'Invoice cancelled' },
+  deleteInvoiceConfirm: { ar: 'حذف الفاتورة "{0}" نهائياً؟ سيُحذف معها أي قيد أو سجل مرتبط ولا يمكن التراجع.', en: 'Permanently delete invoice "{0}"? Related entries will also be removed and this cannot be undone.' },
+  invoiceDeleted: { ar: 'تم حذف الفاتورة نهائياً', en: 'Invoice permanently deleted' },
   loadInvoicesFailed: { ar: 'فشل تحميل الفواتير', en: 'Failed to load invoices' },
   noInvoicesInPeriod: { ar: 'لا توجد فواتير في هذه الفترة.', en: 'No invoices in this period.' },
   filterAllTypes: { ar: 'جميع الأنواع', en: 'All types' },

@@ -527,6 +527,9 @@ export async function updateDailySalesSummary(id, body, companyId) {
 export async function cancelDailySalesSummary(id, companyId) {
   return apiDelete(`/api/v1/sales/summaries/${id}?companyId=${companyId}`);
 }
+export async function deleteDailySalesSummary(id, companyId) {
+  return apiDelete(`/api/v1/sales/summaries/${id}?companyId=${companyId}`);
+}
 export async function getDailySalesSummaries(
   companyId,
   startDate,
@@ -1010,6 +1013,9 @@ export async function createInvoice(body) { return apiPost('/api/v1/invoices', b
 export async function createInvoiceBatch(body) { return apiPost('/api/v1/invoices/batch', body); }
 export async function updateInvoice(id, body, companyId) {
   return apiPatch(`/api/v1/invoices/${id}?companyId=${companyId}`, body);
+}
+export async function deleteInvoice(id, companyId) {
+  return apiDelete(`/api/v1/invoices/${id}?companyId=${companyId}`);
 }
 export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId) {
   const params = { companyId, page: String(page), pageSize: String(pageSize) };

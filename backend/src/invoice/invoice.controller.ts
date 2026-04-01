@@ -6,12 +6,13 @@
  *   GET    → INVOICES_READ   (owner | super_admin | accountant | cashier)
  *   PATCH  → INVOICES_WRITE  (owner | super_admin | accountant)
  */
-import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard }             from '@nestjs/passport';
 import { CompanyAccessGuard }    from '../auth/guards/company-access.guard';
 import { RolesGuard }            from '../auth/guards/roles.guard';
 import { CurrentUser, JwtUser }  from '../auth/decorators/current-user.decorator';
 import { RequirePermission }     from '../auth/decorators/require-permission.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateInvoiceDto }      from './dto/create-invoice.dto';
 import { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { UpdateInvoiceDto }      from './dto/update-invoice.dto';
@@ -116,5 +117,15 @@ export class InvoiceController {
     @CurrentUser()      user:      JwtUser,
   ) {
     return this.invoiceService.update(id, dto, companyId, user.sub);
+  }
+
+  @Delete(':id')
+  @Roles('owner')
+  async remove(
+    @Param('id') id: string,
+    @Query('companyId') companyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.invoiceService.removePermanently(id, companyId, user.sub);
   }
 }

@@ -62,7 +62,7 @@ export default function DailySalesScreen() {
   const [exportBusy, setExportBusy] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
 
-  const { createSummary, updateSummary, cancelSummary } = useSales({
+  const { createSummary, updateSummary, deleteSummary } = useSales({
     companyId,
     startDate: dateFilter.startDate,
     endDate: dateFilter.endDate,
@@ -196,13 +196,13 @@ export default function DailySalesScreen() {
     setEditingSummary(null);
   }
 
-  function handleCancelSummary(s) {
-    if (!companyId || !window.confirm(t('cancelSummaryConfirm', s.summaryNumber))) return;
-    cancelSummary.mutate(
+  function handleDeleteSummary(s) {
+    if (!companyId || !window.confirm(t('deleteSummaryConfirm', s.summaryNumber))) return;
+    deleteSummary.mutate(
       { id: s.id, companyId },
       {
-        onSuccess: () => setToast({ visible: true, message: t('summaryCancelled'), type: 'success' }),
-        onError: (e) => setToast({ visible: true, message: e?.message || t('cancelFailed'), type: 'error' }),
+        onSuccess: () => setToast({ visible: true, message: t('summaryDeleted'), type: 'success' }),
+        onError: (e) => setToast({ visible: true, message: e?.message || t('deleteFailed'), type: 'error' }),
       },
     );
   }
@@ -267,7 +267,7 @@ export default function DailySalesScreen() {
           userRole={userRole}
           onPrint={openWhatsApp}
           onEdit={setEditingSummary}
-          onDelete={handleCancelSummary}
+          onDelete={handleDeleteSummary}
         />
       ),
     },
@@ -446,7 +446,7 @@ export default function DailySalesScreen() {
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleCancelSummary} />
+          <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
         </div>
       </div>
     );

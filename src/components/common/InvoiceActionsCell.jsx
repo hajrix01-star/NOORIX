@@ -37,10 +37,10 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
 
   const canPrint = hasPermission(userRole, 'INVOICES_READ', userPermissions);
   const canEdit  = hasPermission(userRole, 'INVOICES_WRITE', userPermissions);
-  const canDel   = hasPermission(userRole, 'INVOICES_DELETE', userPermissions);
+  const canDel   = (userRole || '').toLowerCase() === 'owner';
   const canView  = !!onView && canPrint;
   const showEdit = canEdit && row.status === 'active' && row.kind !== 'sale';
-  const showDel  = canDel && row.status === 'active';
+  const showDel  = canDel && !!onDelete;
   const showAny  = canPrint || canEdit || canDel || canView;
 
   useEffect(() => {
@@ -119,7 +119,7 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
       )}
       {showDel && (
         <button type="button" role="menuitem" onClick={() => run(onDelete)} style={{ ...menuItemStyle, color: '#dc2626' }}>
-          {t('cancelTitle')}
+          {t('delete')}
         </button>
       )}
     </div>

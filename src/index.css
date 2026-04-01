@@ -1131,6 +1131,11 @@ html[data-card-style="10"] .noorix-stat-card {
 .sales-channels-grid {
   grid-template-columns: repeat(2, 1fr) !important;
 }
+@media (max-width: 420px) {
+  .sales-channels-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 @media (min-width: 600px) {
   .sales-channels-grid {
     grid-template-columns: repeat(3, 1fr) !important;
@@ -1139,6 +1144,59 @@ html[data-card-style="10"] .noorix-stat-card {
 @keyframes slideUp {
   from { transform: translateY(100%); opacity: 0.9; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+.reports-detail-modal {
+  min-width: 0;
+}
+
+.bank-analysis-add-menu {
+  background: var(--noorix-bg-surface) !important;
+}
+
+@media (max-width: 640px) {
+  .reports-detail-modal-overlay {
+    padding: 12px !important;
+    align-items: flex-end !important;
+  }
+
+  .reports-detail-modal {
+    max-height: 94vh !important;
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+
+  .reports-detail-derived-item {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+
+  .bank-analysis-add-menu {
+    inset-inline-start: 0 !important;
+    inset-inline-end: 0 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .import-export-modal {
+    max-height: 94vh !important;
+  }
+
+  .import-export-modal__header {
+    padding: 14px 16px 0 !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+
+  .import-export-modal__tabs {
+    margin: 0 16px !important;
+    overflow-x: auto;
+  }
+
+  .import-export-modal__body {
+    padding: 16px !important;
+  }
 }
 
 /* ── Result Panel: لوحة نتائج الحاسبات (راتب / EOS) ──────── */

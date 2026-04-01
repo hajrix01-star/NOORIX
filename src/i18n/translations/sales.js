@@ -12,6 +12,8 @@ export default {
   updateFailed: { ar: 'فشل التحديث', en: 'Update failed' },
   cancelSummaryConfirm: { ar: 'إلغاء ملخص "{0}"؟ سيتم تعطيل الملخص والقيود المرتبطة.', en: 'Cancel summary "{0}"? The summary and related entries will be disabled.' },
   summaryCancelled: { ar: 'تم إلغاء الملخص', en: 'Summary cancelled' },
+  deleteSummaryConfirm: { ar: 'حذف ملخص "{0}" نهائياً؟ سيُحذف معه قيد المبيعات والفاتورة المرتبطة ولا يمكن التراجع.', en: 'Permanently delete summary "{0}"? Its sales entries and linked invoice will also be removed and this cannot be undone.' },
+  summaryDeleted: { ar: 'تم حذف الملخص نهائياً', en: 'Summary permanently deleted' },
   cancelFailed: { ar: 'فشل الإلغاء', en: 'Cancel failed' },
   transactionDate: { ar: 'تاريخ العملية *', en: 'Transaction date *' },
   customerCount: { ar: 'عدد العملاء (الطلبات)', en: 'Customer count (orders)' },

@@ -12,7 +12,7 @@ import { useInvoices }    from '../../hooks/useInvoices';
 import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDateISO } from '../../utils/saudiDate';
-import { updateInvoice, getInvoices } from '../../services/api';
+import { updateInvoice, getInvoices, deleteInvoice } from '../../services/api';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable         from '../../components/common/SmartTable';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
@@ -171,14 +171,14 @@ export default function InvoicesListScreen() {
           onPrint={() => window.print()}
           onEdit={(r) => setEditingInvoice(r)}
           onDelete={async (r) => {
-            if (!confirm(t('cancelInvoiceConfirm'))) return;
-            const res = await updateInvoice(r.id, { status: 'cancelled' }, companyId);
+            if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
+            const res = await deleteInvoice(r.id, companyId);
             if (res.success) {
               queryClient.invalidateQueries({ queryKey: ['invoices'] });
               queryClient.invalidateQueries({ queryKey: ['vaults'] });
               queryClient.invalidateQueries({ queryKey: ['ledger'] });
-              setToast({ visible: true, message: t('invoiceCancelled'), type: 'success' });
-            } else setToast({ visible: true, message: res.error || t('cancelFailed'), type: 'error' });
+              setToast({ visible: true, message: t('invoiceDeleted'), type: 'success' });
+            } else setToast({ visible: true, message: res.error || t('deleteFailed'), type: 'error' });
           }}
         />
       ),
@@ -283,14 +283,14 @@ export default function InvoicesListScreen() {
             onPrint={() => window.print()}
             onEdit={(r) => setEditingInvoice(r)}
             onDelete={async (r) => {
-              if (!confirm(t('cancelInvoiceConfirm'))) return;
-              const res = await updateInvoice(r.id, { status: 'cancelled' }, companyId);
+              if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
+              const res = await deleteInvoice(r.id, companyId);
               if (res.success) {
                 queryClient.invalidateQueries({ queryKey: ['invoices'] });
                 queryClient.invalidateQueries({ queryKey: ['vaults'] });
                 queryClient.invalidateQueries({ queryKey: ['ledger'] });
-                setToast({ visible: true, message: t('invoiceCancelled'), type: 'success' });
-              } else setToast({ visible: true, message: res.error || t('cancelFailed'), type: 'error' });
+                setToast({ visible: true, message: t('invoiceDeleted'), type: 'success' });
+              } else setToast({ visible: true, message: res.error || t('deleteFailed'), type: 'error' });
             }}
           />
         </div>

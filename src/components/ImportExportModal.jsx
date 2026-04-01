@@ -572,10 +572,10 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
   return (
     <div style={S.overlay} onClick={(e) => e.target === e.currentTarget && !importing && onClose()}>
-      <div style={S.modal} role="dialog" aria-modal="true">
+      <div className="import-export-modal" style={S.modal} role="dialog" aria-modal="true">
 
         {/* Header */}
-        <div style={S.header}>
+        <div className="import-export-modal__header" style={S.header}>
           <div>
             <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>استيراد وتصدير — {cfg.label}</h2>
             {lookupsLoading && <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--noorix-text-muted)' }}>جارٍ تحميل بيانات النظام…</p>}
@@ -584,7 +584,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
         </div>
 
         {/* Tabs */}
-        <div style={S.tabs}>
+        <div className="import-export-modal__tabs" style={S.tabs}>
           <button type="button" style={S.tab(activeTab === 'import')} onClick={() => setActiveTab('import')}>⬆ استيراد</button>
           {exportFetcher && (
             <button type="button" style={S.tab(activeTab === 'export')} onClick={() => setActiveTab('export')}>⬇ تصدير</button>
@@ -592,7 +592,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
         </div>
 
         {/* Body */}
-        <div style={S.body}>
+        <div className="import-export-modal__body" style={S.body}>
 
           {/* ── EXPORT TAB ─────────────────────────────────────────────── */}
           {activeTab === 'export' && (

@@ -1,7 +1,7 @@
 /**
  * ReportsDetailModal — نافذة تفاصيل البند في تقرير ربح وخسارة
  */
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { amountText, moneyText, percentText, truncateText, PERCENT_COLOR } from './reportHelpers';
@@ -9,6 +9,7 @@ import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDri
 
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }) {
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches);
   const { data, isLoading, error } = useReportDetails({
     companyId,
     year,
@@ -53,17 +54,26 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     return String(total / points.length);
   }, [trend]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 640px)');
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   if (!state) return null;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
+      className="reports-detail-modal-overlay"
       style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.45)', padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onClick={onClose}
     >
       <div
-        className="noorix-surface-card"
+        className="noorix-surface-card reports-detail-modal"
         style={{ width: '100%', maxWidth: 1180, maxHeight: '92vh', overflow: 'auto', padding: 20 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -156,7 +166,10 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     );
                   })}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(62px, 1fr))', gap: 8 }}>
+                <div
+                  className="reports-detail-timeline-grid"
+                  style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(120px, 1fr))' : 'repeat(12, minmax(62px, 1fr))', gap: 8 }}
+                >
                   {(trend.points || []).map((point) => (
                     <div
                       key={`timeline-${point.month}`}
@@ -177,10 +190,11 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
             )}
 
             {data.kind === 'derived' && (
-              <div style={{ display: 'grid', gap: 10 }}>
+              <div className="reports-detail-derived-list" style={{ display: 'grid', gap: 10 }}>
                 {(data.items || []).map((item) => (
                   <div
                     key={item.key}
+                    className="reports-detail-derived-item"
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',

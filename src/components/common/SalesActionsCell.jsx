@@ -42,7 +42,7 @@ export const SalesActionsCell = memo(function SalesActionsCell({
   const VIEWPORT_GAP = 10;
   const canPrint = hasPermission(userRole, 'SALES_READ', userPermissions);
   const canEdit  = hasPermission(userRole, 'SALES_WRITE', userPermissions) || hasPermission(userRole, 'SALES_ACTIONS', userPermissions);
-  const canDel   = hasPermission(userRole, 'SALES_DELETE', userPermissions) || hasPermission(userRole, 'SALES_ACTIONS', userPermissions);
+  const canDel   = (userRole || '').toLowerCase() === 'owner';
   const showAny  = canPrint || canEdit || canDel;
 
   if (!showAny) return <span style={{ color: 'var(--noorix-text-muted)', fontSize: 12 }}>—</span>;
@@ -50,7 +50,7 @@ export const SalesActionsCell = memo(function SalesActionsCell({
   const items = [];
   if (canPrint) items.push({ key: 'print', label: t('printWhatsApp'), fn: onPrint, color: '#2563eb' });
   if (canEdit && summary.status === 'active') items.push({ key: 'edit', label: t('edit'), fn: onEdit, color: '#16a34a' });
-  if (canDel && summary.status === 'active') items.push({ key: 'delete', label: t('cancelTitle'), fn: onDelete, color: '#dc2626' });
+  if (canDel && onDelete) items.push({ key: 'delete', label: t('delete'), fn: onDelete, color: '#dc2626' });
 
   useEffect(() => {
     if (open && btnRef.current) {

@@ -4,10 +4,12 @@
  * createSummary يُفوَّض بالكامل → FinancialCoreService.processInflow
  * findAll تبقى هنا (قراءة بحتة).
  */
-import { Injectable }           from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma }                from '@prisma/client';
 import { TenantPrismaService }   from '../prisma/tenant-prisma.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { TenantContext } from '../common/tenant-context';
+import { nowSaudi } from '../common/utils/date-utils';
 
 @Injectable()
 export class SalesService {
@@ -171,5 +173,54 @@ export class SalesService {
       { referenceType: 'sale', referenceId: id, companyId, reason: 'إلغاء من واجهة المبيعات' },
       userId,
     );
+  }
+
+  async removePermanently(id: string, companyId: string, userId?: string) {
+    const tenantId = TenantContext.tryGetTenantId() ?? '';
+    return this.prisma.$transaction(async (tx) => {
+      const summary = await tx.dailySalesSummary.findFirst({
+        where: { id, companyId },
+        include: { saleInvoice: true, channels: true },
+      });
+      if (!summary) throw new NotFoundException('الملخص غير موجود');
+
+      const oldValue = {
+        id: summary.id,
+        summaryNumber: summary.summaryNumber,
+        companyId: summary.companyId,
+        transactionDate: summary.transactionDate.toISOString(),
+        totalAmount: String(summary.totalAmount),
+        customerCount: summary.customerCount,
+        status: summary.status,
+        invoiceId: summary.saleInvoice?.id ?? null,
+        channelsCount: summary.channels.length,
+      };
+
+      await tx.ledgerEntry.deleteMany({
+        where: { companyId, referenceType: 'sale', referenceId: id },
+      });
+
+      if (summary.saleInvoice) {
+        await tx.invoice.delete({ where: { id: summary.saleInvoice.id } });
+      }
+
+      await tx.dailySalesSummary.delete({ where: { id } });
+
+      await tx.auditLog.create({
+        data: {
+          tenantId,
+          companyId,
+          userId: userId ?? null,
+          action: 'delete',
+          entity: 'daily_sales_summary',
+          entityId: id,
+          oldValue: oldValue as Prisma.InputJsonValue,
+          newValue: { deleted: true, deletedBy: userId ?? null } as Prisma.InputJsonValue,
+          createdAt: nowSaudi(),
+        },
+      });
+
+      return { success: true, deleted: true, id };
+    });
   }
 }

@@ -217,7 +217,9 @@ export default function BankStatementTransactionsFullTab({
             padding: '6px 10px',
             borderRadius: 8,
             border: '1px solid var(--noorix-border)',
-            width: 200,
+            width: '100%',
+            maxWidth: 200,
+            flex: '1 1 200px',
             fontSize: 13,
           }}
         />

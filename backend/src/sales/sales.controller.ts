@@ -11,6 +11,7 @@ import { CompanyAccessGuard }   from '../auth/guards/company-access.guard';
 import { RolesGuard }           from '../auth/guards/roles.guard';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermission }    from '../auth/decorators/require-permission.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { SalesService }           from './sales.service';
 import { CreateSalesSummaryDto }  from './dto/create-sales-summary.dto';
 import { UpdateSalesSummaryDto }  from './dto/update-sales-summary.dto';
@@ -57,14 +58,14 @@ export class SalesController {
   }
 
   @Delete('summaries/:id')
-  @RequirePermission('SALES_WRITE')
+  @Roles('owner')
   async cancelSummary(
     @Param('id') id: string,
     @Query('companyId') companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
     if (!companyId) throw new Error('companyId مطلوب');
-    return this.salesService.cancelSummary(id, companyId, user.sub);
+    return this.salesService.removePermanently(id, companyId, user.sub);
   }
 
   @Get('summaries')

@@ -208,7 +208,7 @@ export function SalesEntryModal({
                 {t('noSalesChannels')}
               </div>
             ) : (
-              <div className="sales-channels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+              <div className="sales-channels-grid" style={{ display: 'grid', gap: 8 }}>
                 {salesChannels.map((v) => {
                   const amt = channelAmounts[v.id] || '';
                   return (
