@@ -413,6 +413,7 @@ export function formatEmployeeForExport(emp) {
     'بدل النقل': emp.transportAllowance ?? '',
     'بدلات أخرى': emp.otherAllowance ?? '',
     'تاريخ الالتحاق': emp.joinDate?.slice(0, 10) ?? '',
+    'ساعات العمل': emp.workHours ?? '',
     'الحالة': emp.status === 'active' ? 'نشط' : (emp.status === 'terminated' ? 'منتهي' : emp.status),
     'ملاحظات': emp.notes ?? '',
   };

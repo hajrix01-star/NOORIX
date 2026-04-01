@@ -26,7 +26,6 @@ export function useVaults({ companyId, includeArchived = false }) {
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },
-    placeholderData: (prev) => prev,
     enabled: !!companyId,
   });
 

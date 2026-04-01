@@ -43,19 +43,15 @@ export default function AppHeader({ toggleSidebar, toggleTheme, toggleLanguage, 
           )}
         </div>
         <div className="noorix-topbar-actions">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="noorix-topbar-btn"
-            title={theme === 'light' ? t('darkMode') : t('lightMode')}
-          >
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
-          <button type="button" onClick={toggleLanguage} className="noorix-topbar-btn" title={language === 'ar' ? t('switchToEnglish') : t('switchToArabic')} aria-label={language === 'ar' ? t('switchToEnglish') : t('switchToArabic')}>
-            {language === 'ar' ? 'AR' : 'EN'}
-          </button>
           {isAuthenticated && user && (
-            <UserMenu user={user} onLogout={onLogout} />
+            <UserMenu
+              user={user}
+              onLogout={onLogout}
+              theme={theme}
+              toggleTheme={toggleTheme}
+              language={language}
+              toggleLanguage={toggleLanguage}
+            />
           )}
         </div>
       </header>

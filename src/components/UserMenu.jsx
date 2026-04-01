@@ -26,8 +26,9 @@ function getInitials(user) {
   return 'N';
 }
 
-export default function UserMenu({ user, onLogout }) {
-  const { t } = useTranslation();
+export default function UserMenu({ user, onLogout, theme, toggleTheme, language, toggleLanguage }) {
+  const { t, lang } = useTranslation();
+  const showAppearance = typeof toggleTheme === 'function' && typeof toggleLanguage === 'function';
   const [open, setOpen] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
@@ -65,7 +66,7 @@ export default function UserMenu({ user, onLogout }) {
     top: pos.top,
     right: pos.right,
     left: 'auto',
-    direction: 'ltr',
+    direction: lang === 'ar' ? 'rtl' : 'ltr',
   };
 
   return (
@@ -111,6 +112,35 @@ export default function UserMenu({ user, onLogout }) {
           </div>
 
           <div style={styles.divider} />
+
+          {showAppearance && (
+            <>
+              <div style={{ ...styles.dropdownBody, paddingTop: 4 }}>
+                <button
+                  type="button"
+                  style={styles.menuItemAction}
+                  onClick={() => toggleTheme()}
+                >
+                  <span style={styles.menuItemIcon}>{theme === 'light' ? '🌙' : '☀️'}</span>
+                  <span style={{ flex: 1, textAlign: 'inherit' }}>
+                    {theme === 'light' ? t('darkMode') : t('lightMode')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  style={styles.menuItemAction}
+                  onClick={() => toggleLanguage()}
+                >
+                  <span style={styles.menuItemIcon}>🌐</span>
+                  <span style={{ flex: 1, textAlign: 'inherit' }}>
+                    {language === 'ar' ? t('switchToEnglish') : t('switchToArabic')}
+                  </span>
+                  <span style={styles.langChip}>{language === 'ar' ? 'AR' : 'EN'}</span>
+                </button>
+              </div>
+              <div style={styles.divider} />
+            </>
+          )}
 
           {/* عناصر القائمة */}
           <div style={styles.dropdownBody}>
@@ -290,6 +320,31 @@ const styles = {
     display: 'grid',
     gap: 2,
   },
+  menuItemAction: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '9px 10px',
+    borderRadius: 8,
+    border: 'none',
+    background: 'none',
+    color: 'var(--noorix-text)',
+    fontSize: 13,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    textAlign: 'inherit',
+    width: '100%',
+    transition: 'background 0.15s',
+  },
+  langChip: {
+    fontSize: 11,
+    fontWeight: 800,
+    padding: '2px 8px',
+    borderRadius: 6,
+    background: 'var(--noorix-bg-muted)',
+    color: 'var(--noorix-text-muted)',
+    flexShrink: 0,
+  },
   menuItem: {
     display: 'flex',
     alignItems: 'center',
@@ -302,7 +357,7 @@ const styles = {
     fontSize: 13,
     cursor: 'not-allowed',
     fontFamily: 'inherit',
-    textAlign: 'right',
+    textAlign: 'inherit',
     width: '100%',
   },
   menuItemIcon: {

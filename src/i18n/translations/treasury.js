@@ -3,6 +3,7 @@
  */
 export default {
   vaultsDesc: { ar: 'إدارة الخزائن وقنوات البيع وطرق السداد. الرصيد الإجمالي:', en: 'Manage vaults, sales channels and payment methods. Total balance:' },
+  vaultsSyncing: { ar: 'جاري مزامنة الخزائن مع الشركة النشطة…', en: 'Syncing vaults for the active company…' },
   showArchived: { ar: 'عرض المؤرشف', en: 'Show archived' },
   addVault: { ar: '+ إضافة خزنة', en: '+ Add vault' },
   vaultAdded: { ar: 'تمت إضافة الخزنة بنجاح.', en: 'Vault added successfully.' },

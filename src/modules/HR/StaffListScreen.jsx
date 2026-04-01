@@ -1,7 +1,7 @@
 /**
  * StaffListScreen — قائمة الموظفين (احترافي كامل)
  */
-import React, { useState, useMemo, memo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, memo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -16,7 +16,6 @@ import ImportExportModal from '../../components/ImportExportModal';
 import { formatEmployeeForExport } from '../../utils/importTemplates';
 import {
   createCustomAllowance,
-  createEmployeesBatch,
   deleteCustomAllowance,
   getCustomAllowances,
   getEmployeesPaged,
@@ -96,7 +95,6 @@ export default function StaffListScreen({ embedded }) {
     clause: '',
     date: getSaudiToday(),
   });
-  const [importing, setImporting] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
   const terminationReasonOptions = [
     t('terminationReasonOptionArt80'),
@@ -105,7 +103,6 @@ export default function StaffListScreen({ embedded }) {
     t('terminationReasonOptionResignation'),
     t('terminationReasonOptionAbsence'),
   ];
-  const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
 
   const { create, update, createAdvance } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: false });
@@ -299,98 +296,6 @@ export default function StaffListScreen({ embedded }) {
       setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
     } finally {
       setExporting(false);
-    }
-  }
-
-  async function handleImportFile(file) {
-    if (!file || !companyId) return;
-    setImporting(true);
-    try {
-      const XLSX = await import('xlsx');
-      const data = await file.arrayBuffer();
-      const wb = XLSX.read(data, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      if (!rows.length || rows.length < 2) {
-        setToast({ visible: true, message: t('noDataInPeriod'), type: 'error' });
-        return;
-      }
-      const headers = rows[0].map((h) => String(h || '').trim().toLowerCase());
-      const col = (...names) => {
-        for (const n of names) {
-          const i = headers.findIndex((h) => (h && String(h).includes(n)) || (n === 'name' && (h === 'الاسم' || h === 'اسم')));
-          if (i >= 0) return i;
-        }
-        return -1;
-      };
-      const idx = {
-        name: col('name', 'الاسم', 'اسم') >= 0 ? col('name', 'الاسم', 'اسم') : 0,
-        jobTitle: col('job', 'المسمى', 'الوظيفة'),
-        basicSalary: col('basic', 'الراتب', 'راتب'),
-        housing: col('housing', 'السكن', 'سكن'),
-        transport: col('transport', 'النقل', 'نقل'),
-        joinDate: col('join', 'date', 'التاريخ', 'تاريخ'),
-        workHours: col('hours', 'ساعات', 'ساعة', 'work'),
-      };
-      const today = new Date().toISOString().slice(0, 10);
-      const items = [];
-      for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row || !row[idx.name]) continue;
-        const name = String(row[idx.name] || '').trim();
-        if (!name) continue;
-        let joinDate = today;
-        if (idx.joinDate >= 0 && row[idx.joinDate] != null) {
-          const d = row[idx.joinDate];
-          if (typeof d === 'number' && d > 0) {
-            const parsed = XLSX.SSF?.parse_date_code?.(d);
-            if (parsed && parsed.y) {
-              joinDate = `${String(parsed.y).padStart(4, '0')}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
-            }
-          } else if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
-            joinDate = d;
-          } else if (typeof d === 'string' && d.includes('/')) {
-            const parts = d.split('/');
-            if (parts.length === 3) joinDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-          }
-        }
-        let workHours = undefined;
-        if (idx.workHours >= 0 && row[idx.workHours] != null) {
-          const v = row[idx.workHours];
-          workHours = typeof v === 'number' ? String(v) : String(v || '').trim();
-          if (workHours && !/^\d+(\.\d+)?$/.test(workHours)) {
-            const num = String(v).match(/(\d+(?:\.\d+)?)/);
-            workHours = num ? num[1] : undefined;
-          }
-        }
-        items.push({
-          name,
-          jobTitle: idx.jobTitle >= 0 && row[idx.jobTitle] ? String(row[idx.jobTitle]).trim() : undefined,
-          basicSalary: idx.basicSalary >= 0 ? Number(row[idx.basicSalary]) || 0 : 0,
-          housingAllowance: idx.housing >= 0 ? Number(row[idx.housing]) || 0 : 0,
-          transportAllowance: idx.transport >= 0 ? Number(row[idx.transport]) || 0 : 0,
-          joinDate: typeof joinDate === 'string' ? joinDate : today,
-          workHours: workHours || undefined,
-        });
-      }
-      if (items.length === 0) {
-        setToast({ visible: true, message: t('noDataInPeriod'), type: 'error' });
-        return;
-      }
-      const res = await createEmployeesBatch({ companyId, items });
-      if (res?.success && res?.data) {
-        queryClient.invalidateQueries({ queryKey: ['employees'] });
-        queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
-        const { created, failed } = res.data;
-        setToast({ visible: true, message: `تم استيراد ${created} موظف${failed > 0 ? `، فشل ${failed}` : ''}`, type: 'success' });
-      } else {
-        setToast({ visible: true, message: res?.error || t('saveFailed'), type: 'error' });
-      }
-    } catch (e) {
-      setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
-    } finally {
-      setImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 

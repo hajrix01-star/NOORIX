@@ -165,6 +165,109 @@ function StatBadge({ count, label, color }) {
   );
 }
 
+/** شريط مراحل الاستيراد — يوضح أين المستخدم في التدفق */
+function ImportPhaseSteps({ phase, importing }) {
+  const steps = [
+    { n: 1, label: 'القالب' },
+    { n: 2, label: 'رفع الملف' },
+    { n: 3, label: 'المعاينة والفحص' },
+    { n: 4, label: 'التنفيذ' },
+    { n: 5, label: 'النتيجة' },
+  ];
+  let active = 1;
+  if (phase === 'parsing') active = 2;
+  else if (phase === 'validated' && !importing) active = 3;
+  else if (importing) active = 4;
+  else if (phase === 'done') active = 5;
+
+  return (
+    <div style={{
+      display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6,
+      padding: '12px 14px', borderRadius: 12, border: '1px solid var(--noorix-border)',
+      background: 'var(--noorix-bg)', marginBottom: 4,
+    }}>
+      {steps.map((s, i) => (
+        <React.Fragment key={s.n}>
+          {i > 0 && <span style={{ color: 'var(--noorix-text-muted)', fontSize: 12, userSelect: 'none' }}>→</span>}
+          <span style={{
+            fontSize: 12, fontWeight: active === s.n ? 800 : 500,
+            color: active === s.n ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
+            padding: '4px 8px', borderRadius: 8,
+            background: active === s.n ? 'rgba(37,99,235,0.1)' : 'transparent',
+            whiteSpace: 'nowrap',
+          }}>
+            {s.n}. {s.label}
+          </span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
+  const maxRows = 150;
+  const slice = validationResults.slice(0, maxRows);
+  return (
+    <div style={{ marginTop: 12, borderRadius: 10, border: '1px solid var(--noorix-border)', overflow: 'hidden' }}>
+      <div style={{
+        padding: '8px 12px', fontSize: 12, fontWeight: 700,
+        background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)',
+        borderBottom: '1px solid var(--noorix-border)',
+      }}>
+        معاينة البيانات (أول {Math.min(slice.length, maxRows)} صفاً من أصل {validationResults.length})
+      </div>
+      <div style={{ overflowX: 'auto', maxHeight: 280 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr style={{ background: 'var(--noorix-bg-surface)', position: 'sticky', top: 0, zIndex: 1 }}>
+              {['#', 'الاسم', 'تاريخ الالتحاق', 'الراتب الأساسي', 'الحالة', 'ملاحظات'].map((h) => (
+                <th key={h} style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {slice.map((r) => {
+              const raw = parsedRows[r.rowNum - 2] || {};
+              const nameStr = String(raw['الاسم بالعربية'] ?? raw.name ?? '').trim();
+              const name = r.payload?.name ?? (nameStr || '—');
+              const jdStr = String(raw['تاريخ الالتحاق'] ?? raw.joinDate ?? '').trim();
+              const jd = r.payload?.joinDate ?? (jdStr || '—');
+              const salRaw = r.payload?.basicSalary ?? raw['الراتب الأساسي'] ?? raw.basicSalary;
+              const sal = salRaw === undefined || salRaw === null || salRaw === '' ? '—' : salRaw;
+              const ok = r.valid;
+              const note = ok
+                ? (r.warnings.length ? r.warnings.join('؛ ') : '—')
+                : r.errors.join('؛ ');
+              return (
+                <tr key={r.rowNum} style={{ background: ok ? 'transparent' : 'rgba(239,68,68,0.06)' }}>
+                  <td style={{ padding: '7px 10px', borderBottom: '1px solid var(--noorix-border)', fontFamily: 'var(--noorix-font-numbers)' }}>{r.rowNum}</td>
+                  <td style={{ padding: '7px 10px', borderBottom: '1px solid var(--noorix-border)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</td>
+                  <td style={{ padding: '7px 10px', borderBottom: '1px solid var(--noorix-border)', fontFamily: 'var(--noorix-font-numbers)', whiteSpace: 'nowrap' }}>{jd}</td>
+                  <td style={{ padding: '7px 10px', borderBottom: '1px solid var(--noorix-border)', fontFamily: 'var(--noorix-font-numbers)' }}>{sal}</td>
+                  <td style={{ padding: '7px 10px', borderBottom: '1px solid var(--noorix-border)', fontWeight: 700, color: ok ? '#16a34a' : '#dc2626' }}>
+                    {ok ? '✓ صالح' : '✗ خطأ'}
+                  </td>
+                  <td style={{ padding: '7px 10px', borderBottom: '1px solid var(--noorix-border)', color: 'var(--noorix-text-muted)', maxWidth: 220 }} title={note}>{note}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {validationResults.length > maxRows && (
+        <div style={{ padding: '6px 12px', fontSize: 11, color: 'var(--noorix-text-muted)', borderTop: '1px solid var(--noorix-border)' }}>
+          … و {validationResults.length - maxRows} صفاً إضافياً (كلها مضمّنة في الاستيراد عند نجاح الفحص)
+        </div>
+      )}
+    </div>
+  );
+}
+
+const EMPLOYEE_EXPORT_COLUMNS_AR = [
+  'الاسم بالعربية', 'الاسم بالإنجليزية', 'رقم الموظف', 'رقم الإقامة', 'المسمى الوظيفي',
+  'الراتب الأساسي', 'بدل السكن', 'بدل النقل', 'بدلات أخرى', 'تاريخ الالتحاق', 'ساعات العمل', 'الحالة', 'ملاحظات',
+];
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 /**
@@ -294,7 +397,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     try {
       const rows = await exportFetcher();
       if (!rows.length) { alert('لا توجد بيانات للتصدير'); return; }
-      await exportToExcel(rows, cfg.exportFilename);
+      const stamp = new Date().toISOString().slice(0, 10);
+      const base = String(cfg.exportFilename || 'export.xlsx').replace(/\.xlsx$/i, '');
+      await exportToExcel(rows, `${base}-${stamp}.xlsx`);
     } catch (err) {
       alert('خطأ في التصدير: ' + (err?.message ?? ''));
     } finally {
@@ -436,11 +541,19 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ ...S.card, gap: 10 }}>
                 <p style={{ margin: 0, fontSize: 14, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
-                  يتم تصدير البيانات المفلترة حالياً بصيغة Excel. يمكنك استخدام الفلاتر في الشاشة الرئيسية قبل الفتح لتحديد نطاق التصدير.
+                  يتم جلب السجلات من الخادم ثم تنزيل ملف Excel باسم يتضمن تاريخ اليوم. استخدم الفلاتر في الشاشة الرئيسية (عند توفرها) لتحديد نطاق القائمة قبل التصدير.
                 </p>
+                {entityType === 'employees' && (
+                  <div style={{ marginTop: 4 }}>
+                    <p style={{ ...S.sectionTitle, marginTop: 0 }}>أعمدة ملف الموظفين</p>
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.65 }}>
+                      {EMPLOYEE_EXPORT_COLUMNS_AR.join(' · ')}
+                    </p>
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button type="button" style={S.btnPrimary} onClick={handleExport} disabled={exporting}>
-                    {exporting ? '⏳ جارٍ التصدير…' : '⬇ تصدير Excel'}
+                    {exporting ? '⏳ جارٍ التصدير…' : '⬇ تنزيل Excel'}
                   </button>
                 </div>
               </div>
@@ -450,6 +563,8 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           {/* ── IMPORT TAB ──────────────────────────────────────────────── */}
           {activeTab === 'import' && (
             <>
+              <ImportPhaseSteps phase={phase} importing={importing} />
+
               {/* Step 1: Template */}
               <div style={S.card}>
                 <p style={S.sectionTitle}>الخطوة 1 — تحميل القالب</p>
@@ -457,6 +572,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                   حمّل قالب Excel الجاهز، افتحه في Excel أو Google Sheets، أضف بياناتك ثم احفظه.
                   {entityType === 'invoices' && ' أسماء الموردين والصناديق يجب أن تتطابق مع الأسماء المسجلة في النظام.'}
                   {entityType === 'sales' && ' أعمدة القنوات تتطابق مع أسماء الصناديق في نظامك.'}
+                  {entityType === 'employees' && ' أعمدة الموظفين ثابتة (الاسم بالعربية، تاريخ الالتحاق، الراتب الأساسي، …) — لا تغيّر عناوين الأعمدة في الصف الأول.'}
                 </p>
                 <button type="button" style={S.btnSecondary} onClick={handleDownloadTemplate} disabled={lookupsLoading}>
                   {lookupsLoading ? '⏳ تحميل…' : '⬇ تحميل قالب Excel'}
@@ -464,7 +580,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               </div>
 
               {/* Step 2: Upload */}
-              {phase !== 'done' && (
+              {phase !== 'done' && !importing && (
                 <div style={S.card}>
                   <p style={S.sectionTitle}>الخطوة 2 — رفع الملف</p>
                   <div
@@ -501,14 +617,18 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               )}
 
               {/* Step 3: Validation results */}
-              {phase === 'validated' && (
+              {phase === 'validated' && !importing && (
                 <div style={S.card}>
-                  <p style={S.sectionTitle}>الخطوة 3 — نتائج الفحص</p>
+                  <p style={S.sectionTitle}>الخطوة 3 — نتائج الفحص والمعاينة</p>
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                     <StatBadge count={validCount} label="صف صحيح" color="#16a34a" />
                     {errorCount > 0 && <StatBadge count={errorCount} label="بها أخطاء" color="#dc2626" />}
                     {warnCount > 0 && <StatBadge count={warnCount} label="تحذيرات" color="#f59e0b" />}
                   </div>
+
+                  {entityType === 'employees' && validationResults.length > 0 && (
+                    <EmployeeImportPreviewTable validationResults={validationResults} parsedRows={parsedRows} />
+                  )}
 
                   {(errorCount > 0 || warnCount > 0) && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>

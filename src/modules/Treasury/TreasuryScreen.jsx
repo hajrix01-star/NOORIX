@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVaults, createVault, updateVault, archiveVault, deleteVault } from '../../services/api';
 import { useApp }         from '../../context/AppContext';
@@ -30,7 +30,7 @@ export default function TreasuryScreen() {
   const notify = (message, type = 'success') =>
     setToast({ visible: true, message, type });
 
-  const { data: vaultsList = [], isLoading } = useQuery({
+  const { data: vaultsList = [], isLoading, isFetching } = useQuery({
     queryKey: ['vaults', companyId, includeArchived, startDate, endDate],
     queryFn:  async () => {
       const res = await getVaults(companyId, includeArchived, startDate, endDate);
@@ -38,9 +38,16 @@ export default function TreasuryScreen() {
       const d = res?.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },
-    placeholderData: (prev) => prev,
+    // بدون إبقاء بيانات شركة سابقة — يمنع خلط الخزائن عند تبديل الشركة
     enabled: !!companyId,
   });
+
+  useEffect(() => {
+    setSelectedVault(null);
+    setEditVault(null);
+    setShowAddForm(false);
+    setSaveError('');
+  }, [companyId]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['vaults', companyId] });
 
@@ -137,11 +144,16 @@ export default function TreasuryScreen() {
 
       {/* هيدر */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <div>
+        <div style={{ flex: '1 1 200px', minWidth: 0 }}>
           <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{t('vaults')}</h1>
           <p style={{ marginTop: 3, fontSize: 13, color: 'var(--noorix-text-muted)', margin: '3px 0 0' }}>
             {t('vaultsDesc')}
           </p>
+          {hasCompany && isFetching && !isLoading && (
+            <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--noorix-accent-blue)', fontWeight: 600 }}>
+              {t('vaultsSyncing')}
+            </p>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--noorix-text-muted)', cursor: 'pointer' }}>
