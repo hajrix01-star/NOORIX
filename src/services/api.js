@@ -748,6 +748,9 @@ export async function getVaults(companyId, includeArchived = false, startDate, e
   if (endDate) params.endDate = String(endDate).slice(0, 25);
   return apiGet('/api/v1/vaults', params);
 }
+export async function getSalesChannels(companyId) {
+  return apiGet('/api/v1/vaults/sales-channels', { companyId });
+}
 export async function getVaultTransactions(vaultId, companyId, startDate, endDate, page = 1, pageSize = 50) {
   const params = { companyId, page: String(page), pageSize: String(pageSize) };
   if (startDate) params.startDate = startDate;

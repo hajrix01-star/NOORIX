@@ -18,6 +18,8 @@ export default {
   cashOnHand: { ar: 'المبلغ الموجود بالصندوق', en: 'Cash on hand' },
   salesChannels: { ar: '🛒 قنوات البيع', en: '🛒 Sales channels' },
   noSalesChannels: { ar: 'لا توجد قنوات بيع مفعّلة. اذهب إلى الخزائن وفعّل خزنة كقناة بيع.', en: 'No sales channels enabled. Go to Vaults and enable a vault as a sales channel.' },
+  salesChannelsLoadFailed: { ar: 'تعذر تحميل قنوات البيع. تحقق من صلاحيات الحساب أو الشركة النشطة ثم أعد المحاولة.', en: 'Could not load sales channels. Check the account permissions or active company and try again.' },
+  retryLoadSalesChannels: { ar: 'إعادة تحميل قنوات البيع', en: 'Retry loading sales channels' },
   notes: { ar: 'ملاحظات', en: 'Notes' },
   notesPlaceholder: { ar: 'أي ملاحظات على مبيعات اليوم...', en: 'Any notes on today\'s sales...' },
   totalLabel: { ar: '💰 الإجمالي', en: '💰 Total' },

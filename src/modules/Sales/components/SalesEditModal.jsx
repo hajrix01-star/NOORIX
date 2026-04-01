@@ -21,7 +21,7 @@ const inputStyle = {
   color: 'var(--noorix-text)', fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box',
 };
 
-export function SalesEditModal({ summary, salesChannels, companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }) {
+export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }) {
   const { lang } = useTranslation();
   const [txDate, setTxDate] = useState('');
   const [customerCount, setCustomerCount] = useState('');
@@ -132,7 +132,15 @@ export function SalesEditModal({ summary, salesChannels, companyId, vatEnabled =
 
         <div style={{ marginBottom: 18 }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>🛒 قنوات البيع</label>
-          {salesChannels.length === 0 ? (
+          {salesChannelsLoading ? (
+            <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
+              جاري تحميل قنوات البيع...
+            </div>
+          ) : salesChannelsError ? (
+            <div style={{ padding: 16, textAlign: 'center', color: '#b91c1c', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
+              {salesChannelsError}
+            </div>
+          ) : salesChannels.length === 0 ? (
             <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
               لا توجد قنوات بيع مفعّلة.
             </div>
@@ -201,7 +209,7 @@ export function SalesEditModal({ summary, salesChannels, companyId, vatEnabled =
           <button
             type="button"
             className="noorix-btn-nav noorix-btn-success"
-            disabled={saving || totalAmount.lte(0) || salesChannels.length === 0}
+            disabled={saving || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || salesChannels.length === 0}
             onClick={handleSave}
             style={{ flex: 1 }}
           >

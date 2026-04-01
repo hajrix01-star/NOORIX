@@ -408,7 +408,7 @@ export default function RolesTab({ userRole, language }) {
                   background: 'var(--noorix-text-muted)', color: '#fff',
                   padding: '2px 10px', borderRadius: 8, fontSize: 10, fontWeight: 700,
                 }}>
-                  {isAr ? 'دور نظام — يمكن عرض الصلاحيات فقط' : 'System role — view only'}
+                  {isAr ? 'دور نظام' : 'System role'}
                 </span>
               )}
             </div>
@@ -429,13 +429,13 @@ export default function RolesTab({ userRole, language }) {
                     <label style={labelStyle}>{isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'}</label>
                     <input type="text" value={editing.nameAr}
                       onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))}
-                      style={inputStyle} disabled={editing.isSystem} />
+                      style={inputStyle} />
                   </div>
                   <div>
                     <label style={labelStyle}>{isAr ? 'الوصف' : 'Description'}</label>
                     <input type="text" value={editing.description}
                       onChange={(e) => setEditing((p) => ({ ...p, description: e.target.value }))}
-                      style={inputStyle} disabled={editing.isSystem} />
+                      style={inputStyle} />
                   </div>
                 </div>
               </div>
@@ -446,16 +446,14 @@ export default function RolesTab({ userRole, language }) {
               <PermissionMatrix
                 permissions={editing.permissions}
                 onChange={(perms) => setEditing((p) => ({ ...p, permissions: perms }))}
-                disabled={editing.isSystem}
+                disabled={false}
                 language={language}
               />
 
               <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-                {!editing.isSystem && (
-                  <button type="submit" className="noorix-btn-primary" disabled={updateMutation.isPending}>
-                    {updateMutation.isPending ? t('saving') : t('save')}
-                  </button>
-                )}
+                <button type="submit" className="noorix-btn-primary" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? t('saving') : t('save')}
+                </button>
                 <button type="button" className="noorix-btn-nav" onClick={() => setEditing(null)}>
                   {t('close')}
                 </button>

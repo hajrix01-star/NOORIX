@@ -21,6 +21,8 @@ const inputStyle = {
 export function SalesEntryModal({
   companyId,
   salesChannels,
+  salesChannelsLoading = false,
+  salesChannelsError = '',
   vatEnabled = false,
   vatRate = 0.15,
   createSummary,
@@ -193,7 +195,15 @@ export function SalesEntryModal({
 
           <div style={{ marginBottom: 18 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{t('salesChannels')}</label>
-            {salesChannels.length === 0 ? (
+            {salesChannelsLoading ? (
+              <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
+                {t('loading')}
+              </div>
+            ) : salesChannelsError ? (
+              <div style={{ padding: 16, textAlign: 'center', color: '#b91c1c', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
+                {salesChannelsError}
+              </div>
+            ) : salesChannels.length === 0 ? (
               <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
                 {t('noSalesChannels')}
               </div>
@@ -259,7 +269,7 @@ export function SalesEntryModal({
             <button
               type="button"
               className="noorix-btn-nav noorix-btn-success"
-              disabled={createSummary.isPending || totalAmount.lte(0) || salesChannels.length === 0 || !customerCount || parseInt(customerCount, 10) <= 0}
+              disabled={createSummary.isPending || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || salesChannels.length === 0 || !customerCount || parseInt(customerCount, 10) <= 0}
               onClick={handleSave}
               style={{ flex: 1, padding: '12px 16px', fontSize: 15 }}
             >

@@ -18,6 +18,7 @@ import { CompanyAccessGuard }    from '../auth/guards/company-access.guard';
 import { RolesGuard }            from '../auth/guards/roles.guard';
 import { CurrentUser, JwtUser }  from '../auth/decorators/current-user.decorator';
 import { RequirePermission }     from '../auth/decorators/require-permission.decorator';
+import { RequireAnyPermission }  from '../auth/decorators/require-any-permission.decorator';
 import { createVaultSchema, updateVaultSchema } from './dto/create-vault.dto';
 import { VaultsService }         from './vaults.service';
 import { preferQueryCompanyId }  from '../common/utils/company-request';
@@ -48,6 +49,17 @@ export class VaultsController {
       startDate,
       endDate,
     );
+  }
+
+  @Get('sales-channels')
+  @RequireAnyPermission('VIEW_SALES', 'SALES_READ', 'SALES_WRITE')
+  async findSalesChannels(
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    if (!companyId) return [];
+    return this.vaultsService.findSalesChannels(companyId);
   }
 
   @Get(':id/transactions')

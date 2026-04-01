@@ -10,7 +10,7 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useSales } from '../../hooks/useSales';
-import { useVaults } from '../../hooks/useVaults';
+import { useSalesChannels } from '../../hooks/useSalesChannels';
 import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } from '../../services/api';
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
@@ -68,7 +68,13 @@ export default function DailySalesScreen() {
     endDate: dateFilter.endDate,
     fetchList: false,
   });
-  const { salesChannels } = useVaults({ companyId });
+  const {
+    salesChannels,
+    isLoading: salesChannelsLoading,
+    isError: salesChannelsHasError,
+    error: salesChannelsError,
+    refetch: refetchSalesChannels,
+  } = useSalesChannels(companyId);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(searchInput.trim()), 300);
@@ -454,6 +460,8 @@ export default function DailySalesScreen() {
         <SalesEditModal
           summary={editingSummary}
           salesChannels={salesChannels}
+          salesChannelsLoading={salesChannelsLoading}
+          salesChannelsError={salesChannelsHasError ? (salesChannelsError?.message || t('salesChannelsLoadFailed')) : ''}
           companyId={companyId}
           vatEnabled={vatEnabled}
           vatRate={vatRate}
@@ -466,6 +474,8 @@ export default function DailySalesScreen() {
         <SalesEntryModal
           companyId={companyId}
           salesChannels={salesChannels}
+          salesChannelsLoading={salesChannelsLoading}
+          salesChannelsError={salesChannelsHasError ? (salesChannelsError?.message || t('salesChannelsLoadFailed')) : ''}
           vatEnabled={vatEnabled}
           vatRate={vatRate}
           createSummary={createSummary}
@@ -523,6 +533,30 @@ export default function DailySalesScreen() {
         >
           + {t('addDailySummary')}
         </button>
+      )}
+
+      {hasCompany && salesChannelsHasError && (
+        <div
+          className="noorix-surface-card"
+          style={{
+            padding: 14,
+            border: '1px solid rgba(239,68,68,0.2)',
+            background: 'rgba(239,68,68,0.06)',
+            color: '#b91c1c',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 600 }}>
+            {salesChannelsError?.message || t('salesChannelsLoadFailed')}
+          </div>
+          <button type="button" className="noorix-btn-nav" onClick={() => refetchSalesChannels()}>
+            {t('retryLoadSalesChannels')}
+          </button>
+        </div>
       )}
 
       <DateFilterBar filter={dateFilter} />
