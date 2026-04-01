@@ -26,7 +26,7 @@ export class VaultsService {
     startDate?: string,
     endDate?: string,
   ) {
-    const where = { companyId, ...(includeArchived ? {} : { isArchived: false }) };
+    const where = { companyId, isActive: true, ...(includeArchived ? {} : { isArchived: false }) };
 
     // ── 1. جلب الخزائن ──────────────────────────────────────
     const vaults = await this.prisma.vault.findMany({
@@ -114,7 +114,7 @@ export class VaultsService {
   async getBalancesAsOf(companyId: string, endDate: string, includeArchived = false) {
     const d = String(endDate).slice(0, 10);
     const end = new Date(`${d}T23:59:59.999Z`);
-    const where = { companyId, ...(includeArchived ? {} : { isArchived: false }) };
+    const where = { companyId, isActive: true, ...(includeArchived ? {} : { isArchived: false }) };
 
     const vaults = await this.prisma.vault.findMany({
       where,

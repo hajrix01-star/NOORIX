@@ -65,7 +65,7 @@ export class SalesController {
     @CurrentUser() user: JwtUser,
   ) {
     if (!companyId) throw new Error('companyId مطلوب');
-    return this.salesService.removePermanently(id, companyId, user.sub);
+    return this.salesService.cancelSummary(id, companyId, user.sub);
   }
 
   @Get('summaries')

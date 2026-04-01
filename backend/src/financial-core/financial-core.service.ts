@@ -985,13 +985,16 @@ export class FinancialCoreService {
     if (!ids.length) return;
     const vaults = await tx.vault.findMany({
       where: { id: { in: ids }, companyId },
-      select: { id: true, nameAr: true, isSalesChannel: true, isArchived: true },
+      select: { id: true, nameAr: true, isActive: true, isSalesChannel: true, isArchived: true },
     });
     const byId = new Map(vaults.map((v) => [v.id, v]));
     for (const id of ids) {
       const v = byId.get(id);
       if (!v) {
         throw new NotFoundException(`الخزنة غير موجودة أو لا تنتمي لهذه الشركة`);
+      }
+      if (v.isActive === false) {
+        throw new BadRequestException(`الخزينة «${v.nameAr}» غير نشطة ولا يمكن استخدامها في المبيعات.`);
       }
       if (v.isArchived) {
         throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة ولا يمكن استخدامها في المبيعات.`);
@@ -1006,10 +1009,13 @@ export class FinancialCoreService {
   private async _assertVaultUsableForPaymentOutflow(tx: TxClient, companyId: string, vaultId: string) {
     const v = await tx.vault.findFirst({
       where: { id: vaultId, companyId },
-      select: { id: true, nameAr: true, showAsPaymentMethod: true, isArchived: true },
+      select: { id: true, nameAr: true, isActive: true, showAsPaymentMethod: true, isArchived: true },
     });
     if (!v) {
       throw new NotFoundException(`الخزنة غير موجودة أو لا تنتمي لهذه الشركة`);
+    }
+    if (v.isActive === false) {
+      throw new BadRequestException(`الخزينة «${v.nameAr}» غير نشطة ولا يمكن السداد منها.`);
     }
     if (v.isArchived) {
       throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة ولا يمكن السداد منها.`);

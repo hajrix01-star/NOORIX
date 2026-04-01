@@ -126,6 +126,6 @@ export class InvoiceController {
     @Query('companyId') companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    return this.invoiceService.removePermanently(id, companyId, user.sub);
+    return this.invoiceService.update(id, { status: 'cancelled' }, companyId, user.sub);
   }
 }

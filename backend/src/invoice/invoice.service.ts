@@ -231,60 +231,6 @@ export class InvoiceService {
     });
   }
 
-  async removePermanently(id: string, companyId: string, userId?: string | null) {
-    const tenantId = TenantContext.tryGetTenantId() ?? '';
-    return this.prisma.$transaction(async (tx) => {
-      const invoice = await tx.invoice.findFirst({
-        where: { id, companyId },
-      });
-      if (!invoice) throw new NotFoundException('الفاتورة غير موجودة');
-
-      const oldValue = AuditLogService.invoiceToSnapshot(invoice as Parameters<typeof AuditLogService.invoiceToSnapshot>[0]);
-
-      if (invoice.kind === 'sale' && invoice.dailySalesSummaryId) {
-        await tx.ledgerEntry.deleteMany({
-          where: {
-            companyId,
-            referenceType: 'sale',
-            referenceId: invoice.dailySalesSummaryId,
-          },
-        });
-        await tx.invoice.delete({ where: { id } });
-        await tx.dailySalesSummary.delete({ where: { id: invoice.dailySalesSummaryId } });
-      } else {
-        const referenceType = invoice.kind === 'salary'
-          ? 'salary'
-          : invoice.kind === 'advance'
-            ? 'advance'
-            : 'invoice';
-        await tx.ledgerEntry.deleteMany({
-          where: {
-            companyId,
-            referenceType,
-            referenceId: id,
-          },
-        });
-        await tx.invoice.delete({ where: { id } });
-      }
-
-      await tx.auditLog.create({
-        data: {
-          tenantId,
-          companyId,
-          userId: userId ?? null,
-          action: 'delete',
-          entity: 'invoice',
-          entityId: id,
-          oldValue: oldValue as Prisma.InputJsonValue,
-          newValue: { deleted: true, deletedBy: userId ?? null } as Prisma.InputJsonValue,
-          createdAt: nowSaudi(),
-        },
-      });
-
-      return { success: true, deleted: true, id };
-    });
-  }
-
   async findOne(id: string, companyId: string) {
     return this.prisma.invoice.findFirstOrThrow({
       where:   { id, companyId },

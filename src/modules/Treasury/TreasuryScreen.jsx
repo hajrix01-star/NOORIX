@@ -96,14 +96,14 @@ export default function TreasuryScreen() {
     deleteMutation.mutate(v.id);
   };
 
-  const salesChannels  = useMemo(() => vaultsList.filter((v) =>  v.isSalesChannel && !v.isArchived), [vaultsList]);
-  const otherVaults    = useMemo(() => vaultsList.filter((v) => !v.isSalesChannel && !v.isArchived), [vaultsList]);
+  const salesChannels  = useMemo(() => vaultsList.filter((v) => v.isActive !== false && v.isSalesChannel && !v.isArchived), [vaultsList]);
+  const otherVaults    = useMemo(() => vaultsList.filter((v) => v.isActive !== false && !v.isSalesChannel && !v.isArchived), [vaultsList]);
   const archivedVaults = useMemo(
-    () => includeArchived ? vaultsList.filter((v) => v.isArchived) : [],
+    () => includeArchived ? vaultsList.filter((v) => v.isActive !== false && v.isArchived) : [],
     [vaultsList, includeArchived],
   );
   const totalBalance   = useMemo(
-    () => sumAmounts(vaultsList.filter((v) => !v.isArchived), 'balance').toNumber(),
+    () => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'balance').toNumber(),
     [vaultsList],
   );
 
@@ -119,8 +119,8 @@ export default function TreasuryScreen() {
   const hasCompany = !!companyId;
 
   /* الإجمالي الكلي وارد/صادر */
-  const totalIn  = useMemo(() => sumAmounts(vaultsList.filter((v) => !v.isArchived), 'totalIn').toNumber(),  [vaultsList]);
-  const totalOut = useMemo(() => sumAmounts(vaultsList.filter((v) => !v.isArchived), 'totalOut').toNumber(), [vaultsList]);
+  const totalIn  = useMemo(() => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'totalIn').toNumber(),  [vaultsList]);
+  const totalOut = useMemo(() => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'totalOut').toNumber(), [vaultsList]);
 
   const gridStyle = {
     display: 'grid',

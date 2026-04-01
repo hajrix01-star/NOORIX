@@ -47,12 +47,13 @@ export class HRService {
     if (!ids.length) return;
     const vaults = await this.prisma.vault.findMany({
       where: { id: { in: ids }, companyId },
-      select: { id: true, nameAr: true, showAsPaymentMethod: true, isArchived: true },
+      select: { id: true, nameAr: true, isActive: true, showAsPaymentMethod: true, isArchived: true },
     });
     const byId = new Map(vaults.map((v) => [v.id, v]));
     for (const id of ids) {
       const v = byId.get(id);
       if (!v) throw new BadRequestException('خزنة غير موجودة أو لا تنتمي للشركة.');
+      if (v.isActive === false) throw new BadRequestException(`الخزينة «${v.nameAr}» غير نشطة.`);
       if (v.isArchived) throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة.`);
       if (v.showAsPaymentMethod === false) {
         throw new BadRequestException(

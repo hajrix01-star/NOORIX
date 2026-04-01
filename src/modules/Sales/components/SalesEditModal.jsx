@@ -44,6 +44,19 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
     setChannelAmounts(ch);
   }, [summary]);
 
+  const mergedSalesChannels = useMemo(() => {
+    const live = Array.isArray(salesChannels) ? salesChannels : [];
+    const legacy = (summary?.channels || [])
+      .filter((c) => c?.vaultId && !live.some((v) => v.id === c.vaultId))
+      .map((c) => ({
+        id: c.vaultId,
+        nameAr: c.vault?.nameAr || 'قناة سابقة',
+        type: c.vault?.type || 'cash',
+        isLegacyDisabled: true,
+      }));
+    return [...live, ...legacy];
+  }, [salesChannels, summary]);
+
   const totalAmount = Object.values(channelAmounts).reduce(
     (s, v) => s.plus(new Decimal(v || 0)),
     new Decimal(0),
@@ -58,7 +71,12 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
 
   async function handleSave() {
     setError('');
-    const channels = salesChannels
+    const blockedLegacyChannels = mergedSalesChannels.filter((v) => v.isLegacyDisabled && parseFloat(channelAmounts[v.id]) > 0);
+    if (blockedLegacyChannels.length > 0) {
+      setError('بعض القنوات المستخدمة سابقاً لم تعد مفعلة كقنوات بيع. أعد تفعيلها من الخزائن أو وزّع المبلغ على القنوات الحالية.');
+      return;
+    }
+    const channels = mergedSalesChannels
       .filter((v) => parseFloat(channelAmounts[v.id]) > 0)
       .map((v) => ({ vaultId: v.id, amount: channelAmounts[v.id] }));
     if (channels.length === 0) {
@@ -140,13 +158,13 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
             <div style={{ padding: 16, textAlign: 'center', color: '#b91c1c', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
               {salesChannelsError}
             </div>
-          ) : salesChannels.length === 0 ? (
+          ) : mergedSalesChannels.length === 0 ? (
             <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
               لا توجد قنوات بيع مفعّلة.
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
-              {salesChannels.map((v) => {
+              {mergedSalesChannels.map((v) => {
                 const c = CHANNEL_COLORS[v.type] || CHANNEL_COLORS.cash;
                 const amt = channelAmounts[v.id] ?? '';
                 return (
@@ -155,6 +173,11 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
                       <span style={{ fontSize: 16 }}>{c.icon}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: 12 }}>{vaultDisplayName(v, lang)}</div>
+                        {v.isLegacyDisabled && (
+                          <div style={{ marginTop: 2, fontSize: 10, color: '#b45309', fontWeight: 700 }}>
+                            قناة قديمة غير مفعلة حالياً
+                          </div>
+                        )}
                       </div>
                     </div>
                     <input
@@ -164,7 +187,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
                       value={amt}
                       onChange={(e) => setChannelAmounts((p) => ({ ...p, [v.id]: e.target.value }))}
                       placeholder="0.00"
-                      style={{ width: '100%', padding: '6px 8px', borderRadius: 7, fontSize: 15, fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', border: `1px solid ${c.border}55`, background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '6px 8px', borderRadius: 7, fontSize: 15, fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', border: `1px solid ${c.border}55`, background: v.isLegacyDisabled ? 'var(--noorix-bg-muted)' : 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', boxSizing: 'border-box' }}
                     />
                   </div>
                 );
@@ -209,7 +232,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
           <button
             type="button"
             className="noorix-btn-nav noorix-btn-success"
-            disabled={saving || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || salesChannels.length === 0}
+            disabled={saving || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || mergedSalesChannels.length === 0}
             onClick={handleSave}
             style={{ flex: 1 }}
           >
