@@ -44,6 +44,10 @@ function toDayKey(date) {
   return new Date(date).toISOString().slice(0, 10);
 }
 
+function ceilAmount(value) {
+  return Math.max(0, Math.ceil(Number(value) || 0));
+}
+
 export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose }) {
   const { t } = useTranslation();
   const { activeCompanyId } = useApp();
@@ -216,7 +220,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     const gross = totalSalary(emp, customSum);
     const workDays = Math.max(1, parseOvertimeWorkDaysPerMonth(emp));
     const appliedDays = Math.min(leaveDays, workDays);
-    const leaveDeduction = Math.min(gross, (gross * appliedDays) / workDays);
+    const leaveDeduction = Math.min(gross, ceilAmount((gross * appliedDays) / workDays));
     return { leaveDays: appliedDays, leaveDeduction };
   }
 
@@ -232,7 +236,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       const netSalary = Math.max(0, baseBeforeDeduction - deductions - advancesDeduct);
       const notesParts = [];
       if (advMeta.datesLabel) notesParts.push(`تواريخ السلف: ${advMeta.datesLabel}`);
-      if (leaveDays > 0) notesParts.push(`خصم إجازة: ${hrFmt(leaveDays)} يوم`);
+      if (leaveDays > 0) notesParts.push(`خصم إجازة بسبب ${hrFmt(leaveDays)} يوم: ${hrFmt(leaveDeduction)}`);
       return {
         employeeId: emp.id,
         employeeName: emp.name || emp.nameAr || '—',
@@ -335,7 +339,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       const { leaveDays, leaveDeduction } = getLeaveDeductionMeta(emp);
       const notesParts = [];
       if (advMeta.datesLabel) notesParts.push(`تواريخ السلف: ${advMeta.datesLabel}`);
-      if (leaveDays > 0) notesParts.push(`خصم إجازة: ${hrFmt(leaveDays)} يوم`);
+      if (leaveDays > 0) notesParts.push(`خصم إجازة بسبب ${hrFmt(leaveDays)} يوم: ${hrFmt(leaveDeduction)}`);
       setItems((prev) => [...prev, {
         employeeId: emp.id,
         employeeName: emp.name || emp.nameAr || '—',
