@@ -254,70 +254,96 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
 
   const totalNet = items.reduce((s, i) => s + (i.netSalary ?? 0), 0);
 
+  const selectInput = (e) => {
+    try {
+      e.target.select();
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
     <div
       className="modal-overlay"
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 12 }}
       onClick={onClose}
+      role="presentation"
     >
       <div
-        className="noorix-surface-card"
-        style={{ padding: 24, maxWidth: 720, width: '95%', maxHeight: '90vh', overflow: 'auto' }}
+        className="noorix-surface-card prfm-modal-root"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-labelledby="prfm-modal-title"
+        aria-modal="true"
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>{t('createPayrollRun')}</h3>
-
-        <form onSubmit={handleSubmit}>
-          <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.55 }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--noorix-border)', flexShrink: 0 }}>
+          <h3 id="prfm-modal-title" style={{ margin: 0, fontSize: 19, fontWeight: 800, letterSpacing: '-0.02em' }}>
+            {t('createPayrollRun')}
+          </h3>
+          <p style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6, maxWidth: '72ch' }}>
             {t('payrollGrossFixedPackageHint')}
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('payrollMonth')}</label>
-              <input
-                type="month"
-                value={payrollMonth ? payrollMonth.slice(0, 7) : ''}
-                onChange={(e) => setPayrollMonth(e.target.value ? `${e.target.value}-01` : defaultMonth)}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-              />
-              {alreadyExists && (
-                <span style={{ fontSize: 12, color: '#f59e0b', marginTop: 4, display: 'block' }}>
-                  {t('payrollMonthExists') || 'مسيرة لهذا الشهر موجودة'}
-                </span>
-              )}
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('notes')}</label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder={t('notes')}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-              />
+        </div>
+
+        <form className="prfm-modal-form" onSubmit={handleSubmit}>
+          <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('payrollMonth')}</label>
+                <input
+                  type="month"
+                  className="prfm-modal-field"
+                  value={payrollMonth ? payrollMonth.slice(0, 7) : ''}
+                  onChange={(e) => setPayrollMonth(e.target.value ? `${e.target.value}-01` : defaultMonth)}
+                />
+                {alreadyExists && (
+                  <span style={{ fontSize: 12, color: 'var(--noorix-accent-amber)', marginTop: 6, display: 'block', fontWeight: 600 }}>
+                    {t('payrollMonthExists') || 'مسيرة لهذا الشهر موجودة'}
+                  </span>
+                )}
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('notes')}</label>
+                <input
+                  type="text"
+                  className="prfm-modal-field"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder={t('notes')}
+                />
+              </div>
             </div>
           </div>
 
-          <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>{t('employeesList')} ({items.length})</span>
+          <div
+            style={{
+              padding: '14px 24px 10px',
+              flexShrink: 0,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 10,
+            }}
+          >
+            <span style={{ fontSize: 14, fontWeight: 700 }}>{t('employeesList')} ({items.length})</span>
             <button type="button" className="noorix-btn-nav" onClick={initItems}>
               {t('refresh') || 'تحديث'}
             </button>
           </div>
 
-          <div className="noorix-table-frame" style={{ overflowX: 'auto', maxHeight: 280, border: '1px solid var(--noorix-border)', borderRadius: 8, marginBottom: 16 }}>
-            <table className="noorix-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <div className="prfm-modal-scroll" style={{ margin: '0 24px' }}>
+            <table>
               <thead>
-                <tr style={{ background: 'var(--noorix-bg-page)' }}>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid var(--noorix-border)' }}>{t('employeeName')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid var(--noorix-border)' }}>{t('payrollAdvanceDates')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid var(--noorix-border)' }}>{t('grossSalary')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid var(--noorix-border)' }}>{t('payrollAllowances')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid var(--noorix-border)' }}>{t('payrollDeductions')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid var(--noorix-border)' }}>{t('payrollAdvances')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid var(--noorix-border)' }}>{t('payrollDeferAdvanceDeduct')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid var(--noorix-border)' }}>{t('netSalary')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid var(--noorix-border)' }}>—</th>
+                <tr>
+                  <th style={{ minWidth: 200 }}>{t('employeeName')}</th>
+                  <th>{t('payrollAdvanceDates')}</th>
+                  <th>{t('grossSalary')}</th>
+                  <th>{t('payrollAllowances')}</th>
+                  <th>{t('payrollDeductions')}</th>
+                  <th>{t('payrollAdvances')}</th>
+                  <th style={{ textAlign: 'center' }}>{t('payrollDeferAdvanceDeduct')}</th>
+                  <th>{t('netSalary')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -325,63 +351,83 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
                   const idx = items.findIndex((i) => i.employeeId === emp.id);
                   const included = idx >= 0;
                   return (
-                    <tr key={emp.id} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
-                      <td style={{ padding: '6px 10px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                    <tr key={emp.id}>
+                      <td>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', lineHeight: 1.45 }}>
                           <input
                             type="checkbox"
                             checked={included}
                             onChange={() => toggleInclude(emp)}
+                            style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
+                            aria-label={t('employeeName')}
                           />
-                          <span>{emp.name || emp.nameAr || '—'}</span>
+                          <span style={{ fontWeight: included ? 600 : 400 }}>{emp.name || emp.nameAr || '—'}</span>
                         </label>
                       </td>
                       {included ? (
                         <>
-                          <td style={{ padding: '6px 10px', color: 'var(--noorix-text-muted)' }}>{items[idx].advanceDates || '—'}</td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(items[idx].grossSalary)}</td>
-                          <td style={{ padding: '6px 10px' }}>
+                          <td style={{ color: 'var(--noorix-text-muted)', fontSize: 12, maxWidth: 160, lineHeight: 1.45 }} title={items[idx].advanceDates || ''}>
+                            {items[idx].advanceDates || '—'}
+                          </td>
+                          <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>{hrFmt(items[idx].grossSalary)}</td>
+                          <td>
                             <input
                               type="number"
-                              step="0.01"
-                              min="0"
+                              inputMode="decimal"
+                              step={1}
+                              min={0}
+                              className="prfm-modal-num"
                               value={items[idx].allowancesAdd ?? 0}
                               onChange={(e) => updateItem(idx, 'allowancesAdd', e.target.value)}
-                              style={{ width: 70, padding: '4px 6px', fontSize: 12, textAlign: 'right' }}
+                              onFocus={selectInput}
+                              aria-label={t('payrollAllowances')}
                             />
                           </td>
-                          <td style={{ padding: '6px 10px' }}>
+                          <td>
                             <input
                               type="number"
-                              step="0.01"
-                              min="0"
+                              inputMode="decimal"
+                              step={1}
+                              min={0}
+                              className="prfm-modal-num"
                               value={items[idx].deductions ?? 0}
                               onChange={(e) => updateItem(idx, 'deductions', e.target.value)}
-                              style={{ width: 70, padding: '4px 6px', fontSize: 12, textAlign: 'right' }}
+                              onFocus={selectInput}
+                              aria-label={t('payrollDeductions')}
                             />
                           </td>
-                          <td style={{ padding: '6px 10px' }}>
+                          <td>
                             <input
                               type="number"
-                              step="0.01"
-                              min="0"
+                              inputMode="decimal"
+                              step={1}
+                              min={0}
+                              className="prfm-modal-num"
                               value={items[idx].advancesDeduct ?? 0}
                               onChange={(e) => updateItem(idx, 'advancesDeduct', e.target.value)}
                               disabled={items[idx].deferAdvances}
-                              style={{ width: 70, padding: '4px 6px', fontSize: 12, textAlign: 'right' }}
+                              onFocus={selectInput}
+                              aria-label={t('payrollAdvances')}
                             />
                           </td>
-                          <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                            <input type="checkbox" checked={!!items[idx].deferAdvances} onChange={() => toggleDefer(idx)} />
+                          <td style={{ textAlign: 'center' }}>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', padding: '6px 4px' }}>
+                              <input
+                                type="checkbox"
+                                checked={!!items[idx].deferAdvances}
+                                onChange={() => toggleDefer(idx)}
+                                style={{ width: 18, height: 18 }}
+                                aria-label={t('payrollDeferAdvanceDeduct')}
+                              />
+                            </label>
                           </td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600 }}>{hrFmt(items[idx].netSalary)}</td>
+                          <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, fontSize: 14, whiteSpace: 'nowrap' }}>{hrFmt(items[idx].netSalary)}</td>
                         </>
                       ) : (
-                        <>
-                          <td colSpan={7} style={{ padding: '6px 10px', color: 'var(--noorix-text-muted)' }}>—</td>
-                        </>
+                        <td colSpan={7} style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>
+                          —
+                        </td>
                       )}
-                      <td style={{ padding: '6px 10px', textAlign: 'center' }}>—</td>
                     </tr>
                   );
                 })}
@@ -389,26 +435,42 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
             </table>
           </div>
 
-          <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 15 }}>
-            {t('payrollTotal')}: {hrFmt(totalNet)}
-          </div>
-
           {error && (
-            <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
+            <div
+              style={{
+                margin: '12px 24px 0',
+                padding: '12px 14px',
+                background: 'rgba(239,68,68,0.12)',
+                borderRadius: 10,
+                border: '1px solid rgba(239,68,68,0.25)',
+                color: 'var(--noorix-accent-red)',
+                fontSize: 13,
+                fontWeight: 600,
+                flexShrink: 0,
+              }}
+              role="alert"
+            >
               {error}
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
-            <button
-              type="submit"
-              className="noorix-btn-nav"
-              style={{ background: 'var(--btn-primary-bg)', color: '#fff' }}
-              disabled={submitting || items.length === 0 || alreadyExists}
-            >
-              {submitting ? t('saving') : t('create') || 'إنشاء'}
-            </button>
+          <div className="prfm-modal-footer" style={{ marginTop: 'auto' }}>
+            <div style={{ fontWeight: 800, fontSize: 'clamp(15px, 2.4vw, 17px)', fontFamily: 'var(--noorix-font-numbers)' }}>
+              {t('payrollTotal')}: {hrFmt(totalNet)}
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button type="button" className="noorix-btn-nav" onClick={onClose}>
+                {t('cancel')}
+              </button>
+              <button
+                type="submit"
+                className="noorix-btn-nav"
+                style={{ background: 'var(--btn-primary-bg)', color: '#fff', minWidth: 120, fontWeight: 700 }}
+                disabled={submitting || items.length === 0 || alreadyExists}
+              >
+                {submitting ? t('saving') : t('create') || 'إنشاء'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
