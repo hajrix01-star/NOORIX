@@ -48,6 +48,7 @@ export default function InvoicesListScreen() {
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
+  const [showCancelled, setShowCancelled] = useState(false);
   const [urlExtra, setUrlExtra] = useState({ kind: '', categoryId: '', expenseLineId: '' });
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('transactionDate');
@@ -65,7 +66,7 @@ export default function InvoicesListScreen() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId, urlExtra.kind, urlExtra.categoryId, urlExtra.expenseLineId]);
+  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId, showCancelled, urlExtra.kind, urlExtra.categoryId, urlExtra.expenseLineId]);
 
   useEffect(() => {
     const keys = ['from', 'to', 'kind', 'supplierId', 'categoryId', 'expenseLineId', 'q'];
@@ -207,6 +208,7 @@ export default function InvoicesListScreen() {
     q: debouncedQ || undefined,
     categoryId: urlExtra.categoryId || undefined,
     expenseLineId: urlExtra.expenseLineId || undefined,
+    includeCancelled: showCancelled,
   });
 
   // بيانات مُحوَّلة لـ SmartTable
@@ -471,6 +473,24 @@ export default function InvoicesListScreen() {
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               استيراد / تصدير
+            </button>
+            <button
+              type="button"
+              className="noorix-btn-nav"
+              onClick={() => setShowCancelled((v) => !v)}
+              style={{
+                fontSize: 12,
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                flexShrink: 0,
+                color: showCancelled ? '#dc2626' : 'var(--noorix-text)',
+                borderColor: showCancelled ? 'rgba(220,38,38,0.25)' : undefined,
+                background: showCancelled ? 'rgba(220,38,38,0.06)' : undefined,
+              }}
+            >
+              {showCancelled ? t('hideCancelledInvoices') : t('showCancelledInvoices')}
             </button>
             <span className="noorix-exec-filters__icon" title={t('filterByType')} aria-hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="4 2 20 2 14 10 14 22 10 22 10 10 4 2"/></svg>

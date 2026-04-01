@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getVaults,
+  getPaymentVaults,
   createVault,
   updateVault,
   archiveVault,
@@ -29,6 +30,17 @@ export function useVaults({ companyId, includeArchived = false }) {
     enabled: !!companyId,
   });
 
+  const { data: paymentVaults = [], isLoading: paymentVaultsLoading } = useQuery({
+    queryKey: ['payment-vaults', companyId],
+    queryFn: async () => {
+      const res = await getPaymentVaults(companyId);
+      if (!res?.success) return [];
+      const d = res.data;
+      return Array.isArray(d) ? d : (d?.items ?? []);
+    },
+    enabled: !!companyId,
+  });
+
   const salesChannels = useMemo(
     () =>
       vaultsList.filter(
@@ -37,14 +49,11 @@ export function useVaults({ companyId, includeArchived = false }) {
     [vaultsList],
   );
 
-  /** خزائن تظهر في قوائم السداد (مبيعات، مشتريات، مصاريف، HR، استيراد، …) */
-  const paymentVaults = useMemo(
-    () => vaultsList.filter((v) => v.isActive !== false && !v.isArchived && v.showAsPaymentMethod !== false),
-    [vaultsList],
-  );
-
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['vaults', companyId] });
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['vaults', companyId] }),
+      queryClient.invalidateQueries({ queryKey: ['payment-vaults', companyId] }),
+    ]);
 
   const createMutation = useMutation({
     mutationFn: (body) => createVault({ ...body, companyId }),
@@ -70,7 +79,7 @@ export function useVaults({ companyId, includeArchived = false }) {
     vaultsList,
     salesChannels,
     paymentVaults,
-    isLoading,
+    isLoading: isLoading || paymentVaultsLoading,
     create:  createMutation,
     update:  updateMutation,
     archive: archiveMutation,

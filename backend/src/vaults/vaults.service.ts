@@ -107,6 +107,21 @@ export class VaultsService {
     return vaults;
   }
 
+  async findPaymentOptions(companyId: string) {
+    const vaults = await this.prisma.vault.findMany({
+      where: {
+        companyId,
+        isActive: true,
+        isArchived: false,
+        showAsPaymentMethod: true,
+      },
+      orderBy: [{ nameAr: 'asc' }],
+      include: { account: { select: { id: true, code: true, nameAr: true } } },
+    });
+
+    return vaults;
+  }
+
   /**
    * أرصدة الخزائن حتى نهاية يوم محدد (شامل) — مجموع القيود الفعّالة حتى 23:59:59 UTC لذلك اليوم.
    * يُستخدم في تقرير نهاية اليوم لعرض «الرصيد في نهاية اليوم» وليس الرصيد اللحظي الحالي.

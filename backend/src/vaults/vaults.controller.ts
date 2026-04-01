@@ -62,6 +62,28 @@ export class VaultsController {
     return this.vaultsService.findSalesChannels(companyId);
   }
 
+  @Get('payment-options')
+  @RequireAnyPermission(
+    'VIEW_INVOICES',
+    'INVOICES_READ',
+    'INVOICES_WRITE',
+    'VIEW_EXPENSES',
+    'EXPENSES_READ',
+    'EXPENSES_WRITE',
+    'HR_READ',
+    'HR_WRITE',
+    'EMPLOYEES_READ',
+    'EMPLOYEES_WRITE',
+  )
+  async findPaymentOptions(
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    if (!companyId) return [];
+    return this.vaultsService.findPaymentOptions(companyId);
+  }
+
   @Get(':id/transactions')
   @RequirePermission('VAULTS_READ')
   async findTransactions(

@@ -80,6 +80,7 @@ export class InvoiceController {
     @Query('sortBy')      sortBy?:     string,
     @Query('sortDir')     sortDir?:    string,
     @Query('q')           q?:          string,
+    @Query('includeCancelled') includeCancelled?: string,
   ) {
     return this.invoiceService.findAll(
       companyId,
@@ -96,6 +97,7 @@ export class InvoiceController {
       sortBy,
       sortDir,
       q,
+      includeCancelled === '1' || includeCancelled === 'true',
     );
   }
 

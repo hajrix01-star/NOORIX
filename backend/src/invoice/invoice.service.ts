@@ -253,6 +253,7 @@ export class InvoiceService {
     sortBy = 'transactionDate',
     sortDir: 'asc' | 'desc' | string = 'desc',
     q?: string,
+    includeCancelled = true,
   ) {
     // معالجة التواريخ: YYYY-MM-DD → بداية اليوم ونهاية اليوم (UTC) — مطابق لـ SalesService
     const dateFilter =
@@ -320,6 +321,7 @@ export class InvoiceService {
 
     const where = {
       companyId,
+      ...(includeCancelled ? {} : { status: 'active' }),
       ...dateFilter,
       ...batchFilter,
       ...employeeFilter,

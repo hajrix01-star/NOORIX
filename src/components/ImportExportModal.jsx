@@ -27,6 +27,7 @@ import {
   createInvoice,
   createEmployeesBatch,
   createDailySalesSummary,
+  getPaymentVaults,
 } from '../services/api';
 
 // ─── Config per entity type ──────────────────────────────────────────────────
@@ -343,7 +344,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     if (!isOpen || !companyId) return;
     setLookupsLoading(true);
     const promises = [
-      apiGet('/api/v1/vaults', { companyId, includeArchived: false }).catch(() => ({})),
+      getPaymentVaults(companyId).catch(() => ({})),
     ];
     if (entityType === 'invoices') {
       promises.push(
@@ -354,9 +355,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     }
     Promise.all(promises)
       .then(([vaultsRes, suppliersRes, categoriesRes, expLinesRes]) => {
-        const rawVaults = Array.isArray(vaultsRes) ? vaultsRes : (vaultsRes?.items ?? []);
+        const rawVaults = Array.isArray(vaultsRes?.data) ? vaultsRes.data : (vaultsRes?.data?.items ?? []);
         setLookups({
-          vaults: rawVaults.filter((v) => v.isActive !== false && v.showAsPaymentMethod !== false),
+          vaults: rawVaults,
           suppliers: Array.isArray(suppliersRes) ? suppliersRes : (suppliersRes?.items ?? []),
           categories: Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes?.items ?? []),
           expenseLines: Array.isArray(expLinesRes) ? expLinesRes : (expLinesRes?.items ?? []),

@@ -45,6 +45,8 @@ export default {
   filterAllTypes: { ar: 'جميع الأنواع', en: 'All types' },
   filterByType: { ar: 'نوع الفاتورة', en: 'Invoice type' },
   filterBySupplier: { ar: 'المورد', en: 'Supplier' },
+  showCancelledInvoices: { ar: 'إظهار الفواتير الملغاة', en: 'Show cancelled invoices' },
+  hideCancelledInvoices: { ar: 'إخفاء الفواتير الملغاة', en: 'Hide cancelled invoices' },
 
   dayCloseTitle: { ar: 'تقرير نهاية اليوم', en: 'End-of-day report' },
   dayCloseOpenBtn: { ar: 'تقرير نهاية اليوم', en: 'End-of-day report' },

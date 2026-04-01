@@ -751,6 +751,9 @@ export async function getVaults(companyId, includeArchived = false, startDate, e
   if (endDate) params.endDate = String(endDate).slice(0, 25);
   return apiGet('/api/v1/vaults', params);
 }
+export async function getPaymentVaults(companyId) {
+  return apiGet('/api/v1/vaults/payment-options', { companyId });
+}
 export async function getSalesChannels(companyId) {
   return apiGet('/api/v1/vaults/sales-channels', { companyId });
 }
@@ -1017,7 +1020,7 @@ export async function updateInvoice(id, body, companyId) {
 export async function deleteInvoice(id, companyId) {
   return apiDelete(`/api/v1/invoices/${id}?companyId=${companyId}`);
 }
-export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId) {
+export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled = true) {
   const params = { companyId, page: String(page), pageSize: String(pageSize) };
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
   if (startDate) params.startDate = String(startDate).slice(0, 10);
@@ -1030,6 +1033,7 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
   if (supplierId) params.supplierId = supplierId;
   if (categoryId) params.categoryId = categoryId;
   if (expenseLineId) params.expenseLineId = expenseLineId;
+  params.includeCancelled = includeCancelled ? 'true' : 'false';
   if (q && String(q).trim()) params.q = String(q).trim();
   const res = await apiGet('/api/v1/invoices', params);
   if (!res.success) return res;
