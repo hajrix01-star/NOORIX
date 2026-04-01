@@ -11,7 +11,7 @@ import { createPayrollRun, updatePayrollRun } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
-import { totalSalary } from '../utils/employeeSalaryMath';
+import { parseOvertimeWorkDaysPerMonth, totalSalary } from '../utils/employeeSalaryMath';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -38,6 +38,10 @@ function monthRange(dateStr) {
   end.setDate(0);
   end.setHours(23, 59, 59, 999);
   return { start, end };
+}
+
+function toDayKey(date) {
+  return new Date(date).toISOString().slice(0, 10);
 }
 
 export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose }) {
@@ -135,23 +139,32 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     return (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
   }, [employees]);
 
-  const employeesOnLeaveSet = useMemo(() => {
+  const leaveDaysByEmployee = useMemo(() => {
     const { start, end } = monthRange(payrollMonth || defaultMonth);
-    const set = new Set();
+    const map = new Map();
     for (const leave of leaves || []) {
       if (!leave?.employeeId || leave.status !== 'approved') continue;
-      const leaveStart = new Date(leave.startDate);
-      const leaveEnd = new Date(leave.endDate);
-      if (leaveStart <= end && leaveEnd >= start) {
-        set.add(leave.employeeId);
+      const overlapStart = new Date(Math.max(new Date(leave.startDate).getTime(), start.getTime()));
+      const overlapEnd = new Date(Math.min(new Date(leave.endDate).getTime(), end.getTime()));
+      if (overlapStart > overlapEnd) continue;
+      const days = map.get(leave.employeeId) || new Set();
+      const cursor = new Date(overlapStart);
+      cursor.setHours(0, 0, 0, 0);
+      overlapEnd.setHours(0, 0, 0, 0);
+      while (cursor <= overlapEnd) {
+        days.add(toDayKey(cursor));
+        cursor.setDate(cursor.getDate() + 1);
       }
+      map.set(leave.employeeId, days);
     }
-    return set;
+    return map;
   }, [leaves, payrollMonth, defaultMonth]);
 
   const eligibleEmployees = useMemo(() => {
-    return activeEmployees.filter((e) => e.status !== 'on_leave' && !employeesOnLeaveSet.has(e.id));
-  }, [activeEmployees, employeesOnLeaveSet]);
+    const { start, end } = monthRange(payrollMonth || defaultMonth);
+    const daysInMonth = Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+    return activeEmployees.filter((e) => (leaveDaysByEmployee.get(e.id)?.size || 0) < daysInMonth);
+  }, [activeEmployees, leaveDaysByEmployee, payrollMonth, defaultMonth]);
 
   const displayEmployees = useMemo(() => {
     const map = new Map();
@@ -196,6 +209,17 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     };
   }
 
+  function getLeaveDeductionMeta(emp) {
+    const leaveDays = leaveDaysByEmployee.get(emp.id)?.size || 0;
+    if (!leaveDays) return { leaveDays: 0, leaveDeduction: 0 };
+    const customSum = allowanceTotals.get(emp.id) || 0;
+    const gross = totalSalary(emp, customSum);
+    const workDays = Math.max(1, parseOvertimeWorkDaysPerMonth(emp));
+    const appliedDays = Math.min(leaveDays, workDays);
+    const leaveDeduction = Math.min(gross, (gross * appliedDays) / workDays);
+    return { leaveDays: appliedDays, leaveDeduction };
+  }
+
   const initItems = () => {
     const list = eligibleEmployees.map((emp) => {
       const customSum = allowanceTotals.get(emp.id) || 0;
@@ -203,8 +227,12 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       const advMeta = getAdvanceMetaForEmployee(emp.id);
       const advancesDeduct = Number(advMeta.dueAmount || 0);
       const baseBeforeDeduction = gross;
-      const deductions = 0;
+      const { leaveDays, leaveDeduction } = getLeaveDeductionMeta(emp);
+      const deductions = leaveDeduction;
       const netSalary = Math.max(0, baseBeforeDeduction - deductions - advancesDeduct);
+      const notesParts = [];
+      if (advMeta.datesLabel) notesParts.push(`تواريخ السلف: ${advMeta.datesLabel}`);
+      if (leaveDays > 0) notesParts.push(`خصم إجازة: ${hrFmt(leaveDays)} يوم`);
       return {
         employeeId: emp.id,
         employeeName: emp.name || emp.nameAr || '—',
@@ -215,7 +243,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
         netSalary,
         deferAdvances: false,
         advanceDates: advMeta.datesLabel,
-        notes: advMeta.datesLabel ? `تواريخ السلف: ${advMeta.datesLabel}` : '',
+        notes: notesParts.join(' | '),
       };
     });
     setItems(list);
@@ -304,17 +332,21 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       const gross = totalSalary(emp, customSum);
       const advMeta = getAdvanceMetaForEmployee(emp.id);
       const advancesDeduct = Number(advMeta.dueAmount || 0);
+      const { leaveDays, leaveDeduction } = getLeaveDeductionMeta(emp);
+      const notesParts = [];
+      if (advMeta.datesLabel) notesParts.push(`تواريخ السلف: ${advMeta.datesLabel}`);
+      if (leaveDays > 0) notesParts.push(`خصم إجازة: ${hrFmt(leaveDays)} يوم`);
       setItems((prev) => [...prev, {
         employeeId: emp.id,
         employeeName: emp.name || emp.nameAr || '—',
         grossSalary: gross,
         allowancesAdd: 0,
-        deductions: 0,
+        deductions: leaveDeduction,
         advancesDeduct,
-        netSalary: Math.max(0, gross - advancesDeduct),
+        netSalary: Math.max(0, gross - leaveDeduction - advancesDeduct),
         deferAdvances: false,
         advanceDates: advMeta.datesLabel,
-        notes: advMeta.datesLabel ? `تواريخ السلف: ${advMeta.datesLabel}` : '',
+        notes: notesParts.join(' | '),
       }]);
     }
   };
