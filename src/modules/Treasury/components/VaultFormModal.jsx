@@ -46,6 +46,11 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const setShowAsPaymentMethod = (enabled) => setForm((p) => ({
+    ...p,
+    showAsPaymentMethod: enabled,
+    paymentMethod: enabled ? p.paymentMethod : '',
+  }));
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -167,17 +172,6 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
               <span style={{ fontWeight: 700, fontSize: 13 }}>{t('enableAsSalesChannel')}</span>
               {form.isSalesChannel && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>{t('enabled')}</span>}
             </label>
-            {form.isSalesChannel && (
-              <div>
-                <label style={{ ...LST, marginBottom: 6 }}>{t('paymentMethod')}</label>
-                <select value={form.paymentMethod} onChange={(e) => set('paymentMethod', e.target.value)} style={IST}>
-                  <option value="">{t('selectPaymentMethod')}</option>
-                  {PAYMENT_METHODS.map((m) => (
-                    <option key={m.value} value={m.value}>{m.labelKey ? t(m.labelKey) : m.label}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
 
           {/* إظهار كطريقة سداد في المبيعات والمشتريات */}
@@ -189,7 +183,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 0 }}>
               <div
-                onClick={() => set('showAsPaymentMethod', !form.showAsPaymentMethod)}
+                onClick={() => setShowAsPaymentMethod(!form.showAsPaymentMethod)}
                 style={{
                   width: 40, height: 22, borderRadius: 999, position: 'relative', cursor: 'pointer', flexShrink: 0,
                   background: form.showAsPaymentMethod ? '#2563eb' : 'var(--noorix-border)', transition: 'background 200ms',
@@ -210,6 +204,20 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
             <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.45 }}>
               {t('showAsPaymentMethodHint')}
             </p>
+            <div style={{ marginTop: 12 }}>
+              <label style={{ ...LST, marginBottom: 6, opacity: form.showAsPaymentMethod ? 1 : 0.6 }}>{t('paymentMethod')}</label>
+              <select
+                value={form.paymentMethod}
+                onChange={(e) => set('paymentMethod', e.target.value)}
+                style={{ ...IST, opacity: form.showAsPaymentMethod ? 1 : 0.65 }}
+                disabled={!form.showAsPaymentMethod}
+              >
+                <option value="">{t('selectPaymentMethod')}</option>
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>{m.labelKey ? t(m.labelKey) : m.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* ملاحظات */}

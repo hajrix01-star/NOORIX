@@ -290,6 +290,7 @@ export class VaultsService {
    */
   async create(dto: CreateVaultDto, userId?: string) {
     const tenantId = TenantContext.getTenantId();
+    const normalizedPaymentMethod = dto.showAsPaymentMethod === false ? null : (dto.paymentMethod ?? null);
 
     return this.prisma.$transaction(async (tx) => {
       // توليد كود حساب فريد V-001, V-002, ...
@@ -323,7 +324,7 @@ export class VaultsService {
           type:           dto.type,
           isSalesChannel: dto.isSalesChannel ?? false,
           showAsPaymentMethod: dto.showAsPaymentMethod ?? true,
-          paymentMethod:  dto.paymentMethod  ?? null,
+          paymentMethod:  normalizedPaymentMethod,
           notes:          (dto.notes ?? '').trim() || null,
         },
         include: { account: { select: { id: true, code: true, nameAr: true } } },
@@ -362,6 +363,12 @@ export class VaultsService {
     const tenantId = TenantContext.tryGetTenantId() ?? '';
     const vault    = await this.prisma.vault.findFirst({ where: { id, companyId } });
     if (!vault) throw new NotFoundException('الخزنة غير موجودة');
+    const nextShowAsPaymentMethod =
+      data.showAsPaymentMethod !== undefined ? data.showAsPaymentMethod : vault.showAsPaymentMethod;
+    const normalizedPaymentMethod =
+      nextShowAsPaymentMethod === false
+        ? null
+        : (data.paymentMethod !== undefined ? (data.paymentMethod || null) : undefined);
 
     const updated = await this.prisma.vault.update({
       where: { id },
@@ -371,7 +378,7 @@ export class VaultsService {
         ...(data.type           !== undefined ? { type:           data.type                   } : {}),
         ...(data.isSalesChannel !== undefined ? { isSalesChannel: data.isSalesChannel         } : {}),
         ...(data.showAsPaymentMethod !== undefined ? { showAsPaymentMethod: data.showAsPaymentMethod } : {}),
-        ...(data.paymentMethod  !== undefined ? { paymentMethod:  data.paymentMethod || null  } : {}),
+        ...(normalizedPaymentMethod !== undefined ? { paymentMethod: normalizedPaymentMethod } : {}),
         ...(data.notes          !== undefined ? { notes:          data.notes?.trim() || null  } : {}),
       },
       include: { account: { select: { id: true, code: true, nameAr: true } } },
