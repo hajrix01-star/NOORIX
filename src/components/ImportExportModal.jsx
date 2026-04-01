@@ -165,6 +165,26 @@ function StatBadge({ count, label, color }) {
   );
 }
 
+/** دمج أخطاء دفعة الموظفين مع أرقام الصفوف (السيرفر يعيد created/failed وليس نجاح كل الصفوف) */
+function appendEmployeesBatchErrors(batchErrors, slice, errors) {
+  if (!Array.isArray(batchErrors)) return;
+  for (const err of batchErrors) {
+    if (err && typeof err === 'object' && typeof err.index === 'number') {
+      const rowEntry = slice[err.index];
+      errors.push({
+        rowNum: rowEntry?.rowNum ?? err.index + 2,
+        message: err.message || 'خطأ',
+      });
+    } else if (typeof err === 'string') {
+      const m = err.match(/^([^:]+):\s*(.+)$/s);
+      const empName = m ? m[1].trim() : '';
+      const msg = m ? m[2].trim() : err;
+      const rowEntry = slice.find((x) => (x.payload?.name || '').trim() === empName);
+      errors.push({ rowNum: rowEntry?.rowNum ?? '?', message: msg });
+    }
+  }
+}
+
 /** شريط مراحل الاستيراد — يوضح أين المستخدم في التدفق */
 function ImportPhaseSteps({ phase, importing }) {
   const steps = [
@@ -442,26 +462,42 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
         setProgress({ current: i + slice.length, total, succeeded, failed, errors: [...errors] });
       }
     } else if (entityType === 'employees') {
-      // Send in batches of 50 using the batch endpoint
       const batchSize = 50;
       for (let i = 0; i < validResults.length; i += batchSize) {
         if (abortRef.current) break;
         const slice = validResults.slice(i, i + batchSize);
+        let res;
         try {
-          await createEmployeesBatch({
+          res = await createEmployeesBatch({
             companyId,
             items: slice.map((r) => ({ ...r.payload, companyId })),
           });
-          succeeded += slice.length;
         } catch (err) {
-          // Try one-by-one to identify failing rows
+          res = { success: false, error: err?.message ?? 'خطأ شبكة' };
+        }
+        if (res?.success) {
+          const br = res.data || {};
+          succeeded += Number(br.created) || 0;
+          failed += Number(br.failed) || 0;
+          appendEmployeesBatchErrors(br.errors, slice, errors);
+        } else {
           for (const r of slice) {
+            let r2;
             try {
-              await createEmployeesBatch({ companyId, items: [{ ...r.payload, companyId }] });
-              succeeded++;
+              r2 = await createEmployeesBatch({ companyId, items: [{ ...r.payload, companyId }] });
             } catch (e2) {
-              failed++;
+              failed += 1;
               errors.push({ rowNum: r.rowNum, message: e2?.message ?? 'خطأ غير معروف' });
+              continue;
+            }
+            if (!r2?.success) {
+              failed += 1;
+              errors.push({ rowNum: r.rowNum, message: r2?.error || res?.error || 'فشل الاستيراد' });
+            } else {
+              const br = r2.data || {};
+              succeeded += Number(br.created) || 0;
+              failed += Number(br.failed) || 0;
+              appendEmployeesBatchErrors(br.errors, [r], errors);
             }
           }
         }
@@ -565,19 +601,21 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
             <>
               <ImportPhaseSteps phase={phase} importing={importing} />
 
-              {/* Step 1: Template */}
+              {/* Step 1: Template — تُخفى بعد اكتمال الاستيراد لتجنب ازدحام الشاشة */}
+              {phase !== 'done' && !importing && (
               <div style={S.card}>
                 <p style={S.sectionTitle}>الخطوة 1 — تحميل القالب</p>
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
                   حمّل قالب Excel الجاهز، افتحه في Excel أو Google Sheets، أضف بياناتك ثم احفظه.
                   {entityType === 'invoices' && ' أسماء الموردين والصناديق يجب أن تتطابق مع الأسماء المسجلة في النظام.'}
                   {entityType === 'sales' && ' أعمدة القنوات تتطابق مع أسماء الصناديق في نظامك.'}
-                  {entityType === 'employees' && ' أعمدة الموظفين ثابتة (الاسم بالعربية، تاريخ الالتحاق، الراتب الأساسي، …) — لا تغيّر عناوين الأعمدة في الصف الأول.'}
+                  {entityType === 'employees' && ' أعمدة الموظفين ثابتة (الاسم بالعربية، تاريخ الالتحاق، الراتب الأساسي، …) — لا تغيّر عناوين الأعمدة في الصف الأول. رقم الإقامة يجب أن يكون فريداً لكل موظف أو اتركه فارغاً.'}
                 </p>
                 <button type="button" style={S.btnSecondary} onClick={handleDownloadTemplate} disabled={lookupsLoading}>
                   {lookupsLoading ? '⏳ تحميل…' : '⬇ تحميل قالب Excel'}
                 </button>
               </div>
+              )}
 
               {/* Step 2: Upload */}
               {phase !== 'done' && !importing && (

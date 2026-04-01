@@ -219,15 +219,24 @@ export class EmployeesService {
   }
 
   async createBatch(dto: CreateBatchEmployeesDto, userId?: string) {
-    const results = { created: 0, failed: 0, errors: [] as string[] };
-    for (const item of dto.items) {
+    const results = {
+      created: 0,
+      failed: 0,
+      errors: [] as { index: number; name: string; message: string }[],
+    };
+    for (let i = 0; i < dto.items.length; i++) {
+      const item = dto.items[i];
       try {
         const fullDto: CreateEmployeeDto = { ...item, companyId: dto.companyId };
         await this.create(fullDto, userId);
         results.created++;
       } catch (e: any) {
         results.failed++;
-        results.errors.push(`${item.name}: ${e?.message || 'خطأ'}`);
+        results.errors.push({
+          index: i,
+          name: item.name || '',
+          message: e?.message || 'خطأ',
+        });
       }
     }
     return results;

@@ -144,7 +144,7 @@ export async function downloadEmployeeTemplate() {
     {
       'الاسم بالعربية': 'محمد أحمد',
       'الاسم بالإنجليزية': 'Mohammed Ahmed',
-      'رقم الإقامة': '2123456789',
+      'رقم الإقامة': '',
       'المسمى الوظيفي': 'محاسب',
       'الراتب الأساسي': 5000,
       'بدل السكن': 1000,
@@ -152,7 +152,7 @@ export async function downloadEmployeeTemplate() {
       'بدلات أخرى': 0,
       'تاريخ الالتحاق': '2024-01-01',
       'ساعات العمل': '8 ساعات',
-      'ملاحظات': 'صف مثال — احذفه واستبدله ببياناتك',
+      'ملاحظات': 'مثال: رقم الإقامة فارغ أو فريد لكل موظف — تكرار نفس الرقم في كل الصفوف يرفض الاستيراد.',
     },
   ];
   await exportToExcel(rows, 'template-employees.xlsx');
@@ -280,6 +280,12 @@ export function validateInvoiceRows(rows, { suppliers = [], vaults = [], categor
  * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
  */
 export function validateEmployeeRows(rows) {
+  const iqamaCounts = new Map();
+  for (const row of rows) {
+    const iq = String(row['رقم الإقامة'] ?? row['iqamaNumber'] ?? '').trim();
+    if (iq) iqamaCounts.set(iq, (iqamaCounts.get(iq) || 0) + 1);
+  }
+
   return rows.map((row, i) => {
     const errors = [];
     const warnings = [];
@@ -296,7 +302,7 @@ export function validateEmployeeRows(rows) {
     if (!joinDate) errors.push('تاريخ الالتحاق مطلوب أو غير صحيح');
 
     const nameEn = String(row['الاسم بالإنجليزية'] ?? row['nameEn'] ?? '').trim() || undefined;
-    const iqamaNumber = String(row['رقم الإقامة'] ?? row['iqamaNumber'] ?? '').trim() || undefined;
+    let iqamaNumber = String(row['رقم الإقامة'] ?? row['iqamaNumber'] ?? '').trim() || undefined;
     const jobTitle = String(row['المسمى الوظيفي'] ?? row['jobTitle'] ?? '').trim() || undefined;
     const housingAllowance = Math.max(0, parseNumber(row['بدل السكن'] ?? row['housingAllowance'] ?? 0) ?? 0);
     const transportAllowance = Math.max(0, parseNumber(row['بدل النقل'] ?? row['transportAllowance'] ?? 0) ?? 0);
@@ -304,8 +310,12 @@ export function validateEmployeeRows(rows) {
     const workHours = String(row['ساعات العمل'] ?? row['workHours'] ?? '').trim() || undefined;
     const notes = String(row['ملاحظات'] ?? row['notes'] ?? '').trim() || undefined;
 
+    if (iqamaNumber && iqamaCounts.get(iqamaNumber) > 1) {
+      errors.push('رقم الإقامة مكرر في الملف — اتركه فارغاً أو استخدم رقماً مختلفاً لكل موظف (تكرار القالب يسبب رفض الاستيراد في السيرفر).');
+    }
+
     if (iqamaNumber && !/^\d{10}$/.test(iqamaNumber)) {
-      warnings.push(`رقم الإقامة "${iqamaNumber}" يجب أن يتكون من 10 أرقام`);
+      warnings.push(`رقم الإقامة "${iqamaNumber}" يجب أن يتكون من 10 أرقام؛ إن لم يكن صحيحاً اترك الحقل فارغاً لتجنب الرفض.`);
     }
 
     return {
