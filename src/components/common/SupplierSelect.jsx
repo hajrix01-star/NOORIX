@@ -53,8 +53,10 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
   );
 
   useEffect(() => {
-    setQuery(selectedSupplier ? supplierLabel(selectedSupplier) : '');
-  }, [selectedSupplier]);
+    if (!open) {
+      setQuery(selectedSupplier ? supplierLabel(selectedSupplier) : '');
+    }
+  }, [selectedSupplier, open]);
 
   const filteredSuppliers = useMemo(() => {
     const usage = readSupplierUsage();
@@ -89,7 +91,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
     return filteredSuppliers.filter((s) => !topIds.has(s.id));
   }, [filteredSuppliers, topSuppliers]);
 
-  const showMenu = open && (filteredSuppliers.length > 0 || query.trim());
+  const showMenu = open && (filteredSuppliers.length > 0 || query.trim() || suppliers.length > 0);
 
   function selectSupplier(supplier) {
     onChange(supplier.id);
@@ -104,6 +106,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
       <input
         value={query}
         onFocus={() => setOpen(true)}
+        onClick={() => setOpen(true)}
         onChange={(e) => {
           const next = e.target.value;
           setQuery(next);
@@ -111,9 +114,23 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
           if (!next.trim() && value) onChange('');
         }}
         onBlur={() => window.setTimeout(() => setOpen(false), 120)}
-        placeholder={placeholder}
-        style={INPUT_STYLE}
+        placeholder={placeholder && placeholder !== '—' ? placeholder : 'ابحث عن المورد أو اختره'}
+        style={{ ...INPUT_STYLE, paddingInlineEnd: 36 }}
       />
+      <span
+        aria-hidden
+        style={{
+          position: 'absolute',
+          insetInlineEnd: 12,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          color: 'var(--noorix-text-muted)',
+          fontSize: 12,
+          pointerEvents: 'none',
+        }}
+      >
+        ▼
+      </span>
       {showMenu && (
         <div
           style={{
@@ -204,7 +221,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
             );
           }) : (
             <div style={{ padding: '10px 12px', fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-              لا يوجد مورد مطابق
+              {suppliers.length ? 'لا يوجد مورد مطابق' : 'لا يوجد موردون متاحون حالياً'}
             </div>
           )}
         </div>
