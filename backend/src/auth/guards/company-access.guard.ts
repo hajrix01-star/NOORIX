@@ -4,7 +4,7 @@
  * ترتيب استخراج companyId (من الأعلى أولويةً):
  *   1. body.companyId    (POST/PATCH)
  *   2. params.companyId  (GET)
- *   3. query.companyId   (GET)
+ *   3. query.companyId   (GET) — يجب أن يطابق ما تستخدمه الـ controllers لـ GET (قبل الهيدر)
  *   4. x-company-id header (standard header)
  *
  * التحققات:
