@@ -9,7 +9,8 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { createDeduction, getInvoices, updateInvoice } from '../../../services/api';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import { fmt, sumAmounts } from '../../../utils/format';
+import { sumAmounts } from '../../../utils/format';
+import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import SmartTable from '../../../components/common/SmartTable';
@@ -115,7 +116,7 @@ export default function AdvancesTab() {
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
         }}
         >
-          {fmt(row.totalAmount ?? v)}
+          {hrFmt(row.totalAmount ?? v)}
         </span>
       ) },
     { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
@@ -133,13 +134,13 @@ export default function AdvancesTab() {
     { key: 'settledAmount', label: t('advanceSettledAmount'), numeric: true, width: 120, minWidth: 110,
       render: (_, row) => (
         <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: row.settlementStatus === 'settled' ? '#b91c1c' : 'inherit' }}>
-          {fmt(row.settledAmountNum || 0)}
+          {hrFmt(row.settledAmountNum || 0)}
         </span>
       ) },
     { key: 'remainingAmount', label: t('advanceRemainingAmount'), numeric: true, width: 120, minWidth: 110,
       render: (_, row) => (
         <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: row.remainingAmount > 0 ? '#f59e0b' : '#16a34a' }}>
-          {fmt(row.remainingAmount || 0)}
+          {hrFmt(row.remainingAmount || 0)}
         </span>
       ) },
     { key: 'settledAt', label: t('advanceSettlementDate'), width: 125, minWidth: 120,
@@ -201,7 +202,7 @@ export default function AdvancesTab() {
         {t('advancesList')} ({allFilteredData.length}) — {t('advanceOutstanding')}: {outstandingCount}
       </td>
       <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, fontWeight: 900, color: '#16a34a', textAlign: 'right' }}>
-        {fmt(totalAmount.toNumber())}
+        {hrFmt(totalAmount.toNumber())}
       </td>
       <td colSpan={1} />
     </>
@@ -209,10 +210,10 @@ export default function AdvancesTab() {
 
   const exportData = allFilteredData.map((r) => ({
     employeeName: r.employee?.name || r.employeeName || '—',
-    amount: fmt(r.totalAmount),
+    amount: hrFmt(r.totalAmount),
     transactionDate: formatSaudiDate(r.transactionDate),
-    settledAmount: fmt(r.settledAmountNum || 0),
-    remainingAmount: fmt(r.remainingAmount || 0),
+    settledAmount: hrFmt(r.settledAmountNum || 0),
+    remainingAmount: hrFmt(r.remainingAmount || 0),
     settlementDate: r.settledAt ? formatSaudiDate(r.settledAt) : '—',
     status: r.settlementStatus === 'cancelled'
       ? t('cancelled')
@@ -249,15 +250,15 @@ export default function AdvancesTab() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('advanceAmount')}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmountNum)}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.totalAmountNum)}</div>
           </div>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('advanceSettledAmount')}</div>
-            <div style={{ fontSize: 13, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.settledAmountNum)}</div>
+            <div style={{ fontSize: 13, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.settledAmountNum)}</div>
           </div>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('advanceRemainingAmount')}</div>
-            <div style={{ fontSize: 13, color: row.remainingAmount > 0 ? '#f59e0b' : '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.remainingAmount)}</div>
+            <div style={{ fontSize: 13, color: row.remainingAmount > 0 ? '#f59e0b' : '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.remainingAmount)}</div>
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -487,7 +488,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
     <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
       <div className="noorix-surface-card" style={{ padding: 20, maxWidth: 560, width: '95%' }} onClick={(e) => e.stopPropagation()}>
         <h4 style={{ marginTop: 0 }}>{t('settleAdvance')}</h4>
-        <div style={{ marginBottom: 8, fontSize: 13 }}>{t('advanceRemainingAmount')}: <strong>{fmt(remaining)}</strong></div>
+        <div style={{ marginBottom: 8, fontSize: 13 }}>{t('advanceRemainingAmount')}: <strong>{hrFmt(remaining)}</strong></div>
         <div style={{ display: 'grid', gap: 10 }}>
           <select value={settlementType} onChange={(e) => setSettlementType(e.target.value)}>
             <option value="full">{t('settlementFull')}</option>

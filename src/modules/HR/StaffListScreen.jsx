@@ -9,7 +9,7 @@ import { useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
-import { fmt } from '../../utils/format';
+import { hrFmt } from './utils/hrFmt';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ImportExportModal from '../../components/ImportExportModal';
@@ -183,7 +183,7 @@ export default function StaffListScreen({ embedded }) {
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125, minWidth: 120,
       render: (v) => <span style={{ fontSize: 12, whiteSpace: 'nowrap', color: 'var(--noorix-text-muted)' }}>{formatSaudiDate(v)}</span> },
     { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140, minWidth: 130,
-      render: (_, row) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{fmt(row.totalSalary)}</span> },
+      render: (_, row) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{hrFmt(row.totalSalary)}</span> },
     { key: 'status', label: t('status'), width: 120, minWidth: 110, render: (v) => <Badge map={statusStyles} value={v} /> },
     ...(viewMode === 'terminated' || viewMode === 'archived'
       ? [
@@ -268,7 +268,7 @@ export default function StaffListScreen({ embedded }) {
           name: e.name,
           jobTitle: e.jobTitle,
           joinDate: formatSaudiDate(e.joinDate),
-          totalSalary: fmt(ts),
+          totalSalary: hrFmt(ts),
           status: statusStyles[e.status]?.label || e.status,
           terminationReason: meta.terminationReason || '',
           terminationClause: meta.terminationClause || '',
@@ -389,7 +389,7 @@ export default function StaffListScreen({ embedded }) {
           </div>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('totalSalary')}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalSalary)} ﷼</div>
+            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.totalSalary)} ﷼</div>
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

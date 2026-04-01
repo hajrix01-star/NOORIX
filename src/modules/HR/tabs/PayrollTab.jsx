@@ -8,7 +8,7 @@ import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import { fmt } from '../../../utils/format';
+import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { getSaudiToday } from '../../../utils/saudiDate';
@@ -106,9 +106,9 @@ export default function PayrollTab() {
     { key: 'month', label: t('payrollMonth'), sortable: true, width: 130, minWidth: 120,
       render: (v) => <span style={{ fontSize: 13 }}>{v || '—'}</span> },
     { key: 'grossTotal', label: t('payrollGross'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{fmt(v)}</span> },
+      render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{hrFmt(v)}</span> },
     { key: 'netTotal', label: t('payrollNet'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v) => <span style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{fmt(v)}</span> },
+      render: (v) => <span style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{hrFmt(v)}</span> },
     { key: 'status', label: t('payrollStatus'), width: 120, minWidth: 110,
       render: (v) => (
         <span style={{
@@ -134,8 +134,8 @@ export default function PayrollTab() {
   const footerCells = (
     <>
       <td colSpan={2} style={{ padding: '6px 10px', fontSize: 12, color: 'var(--noorix-text-muted)', fontWeight: 600 }}>{t('payrollTotal')} ({allFilteredData.length})</td>
-      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, textAlign: 'right' }}>{fmt(allFilteredData.reduce((s, r) => s + (r.grossTotal ?? 0), 0))}</td>
-      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, fontWeight: 900, color: '#16a34a', textAlign: 'right' }}>{fmt(totalNet)}</td>
+      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, textAlign: 'right' }}>{hrFmt(allFilteredData.reduce((s, r) => s + (r.grossTotal ?? 0), 0))}</td>
+      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, fontWeight: 900, color: '#16a34a', textAlign: 'right' }}>{hrFmt(totalNet)}</td>
       <td colSpan={2} />
     </>
   );
@@ -143,8 +143,8 @@ export default function PayrollTab() {
   const exportData = allFilteredData.map((r) => ({
     runNumber: r.runNumber,
     month: r.month,
-    grossTotal: fmt(r.grossTotal),
-    netTotal: fmt(r.netTotal),
+    grossTotal: hrFmt(r.grossTotal),
+    netTotal: hrFmt(r.netTotal),
     status: statusStyles[r.status]?.label || r.status,
   }));
 
@@ -160,11 +160,11 @@ export default function PayrollTab() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('payrollGross')}</div>
-            <div style={{ fontSize: 14, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.grossTotal)}</div>
+            <div style={{ fontSize: 14, fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.grossTotal)}</div>
           </div>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('payrollNet')}</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.netTotal)}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.netTotal)}</div>
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -186,7 +186,7 @@ export default function PayrollTab() {
 
   function handlePrint() {
     const rows = allFilteredData.map((r) =>
-      `<tr><td>${(r.runNumber || '').replace(/</g, '&lt;')}</td><td>${(r.month || '').replace(/</g, '&lt;')}</td><td>${fmt(r.grossTotal)}</td><td>${fmt(r.netTotal)}</td><td>${(statusStyles[r.status]?.label || r.status).replace(/</g, '&lt;')}</td></tr>`
+      `<tr><td>${(r.runNumber || '').replace(/</g, '&lt;')}</td><td>${(r.month || '').replace(/</g, '&lt;')}</td><td>${hrFmt(r.grossTotal)}</td><td>${hrFmt(r.netTotal)}</td><td>${(statusStyles[r.status]?.label || r.status).replace(/</g, '&lt;')}</td></tr>`
     ).join('');
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('hrTabPayroll') || '').replace(/</g, '&lt;')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;color:#1a1a1a;line-height:1.6}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}.header h1{margin:8px 0 4px;font-size:20px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}@media print{body{padding:0}}</style></head><body>

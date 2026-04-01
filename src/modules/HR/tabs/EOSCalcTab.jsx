@@ -11,7 +11,7 @@ import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
-import { fmt } from '../../../utils/format';
+import { hrFmt } from '../utils/hrFmt';
 import { parseWorkHours } from '../utils/employeeSalaryMath';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -107,10 +107,10 @@ export default function EOSCalcTab() {
   function handlePrint() {
     const reportDate = new Date().toISOString().slice(0, 10);
     const allowanceRowsAr = allowanceRows.length
-      ? allowanceRows.map((r) => `<tr><td>${r.ar}</td><td class="num">${fmt(r.amount)}</td></tr>`).join('')
+      ? allowanceRows.map((r) => `<tr><td>${r.ar}</td><td class="num">${hrFmt(r.amount)}</td></tr>`).join('')
       : '<tr><td>لا توجد بدلات</td><td class="num">0</td></tr>';
     const allowanceRowsEn = allowanceRows.length
-      ? allowanceRows.map((r) => `<tr><td>${r.en}</td><td class="num">${fmt(r.amount)}</td></tr>`).join('')
+      ? allowanceRows.map((r) => `<tr><td>${r.en}</td><td class="num">${hrFmt(r.amount)}</td></tr>`).join('')
       : '<tr><td>No allowances</td><td class="num">0</td></tr>';
     const html = `<!DOCTYPE html>
       <html dir="rtl">
@@ -145,10 +145,10 @@ export default function EOSCalcTab() {
             <div class="bi">
               <div class="box">
                 <div class="row"><strong>الموظف</strong><span>${emp?.name || '—'}</span></div>
-                <div class="row"><strong>ساعات العمل اليومية</strong><span class="num">${fmt(parseWorkHours(emp?.workHours))}</span></div>
+                <div class="row"><strong>ساعات العمل اليومية</strong><span class="num">${hrFmt(parseWorkHours(emp?.workHours))}</span></div>
                 <div class="row"><strong>تاريخ التعيين</strong><span>${jd || '—'}</span></div>
                 <div class="row"><strong>تاريخ نهاية الخدمة</strong><span>${ed || '—'}</span></div>
-                <div class="row"><strong>آخر أجر فعلي</strong><span class="num">${fmt(sal.toNumber())}</span></div>
+                <div class="row"><strong>آخر أجر فعلي</strong><span class="num">${hrFmt(sal.toNumber())}</span></div>
                 <div class="row"><strong>سبب الانتهاء</strong><span>${t(
                   terminationReason === 'employer'
                     ? 'eosCalcReasonEmployer'
@@ -160,23 +160,23 @@ export default function EOSCalcTab() {
                 )}</span></div>
                 <div class="row"><strong>مدة الخدمة بالأيام</strong><span class="num">${serviceDays}</span></div>
                 <div class="row"><strong>سنوات الخدمة</strong><span class="num">${serviceYears.toDecimalPlaces(2).toString()}</span></div>
-                <div class="row"><strong>المكافأة الكاملة</strong><span class="num">${fmt(fullAward.toNumber())}</span></div>
+                <div class="row"><strong>المكافأة الكاملة</strong><span class="num">${hrFmt(fullAward.toNumber())}</span></div>
                 <div class="row"><strong>نسبة الاستحقاق</strong><span class="num">${eligibilityFactor.times(100).toDecimalPlaces(2).toString()}%</span></div>
-                <div class="row"><strong>نهاية الخدمة</strong><span class="num">${fmt(eosAmount.toNumber())}</span></div>
+                <div class="row"><strong>نهاية الخدمة</strong><span class="num">${hrFmt(eosAmount.toNumber())}</span></div>
               </div>
               <div class="sep"></div>
               <div class="box en">
                 <div class="row"><strong>Employee</strong><span>${emp?.name || '—'}</span></div>
-                <div class="row"><strong>Work hours/day</strong><span class="num">${fmt(parseWorkHours(emp?.workHours))}</span></div>
+                <div class="row"><strong>Work hours/day</strong><span class="num">${hrFmt(parseWorkHours(emp?.workHours))}</span></div>
                 <div class="row"><strong>Join date</strong><span>${jd || '—'}</span></div>
                 <div class="row"><strong>End of service date</strong><span>${ed || '—'}</span></div>
-                <div class="row"><strong>Last actual wage</strong><span class="num">${fmt(sal.toNumber())}</span></div>
+                <div class="row"><strong>Last actual wage</strong><span class="num">${hrFmt(sal.toNumber())}</span></div>
                 <div class="row"><strong>Reason</strong><span>${terminationReason}</span></div>
                 <div class="row"><strong>Service days</strong><span class="num">${serviceDays}</span></div>
                 <div class="row"><strong>Service Years</strong><span class="num">${serviceYears.toDecimalPlaces(2).toString()}</span></div>
-                <div class="row"><strong>Full Award</strong><span class="num">${fmt(fullAward.toNumber())}</span></div>
+                <div class="row"><strong>Full Award</strong><span class="num">${hrFmt(fullAward.toNumber())}</span></div>
                 <div class="row"><strong>Eligibility</strong><span class="num">${eligibilityFactor.times(100).toDecimalPlaces(2).toString()}%</span></div>
-                <div class="row"><strong>EOS Amount</strong><span class="num">${fmt(eosAmount.toNumber())}</span></div>
+                <div class="row"><strong>EOS Amount</strong><span class="num">${hrFmt(eosAmount.toNumber())}</span></div>
               </div>
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function EOSCalcTab() {
           </div>
           <div className="noorix-result-panel__row">
             <span className="noorix-result-panel__row-label">{t('eosCalcFullAward')}</span>
-            <span className="noorix-result-panel__row-value">{fmt(fullAward.toNumber())} ﷼</span>
+            <span className="noorix-result-panel__row-value">{hrFmt(fullAward.toNumber())} ﷼</span>
           </div>
           <div className="noorix-result-panel__row">
             <span className="noorix-result-panel__row-label">{t('eosCalcEligibilityFactor')}</span>
@@ -276,7 +276,7 @@ export default function EOSCalcTab() {
           </div>
           <div className="noorix-result-panel__row noorix-result-panel__row--highlight">
             <span className="noorix-result-panel__row-label">{t('eosCalcResult')}</span>
-            <span className="noorix-result-panel__row-value">{fmt(eosAmount.toNumber())} ﷼</span>
+            <span className="noorix-result-panel__row-value">{hrFmt(eosAmount.toNumber())} ﷼</span>
           </div>
         </div>
         <div className="noorix-result-panel__note">

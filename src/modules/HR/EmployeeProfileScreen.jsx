@@ -21,7 +21,7 @@ import {
   deleteEmployee,
 } from '../../services/api';
 import { formatSaudiDate } from '../../utils/saudiDate';
-import { fmt } from '../../utils/format';
+import { hrFmt } from './utils/hrFmt';
 import SmartTable from '../../components/common/SmartTable';
 import {
   parseWorkHours,
@@ -276,7 +276,7 @@ export default function EmployeeProfileScreen() {
     }
     if (overtimeTotal > 0) {
       rows.push({
-        label: overtimeHoursPerDay > 0 ? `${t('salaryCalcOvertimePay')} (${fmt(overtimeHoursPerDay)} ساعة/يوم)` : t('salaryCalcOvertimePay'),
+        label: overtimeHoursPerDay > 0 ? `${t('salaryCalcOvertimePay')} (${hrFmt(overtimeHoursPerDay)} ساعة/يوم)` : t('salaryCalcOvertimePay'),
         amount: overtimeTotal,
       });
     }
@@ -376,7 +376,7 @@ export default function EmployeeProfileScreen() {
             >
               <div style={{ fontWeight: row.total || row.strong ? 700 : 500 }}>{row.label}</div>
               <div style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', fontWeight: row.total ? 800 : 600 }}>
-                {fmt(row.amount)}
+                {hrFmt(row.amount)}
               </div>
             </div>
           ))}
@@ -398,7 +398,7 @@ export default function EmployeeProfileScreen() {
             { key: 'date', label: t('transactionDate'), width: '12%', render: (v) => formatSaudiDate(v) },
             { key: 'typeLabel', label: t('status') || 'النوع', width: '18%', render: (v) => v },
             { key: 'amount', label: t('advanceAmount') || 'المبلغ', numeric: true, width: '15%', render: (v) => (
-              <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: v >= 0 ? 'inherit' : '#dc2626' }}>{fmt(v)}</span>
+              <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: v >= 0 ? 'inherit' : '#dc2626' }}>{hrFmt(v)}</span>
             ) },
             { key: 'notes', label: t('invoiceNotesColumn'), width: '54%', render: (v) => (
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: '100%' }} title={v || ''}>{v || '—'}</span>
@@ -458,7 +458,7 @@ export default function EmployeeProfileScreen() {
           rowNumberWidth="1%"
           innerPadding={8}
           columns={[
-            { key: 'totalAmount', label: t('advanceAmount'), numeric: true, width: '25%', render: (v) => fmt(v) },
+            { key: 'totalAmount', label: t('advanceAmount'), numeric: true, width: '25%', render: (v) => hrFmt(v) },
             { key: 'transactionDate', label: t('transactionDate'), width: '25%', render: (v) => formatSaudiDate(v) },
             { key: 'status', label: t('status'), width: '25%', render: (v) => (
               <span style={{

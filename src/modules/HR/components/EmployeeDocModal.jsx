@@ -4,7 +4,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import { fmt } from '../../../utils/format';
+import { hrFmt } from '../utils/hrFmt';
 import Decimal from 'decimal.js';
 import { uploadDocumentFile } from '../../../services/api';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
@@ -94,7 +94,7 @@ function buildSalaryRows(employee, customAllowances = []) {
   const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
   if (overtimeHoursPerDay > 0) {
     const overtimeAmount = overtimePay(employee, customTotal);
-    rows.push({ ar: `مقابل الأوفر تايم (${fmt(overtimeHoursPerDay)} ساعة/يوم)`, en: `Overtime Pay (${fmt(overtimeHoursPerDay)} hr/day)`, amount: overtimeAmount });
+    rows.push({ ar: `مقابل الأوفر تايم (${hrFmt(overtimeHoursPerDay)} ساعة/يوم)`, en: `Overtime Pay (${hrFmt(overtimeHoursPerDay)} hr/day)`, amount: overtimeAmount });
   }
   const total = rows.reduce((sum, row) => sum + row.amount, 0);
   return { rows, total };
@@ -274,12 +274,12 @@ function SalaryBreakdownTable({ rows, total }) {
           {rows.map((row, idx) => (
             <tr key={`ar-${row.ar}-${idx}`}>
               <td>{row.ar}</td>
-              <td className="num">{fmt(row.amount)}</td>
+              <td className="num">{hrFmt(row.amount)}</td>
             </tr>
           ))}
           <tr>
             <td style={{ fontWeight: 800 }}>إجمالي الراتب</td>
-            <td className="num" style={{ fontWeight: 800 }}>{fmt(total)}</td>
+            <td className="num" style={{ fontWeight: 800 }}>{hrFmt(total)}</td>
           </tr>
         </tbody>
       </table>
@@ -295,12 +295,12 @@ function SalaryBreakdownTable({ rows, total }) {
           {rows.map((row, idx) => (
             <tr key={`en-${row.en}-${idx}`}>
               <td style={{ textAlign: 'left' }}>{row.en}</td>
-              <td className="num" style={{ textAlign: 'right' }}>{fmt(row.amount, 2)}</td>
+              <td className="num" style={{ textAlign: 'right' }}>{hrFmt(row.amount)}</td>
             </tr>
           ))}
           <tr>
             <td style={{ fontWeight: 800, textAlign: 'left' }}>Total Compensation</td>
-            <td className="num" style={{ fontWeight: 800, textAlign: 'right' }}>{fmt(total, 2)}</td>
+            <td className="num" style={{ fontWeight: 800, textAlign: 'right' }}>{hrFmt(total)}</td>
           </tr>
         </tbody>
       </table>
@@ -660,15 +660,15 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
                 <h3 style={{ margin: '0 0 10px' }}>حسبة المستحقات النهائية</h3>
                 <div style={{ lineHeight: 1.9, fontSize: 13 }}>
                   <div><strong>مدة الخدمة (يوم):</strong> {eos.serviceDays}</div>
-                  <div><strong>مدة الخدمة (سنة):</strong> {fmt(eos.serviceYears)}</div>
-                  <div><strong>ساعات العمل اليومية:</strong> {fmt(parseWorkHours(employee?.workHours))}</div>
-                  <div><strong>ساعات الأوفرتايم اليومية:</strong> {fmt(overtimeHoursPerDay)}</div>
-                  <div><strong>الأجر المعتمد للحسبة:</strong> {fmt(eos.wageForEos)}</div>
-                  <div><strong>مكافأة نهاية الخدمة الكاملة:</strong> {fmt(eos.fullAward)}</div>
-                  <div><strong>نسبة الاستحقاق:</strong> {fmt(eos.factorPct)}%</div>
-                  <div><strong>قيمة نهاية الخدمة حسب النظام:</strong> {fmt(eos.eosAmount)}</div>
-                  <div><strong>القيمة المضافة في المخالصة:</strong> {fmt(eos.appliedEosAmount)}</div>
-                  <div><strong>إجمالي التسوية (راتب + نهاية خدمة):</strong> {fmt(eos.finalTotal)}</div>
+                  <div><strong>مدة الخدمة (سنة):</strong> {hrFmt(eos.serviceYears)}</div>
+                  <div><strong>ساعات العمل اليومية:</strong> {hrFmt(parseWorkHours(employee?.workHours))}</div>
+                  <div><strong>ساعات الأوفرتايم اليومية:</strong> {hrFmt(overtimeHoursPerDay)}</div>
+                  <div><strong>الأجر المعتمد للحسبة:</strong> {hrFmt(eos.wageForEos)}</div>
+                  <div><strong>مكافأة نهاية الخدمة الكاملة:</strong> {hrFmt(eos.fullAward)}</div>
+                  <div><strong>نسبة الاستحقاق:</strong> {hrFmt(eos.factorPct)}%</div>
+                  <div><strong>قيمة نهاية الخدمة حسب النظام:</strong> {hrFmt(eos.eosAmount)}</div>
+                  <div><strong>القيمة المضافة في المخالصة:</strong> {hrFmt(eos.appliedEosAmount)}</div>
+                  <div><strong>إجمالي التسوية (راتب + نهاية خدمة):</strong> {hrFmt(eos.finalTotal)}</div>
                 </div>
               </div>
               <div style={{ background: '#cbd5e1', borderRadius: 999 }} />
@@ -676,15 +676,15 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
                 <h3 style={{ margin: '0 0 10px' }}>Final Entitlements Calculation</h3>
                 <div style={{ lineHeight: 1.9, fontSize: 13 }}>
                   <div><strong>Service period (days):</strong> {eos.serviceDays}</div>
-                  <div><strong>Service period (years):</strong> {fmt(eos.serviceYears)}</div>
-                  <div><strong>Work hours/day:</strong> {fmt(parseWorkHours(employee?.workHours))}</div>
-                  <div><strong>Overtime hours/day:</strong> {fmt(overtimeHoursPerDay)}</div>
-                  <div><strong>Wage used for EOS:</strong> {fmt(eos.wageForEos)}</div>
-                  <div><strong>Full EOS award:</strong> {fmt(eos.fullAward)}</div>
-                  <div><strong>Eligibility factor:</strong> {fmt(eos.factorPct)}%</div>
-                  <div><strong>EOS amount by law:</strong> {fmt(eos.eosAmount)}</div>
-                  <div><strong>Amount included in settlement:</strong> {fmt(eos.appliedEosAmount)}</div>
-                  <div><strong>Total settlement (salary + EOS):</strong> {fmt(eos.finalTotal)}</div>
+                  <div><strong>Service period (years):</strong> {hrFmt(eos.serviceYears)}</div>
+                  <div><strong>Work hours/day:</strong> {hrFmt(parseWorkHours(employee?.workHours))}</div>
+                  <div><strong>Overtime hours/day:</strong> {hrFmt(overtimeHoursPerDay)}</div>
+                  <div><strong>Wage used for EOS:</strong> {hrFmt(eos.wageForEos)}</div>
+                  <div><strong>Full EOS award:</strong> {hrFmt(eos.fullAward)}</div>
+                  <div><strong>Eligibility factor:</strong> {hrFmt(eos.factorPct)}%</div>
+                  <div><strong>EOS amount by law:</strong> {hrFmt(eos.eosAmount)}</div>
+                  <div><strong>Amount included in settlement:</strong> {hrFmt(eos.appliedEosAmount)}</div>
+                  <div><strong>Total settlement (salary + EOS):</strong> {hrFmt(eos.finalTotal)}</div>
                 </div>
               </div>
             </div>

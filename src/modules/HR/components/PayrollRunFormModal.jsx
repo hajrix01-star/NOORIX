@@ -8,7 +8,7 @@ import { useApp } from '../../../context/AppContext';
 import { getEmployees, getInvoices } from '../../../services/api';
 import { getPayrollRuns } from '../../../services/api';
 import { createPayrollRun } from '../../../services/api';
-import { fmt } from '../../../utils/format';
+import { hrFmt } from '../utils/hrFmt';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { totalSalary } from '../utils/employeeSalaryMath';
@@ -339,7 +339,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
                       {included ? (
                         <>
                           <td style={{ padding: '6px 10px', color: 'var(--noorix-text-muted)' }}>{items[idx].advanceDates || '—'}</td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(items[idx].grossSalary)}</td>
+                          <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(items[idx].grossSalary)}</td>
                           <td style={{ padding: '6px 10px' }}>
                             <input
                               type="number"
@@ -374,7 +374,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
                           <td style={{ padding: '6px 10px', textAlign: 'center' }}>
                             <input type="checkbox" checked={!!items[idx].deferAdvances} onChange={() => toggleDefer(idx)} />
                           </td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600 }}>{fmt(items[idx].netSalary)}</td>
+                          <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600 }}>{hrFmt(items[idx].netSalary)}</td>
                         </>
                       ) : (
                         <>
@@ -390,7 +390,7 @@ export function PayrollRunFormModal({ companyId, onCreate, onClose }) {
           </div>
 
           <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 15 }}>
-            {t('payrollTotal')}: {fmt(totalNet)}
+            {t('payrollTotal')}: {hrFmt(totalNet)}
           </div>
 
           {error && (

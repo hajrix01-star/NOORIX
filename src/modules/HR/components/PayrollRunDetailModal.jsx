@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getPayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import { fmt } from '../../../utils/format';
+import { hrFmt } from '../utils/hrFmt';
 import SmartTable from '../../../components/common/SmartTable';
 
 const STATUS_MAP = {
@@ -56,10 +56,10 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
           <td>${idx + 1}</td>
           <td>${employeeName}</td>
           <td>${advanceDates}</td>
-          <td>${fmt(row.grossSalary ?? 0)}</td>
-          <td>${fmt(before)}</td>
-          <td>${fmt(deductionsAll)}</td>
-          <td>${fmt(row.netSalary ?? 0)}</td>
+          <td>${hrFmt(row.grossSalary ?? 0)}</td>
+          <td>${hrFmt(before)}</td>
+          <td>${hrFmt(deductionsAll)}</td>
+          <td>${hrFmt(row.netSalary ?? 0)}</td>
         </tr>
       `;
     }).join('');
@@ -116,15 +116,15 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
           <div class="summary">
             <div class="card">
               <div class="label">${t('payrollTotalBeforeDeductions')}</div>
-              <div class="value">${fmt(totalBeforeDeduction)}</div>
+              <div class="value">${hrFmt(totalBeforeDeduction)}</div>
             </div>
             <div class="card">
               <div class="label">${t('payrollTotalDeductionsAll')}</div>
-              <div class="value">${fmt(totalDeductions)}</div>
+              <div class="value">${hrFmt(totalDeductions)}</div>
             </div>
             <div class="card">
               <div class="label">${t('payrollTotalAfterDeductions')}</div>
-              <div class="value">${fmt(totalNet)}</div>
+              <div class="value">${hrFmt(totalNet)}</div>
             </div>
           </div>
           <script>window.onload = () => window.print();</script>
@@ -142,19 +142,19 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   const columns = [
     { key: 'employeeName', label: t('employeeName'), minWidth: 180, render: (_, row) => row.employee?.name || row.employee?.nameAr || '—' },
     { key: 'advanceDates', label: t('payrollAdvanceDates'), minWidth: 170, render: (_, row) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
-    { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: 130, minWidth: 120, render: (v) => fmt(v) },
-    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: 130, minWidth: 120, render: (_, row) => fmt(Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0)) },
-    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, width: 130, minWidth: 120, render: (v) => fmt(v ?? 0) },
-    { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: 130, minWidth: 120, render: (v) => fmt(v ?? 0) },
-    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: 130, minWidth: 120, render: (v) => fmt(v ?? 0) },
-    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: 130, minWidth: 120, render: (_, row) => fmt(Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0)) },
-    { key: 'netSalary', label: t('netSalary'), numeric: true, width: 130, minWidth: 120, render: (v) => fmt(v) },
+    { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v) },
+    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: 130, minWidth: 120, render: (_, row) => hrFmt(Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0)) },
+    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v ?? 0) },
+    { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v ?? 0) },
+    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v ?? 0) },
+    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: 130, minWidth: 120, render: (_, row) => hrFmt(Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0)) },
+    { key: 'netSalary', label: t('netSalary'), numeric: true, width: 130, minWidth: 120, render: (v) => hrFmt(v) },
   ];
 
   const footerCells = (
     <>
       <td colSpan={8} style={{ padding: '8px 12px', fontSize: 13, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{t('payrollTotalAfterDeductions')}</td>
-      <td style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14, fontWeight: 900, color: '#16a34a', textAlign: 'right' }}>{fmt(totalNet)}</td>
+      <td style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14, fontWeight: 900, color: '#16a34a', textAlign: 'right' }}>{hrFmt(totalNet)}</td>
     </>
   );
 
