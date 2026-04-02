@@ -141,10 +141,10 @@ const CMD_GROUPS = [
     icon: '👥',
     items: [
       { key: 'addEmployee', labelAr: 'إضافة موظف', labelEn: 'Add employee', icon: '➕', canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.EMPLOYEES_WRITE) },
-      { key: 'advance', labelAr: 'خصم من الراتب (سلفة)', labelEn: 'Salary deduction (Advance)', icon: '💳', canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.INVOICES_WRITE) },
-      { key: 'increase', labelAr: 'زيادة سنوية', labelEn: 'Annual increase', icon: '📈', canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.HR_WRITE) },
-      { key: 'leave', labelAr: 'إجازة موظف', labelEn: 'Employee leave', icon: '📅', canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.HR_WRITE) },
-      { key: 'deduction', labelAr: 'تسجيل خصم', labelEn: 'Record deduction', icon: '📉', canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.HR_WRITE) },
+      { key: 'advance', labelAr: 'صرف سلفة', labelEn: 'Pay advance', icon: '💳', canUse: (c) => c(PERMISSIONS.HR_WRITE) || c(PERMISSIONS.EMPLOYEES_WRITE) },
+      { key: 'increase', labelAr: 'زيادة / بدلة', labelEn: 'Raise / Allowance', icon: '📈', canUse: (c) => c(PERMISSIONS.HR_WRITE) },
+      { key: 'leave', labelAr: 'تسجيل إجازة', labelEn: 'Record leave', icon: '📅', canUse: (c) => c(PERMISSIONS.HR_WRITE) },
+      { key: 'deduction', labelAr: 'تسجيل خصم', labelEn: 'Record deduction', icon: '📉', canUse: (c) => c(PERMISSIONS.HR_WRITE) },
     ],
   },
   {
@@ -466,9 +466,12 @@ export default function SmartChatScreen() {
                 {t('chatNoMessagesOnDate')}
               </div>
             ) : (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16, color: 'var(--noorix-text-muted)', textAlign: 'center' }}>
-                <div style={{ fontSize: 15, maxWidth: 400 }}>
-                  {isAr ? 'استخدم «الأوامر» أو «أسئلة جاهزة» أعلاه، أو اكتب سؤالك في الأسفل.' : 'Use Commands or Suggested above, or type your question below.'}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16, color: 'var(--noorix-text-muted)', textAlign: 'center', padding: 32 }}>
+                <div style={{ fontSize: 48, opacity: 0.25 }}>💬</div>
+                <div style={{ fontSize: 15, maxWidth: 360, lineHeight: 1.7, opacity: 0.7 }}>
+                  {isAr
+                    ? 'استخدم «الأوامر» لإدخال البيانات، أو «أسئلة جاهزة» للاستفسار، أو اكتب سؤالك مباشرة.'
+                    : 'Use Commands to enter data, Suggested for queries, or type your question below.'}
                 </div>
               </div>
             )
@@ -477,20 +480,9 @@ export default function SmartChatScreen() {
             <div
               key={i}
               className={`noorix-chat-msg-row noorix-chat-msg-row--${m.role === 'user' ? 'user' : 'assistant'}`}
-              style={{ alignSelf: m.role === 'user' ? (isAr ? 'flex-start' : 'flex-end') : (isAr ? 'flex-end' : 'flex-start'), maxWidth: '90%' }}
             >
               {m.role === 'user' ? (
-                <div
-                  className="noorix-chat-bubble noorix-chat-bubble--user"
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 12,
-                    background: 'rgba(37,99,235,0.12)',
-                    color: '#1e40af',
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                  }}
-                >
+                <div className="noorix-chat-bubble--user">
                   {m.text}
                 </div>
               ) : (
@@ -505,8 +497,9 @@ export default function SmartChatScreen() {
             </div>
           ))}
           {loading && (
-            <div style={{ alignSelf: isAr ? 'flex-end' : 'flex-start' }}>
-              <div style={{ padding: '12px 16px', borderRadius: 12, background: 'var(--noorix-bg-muted)', fontSize: 14, color: 'var(--noorix-text-muted)' }}>
+            <div className={`noorix-chat-msg-row noorix-chat-msg-row--assistant`}>
+              <div style={{ padding: '12px 18px', borderRadius: 18, background: 'var(--noorix-bg-muted)', fontSize: 14, color: 'var(--noorix-text-muted)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span className="noorix-chat-spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(100,116,139,0.3)', borderTopColor: 'var(--noorix-text-muted)' }} />
                 {isAr ? 'جاري البحث...' : 'Searching...'}
               </div>
             </div>
