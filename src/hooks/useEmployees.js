@@ -24,7 +24,7 @@ export function useEmployees(companyId, { includeTerminated = false, fetchEnable
     queryKey: ['employees', companyId, includeTerminated],
     queryFn: async () => {
       const res = await getEmployees(companyId, includeTerminated);
-      if (!res?.success) return [];
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الموظفين');
       return Array.isArray(res.data) ? res.data : [];
     },
     enabled: !!companyId && fetchEnabled,

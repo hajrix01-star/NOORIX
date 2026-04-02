@@ -93,6 +93,14 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       render: (v) => <span style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
   ];
 
+  if (isError) {
+    return (
+      <div style={{ padding: 32, textAlign: 'center', color: '#dc2626', fontSize: 14 }}>
+        ⚠ {error?.message || 'فشل تحميل سجل المدفوعات'}
+      </div>
+    );
+  }
+
   return (
     <div>
       {!externalDateFilter && (

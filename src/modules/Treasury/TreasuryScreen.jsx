@@ -30,11 +30,11 @@ export default function TreasuryScreen() {
   const notify = (message, type = 'success') =>
     setToast({ visible: true, message, type });
 
-  const { data: vaultsList = [], isLoading, isFetching } = useQuery({
+  const { data: vaultsList = [], isLoading, isFetching, isError: vaultsError } = useQuery({
     queryKey: ['vaults', companyId, includeArchived, startDate, endDate],
     queryFn:  async () => {
       const res = await getVaults(companyId, includeArchived, startDate, endDate);
-      if (!res?.success) return [];
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الخزائن');
       const d = res?.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },

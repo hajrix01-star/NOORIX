@@ -152,11 +152,11 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>الإجمالي (شامل الضريبة) *</label>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('totalAmountInclTax') || 'الإجمالي (شامل الضريبة) *'}</label>
             <input
               type="number"
-              min="0"
-              step="0.1"
+              min="0.01"
+              step="0.01"
               value={form.totalAmount}
               onChange={(e) => updateField('totalAmount', e.target.value)}
               style={{ ...inputBase, fontFamily: 'var(--noorix-font-numbers)' }}

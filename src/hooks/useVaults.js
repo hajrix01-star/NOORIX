@@ -23,7 +23,7 @@ export function useVaults({ companyId, includeArchived = false }) {
     queryKey: ['vaults', companyId, includeArchived],
     queryFn: async () => {
       const res = await getVaults(companyId, includeArchived);
-      if (!res?.success) return [];
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الخزائن');
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },
@@ -34,7 +34,7 @@ export function useVaults({ companyId, includeArchived = false }) {
     queryKey: ['payment-vaults', companyId],
     queryFn: async () => {
       const res = await getPaymentVaults(companyId);
-      if (!res?.success) return [];
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل خيارات الدفع');
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },

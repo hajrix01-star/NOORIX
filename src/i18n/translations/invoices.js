@@ -90,4 +90,5 @@ export default {
   dayCloseKpiColMetric: { ar: 'البند', en: 'Item' },
   dayCloseKpiColValue: { ar: 'المبلغ (﷼)', en: 'Amount (SAR)' },
   dayCloseKpiColCount: { ar: 'العدد', en: 'Count' },
+  totalAmountInclTax: { ar: 'الإجمالي (شامل الضريبة) *', en: 'Total amount (incl. VAT) *' },
 };

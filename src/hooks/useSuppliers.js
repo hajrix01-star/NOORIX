@@ -17,7 +17,7 @@ export function useSuppliers(companyId, { pageSize = 200, q } = {}) {
     queryKey: ['suppliers', companyId, pageSize, q || ''],
     queryFn: async () => {
       const res = await getSuppliers(companyId, 1, pageSize, q);
-      if (!res?.success) return [];
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الموردين');
       const d = res.data?.data ?? res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },

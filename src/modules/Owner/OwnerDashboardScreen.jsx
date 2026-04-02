@@ -34,7 +34,8 @@ export default function OwnerDashboardScreen() {
     window.addEventListener('resize', handler, { passive: true });
     return () => window.removeEventListener('resize', handler);
   }, []);
-  const idsToFetch = selectedCompanyIds.size > 0 ? [...selectedCompanyIds] : companyList.map((c) => c.id);
+  const allSelected = selectedCompanyIds.size === 0;
+  const idsToFetch = allSelected ? companyList.map((c) => c.id) : [...selectedCompanyIds];
   const { reportsByCompany, isLoading, isError, error } = useOwnerReports({ companyIds: idsToFetch, year });
 
   const toggleCompany = (id) => {
@@ -218,7 +219,7 @@ export default function OwnerDashboardScreen() {
           <button type="button" className="noorix-btn-nav" onClick={selectAll} style={{ padding: '6px 10px', fontSize: 11 }}>{t('ownerAllCompanies')}</button>
           <button type="button" className="noorix-btn-nav" onClick={selectNone} style={{ padding: '6px 10px', fontSize: 11 }}>{lang === 'ar' ? 'إخفاء الكل' : 'Hide all'}</button>
           {companyList.map((c, i) => {
-            const isVisible = selectedCompanyIds.has(c.id) || selectedCompanyIds.size === 0;
+            const isVisible = allSelected ? true : selectedCompanyIds.has(c.id);
             return (
               <button
                 key={c.id}

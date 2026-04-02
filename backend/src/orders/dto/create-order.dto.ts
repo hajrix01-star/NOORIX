@@ -5,6 +5,7 @@ import {
   IsIn,
   ValidateNested,
   ArrayMinSize,
+  Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -25,9 +26,11 @@ export class CreateOrderItemDto {
   unit?: string;
 
   @IsString()
+  @Matches(/^\d+(\.\d+)?$/, { message: 'الكمية يجب أن تكون رقماً موجباً' })
   quantity: string;
 
   @IsString()
+  @Matches(/^\d+(\.\d+)?$/, { message: 'سعر الوحدة يجب أن يكون رقماً غير سالب' })
   unitPrice: string;
 }
 
