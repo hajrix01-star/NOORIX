@@ -78,7 +78,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         <form onSubmit={handleSave} style={{ display: 'grid', gap: 14 }}>
 
           {/* الأسماء */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="vault-form-names-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={LST}>{t('nameArLabel')}</label>
               <input type="text" value={form.nameAr} onChange={(e) => set('nameAr', e.target.value)}
@@ -94,7 +94,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           {/* النوع */}
           <div>
             <label style={LST}>{t('vaultType')}</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            <div className="vault-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
               {VAULT_TYPES.map((vt) => (
                 <button key={vt.value} type="button" onClick={() => set('type', vt.value)} style={{
                   padding: '10px 6px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600,

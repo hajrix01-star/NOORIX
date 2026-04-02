@@ -149,7 +149,8 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
         {isLoading ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'end', minHeight: 100 }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(36px, 1fr))', gap: 8, alignItems: 'end', minHeight: 100, minWidth: 360 }}>
             {chartData.map((point) => {
               const barHeight = `${Math.max(0, (point.percent / maxPercent) * 100)}%`;
               return (
@@ -173,6 +174,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
                 </div>
               );
             })}
+          </div>
           </div>
         )}
       </div>

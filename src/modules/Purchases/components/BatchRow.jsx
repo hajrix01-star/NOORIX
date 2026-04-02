@@ -98,9 +98,9 @@ export const BatchRow = memo(function BatchRow({
               onClick={() => onBookmark(row.supplierId)}
               title={bookmarkedIds.includes(row.supplierId) ? t('removeFromShortcuts') : t('addToShortcuts')}
               style={{
-                width: 26, height: 26, borderRadius: 5, border: '1px solid var(--noorix-border)',
+                width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6, border: '1px solid var(--noorix-border)',
                 background: bookmarkedIds.includes(row.supplierId) ? 'rgba(245,158,11,0.15)' : 'var(--noorix-bg-page)',
-                cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}
             >
               {bookmarkedIds.includes(row.supplierId) ? '★' : '☆'}
@@ -207,8 +207,8 @@ export const BatchRow = memo(function BatchRow({
           type="button"
           onClick={() => onRemove(index)}
           style={{
-            width: 26, height: 26, borderRadius: 5, border: '1px solid #fecaca',
-            background: 'rgba(239,68,68,0.06)', color: '#dc2626', cursor: 'pointer', fontSize: 13,
+            width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6, border: '1px solid #fecaca',
+            background: 'rgba(239,68,68,0.06)', color: '#dc2626', cursor: 'pointer', fontSize: 15,
             display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
           }}
           title={t('delete')}

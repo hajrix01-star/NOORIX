@@ -262,7 +262,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
             <button type="submit" className="noorix-btn-nav" style={{ background: 'var(--btn-primary-bg)', color: '#fff' }} disabled={submitting}>
               {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}

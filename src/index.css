@@ -2531,3 +2531,92 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     overflow: visible !important;
   }
 }
+
+/* ========== VaultFormModal — شبكة متكيفة مع الجوال ========== */
+@media (max-width: 520px) {
+  /* شبكة اسمي الخزينة: عمودان → عمود واحد */
+  .vault-form-names-grid {
+    grid-template-columns: 1fr !important;
+  }
+  /* شبكة أنواع الخزينة: 4 أعمدة → 2 أعمدة */
+  .vault-type-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* شبكة نموذج الموظف: عمودان → عمود واحد */
+  .staff-form-names-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ========== Dashboard — تخفيف padding على الجوال ========== */
+@media (max-width: 640px) {
+  .noorix-surface-card > div[style*="padding: 24"] {
+    padding: 12px !important;
+  }
+  /* تبويبات لوحة التحكم: تمرير أفقي */
+  .noorix-tab-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .noorix-tab-bar::-webkit-scrollbar { display: none; }
+}
+
+/* ========== أزرار Footer في النوافذ — دائماً قابلة للالتفاف ========== */
+/* نضمن أن صفوف أزرار الحفظ/الإلغاء لا تُضغط على الشاشات الضيقة */
+@media (max-width: 480px) {
+  [role="dialog"] form > div:last-child,
+  .modal-overlay form > div:last-child,
+  [role="dialog"] > div > div:last-child > div[style*="flex-end"],
+  [role="dialog"] > div > div[style*="flex-end"]:last-child {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  [role="dialog"] form button,
+  .modal-overlay form button {
+    min-height: 40px;
+    flex: 1 1 auto;
+    min-width: 100px;
+  }
+}
+
+/* ========== HR Modals — footer أزرار ========== */
+@media (max-width: 480px) {
+  /* ضمان أن أزرار الحفظ/الإلغاء في نوافذ HR تلتف */
+  .noorix-surface-card form > div:last-child[style*="justify-content: flex-end"],
+  .noorix-surface-card form > div:last-child[style*="justifyContent"] {
+    flex-wrap: wrap !important;
+    justify-content: stretch !important;
+  }
+  .noorix-surface-card form > div:last-child button,
+  .noorix-surface-card form > div:last-child .noorix-btn-nav,
+  .noorix-surface-card form > div:last-child .noorix-btn-primary {
+    flex: 1 1 auto;
+    min-width: 100px;
+    min-height: 40px;
+  }
+}
+
+/* ========== RolesTab — badge font-size أكبر ========== */
+.noorix-role-system-badge {
+  font-size: 11px !important;
+}
+
+/* ========== BankStatementAnalysisCardsTab — رأس البطاقة ========== */
+@media (max-width: 600px) {
+  .bank-analysis-card-header {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+}
+
+/* ========== تحسين padding الجوال لعموم النوافذ ========== */
+@media (max-width: 480px) {
+  /* تقليص padding الـ overlay للنوافذ المتمركزة */
+  [role="dialog"][style*="padding: 24"] {
+    padding: 12px !important;
+  }
+  [role="dialog"][style*="padding: 20"] {
+    padding: 10px !important;
+  }
+}

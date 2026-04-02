@@ -180,20 +180,20 @@ export const StaffFormModal = memo(function StaffFormModal({
         style={{ width: '100%', maxWidth: 520, maxHeight: '90vh', overflow: 'auto', borderRadius: 14, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 8 }}>
           <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
             {isEdit ? t('editEmployee') : t('addEmployee')}
           </h4>
           <button
             type="button"
             onClick={onClose}
-            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--noorix-text-muted)' }}
+            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--noorix-text-muted)', minWidth: 32, minHeight: 32 }}
           >
             ×
           </button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+          <div className="staff-form-names-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('employeeName')}</label>
               <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={t('employeeNamePlaceholder')} required style={IS} />
@@ -338,7 +338,7 @@ export const StaffFormModal = memo(function StaffFormModal({
               <div style={{ marginTop: 10, fontSize: 12, color: '#dc2626' }}>{allowanceError}</div>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
             <button type="submit" className="noorix-btn-nav noorix-btn-success" disabled={isSaving || !form.name.trim()}>
               {isSaving ? t('saving') : t('saveChanges')}

@@ -161,7 +161,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   return (
     <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 12 }} onClick={onClose}>
       <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 1380, width: 'min(97vw, 1380px)', maxHeight: '92vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 8 }}>
           <div>
             <h3 style={{ margin: '0 0 4px', fontSize: 18 }}>{run.runNumber || '—'}</h3>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
@@ -194,7 +194,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
           <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{run.notes}</p>
         )}
 
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16, flexWrap: 'wrap' }}>
           <button type="button" className="noorix-btn-nav" onClick={handlePrint}>{t('printPayroll')}</button>
           <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('close') || 'إغلاق'}</button>
         </div>

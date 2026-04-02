@@ -60,7 +60,7 @@ export default function DashboardScreen() {
       </div>
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="noorix-tab-bar" style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)' }}>
+        <div className="noorix-tab-bar" style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {DASHBOARD_TABS.map((tab) => (
             <button
               key={tab.id}
@@ -82,7 +82,7 @@ export default function DashboardScreen() {
             </button>
           ))}
         </div>
-        <div style={{ padding: 24 }}>
+        <div style={{ padding: 'clamp(12px, 3vw, 24px)' }}>
           {activeTab === 'overview' && <DashboardOverviewTab companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
           {activeTab === 'calendar' && <DashboardCalendarTab companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
           {activeTab === 'specialDays' && <DashboardSpecialDaysTab companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} />}

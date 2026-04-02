@@ -135,7 +135,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
               style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
             />
           </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
             <button type="submit" className="noorix-btn-nav" style={{ background: 'var(--btn-primary-bg)', color: '#fff' }} disabled={createAdvance.isPending}>
               {createAdvance.isPending ? t('saving') : t('payAdvance')}

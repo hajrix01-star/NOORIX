@@ -221,7 +221,7 @@ export function SalesEntryModal({
                         value={amt}
                         onChange={(e) => setChannelAmounts((p) => ({ ...p, [v.id]: e.target.value }))}
                         placeholder="0.00"
-                        style={{ padding: '8px 10px', borderRadius: 8, fontSize: 14, fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, fontSize: 14, fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}
                       />
                     </div>
                   );
