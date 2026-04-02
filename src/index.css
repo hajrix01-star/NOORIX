@@ -2170,6 +2170,49 @@ input:focus, select:focus, textarea:focus {
 /* شريط التبويبات من الموارد البشرية */
 .noorix-tab-bar-pill::-webkit-scrollbar { display: none; }
 
+/* مبيعات — هيدر + شريط إجراءات ثابت على الجوال */
+.noorix-daily-sales-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.noorix-daily-sales-header__titles {
+  min-width: 0;
+  flex: 1 1 200px;
+}
+.noorix-daily-sales-header__toolbar {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+}
+@media (max-width: 700px) {
+  .noorix-daily-sales-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .noorix-daily-sales-header__toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 35;
+    padding: 10px 0;
+    margin: 0 -4px;
+    padding-inline: 4px;
+    background: var(--noorix-bg-page);
+    border-bottom: 1px solid var(--noorix-border);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  }
+  .noorix-daily-sales-header__toolbar .noorix-btn-nav,
+  .noorix-daily-sales-header__toolbar .noorix-btn-primary {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
 /* إخفاء زر الإضافة الرئيسي على الجوال حين يوجد FAB */
 .noorix-mobile-hide { display: inline-flex; }
 @media (max-width: 768px) {

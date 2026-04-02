@@ -25,6 +25,8 @@ export const PERMISSIONS = {
   SALES_WRITE:      'SALES_WRITE',
   SALES_DELETE:     'SALES_DELETE',
   SALES_ACTIONS:    'SALES_ACTIONS',
+  SALES_FULL_HISTORY:        'SALES_FULL_HISTORY',
+  SALES_VIEW_SUMMARIES_LIST: 'SALES_VIEW_SUMMARIES_LIST',
 
   SUPPLIERS_READ:   'SUPPLIERS_READ',
   SUPPLIERS_WRITE:  'SUPPLIERS_WRITE',
@@ -258,6 +260,29 @@ export const PERMISSION_LEVELS = {
 };
 
 /**
+ * صلاحيات الأدوار الثابتة عندما تكون permissions في JWT فارغة — يطابق backend/src/auth/constants/permissions.ts
+ */
+const SYSTEM_ROLE_PERMISSIONS = {
+  accountant: [
+    'VIEW_DASHBOARD', 'VIEW_CHAT', 'VIEW_INVOICES', 'VIEW_SUPPLIERS', 'VIEW_VAULTS', 'VIEW_REPORTS',
+    'VIEW_SALES', 'VIEW_EMPLOYEES', 'VIEW_ORDERS', 'VIEW_EXPENSES',
+    'INVOICES_READ', 'INVOICES_WRITE', 'INVOICES_ACTIONS',
+    'SALES_READ', 'SALES_WRITE', 'SALES_ACTIONS', 'SALES_FULL_HISTORY', 'SALES_VIEW_SUMMARIES_LIST',
+    'SUPPLIERS_READ', 'VAULTS_READ', 'EXPENSES_READ', 'EXPENSES_WRITE',
+    'ORDERS_READ', 'ORDERS_WRITE', 'REPORTS_READ',
+    'EMPLOYEES_READ', 'EMPLOYEES_WRITE', 'HR_READ', 'HR_WRITE', 'HR_DELETE',
+    'SMART_CHAT_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS',
+    'CHAT_PRESET_FAQ', 'CHAT_PRESET_INCREASES', 'CREATE_INVOICE',
+  ],
+  cashier: [
+    'VIEW_CHAT', 'VIEW_SALES', 'VIEW_INVOICES',
+    'SALES_READ', 'SALES_WRITE', 'SALES_ACTIONS', 'SALES_VIEW_SUMMARIES_LIST',
+    'INVOICES_READ', 'INVOICES_WRITE', 'INVOICES_ACTIONS',
+    'SMART_CHAT_READ', 'CHAT_PRESET_FAQ', 'CREATE_INVOICE',
+  ],
+};
+
+/**
  * hasPermission — يفحص الصلاحية من مصفوفة المستخدم (DB-based).
  * @param {string|string[]} roleOrPermissions - اسم الدور أو مصفوفة الصلاحيات
  * @param {string} permission - الصلاحية المطلوبة
@@ -271,11 +296,12 @@ export function hasPermission(roleOrPermissions, permission, userPermissions) {
   const role = (roleOrPermissions || '').toLowerCase();
   if (role === 'super_admin' || role === 'owner') return true;
 
-  if (Array.isArray(userPermissions)) {
+  if (Array.isArray(userPermissions) && userPermissions.length > 0) {
     return userPermissions.includes(permission);
   }
 
-  return false;
+  const defaults = SYSTEM_ROLE_PERMISSIONS[role];
+  return Array.isArray(defaults) && defaults.includes(permission);
 }
 
 export function isSuperAdmin(role) {

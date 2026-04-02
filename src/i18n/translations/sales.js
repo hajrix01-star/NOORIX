@@ -33,6 +33,8 @@ export default {
   sendWhatsApp: { ar: '📤 إرسال عبر واتساب', en: '📤 Send via WhatsApp' },
   dailySummaryInput: { ar: 'إدخال ملخص مبيعات يومي', en: 'Enter daily sales summary' },
   previousSummaries: { ar: '📋 الملخصات السابقة', en: '📋 Previous summaries' },
+  salesCashierWindowHint: { ar: 'تظهر لك ملخصات آخر 7 أيام فقط — بدون فلاتر أو تصدير.', en: 'You only see the last 7 days of summaries — no filters or export.' },
+  salesSummariesHiddenByRole: { ar: 'تم إخفاء قائمة الملخصات لهذا الدور. يمكنك إدخال ملخص جديد فقط.', en: 'Summary list is hidden for this role. You can only enter a new summary.' },
   noSummariesInPeriod: { ar: 'لا توجد ملخصات في هذه الفترة.', en: 'No summaries in this period.' },
   batchPurchasesTitle: { ar: 'إدخال المشتريات الجماعي', en: 'Batch Purchases Entry' },
   batchPurchasesDesc: { ar: 'إدخال عدة فواتير موردين دفعة واحدة', en: 'Enter multiple supplier invoices in one batch' },

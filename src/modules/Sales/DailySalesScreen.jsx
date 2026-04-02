@@ -12,7 +12,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useSales } from '../../hooks/useSales';
 import { useSalesChannels } from '../../hooks/useSalesChannels';
 import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } from '../../services/api';
-import { formatSaudiDate } from '../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
@@ -24,8 +24,15 @@ import { SalesEditModal } from './components/SalesEditModal';
 import { SalesEntryModal } from './components/SalesEntryModal';
 import ImportExportModal from '../../components/ImportExportModal';
 import { formatSalesForExport } from '../../utils/importTemplates';
+import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 
 const PAGE_SIZE = 50;
+
+function addCalendarDaysYmd(ymd, delta) {
+  const [y, m, d] = ymd.split('-').map((x) => parseInt(x, 10));
+  const dt = new Date(Date.UTC(y, m - 1, d + delta));
+  return dt.toISOString().slice(0, 10);
+}
 
 /* ── شارة الحالة ──────────────────────────────────────────────── */
 const Badge = memo(function Badge({ map, value }) {
@@ -40,7 +47,7 @@ const Badge = memo(function Badge({ map, value }) {
 /* ══ الشاشة الرئيسية ══════════════════════════════════════════ */
 export default function DailySalesScreen() {
   const queryClient = useQueryClient();
-  const { activeCompanyId, userRole, companies } = useApp();
+  const { activeCompanyId, userRole, userPermissions, companies } = useApp();
   const { t, lang } = useTranslation();
   const [searchParams] = useSearchParams();
   const urlDrillKeyRef = useRef('');
@@ -62,6 +69,9 @@ export default function DailySalesScreen() {
   const [exportBusy, setExportBusy] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
 
+  const salesFullHistory = hasPermission(userRole, PERMISSIONS.SALES_FULL_HISTORY, userPermissions);
+  const salesViewSummariesList = hasPermission(userRole, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, userPermissions);
+
   const { createSummary, updateSummary, deleteSummary } = useSales({
     companyId,
     startDate: dateFilter.startDate,
@@ -82,10 +92,28 @@ export default function DailySalesScreen() {
   }, [searchInput]);
 
   useEffect(() => {
-    setListPage(1);
-  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate]);
+    if (salesFullHistory) return;
+    setSearchInput('');
+    setDebouncedQ('');
+  }, [salesFullHistory, companyId]);
 
   useEffect(() => {
+    if (salesFullHistory || !companyId) return;
+    const end = getSaudiToday();
+    const start = addCalendarDaysYmd(end, -6);
+    dateFilter.setMode('range');
+    dateFilter.setRangeStart(start);
+    dateFilter.setRangeEnd(end);
+  }, [salesFullHistory, companyId]);
+
+  const debouncedQEffective = salesFullHistory ? debouncedQ : '';
+
+  useEffect(() => {
+    setListPage(1);
+  }, [debouncedQEffective, dateFilter.startDate, dateFilter.endDate]);
+
+  useEffect(() => {
+    if (!salesFullHistory) return;
     const keys = ['from', 'to', 'q'];
     const parts = keys.map((k) => searchParams.get(k) || '');
     const drillKey = parts.join('\u001f');
@@ -121,9 +149,10 @@ export default function DailySalesScreen() {
       dateFilter.endDate,
       listPage,
       PAGE_SIZE,
-      debouncedQ,
+      debouncedQEffective,
       sortKey,
       sortDir,
+      salesViewSummariesList,
     ],
     queryFn: async () => {
       const res = await getDailySalesSummaries(
@@ -132,7 +161,7 @@ export default function DailySalesScreen() {
         dateFilter.endDate,
         listPage,
         PAGE_SIZE,
-        debouncedQ,
+        debouncedQEffective,
         sortKey,
         sortDir,
         true,
@@ -140,7 +169,7 @@ export default function DailySalesScreen() {
       if (!res?.success) throw new Error(res?.error || 'فشل تحميل المبيعات');
       return res.data;
     },
-    enabled: !!companyId,
+    enabled: !!companyId && salesViewSummariesList,
   });
 
   const listTotal = salesPage?.total ?? 0;
@@ -503,37 +532,33 @@ export default function DailySalesScreen() {
         }}
       />
 
-      {/* هيدر */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
+      {/* هيدر + شريط إجراءات (ثابت على الجوال بجانب الاستيراد) */}
+      <div className="noorix-daily-sales-header">
+        <div className="noorix-daily-sales-header__titles">
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('salesDailySummary')}</h1>
           <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('salesDailyDesc')}</p>
+          {!salesFullHistory && (
+            <p style={{ marginTop: 6, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+              {t('salesCashierWindowHint')}
+            </p>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-          <button type="button" className="noorix-btn-nav noorix-print-hide"
-            onClick={() => setShowImportExport(true)} disabled={!hasCompany}
-            style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            استيراد / تصدير
-          </button>
-          <button type="button" className="noorix-btn-nav noorix-btn-primary noorix-print-hide noorix-mobile-hide"
+        <div className="noorix-daily-sales-header__toolbar noorix-print-hide">
+          {salesFullHistory && (
+            <button type="button" className="noorix-btn-nav"
+              onClick={() => setShowImportExport(true)} disabled={!hasCompany}
+              style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              استيراد / تصدير
+            </button>
+          )}
+          <button type="button" className="noorix-btn-nav noorix-btn-primary"
             onClick={() => setShowEntryModal(true)} disabled={!hasCompany}
             style={{ flexShrink: 0 }}>
             {t('addDailySummary')}
           </button>
         </div>
       </div>
-
-      {/* FAB — زر إضافة عائم للجوال */}
-      {hasCompany && (
-        <button
-          type="button"
-          className="noorix-fab noorix-print-hide"
-          onClick={() => setShowEntryModal(true)}
-        >
-          + {t('addDailySummary')}
-        </button>
-      )}
 
       {hasCompany && salesChannelsHasError && (
         <div
@@ -559,7 +584,7 @@ export default function DailySalesScreen() {
         </div>
       )}
 
-      <DateFilterBar filter={dateFilter} />
+      {salesFullHistory && <DateFilterBar filter={dateFilter} />}
 
       {!hasCompany && (
         <div className="noorix-surface-card" style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
@@ -568,7 +593,12 @@ export default function DailySalesScreen() {
       )}
 
       {/* ── الملخصات السابقة — جدول احترافي ── */}
-      {hasCompany && (
+      {hasCompany && !salesViewSummariesList && (
+        <div className="noorix-surface-card" style={{ padding: 16, fontSize: 14, color: 'var(--noorix-text-muted)' }}>
+          {t('salesSummariesHiddenByRole')}
+        </div>
+      )}
+      {hasCompany && salesViewSummariesList && (
         <div className="noorix-sales-table-wrapper">
           <SmartTable
             columns={columns}
@@ -589,15 +619,17 @@ export default function DailySalesScreen() {
             <>
               <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>— {dateFilter.label}</span>
               <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 999, background: 'rgba(37,99,235,0.1)', color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap' }}>{t('summaryCount', displayedTotal)}</span>
-              <span className="noorix-print-hide" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <button type="button" className="noorix-btn-nav" onClick={() => handleExportExcel()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>📊 {exportBusy ? '…' : t('exportExcel')}</button>
-                <button type="button" className="noorix-btn-nav" onClick={() => handleExportPdf()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>📄 {exportBusy ? '…' : t('exportPdf')}</button>
-                <button type="button" className="noorix-btn-nav" onClick={() => handlePrint()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>🖨 {exportBusy ? '…' : t('print')}</button>
-              </span>
+              {salesFullHistory && (
+                <span className="noorix-print-hide" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button type="button" className="noorix-btn-nav" onClick={() => handleExportExcel()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>📊 {exportBusy ? '…' : t('exportExcel')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={() => handleExportPdf()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>📄 {exportBusy ? '…' : t('exportPdf')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={() => handlePrint()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>🖨 {exportBusy ? '…' : t('print')}</button>
+                </span>
+              )}
             </>
           }
-          searchValue={searchInput}
-          onSearchChange={setSearchInput}
+          searchValue={salesFullHistory ? searchInput : undefined}
+          onSearchChange={salesFullHistory ? setSearchInput : undefined}
           sortKey={sortKey}
           sortDir={sortDir}
           onSort={toggleSort}

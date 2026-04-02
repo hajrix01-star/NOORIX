@@ -5,6 +5,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { ROLE_PERMISSIONS } from '../auth/constants/permissions';
 
 const ADMIN_EMAIL = 'admin@noorix.sa';
 const ADMIN_PASSWORD = '123';
@@ -14,7 +15,8 @@ const ALL_PERMISSIONS = [
   'VIEW_OWNER', 'VIEW_DASHBOARD', 'VIEW_CHAT', 'VIEW_SALES', 'VIEW_INVOICES',
   'VIEW_SUPPLIERS', 'VIEW_VAULTS', 'VIEW_REPORTS', 'INVOICES_READ', 'INVOICES_WRITE',
   'INVOICES_DELETE', 'INVOICES_ACTIONS', 'SALES_READ', 'SALES_WRITE', 'SALES_DELETE',
-  'SALES_ACTIONS', 'SUPPLIERS_READ', 'SUPPLIERS_WRITE', 'SUPPLIERS_DELETE',
+  'SALES_ACTIONS', 'SALES_FULL_HISTORY', 'SALES_VIEW_SUMMARIES_LIST',
+  'SUPPLIERS_READ', 'SUPPLIERS_WRITE', 'SUPPLIERS_DELETE',
   'VAULTS_READ', 'VAULTS_WRITE', 'VAULTS_DELETE', 'REPORTS_READ', 'SMART_CHAT_READ',
   'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS', 'CHAT_PRESET_FAQ', 'CHAT_PRESET_INCREASES',
   'MANAGE_SETTINGS', 'MANAGE_COMPANIES', 'MANAGE_USERS', 'DELETE_COMPANY', 'USERS_DELETE',
@@ -88,6 +90,21 @@ export class DatabaseBootstrapService implements OnModuleInit {
         }
       }
       roleMap[name] = role.id;
+    }
+
+    for (const name of ['accountant', 'cashier'] as const) {
+      const r = await this.prisma.role.findUnique({ where: { name } });
+      if (!r) continue;
+      const defaults = ROLE_PERMISSIONS[name] as string[];
+      const cur = (r.permissions || []) as string[];
+      const merged = [...new Set([...cur, ...defaults])];
+      if (merged.length > cur.length) {
+        await this.prisma.role.update({
+          where: { id: r.id },
+          data: { permissions: merged },
+        });
+        this.logger.log(`تم دمج صلاحيات الدور الافتراضي: ${name}`);
+      }
     }
 
     let company = await this.prisma.company.findFirst({ where: { tenantId: tenant.id } });

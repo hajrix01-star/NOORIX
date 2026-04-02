@@ -15,6 +15,8 @@ export const PERMISSION_LABELS = {
   SALES_READ:         { ar: 'قراءة المبيعات',         icon: '👁️', group: 'المبيعات'    },
   SALES_WRITE:        { ar: 'كتابة / تعديل المبيعات', icon: '✏️', group: 'المبيعات'    },
   SALES_DELETE:       { ar: 'حذف المبيعات',           icon: '🗑️', group: 'المبيعات'    },
+  SALES_FULL_HISTORY: { ar: 'المبيعات — عرض كامل السجل والفلاتر', icon: '📅', group: 'المبيعات' },
+  SALES_VIEW_SUMMARIES_LIST: { ar: 'المبيعات — عرض جدول الملخصات السابقة', icon: '📋', group: 'المبيعات' },
   SUPPLIERS_READ:     { ar: 'قراءة الموردين',          icon: '👁️', group: 'الموردين'    },
   SUPPLIERS_WRITE:    { ar: 'إضافة / تعديل الموردين', icon: '✏️', group: 'الموردين'    },
   SUPPLIERS_DELETE:   { ar: 'حذف الموردين',           icon: '🗑️', group: 'الموردين'    },

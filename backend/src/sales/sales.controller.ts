@@ -12,6 +12,8 @@ import { RolesGuard }           from '../auth/guards/roles.guard';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermission }    from '../auth/decorators/require-permission.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
+import { clampSalesSummaryDateQuery } from '../common/utils/sales-summary-date-range';
 import { SalesService }           from './sales.service';
 import { CreateSalesSummaryDto }  from './dto/create-sales-summary.dto';
 import { UpdateSalesSummaryDto }  from './dto/update-sales-summary.dto';
@@ -71,6 +73,7 @@ export class SalesController {
   @Get('summaries')
   @RequirePermission('SALES_READ')
   async findAll(
+    @CurrentUser() user: JwtUser,
     @Query('companyId') companyId:  string,
     @Query('startDate') startDate?: string,
     @Query('endDate')   endDate?:   string,
@@ -81,13 +84,28 @@ export class SalesController {
     @Query('sortDir')   sortDir?:   string,
     @Query('includeCancelled') includeCancelled?: string,
   ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const pageSizeNum = pageSize ? parseInt(pageSize, 10) : 30;
     if (!companyId) return { items: [], total: 0, page: 1, pageSize: 30 };
+
+    if (!hasPermission(user.role, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, user.permissions)) {
+      return { items: [], total: 0, page: pageNum, pageSize: Math.min(200, Math.max(1, pageSizeNum)) };
+    }
+
+    let effStart = startDate;
+    let effEnd = endDate;
+    if (!hasPermission(user.role, PERMISSIONS.SALES_FULL_HISTORY, user.permissions)) {
+      const c = clampSalesSummaryDateQuery(startDate, endDate, 7);
+      effStart = c.startDate;
+      effEnd = c.endDate;
+    }
+
     return this.salesService.findAll(
       companyId,
-      startDate,
-      endDate,
-      page     ? parseInt(page, 10)     : 1,
-      pageSize ? parseInt(pageSize, 10) : 30,
+      effStart,
+      effEnd,
+      pageNum,
+      pageSizeNum,
       q,
       sortBy,
       sortDir,
