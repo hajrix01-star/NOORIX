@@ -19,7 +19,7 @@ export default function AppHeader({ toggleSidebar, toggleTheme, toggleLanguage, 
           <button
             type="button"
             onClick={onRetryConnection}
-            style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 6, color: '#fff', padding: '2px 10px', cursor: 'pointer', fontSize: 12 }}
+            style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 6, color: '#fff', padding: '6px 14px', cursor: 'pointer', fontSize: 13, minHeight: 36, fontFamily: 'inherit' }}
           >
             {t('retry')}
           </button>
