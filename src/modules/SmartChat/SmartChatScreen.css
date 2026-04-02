@@ -109,7 +109,7 @@ body.noorix-page-smart-chat .app-main__content {
   min-width: 0;
 }
 
-/* ─── زر الأوامر / الأسئلة ─── */
+/* ─── زر الأوامر / الأسئلة — يتبع ثيم النظام ─── */
 .noorix-chat-gradient-btn {
   display: inline-flex;
   align-items: center;
@@ -119,18 +119,19 @@ body.noorix-page-smart-chat .app-main__content {
   font-size: 13px;
   font-weight: 700;
   color: #fff;
-  border: none;
+  border: 1px solid var(--btn-primary-bg);
   border-radius: 9px;
   cursor: pointer;
   white-space: nowrap;
-  background: linear-gradient(135deg, #1e3a5f 0%, #0a1628 100%);
-  box-shadow: 0 2px 6px rgba(10, 22, 40, 0.18);
-  transition: filter 0.15s, transform 0.1s;
+  background: var(--btn-primary-bg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s, transform 0.1s;
   font-family: inherit;
 }
 
 .noorix-chat-gradient-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
+  background: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
 }
 
 .noorix-chat-gradient-btn:active:not(:disabled) {
@@ -158,7 +159,7 @@ body.noorix-page-smart-chat .app-main__content {
 .noorix-chat-chev {
   flex-shrink: 0;
   font-size: 10px;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 /* ─── لوحة الأوامر (نسخة عادية، مستخدمة على سطح المكتب بدون portal) ─── */
@@ -454,11 +455,7 @@ body.noorix-page-smart-chat .app-main__content {
 
 /* ─── وضع داكن ─── */
 .dark .noorix-smart-chat-header .noorix-smart-chat-title {
-  color: #e8edf5;
-}
-
-.dark .noorix-chat-bubble--user {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+  color: var(--noorix-text);
 }
 
 /* ─── جوال: تخطيط عمودي كامل الشاشة ─── */

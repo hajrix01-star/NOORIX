@@ -299,7 +299,9 @@ export default function SmartChatScreen() {
 
   useEffect(() => {
     const onDoc = (e) => {
-      if (!commandsWrapRef.current?.contains(e.target)) setCommandsOpen(false);
+      const inTrigger = commandsWrapRef.current?.contains(e.target);
+      const inPanel   = commandsPanelRef.current?.contains(e.target);
+      if (!inTrigger && !inPanel) setCommandsOpen(false);
     };
     document.addEventListener('pointerdown', onDoc, true);
     return () => document.removeEventListener('pointerdown', onDoc, true);
