@@ -374,12 +374,12 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px',
-              background: 'linear-gradient(135deg, var(--noorix-accent-blue) 0%, #1d4ed8 100%)', color: '#fff', borderRadius: '12px 12px 0 0',
+              display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px',
+              background: 'linear-gradient(135deg, var(--noorix-accent-blue) 0%, #1d4ed8 100%)', color: '#fff', borderRadius: '12px 12px 0 0', gap: 12,
             }}>
               <div>
                 <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 4 }}>{companyName}</div>
-                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>{t('ordersViewOrder')} — {viewingOrder.orderNumber}</h2>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{t('ordersViewOrder')} — {viewingOrder.orderNumber}</h2>
               </div>
               <button type="button" onClick={() => setViewingOrder(null)} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontWeight: 600 }}>{t('close')}</button>
             </div>

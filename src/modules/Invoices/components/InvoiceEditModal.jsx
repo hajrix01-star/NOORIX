@@ -104,17 +104,18 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
         style={{
           background: 'var(--noorix-bg-surface)', borderRadius: 12, maxWidth: 480, width: '100%',
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', maxHeight: '90vh',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--noorix-border)' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--noorix-border)', flexShrink: 0 }}>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{t('editInvoice')}</h3>
           <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
             {invoice.supplierInvoiceNumber || invoice.invoiceNumber}
           </p>
         </div>
 
-        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="invoice-edit-modal-body" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
           {error && (
             <div style={{ padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#dc2626', fontSize: 13 }}>
               {error}
@@ -188,7 +189,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
           </div>
         </div>
 
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--noorix-border)', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--noorix-border)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
           <button type="button" className="noorix-btn-nav" onClick={onClose}>
             {t('cancel')}
           </button>

@@ -2491,3 +2491,43 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border-color: var(--noorix-accent-blue);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
+
+/* ========== تحسينات عامة للـ modal-overlay على الجوال ========== */
+/* يجعل النوافذ ذات noorix-surface-card تدعم التمرير على الشاشات الصغيرة */
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .modal-overlay > .noorix-surface-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 20px 16px env(safe-area-inset-bottom, 16px) !important;
+  }
+}
+
+/* ========== PWA safe area — التصحيح لشريط التنقل السفلي ========== */
+.noorix-topbar {
+  padding-top: max(0px, env(safe-area-inset-top));
+}
+.noorix-sidebar {
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+
+/* ========== InvoiceEditModal — تمرير احترافي ========== */
+.invoice-edit-modal-body {
+  max-height: min(75vh, 560px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ========== تمرير كل النوافذ الثابتة ذات overflow: hidden على الجوال ========== */
+@media (max-width: 600px) {
+  .noorix-settings-card {
+    overflow: visible !important;
+  }
+}
