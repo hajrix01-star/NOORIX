@@ -64,6 +64,192 @@ function matchByName(list, name, nameArKey = 'nameAr', nameEnKey = 'nameEn') {
   ) || null;
 }
 
+// ─── Supplier Template ───────────────────────────────────────────────────────
+
+export const SUPPLIER_TEMPLATE_COLUMNS = [
+  'اسم المورد بالعربية',          // required
+  'اسم المورد بالإنجليزية',       // optional
+  'رقم الجوال',                   // optional
+  'البريد الإلكتروني',            // optional
+  'العنوان',                      // optional
+  'الرقم الضريبي',                // optional
+  'ملاحظات',                      // optional
+];
+
+export async function downloadSupplierTemplate() {
+  const rows = [
+    {
+      'اسم المورد بالعربية': 'شركة الوفاء للتوريد',
+      'اسم المورد بالإنجليزية': 'Al Wafa Supply Co.',
+      'رقم الجوال': '0501234567',
+      'البريد الإلكتروني': 'info@alwafa.com',
+      'العنوان': 'الرياض، حي العليا',
+      'الرقم الضريبي': '310000000000003',
+      'ملاحظات': 'صف مثال — احذفه واستبدله ببياناتك',
+    },
+    {
+      'اسم المورد بالعربية': 'مورد بدون بيانات إضافية',
+      'اسم المورد بالإنجليزية': '',
+      'رقم الجوال': '',
+      'البريد الإلكتروني': '',
+      'العنوان': '',
+      'الرقم الضريبي': '',
+      'ملاحظات': 'يكفي الاسم العربي كحد أدنى',
+    },
+  ];
+  await exportToExcel(rows, 'template-suppliers.xlsx');
+}
+
+/**
+ * @param {Object[]} rows
+ * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
+ */
+export function validateSupplierRows(rows) {
+  return rows.map((row, i) => {
+    const errors = [];
+    const warnings = [];
+    const rowNum = i + 2;
+
+    const nameAr = String(row['اسم المورد بالعربية'] ?? row['nameAr'] ?? '').trim();
+    const nameEn = String(row['اسم المورد بالإنجليزية'] ?? row['nameEn'] ?? '').trim() || undefined;
+    if (!nameAr && !nameEn) {
+      errors.push('يجب إدخال اسم المورد بالعربية أو الإنجليزية (أحدهما على الأقل)');
+    }
+
+    const phone = String(row['رقم الجوال'] ?? row['phone'] ?? '').trim() || undefined;
+    const email = String(row['البريد الإلكتروني'] ?? row['email'] ?? '').trim() || undefined;
+    const address = String(row['العنوان'] ?? row['address'] ?? '').trim() || undefined;
+    const taxNumber = String(row['الرقم الضريبي'] ?? row['taxNumber'] ?? '').trim() || undefined;
+    const notes = String(row['ملاحظات'] ?? row['notes'] ?? '').trim() || undefined;
+
+    if (taxNumber && !/^\d{15}$/.test(taxNumber)) {
+      warnings.push(`الرقم الضريبي "${taxNumber}" لا يبدو صحيحاً (يجب أن يكون 15 رقماً)`);
+    }
+
+    return {
+      rowNum,
+      errors,
+      warnings,
+      valid: errors.length === 0,
+      payload: errors.length === 0
+        ? { nameAr: nameAr || undefined, nameEn, phone, email, address, taxNumber, notes }
+        : null,
+    };
+  });
+}
+
+export function formatSupplierForExport(sup) {
+  return {
+    'اسم المورد بالعربية': sup.nameAr ?? '',
+    'اسم المورد بالإنجليزية': sup.nameEn ?? '',
+    'رقم الجوال': sup.phone ?? '',
+    'البريد الإلكتروني': sup.email ?? '',
+    'العنوان': sup.address ?? '',
+    'الرقم الضريبي': sup.taxNumber ?? '',
+    'الحالة': sup.status === 'active' ? 'نشط' : 'غير نشط',
+    'ملاحظات': sup.notes ?? '',
+  };
+}
+
+// ─── Product Template ─────────────────────────────────────────────────────────
+
+export const PRODUCT_TEMPLATE_COLUMNS = [
+  'اسم الصنف بالعربية',           // required
+  'اسم الصنف بالإنجليزية',        // optional
+  'الباركود',                     // optional
+  'الفئة',                        // optional  matched by name → categoryId
+  'الوحدة الأساسية',              // optional  e.g. كرتون / قطعة / كيلو
+  'سعر التكلفة',                  // optional  number >= 0
+  'سعر البيع',                    // optional  number >= 0
+  'ملاحظات',                      // optional
+];
+
+export async function downloadProductTemplate() {
+  const rows = [
+    {
+      'اسم الصنف بالعربية': 'زيت زيتون بكر',
+      'اسم الصنف بالإنجليزية': 'Extra Virgin Olive Oil',
+      'الباركود': '6281012345678',
+      'الفئة': 'زيوت وسمن',
+      'الوحدة الأساسية': 'كرتون',
+      'سعر التكلفة': 85,
+      'سعر البيع': 110,
+      'ملاحظات': 'صف مثال — احذفه واستبدله ببياناتك',
+    },
+    {
+      'اسم الصنف بالعربية': 'ماء معدني 1.5 لتر',
+      'اسم الصنف بالإنجليزية': 'Mineral Water 1.5L',
+      'الباركود': '',
+      'الفئة': 'مشروبات',
+      'الوحدة الأساسية': 'كرتون',
+      'سعر التكلفة': 12,
+      'سعر البيع': 18,
+      'ملاحظات': '',
+    },
+  ];
+  await exportToExcel(rows, 'template-products.xlsx');
+}
+
+/**
+ * @param {Object[]} rows
+ * @param {{ categories: Object[] }} options
+ * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
+ */
+export function validateProductRows(rows, { categories = [] } = {}) {
+  return rows.map((row, i) => {
+    const errors = [];
+    const warnings = [];
+    const rowNum = i + 2;
+
+    const nameAr = String(row['اسم الصنف بالعربية'] ?? row['nameAr'] ?? '').trim();
+    const nameEn = String(row['اسم الصنف بالإنجليزية'] ?? row['nameEn'] ?? '').trim() || undefined;
+    if (!nameAr && !nameEn) {
+      errors.push('يجب إدخال اسم الصنف بالعربية أو الإنجليزية (أحدهما على الأقل)');
+    }
+
+    const barcode = String(row['الباركود'] ?? row['barcode'] ?? '').trim() || undefined;
+    const unit = String(row['الوحدة الأساسية'] ?? row['unit'] ?? '').trim() || undefined;
+    const costPrice = parseNumber(row['سعر التكلفة'] ?? row['costPrice'] ?? null);
+    const salePrice = parseNumber(row['سعر البيع'] ?? row['salePrice'] ?? null);
+    const notes = String(row['ملاحظات'] ?? row['notes'] ?? '').trim() || undefined;
+
+    if (costPrice !== null && costPrice < 0) warnings.push('سعر التكلفة لا يمكن أن يكون سالباً');
+    if (salePrice !== null && salePrice < 0) warnings.push('سعر البيع لا يمكن أن يكون سالباً');
+
+    const catNameRaw = String(row['الفئة'] ?? row['categoryName'] ?? '').trim();
+    let categoryId;
+    if (catNameRaw) {
+      const found = matchByName(categories, catNameRaw);
+      if (found) categoryId = found.id;
+      else warnings.push(`الفئة "${catNameRaw}" غير موجودة في النظام`);
+    }
+
+    return {
+      rowNum,
+      errors,
+      warnings,
+      valid: errors.length === 0,
+      payload: errors.length === 0
+        ? { nameAr: nameAr || undefined, nameEn, barcode, categoryId, unit, costPrice, salePrice, notes }
+        : null,
+    };
+  });
+}
+
+export function formatProductForExport(prod) {
+  return {
+    'اسم الصنف بالعربية': prod.nameAr ?? '',
+    'اسم الصنف بالإنجليزية': prod.nameEn ?? '',
+    'الباركود': prod.barcode ?? '',
+    'الفئة': prod.category?.nameAr ?? prod.category?.nameEn ?? '',
+    'الوحدة الأساسية': prod.unit ?? '',
+    'سعر التكلفة': prod.costPrice ?? '',
+    'سعر البيع': prod.salePrice ?? '',
+    'الحالة': prod.status === 'active' ? 'نشط' : 'غير نشط',
+    'ملاحظات': prod.notes ?? '',
+  };
+}
+
 // ─── Invoice Template ────────────────────────────────────────────────────────
 
 export const INVOICE_KIND_LABELS = {

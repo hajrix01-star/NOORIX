@@ -40,6 +40,16 @@ export class CategoriesService {
       if (parent.parentId) throw new BadRequestException('لا يمكن إضافة فئة فرعية تحت فئة فرعية (مستويان فقط)');
     }
 
+    const duplicate = await this.prisma.category.findFirst({
+      where: {
+        companyId: dto.companyId,
+        nameAr: dto.nameAr.trim(),
+        parentId: dto.parentId || null,
+        isActive: true,
+      },
+    });
+    if (duplicate) throw new BadRequestException('يوجد تصنيف بنفس الاسم على هذا المستوى');
+
     const type = dto.type || 'purchase';
     let accountId: string | null = null;
 
@@ -127,11 +137,23 @@ export class CategoriesService {
   async remove(id: string, companyId: string) {
     const cat = await this.prisma.category.findFirst({
       where: { id, companyId },
-      include: { children: { where: { isActive: true } }, suppliers: { where: { isDeleted: false } } },
+      include: {
+        children:     { where: { isActive: true } },
+        suppliers:    { where: { isDeleted: false } },
+        expenseLines: { where: { isActive: true } },
+      },
     });
     if (!cat) throw new NotFoundException('التصنيف غير موجود');
-    if (cat.children.length > 0) throw new BadRequestException('لا يمكن حذف فئة تحتوي على فئات فرعية');
-    if (cat.suppliers.length > 0) throw new BadRequestException('لا يمكن حذف فئة مرتبطة بموردين');
+    if (cat.children.length > 0)
+      throw new BadRequestException('لا يمكن حذف فئة تحتوي على فئات فرعية نشطة');
+    if (cat.suppliers.length > 0)
+      throw new BadRequestException(
+        `لا يمكن حذف فئة مرتبطة بـ ${cat.suppliers.length} مورد`,
+      );
+    if (cat.expenseLines.length > 0)
+      throw new BadRequestException(
+        `لا يمكن حذف فئة مرتبطة بـ ${cat.expenseLines.length} بند مصروف نشط`,
+      );
 
     return this.prisma.category.update({ where: { id }, data: { isActive: false } });
   }

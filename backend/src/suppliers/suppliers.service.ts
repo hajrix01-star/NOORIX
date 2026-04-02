@@ -99,6 +99,24 @@ export class SuppliersService {
     });
     if (!existing) throw new NotFoundException('المورد غير موجود');
 
+    const [invoiceCount, expenseLineCount] = await Promise.all([
+      this.prisma.invoice.count({
+        where: { companyId, supplierId: id, status: 'active' },
+      }),
+      this.prisma.expenseLine.count({
+        where: { companyId, supplierId: id, isActive: true },
+      }),
+    ]);
+
+    if (invoiceCount > 0)
+      throw new BadRequestException(
+        `لا يمكن حذف المورد لارتباطه بـ ${invoiceCount} فاتورة نشطة`,
+      );
+    if (expenseLineCount > 0)
+      throw new BadRequestException(
+        `لا يمكن حذف المورد لارتباطه بـ ${expenseLineCount} بند مصروف نشط`,
+      );
+
     return this.prisma.supplier.update({
       where: { id },
       data: { isDeleted: true },

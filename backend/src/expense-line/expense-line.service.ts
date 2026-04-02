@@ -93,6 +93,11 @@ export class ExpenseLineService {
   async create(dto: CreateExpenseLineDto) {
     const tenantId = TenantContext.getTenantId();
 
+    const duplicate = await this.prisma.expenseLine.findFirst({
+      where: { companyId: dto.companyId, nameAr: dto.nameAr.trim() },
+    });
+    if (duplicate) throw new BadRequestException('يوجد بند مصروف بنفس الاسم في هذه الشركة');
+
     const category = await this.prisma.category.findFirst({
       where: { id: dto.categoryId, companyId: dto.companyId, type: 'expense' },
     });
@@ -125,6 +130,13 @@ export class ExpenseLineService {
 
   async update(id: string, companyId: string, dto: UpdateExpenseLineDto) {
     const existing = await this.findOne(id, companyId);
+
+    if (dto.nameAr !== undefined && dto.nameAr.trim() !== existing.nameAr) {
+      const duplicate = await this.prisma.expenseLine.findFirst({
+        where: { companyId, nameAr: dto.nameAr.trim(), id: { not: id } },
+      });
+      if (duplicate) throw new BadRequestException('يوجد بند مصروف بنفس الاسم في هذه الشركة');
+    }
 
     if (dto.categoryId) {
       const cat = await this.prisma.category.findFirst({
@@ -161,6 +173,15 @@ export class ExpenseLineService {
 
   async deactivate(id: string, companyId: string) {
     await this.findOne(id, companyId);
+
+    const activeInvoices = await this.prisma.invoice.count({
+      where: { companyId, expenseLineId: id, status: 'active' },
+    });
+    if (activeInvoices > 0)
+      throw new BadRequestException(
+        `لا يمكن تعطيل بند المصروف لارتباطه بـ ${activeInvoices} فاتورة نشطة`,
+      );
+
     return this.prisma.expenseLine.update({
       where: { id },
       data: { isActive: false },

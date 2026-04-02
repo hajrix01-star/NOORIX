@@ -69,6 +69,16 @@ function persistToStorage() {
   }
 }
 
+function assertKey(key) {
+  if (key == null || typeof key !== 'string' || key.trim() === '') {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[CacheHelper] Invalid or empty cache key:', key);
+    }
+    return false;
+  }
+  return true;
+}
+
 function isExpired(entry) {
   if (!entry) return true;
   if (entry.expiresAt == null) return false;
@@ -108,6 +118,7 @@ export function initGlobalCacheManager() {
  * @param {number} [ttlMs] - time to live in milliseconds
  */
 export function setCache(key, value, ttlMs) {
+  if (!assertKey(key)) return;
   setInternal(key, value, ttlMs);
   persistToStorage();
 }
@@ -118,6 +129,7 @@ export function setCache(key, value, ttlMs) {
  * @returns {any} value
  */
 export function getCache(key) {
+  if (!assertKey(key)) return undefined;
   const entry = memoryStore[key];
   if (!entry) return undefined;
   if (isExpired(entry)) {
@@ -133,6 +145,7 @@ export function getCache(key) {
  * @param {string} key
  */
 export function invalidateCache(key) {
+  if (!assertKey(key)) return;
   deleteKey(key);
   persistToStorage();
 }
@@ -144,6 +157,7 @@ export function invalidateCache(key) {
  * @param {string[]|Set<string>} relatedKeys
  */
 export function registerRelations(sourceKey, relatedKeys) {
+  if (!assertKey(sourceKey)) return;
   if (!relations[sourceKey]) {
     relations[sourceKey] = new Set();
   }
@@ -163,6 +177,7 @@ export function registerRelations(sourceKey, relatedKeys) {
  * @param {string} sourceKey
  */
 export function invalidateRelated(sourceKey) {
+  if (!assertKey(sourceKey)) return;
   const relatedSet = relations[sourceKey];
   if (!relatedSet) return;
   relatedSet.forEach((k) => {

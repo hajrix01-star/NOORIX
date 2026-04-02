@@ -2,6 +2,7 @@
  * ProductSearchInput — بحث ذكي عن الصنف (عربي + إنجليزي)
  * يعرض الحجم والسعر من آخر طلب (lastPrice من variants)
  * يستخدم Portal للقائمة المنسدلة لتجنب القص (overflow)
+ * يدعم debounce 300ms، loading state، RTL، وجوال (font-size ≥ 16px)
  */
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -11,7 +12,7 @@ import { fmt } from '../../utils/format';
 const inputStyle = {
   width: '100%', padding: '12px 14px', borderRadius: 8,
   border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)', fontSize: 15, fontFamily: 'inherit', boxSizing: 'border-box',
+  color: 'var(--noorix-text)', fontSize: 16, fontFamily: 'inherit', boxSizing: 'border-box',
   minHeight: 44,
 };
 
@@ -42,23 +43,26 @@ export function ProductSearchInput({
   placeholder = '— اختر الصنف —',
   style = {},
   compact = false,
+  loading = false,
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);
   const [dropdownRect, setDropdownRect] = useState(null);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
+  const debounceRef = useRef(null);
 
   const selectedProduct = value ? productsById?.get(value) : null;
   const displayValue = selectedProduct ? (selectedProduct.nameAr || selectedProduct.nameEn || '') : '';
 
   const filtered = useMemo(() => {
-    const q = normalizeForSearch(query);
+    const q = normalizeForSearch(debouncedQuery);
     if (!q) return products;
     return products.filter((p) => matchesSearch(p, q));
-  }, [products, query]);
+  }, [products, debouncedQuery]);
 
   function updateDropdownPosition() {
     const el = containerRef.current;
@@ -155,9 +159,12 @@ export function ProductSearchInput({
         type="text"
         value={open ? query : displayValue}
         onChange={(e) => {
-          setQuery(e.target.value);
+          const val = e.target.value;
+          setQuery(val);
           setOpen(true);
           if (value) onChange?.('');
+          clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => setDebouncedQuery(val), 300);
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
@@ -185,7 +192,12 @@ export function ProductSearchInput({
               zIndex: 10001,
             }}
           >
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div style={{ padding: 16, color: 'var(--noorix-text-muted)', fontSize: 13, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <span style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid var(--noorix-border)', borderTopColor: 'var(--noorix-accent-blue)', borderRadius: '50%', animation: 'noorix-spin 0.8s linear infinite', flexShrink: 0 }} />
+                {t('loading') || 'جاري التحميل...'}
+              </div>
+            ) : filtered.length === 0 ? (
               <div style={{ padding: 16, color: 'var(--noorix-text-muted)', fontSize: 13, textAlign: 'center' }}>
                 {t('ordersNoSearchResults') || 'لا توجد نتائج'}
               </div>
