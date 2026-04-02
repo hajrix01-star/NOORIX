@@ -264,7 +264,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                               )}
                             </td>
                             <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, textAlign: 'right', background: 'rgba(248,250,252,0.9)' }}>{amountText(item.netAmount)}</td>
-                            <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, textAlign: 'right', color: PERCENT_COLOR }}>{percentText(data.contextPercentOfSales)}</td>
+                            <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, textAlign: 'right', color: PERCENT_COLOR }}>{percentText(item.percentOfSales ?? item.percentOfTotal)}</td>
                             <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', color: 'var(--noorix-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }} title={truncateText(item.notes)}>{truncateText(item.notes)}</td>
                           </tr>
                         ))}

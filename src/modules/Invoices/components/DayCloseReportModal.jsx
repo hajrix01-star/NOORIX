@@ -360,13 +360,17 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                       </tr>
                     </thead>
                     <tbody>
-                      {(data.byKind || []).map((row) => (
-                        <tr key={row.kind}>
-                          <td>{kindLabel[row.kind] || row.kind}</td>
-                          <td className="dc-num">{row.count}</td>
-                          <td className="dc-num">{fmt(Number(row.total), 2)}</td>
-                        </tr>
-                      ))}
+                      {(data.byKind || []).length === 0 ? (
+                        <tr><td colSpan={3} className="dc-empty">—</td></tr>
+                      ) : (
+                        (data.byKind || []).map((row) => (
+                          <tr key={row.kind}>
+                            <td>{kindLabel[row.kind] || row.kind}</td>
+                            <td className="dc-num">{row.count}</td>
+                            <td className="dc-num">{fmt(Number(row.total), 2)}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -465,14 +469,18 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                       </tr>
                     </thead>
                     <tbody>
-                      {(data.vaults?.movementOnDayByVault || []).map((v) => (
-                        <tr key={v.id}>
-                          <td>{v.nameAr} <span className="dc-muted">({v.type})</span></td>
-                          <td className="dc-num">{fmt(Number(v.totalIn), 2)}</td>
-                          <td className="dc-num">{fmt(Number(v.totalOut), 2)}</td>
-                          <td className="dc-num">{fmt(Number(v.netDay), 2)}</td>
-                        </tr>
-                      ))}
+                      {(data.vaults?.movementOnDayByVault || []).length === 0 ? (
+                        <tr><td colSpan={4} className="dc-empty">—</td></tr>
+                      ) : (
+                        (data.vaults?.movementOnDayByVault || []).map((v) => (
+                          <tr key={v.id}>
+                            <td>{v.nameAr} <span className="dc-muted">({v.type})</span></td>
+                            <td className="dc-num">{fmt(Number(v.totalIn), 2)}</td>
+                            <td className="dc-num">{fmt(Number(v.totalOut), 2)}</td>
+                            <td className="dc-num">{fmt(Number(v.netDay), 2)}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -486,12 +494,16 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                       </tr>
                     </thead>
                     <tbody>
-                      {(data.vaults?.balanceEndOfDayByVault || []).map((v) => (
-                        <tr key={v.id}>
-                          <td>{v.nameAr} <span className="dc-muted">({v.type})</span></td>
-                          <td className="dc-num">{fmt(Number(v.balance), 2)}</td>
-                        </tr>
-                      ))}
+                      {(data.vaults?.balanceEndOfDayByVault || []).length === 0 ? (
+                        <tr><td colSpan={2} className="dc-empty">—</td></tr>
+                      ) : (
+                        (data.vaults?.balanceEndOfDayByVault || []).map((v) => (
+                          <tr key={v.id}>
+                            <td>{v.nameAr} <span className="dc-muted">({v.type})</span></td>
+                            <td className="dc-num">{fmt(Number(v.balance), 2)}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -512,6 +524,9 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                       </tr>
                     </thead>
                     <tbody>
+                      {(data.operations || []).length === 0 && (
+                        <tr><td colSpan={6} className="dc-empty">—</td></tr>
+                      )}
                       {(data.operations || []).map((op) => (
                         <tr key={op.id} style={{ opacity: op.status === 'cancelled' ? 0.55 : 1 }}>
                           <td style={{ fontWeight: 700 }}>{op.invoiceNumber}</td>

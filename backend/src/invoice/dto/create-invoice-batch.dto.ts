@@ -2,6 +2,7 @@ import {
   IsString,
   IsNumber,
   Min,
+  Max,
   IsOptional,
   IsBoolean,
   IsIn,
@@ -52,6 +53,7 @@ export class BatchInvoiceItemDto {
 
   @IsNumber()
   @Min(0.01, { message: 'المبلغ يجب أن يكون أكبر من صفر' })
+  @Max(10_000_000, { message: 'المبلغ الإجمالي لا يمكن أن يتجاوز 10,000,000' })
   @Type(() => Number)
   totalAmount: number;
 

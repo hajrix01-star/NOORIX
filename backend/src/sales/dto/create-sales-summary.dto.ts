@@ -1,6 +1,6 @@
 import {
-  IsString, IsNumber, IsArray, IsOptional,
-  ValidateNested, Min, IsDateString, ArrayMinSize,
+  IsString, IsNumber, IsInt, IsArray, IsOptional,
+  ValidateNested, Min, Max, IsDateString, ArrayMinSize, Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -9,6 +9,7 @@ export class SalesChannelDto {
   vaultId: string;
 
   @IsString()
+  @Matches(/^\d+(\.\d{1,2})?$/, { message: 'المبلغ يجب أن يكون رقماً موجباً بحد أقصى خانتين عشريتين' })
   amount: string;
 }
 
@@ -19,13 +20,15 @@ export class CreateSalesSummaryDto {
   @IsDateString()
   transactionDate: string;
 
-  @IsNumber()
+  @IsInt({ message: 'عدد العملاء يجب أن يكون عدداً صحيحاً' })
   @Min(0)
+  @Max(100_000, { message: 'عدد العملاء لا يمكن أن يتجاوز 100,000' })
   @Type(() => Number)
   customerCount: number;
 
   @IsOptional()
   @IsString()
+  @Matches(/^\d+(\.\d{1,2})?$/, { message: 'النقد في الصندوق يجب أن يكون رقماً موجباً بحد أقصى خانتين عشريتين' })
   cashOnHand?: string;
 
   @IsArray()

@@ -266,6 +266,25 @@ export default function EOSCalcTab() {
             <span className="noorix-result-panel__row-label">{t('eosCalcYears')}</span>
             <span className="noorix-result-panel__row-value">{serviceYears.toDecimalPlaces(2).toString()}</span>
           </div>
+          {/* تفصيل حسابي: نصف شهر للخمس الأولى + شهر كامل لما بعدها — م84 */}
+          <div className="noorix-result-panel__row" style={{ opacity: 0.82, fontSize: 12 }}>
+            <span className="noorix-result-panel__row-label">
+              نصف شهر × {firstFiveYears.toDecimalPlaces(2).toString()} سنة (≤5)
+            </span>
+            <span className="noorix-result-panel__row-value">
+              {hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())} ﷼
+            </span>
+          </div>
+          {remainingYears.gt(0) && (
+            <div className="noorix-result-panel__row" style={{ opacity: 0.82, fontSize: 12 }}>
+              <span className="noorix-result-panel__row-label">
+                شهر كامل × {remainingYears.toDecimalPlaces(2).toString()} سنة ({'>'}5)
+              </span>
+              <span className="noorix-result-panel__row-value">
+                {hrFmt(sal.times(remainingYears).toNumber())} ﷼
+              </span>
+            </div>
+          )}
           <div className="noorix-result-panel__row">
             <span className="noorix-result-panel__row-label">{t('eosCalcFullAward')}</span>
             <span className="noorix-result-panel__row-value">{hrFmt(fullAward.toNumber())} ﷼</span>

@@ -118,6 +118,20 @@ export default function TaxSettingsTab() {
           </div>
 
           {hasChanges && (
+            <div style={{
+              padding: '10px 14px',
+              borderRadius: 10,
+              background: 'rgba(234,179,8,0.08)',
+              border: '1px solid rgba(234,179,8,0.35)',
+              fontSize: 13,
+              color: 'var(--noorix-text-default)',
+              lineHeight: 1.6,
+            }}>
+              <strong>⚠️ تنبيه مهم:</strong> تغيير إعدادات الضريبة سيُطبَّق على <strong>الفواتير والمعاملات الجديدة فقط</strong>. الفواتير والسجلات المحفوظة مسبقاً لن تتأثر بهذا التغيير ولن تُعاد حسابها تلقائياً.
+            </div>
+          )}
+
+          {hasChanges && (
             <button
               type="button"
               className="noorix-btn-nav noorix-btn-success"

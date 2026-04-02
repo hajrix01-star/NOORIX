@@ -12,7 +12,7 @@ export function useCustomAllowances(companyId, employeeId) {
     queryKey: ['custom-allowances', companyId, employeeId || 'all'],
     queryFn: async () => {
       const res = await getCustomAllowances(companyId, employeeId);
-      if (!res?.success) return [];
+      if (!res?.success) throw new Error(res?.error || 'فشل تحميل البدلات المخصصة');
       const data = res.data;
       return Array.isArray(data) ? data : (data?.items ?? []);
     },
@@ -37,6 +37,8 @@ export function useCustomAllowances(companyId, employeeId) {
   return {
     allowances: query.data ?? [],
     isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
     create,
     remove,
   };

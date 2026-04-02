@@ -2,6 +2,7 @@ import {
   IsString,
   IsNumber,
   Min,
+  Max,
   IsOptional,
   IsBoolean,
   IsIn,
@@ -57,6 +58,7 @@ export class CreateInvoiceDto {
 
   @IsNumber()
   @Min(0.01, { message: 'المبلغ يجب أن يكون أكبر من صفر' })
+  @Max(10_000_000, { message: 'المبلغ الإجمالي لا يمكن أن يتجاوز 10,000,000' })
   @Type(() => Number)
   @ValidateIf((o) => o.netAmount != null && o.taxAmount != null)
   @IsAmountConsistent({ message: 'الصافي + الضريبة يجب أن يساويا الإجمالي بهامش 0.01' })
@@ -72,6 +74,7 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(10_000_000, { message: 'الصافي لا يمكن أن يتجاوز 10,000,000' })
   @Type(() => Number)
   netAmount?: number;
 
@@ -79,6 +82,7 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(1_500_000, { message: 'مبلغ الضريبة لا يمكن أن يتجاوز 1,500,000' })
   @Type(() => Number)
   taxAmount?: number;
 

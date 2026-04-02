@@ -234,7 +234,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     e.preventDefault();
     if (submitting) return;
     setFormError('');
-    const amt = parseFloat(String(advAmount).replace(',', '.'), 10);
+    const amt = parseFloat(String(advAmount).replace(',', '.'));
     const emp = activeEmployees.find((x) => x.id === advEmp);
     if (!advEmp || !amt || amt <= 0) {
       setFormError(t('requiredFields'));
@@ -300,7 +300,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     e.preventDefault();
     if (submitting) return;
     setFormError('');
-    const amt = parseFloat(String(ddAmount).replace(',', '.'), 10);
+    const amt = parseFloat(String(ddAmount).replace(',', '.'));
     if (!ddEmp || !amt || amt <= 0) {
       setFormError(t('requiredFields'));
       return;
@@ -331,7 +331,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       return;
     }
     const emp = activeEmployees.find((x) => x.id === mvEmp);
-    const amt = mvAmount.trim() ? parseFloat(String(mvAmount).replace(',', '.'), 10) : undefined;
+    const amt = mvAmount.trim() ? parseFloat(String(mvAmount).replace(',', '.')) : undefined;
     const payload = {
       companyId,
       employeeId: mvEmp,
@@ -354,7 +354,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     e.preventDefault();
     if (submitting) return;
     setFormError('');
-    const amt = parseFloat(String(alAmount).replace(',', '.'), 10);
+    const amt = parseFloat(String(alAmount).replace(',', '.'));
     const amtRounded = roundMoney2(amt);
     if (!alEmp || !alName.trim() || !amtRounded || amtRounded <= 0) {
       setFormError(t('requiredFields'));
@@ -603,7 +603,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                   <option value="advance">{isAr ? 'مرتبط بسلفة' : 'Advance-related'}</option>
                 </select>
               </Field>
-              <Field id="dd-amt" label={t('advanceAmount')}>
+              <Field id="dd-amt" label={isAr ? 'مبلغ الخصم' : 'Deduction amount'}>
                 <input id="dd-amt" type="number" inputMode="decimal" step="0.01" min="0" value={ddAmount} onChange={(e) => setDdAmount(e.target.value)} style={inputBase} />
               </Field>
               <Field id="dd-date" label={t('transactionDate')}>

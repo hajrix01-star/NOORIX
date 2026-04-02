@@ -84,6 +84,33 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="noorix-surface-card" style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+        {t('loading')}
+      </div>
+    );
+  }
+
+  if (yearTotal === 0) {
+    return (
+      <div
+        style={{
+          borderRadius: CARD_BORDER_RADIUS,
+          border: '1px solid var(--noorix-border)',
+          background: 'var(--noorix-bg-surface)',
+          padding: 48,
+          textAlign: 'center',
+          color: 'var(--noorix-text-muted)',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        }}
+      >
+        <div style={{ fontSize: 40, opacity: 0.25, marginBottom: 12 }}>📱</div>
+        <div style={{ fontSize: 14 }}>{t('noDataInPeriod')}</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
@@ -105,6 +132,11 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
             <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
               {fmt(yearApp, 2)} ﷼ / {fmt(yearTotal, 2)} ﷼
             </div>
+            {yearApp === 0 && (
+              <div style={{ marginTop: 8, fontSize: 11, color: '#f59e0b', fontWeight: 600 }}>
+                {t('dashboardNoAppSales')}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -146,9 +178,6 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
         }}
       >
         <div style={{ fontSize: 14, fontWeight: 700, color: CARD_COLORS.sales.accent, marginBottom: 16 }}>{t('dashboardAppSalesChart')}</div>
-        {isLoading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>
-        ) : (
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(36px, 1fr))', gap: 8, alignItems: 'end', minHeight: 100, minWidth: 360 }}>
             {chartData.map((point) => {
@@ -176,7 +205,6 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
             })}
           </div>
           </div>
-        )}
       </div>
     </div>
   );

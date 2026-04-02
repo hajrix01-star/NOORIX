@@ -24,7 +24,7 @@ export default function ReportsLayout() {
       </div>
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="noorix-tab-bar" style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)' }}>
+        <div className="noorix-tab-bar" style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {REPORT_SUB_LINKS.map((link) => (
             <NavLink
               key={link.to}

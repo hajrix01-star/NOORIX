@@ -212,6 +212,13 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           </div>
         </div>
 
+        {chartData.length === 0 || chartData.every((p) => p.amount === 0) ? (
+          <div style={{ minHeight: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--noorix-text-muted)', gap: 8 }}>
+            <div style={{ fontSize: 32, opacity: 0.3 }}>📊</div>
+            <div style={{ fontSize: 13 }}>{t('noDataInPeriod')}</div>
+          </div>
+        ) : (
+          <>
         <div style={{ display: 'flex', gap: 0, minHeight: 220 }}>
           {/* Y-axis */}
           <div style={{ flexShrink: 0, width: 52, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 28 }}>
@@ -303,7 +310,10 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
         <div style={{ marginTop: 8, paddingRight: 52, fontSize: 11, color: 'var(--noorix-text-muted)', textAlign: 'center' }}>
           {isDailyChart ? `${t('reportYear')} ${year} — ${EN_MONTHS[month - 1]} — ${t('revenueGroup')}` : `${t('reportYear')} ${year} — ${t('revenueGroup')}`}
         </div>
+          </>
+        )}
       </div>
+
     </div>
   );
 }

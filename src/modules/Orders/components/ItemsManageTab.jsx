@@ -23,6 +23,7 @@ import {
   exportOrderProductsWorkbook,
   exportOrderCategoriesWorkbook,
   filterOrderProductsTemplateRows,
+  filterOrderCategoriesTemplateRows,
   groupOrderProductImportRows,
   orderProductImportGroupsToPayload,
 } from '../../../utils/exportUtils';

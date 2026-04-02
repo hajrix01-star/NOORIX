@@ -18,7 +18,7 @@ import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
 export function useSales({ companyId, startDate, endDate, enabled = true, fetchList = true }) {
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['sales-summaries', companyId, startDate, endDate],
     queryFn: async () => {
       const pageSize = 150;
@@ -27,7 +27,7 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
       let reportedTotal = 0;
       for (let guard = 0; guard < 500; guard++) {
         const res = await getDailySalesSummaries(companyId, startDate, endDate, page, pageSize);
-        if (!res?.success) return [];
+        if (!res?.success) throw new Error(res?.error || 'فشل تحميل ملخصات المبيعات');
         const { items = [], total = 0 } = res.data || {};
         reportedTotal = Number(total) || 0;
         acc.push(...items);
@@ -68,6 +68,8 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
   return {
     summaries,
     isLoading,
+    isError,
+    error,
     createSummary: createMutation,
     updateSummary: updateMutation,
     cancelSummary: cancelMutation,

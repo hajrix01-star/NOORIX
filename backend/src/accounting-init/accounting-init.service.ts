@@ -2,7 +2,7 @@
  * AccountingInitService — محرك البذر التلقائي لدليل الحسابات (COA)
  *
  * يُنفذ عند إنشاء أي شركة جديدة عبر initializeCompanyAccounting.
- * يزرع: 15 حساباً افتراضياً + خزينتين + فئات وتصنيفات فرعية + موردين افتراضيين.
+ * يزرع: 16 حساباً افتراضياً (5 أصناف) + خزينتين + ذمم مدينة ودائنة + فئات وتصنيفات فرعية + موردين افتراضيين.
  *
  * موردين افتراضيين: الشركة السعودية للكهرباء، الاتصالات السعودية (STC)
  * — مرتبطين بفئات (كهرباء، اتصالات) تحت إيجار ومرافق، مع الرقم الضريبي.
@@ -38,22 +38,26 @@ export interface MasterCategorySeed {
 /** قالب الحسابات الافتراضي — يُزرع لكل شركة جديدة */
 const MASTER_ACCOUNTS: MasterAccountSeed[] = [
   // أ- الأصول
-  { code: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash Vault', type: 'asset', icon: '💵', taxExempt: false },
-  { code: 'V-002', nameAr: 'البنك (مدى/تحويلات)', nameEn: 'Bank (Mada/Transfer)', type: 'asset', icon: '💳', taxExempt: false },
-  { code: 'EXP-001', nameAr: 'سلفيات الموظفين', nameEn: 'Employee Advances', type: 'asset', icon: '👤', taxExempt: false },
-  // ب- المصاريف
-  { code: 'PUR-001', nameAr: 'بضاعة ومواد (مشتريات)', nameEn: 'Goods & Materials (Purchases)', type: 'expense', icon: '📦', taxExempt: false },
-  { code: 'EXP-004', nameAr: 'رواتب وأجور', nameEn: 'Salaries & Wages', type: 'expense', icon: '💸', taxExempt: true },
-  { code: 'EXP-002', nameAr: 'رسوم حكومية وإقامات', nameEn: 'Gov Fees & Iqama', type: 'expense', icon: '🏛️', taxExempt: true },
-  { code: 'EXP-003', nameAr: 'إيجار ومرافق (كهرباء/ماء)', nameEn: 'Rent & Utilities', type: 'expense', icon: '🏠', taxExempt: false },
-  { code: 'EXP-005', nameAr: 'صيانة وتشغيل', nameEn: 'Maintenance & Operations', type: 'expense', icon: '🛠️', taxExempt: false },
-  { code: 'EXP-006', nameAr: 'تسويق وهدايا', nameEn: 'Marketing & Gifts', type: 'expense', icon: '📣', taxExempt: false },
-  { code: 'EXP-007', nameAr: 'مصروفات مالية', nameEn: 'Financial Expenses', type: 'expense', icon: '🏦', taxExempt: false },
-  { code: 'EXP-008', nameAr: 'أصول ومعدات', nameEn: 'Assets & Equipment', type: 'expense', icon: '🖥️', taxExempt: false },
-  // ج- الإيرادات والملكية والضرائب
-  { code: 'REV-001', nameAr: 'المبيعات', nameEn: 'Sales', type: 'revenue', icon: '💰', taxExempt: false },
-  { code: 'EQU-001', nameAr: 'رأس المال', nameEn: 'Capital', type: 'equity', icon: '💎', taxExempt: false },
-  { code: 'TAX-001', nameAr: 'ضريبة القيمة المضافة', nameEn: 'VAT', type: 'liability', icon: '📝', taxExempt: false },
+  { code: 'V-001',  nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash Vault',           type: 'asset',   icon: '💵', taxExempt: false },
+  { code: 'V-002',  nameAr: 'البنك (مدى/تحويلات)',    nameEn: 'Bank (Mada/Transfer)',        type: 'asset',   icon: '💳', taxExempt: false },
+  { code: 'AR-001', nameAr: 'الذمم المدينة (عملاء)',  nameEn: 'Accounts Receivable',         type: 'asset',   icon: '🧾', taxExempt: false },
+  { code: 'EXP-001',nameAr: 'سلفيات الموظفين',        nameEn: 'Employee Advances',           type: 'asset',   icon: '👤', taxExempt: false },
+  // ب- الخصوم
+  { code: 'AP-001', nameAr: 'الذمم الدائنة (موردون)', nameEn: 'Accounts Payable',            type: 'liability',icon: '📋', taxExempt: false },
+  { code: 'TAX-001',nameAr: 'ضريبة القيمة المضافة',   nameEn: 'VAT',                         type: 'liability',icon: '📝', taxExempt: false },
+  // ج- حقوق الملكية
+  { code: 'EQU-001',nameAr: 'رأس المال',              nameEn: 'Capital',                     type: 'equity',  icon: '💎', taxExempt: false },
+  // د- الإيرادات
+  { code: 'REV-001',nameAr: 'المبيعات',               nameEn: 'Sales',                       type: 'revenue', icon: '💰', taxExempt: false },
+  // هـ- المصروفات
+  { code: 'PUR-001',nameAr: 'بضاعة ومواد (مشتريات)', nameEn: 'Goods & Materials (Purchases)',type: 'expense', icon: '📦', taxExempt: false },
+  { code: 'EXP-004',nameAr: 'رواتب وأجور',            nameEn: 'Salaries & Wages',            type: 'expense', icon: '💸', taxExempt: true  },
+  { code: 'EXP-002',nameAr: 'رسوم حكومية وإقامات',   nameEn: 'Gov Fees & Iqama',            type: 'expense', icon: '🏛️', taxExempt: true  },
+  { code: 'EXP-003',nameAr: 'إيجار ومرافق (كهرباء/ماء)', nameEn: 'Rent & Utilities',       type: 'expense', icon: '🏠', taxExempt: false },
+  { code: 'EXP-005',nameAr: 'صيانة وتشغيل',          nameEn: 'Maintenance & Operations',    type: 'expense', icon: '🛠️', taxExempt: false },
+  { code: 'EXP-006',nameAr: 'تسويق وهدايا',           nameEn: 'Marketing & Gifts',           type: 'expense', icon: '📣', taxExempt: false },
+  { code: 'EXP-007',nameAr: 'مصروفات مالية',          nameEn: 'Financial Expenses',          type: 'expense', icon: '🏦', taxExempt: false },
+  { code: 'EXP-008',nameAr: 'أصول ومعدات',            nameEn: 'Assets & Equipment',          type: 'expense', icon: '🖥️', taxExempt: false },
 ];
 
 const MASTER_VAULTS: MasterVaultSeed[] = [
@@ -159,7 +163,7 @@ export class AccountingInitService {
   async initializeCompanyAccounting(tenantId: string, companyId: string): Promise<{ accounts: number; vaults: number; categories: number; suppliers: number }> {
     const codeToAccountId: Record<string, string> = {};
 
-    // 1. إنشاء الحسابات الـ 13
+    // 1. إنشاء الحسابات الـ 16 (أصول + خصوم + ملكية + إيرادات + مصروفات)
     for (const acc of MASTER_ACCOUNTS) {
       const created = await this.prisma.account.create({
         data: {

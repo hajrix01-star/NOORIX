@@ -45,11 +45,19 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = '#2563eb' }) {
 
 function PurchaseHistoryModal({ companyId, year, month, product, category, onClose, t }) {
   const isProduct = !!product;
-  const id = isProduct ? (product?.id ?? product?.productId) : category?.id;
-  const { data: history = [], isLoading } = isProduct
-    ? useProductPurchaseHistory(companyId, id, year, month)
-    : useCategoryPurchaseHistory(companyId, id, year, month);
-  const title = isProduct ? (product?.productNameAr || product?.nameAr || product?.productNameEn || product?.nameEn || id) : (category?.nameAr || category?.nameEn || id);
+  const productId = product?.id ?? product?.productId;
+  const categoryId = category?.id;
+
+  const { data: productHistory = [], isLoading: productLoading } = useProductPurchaseHistory(
+    companyId, productId, year, month, isProduct,
+  );
+  const { data: categoryHistory = [], isLoading: categoryLoading } = useCategoryPurchaseHistory(
+    companyId, categoryId, year, month, !isProduct,
+  );
+
+  const history = isProduct ? productHistory : categoryHistory;
+  const isLoading = isProduct ? productLoading : categoryLoading;
+  const title = isProduct ? (product?.productNameAr || product?.nameAr || product?.productNameEn || product?.nameEn || productId) : (category?.nameAr || category?.nameEn || categoryId);
 
   return (
     <div

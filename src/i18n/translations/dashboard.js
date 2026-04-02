@@ -37,4 +37,5 @@ export default {
   dashboardSelectedDays: { ar: 'أيام محددة', en: 'Selected days' },
   dashboardSelectDaysMode: { ar: 'تحديد أيام', en: 'Select days' },
   dashboardSelectDaysModeOff: { ar: 'إلغاء التحديد', en: 'Cancel selection' },
+  dashboardNoAppSales: { ar: 'لا توجد مبيعات عبر التطبيقات في هذه الفترة', en: 'No app sales in this period' },
 };

@@ -36,10 +36,11 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   const specialDaysList = useMemo(() => getStoredSpecialDays(companyId, year, month), [companyId, year, month, specialDaysVersion]);
 
   const handleAdd = useCallback(() => {
-    const from = newFrom?.trim().slice(0, 10);
-    const to = newTo?.trim().slice(0, 10) || from;
+    let from = newFrom?.trim().slice(0, 10);
+    let to = newTo?.trim().slice(0, 10) || from;
     const name = (newName || t('dashboardSpecialDay')).trim();
     if (!from) return;
+    if (to < from) { const tmp = from; from = to; to = tmp; }
     const list = getStoredSpecialDays(companyId, year, month);
     const id = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const color = DEFAULT_COLORS[list.length % DEFAULT_COLORS.length];
@@ -64,10 +65,11 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   }, [companyId, year, month]);
 
   const handleRemove = useCallback((id) => {
+    if (!window.confirm(t('confirmDelete'))) return;
     const list = getStoredSpecialDays(companyId, year, month).filter((x) => x.id !== id);
     setStoredSpecialDays(companyId, year, month, list);
     setSpecialDaysVersion((v) => v + 1);
-  }, [companyId, year, month]);
+  }, [companyId, year, month, t]);
 
   const monthLabel = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month - 1];
 

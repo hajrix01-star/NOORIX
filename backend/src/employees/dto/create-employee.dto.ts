@@ -1,6 +1,6 @@
 import {
   IsString, IsOptional, IsNumber, IsDateString,
-  IsIn, Min, MaxLength,
+  IsIn, Min, Max, MaxLength, Matches,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -15,7 +15,7 @@ export class CreateEmployeeDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(20)
+  @Matches(/^\d{10}$/, { message: 'رقم الهوية/الإقامة يجب أن يكون 10 أرقام بالضبط' })
   iqamaNumber?: string;
 
   @IsOptional()
@@ -26,6 +26,7 @@ export class CreateEmployeeDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(500_000, { message: 'الراتب الأساسي لا يمكن أن يتجاوز 500,000' })
   @Transform(({ value }) => {
     if (value === undefined || value === null || value === '') return 0;
     const n = Number(value);
@@ -36,18 +37,21 @@ export class CreateEmployeeDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(300_000, { message: 'بدل السكن لا يمكن أن يتجاوز 300,000' })
   @Transform(({ value }) => Number(value ?? 0))
   housingAllowance?: number;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(50_000, { message: 'بدل المواصلات لا يمكن أن يتجاوز 50,000' })
   @Transform(({ value }) => Number(value ?? 0))
   transportAllowance?: number;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(200_000, { message: 'البدلات الأخرى لا يمكن أن تتجاوز 200,000' })
   @Transform(({ value }) => Number(value ?? 0))
   otherAllowance?: number;
 

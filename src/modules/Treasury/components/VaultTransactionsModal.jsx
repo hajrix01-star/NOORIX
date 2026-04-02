@@ -153,6 +153,8 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     </>
   ) : null;
 
+  const isPaginatedTotal = vault?.totalIn != null && (data?.total ?? 0) > items.length;
+
   return (
     <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }} onClick={onClose}>
       <div className="noorix-surface-card" style={{ maxWidth: 720, width: '100%', maxHeight: '90vh', overflow: 'auto', padding: 20 }} onClick={(e) => e.stopPropagation()}>
@@ -164,6 +166,20 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
             <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('close')}</button>
           </div>
         </div>
+        {isPaginatedTotal && (
+          <div style={{
+            fontSize: 12,
+            color: 'var(--noorix-text-muted)',
+            background: 'var(--noorix-bg-surface)',
+            border: '1px solid var(--noorix-border)',
+            borderRadius: 8,
+            padding: '7px 12px',
+            marginBottom: 12,
+            lineHeight: 1.5,
+          }}>
+            ℹ️ المجموع الظاهر في الأسفل يعكس إجمالي حركات الفترة بأكملها ({data?.total?.toLocaleString('ar-SA')} حركة)، وليس مجموع الصفحة الحالية فقط. للاطلاع على جميع الحركات استخدم تصدير Excel.
+          </div>
+        )}
         <SmartTable
           columns={columns}
           data={items}

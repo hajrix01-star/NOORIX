@@ -1,4 +1,13 @@
-import { IsString, IsArray, IsOptional, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsNotEmpty,
+  IsNumber,
+  Min,
+  ArrayMinSize,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ProductVariantBatchDto {
@@ -15,11 +24,14 @@ export class ProductVariantBatchDto {
   unit?: string;
 
   @IsOptional()
-  @IsString()
-  lastPrice?: string;
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  lastPrice?: number;
 }
 
 export class CreateProductItemDto {
+  @IsNotEmpty()
   @IsString()
   nameAr: string;
 
@@ -44,8 +56,10 @@ export class CreateProductItemDto {
   categoryId?: string;
 
   @IsOptional()
-  @IsString()
-  lastPrice?: string;
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  lastPrice?: number;
 
   @IsOptional()
   @IsArray()
@@ -55,10 +69,12 @@ export class CreateProductItemDto {
 }
 
 export class CreateProductsBatchDto {
+  @IsNotEmpty()
   @IsString()
   companyId: string;
 
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateProductItemDto)
   products: CreateProductItemDto[];

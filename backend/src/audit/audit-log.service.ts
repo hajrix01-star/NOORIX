@@ -5,7 +5,15 @@ import { TenantContext }  from '../common/tenant-context';
 
 type JsonValue = Prisma.InputJsonValue;
 
-export type AuditAction = 'create' | 'update' | 'delete' | 'cancel';
+export type AuditAction =
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'cancel'
+  | 'login'
+  | 'logout'
+  | 'password_change'
+  | 'role_change';
 
 export interface AuditLogParams {
   companyId:  string;

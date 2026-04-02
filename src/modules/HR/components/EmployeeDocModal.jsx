@@ -213,14 +213,17 @@ function DocumentFrame({ companyName, companyLogo, arabicTitle, englishTitle, ch
   );
 }
 
-function EmployeeInfoTable({ employee, workHoursValue }) {
-  const infoRows = [
+function EmployeeInfoTable({ employee, workHoursValue, contractEnd }) {
+  const baseRows = [
     ['اسم الموظف', 'Employee Name', employee?.name || employee?.nameAr || '—'],
     ['المسمى الوظيفي', 'Job Title', employee?.jobTitle || '—'],
     ['رقم الإقامة', 'Iqama Number', employee?.iqamaNumber || '—'],
-    ['تاريخ التعيين', 'Join Date', formatSaudiDate(employee?.joinDate)],
+    ['تاريخ التعيين', 'Join Date', formatSaudiDate(employee?.joinDate) || '—'],
     ['ساعات العمل', 'Working Hours', workHoursValue || employee?.workHours || '8'],
   ];
+  const infoRows = contractEnd
+    ? [...baseRows, ['تاريخ انتهاء العقد', 'Contract End Date', formatSaudiDate(contractEnd) || contractEnd]]
+    : baseRows;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 12, alignItems: 'stretch' }}>
       <table>
@@ -456,6 +459,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
   const { t } = useTranslation();
   const printRef = useRef(null);
   const [saving, setSaving] = useState(false);
+  const [contractEnd, setContractEnd] = useState(employee?.contractEndDate?.slice(0, 10) || '');
   const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
 
   const handlePrint = () => {
@@ -494,10 +498,24 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
 
   return (
     <ModalShell title={t('documentContract') || 'عقد عمل'} onClose={onClose} onPrint={handlePrint} onSave={handleSaveToDocuments} saving={saving} t={t}>
+      <div style={{ padding: '8px 4px 12px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <label style={{ fontSize: 12, fontWeight: 600 }}>
+          تاريخ انتهاء العقد (اختياري):
+          <input
+            type="date"
+            value={contractEnd}
+            onChange={(e) => setContractEnd(e.target.value)}
+            style={{ marginRight: 8, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', fontSize: 13 }}
+          />
+        </label>
+        {contractEnd && (
+          <button type="button" style={{ fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setContractEnd('')}>✕ إزالة</button>
+        )}
+      </div>
       <div ref={printRef}>
         <DocumentFrame companyName={companyName} companyLogo={companyLogo} arabicTitle="عقد عمل" englishTitle="Employment Contract">
           <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
-            <EmployeeInfoTable employee={employee} workHoursValue="8 ساعات أساسية / 8 regular hours" />
+            <EmployeeInfoTable employee={employee} workHoursValue={employee?.workHours ? `${employee.workHours} ساعة / ${employee.workHours} hr` : '8 ساعات / 8 hr'} contractEnd={contractEnd} />
           </div>
           <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
             <SalaryBreakdownTable rows={rows} total={total} />

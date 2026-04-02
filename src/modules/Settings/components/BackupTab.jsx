@@ -144,6 +144,7 @@ export default function BackupTab({ activeCompanies = [] }) {
   const [importModal, setImportModal] = useState(null);
   const [importReportModal, setImportReportModal] = useState(null);
   const [importNameAr, setImportNameAr] = useState('');
+  const [importConfirmed, setImportConfirmed] = useState(false);
   const [sysForm, setSysForm] = useState({
     enabled: false,
     scheduleHour: 6,
@@ -576,6 +577,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                         disabled={importMut.isPending}
                         onClick={() => {
                           setImportNameAr(defaultImportCompanyName(j, t, lang));
+                          setImportConfirmed(false);
                           setImportModal({ jobId: j.id });
                         }}
                       >
@@ -625,36 +627,85 @@ export default function BackupTab({ activeCompanies = [] }) {
         >
           <div
             className="noorix-surface-card"
-            style={{ width: 'min(100%, 26rem)', maxWidth: '100%', padding: 18, boxSizing: 'border-box' }}
+            style={{ width: 'min(100%, 28rem)', maxWidth: '100%', padding: 18, boxSizing: 'border-box' }}
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ marginTop: 0, fontSize: '1.05rem' }}>{t('backupImportNewCompany')}</h3>
-            <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
+
+            {/* تحذير أحمر واضح */}
+            <div
+              style={{
+                padding: '10px 14px',
+                marginBottom: 14,
+                background: 'rgba(220,38,38,0.08)',
+                border: '1px solid rgba(220,38,38,0.45)',
+                borderRadius: 6,
+                fontSize: 13,
+                color: '#b91c1c',
+                lineHeight: 1.65,
+                fontWeight: 500,
+              }}
+              role="alert"
+            >
+              {isAr
+                ? '⚠️ تحذير: سيتم إنشاء شركة جديدة كاملة من هذه النسخة الاحتياطية. تأكد من صحة النسخة قبل المتابعة.'
+                : '⚠️ Warning: A new company will be created from this backup. Make sure the backup is correct before proceeding.'}
+            </div>
+
+            <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6, margin: '0 0 12px' }}>
               {t('backupImportWarn')}
             </p>
+
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
               {t('backupImportNameLabel')}
             </label>
             <input
               type="text"
               className="noorix-bank-filter"
-              style={{ width: '100%', marginBottom: 16 }}
+              style={{ width: '100%', marginBottom: 14 }}
               value={importNameAr}
               onChange={(e) => setImportNameAr(e.target.value)}
             />
+
+            {/* تأكيد مزدوج — checkbox */}
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                fontSize: 13,
+                marginBottom: 16,
+                cursor: 'pointer',
+                color: 'var(--noorix-text)',
+                lineHeight: 1.5,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={importConfirmed}
+                onChange={(e) => setImportConfirmed(e.target.checked)}
+                style={{ marginTop: 2, flexShrink: 0 }}
+              />
+              <span>
+                {isAr
+                  ? 'أؤكد أنني أرغب في إنشاء شركة جديدة من هذه النسخة الاحتياطية'
+                  : 'I confirm I want to create a new company from this backup'}
+              </span>
+            </label>
+
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 className="noorix-btn noorix-btn--ghost"
                 disabled={importMut.isPending}
-                onClick={() => setImportModal(null)}
+                onClick={() => { setImportModal(null); setImportConfirmed(false); }}
               >
                 {t('cancel')}
               </button>
               <button
                 type="button"
                 className="noorix-btn noorix-btn--primary"
-                disabled={importMut.isPending || !importNameAr.trim()}
+                disabled={importMut.isPending || !importNameAr.trim() || !importConfirmed}
                 onClick={() =>
                   importMut.mutate({ jobId: importModal.jobId, nameAr: importNameAr.trim() })
                 }

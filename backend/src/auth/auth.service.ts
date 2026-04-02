@@ -2,12 +2,25 @@
  * AuthService — مصادقة المستخدمين
  * ✅ JWT payload يحتوي على tenantId — لازم لـ TenantMiddleware + RLS
  * ✅ Refresh Token — تجديد access token بدون إعادة تسجيل الدخول
+ *
+ * ملاحظة أمنية — JWT وتسجيل الخروج (Logout):
+ * ─────────────────────────────────────────
+ * JWT هو نظام stateless: لا يوجد blacklist للتوكنات من جهة الـ backend.
+ * تسجيل الخروج يعتمد على:
+ *   1. الفرونتند يحذف التوكن من sessionStorage عبر clearAuth() فور الضغط على logout.
+ *   2. Access token قصير المدة (راجع JWT_EXPIRES_IN في .env) — ينتهي تلقائياً.
+ *   3. session timeout تلقائي بعد 15 دقيقة من الخمول (AuthContext.jsx).
+ *   4. عند تعطيل المستخدم (isActive=false) يُرفض Refresh Token فوراً.
+ *
+ * الحل البديل لو أردت invalidation فوري: Redis blacklist أو تخزين tokenVersion
+ * في جدول users ومقارنتها عند كل طلب — لم يُطبَّق حالياً لتبسيط البنية.
  */
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService }   from '@nestjs/jwt';
 import * as bcrypt      from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { nowSaudi }     from '../common/utils/date-utils';
+import { AuditLogService } from '../audit/audit-log.service';
 
 const BCRYPT_ROUNDS = process.env.NODE_ENV === 'production' ? 12 : 10;
 const REFRESH_TOKEN_EXPIRY = '7d';
@@ -27,6 +40,7 @@ export class AuthService {
   constructor(
     private readonly prisma:      PrismaService,
     private readonly jwtService:  JwtService,
+    private readonly auditLog:    AuditLogService,
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -62,6 +76,14 @@ export class AuthService {
       where: { id: userId },
       data: { passwordHash, updatedAt: nowSaudi() },
     });
+    await this.auditLog.log({
+      companyId: user.tenantId,
+      tenantId:  user.tenantId,
+      userId:    user.id,
+      action:    'password_change',
+      entity:    'User',
+      entityId:  user.id,
+    }).catch(() => undefined);
     return { success: true };
   }
 
@@ -108,6 +130,16 @@ export class AuthService {
     };
 
     const tokens = this.generateTokens(payload);
+
+    await this.auditLog.log({
+      companyId: user.tenantId,
+      tenantId:  user.tenantId,
+      userId:    user.id,
+      action:    'login',
+      entity:    'User',
+      entityId:  user.id,
+      newValue:  { email: user.email, role: user.role.name },
+    }).catch(() => undefined);
 
     return {
       ...tokens,

@@ -32,7 +32,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
         taxNumber: supplier.taxNumber || '',
         phone: supplier.phone || '',
         supplierCategoryId: supplier.supplierCategoryId || '',
-        supplierType: (supplier.categoryId || supplier.supplierType) === 'expenses' ? 'expenses' : 'purchases',
+        supplierType: supplier.supplierType === 'expenses' ? 'expenses' : 'purchases',
       });
     }
   }, [supplier]);
@@ -88,7 +88,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('nameAr')}</label>
-              <input value={form.nameAr} onChange={(e) => set('nameAr', e.target.value)} placeholder={t('nameArPlaceholder')} required style={IS} />
+              <input value={form.nameAr} onChange={(e) => set('nameAr', e.target.value)} placeholder={t('nameArPlaceholder')} required autoComplete="off" style={IS} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('nameEn')}</label>
