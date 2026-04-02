@@ -113,7 +113,8 @@ const SmartTable = memo(function SmartTable({
   }, []);
 
   const showCards = isMobile && typeof renderMobileCard === 'function';
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePageSize = Math.max(1, pageSize);
+  const totalPages = Math.max(1, Math.ceil(total / safePageSize));
   const colCount   = columns.length;
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   // قانون الاحتواء الذكي: ≤6 أعمدة → auto، >6 → fixed + min-width
@@ -152,11 +153,11 @@ const SmartTable = memo(function SmartTable({
         </div>
       )}
 
-      {/* ── خطأ ── */}
-      {isError && !isLoading && (
+      {/* ── خطأ — يظهر دائماً عند isError حتى أثناء إعادة التحميل ── */}
+      {isError && (
         <div style={{
-padding: 16, margin: 12, background: 'rgba(239,68,68,0.08)',
-        borderRadius: 10, color: '#ef4444', fontSize: 14,
+          padding: 16, margin: 12, background: 'rgba(239,68,68,0.08)',
+          borderRadius: 10, color: '#ef4444', fontSize: 14,
         }}>
           ⚠️ {errMsg}
         </div>
@@ -259,7 +260,7 @@ padding: 16, margin: 12, background: 'rgba(239,68,68,0.08)',
                 >
                   {showRowNumbers && (
                     <td style={{ padding: cellPad.td, fontSize: cellFs, textAlign: 'center', color: 'var(--noorix-text-muted)', fontWeight: 600, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36 }}>
-                      {(page - 1) * pageSize + i + 1}
+                      {(page - 1) * safePageSize + i + 1}
                     </td>
                   )}
                   {columns.map((col) => {

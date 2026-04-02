@@ -9,6 +9,7 @@
 const FINANCIAL_QUERY_PREFIXES = [
   ['invoices'],
   ['vaults'],
+  ['vault-transactions'],
   ['sales-summaries'],
   ['sales-summaries-paged'],
   ['purchase-batch-summaries'],
@@ -22,6 +23,10 @@ const FINANCIAL_QUERY_PREFIXES = [
   ['orders-items-report'],
   ['product-purchase-history'],
   ['category-purchase-history'],
+  ['payroll-runs'],
+  ['payroll-run'],
+  ['invoice-day-close'],
+  ['suppliers'],
 ];
 
 /**

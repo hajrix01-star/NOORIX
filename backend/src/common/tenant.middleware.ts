@@ -25,11 +25,14 @@ export class TenantMiddleware implements NestMiddleware {
 
     try {
       const token   = authHeader.slice(7);
+      // استخدم نفس fallback الذي يستخدمه JwtStrategy حتى يتطابق السلوك في بيئة التطوير
+      // (الإنتاج محمي: main.ts يخرج إذا لم يُضبط JWT_SECRET)
+      const jwtSecret = process.env.JWT_SECRET ?? 'noorix-dev-secret-DO-NOT-USE-IN-PROD';
       const payload = this.jwtService.verify<{
         sub: string;
         tenantId: string;
         companyIds: string[];
-      }>(token, { secret: process.env.JWT_SECRET });
+      }>(token, { secret: jwtSecret });
 
       const tenantId = payload?.tenantId;
       const userId   = payload?.sub ?? null;

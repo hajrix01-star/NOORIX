@@ -46,7 +46,8 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
   useEffect(() => {
     if (open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      const estimatedHeight = Math.min(MENU_MAX_HEIGHT, 180);
+      const itemCount = [canView, canPrint, showEdit, showDel].filter(Boolean).length;
+      const estimatedHeight = Math.min(MENU_MAX_HEIGHT, (Math.max(1, itemCount) * 42) + 12);
       const spaceBelow = window.innerHeight - r.bottom;
       const spaceAbove = r.top;
       const openUpward = spaceBelow < estimatedHeight + VIEWPORT_GAP && spaceAbove > spaceBelow;
@@ -59,7 +60,7 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
       );
       setPos({ top, left: safeLeft, right: safeLeft + r.width, openUpward });
     }
-  }, [open]);
+  }, [open, canView, canPrint, showEdit, showDel]);
 
   useEffect(() => {
     if (!open) return;

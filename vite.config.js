@@ -89,6 +89,20 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    sourcemap: false,
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts'],
+          query: ['@tanstack/react-query'],
+          pdf: ['jspdf', 'jspdf-autotable'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     strictPort: true,

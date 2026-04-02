@@ -373,6 +373,13 @@ export class FinancialCoreService {
       throw new BadRequestException('يجب إدخال قناة بيع واحدة على الأقل.');
     }
 
+    // منع التواريخ المستقبلية — نسمح بنهاية اليوم الحالي (23:59:59) فقط
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    if (txDate > todayEnd) {
+      throw new BadRequestException('لا يمكن إدخال مبيعات بتاريخ مستقبلي.');
+    }
+
     const totalAmount = dto.channels.reduce(
       (sum: Prisma.Decimal, ch: { vaultId: string; amount: string }) => sum.plus(new Prisma.Decimal(ch.amount || '0')),
       new Prisma.Decimal(0),
@@ -577,6 +584,13 @@ export class FinancialCoreService {
     const tenantId = this._resolveTenantId();
     const { entryDate, txDate } = this._buildDates(dto.transactionDate);
 
+    // منع التواريخ المستقبلية في التحديثات أيضاً
+    const todayEndForUpdate = new Date();
+    todayEndForUpdate.setHours(23, 59, 59, 999);
+    if (txDate > todayEndForUpdate) {
+      throw new BadRequestException('لا يمكن تعديل ملخص مبيعات بتاريخ مستقبلي.');
+    }
+
     const totalAmount = dto.channels.reduce(
       (sum: Prisma.Decimal, ch: SalesChannelDto) => sum.plus(new Prisma.Decimal(ch.amount || '0')),
       new Prisma.Decimal(0),
@@ -593,6 +607,7 @@ export class FinancialCoreService {
     }
 
     return this.db.withTenant(async (tx) => {
+      // نتحقق من التاريخ الجديد أولاً قبل جلب الملخص
       await this.fiscalPeriod.assertPeriodOpenForDate(tx, companyId, txDate);
 
       const summary = await tx.dailySalesSummary.findFirst({
@@ -600,6 +615,12 @@ export class FinancialCoreService {
       });
       if (!summary) {
         throw new NotFoundException('الملخص غير موجود أو تم إلغاؤه.');
+      }
+
+      // نتحقق أن الفترة الأصلية للملخص مفتوحة أيضاً —
+      // يمنع نقل القيود من فترة مغلقة إلى فترة مفتوحة عبر تغيير transactionDate
+      if (summary.transactionDate.getTime() !== txDate.getTime()) {
+        await this.fiscalPeriod.assertPeriodOpenForDate(tx, companyId, summary.transactionDate);
       }
 
       await this._assertVaultsUsableAsSalesPayment(

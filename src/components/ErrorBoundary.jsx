@@ -23,6 +23,10 @@ export class ErrorBoundary extends React.Component {
     this.setState({ hasError: false, error: null });
   };
 
+  handleReload = () => {
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -61,14 +65,24 @@ export class ErrorBoundary extends React.Component {
                 {this.state.error.message}
               </pre>
             )}
-            <button
-              type="button"
-              onClick={this.handleRetry}
-              className="noorix-topbar-btn"
-              style={{ padding: '10px 20px', fontWeight: 600 }}
-            >
-              تحديث الصفحة
-            </button>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={this.handleRetry}
+                className="noorix-topbar-btn"
+                style={{ padding: '10px 20px', fontWeight: 600 }}
+              >
+                إعادة المحاولة
+              </button>
+              <button
+                type="button"
+                onClick={this.handleReload}
+                className="noorix-topbar-btn"
+                style={{ padding: '10px 20px', fontWeight: 600, background: 'var(--noorix-primary, #0a1f44)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}
+              >
+                إعادة تحميل الصفحة
+              </button>
+            </div>
           </div>
         </div>
       );

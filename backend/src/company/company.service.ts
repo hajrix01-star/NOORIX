@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }    from '../common/tenant-context';
 import { AccountingInitService } from '../accounting-init/accounting-init.service';
@@ -66,6 +66,28 @@ export class CompanyService {
   }
 
   async remove(id: string) {
+    const [invoiceCount, employeeCount, vaultCount] = await Promise.all([
+      this.prisma.invoice.count({ where: { companyId: id } }),
+      this.prisma.employee.count({ where: { companyId: id } }),
+      this.prisma.vault.count({ where: { companyId: id } }),
+    ]);
+
+    if (invoiceCount > 0) {
+      throw new BadRequestException(
+        `لا يمكن حذف الشركة — لديها ${invoiceCount} معاملة مالية. استخدم الأرشفة بدلاً من الحذف.`,
+      );
+    }
+    if (employeeCount > 0) {
+      throw new BadRequestException(
+        `لا يمكن حذف الشركة — لديها ${employeeCount} موظف. أنهِ خدماتهم أولاً أو استخدم الأرشفة.`,
+      );
+    }
+    if (vaultCount > 0) {
+      throw new BadRequestException(
+        `لا يمكن حذف الشركة — لديها ${vaultCount} خزينة مرتبطة. استخدم الأرشفة بدلاً من الحذف.`,
+      );
+    }
+
     return this.prisma.company.delete({ where: { id } });
   }
 }

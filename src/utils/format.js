@@ -9,16 +9,29 @@ import { splitTaxFromTotal } from './math-engine';
 export { sumAmounts } from './math-engine';
 
 /**
- * تنسيق رقم مالي — أرقام إنجليزية.
- * @param {number|Decimal} n - القيمة
- * @param {number} decimals - عدد الخانات (1 افتراضي، 2 للمبالغ)
+ * تنسيق رقم مالي — أرقام إنجليزية مع فواصل الآلاف.
+ * يتعامل مع null/undefined/NaN بأمان بإرجاع '0.0'.
+ * @param {number|Decimal|null|undefined} n - القيمة
+ * @param {number} decimals - عدد الخانات العشرية (1 افتراضي، 2 للمبالغ الدقيقة)
  */
 export function fmt(n, decimals = 1) {
-  const num = n instanceof Decimal ? n.toNumber() : Number(n || 0);
+  const raw = n instanceof Decimal ? n.toNumber() : Number(n ?? 0);
+  const num = Number.isFinite(raw) ? raw : 0;
   return num.toLocaleString('en', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
+}
+
+/**
+ * تنسيق مبلغ مالي مع رمز الريال السعودي.
+ * رمز ﷼ يظهر بعد الرقم (صحيح للـ RTL وعرف السوق السعودي).
+ * @param {number|Decimal|null|undefined} n
+ * @param {number} decimals
+ * @returns {string} مثال: "1,250.0 ﷼"
+ */
+export function fmtSAR(n, decimals = 1) {
+  return `${fmt(n, decimals)} ﷼`;
 }
 
 /**

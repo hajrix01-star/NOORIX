@@ -64,6 +64,16 @@ const HEADER_KEYWORDS: Record<string, string[]> = {
 /** حد أمان لحجم JSON في قاعدة البيانات (صفوف كاملة للربط لاحقاً) */
 const RAW_DATA_MAX_ROWS = 30_000;
 
+/** أحرف تُشير لـ formula injection في Excel عند بدء الخلية بها */
+const FORMULA_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
+
+/** تنظيف قيمة نصية من formula injection */
+function sanitizeCell(val: string): string {
+  if (!val || val.length === 0) return val;
+  if (FORMULA_PREFIXES.some((p) => val.startsWith(p))) return "'" + val;
+  return val;
+}
+
 export type ColumnMapping = {
   dateCol?: number;
   descCol?: number;
@@ -150,6 +160,11 @@ export class BankStatementsService {
   ) {
     const tenantId = TenantContext.getTenantId();
     if (!dto.raw?.length) throw new BadRequestException('الملف فارغ');
+
+    const allowedFormats = ['excel', 'xlsx', 'xls', 'csv'];
+    if (dto.fileFormat && !allowedFormats.includes(dto.fileFormat.toLowerCase())) {
+      throw new BadRequestException('صيغة الملف غير مدعومة — يُقبل xlsx وxls وcsv فقط');
+    }
 
     const raw = dto.raw as string[][];
     const colCount = Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0)), 1);
@@ -388,7 +403,7 @@ export class BankStatementsService {
       if (p.credit > 0) totalDeposits = totalDeposits.add(p.credit);
       transactions.push({
         txDate: p.txDate,
-        description: p.description,
+        description: sanitizeCell(p.description),
         debit: new Decimal(p.debit),
         credit: new Decimal(p.credit),
         balance: p.balance != null ? new Decimal(p.balance) : null,

@@ -1,41 +1,110 @@
 import React, { useEffect } from 'react';
 
+const TYPE_STYLES = {
+  success: {
+    background: 'var(--noorix-accent-green, #16a34a)',
+    icon: '✓',
+  },
+  error: {
+    background: 'var(--noorix-accent-red, #ef4444)',
+    icon: '✕',
+  },
+  warning: {
+    background: 'var(--noorix-accent-amber, #d97706)',
+    icon: '⚠',
+  },
+  info: {
+    background: 'var(--noorix-accent-blue, #2563eb)',
+    icon: 'ℹ',
+  },
+};
+
 /**
- * رسالة طافية: نجاح (أخضر) أو خطأ (أحمر). تختفي تلقائياً بعد 4 ثوانٍ.
+ * Toast — إشعار طافٍ يدعم: نجاح / خطأ / تحذير / معلومة.
+ * يختفي تلقائياً بعد 4 ثوانٍ، وقابل للإغلاق يدوياً.
+ * يظهر في الزاوية الصحيحة حسب اتجاه المستند (RTL/LTR).
  */
 export default function Toast({ message, type = 'success', visible, onDismiss }) {
   useEffect(() => {
     if (!visible || !message) return;
-    const t = setTimeout(() => onDismiss?.(), 4000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => onDismiss?.(), 4000);
+    return () => clearTimeout(timer);
   }, [visible, message, onDismiss]);
 
   if (!visible || !message) return null;
 
-  const isSuccess = type === 'success';
+  const style = TYPE_STYLES[type] ?? TYPE_STYLES.info;
+
   return (
     <div
       role="alert"
-      aria-live="polite"
+      aria-live="assertive"
+      aria-atomic="true"
       style={{
         position: 'fixed',
         top: 16,
-        right: 16,
-        left: 'auto',
-        maxWidth: 360,
-        padding: '12px 16px',
-        borderRadius: 8,
-        background: isSuccess ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red, #ef4444)',
+        insetInlineEnd: 16,
+        maxWidth: 'min(360px, calc(100vw - 32px))',
+        padding: '10px 14px',
+        borderRadius: 10,
+        background: style.background,
         color: '#fff',
         fontWeight: 600,
         fontSize: 14,
         fontFamily: 'var(--noorix-font-primary)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
         zIndex: 9999,
-        direction: 'rtl',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+        direction: 'inherit',
+        wordBreak: 'break-word',
       }}
     >
-      {message}
+      <span
+        aria-hidden="true"
+        style={{
+          flexShrink: 0,
+          width: 22,
+          height: 22,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 12,
+          fontWeight: 800,
+          marginTop: 1,
+        }}
+      >
+        {style.icon}
+      </span>
+
+      <span style={{ flex: 1, lineHeight: 1.5 }}>{message}</span>
+
+      <button
+        type="button"
+        onClick={() => onDismiss?.()}
+        aria-label="إغلاق"
+        style={{
+          flexShrink: 0,
+          background: 'rgba(255,255,255,0.18)',
+          border: 'none',
+          borderRadius: 6,
+          color: '#fff',
+          cursor: 'pointer',
+          fontSize: 14,
+          fontWeight: 700,
+          lineHeight: 1,
+          padding: '3px 7px',
+          marginTop: 1,
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.3)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; }}
+      >
+        ✕
+      </button>
     </div>
   );
 }

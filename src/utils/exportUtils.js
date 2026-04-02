@@ -10,6 +10,12 @@ function setSheetColWidths(ws, widths) {
   ws['!cols'] = widths.map((wch) => ({ wch }));
 }
 
+/** تفعيل اتجاه RTL على ورقة Excel */
+function setSheetRTL(ws) {
+  if (!ws['!views']) ws['!views'] = [{}];
+  ws['!views'][0].rightToLeft = true;
+}
+
 /** رؤوس أعمدة أصناف الطلبات — خلية لكل قيمة (بدون JSON في خلية واحدة) */
 export const ORDER_PRODUCTS_EXCEL_HEADERS = ['nameAr', 'nameEn', 'category', 'size', 'packaging', 'unit', 'lastPrice'];
 
@@ -33,7 +39,7 @@ export function flattenOrderProductsToAoA(products) {
           v.size ?? '',
           v.packaging ?? '',
           v.unit ?? 'piece',
-          String(v.lastPrice ?? 0),
+          parseFloat(v.lastPrice ?? 0) || 0,
         ]);
       });
     } else {
@@ -44,7 +50,7 @@ export function flattenOrderProductsToAoA(products) {
         '',
         '',
         p.unit ?? 'piece',
-        String(p.lastPrice ?? 0),
+        parseFloat(p.lastPrice ?? 0) || 0,
       ]);
     }
   }
@@ -60,6 +66,7 @@ export async function exportOrderProductsWorkbook(products, filename = 'order-pr
   const aoa = flattenOrderProductsToAoA(products);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   setSheetColWidths(ws, [26, 22, 20, 16, 16, 11, 12]);
+  setSheetRTL(ws);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'أصناف');
   XLSX.writeFile(wb, filename);
@@ -70,6 +77,7 @@ export async function exportOrderCategoriesWorkbook(categories, filename = 'orde
   const aoa = flattenOrderCategoriesToAoA(categories);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   setSheetColWidths(ws, [32, 28]);
+  setSheetRTL(ws);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'فئات');
   XLSX.writeFile(wb, filename);
@@ -222,12 +230,13 @@ export async function exportOrdersProductsImportTemplate(filename = 'order-produ
   const emptyRow = () => ['', '', '', '', '', '', ''];
   const aoa = [
     ORDER_PRODUCTS_EXCEL_HEADERS,
-    [ORDER_PRODUCTS_TEMPLATE_MARKER_AR, 'Example item (delete row)', 'ألبان', 'كبير', 'كرتون', 'piece', '18.5'],
-    ['', '', '', 'وسط', 'علبة', 'piece', '12'],
+    [ORDER_PRODUCTS_TEMPLATE_MARKER_AR, 'Example item (delete row)', 'ألبان', 'كبير', 'كرتون', 'piece', 18.5],
+    ['', '', '', 'وسط', 'علبة', 'piece', 12],
     ...Array.from({ length: 12 }, emptyRow),
   ];
   const wsData = XLSX.utils.aoa_to_sheet(aoa);
   setSheetColWidths(wsData, [26, 22, 20, 16, 16, 11, 12]);
+  setSheetRTL(wsData);
 
   const instructions = [
     ['البند', 'الشرح'],
@@ -242,13 +251,14 @@ export async function exportOrdersProductsImportTemplate(filename = 'order-produ
     ['size', 'الحجم أو وصف الوحدة المعروض (خلية منفصلة).'],
     ['packaging', 'التغليف (خلية منفصلة).'],
     ['unit', 'piece | kg | box | dozen'],
-    ['lastPrice', 'آخر سعر رقمي.'],
+    ['lastPrice', 'آخر سعر — رقم (يُصدَّر كرقم وليس نص).'],
     ['', ''],
     ['تركيبات متعددة', 'لنفس الصنف: اترك nameAr وnameEn وcategory فارغة في الصف التالي واملأ size/packaging/unit/lastPrice فقط.'],
     ['ملفات قديمة', 'عمود variants كنص JSON لا يزال مدعوماً إن وُجد.'],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
   setSheetColWidths(wsInstr, [28, 62]);
+  setSheetRTL(wsInstr);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, wsData, 'أصناف');
@@ -268,6 +278,7 @@ export async function exportOrdersCategoriesImportTemplate(filename = 'order-cat
   ];
   const wsData = XLSX.utils.aoa_to_sheet(aoa);
   setSheetColWidths(wsData, [32, 28]);
+  setSheetRTL(wsData);
 
   const instructions = [
     ['البند', 'الشرح'],
@@ -280,6 +291,7 @@ export async function exportOrdersCategoriesImportTemplate(filename = 'order-cat
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
   setSheetColWidths(wsInstr, [22, 58]);
+  setSheetRTL(wsInstr);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, wsData, 'فئات');
@@ -291,16 +303,18 @@ export async function exportToExcel(data, filename = 'export.xlsx') {
   const XLSX = await import('xlsx');
   const rows = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
   const ws = XLSX.utils.json_to_sheet(rows);
+  setSheetRTL(ws);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  XLSX.utils.book_append_sheet(wb, ws, 'بيانات');
   XLSX.writeFile(wb, filename);
 }
 
 export async function exportToPdf(content, filename = 'export.pdf') {
   const { jsPDF } = await import('jspdf');
-  const doc = new jsPDF();
+  const doc = new jsPDF({ putOnlyUsedFonts: true });
   doc.setFontSize(12);
-  doc.text(typeof content === 'string' ? content : 'PDF Export', 10, 10);
+  const text = typeof content === 'string' ? content : 'PDF Export';
+  doc.text(text, doc.internal.pageSize.getWidth() - 14, 10, { align: 'right' });
   doc.save(filename);
 }
 
@@ -420,27 +434,48 @@ export async function importBankStatementFile(file) {
   return importExcelRaw(file);
 }
 
-export async function exportTableToPdf({ columns, data, title = '', filename = 'export.pdf' }) {
+export async function exportTableToPdf({ columns, data, title = '', filename = 'export.pdf', rtl = true }) {
   const { jsPDF } = await import('jspdf');
   const autoTable = (await import('jspdf-autotable')).default;
-  const doc = new jsPDF();
-  let y = 10;
+  const pageWidth = 210;
+  const doc = new jsPDF({ putOnlyUsedFonts: true });
+  let y = 14;
+
   if (title) {
-    doc.setFontSize(16);
-    doc.text(title, 14, y);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    if (rtl) {
+      doc.text(title, pageWidth - 14, y, { align: 'right' });
+    } else {
+      doc.text(title, 14, y);
+    }
     y += 10;
   }
+
   const cols = columns || (data[0] && typeof data[0] === 'object' && !Array.isArray(data[0]) ? Object.keys(data[0]) : []);
   const head = [cols];
   const body = data.map((row) =>
     Array.isArray(row) ? row.map((c) => String(c ?? '')) : cols.map((c) => String(row[c] ?? '')),
   );
+
   autoTable(doc, {
     head,
     body: body.length ? body : [['لا توجد بيانات']],
     startY: y,
-    styles: { font: 'helvetica', fontSize: 9 },
-    headStyles: { fillColor: [37, 99, 235] },
+    styles: {
+      font: 'helvetica',
+      fontSize: 9,
+      halign: rtl ? 'right' : 'left',
+    },
+    headStyles: {
+      fillColor: [37, 99, 235],
+      halign: rtl ? 'right' : 'left',
+      fontStyle: 'bold',
+    },
+    columnStyles: rtl ? { 0: { cellWidth: 'auto' } } : {},
+    tableWidth: 'auto',
+    margin: { left: 14, right: 14 },
   });
+
   doc.save(filename);
 }

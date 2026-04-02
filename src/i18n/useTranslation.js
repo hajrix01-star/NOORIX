@@ -5,7 +5,16 @@ import { useApp } from '../context/AppContext';
 import { getText } from './translations';
 
 /**
- * @returns {{ t: (key: string, ...replacements: string[]) => string, lang: 'ar'|'en' }}
+ * @returns {{
+ *   t: (key: string, vars?: Object|string, ...rest: string[]) => string,
+ *   lang: 'ar'|'en'
+ * }}
+ *
+ * الاستخدام:
+ *   t('save')                          → 'حفظ'
+ *   t('batchLabel', '5')               → 'دفعة 5'     (استبدال ترتيبي)
+ *   t('pageLabel', { 0: 2, 1: 10 })   → 'صفحة 2 / 10'
+ *   t('total', { count: 5 })           → يعمل إذا النص يحتوي {count}
  */
 export function useTranslation() {
   const { language } = useApp();

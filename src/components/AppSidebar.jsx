@@ -82,6 +82,28 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
               <span className="app-sidebar__title-main">Noorix</span>
               <span className="app-sidebar__title-sub">{t('appTagline')}</span>
             </div>
+            {isOpen && (
+              <button
+                type="button"
+                className="app-sidebar__close-btn"
+                onClick={onClose}
+                aria-label={t('close')}
+                style={{
+                  marginInlineStart: 'auto',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 8,
+                  color: 'rgba(255,255,255,0.7)',
+                  cursor: 'pointer',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  padding: '5px 10px',
+                }}
+              >
+                ✕
+              </button>
+            )}
           </div>
           <div style={{ width: '100%', marginTop: 8 }}>
             {(() => {

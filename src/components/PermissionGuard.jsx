@@ -4,8 +4,15 @@ import { getRouteRequiredPermissions, isSuperAdmin } from '../constants/permissi
 import Forbidden403 from './Forbidden403';
 
 /**
- * يلف المحتوى ويمنع العرض إذا كان المستخدم لا يملك صلاحية المسار الحالي.
- * يستخدم permissions من قاعدة البيانات (عبر user object) بدلاً من الخريطة الثابتة.
+ * حارس صلاحيات على مستوى المسارات (client-side).
+ *
+ * ⚠️  أمان: هذا الحارس يمنع العرض فقط — الحماية الحقيقية على الـ API (backend).
+ *     يجب ألّا تعتمد على هذا الحارس وحده لمنع وصول البيانات الحساسة.
+ *
+ * مصدر الصلاحيات: يجب أن تأتي userPermissions و userRole من JWT المُفكَّك
+ *     على الـ backend أو من /me endpoint موثوق — لا من localStorage مباشرة.
+ *
+ * يعرض <Forbidden403 /> عند انعدام الصلاحية بدلاً من null لإبلاغ المستخدم.
  */
 export default function PermissionGuard({ children, userRole, userPermissions, isUserLoading }) {
   const location = useLocation();

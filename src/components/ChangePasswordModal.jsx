@@ -5,6 +5,26 @@ import React, { useState } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import { changePassword } from '../services/api';
 
+const MIN_LENGTH = 8;
+
+/**
+ * يُحسب مستوى قوة كلمة المرور من 0 إلى 4.
+ * المعايير: الطول، أرقام، حروف صغيرة، حروف كبيرة، رموز خاصة.
+ */
+function getPasswordStrength(pwd) {
+  if (!pwd) return 0;
+  let score = 0;
+  if (pwd.length >= MIN_LENGTH) score++;
+  if (pwd.length >= 12) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  return Math.min(score, 4);
+}
+
+const STRENGTH_LABELS = ['ضعيفة جداً', 'ضعيفة', 'متوسطة', 'جيدة', 'قوية'];
+const STRENGTH_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a'];
+
 export default function ChangePasswordModal({ onClose, onSuccess }) {
   const { t } = useTranslation();
   const [currentPassword, setCurrentPassword] = useState('');
@@ -12,6 +32,10 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const strength = getPasswordStrength(newPassword);
+  const strengthLabel = newPassword ? STRENGTH_LABELS[strength] : '';
+  const strengthColor = newPassword ? STRENGTH_COLORS[strength] : 'var(--noorix-border)';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,8 +48,8 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
       setError(t('changePasswordNewRequired') || 'كلمة المرور الجديدة مطلوبة');
       return;
     }
-    if (newPassword.length < 6) {
-      setError(t('changePasswordMinLength') || 'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل');
+    if (newPassword.length < MIN_LENGTH) {
+      setError(t('changePasswordMinLength') || `كلمة المرور الجديدة يجب أن تكون ${MIN_LENGTH} أحرف على الأقل`);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -56,6 +80,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
     background: 'var(--noorix-bg-surface)',
     fontSize: 14,
     fontFamily: 'inherit',
+    boxSizing: 'border-box',
   };
 
   return (
@@ -86,7 +111,9 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
         <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700 }}>{t('changePassword')}</h3>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('changePasswordCurrent') || 'كلمة المرور الحالية'}</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+              {t('changePasswordCurrent') || 'كلمة المرور الحالية'}
+            </label>
             <input
               type="password"
               value={currentPassword}
@@ -96,8 +123,10 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               autoComplete="current-password"
             />
           </div>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('changePasswordNew') || 'كلمة المرور الجديدة'}</label>
+          <div style={{ marginBottom: 8 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+              {t('changePasswordNew') || 'كلمة المرور الجديدة'}
+            </label>
             <input
               type="password"
               value={newPassword}
@@ -106,9 +135,31 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               style={inputStyle}
               autoComplete="new-password"
             />
+            {/* مؤشر قوة كلمة المرور */}
+            {newPassword && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                  {[1, 2, 3, 4].map((level) => (
+                    <div
+                      key={level}
+                      style={{
+                        flex: 1,
+                        height: 4,
+                        borderRadius: 4,
+                        background: strength >= level ? strengthColor : 'var(--noorix-border)',
+                        transition: 'background 0.2s',
+                      }}
+                    />
+                  ))}
+                </div>
+                <span style={{ fontSize: 11, color: strengthColor }}>{strengthLabel}</span>
+              </div>
+            )}
           </div>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('changePasswordConfirm') || 'تأكيد كلمة المرور'}</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+              {t('changePasswordConfirm') || 'تأكيد كلمة المرور'}
+            </label>
             <input
               type="password"
               value={confirmPassword}
@@ -117,6 +168,11 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               style={inputStyle}
               autoComplete="new-password"
             />
+            {confirmPassword && confirmPassword !== newPassword && (
+              <span style={{ fontSize: 11, color: '#ef4444', marginTop: 4, display: 'block' }}>
+                كلمتا المرور غير متطابقتين
+              </span>
+            )}
           </div>
           {error && (
             <div style={{ marginBottom: 16, padding: 10, borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#dc2626', fontSize: 13 }}>

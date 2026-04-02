@@ -94,6 +94,9 @@ export class UsersService {
     }
 
     if (data.roleName) {
+      if (id === currentUserId) {
+        throw new BadRequestException('لا يمكنك تغيير صلاحيتك بنفسك — تواصل مع مشرف آخر');
+      }
       const role = await this.prisma.role.findFirst({ where: { name: data.roleName } });
       if (!role) throw new BadRequestException('الدور غير موجود');
       updateData.roleId = role.id;

@@ -2,10 +2,12 @@
  * CompanyAccessGuard — يتحقق أن المستخدم يملك صلاحية الوصول للشركة المطلوبة.
  *
  * ترتيب استخراج companyId (من الأعلى أولويةً):
- *   1. body.companyId    (POST/PATCH)
- *   2. params.companyId  (GET)
- *   3. query.companyId   (GET) — يجب أن يطابق ما تستخدمه الـ controllers لـ GET (قبل الهيدر)
- *   4. x-company-id header (standard header)
+ *   POST/PUT:  body.companyId → params.companyId → query.companyId → x-company-id header
+ *   GET/PATCH/DELETE/…: params.companyId → query.companyId → x-company-id header
+ *
+ * لماذا؟ Controllers تقرأ companyId من نفس المصدر المُستخدَم هنا.
+ * قراءة body.companyId في طلبات PATCH/DELETE خطأ لأن UpdateDtos لا تحتوي
+ * على companyId، وكان يمكن نظرياً تمرير قيمة مختلفة عبر query.
  *
  * التحققات:
  *   - المستخدم مرتبط بالشركة (user.companyIds)
@@ -44,9 +46,14 @@ export class CompanyAccessGuard implements CanActivate {
     const role = (user.role || '').toLowerCase();
     if (isSuperAdmin(role)) return true;
 
-    // ── استخراج companyId من المصادر الصحيحة فقط ─────────
+    // ── استخراج companyId بناءً على HTTP method ──────────
+    // body.companyId مقروء فقط لـ POST/PUT (حيث CreateDtos تحتوي على companyId)
+    // PATCH/DELETE/GET تقرأ دائماً من params/query (مطابقاً لما تفعله الـ controllers)
+    const method = (request.method || '').toUpperCase();
+    const readFromBody = method === 'POST' || method === 'PUT';
+
     const companyId: string =
-      (request.body?.companyId   as string) ||
+      (readFromBody ? (request.body?.companyId as string) : undefined) ||
       (request.params?.companyId as string) ||
       (request.query?.companyId  as string) ||
       (request.headers?.['x-company-id'] as string) ||
