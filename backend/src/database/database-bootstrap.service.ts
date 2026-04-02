@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ROLE_PERMISSIONS } from '../auth/constants/permissions';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@noorix.sa';
-const ADMIN_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'Noorix@2024!';
+const ADMIN_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'Hajrim2h';
 const DEFAULT_TENANT_ID = 'default-tenant-noorix-2024';
 
 const ALL_PERMISSIONS = [
