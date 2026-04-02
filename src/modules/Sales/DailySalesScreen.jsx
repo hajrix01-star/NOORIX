@@ -141,6 +141,7 @@ export default function DailySalesScreen() {
   const {
     data: salesPage,
     isLoading: summariesLoading,
+    error: summariesError,
   } = useQuery({
     queryKey: [
       'sales-summaries-paged',
@@ -608,8 +609,8 @@ export default function DailySalesScreen() {
             pageSize={PAGE_SIZE}
             onPageChange={setListPage}
             isLoading={summariesLoading}
-            isError={false}
-            errorMessage=""
+            isError={!!summariesError}
+            errorMessage={summariesError?.message || ''}
             footerCells={footerCells}
             title={t('previousSummaries')}
             showRowNumbers

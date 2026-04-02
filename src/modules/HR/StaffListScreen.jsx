@@ -94,6 +94,7 @@ export default function StaffListScreen({ embedded }) {
   const {
     data: pagedResult,
     isLoading,
+    error: employeesError,
   } = useQuery({
     queryKey: ['employees-paged', companyId, viewMode, listPage, PAGE_SIZE, debouncedQ, sortKey, sortDir],
     queryFn: async () => {
@@ -492,6 +493,8 @@ export default function StaffListScreen({ embedded }) {
             pageSize={PAGE_SIZE}
             onPageChange={setListPage}
             isLoading={isLoading}
+            isError={!!employeesError}
+            errorMessage={employeesError?.message || 'فشل تحميل الموظفين'}
             title={t('employeesList')}
             badge={<span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{listTotal}</span>}
             searchValue={searchInput}

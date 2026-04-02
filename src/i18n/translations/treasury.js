@@ -71,4 +71,5 @@ export default {
   paymentMada: { ar: 'مدى', en: 'Mada' },
   stcPay: { ar: 'STC Pay', en: 'STC Pay' },
   applePay: { ar: 'Apple Pay', en: 'Apple Pay' },
+  totalBalance: { ar: 'الرصيد الإجمالي', en: 'Total balance' },
 };

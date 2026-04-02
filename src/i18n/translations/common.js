@@ -6,6 +6,7 @@ export default {
   appSubtitle: { ar: 'إدارة المبيعات والمالية اليومية بنمط احترافي.', en: 'Daily sales and finance management, professional style.' },
   appTagline: { ar: 'منصة إدارة الأعمال المالية', en: 'Business Finance Management Platform' },
   loading: { ar: 'جاري التحميل...', en: 'Loading...' },
+  loadingError: { ar: 'فشل تحميل البيانات', en: 'Failed to load data' },
   retry: { ar: 'إعادة المحاولة', en: 'Retry' },
   cancel: { ar: 'إلغاء', en: 'Cancel' },
   save: { ar: 'حفظ', en: 'Save' },

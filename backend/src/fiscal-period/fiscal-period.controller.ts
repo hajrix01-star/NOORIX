@@ -8,7 +8,7 @@ import { FiscalPeriodService } from './fiscal-period.service';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { TenantContext } from '../common/tenant-context';
 
-@Controller('api/v1/fiscal-periods')
+@Controller('fiscal-periods')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard)
 export class FiscalPeriodController {
   constructor(private readonly service: FiscalPeriodService) {}

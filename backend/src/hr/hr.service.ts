@@ -132,6 +132,15 @@ export class HRService {
     payrollMonth.setDate(1);
     payrollMonth.setHours(0, 0, 0, 0);
 
+    const existing = await this.prisma.payrollRun.findFirst({
+      where: { companyId: dto.companyId, payrollMonth, status: { not: 'cancelled' } },
+    });
+    if (existing) {
+      throw new BadRequestException(
+        `يوجد مسير رواتب لهذا الشهر بالفعل (${existing.runNumber}). يمكنك تعديله أو حذفه.`,
+      );
+    }
+
     const runNumber = await this.generateRunNumber(dto.companyId);
     const splitVaultIds = dto.items.flatMap((it) => (it.vaultSplits ?? []).map((vs) => vs.vaultId));
     await this.assertVaultsUsableForPayment(dto.companyId, splitVaultIds);

@@ -63,13 +63,10 @@ export class AppService {
       // db error
     }
     return {
-      status: 'ok',
+      status: dbConnected ? 'ok' : 'degraded',
       service: 'noorix-backend',
-      version: '0.1.0',
-      geminiAvailable: isGeminiAvailable(),
       dbConnected,
       dbLatencyMs,
-      adminExists,
     };
   }
 

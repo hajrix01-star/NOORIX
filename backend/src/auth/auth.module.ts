@@ -9,6 +9,9 @@ import { JwtStrategy }       from './jwt.strategy';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('❌ JWT_SECRET يجب تحديده في بيئة الإنتاج.');
+  }
   new Logger('AuthModule').warn('⚠️ JWT_SECRET غير محدد — يُستخدم secret افتراضي (للتطوير فقط)');
 }
 

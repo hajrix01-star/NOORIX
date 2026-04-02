@@ -7,6 +7,7 @@ import { AppContext } from './context/AppContext';
 import { useAuth } from './context/AuthContext';
 import PermissionGuard from './components/PermissionGuard';
 import Forbidden403 from './components/Forbidden403';
+import NotFound404 from './components/NotFound404';
 import AppSidebar from './components/AppSidebar';
 import AppHeader from './components/AppHeader';
 import LoadingFallback from './components/LoadingFallback';
@@ -338,7 +339,7 @@ export default function App() {
                 </Route>
                 <Route path="/settings" element={<SettingsScreen />} />
                 <Route path="/" element={<DashboardScreen />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<NotFound404 />} />
               </Routes>
             </PermissionGuard>
           </React.Suspense>

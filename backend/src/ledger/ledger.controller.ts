@@ -1,15 +1,18 @@
 import { Controller, Get, Headers, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { preferQueryCompanyId } from '../common/utils/company-request';
 import { LedgerService } from './ledger.service';
 
 @Controller('ledger')
-@UseGuards(AuthGuard('jwt'), CompanyAccessGuard)
+@UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class LedgerController {
   constructor(private readonly ledgerService: LedgerService) {}
 
   @Get()
+  @RequirePermission('REPORTS_READ')
   async findAll(
     @Query('companyId') queryCompanyId: string,
     @Headers('x-company-id') headerCompanyId: string,

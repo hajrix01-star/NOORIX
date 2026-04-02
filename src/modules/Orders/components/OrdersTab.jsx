@@ -60,7 +60,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
   const [orderTypeFilter, setOrderTypeFilter] = useState('all'); // 'all' | 'external' | 'internal'
   const [viewingOrder, setViewingOrder] = useState(null);
 
-  const { data: orders = [], isLoading } = useOrders(companyId, year, month);
+  const { data: orders = [], isLoading, error: ordersError } = useOrders(companyId, year, month);
   const { data: products = [] } = useOrderProducts(companyId);
   const { data: summaryFromApi = {}, isLoading: summaryLoading } = useOrdersSummary(companyId, year, month);
   const createOrder = useCreateOrderMutation();
@@ -258,7 +258,9 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
       <OrdersSummaryCard summary={summary} cashSalesTotal={cashSalesTotal} isLoading={summaryLoading} />
 
       <div className="noorix-surface-card" style={{ overflow: 'auto' }}>
-        {isLoading ? (
+        {ordersError ? (
+          <div style={{ padding: 40, textAlign: 'center', color: '#dc2626' }}>⚠ {ordersError?.message || t('loadingError')}</div>
+        ) : isLoading ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>
         ) : orders.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('ordersNoOrdersInPeriod')}</div>
