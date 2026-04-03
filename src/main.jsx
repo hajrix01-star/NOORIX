@@ -3,12 +3,14 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { initGlobalCacheManager } from './utils/cacheHelper';
+import { applyBranding } from './utils/appBranding';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './context/AuthContext';
 import App from './App';
 import './index.css';
 
 initGlobalCacheManager();
+applyBranding(); // تطبيق اسم التطبيق وشعاره المحفوظَين قبل أي رسم
 
 /**
  * React Query — توازن بين الأداء والبيانات الحديثة (نمط SaaS شائع):

@@ -20,6 +20,7 @@ import RolesTab                 from './components/RolesTab';
 import TaxSettingsTab           from './components/TaxSettingsTab';
 import AISettingsTab            from './components/AISettingsTab';
 import BackupTab                from './components/BackupTab';
+import AppBrandingTab           from './components/AppBrandingTab';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -40,6 +41,7 @@ export default function SettingsScreen() {
     { id: 'roles',     label: t('rolesTab') },
     { id: 'backup',    label: t('backupTab'), permission: 'MANAGE_SETTINGS' },
     { id: 'ai',        label: t('aiTab') },
+    { id: 'branding',  label: 'هوية التطبيق' },
   ], [t]);
 
   const TABS = useMemo(
@@ -103,6 +105,9 @@ export default function SettingsScreen() {
           )}
           {activeTab === 'ai' && (
             <AISettingsTab />
+          )}
+          {activeTab === 'branding' && (
+            <AppBrandingTab />
           )}
         </div>
       </div>

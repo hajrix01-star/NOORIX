@@ -242,39 +242,6 @@ export default function App() {
     queryClient.removeQueries();
   }, [activeCompanyId, queryClient]);
 
-  // تحديث عنوان الصفحة وأيقونة التبويب حسب الشركة النشطة
-  useEffect(() => {
-    const company = companiesFromApi?.find((c) => c.id === activeCompanyId);
-    const companyName = company?.nameAr || company?.nameEn || company?.name;
-    const logoUrl = company?.logoUrl;
-
-    // عنوان الصفحة
-    document.title = companyName ? `${companyName} — نووريكس` : 'نووريكس — Noorix';
-
-    // تحديث الأيقونة ديناميكياً
-    if (logoUrl) {
-      let link = document.querySelector('link[rel="icon"]');
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      link.href = logoUrl;
-      link.type = logoUrl.startsWith('data:image/svg') ? 'image/svg+xml' : 'image/png';
-
-      // Apple touch icon
-      let apple = document.querySelector('link[rel="apple-touch-icon"]');
-      if (apple) apple.href = logoUrl;
-    }
-
-    // meta للـ PWA installed name
-    if (companyName) {
-      const metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-      if (metaTitle) metaTitle.content = companyName;
-      const metaApp = document.querySelector('meta[name="application-name"]');
-      if (metaApp) metaApp.content = companyName;
-    }
-  }, [activeCompanyId, companiesFromApi]);
 
   // مراقبة حالة الاتصال بالسيرفر
   const [serverDown, setServerDown] = useState(false);
