@@ -1,14 +1,18 @@
 /**
  * SuppliersTab — تبويبة الموردين
+ * يدعم: إضافة، تعديل، حذف، تحديد متعدد، حذف جماعي،
+ *        استيراد CSV، تصدير CSV، تنزيل نموذج.
  */
-import React, { useState, memo, useEffect } from 'react';
-import { useSuppliers } from '../../../hooks/useSuppliers';
-import { useCategories } from '../../../hooks/useCategories';
-import { useTranslation } from '../../../i18n/useTranslation';
-import Toast from '../../../components/Toast';
-import { SupplierForm } from './SupplierForm';
-import { SupplierTable } from './SupplierTable';
-import { SupplierEditModal } from './SupplierEditModal';
+import React, { useState, memo, useEffect, useCallback } from 'react';
+import { useSuppliers }        from '../../../hooks/useSuppliers';
+import { useCategories }       from '../../../hooks/useCategories';
+import { useTranslation }      from '../../../i18n/useTranslation';
+import { createSupplier }      from '../../../services/api';
+import Toast                   from '../../../components/Toast';
+import { SupplierForm }        from './SupplierForm';
+import { SupplierTable }       from './SupplierTable';
+import { SupplierEditModal }   from './SupplierEditModal';
+import SupplierImportExport    from './SupplierImportExport';
 
 const IS = {
   width: '100%', padding: '9px 12px', borderRadius: 8,
@@ -18,62 +22,116 @@ const IS = {
 
 export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   const { t } = useTranslation();
-  const [showForm, setShowForm] = useState(false);
-  const [search, setSearch]     = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
-  const [toast, setToast]       = useState({ visible: false, message: '', type: 'success' });
-  const [editingSupplier, setEditingSupplier] = useState(null);
 
+  /* ── حالة ── */
+  const [showForm,        setShowForm]        = useState(false);
+  const [search,          setSearch]          = useState('');
+  const [debouncedQ,      setDebouncedQ]      = useState('');
+  const [editingSupplier, setEditingSupplier] = useState(null);
+  const [selectedIds,     setSelectedIds]     = useState(new Set());
+  const [toast,           setToast]           = useState({ visible: false, message: '', type: 'success' });
+
+  /* debounce البحث */
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(search.trim()), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedQ(search.trim()), 300);
+    return () => clearTimeout(timer);
   }, [search]);
 
-  const { suppliers, isLoading, create, update, remove } = useSuppliers(companyId, { pageSize: 200, q: debouncedQ || undefined });
-  const { flatCategories }                               = useCategories(companyId);
+  /* ── بيانات ── */
+  const { suppliers, isLoading, create, update, remove } = useSuppliers(companyId, { pageSize: 500, q: debouncedQ || undefined });
+  const { flatCategories } = useCategories(companyId);
 
+  /* ── مساعد toast ── */
+  const notify = useCallback((message, type = 'success') => {
+    setToast({ visible: true, message, type });
+  }, []);
+
+  /* ── إضافة مورد ── */
   function handleSave(body) {
-    if (!companyId) { setToast({ visible: true, message: t('pleaseSelectCompanyFirst'), type: 'error' }); return; }
+    if (!companyId) { notify(t('pleaseSelectCompanyFirst'), 'error'); return; }
     create.mutate(body, {
-      onSuccess: () => {
-        setToast({ visible: true, message: t('supplierAdded'), type: 'success' });
-        setShowForm(false);
-      },
-      onError: (e) => setToast({ visible: true, message: e?.message || t('addFailed'), type: 'error' }),
+      onSuccess: () => { notify(t('supplierAdded')); setShowForm(false); },
+      onError:   (e) => notify(e?.message || t('addFailed'), 'error'),
     });
   }
 
+  /* ── تعديل ── */
   function handleEditSave(body) {
     if (!editingSupplier?.id) return;
-    update.mutate(
-      { id: editingSupplier.id, body },
-      {
-        onSuccess: () => {
-          setToast({ visible: true, message: t('supplierUpdated'), type: 'success' });
-          setEditingSupplier(null);
-        },
-        onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
-      },
-    );
+    update.mutate({ id: editingSupplier.id, body }, {
+      onSuccess: () => { notify(t('supplierUpdated')); setEditingSupplier(null); },
+      onError:   (e) => notify(e?.message || t('updateFailed'), 'error'),
+    });
   }
 
+  /* ── حذف فردي ── */
   function handleDelete(supplier) {
     if (!confirm(t('deleteSupplierConfirm', supplier.nameAr))) return;
     remove.mutate(supplier.id, {
-      onSuccess: () => setToast({ visible: true, message: t('supplierDeleted'), type: 'success' }),
-      onError: (e) => setToast({ visible: true, message: e?.message || t('deleteFailed'), type: 'error' }),
+      onSuccess: () => {
+        setSelectedIds((prev) => { const n = new Set(prev); n.delete(supplier.id); return n; });
+        notify(t('supplierDeleted'));
+      },
+      onError: (e) => notify(e?.message || t('deleteFailed'), 'error'),
     });
+  }
+
+  /* ── حذف جماعي ── */
+  async function handleBulkDelete() {
+    if (!selectedIds.size) return;
+    if (!confirm(`حذف ${selectedIds.size} مورد/موردين؟ لا يمكن التراجع.`)) return;
+
+    let done = 0;
+    const ids = [...selectedIds];
+    for (const id of ids) {
+      try {
+        await new Promise((res, rej) =>
+          remove.mutate(id, { onSuccess: res, onError: rej }),
+        );
+        done++;
+      } catch (_) {}
+    }
+    setSelectedIds(new Set());
+    notify(`تم حذف ${done} من أصل ${ids.length} مورد`);
+  }
+
+  /* ── تحديد / إلغاء تحديد ── */
+  const handleSelectChange = useCallback((id, checked) => {
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      checked ? n.add(id) : n.delete(id);
+      return n;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback((checked) => {
+    setSelectedIds(checked ? new Set(suppliers.map((s) => s.id)) : new Set());
+  }, [suppliers]);
+
+  /* ── استيراد مورد واحد (يُستدعى من ImportExport) ── */
+  async function handleImportOne(body) {
+    const res = await createSupplier(body);
+    if (!res?.success) throw new Error(res?.error || 'فشل الاستيراد');
+    return res.data;
   }
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onDismiss={() => setToast((p) => ({ ...p, visible: false }))}
+      />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      {/* ── شريط البحث + إضافة ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <input
-          type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder={t('searchByNameOrTax')}
-          style={{ ...IS, maxWidth: 320 }}
+          style={{ ...IS, maxWidth: 320, flex: '1 1 160px' }}
         />
         <button
           type="button"
@@ -84,6 +142,14 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
         </button>
       </div>
 
+      {/* ── استيراد / تصدير ── */}
+      <SupplierImportExport
+        companyId={companyId}
+        suppliers={suppliers}
+        onImport={handleImportOne}
+      />
+
+      {/* ── نموذج الإضافة ── */}
       {showForm && (
         <SupplierForm
           companyId={companyId}
@@ -94,16 +160,24 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
         />
       )}
 
+      {/* ── الجدول ── */}
       {isLoading
         ? <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('loading')}</p>
-        : <SupplierTable
+        : (
+          <SupplierTable
             suppliers={suppliers}
             flatCategories={flatCategories}
             onEdit={(s) => setEditingSupplier(s)}
             onDelete={handleDelete}
+            selectedIds={selectedIds}
+            onSelectChange={handleSelectChange}
+            onSelectAll={handleSelectAll}
+            onBulkDelete={handleBulkDelete}
           />
+        )
       }
 
+      {/* ── مودال التعديل ── */}
       {editingSupplier && (
         <SupplierEditModal
           supplier={editingSupplier}

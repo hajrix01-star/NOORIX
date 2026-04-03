@@ -1,24 +1,69 @@
 /**
- * SupplierTable — جدول عرض الموردين.
- * Props: suppliers, flatCategories, onEdit, onDelete
+ * SupplierTable — جدول عرض الموردين مع تحديد متعدد وحذف جماعي.
+ * Props: suppliers, flatCategories, onEdit, onDelete,
+ *        selectedIds (Set), onSelectChange(id,bool), onSelectAll(bool),
+ *        onBulkDelete
  */
 import React, { memo, useState, useEffect } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 
+/* ── بادج نوع المورد ── */
 function TypeBadge({ type, t }) {
-  const labels = { purchase: 'categoryTypes', purchases: 'categoryTypes', expense: 'categoryTypeExpense', expenses: 'categoryTypeExpense' };
-  const c = { purchase: { bg: 'rgba(37,99,235,0.08)', color: '#2563eb' }, purchases: { bg: 'rgba(37,99,235,0.08)', color: '#2563eb' }, expense: { bg: 'rgba(217,119,6,0.08)', color: '#d97706' }, expenses: { bg: 'rgba(217,119,6,0.08)', color: '#d97706' } }[type] || { bg: 'rgba(100,116,139,0.08)', color: '#64748b' };
-  const label = labels[type] ? t(labels[type]) : type;
+  const map = {
+    purchase:  { key: 'categoryTypes',      bg: 'rgba(37,99,235,0.08)',  color: '#2563eb' },
+    purchases: { key: 'categoryTypes',      bg: 'rgba(37,99,235,0.08)',  color: '#2563eb' },
+    expense:   { key: 'categoryTypeExpense', bg: 'rgba(217,119,6,0.08)', color: '#d97706' },
+    expenses:  { key: 'categoryTypeExpense', bg: 'rgba(217,119,6,0.08)', color: '#d97706' },
+  };
+  const cfg = map[type] || { key: null, bg: 'rgba(100,116,139,0.08)', color: '#64748b' };
   return (
-    <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: c.bg, color: c.color }}>
-      {label}
+    <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: cfg.bg, color: cfg.color }}>
+      {cfg.key ? t(cfg.key) : type}
     </span>
   );
 }
 
-export const SupplierTable = memo(function SupplierTable({ suppliers = [], flatCategories = [], onEdit, onDelete }) {
+/* ── checkbox مُنسَّق ── */
+function CB({ checked, indeterminate, onChange, ariaLabel }) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', minHeight: 36, minWidth: 36, padding: 4 }}>
+      <input
+        type="checkbox"
+        checked={checked}
+        ref={(el) => { if (el) el.indeterminate = !!indeterminate; }}
+        onChange={(e) => onChange(e.target.checked)}
+        aria-label={ariaLabel}
+        style={{ width: 16, height: 16, accentColor: 'var(--noorix-accent-green)', cursor: 'pointer' }}
+      />
+    </label>
+  );
+}
+
+/* ── أزرار الإجراء ── */
+function ActionBtns({ onEdit, onDelete, t }) {
+  return (
+    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+      <button type="button" onClick={onEdit} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, cursor: 'pointer', border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', whiteSpace: 'nowrap' }}>
+        ✎ {t('edit')}
+      </button>
+      <button type="button" onClick={onDelete} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, cursor: 'pointer', border: '1px solid #fecaca', background: 'rgba(239,68,68,0.06)', color: 'var(--noorix-accent-red)', whiteSpace: 'nowrap' }}>
+        × {t('delete')}
+      </button>
+    </div>
+  );
+}
+
+export const SupplierTable = memo(function SupplierTable({
+  suppliers = [],
+  flatCategories = [],
+  onEdit,
+  onDelete,
+  selectedIds = new Set(),
+  onSelectChange,
+  onSelectAll,
+  onBulkDelete,
+}) {
   const { t } = useTranslation();
-  const headers = [t('name'), t('nameEnCol'), t('taxNumber'), t('phone'), t('category'), t('type'), t('actions')];
 
   const mq = typeof window !== 'undefined' ? window.matchMedia('(max-width: 700px)') : null;
   const [isMobile, setIsMobile] = useState(mq?.matches ?? false);
@@ -30,6 +75,10 @@ export const SupplierTable = memo(function SupplierTable({ suppliers = [], flatC
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const allSelected    = suppliers.length > 0 && selectedIds.size === suppliers.length;
+  const someSelected   = selectedIds.size > 0 && !allSelected;
+  const hasSelection   = selectedIds.size > 0;
+
   if (suppliers.length === 0) {
     return (
       <div style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 14 }}>
@@ -39,51 +88,89 @@ export const SupplierTable = memo(function SupplierTable({ suppliers = [], flatC
     );
   }
 
-  const actionButtons = (s) => (
-    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-      <button type="button" onClick={() => onEdit?.(s)} style={{ padding: '7px 14px', fontSize: 13, minHeight: 36, borderRadius: 8, cursor: 'pointer', border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
-        ✎ {t('edit')}
+  /* ── شريط الحذف الجماعي ── */
+  const BulkBar = hasSelection ? (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
+      background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)',
+      flexWrap: 'wrap',
+    }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--noorix-accent-red)', flex: 1 }}>
+        تم تحديد {selectedIds.size} {selectedIds.size === 1 ? 'مورد' : 'موردين'}
+      </span>
+      <button
+        type="button"
+        onClick={() => onBulkDelete?.()}
+        style={{ padding: '7px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: 'var(--noorix-accent-red)', color: '#fff' }}
+      >
+        🗑 حذف المحددين
       </button>
-      <button type="button" onClick={() => onDelete?.(s)} style={{ padding: '7px 14px', fontSize: 13, minHeight: 36, borderRadius: 8, cursor: 'pointer', border: '1px solid #fecaca', background: 'rgba(239,68,68,0.06)', color: '#dc2626' }}>
-        × {t('delete')}
+      <button
+        type="button"
+        onClick={() => onSelectAll?.(false)}
+        style={{ padding: '7px 14px', borderRadius: 8, fontSize: 13, cursor: 'pointer', border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text-muted)' }}
+      >
+        إلغاء التحديد
       </button>
     </div>
-  );
+  ) : null;
 
+  /* ══════════════════ عرض الجوال ══════════════════ */
   if (isMobile) {
     return (
       <div className="noorix-surface-card" style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--noorix-border)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-          {t('supplierCount', suppliers.length)}
+        {/* رأس: عدد + تحديد الكل */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderBottom: '1px solid var(--noorix-border)' }}>
+          <CB
+            checked={allSelected}
+            indeterminate={someSelected}
+            onChange={(v) => onSelectAll?.(v)}
+            ariaLabel="تحديد الكل"
+          />
+          <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', flex: 1 }}>
+            {t('supplierCount', suppliers.length)}
+          </span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+        {BulkBar}
+
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {suppliers.map((s) => {
             const cat = flatCategories.find((c) => c.id === s.supplierCategoryId);
             const icon = cat?.icon || cat?.account?.icon || '';
+            const checked = selectedIds.has(s.id);
             return (
-              <div key={s.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--noorix-border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{s.nameAr}</div>
-                    {s.nameEn && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{s.nameEn}</div>}
+              <div
+                key={s.id}
+                style={{ padding: '12px 16px', borderBottom: '1px solid var(--noorix-border)', background: checked ? 'rgba(22,163,74,0.04)' : 'transparent' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  {/* checkbox */}
+                  <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.nameAr}</div>
+                        {s.nameEn && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{s.nameEn}</div>}
+                      </div>
+                      <TypeBadge type={s.supplierType || 'purchases'} t={t} />
+                    </div>
+                    {(s.phone || s.taxNumber) && (
+                      <div style={{ display: 'flex', gap: 12, marginBottom: 6, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                        {s.phone && <span>📞 {s.phone}</span>}
+                        {s.taxNumber && <span style={{ fontFamily: 'monospace' }}>🔢 {s.taxNumber}</span>}
+                      </div>
+                    )}
+                    {cat && (
+                      <div style={{ marginBottom: 8 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: cat.type === 'purchase' ? 'rgba(37,99,235,0.08)' : 'rgba(217,119,6,0.08)', color: cat.type === 'purchase' ? '#2563eb' : '#d97706' }}>
+                          {icon && <span>{icon}</span>}{cat.nameAr}
+                        </span>
+                      </div>
+                    )}
+                    <ActionBtns onEdit={() => onEdit?.(s)} onDelete={() => onDelete?.(s)} t={t} />
                   </div>
-                  <TypeBadge type={s.supplierType || 'purchases'} t={t} />
                 </div>
-                {(s.phone || s.taxNumber) && (
-                  <div style={{ display: 'flex', gap: 12, marginBottom: 8, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-                    {s.phone && <span>{s.phone}</span>}
-                    {s.taxNumber && <span style={{ fontFamily: 'monospace' }}>{s.taxNumber}</span>}
-                  </div>
-                )}
-                {cat && (
-                  <div style={{ marginBottom: 10 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: cat.type === 'purchase' ? 'rgba(37,99,235,0.08)' : 'rgba(217,119,6,0.08)', color: cat.type === 'purchase' ? '#2563eb' : '#d97706' }}>
-                      {icon && <span>{icon}</span>}
-                      {cat.nameAr}
-                    </span>
-                  </div>
-                )}
-                {actionButtons(s)}
               </div>
             );
           })}
@@ -92,26 +179,58 @@ export const SupplierTable = memo(function SupplierTable({ suppliers = [], flatC
     );
   }
 
+  /* ══════════════════ عرض الديسكتوب ══════════════════ */
+  const headers = [
+    { label: '', width: 40 },
+    { label: t('name') },
+    { label: t('nameEnCol') },
+    { label: t('taxNumber') },
+    { label: t('phone') },
+    { label: t('category') },
+    { label: t('type') },
+    { label: t('actions') },
+  ];
+
   return (
     <div className="noorix-surface-card noorix-table-frame" style={{ overflow: 'hidden' }}>
-      <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--noorix-border)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-        {t('supplierCount', suppliers.length)}
+      {/* رأس: عدد */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderBottom: '1px solid var(--noorix-border)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+        <span style={{ flex: 1 }}>{t('supplierCount', suppliers.length)}</span>
       </div>
+
+      {BulkBar}
+
       <div style={{ overflowX: 'auto' }}>
-        <table className="noorix-table" style={{ minWidth: 500 }}>
+        <table className="noorix-table" style={{ minWidth: 560 }}>
           <thead>
             <tr style={{ textAlign: 'right' }}>
-              {headers.map((h) => (
-                <th key={h} style={{ padding: '9px 12px', fontWeight: 700, fontSize: 12 }}>{h}</th>
+              {/* عمود التحديد */}
+              <th style={{ padding: '9px 4px 9px 12px', width: 40 }}>
+                <CB
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onChange={(v) => onSelectAll?.(v)}
+                  ariaLabel="تحديد الكل"
+                />
+              </th>
+              {headers.slice(1).map((h) => (
+                <th key={h.label} style={{ padding: '9px 12px', fontWeight: 700, fontSize: 12 }}>{h.label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {suppliers.map((s) => {
-              const cat = flatCategories.find((c) => c.id === s.supplierCategoryId);
-              const icon = cat?.icon || cat?.account?.icon || '';
+              const cat     = flatCategories.find((c) => c.id === s.supplierCategoryId);
+              const icon    = cat?.icon || cat?.account?.icon || '';
+              const checked = selectedIds.has(s.id);
               return (
-                <tr key={s.id}>
+                <tr
+                  key={s.id}
+                  style={{ background: checked ? 'rgba(22,163,74,0.04)' : 'transparent' }}
+                >
+                  <td style={{ padding: '4px 4px 4px 12px' }}>
+                    <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
+                  </td>
                   <td style={{ padding: '9px 12px', fontWeight: 700 }}>{s.nameAr}</td>
                   <td style={{ padding: '9px 12px', color: 'var(--noorix-text-muted)', fontSize: 12 }}>{s.nameEn || '—'}</td>
                   <td style={{ padding: '9px 12px', fontFamily: 'monospace', fontSize: 12 }}>{s.taxNumber || '—'}</td>
@@ -122,23 +241,16 @@ export const SupplierTable = memo(function SupplierTable({ suppliers = [], flatC
                         {icon && <span style={{ fontSize: 14 }}>{icon}</span>}
                         <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: cat.type === 'purchase' ? 'rgba(37,99,235,0.08)' : 'rgba(217,119,6,0.08)', color: cat.type === 'purchase' ? '#2563eb' : '#d97706' }}>
                           {cat.nameAr}
-                          {cat.account?.code && <span style={{ marginRight: 4, opacity: 0.8 }}>[{cat.account.code}]</span>}
+                          {cat.account?.code && <span style={{ marginRight: 4, opacity: 0.7 }}>[{cat.account.code}]</span>}
                         </span>
                       </span>
                     ) : '—'}
                   </td>
                   <td style={{ padding: '9px 12px' }}>
-                    <TypeBadge type={s.supplierType || s.categoryId || 'purchases'} t={t} />
+                    <TypeBadge type={s.supplierType || 'purchases'} t={t} />
                   </td>
                   <td style={{ padding: '9px 12px' }}>
-                    <div className="noorix-actions-row" style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'nowrap' }}>
-                      <button type="button" onClick={() => onEdit?.(s)} title={t('edit')} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, cursor: 'pointer', border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
-                        ✎ {t('edit')}
-                      </button>
-                      <button type="button" onClick={() => onDelete?.(s)} title={t('delete')} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, cursor: 'pointer', border: '1px solid #fecaca', background: 'rgba(239,68,68,0.06)', color: '#dc2626' }}>
-                        × {t('delete')}
-                      </button>
-                    </div>
+                    <ActionBtns onEdit={() => onEdit?.(s)} onDelete={() => onDelete?.(s)} t={t} />
                   </td>
                 </tr>
               );
