@@ -26,7 +26,7 @@ function getInitials(user) {
   return 'N';
 }
 
-const MENU_WIDTH = 280;
+const MENU_WIDTH = 232;
 const VIEWPORT_GAP = 8;
 
 export default function UserMenu({ user, onLogout, theme, toggleTheme, language, toggleLanguage }) {
@@ -46,18 +46,16 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    // maxHeight لا يكون سالباً أبداً — حد أدنى 200px
     const spaceBelow = Math.max(0, vh - r.bottom - VIEWPORT_GAP * 2);
-    const menuH = Math.min(520, Math.max(200, spaceBelow));
+    const menuH = Math.min(480, Math.max(200, spaceBelow));
 
-    // نحاول محاذاة الحافة اليسرى للقائمة مع الحافة اليسرى للزر
-    let left = r.left;
-    // إذا القائمة ستتجاوز الحافة اليمنى → نزيحها يساراً
+    // نُحاذي الحافة اليمنى للقائمة مع الحافة اليمنى للزر (طبيعي لـ RTL)
+    let left = r.right - MENU_WIDTH;
+    // ألا تخرج عن الحافة اليسرى
+    if (left < VIEWPORT_GAP) left = VIEWPORT_GAP;
+    // ألا تتجاوز الحافة اليمنى
     if (left + MENU_WIDTH > vw - VIEWPORT_GAP) left = vw - MENU_WIDTH - VIEWPORT_GAP;
-    // ألا تخرج عن الحافة اليسرى أبداً
-    left = Math.max(VIEWPORT_GAP, left);
 
-    // إذا لم يكن هناك مساحة كافية أسفل الزر → افتح فوقه
     const openAbove = spaceBelow < 200 && r.top > 200;
     const top = openAbove
       ? Math.max(VIEWPORT_GAP, r.top - menuH - 6)
@@ -116,7 +114,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
         top: pos.top,
         left: pos.left,
         right: 'auto',
-        width: Math.min(MENU_WIDTH, (typeof window !== 'undefined' ? window.innerWidth : 400) - VIEWPORT_GAP * 2),
+        width: Math.min(MENU_WIDTH, (typeof window !== 'undefined' ? window.innerWidth : 320) - VIEWPORT_GAP * 2),
         maxHeight: pos.maxMenuH || 480,
         overflowY: 'auto',
         WebkitOverflowScrolling: 'touch',
@@ -124,8 +122,8 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
         background: 'var(--noorix-bg-surface)',
         color: 'var(--noorix-text)',
         border: '1px solid var(--noorix-border)',
-        borderRadius: 14,
-        boxShadow: '0 16px 48px rgba(0,0,0,0.22)',
+        borderRadius: 12,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)',
         animation: 'fadeSlideDown 0.15s ease',
       }}
     >
@@ -145,7 +143,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
 
       {showAppearance && (
         <>
-          <div style={{ ...S.dropdownBody, paddingTop: 4 }}>
+          <div style={S.dropdownBody}>
             <button type="button" style={S.menuItemAction} onClick={toggleTheme}>
               <span style={S.menuItemIcon}>{theme === 'light' ? '🌙' : '☀️'}</span>
               <span style={{ flex: 1, textAlign: 'inherit' }}>
@@ -182,7 +180,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
 
       <div style={S.divider} />
 
-      <div style={{ padding: '6px 8px' }}>
+      <div style={{ padding: '5px 6px' }}>
         <button
           type="button"
           onClick={() => { setOpen(false); onLogout(); }}
@@ -321,61 +319,66 @@ const S = {
   dropdownHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
-    padding: '14px 14px 10px',
+    gap: 10,
+    padding: '12px 12px 8px',
   },
   avatarLg: {
-    width: 44,
-    height: 44,
+    width: 38,
+    height: 38,
     borderRadius: '50%',
     background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
     border: '2px solid rgba(255,255,255,0.2)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 800,
     color: '#fff',
     flexShrink: 0,
   },
   dropdownName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 700,
     color: 'var(--noorix-text)',
     lineHeight: 1.3,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   dropdownEmail: {
-    fontSize: 12,
+    fontSize: 11,
     color: 'var(--noorix-text-muted)',
-    marginBottom: 4,
+    marginBottom: 3,
     direction: 'ltr',
     textAlign: 'left',
-    wordBreak: 'break-all',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   dropdownRoleBadge: {
     display: 'inline-block',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 600,
-    padding: '2px 8px',
+    padding: '1px 6px',
     borderRadius: 999,
     border: '1px solid',
   },
   divider: {
     height: 1,
     background: 'var(--noorix-border)',
-    margin: '0 14px',
+    margin: '0 10px',
   },
   dropdownBody: {
-    padding: '6px 8px',
+    padding: '4px 6px',
     display: 'grid',
-    gap: 2,
+    gap: 1,
   },
   menuItemAction: {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
-    padding: '10px 10px',
-    borderRadius: 8,
+    gap: 8,
+    padding: '8px 8px',
+    borderRadius: 7,
     border: 'none',
     background: 'none',
     color: 'var(--noorix-text)',
@@ -385,14 +388,14 @@ const S = {
     textAlign: 'inherit',
     width: '100%',
     transition: 'background 0.15s',
-    minHeight: 44,
+    minHeight: 40,
     touchAction: 'manipulation',
   },
   langChip: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 800,
-    padding: '2px 8px',
-    borderRadius: 6,
+    padding: '2px 6px',
+    borderRadius: 5,
     background: 'var(--noorix-bg-muted)',
     color: 'var(--noorix-text-muted)',
     flexShrink: 0,
@@ -400,9 +403,9 @@ const S = {
   menuItem: {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
-    padding: '10px 10px',
-    borderRadius: 8,
+    gap: 8,
+    padding: '8px 8px',
+    borderRadius: 7,
     border: 'none',
     background: 'none',
     color: 'var(--noorix-text-muted)',
@@ -411,16 +414,18 @@ const S = {
     fontFamily: 'inherit',
     textAlign: 'inherit',
     width: '100%',
-    minHeight: 44,
+    minHeight: 40,
   },
   menuItemIcon: {
-    fontSize: 16,
+    fontSize: 15,
     flexShrink: 0,
+    width: 18,
+    textAlign: 'center',
   },
   menuItemBadge: {
-    marginRight: 'auto',
-    fontSize: 11,
-    padding: '2px 6px',
+    marginInlineStart: 'auto',
+    fontSize: 10,
+    padding: '1px 5px',
     borderRadius: 999,
     background: 'var(--noorix-bg-muted)',
     color: 'var(--noorix-text-muted)',
@@ -428,11 +433,11 @@ const S = {
   logoutBtn: {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
-    padding: '10px 10px',
-    borderRadius: 8,
+    gap: 8,
+    padding: '8px 8px',
+    borderRadius: 7,
     border: 'none',
-    background: 'rgba(239,68,68,0.06)',
+    background: 'rgba(239,68,68,0.07)',
     color: '#ef4444',
     fontSize: 13,
     fontWeight: 600,
@@ -441,7 +446,7 @@ const S = {
     width: '100%',
     textAlign: 'inherit',
     transition: 'background 0.15s',
-    minHeight: 44,
+    minHeight: 40,
     touchAction: 'manipulation',
   },
 };
