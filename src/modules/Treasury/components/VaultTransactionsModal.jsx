@@ -177,7 +177,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
             marginBottom: 12,
             lineHeight: 1.5,
           }}>
-            ℹ️ المجموع الظاهر في الأسفل يعكس إجمالي حركات الفترة بأكملها ({data?.total?.toLocaleString('ar-SA')} حركة)، وليس مجموع الصفحة الحالية فقط. للاطلاع على جميع الحركات استخدم تصدير Excel.
+            ℹ️ المجموع الظاهر في الأسفل يعكس إجمالي حركات الفترة بأكملها ({data?.total?.toLocaleString('en')} حركة)، وليس مجموع الصفحة الحالية فقط. للاطلاع على جميع الحركات استخدم تصدير Excel.
           </div>
         )}
         <SmartTable

@@ -527,6 +527,7 @@ export default function BankStatementAnalysisCardsTab({
                       outerRadius={120}
                       paddingAngle={2}
                       cursor="pointer"
+                      isAnimationActive={false}
                       label={({ percent }) => (percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : '')}
                       labelLine={{ stroke: '#94a3b8', strokeWidth: 1 }}
                       onClick={(_, index) => {

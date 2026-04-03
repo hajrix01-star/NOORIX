@@ -22,6 +22,7 @@
   /* خلفيات */
   --noorix-bg-page:     #f4f6f9;
   --noorix-bg-surface:  #ffffff;
+  --noorix-surface:     #ffffff;
   --noorix-bg-muted:    #f0f2f5;
   /* نصوص */
   --noorix-text:        #1a2332;
@@ -80,6 +81,7 @@
 .dark {
   --noorix-bg-page:     #0d1524;
   --noorix-bg-surface:  #172033;
+  --noorix-surface:     #172033;
   --noorix-bg-muted:    #1f2d42;
   --noorix-text:        #e8f0fa;
   --noorix-text-muted:  #8fa8c8;

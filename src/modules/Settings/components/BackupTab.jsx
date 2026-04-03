@@ -26,7 +26,7 @@ import { useApp } from '../../../context/AppContext';
 function formatBackupDate(iso, lang) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString(lang === 'en' ? 'en-GB' : 'ar-SA');
+    return new Date(iso).toLocaleString('en-GB');
   } catch {
     return String(iso);
   }
@@ -48,7 +48,7 @@ function defaultImportCompanyName(j, t, lang) {
   let dateStr = '—';
   if (raw) {
     try {
-      dateStr = new Date(raw).toLocaleDateString(lang === 'en' ? 'en-GB' : 'ar-SA', {
+      dateStr = new Date(raw).toLocaleDateString('en-GB', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -88,7 +88,7 @@ function BackupCountsGrid({ counts, t, lang }) {
         </div>
         <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
           {t('backupReportTotalRows')}:{' '}
-          <strong dir="ltr">{total.toLocaleString(lang === 'en' ? 'en-GB' : 'ar-SA')}</strong>
+          <strong dir="ltr">{total.toLocaleString('en-GB')}</strong>
         </div>
       </div>
       {rows.map(([key, val]) => (
@@ -106,7 +106,7 @@ function BackupCountsGrid({ counts, t, lang }) {
         >
           <span style={{ color: 'var(--noorix-text)' }}>{statLabel(t, key)}</span>
           <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-            {Number(val).toLocaleString(lang === 'en' ? 'en-GB' : 'ar-SA')}
+            {Number(val).toLocaleString('en-GB')}
           </span>
         </div>
       ))}
@@ -517,7 +517,7 @@ export default function BackupTab({ activeCompanies = [] }) {
         <div className="backup-job-list">
           {jobs.map((j) => {
             const metaParts = [
-              new Date(j.createdAt).toLocaleString(isAr ? 'ar-SA' : 'en-GB'),
+              new Date(j.createdAt).toLocaleString('en-GB'),
               j.sizeBytes != null ? formatFileSize(j.sizeBytes) : '',
               j.durationMs != null ? `${j.durationMs} ms` : '',
               j.externalUploaded ? t('backupExternalOk') : j.externalError ? t('backupExternalPending') : '',
@@ -973,3 +973,4 @@ export default function BackupTab({ activeCompanies = [] }) {
     </div>
   );
 }
+

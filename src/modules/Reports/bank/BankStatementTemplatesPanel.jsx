@@ -102,7 +102,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
       <div style={{ display: 'grid', gap: 12 }}>
         {sorted.map((tpl) => {
           const cols = columnsToBadges(tpl.columnsJson, t);
-          const lastUsed = tpl.lastUsedAt ? new Date(tpl.lastUsedAt).toLocaleDateString(lang === 'en' ? 'en-GB' : 'ar-SA') : null;
+          const lastUsed = tpl.lastUsedAt ? new Date(tpl.lastUsedAt).toLocaleDateString('en-GB') : null;
           return (
             <div
               key={tpl.id}
@@ -210,3 +210,4 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
     </div>
   );
 }
+
