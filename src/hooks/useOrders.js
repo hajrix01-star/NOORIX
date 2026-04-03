@@ -14,9 +14,11 @@ import {
   getOrderProducts,
   createOrderProduct,
   updateOrderProduct,
+  createOrderProductsBatch,
   getOrderCategories,
   createOrderCategory,
   updateOrderCategory,
+  createOrderCategoriesBatch,
 } from '../services/api';
 
 export function useOrders(companyId, year, month) {

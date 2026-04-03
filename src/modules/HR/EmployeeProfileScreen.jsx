@@ -15,7 +15,6 @@ import {
   getDocuments,
   getInvoices,
   getDeductions,
-  createDocument,
   uploadDocumentFile,
   downloadDocument,
   deleteEmployee,

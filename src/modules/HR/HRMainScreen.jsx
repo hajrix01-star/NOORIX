@@ -15,13 +15,13 @@ import SalaryCalcTab from './tabs/SalaryCalcTab';
 import EOSCalcTab from './tabs/EOSCalcTab';
 
 const TABS = [
-  { id: 'employees',  labelKey: 'hrTabEmployees',   icon: '👤' },
-  { id: 'payroll',    labelKey: 'hrTabPayroll',      icon: '💰' },
-  { id: 'leave',      labelKey: 'hrTabLeave',        icon: '🏖' },
-  { id: 'advances',   labelKey: 'hrTabAdvances',     icon: '💳' },
-  { id: 'residency',  labelKey: 'hrTabResidency',    icon: '🪪' },
-  { id: 'salaryCalc', labelKey: 'hrTabSalaryCalc',   icon: '🧮' },
-  { id: 'eosCalc',    labelKey: 'hrTabEOSCalc',      icon: '📋' },
+  { id: 'employees',  labelKey: 'hrTabEmployees'  },
+  { id: 'payroll',    labelKey: 'hrTabPayroll'     },
+  { id: 'leave',      labelKey: 'hrTabLeave'       },
+  { id: 'advances',   labelKey: 'hrTabAdvances'    },
+  { id: 'residency',  labelKey: 'hrTabResidency'   },
+  { id: 'salaryCalc', labelKey: 'hrTabSalaryCalc'  },
+  { id: 'eosCalc',    labelKey: 'hrTabEOSCalc'     },
 ];
 
 const EXPIRY_DAYS = 90;

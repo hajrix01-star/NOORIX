@@ -44,35 +44,3 @@ export const CARD_COLORS = {
   },
 };
 
-/**
- * Returns inline styles for a stat card, automatically picking profit/loss
- * variant when the card type supports it.
- *
- * @param {'sales'|'purchases'|'expenses'|'grossProfit'|'netProfit'} type
- * @param {{ isLoss?: boolean }} [options]
- * @returns {{ background: string, border: string, borderRadius: number }}
- */
-export function getCardStyle(type, { isLoss = false } = {}) {
-  const colors = CARD_COLORS[type];
-  if (!colors) return { background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', borderRadius: CARD_BORDER_RADIUS };
-  const bg = isLoss && colors.bgLoss ? colors.bgLoss : colors.bg;
-  const borderColor = isLoss && colors.borderLoss ? colors.borderLoss : colors.border;
-  return {
-    background: bg,
-    border: `1px solid ${borderColor}`,
-    borderRadius: CARD_BORDER_RADIUS,
-  };
-}
-
-/**
- * Returns the accent color for a stat card (text / icon color).
- *
- * @param {'sales'|'purchases'|'expenses'|'grossProfit'|'netProfit'} type
- * @param {{ isLoss?: boolean }} [options]
- * @returns {string}
- */
-export function getCardAccent(type, { isLoss = false } = {}) {
-  const colors = CARD_COLORS[type];
-  if (!colors) return 'var(--noorix-text)';
-  return isLoss && colors.accentLoss ? colors.accentLoss : colors.accent;
-}

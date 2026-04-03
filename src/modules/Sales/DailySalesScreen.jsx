@@ -270,8 +270,7 @@ export default function DailySalesScreen() {
     setListPage(1);
   }, [allowedSort]);
 
-  const filteredData = tableData;
-  const activeOnly = filteredData.filter((s) => s.status !== 'cancelled');
+  const activeOnly = tableData.filter((s) => s.status !== 'cancelled');
   const displayedTotal = listTotal;
   const totalAmountSum = sumAmounts(activeOnly, 'totalAmount');
   const totalCustomers = activeOnly.reduce((sum, s) => sum + (s.customerCount || 0), 0);
@@ -603,7 +602,7 @@ export default function DailySalesScreen() {
         <div className="noorix-sales-table-wrapper">
           <SmartTable
             columns={columns}
-            data={filteredData}
+            data={tableData}
             total={displayedTotal}
             page={listPage}
             pageSize={PAGE_SIZE}

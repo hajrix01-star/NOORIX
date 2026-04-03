@@ -24,17 +24,6 @@ export function fmt(n, decimals = 1) {
 }
 
 /**
- * تنسيق مبلغ مالي مع رمز الريال السعودي.
- * رمز ﷼ يظهر بعد الرقم (صحيح للـ RTL وعرف السوق السعودي).
- * @param {number|Decimal|null|undefined} n
- * @param {number} decimals
- * @returns {string} مثال: "1,250.0 ﷼"
- */
-export function fmtSAR(n, decimals = 1) {
-  return `${fmt(n, decimals)} ﷼`;
-}
-
-/**
  * حساب الضريبة العكسية للتنسيق والعرض.
  */
 export function calcReverseVat(totalInclusive, isTaxable) {

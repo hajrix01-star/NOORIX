@@ -75,6 +75,7 @@ export class InvoiceService {
         vaultId:         dto.vaultId ?? undefined,
         batchId:         dto.batchId  ?? undefined,
         debitAccountId:  dto.debitAccountId ?? undefined,
+        idempotencyKey:  dto.idempotencyKey ?? undefined,
         notes:           dto.notes ?? undefined,
       },
       userId ?? undefined,

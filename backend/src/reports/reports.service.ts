@@ -858,65 +858,6 @@ export class ReportsService {
     });
   }
 
-  private async loadAnnualInvoices(companyId: string, year: number) {
-    const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
-    const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
-
-    const [invoices, categories, expenseLines] = await Promise.all([
-      this.prisma.invoice.findMany({
-        where: {
-          companyId,
-          status: 'active',
-          kind: { in: [...INCLUDED_KINDS] },
-          transactionDate: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        orderBy: [{ transactionDate: 'asc' }, { createdAt: 'asc' }],
-        select: {
-          id: true,
-          invoiceNumber: true,
-          supplierInvoiceNumber: true,
-          kind: true,
-          totalAmount: true,
-          netAmount: true,
-          taxAmount: true,
-          transactionDate: true,
-          notes: true,
-          categoryId: true,
-          supplier: { select: { nameAr: true, nameEn: true } },
-          expenseLine: { select: { id: true, nameAr: true, nameEn: true, categoryId: true } },
-          dailySalesSummary: {
-            select: {
-              summaryNumber: true,
-              channels: {
-                select: {
-                  amount: true,
-                  vault: { select: { id: true, nameAr: true, nameEn: true } },
-                },
-              },
-            },
-          },
-        },
-      }),
-      this.prisma.category.findMany({
-        where: { companyId, isActive: true },
-        select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true },
-      }),
-      this.prisma.expenseLine.findMany({
-        where: { companyId, isActive: true },
-        select: { id: true, nameAr: true, nameEn: true, categoryId: true },
-      }),
-    ]);
-
-    return {
-      invoices: invoices as ReportInvoice[],
-      categories: new Map(categories.map((c) => [c.id, { ...c } as CategoryNode])),
-      expenseLines: expenseLines as ExpenseLineNode[],
-    };
-  }
-
   private createGroupStates(): Record<GroupKey, AggregatedGroup> {
     return {
       sales: {
@@ -941,10 +882,6 @@ export class ReportsService {
         items: new Map(),
       },
     };
-  }
-
-  private resolveGroupKey(kind: string): GroupKey | null {
-    return KIND_TO_GROUP[kind] ?? null;
   }
 
   private getCategoryAndDescendantIds(categoryId: string, categories: Map<string, CategoryNode>): Set<string> {
@@ -1153,10 +1090,6 @@ export class ReportsService {
     }
 
     return { labelAr: GROUP_LABELS[groupKey].ar, labelEn: GROUP_LABELS[groupKey].en };
-  }
-
-  private getMonthIndex(date: Date) {
-    return date.getUTCMonth();
   }
 
   private zeroMonths() {

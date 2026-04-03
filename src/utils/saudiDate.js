@@ -23,14 +23,6 @@ export function getSaudiToday() {
   return `${year}-${month}-${day}`;
 }
 
-/**
- * كائن Date يُمثّل "الآن" بتوقيت الرياض.
- * مفيد للمقارنات الزمنية داخل التطبيق.
- */
-export function nowSaudi() {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: RIYADH_TZ }));
-}
-
 export function formatSaudiDate(value) {
   if (!value) return '—';
   const d = new Date(value);
