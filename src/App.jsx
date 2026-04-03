@@ -198,6 +198,7 @@ export default function App() {
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const navigate = useNavigate();
   const handleLogout = () => {
+    queryClient.clear();
     setToken(null);
     navigate('/login', { replace: true });
   };
@@ -235,29 +236,10 @@ export default function App() {
     setActiveCompanyId(activeCompanyId || '');
   }, [activeCompanyId]);
 
-  // عند تغيير الشركة: إبطال كاش جميع البيانات المرتبطة بالشركة
+  // عند تغيير الشركة: مسح كامل للكاش — يضمن عدم ظهور بيانات الشركة القديمة
   useEffect(() => {
     if (!queryClient || !activeCompanyId) return;
-    queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-    queryClient.invalidateQueries({ queryKey: ['vaults'] });
-    queryClient.invalidateQueries({ queryKey: ['invoices'] });
-    queryClient.invalidateQueries({ queryKey: ['categories'] });
-    queryClient.invalidateQueries({ queryKey: ['sales-summaries'] });
-    queryClient.invalidateQueries({ queryKey: ['employees'] });
-    queryClient.invalidateQueries({ queryKey: ['employees-paged'] });
-    queryClient.invalidateQueries({ queryKey: ['purchase-batch-summaries'] });
-    queryClient.invalidateQueries({ queryKey: ['sales-summaries-paged'] });
-    queryClient.invalidateQueries({ queryKey: ['payroll-runs'] });
-    queryClient.invalidateQueries({ queryKey: ['leaves'] });
-    queryClient.invalidateQueries({ queryKey: ['residencies'] });
-    queryClient.invalidateQueries({ queryKey: ['reports'] });
-    queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
-    queryClient.invalidateQueries({ queryKey: ['orders'] });
-    queryClient.invalidateQueries({ queryKey: ['order-products'] });
-    queryClient.invalidateQueries({ queryKey: ['order-categories'] });
-    queryClient.invalidateQueries({ queryKey: ['bank-statements'] });
-    queryClient.invalidateQueries({ queryKey: ['bank-statements-summary'] });
-    queryClient.invalidateQueries({ queryKey: ['bank-statement-categories'] });
+    queryClient.removeQueries();
   }, [activeCompanyId, queryClient]);
 
   // مراقبة حالة الاتصال بالسيرفر
