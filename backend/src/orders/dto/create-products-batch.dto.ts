@@ -3,8 +3,7 @@ import {
   IsArray,
   IsOptional,
   IsNotEmpty,
-  IsNumber,
-  Min,
+  Matches,
   ArrayMinSize,
   ValidateNested,
 } from 'class-validator';
@@ -24,10 +23,9 @@ export class ProductVariantBatchDto {
   unit?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  lastPrice?: number;
+  @IsString()
+  @Matches(/^\d+(\.\d{1,4})?$/, { message: 'lastPrice يجب أن يكون رقماً غير سالب' })
+  lastPrice?: string;
 }
 
 export class CreateProductItemDto {
@@ -56,10 +54,9 @@ export class CreateProductItemDto {
   categoryId?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  lastPrice?: number;
+  @IsString()
+  @Matches(/^\d+(\.\d{1,4})?$/, { message: 'lastPrice يجب أن يكون رقماً غير سالب' })
+  lastPrice?: string;
 
   @IsOptional()
   @IsArray()
