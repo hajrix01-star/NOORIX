@@ -7,22 +7,27 @@
  *   - Manifest ديناميكي (يدعم "أضف للشاشة الرئيسية" مع الشعار المخصص)
  */
 
-const KEY_NAME  = 'noorix:appName';
-const KEY_LOGO  = 'noorix:appLogo';
-const KEY_COLOR = 'noorix:appColor';
+const KEY_NAME    = 'noorix:appName';
+const KEY_LOGO    = 'noorix:appLogo';
+const KEY_COLOR   = 'noorix:appColor';
+const KEY_TAGLINE = 'noorix:appTagline';
 
-const DEFAULT_NAME  = 'نووريكس';
-const DEFAULT_COLOR = '#0a1f44';
+const DEFAULT_NAME    = 'نووريكس';
+const DEFAULT_COLOR   = '#0a1f44';
+const DEFAULT_TAGLINE = 'نظام إدارة متكامل';
 
-export function getBrandName()  { return localStorage.getItem(KEY_NAME)  || DEFAULT_NAME; }
-export function getBrandLogo()  { return localStorage.getItem(KEY_LOGO)  || ''; }
-export function getBrandColor() { return localStorage.getItem(KEY_COLOR) || DEFAULT_COLOR; }
+export function getBrandName()    { return localStorage.getItem(KEY_NAME)    || DEFAULT_NAME; }
+export function getBrandLogo()    { return localStorage.getItem(KEY_LOGO)    || ''; }
+export function getBrandColor()   { return localStorage.getItem(KEY_COLOR)   || DEFAULT_COLOR; }
+export function getBrandTagline() { return localStorage.getItem(KEY_TAGLINE) || DEFAULT_TAGLINE; }
 
-export function saveBranding({ name, logoUrl, color }) {
-  if (name  !== undefined) name  ? localStorage.setItem(KEY_NAME,  name)  : localStorage.removeItem(KEY_NAME);
-  if (logoUrl !== undefined) logoUrl ? localStorage.setItem(KEY_LOGO, logoUrl) : localStorage.removeItem(KEY_LOGO);
-  if (color !== undefined) color ? localStorage.setItem(KEY_COLOR, color) : localStorage.removeItem(KEY_COLOR);
+export function saveBranding({ name, logoUrl, color, tagline }) {
+  if (name    !== undefined) name    ? localStorage.setItem(KEY_NAME,    name)    : localStorage.removeItem(KEY_NAME);
+  if (logoUrl !== undefined) logoUrl ? localStorage.setItem(KEY_LOGO,    logoUrl) : localStorage.removeItem(KEY_LOGO);
+  if (color   !== undefined) color   ? localStorage.setItem(KEY_COLOR,   color)   : localStorage.removeItem(KEY_COLOR);
+  if (tagline !== undefined) tagline ? localStorage.setItem(KEY_TAGLINE, tagline) : localStorage.removeItem(KEY_TAGLINE);
   applyBranding();
+  window.dispatchEvent(new CustomEvent('noorix:branding-changed'));
 }
 
 export function applyBranding() {

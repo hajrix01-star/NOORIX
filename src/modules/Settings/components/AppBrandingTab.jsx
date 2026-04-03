@@ -3,7 +3,7 @@
  * تُخزَّن في localStorage وتُطبَّق فوراً دون إعادة تحميل.
  */
 import React, { useState, useRef } from 'react';
-import { getBrandName, getBrandLogo, getBrandColor, saveBranding } from '../../../utils/appBranding';
+import { getBrandName, getBrandLogo, getBrandColor, getBrandTagline, saveBranding } from '../../../utils/appBranding';
 import { fileToDataUrl } from '../constants/settingsConstants';
 
 const inputStyle = {
@@ -31,6 +31,7 @@ export default function AppBrandingTab() {
   const [name,    setName]    = useState(getBrandName);
   const [logoUrl, setLogoUrl] = useState(getBrandLogo);
   const [color,   setColor]   = useState(getBrandColor);
+  const [tagline, setTagline] = useState(getBrandTagline);
   const [saved,   setSaved]   = useState(false);
   const fileRef = useRef(null);
 
@@ -44,16 +45,17 @@ export default function AppBrandingTab() {
   };
 
   const handleSave = () => {
-    saveBranding({ name: name.trim() || undefined, logoUrl: logoUrl.trim() || undefined, color });
+    saveBranding({ name: name.trim() || undefined, logoUrl: logoUrl.trim() || undefined, color, tagline: tagline.trim() || undefined });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
   const handleReset = () => {
-    saveBranding({ name: '', logoUrl: '', color: '' });
+    saveBranding({ name: '', logoUrl: '', color: '', tagline: '' });
     setName('نووريكس');
     setLogoUrl('');
     setColor('#0a1f44');
+    setTagline('نظام إدارة متكامل');
   };
 
   return (
@@ -83,9 +85,7 @@ export default function AppBrandingTab() {
           </div>
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--noorix-text)' }}>{name || 'اسم التطبيق'}</div>
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
-              هكذا يظهر اسم التطبيق في تبويب المتصفح وعند التثبيت
-            </div>
+            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 3 }}>{tagline || 'الجملة التعريفية'}</div>
           </div>
         </div>
       </div>
@@ -102,7 +102,23 @@ export default function AppBrandingTab() {
           maxLength={40}
         />
         <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
-          يظهر في تبويب المتصفح وعنوان نافذة PWA عند التثبيت
+          يظهر في تبويب المتصفح وعنوان نافذة PWA عند التثبيت — وفي أعلى القائمة الجانبية
+        </div>
+      </div>
+
+      {/* الجملة التعريفية */}
+      <div>
+        <label style={labelStyle}>الجملة التعريفية (تحت الاسم)</label>
+        <input
+          type="text"
+          value={tagline}
+          onChange={(e) => setTagline(e.target.value)}
+          placeholder="نظام إدارة متكامل"
+          style={inputStyle}
+          maxLength={60}
+        />
+        <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
+          تظهر أسفل اسم التطبيق في القائمة الجانبية وفي تذييلها
         </div>
       </div>
 

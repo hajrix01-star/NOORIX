@@ -6,6 +6,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
+import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
 import {
   IconCrown,
   IconGrid,
@@ -62,6 +63,21 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
     if (isReportsExpanded) setReportsOpen(true);
   }, [isReportsExpanded]);
 
+  // ── قراءة البراندينج وإعادة الرسم عند تغييره ──────────────────────────────
+  const [brandName,    setBrandName]    = useState(getBrandName);
+  const [brandLogo,    setBrandLogo]    = useState(getBrandLogo);
+  const [brandTagline, setBrandTagline] = useState(getBrandTagline);
+
+  useEffect(() => {
+    const refresh = () => {
+      setBrandName(getBrandName());
+      setBrandLogo(getBrandLogo());
+      setBrandTagline(getBrandTagline());
+    };
+    window.addEventListener('noorix:branding-changed', refresh);
+    return () => window.removeEventListener('noorix:branding-changed', refresh);
+  }, []);
+
   const handleReportsParentClick = () => {
     if (reportsOpen) {
       setReportsOpen(false);
@@ -77,10 +93,15 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
       <aside className={`app-sidebar${isOpen ? ' app-sidebar--open' : ''}`}>
         <div className="app-sidebar__header">
           <div className="app-sidebar__logo">
-            <div className="app-sidebar__logo-mark">N</div>
+            <div className="app-sidebar__logo-mark" style={brandLogo ? { padding: 0, overflow: 'hidden' } : {}}>
+              {brandLogo
+                ? <img src={brandLogo} alt={brandName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+                : (brandName?.[0] || 'N')
+              }
+            </div>
             <div className="app-sidebar__title">
-              <span className="app-sidebar__title-main">Noorix</span>
-              <span className="app-sidebar__title-sub">{t('appTagline')}</span>
+              <span className="app-sidebar__title-main">{brandName}</span>
+              <span className="app-sidebar__title-sub">{brandTagline}</span>
             </div>
             {isOpen && (
               <button
@@ -218,7 +239,7 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
           </ul>
         </div>
 
-        <div className="app-sidebar__footer">Noorix • Saudi Business • v0.1</div>
+        <div className="app-sidebar__footer">{brandName} • {brandTagline}</div>
       </aside>
       {isOpen ? <div className="app-sidebar-backdrop" onClick={onClose} /> : null}
     </>
