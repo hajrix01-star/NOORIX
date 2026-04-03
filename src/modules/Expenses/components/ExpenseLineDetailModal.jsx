@@ -19,7 +19,7 @@ export default function ExpenseLineDetailModal({
   dateFilter,
   onRefresh,
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [page, setPage] = useState(1);
 
   const { data: lineData, isLoading: lineLoading } = useQuery({
@@ -124,7 +124,7 @@ export default function ExpenseLineDetailModal({
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, color: 'var(--noorix-text-muted)' }}>
                 <span>النوع: {KIND_LABELS[line?.kind] || line?.kind || '—'}</span>
                 <span>الفئة: {line?.category?.nameAr || '—'}</span>
-                <span>المورد: {line?.supplier?.nameAr || '—'}</span>
+                <span>المورد: {(lang === 'en' ? line?.supplier?.nameEn || line?.supplier?.nameAr : line?.supplier?.nameAr || line?.supplier?.nameEn) || '—'}</span>
                 {line?.serviceNumber && <span>رقم الخدمة: {line.serviceNumber}</span>}
               </div>
             </div>

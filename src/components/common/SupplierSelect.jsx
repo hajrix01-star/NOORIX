@@ -10,6 +10,7 @@ import React, {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from '../../i18n/useTranslation';
 
 const USAGE_STORAGE_KEY = 'noorix_supplier_usage_v1';
 
@@ -25,7 +26,8 @@ const INPUT_STYLE = {
   boxSizing: 'border-box',
 };
 
-function supplierLabel(supplier) {
+function supplierLabel(supplier, lang = 'ar') {
+  if (lang === 'en') return supplier?.nameEn || supplier?.nameAr || supplier?.id || '';
   return supplier?.nameAr || supplier?.nameEn || supplier?.id || '';
 }
 
@@ -51,6 +53,7 @@ function trackSupplierUsage(supplierId) {
 }
 
 export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds = [], placeholder = '—' }) {
+  const { lang } = useTranslation();
   const anchorRef = useRef(null);
   const menuRef = useRef(null);
   const [query, setQuery] = useState('');
@@ -65,9 +68,9 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
 
   useEffect(() => {
     if (!open) {
-      setQuery(selectedSupplier ? supplierLabel(selectedSupplier) : '');
+      setQuery(selectedSupplier ? supplierLabel(selectedSupplier, lang) : '');
     }
-  }, [selectedSupplier, open]);
+  }, [selectedSupplier, open, lang]);
 
   const filteredSuppliers = useMemo(() => {
     const usage = readSupplierUsage();
@@ -80,7 +83,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
       const aUsage = Number(usage[a.id] || 0);
       const bUsage = Number(usage[b.id] || 0);
       if (aUsage !== bUsage) return bUsage - aUsage;
-      return supplierLabel(a).localeCompare(supplierLabel(b), 'ar');
+      return supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), lang === 'en' ? 'en' : 'ar');
     });
     if (!normalized) return list.slice(0, 40);
     return list.filter((s) => {
@@ -218,7 +221,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
                 }}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {supplierLabel(s)}
+                  {supplierLabel(s, lang)}
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   {isBookmarked ? <span style={{ color: '#f59e0b' }}>★</span> : null}
@@ -258,7 +261,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
                 }}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {supplierLabel(s)}
+                  {supplierLabel(s, lang)}
                 </span>
                 {isBookmarked ? <span style={{ color: '#f59e0b', flexShrink: 0 }}>★</span> : null}
               </button>

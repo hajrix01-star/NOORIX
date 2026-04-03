@@ -24,7 +24,7 @@ function kindLabel(t, k) {
 }
 
 export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const { from, to } = useMemo(() => monthDateBounds(year, month), [year, month]);
 
@@ -127,8 +127,8 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                     fontSize: 12,
                   }}
                 >
-                  <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '58%' }} title={s.nameAr}>
-                    {s.nameAr}
+                  <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '58%' }} title={lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}>
+                    {lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}
                   </span>
                   <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#dc2626', flexShrink: 0 }}>
                     {fmt(Number(s.totalAmount || 0), 0)} <small style={{ opacity: 0.7 }}>({s.invoiceCount})</small>

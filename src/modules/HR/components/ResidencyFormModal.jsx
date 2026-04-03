@@ -81,7 +81,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
         if (!res?.success) throw new Error(res?.error || 'فشل إضافة الإقامة');
 
         if (createInvoiceForResidency && invoiceAmount && parseFloat(invoiceAmount) > 0) {
-          const vId = vaultId || vaults[0]?.id;
+          const vId = vaultId;
           if (!vId) {
             setError(t('noVaults') || 'يجب إنشاء خزنة أولاً');
             setSubmitting(false);
@@ -215,10 +215,12 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
                   <div>
                     <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('selectVault')}</label>
                     <select
-                      value={vaultId || vaults[0]?.id}
+                      value={vaultId}
                       onChange={(e) => setVaultId(e.target.value)}
+                      required
                       style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
                     >
+                      <option value="">— اختر الخزينة —</option>
                       {vaults.map((v) => (
                         <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
                       ))}

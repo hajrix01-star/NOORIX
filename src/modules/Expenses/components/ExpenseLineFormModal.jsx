@@ -6,8 +6,10 @@ import { useMutation } from '@tanstack/react-query';
 import { createExpenseLine, updateExpenseLine } from '../../../services/api';
 import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
+import { useTranslation } from '../../../i18n/useTranslation';
 
 export default function ExpenseLineFormModal({ companyId, editing, onClose, onSaved }) {
+  const { lang } = useTranslation();
   const [form, setForm] = useState({
     nameAr: '',
     nameEn: '',
@@ -203,7 +205,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
             >
               <option value="">— اختر المورد —</option>
               {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>{s.nameAr || s.nameEn}</option>
+                <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}</option>
               ))}
             </select>
           </div>

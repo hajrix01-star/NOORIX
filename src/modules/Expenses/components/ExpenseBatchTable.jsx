@@ -11,6 +11,7 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { fmt, calcReverseVat } from '../../../utils/format';
 import Toast from '../../../components/Toast';
 import SmartTable from '../../../components/common/SmartTable';
+import { useTranslation } from '../../../i18n/useTranslation';
 
 const EMPTY_ROW = () => ({
   key: `${Date.now()}-${Math.random()}`,
@@ -21,6 +22,7 @@ const EMPTY_ROW = () => ({
 });
 
 export default function ExpenseBatchTable({ companyId, onSaved }) {
+  const { lang } = useTranslation();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [batchDate, setBatchDate] = useState(getSaudiToday());
@@ -114,7 +116,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       index: i + 1,
       lineName: line?.nameAr || line?.nameEn || '—',
       categoryName: line?.category?.nameAr || line?.category?.nameEn || '—',
-      supplierName: line?.supplier?.nameAr || line?.supplier?.nameEn || '—',
+      supplierName: (lang === 'en' ? line?.supplier?.nameEn || line?.supplier?.nameAr : line?.supplier?.nameAr || line?.supplier?.nameEn) || '—',
       kind: line?.kind === 'fixed_expense' ? 'ثابت' : 'متغير',
       net,
       tax,

@@ -7,6 +7,8 @@
 import React, { memo, useState, useEffect } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 
+const sName = (s, lang) => (lang === 'en' ? s?.nameEn || s?.nameAr : s?.nameAr || s?.nameEn) || '—';
+
 /* ── بادج نوع المورد ── */
 function TypeBadge({ type, t }) {
   const map = {
@@ -63,7 +65,7 @@ export const SupplierTable = memo(function SupplierTable({
   onSelectAll,
   onBulkDelete,
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   const mq = typeof window !== 'undefined' ? window.matchMedia('(max-width: 700px)') : null;
   const [isMobile, setIsMobile] = useState(mq?.matches ?? false);
@@ -150,8 +152,9 @@ export const SupplierTable = memo(function SupplierTable({
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.nameAr}</div>
-                        {s.nameEn && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{s.nameEn}</div>}
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{sName(s, lang)}</div>
+                    {s.nameEn && s.nameAr && lang !== 'en' && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{s.nameEn}</div>}
+                    {s.nameAr && lang === 'en' && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{s.nameAr}</div>}
                       </div>
                       <TypeBadge type={s.supplierType || 'purchases'} t={t} />
                     </div>
@@ -231,8 +234,8 @@ export const SupplierTable = memo(function SupplierTable({
                   <td style={{ padding: '4px 4px 4px 12px' }}>
                     <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
                   </td>
-                  <td style={{ padding: '9px 12px', fontWeight: 700 }}>{s.nameAr}</td>
-                  <td style={{ padding: '9px 12px', color: 'var(--noorix-text-muted)', fontSize: 12 }}>{s.nameEn || '—'}</td>
+                  <td style={{ padding: '9px 12px', fontWeight: 700 }}>{sName(s, lang)}</td>
+                  <td style={{ padding: '9px 12px', color: 'var(--noorix-text-muted)', fontSize: 12 }}>{lang === 'en' ? (s.nameAr || '—') : (s.nameEn || '—')}</td>
                   <td style={{ padding: '9px 12px', fontFamily: 'monospace', fontSize: 12 }}>{s.taxNumber || '—'}</td>
                   <td style={{ padding: '9px 12px', fontSize: 12 }}>{s.phone || '—'}</td>
                   <td style={{ padding: '9px 12px', fontSize: 12 }}>

@@ -64,7 +64,7 @@ function getTabs(t) {
 /* ══ الشاشة الرئيسية — تصميم احترافي ═══════════════════════════════ */
 export default function PurchasesBatchScreen() {
   const { activeCompanyId, language } = useApp();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const queryClient = useQueryClient();
   const dateFilter = useDateFilter();
@@ -89,7 +89,6 @@ export default function PurchasesBatchScreen() {
 
   useEffect(() => {
     if (batchVaultId && !activeVaults.some((v) => v.id === batchVaultId)) setBatchVaultId('');
-    if (!batchVaultId && activeVaults.length === 1) setBatchVaultId(activeVaults[0].id);
   }, [activeVaults, batchVaultId]);
 
   const [batchSearchInput, setBatchSearchInput] = useState('');
@@ -334,7 +333,7 @@ export default function PurchasesBatchScreen() {
           let notes = r.notes?.trim();
           if (r.supplierId) {
             const sup = suppliers.find((s) => s.id === r.supplierId);
-            const name = sup?.nameAr || sup?.nameEn || '';
+            const name = (lang === 'en' ? sup?.nameEn || sup?.nameAr : sup?.nameAr || sup?.nameEn) || '';
             notes = name ? `${t('opInvoicePayment')} — ${name}` : notes;
           } else if (r.kind === 'fixed_expense') {
             notes = notes ? `مصروف ثابت — ${notes}` : 'مصروف ثابت';
@@ -502,7 +501,7 @@ export default function PurchasesBatchScreen() {
                       color: 'var(--noorix-text)', whiteSpace: 'nowrap',
                     }}
                   >
-                    {s.nameAr || s.nameEn}
+                    {(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}
                   </button>
                 ))
               ) : (

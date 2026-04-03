@@ -9,7 +9,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 
 export function BatchPrintSheet({ batch, onClose }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   useEffect(() => {
     const timer = setTimeout(() => window.print(), 300);
     return () => clearTimeout(timer);
@@ -77,7 +77,7 @@ export function BatchPrintSheet({ batch, onClose }) {
                     <td style={{ textAlign: 'center' }}>{i + 1}</td>
                     <td style={{ fontWeight: 600 }}>{inv.invoiceNumber}</td>
                     <td style={{ color: 'var(--noorix-text-muted)' }}>{inv.supplierInvoiceNumber || '—'}</td>
-                    <td>{inv.supplier?.nameAr || '—'}</td>
+                    <td>{(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}</td>
                     <td>{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</td>
                     <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}>{fmt(inv.netAmount)}</td>
                     <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}>{fmt(inv.taxAmount)}</td>

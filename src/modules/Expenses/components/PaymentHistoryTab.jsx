@@ -10,10 +10,12 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
+import { useTranslation } from '../../../i18n/useTranslation';
 
 const KIND_LABELS = { fixed_expense: 'ثابت', expense: 'متغير' };
 
 export default function PaymentHistoryTab({ companyId, dateFilter: externalDateFilter }) {
+  const { lang } = useTranslation();
   const internalDateFilter = useDateFilter();
   const dateFilter = externalDateFilter ?? internalDateFilter;
   const [filterKind, setFilterKind] = useState('');
@@ -43,7 +45,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     activeItems.map((inv) => ({
       'رقم السند': inv.invoiceNumber || '—',
       'رقم فاتورة المورد': inv.supplierInvoiceNumber || '—',
-      'المورد': inv.supplier?.nameAr || inv.supplier?.nameEn || '—',
+      'المورد': (lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—',
       'بند المصروف': inv.expenseLine?.nameAr || inv.expenseLine?.nameEn || '—',
       'النوع': KIND_LABELS[inv.kind] || inv.kind,
       'التاريخ': formatSaudiDate(inv.transactionDate),
@@ -78,7 +80,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد',
       render: (_, row) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text-muted)' }}>{row.supplierInvoiceNumber || '—'}</span> },
     { key: 'supplierName', label: 'المورد',
-      render: (_, row) => <span>{row.supplier?.nameAr || row.supplier?.nameEn || '—'}</span> },
+      render: (_, row) => <span>{(lang === 'en' ? row.supplier?.nameEn || row.supplier?.nameAr : row.supplier?.nameAr || row.supplier?.nameEn) || '—'}</span> },
     { key: 'expenseLineName', label: 'بند المصروف',
       render: (_, row) => <span>{row.expenseLine?.nameAr || row.expenseLine?.nameEn || '—'}</span> },
     { key: 'kind', label: 'النوع',

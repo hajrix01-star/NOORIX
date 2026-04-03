@@ -25,7 +25,7 @@ export default function ExpenseLineList({
   onDeleteLine,
   onRefresh,
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   const columns = useMemo(() => [
     { key: 'nameAr', label: 'اسم البند', sortable: true,
@@ -82,7 +82,7 @@ export default function ExpenseLineList({
     expenseLines.map((line) => ({
       ...line,
       categoryName: line.category?.nameAr || line.category?.nameEn || '—',
-      supplierName: line.supplier?.nameAr || line.supplier?.nameEn || '—',
+      supplierName: (lang === 'en' ? line.supplier?.nameEn || line.supplier?.nameAr : line.supplier?.nameAr || line.supplier?.nameEn) || '—',
     })),
     [expenseLines],
   );

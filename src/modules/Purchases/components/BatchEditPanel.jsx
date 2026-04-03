@@ -14,7 +14,7 @@ const inputBase = {
 };
 
 export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onClose }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const invList = batch?.invoices || batch || [];
   const [invoices, setInvoices] = useState(() =>
     invList.map((i) => ({
@@ -108,7 +108,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                     <td style={{ padding: 6, textAlign: 'center', color: 'var(--noorix-text-muted)', fontWeight: 600 }}>{i + 1}</td>
                     <td style={{ padding: 6 }}>
                       {inv.status === 'cancelled' ? (
-                        <span style={{ color: 'var(--noorix-text-muted)' }}>{inv.supplier?.nameAr || '—'}</span>
+                        <span style={{ color: 'var(--noorix-text-muted)' }}>{(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}</span>
                       ) : (
                         <SupplierSelect
                           suppliers={suppliers}

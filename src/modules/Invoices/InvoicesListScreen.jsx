@@ -38,7 +38,7 @@ const Badge = memo(function Badge({ map, value }) {
 
 export default function InvoicesListScreen() {
   const { activeCompanyId, userRole } = useApp();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [searchParams] = useSearchParams();
   const urlDrillKeyRef = useRef('');
   const companyId           = activeCompanyId ?? '';
@@ -214,7 +214,7 @@ export default function InvoicesListScreen() {
   // بيانات مُحوَّلة لـ SmartTable
   const tableData = useMemo(() => (items || []).map((inv) => ({
     ...inv,
-    supplierName: inv.kind === 'sale' ? (t('categoryTypeSale') || 'مبيعات') : (inv.supplier?.nameAr || ''),
+    supplierName: inv.kind === 'sale' ? (t('categoryTypeSale') || 'مبيعات') : (lang === 'en' ? (inv.supplier?.nameEn || inv.supplier?.nameAr || '') : (inv.supplier?.nameAr || inv.supplier?.nameEn || '')),
     notesOrEmployee: inv.notes || '',
   })), [items, t]);
 
@@ -519,7 +519,7 @@ export default function InvoicesListScreen() {
               >
                 <option value="">{t('allSuppliers')}</option>
                 {(suppliers || []).map((s) => (
-                  <option key={s.id} value={s.id}>{s.nameAr || s.nameEn || s.id}</option>
+                  <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id}</option>
                 ))}
               </select>
             </label>

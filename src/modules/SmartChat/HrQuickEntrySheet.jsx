@@ -123,9 +123,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   useEffect(() => { setFormError(''); }, [mode]);
   useEffect(() => { if (!confirmStep) setPendingData(null); }, [confirmStep]);
 
-  useEffect(() => {
-    if (vaults[0]?.id) setAdvVault((v) => v || vaults[0].id);
-  }, [vaults]);
+  // vault stays empty by default — user must explicitly select
 
   useEffect(() => {
     if (!lvStart || !lvEnd) return;
@@ -244,11 +242,11 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       setFormError(isAr ? 'لا توجد خزائن. أضف خزنة من الخزائن أولاً.' : 'No vaults. Add a vault first.');
       return;
     }
-    const vault = vaults.find((v) => v.id === (advVault || vaults[0]?.id));
+    const vault = vaults.find((v) => v.id === advVault);
     const payload = {
       employeeId: advEmp,
       companyId,
-      vaultId: advVault || vaults[0]?.id,
+      vaultId: advVault || undefined,
       amount: amt,
       transactionDate: advDate,
       notes: advNotes.trim() || `سلفة — ${emp?.name || emp?.nameAr || ''}`,
@@ -535,7 +533,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
               </Field>
               <Field id="adv-vault" label={t('selectVault')}>
                 <select id="adv-vault" value={advVault} onChange={(e) => setAdvVault(e.target.value)} style={inputBase} required>
-                  {vaults.length === 0 && <option value="">{isAr ? '— لا توجد خزائن —' : '— No vaults —'}</option>}
+                  <option value="">{isAr ? '— اختر الخزينة —' : '— Select Vault —'}</option>
                   {vaults.map((v) => (
                     <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
                   ))}

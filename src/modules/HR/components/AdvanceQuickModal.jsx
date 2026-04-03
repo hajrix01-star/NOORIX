@@ -17,7 +17,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
   const [employee, setEmployee] = useState(initialEmployee);
   const [employeeId, setEmployeeId] = useState(initialEmployee?.id || '');
   const [amount, setAmount] = useState('');
-  const [vaultId, setVaultId] = useState(vaults[0]?.id || '');
+  const [vaultId, setVaultId] = useState('');
   const [txDate, setTxDate] = useState(getSaudiToday());
   const [notes, setNotes] = useState('');
 
@@ -32,10 +32,6 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
   });
 
   const activeEmployees = (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
-
-  useEffect(() => {
-    setVaultId(vaults[0]?.id || '');
-  }, [vaults]);
 
   useEffect(() => {
     if (initialEmployee) {
@@ -109,8 +105,10 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
             <select
               value={vaultId}
               onChange={(e) => setVaultId(e.target.value)}
+              required
               style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
             >
+              <option value="">— {t('selectVault') || 'اختر الخزينة'} —</option>
               {vaults.map((v) => (
                 <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
               ))}
