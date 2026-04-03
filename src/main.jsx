@@ -10,7 +10,9 @@ import App from './App';
 import './index.css';
 
 initGlobalCacheManager();
-applyBranding(); // تطبيق اسم التطبيق وشعاره المحفوظَين قبل أي رسم
+// تطبيق هوية التطبيق باللغة المحفوظة قبل أي رسم
+const _storedLang = localStorage.getItem('noorix:language') || 'ar';
+applyBranding(_storedLang);
 
 /**
  * React Query — توازن بين الأداء والبيانات الحديثة (نمط SaaS شائع):

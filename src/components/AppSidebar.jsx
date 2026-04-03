@@ -6,7 +6,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
-import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
+import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor } from '../utils/appBranding';
 import {
   IconCrown,
   IconGrid,
@@ -63,20 +63,26 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
     if (isReportsExpanded) setReportsOpen(true);
   }, [isReportsExpanded]);
 
-  // ── قراءة البراندينج وإعادة الرسم عند تغييره ──────────────────────────────
-  const [brandName,    setBrandName]    = useState(getBrandName);
+  // ── قراءة البراندينج وإعادة الرسم عند تغييره أو تغيير اللغة ───────────────
+  const { lang } = useTranslation();
+  const [brandName,    setBrandName]    = useState(() => getBrandName(lang));
   const [brandLogo,    setBrandLogo]    = useState(getBrandLogo);
-  const [brandTagline, setBrandTagline] = useState(getBrandTagline);
+  const [brandTagline, setBrandTagline] = useState(() => getBrandTagline(lang));
+
+  useEffect(() => {
+    setBrandName(getBrandName(lang));
+    setBrandTagline(getBrandTagline(lang));
+  }, [lang]);
 
   useEffect(() => {
     const refresh = () => {
-      setBrandName(getBrandName());
+      setBrandName(getBrandName(lang));
       setBrandLogo(getBrandLogo());
-      setBrandTagline(getBrandTagline());
+      setBrandTagline(getBrandTagline(lang));
     };
     window.addEventListener('noorix:branding-changed', refresh);
     return () => window.removeEventListener('noorix:branding-changed', refresh);
-  }, []);
+  }, [lang]);
 
   const handleReportsParentClick = () => {
     if (reportsOpen) {

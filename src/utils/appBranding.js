@@ -1,56 +1,74 @@
 /**
- * appBranding — إدارة هوية التطبيق (الاسم والشعار).
+ * appBranding — إدارة هوية التطبيق بدعم ثنائي اللغة (عربي / إنجليزي).
  * يُخزَّن في localStorage ويُطبَّق فوراً على:
  *   - عنوان تبويب المتصفح (document.title)
- *   - أيقونة التبويب (favicon)
- *   - Apple Touch Icon وعنوان PWA
- *   - Manifest ديناميكي (يدعم "أضف للشاشة الرئيسية" مع الشعار المخصص)
+ *   - أيقونة التبويب (favicon + apple-touch-icon)
+ *   - meta tags لـ PWA
+ *   - Manifest ديناميكي (يدعم "أضف للشاشة الرئيسية")
  */
 
-const KEY_NAME    = 'noorix:appName';
-const KEY_LOGO    = 'noorix:appLogo';
-const KEY_COLOR   = 'noorix:appColor';
-const KEY_TAGLINE = 'noorix:appTagline';
+const KEYS = {
+  nameAr:    'noorix:appName:ar',
+  nameEn:    'noorix:appName:en',
+  taglineAr: 'noorix:appTagline:ar',
+  taglineEn: 'noorix:appTagline:en',
+  logo:      'noorix:appLogo',
+  color:     'noorix:appColor',
+};
 
-const DEFAULT_NAME    = 'نووريكس';
-const DEFAULT_COLOR   = '#0a1f44';
-const DEFAULT_TAGLINE = 'نظام إدارة متكامل';
+const DEFAULTS = {
+  nameAr:    'نووريكس',
+  nameEn:    'Noorix',
+  taglineAr: 'نظام إدارة متكامل',
+  taglineEn: 'Business Management System',
+  logo:      '',
+  color:     '#0a1f44',
+};
 
-export function getBrandName()    { return localStorage.getItem(KEY_NAME)    || DEFAULT_NAME; }
-export function getBrandLogo()    { return localStorage.getItem(KEY_LOGO)    || ''; }
-export function getBrandColor()   { return localStorage.getItem(KEY_COLOR)   || DEFAULT_COLOR; }
-export function getBrandTagline() { return localStorage.getItem(KEY_TAGLINE) || DEFAULT_TAGLINE; }
+const get = (key) => localStorage.getItem(KEYS[key]) || DEFAULTS[key];
 
-export function saveBranding({ name, logoUrl, color, tagline }) {
-  if (name    !== undefined) name    ? localStorage.setItem(KEY_NAME,    name)    : localStorage.removeItem(KEY_NAME);
-  if (logoUrl !== undefined) logoUrl ? localStorage.setItem(KEY_LOGO,    logoUrl) : localStorage.removeItem(KEY_LOGO);
-  if (color   !== undefined) color   ? localStorage.setItem(KEY_COLOR,   color)   : localStorage.removeItem(KEY_COLOR);
-  if (tagline !== undefined) tagline ? localStorage.setItem(KEY_TAGLINE, tagline) : localStorage.removeItem(KEY_TAGLINE);
+export const getBrandNameAr    = () => get('nameAr');
+export const getBrandNameEn    = () => get('nameEn');
+export const getBrandTaglineAr = () => get('taglineAr');
+export const getBrandTaglineEn = () => get('taglineEn');
+export const getBrandLogo      = () => get('logo');
+export const getBrandColor     = () => get('color');
+
+/** يُرجع الاسم أو الجملة حسب اللغة الحالية */
+export const getBrandName    = (lang = 'ar') => lang === 'en' ? getBrandNameEn()    : getBrandNameAr();
+export const getBrandTagline = (lang = 'ar') => lang === 'en' ? getBrandTaglineEn() : getBrandTaglineAr();
+
+export function saveBranding({ nameAr, nameEn, taglineAr, taglineEn, logoUrl, color }) {
+  const set = (key, val) =>
+    val !== undefined && (val ? localStorage.setItem(KEYS[key], val) : localStorage.removeItem(KEYS[key]));
+
+  set('nameAr',    nameAr);
+  set('nameEn',    nameEn);
+  set('taglineAr', taglineAr);
+  set('taglineEn', taglineEn);
+  set('logo',      logoUrl);
+  set('color',     color);
+
   applyBranding();
   window.dispatchEvent(new CustomEvent('noorix:branding-changed'));
 }
 
-export function applyBranding() {
-  const name  = getBrandName();
+export function applyBranding(lang = 'ar') {
+  const name  = getBrandName(lang);
   const logo  = getBrandLogo();
   const color = getBrandColor();
 
-  // عنوان التبويب
   document.title = name;
 
-  // theme-color
   document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.content = color; });
 
-  // PWA meta
   const setMeta = (sel, val) => { const m = document.querySelector(sel); if (m) m.content = val; };
   setMeta('meta[name="apple-mobile-web-app-title"]', name);
   setMeta('meta[name="application-name"]', name);
 
-  // أيقونة المتصفح
   if (logo) _setFavicon(logo);
 
-  // Manifest ديناميكي (يمكّن "أضف للشاشة الرئيسية" بالبيانات المحدّثة)
-  _injectDynamicManifest(name, logo, color);
+  _injectDynamicManifest(name, getBrandName(lang === 'ar' ? 'en' : 'ar'), logo, color, lang);
 }
 
 function _setFavicon(url) {
@@ -64,7 +82,7 @@ function _setFavicon(url) {
 
 let _manifestBlobUrl = null;
 
-function _injectDynamicManifest(name, logo, color) {
+function _injectDynamicManifest(name, shortName, logo, color, lang) {
   try {
     const icons = logo
       ? [{ src: logo, sizes: 'any', type: 'image/png', purpose: 'any maskable' }]
@@ -75,7 +93,7 @@ function _injectDynamicManifest(name, logo, color) {
 
     const manifest = {
       name,
-      short_name: name,
+      short_name: shortName || name,
       description: `${name} — نظام إدارة متكامل`,
       theme_color: color,
       background_color: '#f4f6f9',
@@ -83,8 +101,8 @@ function _injectDynamicManifest(name, logo, color) {
       orientation: 'any',
       scope: '/',
       start_url: '/',
-      lang: 'ar',
-      dir: 'rtl',
+      lang: lang === 'en' ? 'en' : 'ar',
+      dir: lang === 'en' ? 'ltr' : 'rtl',
       icons,
     };
 
@@ -100,6 +118,6 @@ function _injectDynamicManifest(name, logo, color) {
     }
     link.href = _manifestBlobUrl;
   } catch (_) {
-    // Blob URLs غير مدعومة في بعض البيئات — نتجاهل الخطأ
+    // Blob URLs غير مدعومة في بعض البيئات
   }
 }

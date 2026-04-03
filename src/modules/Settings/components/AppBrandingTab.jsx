@@ -1,10 +1,13 @@
 /**
- * AppBrandingTab — إعدادات هوية التطبيق (الاسم والشعار واللون)
- * تُخزَّن في localStorage وتُطبَّق فوراً دون إعادة تحميل.
+ * AppBrandingTab — إعدادات هوية التطبيق بدعم ثنائي اللغة (عربي / إنجليزي).
  */
 import React, { useState, useRef } from 'react';
-import { getBrandName, getBrandLogo, getBrandColor, getBrandTagline, saveBranding } from '../../../utils/appBranding';
-import { fileToDataUrl } from '../constants/settingsConstants';
+import {
+  getBrandNameAr, getBrandNameEn,
+  getBrandTaglineAr, getBrandTaglineEn,
+  getBrandLogo, getBrandColor,
+  saveBranding,
+} from '../../../utils/appBranding';
 
 const inputStyle = {
   width: '100%',
@@ -19,114 +22,169 @@ const inputStyle = {
 
 const labelStyle = {
   display: 'block',
-  fontSize: 12,
+  fontSize: 11,
   fontWeight: 700,
   color: 'var(--noorix-text-muted)',
-  marginBottom: 6,
+  marginBottom: 5,
   textTransform: 'uppercase',
   letterSpacing: 0.6,
 };
 
+const sectionTitle = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: 'var(--noorix-text)',
+  marginBottom: 12,
+  paddingBottom: 8,
+  borderBottom: '1px solid var(--noorix-border)',
+};
+
 export default function AppBrandingTab() {
-  const [name,    setName]    = useState(getBrandName);
-  const [logoUrl, setLogoUrl] = useState(getBrandLogo);
-  const [color,   setColor]   = useState(getBrandColor);
-  const [tagline, setTagline] = useState(getBrandTagline);
-  const [saved,   setSaved]   = useState(false);
+  const [nameAr,    setNameAr]    = useState(getBrandNameAr);
+  const [nameEn,    setNameEn]    = useState(getBrandNameEn);
+  const [taglineAr, setTaglineAr] = useState(getBrandTaglineAr);
+  const [taglineEn, setTaglineEn] = useState(getBrandTaglineEn);
+  const [logoUrl,   setLogoUrl]   = useState(getBrandLogo);
+  const [color,     setColor]     = useState(getBrandColor);
+  const [saved,     setSaved]     = useState(false);
   const fileRef = useRef(null);
 
-  const handleFile = async (e) => {
+  const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
-    try {
-      const url = await fileToDataUrl(file);
-      setLogoUrl(url);
-    } catch (_) {}
+    const reader = new FileReader();
+    reader.onload = (ev) => setLogoUrl(ev.target.result);
+    reader.readAsDataURL(file);
   };
 
   const handleSave = () => {
-    saveBranding({ name: name.trim() || undefined, logoUrl: logoUrl.trim() || undefined, color, tagline: tagline.trim() || undefined });
+    saveBranding({
+      nameAr:    nameAr.trim()    || undefined,
+      nameEn:    nameEn.trim()    || undefined,
+      taglineAr: taglineAr.trim() || undefined,
+      taglineEn: taglineEn.trim() || undefined,
+      logoUrl:   logoUrl.trim()   || undefined,
+      color,
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
   const handleReset = () => {
-    saveBranding({ name: '', logoUrl: '', color: '', tagline: '' });
-    setName('نووريكس');
+    saveBranding({ nameAr: '', nameEn: '', taglineAr: '', taglineEn: '', logoUrl: '', color: '' });
+    setNameAr('نووريكس');
+    setNameEn('Noorix');
+    setTaglineAr('نظام إدارة متكامل');
+    setTaglineEn('Business Management System');
     setLogoUrl('');
     setColor('#0a1f44');
-    setTagline('نظام إدارة متكامل');
   };
 
   return (
-    <div style={{ display: 'grid', gap: 28, maxWidth: 560 }}>
+    <div style={{ display: 'grid', gap: 28, maxWidth: 620 }}>
 
-      {/* معاينة مباشرة */}
+      {/* ── معاينة ────────────────────────────────────────────────────────── */}
       <div style={{ padding: 20, borderRadius: 16, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>
           معاينة مباشرة
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {/* محاكاة أيقونة التطبيق */}
+        <div style={{ display: 'flex', gap: 20 }}>
+          {/* أيقونة */}
           <div style={{
-            width: 64, height: 64,
-            borderRadius: 16,
-            background: color,
+            width: 64, height: 64, borderRadius: 16, flexShrink: 0,
+            background: color, overflow: 'hidden',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            overflow: 'hidden',
             boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-            flexShrink: 0,
           }}>
-            {logoUrl ? (
-              <img src={logoUrl} alt="app icon" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <span style={{ fontSize: 28, color: '#fff' }}>✦</span>
-            )}
+            {logoUrl
+              ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <span style={{ fontSize: 26, color: '#fff', fontWeight: 800 }}>{nameAr?.[0] || 'ن'}</span>
+            }
+          </div>
+          {/* نصوص */}
+          <div style={{ display: 'grid', gap: 6, alignContent: 'center' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--noorix-text)', direction: 'rtl' }}>{nameAr || 'نووريكس'}</span>
+              <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>·</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--noorix-text)', direction: 'ltr' }}>{nameEn || 'Noorix'}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', direction: 'rtl' }}>{taglineAr || 'الجملة بالعربي'}</span>
+              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>·</span>
+              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', direction: 'ltr' }}>{taglineEn || 'English tagline'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── الاسم ─────────────────────────────────────────────────────────── */}
+      <div>
+        <div style={sectionTitle}>اسم التطبيق</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={{ ...labelStyle, direction: 'rtl' }}>بالعربي</label>
+            <input
+              type="text"
+              value={nameAr}
+              onChange={(e) => setNameAr(e.target.value)}
+              placeholder="نووريكس"
+              style={{ ...inputStyle, direction: 'rtl', textAlign: 'right' }}
+              maxLength={40}
+            />
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--noorix-text)' }}>{name || 'اسم التطبيق'}</div>
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 3 }}>{tagline || 'الجملة التعريفية'}</div>
+            <label style={{ ...labelStyle, direction: 'ltr' }}>In English</label>
+            <input
+              type="text"
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
+              placeholder="Noorix"
+              style={{ ...inputStyle, direction: 'ltr', textAlign: 'left' }}
+              maxLength={40}
+            />
           </div>
         </div>
-      </div>
-
-      {/* اسم التطبيق */}
-      <div>
-        <label style={labelStyle}>اسم التطبيق</label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="نووريكس"
-          style={inputStyle}
-          maxLength={40}
-        />
         <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
-          يظهر في تبويب المتصفح وعنوان نافذة PWA عند التثبيت — وفي أعلى القائمة الجانبية
+          يظهر في تبويب المتصفح وأعلى القائمة الجانبية حسب لغة التطبيق
         </div>
       </div>
 
-      {/* الجملة التعريفية */}
+      {/* ── الجملة التعريفية ──────────────────────────────────────────────── */}
       <div>
-        <label style={labelStyle}>الجملة التعريفية (تحت الاسم)</label>
-        <input
-          type="text"
-          value={tagline}
-          onChange={(e) => setTagline(e.target.value)}
-          placeholder="نظام إدارة متكامل"
-          style={inputStyle}
-          maxLength={60}
-        />
+        <div style={sectionTitle}>الجملة التعريفية (تحت الاسم)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={{ ...labelStyle, direction: 'rtl' }}>بالعربي</label>
+            <input
+              type="text"
+              value={taglineAr}
+              onChange={(e) => setTaglineAr(e.target.value)}
+              placeholder="نظام إدارة متكامل"
+              style={{ ...inputStyle, direction: 'rtl', textAlign: 'right' }}
+              maxLength={60}
+            />
+          </div>
+          <div>
+            <label style={{ ...labelStyle, direction: 'ltr' }}>In English</label>
+            <input
+              type="text"
+              value={taglineEn}
+              onChange={(e) => setTaglineEn(e.target.value)}
+              placeholder="Business Management System"
+              style={{ ...inputStyle, direction: 'ltr', textAlign: 'left' }}
+              maxLength={60}
+            />
+          </div>
+        </div>
         <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
-          تظهر أسفل اسم التطبيق في القائمة الجانبية وفي تذييلها
+          تظهر أسفل الاسم في القائمة الجانبية وفي تذييلها
         </div>
       </div>
 
-      {/* شعار التطبيق */}
+      {/* ── الشعار ────────────────────────────────────────────────────────── */}
       <div>
-        <label style={labelStyle}>شعار التطبيق (الأيقونة)</label>
+        <div style={sectionTitle}>شعار التطبيق (الأيقونة)</div>
         <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-          {/* معاينة الأيقونة */}
           <div style={{
             width: 72, height: 72, borderRadius: 16, flexShrink: 0,
             border: '2px dashed var(--noorix-border)',
@@ -134,11 +192,10 @@ export default function AppBrandingTab() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden',
           }}>
-            {logoUrl ? (
-              <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <span style={{ fontSize: 28 }}>🖼</span>
-            )}
+            {logoUrl
+              ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <span style={{ fontSize: 28 }}>🖼</span>
+            }
           </div>
           <div style={{ flex: 1, display: 'grid', gap: 8 }}>
             <input
@@ -175,13 +232,13 @@ export default function AppBrandingTab() {
           </div>
         </div>
         <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 8 }}>
-          يُستخدم كأيقونة للمتصفح وعند تثبيت التطبيق على الجوال. مقاس مقترح: 512×512 بكسل.
+          مقاس مقترح: 512×512 بكسل. يستخدم نفس الشعار لكلا اللغتين.
         </div>
       </div>
 
-      {/* لون السمة */}
+      {/* ── لون الهوية ────────────────────────────────────────────────────── */}
       <div>
-        <label style={labelStyle}>لون هوية التطبيق</label>
+        <div style={sectionTitle}>لون هوية التطبيق</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <input
             type="color"
@@ -193,7 +250,7 @@ export default function AppBrandingTab() {
             type="text"
             value={color}
             onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
-            style={{ ...inputStyle, maxWidth: 120, fontFamily: 'monospace', fontSize: 13 }}
+            style={{ ...inputStyle, maxWidth: 110, fontFamily: 'monospace', fontSize: 13 }}
             placeholder="#0a1f44"
             maxLength={7}
           />
@@ -201,7 +258,7 @@ export default function AppBrandingTab() {
         </div>
       </div>
 
-      {/* أزرار الحفظ */}
+      {/* ── أزرار ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         <button
           type="button"
@@ -211,8 +268,7 @@ export default function AppBrandingTab() {
             background: saved ? '#16a34a' : 'var(--btn-primary-bg, #1a3a6c)',
             color: '#fff', fontWeight: 700, fontSize: 14,
             border: 'none', cursor: 'pointer',
-            transition: 'background 0.2s',
-            minWidth: 140,
+            transition: 'background 0.2s', minWidth: 140,
           }}
         >
           {saved ? '✓ تم الحفظ' : 'حفظ وتطبيق'}
@@ -232,11 +288,11 @@ export default function AppBrandingTab() {
         </button>
       </div>
 
-      {/* ملاحظة PWA */}
+      {/* ── ملاحظة PWA ────────────────────────────────────────────────────── */}
       <div style={{ padding: 14, borderRadius: 12, background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.7 }}>
         <strong style={{ color: 'var(--noorix-accent-blue)' }}>ℹ ملاحظة PWA:</strong>
         <br />
-        التغييرات تُطبَّق فوراً على تبويب المتصفح والأيقونة. إذا كان التطبيق مثبّتاً على الجوال، قد تحتاج لإضافته مجدداً من المتصفح للحصول على الأيقونة المحدّثة.
+        التغييرات تُطبَّق فوراً على تبويب المتصفح والأيقونة. إذا كان التطبيق مثبّتاً على الجوال، قد تحتاج لإضافته مجدداً للحصول على الأيقونة المحدّثة.
       </div>
     </div>
   );
