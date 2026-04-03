@@ -260,11 +260,11 @@ export default function CompaniesTab({ onCompanyCreated }) {
                 }}
                 style={{ display: 'grid', gap: 14 }}
               >
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: 12 }}>
                   <div><label style={labelStyle}>الاسم بالعربي *</label><input type="text" value={editModal.nameAr} onChange={(e) => setEditModal((p) => ({ ...p, nameAr: e.target.value }))} required style={inputStyle} /></div>
                   <div><label style={labelStyle}>الاسم بالإنجليزي</label><input type="text" value={editModal.nameEn} onChange={(e) => setEditModal((p) => ({ ...p, nameEn: e.target.value }))} style={inputStyle} /></div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: 12 }}>
                   <div><label style={labelStyle}>الرقم الضريبي</label><input type="text" value={editModal.taxNumber} onChange={(e) => setEditModal((p) => ({ ...p, taxNumber: e.target.value }))} placeholder="300000000000003" style={inputStyle} /></div>
                   <div><label style={labelStyle}>رقم الهاتف</label><input type="text" value={editModal.phone} onChange={(e) => setEditModal((p) => ({ ...p, phone: e.target.value }))} placeholder="05xxxxxxxx" style={inputStyle} /></div>
                 </div>
@@ -301,16 +301,16 @@ export default function CompaniesTab({ onCompanyCreated }) {
                 <div style={{ display: 'grid', gap: 10 }}>
                   <div>
                     <label style={{ ...labelStyle, fontSize: 11 }}>رقم سر الحذف (للضبط)</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input type="password" value={deleteCodeSetting} onChange={(e) => setDeleteCodeSetting(e.target.value)} placeholder="رقم سري" style={{ ...inputStyle, maxWidth: 130, fontSize: 12 }} />
-                      <button type="button" onClick={() => { const v = (deleteCodeSetting || '').trim() || DEFAULT_DELETE_CODE; setDeleteCode(v); setDeleteCodeSetting(v); }} className={BASE_BTN} style={{ fontSize: 12 }}>حفظ الرقم</button>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <input type="password" value={deleteCodeSetting} onChange={(e) => setDeleteCodeSetting(e.target.value)} placeholder="رقم سري" style={{ ...inputStyle, maxWidth: 130, minWidth: 0, flex: '1 1 100px', fontSize: 12 }} />
+                      <button type="button" onClick={() => { const v = (deleteCodeSetting || '').trim() || DEFAULT_DELETE_CODE; setDeleteCode(v); setDeleteCodeSetting(v); }} className={BASE_BTN} style={{ fontSize: 12, flexShrink: 0 }}>حفظ الرقم</button>
                     </div>
                   </div>
                   <div>
                     <label style={{ ...labelStyle, fontSize: 11 }}>أدخل رقم التأكيد لحذف الشركة</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input type="password" value={deleteConfirmCode} onChange={(e) => setDeleteConfirmCode(e.target.value)} placeholder="رقم التأكيد" style={{ ...inputStyle, maxWidth: 130, fontSize: 12 }} />
-                      <button type="button" onClick={handleDelete} disabled={deleteMutation.isPending} className={`${BASE_BTN} noorix-btn-danger`} style={{ fontSize: 12 }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <input type="password" value={deleteConfirmCode} onChange={(e) => setDeleteConfirmCode(e.target.value)} placeholder="رقم التأكيد" style={{ ...inputStyle, maxWidth: 130, minWidth: 0, flex: '1 1 100px', fontSize: 12 }} />
+                      <button type="button" onClick={handleDelete} disabled={deleteMutation.isPending} className={`${BASE_BTN} noorix-btn-danger`} style={{ fontSize: 12, flexShrink: 0 }}>
                         {deleteMutation.isPending ? 'جاري...' : 'حذف الشركة'}
                       </button>
                     </div>

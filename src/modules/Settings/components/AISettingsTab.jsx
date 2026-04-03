@@ -94,10 +94,10 @@ export default function AISettingsTab() {
                 width: 10,
                 height: 10,
                 borderRadius: '50%',
-                background: status === STATUS_ONLINE ? 'var(--noorix-accent-green)' : '#dc2626',
+                background: status === STATUS_ONLINE ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
                 boxShadow: status === STATUS_ONLINE
                   ? '0 0 8px rgba(22,163,74,0.5)'
-                  : '0 0 8px rgba(220,38,38,0.5)',
+                  : '0 0 8px rgba(var(--noorix-accent-red-rgb,220,38,38),0.5)',
               }}
               title={status === STATUS_ONLINE ? 'متصل' : 'غير متصل'}
             />
@@ -105,7 +105,7 @@ export default function AISettingsTab() {
               style={{
                 fontSize: 15,
                 fontWeight: 600,
-                color: status === STATUS_ONLINE ? 'var(--noorix-accent-green)' : '#dc2626',
+                color: status === STATUS_ONLINE ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
               }}
             >
               {status === STATUS_ONLINE
@@ -216,7 +216,7 @@ function DiagnosticRow({ label, value, ok, pending }) {
         <span
           style={{
             fontSize: 13,
-            color: pending ? 'var(--noorix-text-muted)' : ok ? 'var(--noorix-accent-green)' : '#dc2626',
+            color: pending ? 'var(--noorix-text-muted)' : ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
             fontWeight: 500,
           }}
         >
@@ -228,7 +228,7 @@ function DiagnosticRow({ label, value, ok, pending }) {
               width: 6,
               height: 6,
               borderRadius: '50%',
-              background: ok ? 'var(--noorix-accent-green)' : '#dc2626',
+              background: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
             }}
           />
         )}

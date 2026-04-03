@@ -1590,6 +1590,13 @@ input:focus, select:focus, textarea:focus {
   }
   .noorix-settings-tab-body { padding: 14px 12px; }
 }
+@media (max-width: 480px) {
+  .noorix-settings-tab {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .noorix-settings-tab-body { padding: 12px 10px; }
+}
 
 /* ========== تبويب النسخ الاحتياطي — عرض كامل داخل الإعدادات، نماذج موحّدة، شبكة أزرار ========== */
 .backup-tab {

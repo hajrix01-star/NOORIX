@@ -160,7 +160,33 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
         </div>
       )}
 
-      <SmartTable columns={columns} data={users} total={users.length} page={1} pageSize={50} showRowNumbers rowNumberWidth="1%" isLoading={isLoading} title={t('usersTab')} emptyMessage={t('noUsers')} />
+      <SmartTable
+        columns={columns}
+        data={users}
+        total={users.length}
+        page={1}
+        pageSize={50}
+        showRowNumbers
+        rowNumberWidth="1%"
+        isLoading={isLoading}
+        title={t('usersTab')}
+        emptyMessage={t('noUsers')}
+        renderMobileCard={(row) => (
+          <div style={{ display: 'grid', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--noorix-text)' }}>{row.nameAr || row.nameEn || row.email || '—'}</span>
+              <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: row.isActive ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)', color: row.isActive ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)', flexShrink: 0 }}>
+                {row.isActive ? t('active') : t('archived')}
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', direction: 'ltr', textAlign: 'right' }}>{row.email || '—'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{row.role?.nameAr || row.role?.name || '—'}</span>
+              <button type="button" className="noorix-btn-nav" style={{ fontSize: 12 }} onClick={() => openEdit(row)}>{t('edit')}</button>
+            </div>
+          </div>
+        )}
+      />
     </div>
   );
 }

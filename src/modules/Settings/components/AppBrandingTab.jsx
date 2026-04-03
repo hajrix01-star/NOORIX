@@ -88,27 +88,27 @@ export default function AppBrandingTab() {
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>
           معاينة مباشرة
         </div>
-        <div style={{ display: 'flex', gap: 20 }}>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           {/* أيقونة */}
           <div style={{
-            width: 64, height: 64, borderRadius: 16, flexShrink: 0,
+            width: 56, height: 56, borderRadius: 14, flexShrink: 0,
             background: color, overflow: 'hidden',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
           }}>
             {logoUrl
               ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <span style={{ fontSize: 26, color: '#fff', fontWeight: 800 }}>{nameAr?.[0] || 'ن'}</span>
+              : <span style={{ fontSize: 22, color: '#fff', fontWeight: 800 }}>{nameAr?.[0] || 'ن'}</span>
             }
           </div>
           {/* نصوص */}
-          <div style={{ display: 'grid', gap: 6, alignContent: 'center' }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--noorix-text)', direction: 'rtl' }}>{nameAr || 'نووريكس'}</span>
-              <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>·</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--noorix-text)', direction: 'ltr' }}>{nameEn || 'Noorix'}</span>
+          <div style={{ display: 'grid', gap: 4, minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--noorix-text)', direction: 'rtl' }}>{nameAr || 'نووريكس'}</span>
+              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>·</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--noorix-text)', direction: 'ltr' }}>{nameEn || 'Noorix'}</span>
             </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', direction: 'rtl' }}>{taglineAr || 'الجملة بالعربي'}</span>
               <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>·</span>
               <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', direction: 'ltr' }}>{taglineEn || 'English tagline'}</span>
@@ -120,7 +120,7 @@ export default function AppBrandingTab() {
       {/* ── الاسم ─────────────────────────────────────────────────────────── */}
       <div>
         <div style={sectionTitle}>اسم التطبيق</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 12 }}>
           <div>
             <label style={{ ...labelStyle, direction: 'rtl' }}>بالعربي</label>
             <input
@@ -152,7 +152,7 @@ export default function AppBrandingTab() {
       {/* ── الجملة التعريفية ──────────────────────────────────────────────── */}
       <div>
         <div style={sectionTitle}>الجملة التعريفية (تحت الاسم)</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 12 }}>
           <div>
             <label style={{ ...labelStyle, direction: 'rtl' }}>بالعربي</label>
             <input
@@ -239,22 +239,22 @@ export default function AppBrandingTab() {
       {/* ── لون الهوية ────────────────────────────────────────────────────── */}
       <div>
         <div style={sectionTitle}>لون هوية التطبيق</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <input
             type="color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            style={{ width: 52, height: 44, padding: 4, borderRadius: 10, border: '1px solid var(--noorix-border)', cursor: 'pointer', background: 'var(--noorix-bg-surface)' }}
+            style={{ width: 48, height: 42, padding: 3, borderRadius: 10, border: '1px solid var(--noorix-border)', cursor: 'pointer', background: 'var(--noorix-bg-surface)', flexShrink: 0 }}
           />
           <input
             type="text"
             value={color}
             onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
-            style={{ ...inputStyle, maxWidth: 110, fontFamily: 'monospace', fontSize: 13 }}
+            style={{ ...inputStyle, width: 100, minWidth: 0, fontFamily: 'monospace', fontSize: 13 }}
             placeholder="#0a1f44"
             maxLength={7}
           />
-          <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>يظهر في شريط العنوان على Android والـ PWA</span>
+          <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', flexShrink: 1 }}>يظهر في شريط العنوان على Android والـ PWA</span>
         </div>
       </div>
 
