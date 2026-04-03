@@ -302,7 +302,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                   <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('orderType')}</th>
                   <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('ordersTotalItems')}</th>
                   <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('ordersPettyCashGiven')}</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('total')}</th>
+                  <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('orderTotalAmount') || 'إجمالي الطلب'}</th>
                   <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('ordersCumulativeRemaining')}</th>
                   <th className="noorix-print-hide" style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, borderLeft: '2px solid var(--noorix-border)', borderInlineStart: '2px solid var(--noorix-border)' }}>{t('actions')}</th>
                 </tr>

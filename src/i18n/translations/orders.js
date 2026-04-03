@@ -58,6 +58,7 @@ export default {
   ordersTotalItems: { ar: 'عدد الأصناف', en: 'Items count' },
   ordersTotalQuantity: { ar: 'إجمالي الكمية', en: 'Total quantity' },
   ordersTotalAmount: { ar: 'إجمالي المبلغ', en: 'Total amount' },
+  orderTotalAmount:  { ar: 'إجمالي الطلب', en: 'Order total' },
   exportSuccess: { ar: 'تم التصدير بنجاح', en: 'Export successful' },
   exportFailed: { ar: 'فشل التصدير', en: 'Export failed' },
   import: { ar: 'استيراد', en: 'Import' },

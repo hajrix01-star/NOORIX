@@ -5,6 +5,11 @@
  *   - أيقونة التبويب (favicon + apple-touch-icon)
  *   - meta tags لـ PWA
  *   - Manifest ديناميكي (يدعم "أضف للشاشة الرئيسية")
+ *
+ * حل مشكلة الجوال:
+ *   - blob: URLs غير مدعومة في متصفحات الجوال → نستخدم data: URL بدلاً منها
+ *   - تحديث الـ favicon بإنشاء عناصر link جديدة بدلاً من تعديل الموجودة فقط
+ *   - iOS: يعتمد على apple-touch-icon + apple-mobile-web-app-title
  */
 
 const KEYS = {
@@ -66,22 +71,89 @@ export function applyBranding(lang = 'ar') {
   setMeta('meta[name="apple-mobile-web-app-title"]', name);
   setMeta('meta[name="application-name"]', name);
 
-  if (logo) _setFavicon(logo);
+  if (logo) {
+    _setFavicon(logo);
+  }
 
   _injectDynamicManifest(name, getBrandName(lang === 'ar' ? 'en' : 'ar'), logo, color, lang);
 }
 
+/**
+ * تحديث الـ favicon — يعمل على الكمبيوتر والجوال.
+ * ينشئ عناصر link جديدة بدلاً من الاكتفاء بتعديل الموجودة.
+ */
 function _setFavicon(url) {
-  ['link[rel="icon"]', 'link[rel="alternate icon"]'].forEach((sel) => {
-    const el = document.querySelector(sel);
-    if (el) el.href = url;
+  // ابنِ PNG بحجم 64×64 بالـ canvas من الصورة المخصصة
+  // هذا يضمن توافق أوسع بدلاً من استخدام data: URLs الطويلة مباشرةً
+  _buildSquarePng(url, 64).then((pngUrl) => {
+    const relTypes = ['icon', 'shortcut icon', 'alternate icon'];
+    relTypes.forEach((rel) => {
+      // أزل العنصر القديم إن وُجد
+      const old = document.querySelector(`link[rel="${rel}"]`);
+      if (old) old.remove();
+      // أنشئ عنصراً جديداً
+      const link = document.createElement('link');
+      link.rel   = rel;
+      link.type  = 'image/png';
+      link.href  = pngUrl;
+      document.head.appendChild(link);
+    });
+
+    // apple-touch-icon — مهم لـ iOS "Add to Home Screen"
+    const oldApple = document.querySelector('link[rel="apple-touch-icon"]');
+    if (oldApple) oldApple.remove();
+    const apple = document.createElement('link');
+    apple.rel  = 'apple-touch-icon';
+    apple.sizes = '180x180';
+    apple.href  = pngUrl;
+    document.head.appendChild(apple);
+  }).catch(() => {
+    // fallback: تعديل العناصر الموجودة مباشرة
+    document.querySelectorAll('link[rel="icon"], link[rel="alternate icon"], link[rel="apple-touch-icon"]').forEach((el) => {
+      el.href = url;
+    });
   });
-  const apple = document.querySelector('link[rel="apple-touch-icon"]');
-  if (apple) apple.href = url;
 }
 
-let _manifestBlobUrl = null;
+/**
+ * يرسم الصورة في Canvas بشكل مربع ويعيد PNG data URL.
+ * يحل مشكلة أن الصور المستطيلة لا تناسب أيقونات PWA.
+ */
+function _buildSquarePng(src, size) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width  = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        // خلفية بيضاء شفافة
+        ctx.clearRect(0, 0, size, size);
+        // ارسم الصورة مربعة مع الاحتفاظ بالنسبة
+        const ratio = Math.min(size / img.width, size / img.height);
+        const w = img.width  * ratio;
+        const h = img.height * ratio;
+        const x = (size - w) / 2;
+        const y = (size - h) / 2;
+        ctx.drawImage(img, x, y, w, h);
+        resolve(canvas.toDataURL('image/png'));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
 
+/**
+ * Manifest ديناميكي:
+ * - يستخدم data: URL بدلاً من blob: URL لأن blob: غير مدعوم في متصفحات الجوال
+ * - data: URL يعمل في Chrome Android وعدد من المتصفحات الأخرى
+ * - iOS يعتمد على apple meta tags المُعيَّنة في applyBranding() وليس الـ manifest
+ */
 function _injectDynamicManifest(name, shortName, logo, color, lang) {
   try {
     const icons = logo
@@ -106,9 +178,10 @@ function _injectDynamicManifest(name, shortName, logo, color, lang) {
       icons,
     };
 
-    if (_manifestBlobUrl) URL.revokeObjectURL(_manifestBlobUrl);
-    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-    _manifestBlobUrl = URL.createObjectURL(blob);
+    const json = JSON.stringify(manifest);
+
+    // data: URL — أوسع دعماً على الجوال من blob:
+    const dataUrl = 'data:application/manifest+json,' + encodeURIComponent(json);
 
     let link = document.querySelector('link[rel="manifest"]');
     if (!link) {
@@ -116,8 +189,8 @@ function _injectDynamicManifest(name, shortName, logo, color, lang) {
       link.rel = 'manifest';
       document.head.appendChild(link);
     }
-    link.href = _manifestBlobUrl;
+    link.href = dataUrl;
   } catch (_) {
-    // Blob URLs غير مدعومة في بعض البيئات
+    // تجاهل الأخطاء
   }
 }
