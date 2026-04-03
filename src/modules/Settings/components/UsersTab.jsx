@@ -2,6 +2,7 @@
  * UsersTab — إدارة المستخدمين
  */
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
@@ -124,8 +125,8 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
         </div>
       )}
 
-      {editing && (
-        <div role="dialog" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => !updateMutation.isPending && setEditing(null)}>
+      {editing && createPortal(
+        <div role="dialog" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9000 }} onClick={() => !updateMutation.isPending && setEditing(null)}>
           <div className="noorix-surface-card" style={{ padding: 20, maxWidth: 420, width: '90%', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <h4 style={{ margin: '0 0 16px', fontSize: 14 }}>{t('editUser', editing.email)}</h4>
             <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
@@ -157,7 +158,8 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <SmartTable

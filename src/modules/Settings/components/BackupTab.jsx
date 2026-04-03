@@ -2,6 +2,7 @@
  * النسخ الاحتياطي — لقطة منطقية لكل شركة، سجل، تقرير استرجاع، إعادة رفع خارجي
  */
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
@@ -610,14 +611,14 @@ export default function BackupTab({ activeCompanies = [] }) {
         </div>
       </section>
 
-      {importModal && (
+      {importModal && createPortal(
         <div
           className="noorix-modal-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
             background: 'rgba(0,0,0,0.45)',
-            zIndex: 1400,
+            zIndex: 9000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -714,17 +715,18 @@ export default function BackupTab({ activeCompanies = [] }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {reportModal && (
+      {reportModal && createPortal(
         <div
           className="noorix-modal-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
             background: 'rgba(0,0,0,0.45)',
-            zIndex: 1400,
+            zIndex: 9000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -840,17 +842,18 @@ export default function BackupTab({ activeCompanies = [] }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {importReportModal && (
+      {importReportModal && createPortal(
         <div
           className="noorix-modal-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
             background: 'rgba(0,0,0,0.45)',
-            zIndex: 1410,
+            zIndex: 9000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -961,7 +964,8 @@ export default function BackupTab({ activeCompanies = [] }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <Toast

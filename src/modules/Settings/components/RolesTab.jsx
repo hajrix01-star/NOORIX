@@ -2,6 +2,7 @@
  * RolesTab — إدارة الأدوار والصلاحيات بمصفوفة مهنية
  */
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getRoles, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -336,7 +337,7 @@ export default function RolesTab({ userRole, language }) {
       )}
 
       {/* ── نموذج إنشاء دور جديد ── */}
-      {showForm && (
+      {showForm && createPortal(
         <div role="dialog" style={overlayStyle} onClick={() => !createMutation.isPending && setShowForm(false)}>
           <div className="noorix-surface-card" style={modalStyle} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700 }}>
@@ -392,11 +393,12 @@ export default function RolesTab({ userRole, language }) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* ── نموذج تعديل دور ── */}
-      {editing && (
+      {editing && createPortal(
         <div role="dialog" style={overlayStyle} onClick={() => !updateMutation.isPending && setEditing(null)}>
           <div className="noorix-surface-card" style={modalStyle} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -472,7 +474,8 @@ export default function RolesTab({ userRole, language }) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -480,7 +483,7 @@ export default function RolesTab({ userRole, language }) {
 
 const overlayStyle = {
   position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9000,
   padding: 16,
 };
 
