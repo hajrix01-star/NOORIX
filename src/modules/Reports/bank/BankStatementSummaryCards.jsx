@@ -62,37 +62,36 @@ export default function BankStatementSummaryCards({ statement, t }) {
       {cards.map((c, i) => (
         <div
           key={i}
+          className="noorix-surface-card"
           style={{
-            borderRadius: 12,
             padding: 14,
-            background: `linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,58,95,0.92) 100%)`,
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
           }}
         >
-          <div style={{ fontSize: 11, opacity: 0.65, marginBottom: 6 }}>{c.title}</div>
+          <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 2, fontWeight: 600 }}>{c.title}</div>
           <div
             style={{
-              fontSize: c.value?.length > 14 ? 15 : 17,
+              fontSize: c.value?.length > 14 ? 14 : 17,
               fontWeight: 800,
               direction: 'ltr',
               textAlign: 'right',
               wordBreak: 'break-word',
+              color: 'var(--noorix-text)',
             }}
           >
             {c.value}
           </div>
           {c.sub ? (
-            <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4 }}>{c.sub}</div>
+            <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 2 }}>{c.sub}</div>
           ) : null}
           <div
             style={{
               height: 3,
               borderRadius: 2,
-              marginTop: 10,
+              marginTop: 8,
               background: c.accent,
-              opacity: 0.85,
             }}
           />
         </div>

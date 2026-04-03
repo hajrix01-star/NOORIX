@@ -61,79 +61,92 @@ export default function BankStatementPieDrilldownModal({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(15, 23, 42, 0.5)',
+        background: 'rgba(0, 0, 0, 0.55)',
         zIndex: 10060,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
-        backdropFilter: 'blur(4px)',
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="noorix-surface-card"
         style={{
-          width: 'min(920px, 100%)',
-          maxHeight: 'min(85vh, 720px)',
+          width: 'min(960px, 100%)',
+          maxHeight: 'min(88vh, 760px)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          borderRadius: 16,
-          boxShadow: '0 24px 48px rgba(0,0,0,0.2)',
+          borderRadius: 18,
+          boxShadow: '0 32px 64px rgba(0,0,0,0.28)',
+          background: 'var(--noorix-bg-surface)',
+          border: '1px solid var(--noorix-border)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* رأس النافذة */}
         <div
           style={{
-            padding: '16px 20px',
+            padding: '18px 24px 16px',
             borderBottom: '1px solid var(--noorix-border)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
             gap: 12,
             flexShrink: 0,
-            background: 'var(--noorix-bg-muted)',
+            background: 'var(--noorix-bg-surface)',
           }}
         >
           <div style={{ minWidth: 0 }}>
-            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{t('bankPieDrilldownTitle')}</h3>
-            <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6, color: 'var(--noorix-accent-blue)' }}>{categoryName}</div>
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 14 }}>
-              <span>
-                {t('bankStatementTransactions')}: <strong>{rows.length}</strong>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--noorix-text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
+              {t('bankPieDrilldownTitle')}
+            </div>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--noorix-text)' }}>{categoryName}</h3>
+            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-text-muted)', display: 'inline-block' }} />
+                {t('bankStatementTransactions')}: <strong style={{ color: 'var(--noorix-text)' }}>{rows.length}</strong>
               </span>
-              <span style={{ color: '#dc2626' }}>
-                {t('bankStatementColDebit')}: <strong style={{ direction: 'ltr', display: 'inline-block' }}>{fmt(totals.debit)}</strong>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
+                {t('bankStatementColDebit')}: <strong style={{ direction: 'ltr', display: 'inline-block', color: '#dc2626' }}>{fmt(totals.debit)}</strong>
               </span>
-              <span style={{ color: '#16a34a' }}>
-                {t('bankStatementColCredit')}: <strong style={{ direction: 'ltr', display: 'inline-block' }}>{fmt(totals.credit)}</strong>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+                {t('bankStatementColCredit')}: <strong style={{ direction: 'ltr', display: 'inline-block', color: '#16a34a' }}>{fmt(totals.credit)}</strong>
               </span>
             </div>
           </div>
           <button
             type="button"
-            className="noorix-btn noorix-btn--ghost"
             onClick={onClose}
-            style={{ fontSize: 20, lineHeight: 1, padding: '4px 10px' }}
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              border: '1px solid var(--noorix-border)',
+              background: 'var(--noorix-bg-muted)',
+              color: 'var(--noorix-text-muted)',
+              fontSize: 18, lineHeight: 1, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}
             aria-label={t('close') || 'Close'}
           >
             ×
           </button>
         </div>
 
-        <div style={{ overflow: 'auto', flex: 1, padding: '12px 16px' }}>
+        <div style={{ overflow: 'auto', flex: 1 }}>
           {rows.length === 0 ? (
-            <p style={{ textAlign: 'center', color: 'var(--noorix-text-muted)', padding: 24 }}>{t('bankPieDrilldownEmpty')}</p>
+            <p style={{ textAlign: 'center', color: 'var(--noorix-text-muted)', padding: 40 }}>{t('bankPieDrilldownEmpty')}</p>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr style={{ background: 'var(--noorix-bg-muted)', borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{t('bankStatementDate')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{t('bankStatementDescription')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{t('bankStatementColDebit')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{t('bankStatementColCredit')}</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', minWidth: 200 }}>{t('bankStatementCategories')}</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11, whiteSpace: 'nowrap' }}>{t('bankStatementDate')}</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11 }}>{t('bankStatementDescription')}</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11, whiteSpace: 'nowrap' }}>{t('bankStatementColDebit')}</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11, whiteSpace: 'nowrap' }}>{t('bankStatementColCredit')}</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11, minWidth: 200, whiteSpace: 'nowrap' }}>{t('bankStatementCategories')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,20 +154,20 @@ export default function BankStatementPieDrilldownModal({
                   const k = getTxKey(tx);
                   const catId = tx.categoryId || '';
                   return (
-                    <tr key={k} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 ? 'var(--noorix-bg-muted)' : 'transparent' }}>
-                      <td style={{ padding: '8px 10px', whiteSpace: 'nowrap', color: 'var(--noorix-text-muted)' }}>{tx.txDate}</td>
-                      <td style={{ padding: '8px 10px', maxWidth: 260 }}>
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.description}>
+                    <tr key={k} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 === 0 ? 'var(--noorix-bg-surface)' : 'var(--noorix-bg-muted)' }}>
+                      <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', color: 'var(--noorix-text-muted)', fontSize: 12 }}>{tx.txDate}</td>
+                      <td style={{ padding: '10px 14px', maxWidth: 280 }}>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--noorix-text)' }} title={tx.description}>
                           {tx.description}
                         </div>
                       </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', direction: 'ltr', color: Number(tx.debit) > 0 ? '#dc2626' : 'var(--noorix-text-muted)' }}>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', direction: 'ltr', fontWeight: Number(tx.debit) > 0 ? 700 : 400, color: Number(tx.debit) > 0 ? '#dc2626' : 'var(--noorix-text-muted)' }}>
                         {Number(tx.debit) > 0 ? fmt(Number(tx.debit)) : '—'}
                       </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', direction: 'ltr', color: Number(tx.credit) > 0 ? '#16a34a' : 'var(--noorix-text-muted)' }}>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', direction: 'ltr', fontWeight: Number(tx.credit) > 0 ? 700 : 400, color: Number(tx.credit) > 0 ? '#16a34a' : 'var(--noorix-text-muted)' }}>
                         {Number(tx.credit) > 0 ? fmt(Number(tx.credit)) : '—'}
                       </td>
-                      <td style={{ padding: '8px 10px' }}>
+                      <td style={{ padding: '10px 14px' }}>
                         {editingTxId === tx.id ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                             <select
@@ -213,8 +226,8 @@ export default function BankStatementPieDrilldownModal({
           )}
         </div>
 
-        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--noorix-border)', flexShrink: 0 }}>
-          <button type="button" className="noorix-btn noorix-btn--secondary" onClick={onClose}>
+        <div style={{ padding: '14px 24px', borderTop: '1px solid var(--noorix-border)', flexShrink: 0, background: 'var(--noorix-bg-surface)', display: 'flex', justifyContent: 'flex-end' }}>
+          <button type="button" className="noorix-btn noorix-btn--secondary" onClick={onClose} style={{ minWidth: 100 }}>
             {t('close') || 'إغلاق'}
           </button>
         </div>

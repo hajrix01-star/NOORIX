@@ -412,7 +412,7 @@ export default function BankStatementAnalysisCardsTab({
                   </thead>
                   <tbody>
                     {alerts.map((tx, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 ? 'var(--noorix-bg-muted)' : 'transparent' }}>
+                      <tr key={i} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 ? 'var(--noorix-bg-muted)' : 'var(--noorix-bg-surface)' }}>
                         <td style={{ padding: '8px 10px', whiteSpace: 'nowrap', color: 'var(--noorix-text-muted)', verticalAlign: 'middle' }}>{tx.txDate}</td>
                         <td style={{ padding: '8px 10px', maxWidth: 360, verticalAlign: 'middle' }}>
                           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.description || ''}>
@@ -573,6 +573,9 @@ export default function BankStatementAnalysisCardsTab({
                     textAlign: 'center',
                     pointerEvents: 'none',
                     maxWidth: 132,
+                    background: 'var(--noorix-bg-surface)',
+                    borderRadius: 50,
+                    padding: '8px 10px',
                   }}
                 >
                   <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', fontWeight: 600, lineHeight: 1.25 }}>
@@ -783,7 +786,7 @@ export default function BankStatementAnalysisCardsTab({
                     key={row.name}
                     style={{
                       borderBottom: '1px solid var(--noorix-border)',
-                      background: i % 2 === 0 ? 'transparent' : 'var(--noorix-bg-muted)',
+                      background: i % 2 === 0 ? 'var(--noorix-bg-surface)' : 'var(--noorix-bg-muted)',
                       cursor: 'pointer',
                       transition: 'background 0.15s',
                     }}
@@ -866,7 +869,7 @@ export default function BankStatementAnalysisCardsTab({
                         key={row.name}
                         style={{
                           borderBottom: '1px solid var(--noorix-border)',
-                          background: i % 2 === 0 ? 'transparent' : 'var(--noorix-bg-muted)',
+                          background: i % 2 === 0 ? 'var(--noorix-bg-surface)' : 'var(--noorix-bg-muted)',
                           cursor: 'pointer',
                         }}
                         onClick={() => { setCategoryFilter(row.name); setTypeFilter('credit'); setActiveTab('transactions'); }}
@@ -941,7 +944,7 @@ export default function BankStatementAnalysisCardsTab({
                     {posTerminals.slice(0, 8).map((term, i) => {
                       const pct = totalPOS > 0 ? (term.total / totalPOS) * 100 : 0;
                       return (
-                        <tr key={term.terminalId} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 ? 'var(--noorix-bg-muted)' : 'transparent' }}>
+                        <tr key={term.terminalId} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 ? 'var(--noorix-bg-muted)' : 'var(--noorix-bg-surface)' }}>
                           <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{i + 1}</td>
                           <td style={{ padding: '8px 10px' }}>
                             <code style={{ fontSize: 11, background: 'var(--noorix-border)', padding: '4px 8px', borderRadius: 6 }}>…{term.terminalId.slice(-8)}</code>
