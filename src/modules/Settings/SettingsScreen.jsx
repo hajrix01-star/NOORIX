@@ -1,45 +1,52 @@
 /**
  * SettingsScreen — الشاشة الرئيسية للإعدادات
- * مسؤولية واحدة: تبديل التبويبات وتمرير الـ context للمكونات الفرعية.
- *
- * التبويبات:
- *   CompaniesTab   → إدارة الشركات
- *   TaxSettingsTab → الضريبة
- *   UsersTab       → المستخدمون والأدوار
- *   RolesTab             → الأدوار والصلاحيات
+ * - على الجوال (< 640px): قائمة منسدلة select بدلاً من شريط تبويبات
+ * - على الديسكتوب: شريط تبويبات أفقي
  */
-import React, { useState, useMemo } from 'react';
-import { useQuery }             from '@tanstack/react-query';
-import { getCompanies }         from '../../services/api';
-import { useApp }               from '../../context/AppContext';
-import { useTranslation }      from '../../i18n/useTranslation';
-import { hasPermission }        from '../../constants/permissions';
-import CompaniesTab             from './components/CompaniesTab';
-import UsersTab                 from './components/UsersTab';
-import RolesTab                 from './components/RolesTab';
-import TaxSettingsTab           from './components/TaxSettingsTab';
-import AISettingsTab            from './components/AISettingsTab';
-import BackupTab                from './components/BackupTab';
-import AppBrandingTab           from './components/AppBrandingTab';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useQuery }        from '@tanstack/react-query';
+import { getCompanies }    from '../../services/api';
+import { useApp }          from '../../context/AppContext';
+import { useTranslation }  from '../../i18n/useTranslation';
+import { hasPermission }   from '../../constants/permissions';
+import CompaniesTab        from './components/CompaniesTab';
+import UsersTab            from './components/UsersTab';
+import RolesTab            from './components/RolesTab';
+import TaxSettingsTab      from './components/TaxSettingsTab';
+import AISettingsTab       from './components/AISettingsTab';
+import BackupTab           from './components/BackupTab';
+import AppBrandingTab      from './components/AppBrandingTab';
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => window.innerWidth < 640);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const handler = (e) => setMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return mobile;
+}
 
 export default function SettingsScreen() {
-  const { t } = useTranslation();
-  const appContext     = useApp();
-  const userRole       = appContext?.userRole;
+  const { t }           = useTranslation();
+  const appContext      = useApp();
+  const userRole        = appContext?.userRole;
   const userPermissions = appContext?.userPermissions || [];
-  const language       = appContext?.language || 'ar';
+  const language        = appContext?.language || 'ar';
   const setActiveCompany = typeof appContext?.setActiveCompany === 'function'
-    ? appContext.setActiveCompany
-    : () => {};
+    ? appContext.setActiveCompany : () => {};
 
   const [activeTab, setActiveTab] = useState('companies');
+  const isMobile = useIsMobile();
+  const activeTabRef = useRef(null);
 
   const TABS_BASE = useMemo(() => [
     { id: 'companies', label: t('companiesTab') },
     { id: 'tax',       label: t('taxTab') },
-    { id: 'users',     label: t('usersTab'),    permission: 'MANAGE_USERS' },
+    { id: 'users',     label: t('usersTab'),   permission: 'MANAGE_USERS' },
     { id: 'roles',     label: t('rolesTab') },
-    { id: 'backup',    label: t('backupTab'), permission: 'MANAGE_SETTINGS' },
+    { id: 'backup',    label: t('backupTab'),  permission: 'MANAGE_SETTINGS' },
     { id: 'ai',        label: t('aiTab') },
     { id: 'branding',  label: 'هوية التطبيق' },
   ], [t]);
@@ -49,7 +56,13 @@ export default function SettingsScreen() {
     [userRole, userPermissions, TABS_BASE],
   );
 
-  // جلب الشركات مشتركاً بين CompaniesTab و UsersTab
+  // تمرير التبويب النشط للمنتصف (ديسكتوب فقط)
+  useEffect(() => {
+    if (!isMobile && activeTabRef.current) {
+      activeTabRef.current.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+    }
+  }, [activeTab, isMobile]);
+
   const { data: companiesData = [] } = useQuery({
     queryKey:        ['companies', false],
     queryFn:         async () => {
@@ -60,9 +73,12 @@ export default function SettingsScreen() {
     retry:           false,
   });
   const activeCompanies = companiesData.filter((c) => !c.isArchived);
+  const activeLabel = TABS.find((t) => t.id === activeTab)?.label || '';
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+
+      {/* ── عنوان الصفحة ── */}
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>الإعدادات</h1>
         <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
@@ -71,44 +87,53 @@ export default function SettingsScreen() {
       </div>
 
       <div className="noorix-surface-card noorix-settings-card">
-        {/* ── شريط التبويبات (قابل للتمرير أفقياً على الجوال) ── */}
-        <div className="noorix-settings-tabstrip">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className="noorix-settings-tab"
-              onClick={() => setActiveTab(tab.id)}
-              data-active={activeTab === tab.id ? 'true' : 'false'}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
 
-        {/* ── محتوى التبويب ── */}
+        {/* ══ جوال: قائمة منسدلة ══════════════════════════════════════════ */}
+        {isMobile && (
+          <div className="noorix-settings-mobile-nav">
+            <div className="noorix-settings-mobile-nav__label">{activeLabel}</div>
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value)}
+              className="noorix-settings-mobile-nav__select"
+            >
+              {TABS.map((tab) => (
+                <option key={tab.id} value={tab.id}>{tab.label}</option>
+              ))}
+            </select>
+            <span className="noorix-settings-mobile-nav__chevron">▾</span>
+          </div>
+        )}
+
+        {/* ══ ديسكتوب: شريط تبويبات ═══════════════════════════════════════ */}
+        {!isMobile && (
+          <div className="noorix-settings-tabstrip" role="tablist">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                ref={activeTab === tab.id ? activeTabRef : null}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className="noorix-settings-tab"
+                onClick={() => setActiveTab(tab.id)}
+                data-active={activeTab === tab.id ? 'true' : 'false'}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ══ محتوى التبويب ═══════════════════════════════════════════════ */}
         <div className="noorix-settings-tab-body">
-          {activeTab === 'companies' && (
-            <CompaniesTab onCompanyCreated={(id) => setActiveCompany(id)} />
-          )}
-          {activeTab === 'tax' && (
-            <TaxSettingsTab />
-          )}
-          {activeTab === 'users' && (
-            <UsersTab userRole={userRole} activeCompanies={activeCompanies} />
-          )}
-          {activeTab === 'roles' && (
-            <RolesTab userRole={userRole} language={language} />
-          )}
-          {activeTab === 'backup' && (
-            <BackupTab activeCompanies={activeCompanies} />
-          )}
-          {activeTab === 'ai' && (
-            <AISettingsTab />
-          )}
-          {activeTab === 'branding' && (
-            <AppBrandingTab />
-          )}
+          {activeTab === 'companies' && <CompaniesTab onCompanyCreated={(id) => setActiveCompany(id)} />}
+          {activeTab === 'tax'       && <TaxSettingsTab />}
+          {activeTab === 'users'     && <UsersTab userRole={userRole} activeCompanies={activeCompanies} />}
+          {activeTab === 'roles'     && <RolesTab userRole={userRole} language={language} />}
+          {activeTab === 'backup'    && <BackupTab activeCompanies={activeCompanies} />}
+          {activeTab === 'ai'        && <AISettingsTab />}
+          {activeTab === 'branding'  && <AppBrandingTab />}
         </div>
       </div>
     </div>

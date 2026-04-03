@@ -1253,8 +1253,14 @@ html[data-card-style="10"] .noorix-stat-card {
 /* ========== كروت تنفيذية — نفس ثيم خزائن VaultCard ========== */
 .noorix-exec-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 12px;
+}
+@media (max-width: 639px) {
+  .noorix-exec-card-grid {
+    grid-template-columns: 1fr; /* كرت واحد كامل العرض دائماً على الجوال */
+    gap: 10px;
+  }
 }
 .noorix-exec-card {
   background: var(--noorix-bg-surface);
@@ -1318,12 +1324,13 @@ html[data-card-style="10"] .noorix-stat-card {
   gap: 5px;
 }
 .noorix-exec-card__amount {
-  font-size: 26px;
+  font-size: clamp(18px, 4vw, 26px);
   font-weight: 800;
   color: var(--noorix-text);
   font-family: var(--noorix-font-numbers);
   letter-spacing: -0.5px;
   line-height: 1.2;
+  word-break: break-word;
 }
 .noorix-exec-card__currency {
   font-size: 13px;
@@ -1342,8 +1349,22 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-exec-card__footer {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  padding: 12px 18px;
+  padding: 10px 14px;
   gap: 0;
+}
+@media (max-width: 639px) {
+  .noorix-exec-card__footer {
+    padding: 8px 12px;
+  }
+  .noorix-exec-card__header {
+    padding: 12px 14px 8px;
+  }
+  .noorix-exec-card__total {
+    padding: 2px 14px 10px;
+  }
+  .noorix-exec-card__divider {
+    margin: 0 14px;
+  }
 }
 .noorix-exec-card__stat {
   display: flex;
@@ -1536,11 +1557,14 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-/* ========== إعدادات — تبويبات قابلة للتمرير (جوال) ========== */
-/* overflow:hidden على الكارد كان يقطع التمرير الأفقي للتبويبات */
-.noorix-settings-card { overflow: visible; }
-/* نحجب الزوايا المدورة بالـ clip-path بدل overflow:hidden */
-.noorix-settings-card .noorix-settings-tabstrip { border-radius: 0; }
+/* ══════════════════════════════════════════════════════════════════════════
+   إعدادات — التبويبات والتنقل
+   - ديسكتوب (≥ 640px): شريط تبويبات أفقي
+   - جوال    (< 640px): قائمة منسدلة select محلية (100% موثوقة)
+══════════════════════════════════════════════════════════════════════════ */
+.noorix-settings-card { overflow: hidden; }
+
+/* ── شريط التبويبات (ديسكتوب فقط) ─────────────────────────────────── */
 .noorix-settings-tabstrip {
   display: flex;
   gap: 0;
@@ -1549,12 +1573,12 @@ input:focus, select:focus, textarea:focus {
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
-  touch-action: pan-x;          /* أفقي فقط — يمنع تعارض التمرير العمودي */
-  scrollbar-width: none;        /* إخفاء شريط التمرير بصرياً مع الاحتفاظ بالوظيفة */
+  scrollbar-width: none;
   -ms-overflow-style: none;
   flex-shrink: 0;
 }
 .noorix-settings-tabstrip::-webkit-scrollbar { display: none; }
+
 .noorix-settings-tab {
   margin: 0;
   border-radius: 0;
@@ -1565,37 +1589,71 @@ input:focus, select:focus, textarea:focus {
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
-  padding: 12px 14px;
+  padding: 12px 16px;
   font-size: 13px;
   font-family: var(--noorix-font-primary);
   cursor: pointer;
   transition: background 140ms, color 140ms, border-color 140ms;
+  min-height: 44px;
 }
 .noorix-settings-tab[data-active="true"] {
   border-bottom-color: var(--noorix-accent-green);
-  background: rgba(22, 163, 74, 0.07);
+  background: rgba(22,163,74,0.07);
   color: var(--noorix-accent-green);
   font-weight: 700;
 }
-.noorix-settings-tab:hover {
+.noorix-settings-tab:hover:not([data-active="true"]) {
   background: var(--noorix-bg-muted);
   color: var(--noorix-text);
 }
-.noorix-settings-tab-body { padding: 20px; }
-@media (max-width: 768px) {
-  .noorix-settings-tab {
-    padding: 9px 11px;
-    font-size: 12px;
-    min-height: 40px;
-  }
-  .noorix-settings-tab-body { padding: 14px 12px; }
+
+/* ── القائمة المنسدلة (جوال < 640px) ────────────────────────────────── */
+.noorix-settings-mobile-nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 16px;
+  border-bottom: 2px solid var(--noorix-accent-green);
+  background: rgba(22,163,74,0.05);
+  min-height: 52px;
 }
-@media (max-width: 480px) {
-  .noorix-settings-tab {
-    padding: 8px 10px;
-    font-size: 11px;
-  }
-  .noorix-settings-tab-body { padding: 12px 10px; }
+.noorix-settings-mobile-nav__label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--noorix-accent-green);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.noorix-settings-mobile-nav__select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 16px; /* يمنع iOS من تكبير الصفحة */
+  border: none;
+  background: transparent;
+}
+.noorix-settings-mobile-nav__chevron {
+  font-size: 13px;
+  color: var(--noorix-accent-green);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* ── محتوى التبويب ───────────────────────────────────────────────────── */
+.noorix-settings-tab-body { padding: 20px; }
+
+@media (max-width: 767px) {
+  .noorix-settings-tab-body { padding: 16px; }
+}
+@media (max-width: 479px) {
+  .noorix-settings-tab-body { padding: 12px; }
 }
 
 /* ========== تبويب النسخ الاحتياطي — عرض كامل داخل الإعدادات، نماذج موحّدة، شبكة أزرار ========== */
