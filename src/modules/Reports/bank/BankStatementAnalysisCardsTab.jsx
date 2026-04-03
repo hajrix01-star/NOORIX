@@ -514,6 +514,37 @@ export default function BankStatementAnalysisCardsTab({
             }}
           >
             <div style={{ flex: '1 1 300px', minWidth: 280, position: 'relative', height: 320 }}>
+              {/* النص المركزي يُرسم أولاً ليبقى تحت tooltip الدائرة */}
+              {pieDisplayData.length > 0 ? (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    textAlign: 'center',
+                    pointerEvents: 'none',
+                    maxWidth: 132,
+                    background: 'var(--noorix-bg-surface)',
+                    borderRadius: 50,
+                    padding: '8px 10px',
+                    zIndex: 0,
+                  }}
+                >
+                  <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', fontWeight: 600, lineHeight: 1.25 }}>
+                    {centerTitle}
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, direction: 'ltr', color: 'var(--noorix-text)', marginTop: 4 }}>
+                    {fmt(centerMain)}
+                  </div>
+                  {pieMode === 'combined' && (pieGrandTotals.totalDebit > 0 || pieGrandTotals.totalCredit > 0) ? (
+                    <div style={{ fontSize: 10, marginTop: 6, lineHeight: 1.35 }}>
+                      <div style={{ color: '#dc2626', direction: 'ltr' }}>{fmt(pieGrandTotals.totalDebit)}</div>
+                      <div style={{ color: '#16a34a', direction: 'ltr' }}>{fmt(pieGrandTotals.totalCredit)}</div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               {pieDisplayData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={320}>
                   <PieChart>
@@ -564,35 +595,6 @@ export default function BankStatementAnalysisCardsTab({
                   {t('bankNoCategoryData')}
                 </div>
               )}
-              {pieDisplayData.length > 0 ? (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    textAlign: 'center',
-                    pointerEvents: 'none',
-                    maxWidth: 132,
-                    background: 'var(--noorix-bg-surface)',
-                    borderRadius: 50,
-                    padding: '8px 10px',
-                  }}
-                >
-                  <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', fontWeight: 600, lineHeight: 1.25 }}>
-                    {centerTitle}
-                  </div>
-                  <div style={{ fontSize: 17, fontWeight: 800, direction: 'ltr', color: 'var(--noorix-text)', marginTop: 4 }}>
-                    {fmt(centerMain)}
-                  </div>
-                  {pieMode === 'combined' && (pieGrandTotals.totalDebit > 0 || pieGrandTotals.totalCredit > 0) ? (
-                    <div style={{ fontSize: 10, marginTop: 6, lineHeight: 1.35 }}>
-                      <div style={{ color: '#dc2626', direction: 'ltr' }}>{fmt(pieGrandTotals.totalDebit)}</div>
-                      <div style={{ color: '#16a34a', direction: 'ltr' }}>{fmt(pieGrandTotals.totalCredit)}</div>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
             </div>
             <div style={{ flex: '1 1 240px', minWidth: 220, display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 10 }}>
