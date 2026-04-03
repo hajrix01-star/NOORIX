@@ -1537,7 +1537,10 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ========== إعدادات — تبويبات قابلة للتمرير (جوال) ========== */
-.noorix-settings-card { overflow: hidden; }
+/* overflow:hidden على الكارد كان يقطع التمرير الأفقي للتبويبات */
+.noorix-settings-card { overflow: visible; }
+/* نحجب الزوايا المدورة بالـ clip-path بدل overflow:hidden */
+.noorix-settings-card .noorix-settings-tabstrip { border-radius: 0; }
 .noorix-settings-tabstrip {
   display: flex;
   gap: 0;
@@ -1546,10 +1549,12 @@ input:focus, select:focus, textarea:focus {
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
-  touch-action: pan-x pan-y;
-  scrollbar-width: thin;
+  touch-action: pan-x;          /* أفقي فقط — يمنع تعارض التمرير العمودي */
+  scrollbar-width: none;        /* إخفاء شريط التمرير بصرياً مع الاحتفاظ بالوظيفة */
+  -ms-overflow-style: none;
   flex-shrink: 0;
 }
+.noorix-settings-tabstrip::-webkit-scrollbar { display: none; }
 .noorix-settings-tab {
   margin: 0;
   border-radius: 0;
@@ -2533,11 +2538,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 
 /* ========== تمرير كل النوافذ الثابتة ذات overflow: hidden على الجوال ========== */
-@media (max-width: 600px) {
-  .noorix-settings-card {
-    overflow: visible !important;
-  }
-}
 
 /* ========== VaultFormModal — شبكة متكيفة مع الجوال ========== */
 @media (max-width: 520px) {
