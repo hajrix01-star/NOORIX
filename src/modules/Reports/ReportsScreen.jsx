@@ -120,7 +120,6 @@ export default function ReportsScreen() {
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0, flex: '1 1 auto' }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t('reportGeneral')}</h2>
-          <p style={{ marginTop: 6, color: 'var(--noorix-text-muted)' }}>{t('generalReportFullDesc')}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flex: '0 1 auto' }}>
           <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('reportYear')}</label>

@@ -200,7 +200,6 @@ export default function BankStatementAnalysisScreen() {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--noorix-text)' }}>
             {t('reportBankStatementAnalysis')}
           </h1>
-          <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankStatementMonthlyDesc')}</p>
         </div>
         <button type="button" className="noorix-btn noorix-btn--primary noorix-bank-cta" onClick={() => setShowUpload(true)}>
           <span aria-hidden style={{ fontSize: 18, lineHeight: 1, opacity: 0.95 }}>＋</span>

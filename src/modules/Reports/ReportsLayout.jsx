@@ -20,7 +20,6 @@ export default function ReportsLayout() {
     <div style={{ display: 'grid', gap: 18 }}>
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('reports')}</h1>
-        <p style={{ marginTop: 6, color: 'var(--noorix-text-muted)', maxWidth: 900 }}>{t('reportsDesc')}</p>
       </div>
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
