@@ -67,9 +67,6 @@ export default function HRMainScreen() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('staffTitle')}</h1>
-          <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)', margin: '4px 0 0' }}>
-            {t('staffDesc')}
-          </p>
         </div>
         {companyId && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

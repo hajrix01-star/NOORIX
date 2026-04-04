@@ -409,9 +409,6 @@ export default function PurchasesBatchScreen() {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>{t('batchPurchasesTitle')}</h1>
-          <p style={{ marginTop: 6, fontSize: 14, color: 'var(--noorix-text-muted)', lineHeight: 1.4 }}>
-            {t('batchPurchasesDesc')}
-          </p>
         </div>
       </header>
 

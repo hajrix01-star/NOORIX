@@ -24,6 +24,63 @@ import DayCloseReportModal from './components/DayCloseReportModal';
 
 const PAGE_SIZE = 50;
 
+/* ══ نافذة عرض الفاتورة (قراءة فقط) ══════════════════════════════════════════ */
+function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
+  if (!invoice) return null;
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString(lang === 'en' ? 'en-SA' : 'ar-SA', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+  const supplierName = (lang === 'en' ? invoice.supplier?.nameEn || invoice.supplier?.nameAr : invoice.supplier?.nameAr || invoice.supplier?.nameEn) || '—';
+  const fields = [
+    { label: t('invoiceNumber'),   value: invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—' },
+    { label: t('date'),            value: fmtDate(invoice.transactionDate) },
+    { label: t('type'),            value: invoice.kind || '—' },
+    { label: t('status'),          value: invoice.status || '—' },
+    { label: t('supplier'),        value: supplierName },
+    { label: t('net'),             value: invoice.netAmount != null ? `${fmt(invoice.netAmount, 2)} ﷼` : '—', highlight: '#16a34a' },
+    { label: t('tax'),             value: invoice.taxAmount != null ? `${fmt(invoice.taxAmount, 2)} ﷼` : '—', highlight: '#d97706' },
+    { label: t('total'),           value: invoice.totalAmount != null ? `${fmt(invoice.totalAmount, 2)} ﷼` : '—', highlight: '#2563eb', bold: true },
+  ].filter(Boolean);
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={onClose}
+    >
+      <div
+        className="noorix-surface-card"
+        style={{ width: '100%', maxWidth: 500, borderRadius: 14, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.22)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* هيدر */}
+        <div style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, marginBottom: 3 }}>{t('invoicesTitle')}</div>
+            <h3 style={{ margin: 0, color: '#fff', fontSize: 17, fontWeight: 700 }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
+          </div>
+          <button type="button" onClick={onClose} style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', padding: '6px 14px', fontWeight: 600, fontSize: 13 }}>
+            {t('close')}
+          </button>
+        </div>
+        {/* تفاصيل */}
+        <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {fields.map(({ label, value, highlight, bold }) => (
+            <div key={label} style={{ padding: '10px 12px', borderRadius: 10, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
+              <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 14, fontWeight: bold ? 700 : 600, color: highlight || 'var(--noorix-text)', fontFamily: 'var(--noorix-font-numbers)' }}>{value}</div>
+            </div>
+          ))}
+          {invoice.notes && (
+            <div style={{ gridColumn: '1 / -1', padding: '10px 12px', borderRadius: 10, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
+              <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{t('notes')}</div>
+              <div style={{ fontSize: 13, color: 'var(--noorix-text)' }}>{invoice.notes}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const Badge = memo(function Badge({ map, value }) {
   const s = map[value] || { bg: 'rgba(100,116,139,0.08)', color: '#64748b', label: value };
   return (
@@ -45,7 +102,8 @@ export default function InvoicesListScreen() {
   const dateFilter          = useDateFilter();
   const queryClient         = useQueryClient();
   const [toast, setToast]   = useState({ visible: false, message: '', type: 'success' });
-  const [editingInvoice, setEditingInvoice] = useState(null);
+  const [editingInvoice, setEditingInvoice]   = useState(null);
+  const [viewingInvoice, setViewingInvoice]   = useState(null);
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
   const [showCancelled, setShowCancelled] = useState(false);
@@ -169,6 +227,7 @@ export default function InvoicesListScreen() {
           row={row}
           userRole={userRole}
           companyId={companyId}
+          onView={(r) => setViewingInvoice(r)}
           onPrint={() => window.print()}
           onEdit={(r) => setEditingInvoice(r)}
           onDelete={async (r) => {
@@ -305,9 +364,6 @@ export default function InvoicesListScreen() {
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('invoicesTitle')}</h1>
-        <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-          {t('invoicesDesc')}
-        </p>
       </div>
 
       <DateFilterBar filter={dateFilter} />
@@ -524,7 +580,11 @@ export default function InvoicesListScreen() {
               </select>
             </label>
           </div>
-          <SmartTable
+          {/* ── عرض الفاتورة (قراءة فقط) ── */}
+        {viewingInvoice && (
+          <InvoiceViewModal invoice={viewingInvoice} onClose={() => setViewingInvoice(null)} t={t} lang={lang} fmt={fmt} />
+        )}
+        <SmartTable
           compact
           showRowNumbers
           tableLayout="fixed"

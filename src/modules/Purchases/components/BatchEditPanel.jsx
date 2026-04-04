@@ -61,14 +61,17 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
   const total = sumAmounts(items, 'totalAmount').toNumber();
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.4)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-    }}
-    onClick={(e) => e.target === e.currentTarget && onClose?.()}
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.45)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
-      <div style={{
-        background: 'var(--noorix-bg-surface)', borderRadius: 12, maxWidth: 900, width: '100%',
+      <div className="noorix-surface-card" style={{
+        borderRadius: 12, maxWidth: 900, width: '100%',
         maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
       }}
       >

@@ -62,16 +62,18 @@ export const SupplierEditModal = memo(function SupplierEditModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)', padding: 20,
+        background: 'rgba(0,0,0,0.45)', padding: 20,
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         className="noorix-surface-card"
-        style={{ width: '100%', maxWidth: 480, borderRadius: 14, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}
+        style={{ width: '100%', maxWidth: 480, borderRadius: 14, padding: 24, boxShadow: '0 12px 40px rgba(0,0,0,0.22)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>

@@ -418,9 +418,14 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
       )}
 
       {viewingOrder && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
-        }} onClick={() => setViewingOrder(null)}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+          }}
+          onClick={() => setViewingOrder(null)}
+        >
           <div
             className="noorix-surface-card"
             style={{

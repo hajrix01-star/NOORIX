@@ -536,12 +536,6 @@ export default function DailySalesScreen() {
       <div className="noorix-daily-sales-header">
         <div className="noorix-daily-sales-header__titles">
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('salesDailySummary')}</h1>
-          <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('salesDailyDesc')}</p>
-          {!salesFullHistory && (
-            <p style={{ marginTop: 6, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-              {t('salesCashierWindowHint')}
-            </p>
-          )}
         </div>
         <div className="noorix-daily-sales-header__toolbar noorix-print-hide">
           {salesFullHistory && (

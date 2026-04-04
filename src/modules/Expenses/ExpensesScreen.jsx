@@ -89,9 +89,6 @@ export default function ExpensesScreen() {
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--noorix-text)' }}>
           {t('fixedAndVariableExpenses')}
         </h1>
-        <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-          {t('expensesDesc')}
-        </p>
       </div>
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>

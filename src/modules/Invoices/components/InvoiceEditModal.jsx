@@ -94,15 +94,18 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
-        position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.4)',
+        position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.45)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
       }}
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
       <div
+        className="noorix-surface-card"
         style={{
-          background: 'var(--noorix-bg-surface)', borderRadius: 12, maxWidth: 480, width: '100%',
+          borderRadius: 12, maxWidth: 480, width: '100%',
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)', overflow: 'hidden',
           display: 'flex', flexDirection: 'column', maxHeight: '90vh',
         }}

@@ -146,9 +146,6 @@ export default function TreasuryScreen() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ flex: '1 1 200px', minWidth: 0 }}>
           <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{t('vaults')}</h1>
-          <p style={{ marginTop: 3, fontSize: 13, color: 'var(--noorix-text-muted)', margin: '3px 0 0' }}>
-            {t('vaultsDesc')}
-          </p>
           {hasCompany && isFetching && !isLoading && (
             <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--noorix-accent-blue)', fontWeight: 600 }}>
               {t('vaultsSyncing')}

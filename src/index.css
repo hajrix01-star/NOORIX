@@ -110,6 +110,25 @@
   font-family: var(--noorix-font-primary) !important;
 }
 
+/* ========== نوافذ — خلفية أبيض لؤلؤي ثابتة بغض النظر عن نمط الكروت ========== */
+/* نضمن أن محتوى النوافذ دائماً معتم وناصع — يلغي تأثير الزجاج (card-style 3) وغيره */
+:root {
+  --noorix-bg-modal: #fafcff;   /* أبيض لؤلؤي — فاتح */
+}
+.dark {
+  --noorix-bg-modal: #1a2740;   /* داكن ملائم — لا يظهر شفافاً */
+}
+/* أي noorix-surface-card داخل modal overlay يأخذ خلفية المودال الصلبة دائماً */
+[role="dialog"] .noorix-surface-card,
+[aria-modal="true"] .noorix-surface-card,
+.noorix-modal-overlay .noorix-surface-card,
+.modal-overlay .noorix-surface-card {
+  background: var(--noorix-bg-modal) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+/* لكن نافذة التحرير/العرض نفسها (الـ overlay) تبقى شفافة */
+
 /* ========== قاعدة — Typography Scale ========== */
 html {
   font-size: 16px;

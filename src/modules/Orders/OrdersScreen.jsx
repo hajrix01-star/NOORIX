@@ -52,9 +52,6 @@ export default function OrdersScreen() {
     <div style={{ display: 'grid', gap: 18 }}>
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('ordersTitle')}</h1>
-        <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-          {t('ordersDesc')}
-        </p>
       </div>
 
       {!companyId && (
