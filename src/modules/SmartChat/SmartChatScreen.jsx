@@ -141,10 +141,10 @@ const CMD_GROUPS = [
     icon: '👥',
     items: [
       { key: 'addEmployee', labelAr: 'إضافة موظف', labelEn: 'Add employee', icon: '➕', canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.EMPLOYEES_WRITE) },
-      { key: 'advance', labelAr: 'صرف سلفة', labelEn: 'Pay advance', icon: '💳', canUse: (c) => c(PERMISSIONS.HR_WRITE) || c(PERMISSIONS.EMPLOYEES_WRITE) },
-      { key: 'increase', labelAr: 'زيادة / بدلة', labelEn: 'Raise / Allowance', icon: '📈', canUse: (c) => c(PERMISSIONS.HR_WRITE) },
-      { key: 'leave', labelAr: 'تسجيل إجازة', labelEn: 'Record leave', icon: '📅', canUse: (c) => c(PERMISSIONS.HR_WRITE) },
-      { key: 'deduction', labelAr: 'تسجيل خصم', labelEn: 'Record deduction', icon: '📉', canUse: (c) => c(PERMISSIONS.HR_WRITE) },
+      { key: 'advance',   labelAr: 'صرف سلفة',      labelEn: 'Pay advance',        icon: '💳', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_ADVANCES)   || c(PERMISSIONS.HR_WRITE) || c(PERMISSIONS.EMPLOYEES_WRITE) },
+      { key: 'increase',  labelAr: 'زيادة / بدلة',  labelEn: 'Raise / Allowance',  icon: '📈', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_INCREASES)  || c(PERMISSIONS.HR_WRITE) },
+      { key: 'leave',     labelAr: 'تسجيل إجازة',   labelEn: 'Record leave',       icon: '📅', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_LEAVES)     || c(PERMISSIONS.HR_WRITE) },
+      { key: 'deduction', labelAr: 'تسجيل خصم',     labelEn: 'Record deduction',   icon: '📉', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_DEDUCTIONS) || c(PERMISSIONS.HR_WRITE) },
     ],
   },
   {
