@@ -294,53 +294,107 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
               </span>
             </div>
             <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, tableLayout: 'auto' }}>
               <thead>
-                <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('orderNumber')}</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('orderDate')}</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('orderType')}</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('ordersTotalItems')}</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('ordersPettyCashGiven')}</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('orderTotalAmount') || 'إجمالي الطلب'}</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{t('ordersCumulativeRemaining')}</th>
-                  <th className="noorix-print-hide" style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, borderLeft: '2px solid var(--noorix-border)', borderInlineStart: '2px solid var(--noorix-border)' }}>{t('actions')}</th>
+                <tr style={{
+                  background: 'linear-gradient(135deg, var(--noorix-accent-blue, #2563eb) 0%, #1d4ed8 100%)',
+                }}>
+                  {[
+                    t('orderNumber'), t('orderDate'), t('orderType'),
+                    t('ordersTotalItems'), t('ordersPettyCashGiven'),
+                    t('orderTotalAmount') || 'مشتريات المندوب',
+                    t('ordersCumulativeRemaining'), t('actions'),
+                  ].map((label, i) => (
+                    <th
+                      key={label}
+                      className={i === 7 ? 'noorix-print-hide' : ''}
+                      style={{
+                        padding: '11px 14px', fontWeight: 700, fontSize: 12,
+                        color: '#fff', textAlign: 'center', whiteSpace: 'nowrap',
+                        borderInlineEnd: i < 7 ? '1px solid rgba(255,255,255,0.15)' : 'none',
+                        letterSpacing: '0.02em',
+                      }}
+                    >{label}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.map((o) => {
+                {filteredOrders.map((o, rowIdx) => {
                   const pettyGiven = o.orderType === 'external' ? Number(o.pettyCashAmount ?? 0) : null;
                   const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
+                  const isExt = o.orderType === 'external';
+                  const rowBg = rowIdx % 2 === 0 ? 'var(--noorix-bg-surface)' : 'var(--noorix-bg-muted)';
                   return (
-                  <tr key={o.id} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
-                    <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', borderRight: '2px solid var(--noorix-border)' }}>{o.orderNumber}</td>
-                    <td style={{ padding: '10px 12px', borderRight: '2px solid var(--noorix-border)' }}>{formatSaudiDate(o.orderDate)}</td>
-                    <td style={{ padding: '10px 12px', borderRight: '2px solid var(--noorix-border)' }}>
-                      {o.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
+                  <tr
+                    key={o.id}
+                    style={{ borderBottom: '1px solid var(--noorix-border)', background: rowBg, transition: 'background 0.12s' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(37,99,235,0.05)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = rowBg; }}
+                  >
+                    {/* رقم الطلب */}
+                    <td style={{ padding: '11px 14px', textAlign: 'center', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, fontSize: 13, color: 'var(--noorix-accent-blue)', borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                      {o.orderNumber}
                     </td>
-                    <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', borderRight: '2px solid var(--noorix-border)' }}>{(o.items ?? []).length}</td>
-                    <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', color: pettyGiven != null ? '#2563eb' : 'var(--noorix-text-muted)', borderRight: '2px solid var(--noorix-border)' }}>
-                      {pettyGiven != null ? fmt(pettyGiven, 2) : '—'}{pettyGiven != null ? ' ﷼' : ''}
+                    {/* التاريخ */}
+                    <td style={{ padding: '11px 14px', textAlign: 'center', borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                      {formatSaudiDate(o.orderDate)}
                     </td>
-                    <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, borderRight: '2px solid var(--noorix-border)' }}>{fmt(o.totalAmount ?? 0, 2)} ﷼</td>
-                    <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, color: cumRem != null ? (cumRem >= 0 ? '#16a34a' : '#dc2626') : 'var(--noorix-text-muted)', borderRight: '2px solid var(--noorix-border)' }}>
-                      {cumRem != null ? (cumRem >= 0 ? '' : '−') + fmt(Math.abs(cumRem ?? 0), 2) + ' ﷼' : '—'}
+                    {/* نوع الطلب */}
+                    <td style={{ padding: '11px 14px', textAlign: 'center', borderInlineEnd: '1px solid var(--noorix-border)' }}>
+                      <span style={{
+                        display: 'inline-block', padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700,
+                        background: isExt ? 'rgba(37,99,235,0.1)' : 'rgba(22,163,74,0.1)',
+                        color: isExt ? '#2563eb' : '#16a34a',
+                        border: `1px solid ${isExt ? 'rgba(37,99,235,0.25)' : 'rgba(22,163,74,0.25)'}`,
+                      }}>
+                        {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
+                      </span>
                     </td>
-                    <td className="noorix-print-hide" style={{ padding: '10px 12px', textAlign: 'center', display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', borderLeft: '2px solid var(--noorix-border)', borderInlineStart: '2px solid var(--noorix-border)' }}>
-                      <button type="button" className="noorix-btn-nav" onClick={() => handleView(o)} title={t('ordersViewOrder')} style={{ padding: '6px 10px', fontSize: 12 }}>{t('view')}</button>
-                      <button type="button" className="noorix-btn-nav" onClick={() => handleWhatsApp(o)} title={t('sendWhatsApp')} style={{ padding: '6px 10px', fontSize: 12 }}>📱</button>
-                      <button type="button" className="noorix-btn-nav" onClick={() => handleEdit(o)} title={t('edit')} style={{ padding: '6px 10px', fontSize: 12 }}>{t('edit')}</button>
-                      <button type="button" className="noorix-btn-nav" onClick={() => handleDelete(o)} title={t('delete')} style={{ padding: '6px 10px', fontSize: 12, color: '#dc2626' }}>{t('delete')}</button>
+                    {/* عدد الأصناف */}
+                    <td style={{ padding: '11px 14px', textAlign: 'center', fontFamily: 'var(--noorix-font-numbers)', borderInlineEnd: '1px solid var(--noorix-border)' }}>
+                      {(o.items ?? []).length}
+                    </td>
+                    {/* العهدة المعطاة */}
+                    <td style={{ padding: '11px 14px', textAlign: 'center', fontFamily: 'var(--noorix-font-numbers)', borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                      {pettyGiven != null ? (
+                        <span style={{ color: '#2563eb', fontWeight: 600 }}>{fmt(pettyGiven, 2)} ﷼</span>
+                      ) : <span style={{ color: 'var(--noorix-text-muted)' }}>—</span>}
+                    </td>
+                    {/* مشتريات المندوب */}
+                    <td style={{ padding: '11px 14px', textAlign: 'center', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                      {fmt(o.totalAmount ?? 0, 2)} ﷼
+                    </td>
+                    {/* المتبقي التراكمي */}
+                    <td style={{ padding: '11px 14px', textAlign: 'center', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                      {cumRem != null ? (
+                        <span style={{
+                          display: 'inline-block', padding: '3px 8px', borderRadius: 999,
+                          background: cumRem >= 0 ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.1)',
+                          color: cumRem >= 0 ? '#16a34a' : '#dc2626',
+                          border: `1px solid ${cumRem >= 0 ? 'rgba(22,163,74,0.25)' : 'rgba(220,38,38,0.25)'}`,
+                        }}>
+                          {cumRem >= 0 ? '' : '−'}{fmt(Math.abs(cumRem ?? 0), 2)} ﷼
+                        </span>
+                      ) : <span style={{ color: 'var(--noorix-text-muted)' }}>—</span>}
+                    </td>
+                    {/* الإجراءات */}
+                    <td className="noorix-print-hide" style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'nowrap' }}>
+                        <button type="button" className="noorix-btn-nav" onClick={() => handleView(o)} title={t('ordersViewOrder')} style={{ padding: '5px 10px', fontSize: 11 }}>{t('view')}</button>
+                        <button type="button" className="noorix-btn-nav" onClick={() => handleWhatsApp(o)} title={t('sendWhatsApp')} style={{ padding: '5px 8px', fontSize: 11 }}>📱</button>
+                        <button type="button" className="noorix-btn-nav" onClick={() => handleEdit(o)} title={t('edit')} style={{ padding: '5px 10px', fontSize: 11 }}>{t('edit')}</button>
+                        <button type="button" className="noorix-btn-nav" onClick={() => handleDelete(o)} title={t('delete')} style={{ padding: '5px 10px', fontSize: 11, color: '#dc2626' }}>{t('delete')}</button>
+                      </div>
                     </td>
                   </tr>
                   );
                 })}
               </tbody>
               <tfoot>
-                <tr style={{ borderTop: '2px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)' }}>
-                  <td colSpan={5} style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right', borderRight: '2px solid var(--noorix-border)' }}>{t('ordersFilteredTotal')}</td>
-                  <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, borderRight: '2px solid var(--noorix-border)' }}>{fmt(filteredTotal, 2)} ﷼</td>
-                  <td colSpan={2} style={{ padding: '10px 12px' }} />
+                <tr style={{ background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-accent-blue, #2563eb)' }}>
+                  <td colSpan={5} style={{ padding: '11px 14px', fontWeight: 700, textAlign: 'center' }}>{t('ordersFilteredTotal')}</td>
+                  <td style={{ padding: '11px 14px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, textAlign: 'center', color: 'var(--noorix-accent-blue)', fontSize: 14 }}>{fmt(filteredTotal, 2)} ﷼</td>
+                  <td colSpan={2} className="noorix-print-hide" style={{ padding: '11px 14px' }} />
                 </tr>
               </tfoot>
             </table>

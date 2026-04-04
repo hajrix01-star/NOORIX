@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useState, useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useMemo, useTransition, useCallback } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCompanies, getMe, checkApiConnection } from './services/api';
@@ -136,7 +136,11 @@ export default function App() {
   const singleCompanyId = companiesList.length === 1 ? companiesList[0].id : null;
   const showCompanySwitcher = companiesList.length > 1;
 
-  const [activeCompany, setActiveCompany] = useState(() => singleCompanyId || (companiesList[0]?.id ?? ''));
+  const [_companySwitchPending, startCompanyTransition] = useTransition();
+  const [activeCompany, _setActiveCompany] = useState(() => singleCompanyId || (companiesList[0]?.id ?? ''));
+  const setActiveCompany = useCallback((id) => {
+    startCompanyTransition(() => _setActiveCompany(id));
+  }, [startCompanyTransition]);
   useEffect(() => {
     if (singleCompanyId) setActiveCompany(singleCompanyId);
     else if (companiesList.length && !companiesList.some((c) => c.id === activeCompany)) {
@@ -236,10 +240,17 @@ export default function App() {
     setActiveCompanyId(activeCompanyId || '');
   }, [activeCompanyId]);
 
-  // عند تغيير الشركة: مسح كامل للكاش — يضمن عدم ظهور بيانات الشركة القديمة
+  // عند تغيير الشركة: إلغاء صلاحية الاستعلامات المرتبطة بالشركة — مع الإبقاء على بيانات الشركات والمستخدم
   useEffect(() => {
     if (!queryClient || !activeCompanyId) return;
-    queryClient.removeQueries();
+    const GLOBAL_KEYS = ['companies', 'me'];
+    queryClient.removeQueries({
+      predicate: (query) => {
+        const key = query.queryKey;
+        if (!Array.isArray(key)) return false;
+        return !GLOBAL_KEYS.includes(key[0]);
+      },
+    });
   }, [activeCompanyId, queryClient]);
 
 

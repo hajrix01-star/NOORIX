@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getText } from '../../i18n/translations';
 import { login as apiLogin } from '../../services/api';
-import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor } from '../../utils/appBranding';
+import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor, getLoginDomain } from '../../utils/appBranding';
 
 function getLang() {
   return (typeof document !== 'undefined' && document.documentElement?.lang === 'en') ? 'en' : 'ar';
@@ -30,6 +30,7 @@ export default function LoginScreen() {
   const brandName    = getBrandName(lang);
   const brandTagline = getBrandTagline(lang);
   const brandColor   = getBrandColor();
+  const loginDomain  = getLoginDomain();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -125,14 +126,21 @@ export default function LoginScreen() {
             <form onSubmit={handleSubmit} noValidate>
               {/* البريد الإلكتروني */}
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6, color: 'var(--noorix-text)' }}>
-                  {t('usernameOrEmail')}
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--noorix-text)' }}>
+                    {t('usernameOrEmail')}
+                  </label>
+                  {loginDomain && (
+                    <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)', direction: 'ltr', fontFamily: 'monospace' }}>
+                      @{loginDomain}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t('emailPlaceholder')}
+                  placeholder={`user@${loginDomain}`}
                   autoComplete="username"
                   dir="ltr"
                   style={{

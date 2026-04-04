@@ -267,8 +267,13 @@ export default function TreasuryScreen() {
       )}
 
       {selectedVault && (
-        <VaultTransactionsModal vault={selectedVault} companyId={companyId}
-          onClose={() => setSelectedVault(null)} dateFilter={dateFilter} />
+        <VaultTransactionsModal
+          key={selectedVault.id}
+          vault={selectedVault}
+          companyId={companyId}
+          onClose={() => setSelectedVault(null)}
+          dateFilter={dateFilter}
+        />
       )}
 
       {showAddForm && (

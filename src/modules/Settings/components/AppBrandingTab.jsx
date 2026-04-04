@@ -5,7 +5,7 @@ import React, { useState, useRef } from 'react';
 import {
   getBrandNameAr, getBrandNameEn,
   getBrandTaglineAr, getBrandTaglineEn,
-  getBrandLogo, getBrandColor,
+  getBrandLogo, getBrandColor, getLoginDomain,
   saveBranding,
 } from '../../../utils/appBranding';
 
@@ -40,13 +40,14 @@ const sectionTitle = {
 };
 
 export default function AppBrandingTab() {
-  const [nameAr,    setNameAr]    = useState(getBrandNameAr);
-  const [nameEn,    setNameEn]    = useState(getBrandNameEn);
-  const [taglineAr, setTaglineAr] = useState(getBrandTaglineAr);
-  const [taglineEn, setTaglineEn] = useState(getBrandTaglineEn);
-  const [logoUrl,   setLogoUrl]   = useState(getBrandLogo);
-  const [color,     setColor]     = useState(getBrandColor);
-  const [saved,     setSaved]     = useState(false);
+  const [nameAr,      setNameAr]      = useState(getBrandNameAr);
+  const [nameEn,      setNameEn]      = useState(getBrandNameEn);
+  const [taglineAr,   setTaglineAr]   = useState(getBrandTaglineAr);
+  const [taglineEn,   setTaglineEn]   = useState(getBrandTaglineEn);
+  const [logoUrl,     setLogoUrl]     = useState(getBrandLogo);
+  const [color,       setColor]       = useState(getBrandColor);
+  const [loginDomain, setLoginDomain] = useState(getLoginDomain);
+  const [saved,       setSaved]       = useState(false);
   const fileRef = useRef(null);
 
   const handleFile = (e) => {
@@ -59,25 +60,27 @@ export default function AppBrandingTab() {
 
   const handleSave = () => {
     saveBranding({
-      nameAr:    nameAr.trim()    || undefined,
-      nameEn:    nameEn.trim()    || undefined,
-      taglineAr: taglineAr.trim() || undefined,
-      taglineEn: taglineEn.trim() || undefined,
-      logoUrl:   logoUrl.trim()   || undefined,
+      nameAr:      nameAr.trim()      || undefined,
+      nameEn:      nameEn.trim()      || undefined,
+      taglineAr:   taglineAr.trim()   || undefined,
+      taglineEn:   taglineEn.trim()   || undefined,
+      logoUrl:     logoUrl.trim()     || undefined,
       color,
+      loginDomain: loginDomain.trim() || undefined,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
   const handleReset = () => {
-    saveBranding({ nameAr: '', nameEn: '', taglineAr: '', taglineEn: '', logoUrl: '', color: '' });
+    saveBranding({ nameAr: '', nameEn: '', taglineAr: '', taglineEn: '', logoUrl: '', color: '', loginDomain: '' });
     setNameAr('نووريكس');
     setNameEn('Noorix');
     setTaglineAr('نظام إدارة متكامل');
     setTaglineEn('Business Management System');
     setLogoUrl('');
     setColor('#0a1f44');
+    setLoginDomain('noorix.sa');
   };
 
   return (
@@ -241,6 +244,29 @@ export default function AppBrandingTab() {
         </div>
         <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 8 }}>
           مقاس مقترح: 512×512 بكسل. يستخدم نفس الشعار لكلا اللغتين.
+        </div>
+      </div>
+
+      {/* ── دومين تسجيل الدخول ────────────────────────────────────────────── */}
+      <div>
+        <div style={sectionTitle}>دومين النظام (يظهر كتلميح في صفحة الدخول)</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: 320 }}>
+          <span style={{
+            padding: '10px 12px', background: 'var(--noorix-bg-muted)',
+            border: '1px solid var(--noorix-border)', borderRadius: '10px 0 0 10px',
+            fontSize: 13, color: 'var(--noorix-text-muted)', flexShrink: 0, direction: 'ltr',
+          }}>@</span>
+          <input
+            type="text"
+            value={loginDomain}
+            onChange={(e) => setLoginDomain(e.target.value.replace(/^@/, '').replace(/\s/g, ''))}
+            placeholder="noorix.sa"
+            style={{ ...inputStyle, borderRadius: '0 10px 10px 0', borderLeft: 'none', direction: 'ltr', textAlign: 'left' }}
+            maxLength={60}
+          />
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
+          يظهر كتلميح في خانة البريد الإلكتروني بصفحة الدخول. لا يغير الإيميلات المسجّلة فعلياً.
         </div>
       </div>
 

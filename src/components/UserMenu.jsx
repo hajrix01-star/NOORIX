@@ -151,11 +151,19 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
               </span>
             </button>
             <button type="button" style={S.menuItemAction} onClick={toggleLanguage}>
-              <span style={S.menuItemIcon}>🌐</span>
-              <span style={{ flex: 1, textAlign: 'inherit' }}>
-                {language === 'ar' ? t('switchToEnglish') : t('switchToArabic')}
+              <span style={S.menuItemIcon}>{language === 'ar' ? '🇺🇸' : '🇸🇦'}</span>
+              <span style={{ flex: 1, textAlign: 'inherit', fontWeight: 600, fontSize: 12 }}>
+                {language === 'ar' ? 'English' : 'العربية'}
               </span>
-              <span style={S.langChip}>{language === 'ar' ? 'AR' : 'EN'}</span>
+              <span style={{
+                fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 5,
+                background: language === 'ar' ? '#1d4ed815' : '#16a34a15',
+                color: language === 'ar' ? '#1d4ed8' : '#16a34a',
+                border: `1px solid ${language === 'ar' ? '#1d4ed830' : '#16a34a30'}`,
+                flexShrink: 0,
+              }}>
+                {language === 'ar' ? 'EN' : 'AR'}
+              </span>
             </button>
           </div>
           <div style={S.divider} />

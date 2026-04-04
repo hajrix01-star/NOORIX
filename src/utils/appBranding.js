@@ -13,21 +13,23 @@
  */
 
 const KEYS = {
-  nameAr:    'noorix:appName:ar',
-  nameEn:    'noorix:appName:en',
-  taglineAr: 'noorix:appTagline:ar',
-  taglineEn: 'noorix:appTagline:en',
-  logo:      'noorix:appLogo',
-  color:     'noorix:appColor',
+  nameAr:      'noorix:appName:ar',
+  nameEn:      'noorix:appName:en',
+  taglineAr:   'noorix:appTagline:ar',
+  taglineEn:   'noorix:appTagline:en',
+  logo:        'noorix:appLogo',
+  color:       'noorix:appColor',
+  loginDomain: 'noorix:loginDomain',
 };
 
 const DEFAULTS = {
-  nameAr:    'نووريكس',
-  nameEn:    'Noorix',
-  taglineAr: 'نظام إدارة متكامل',
-  taglineEn: 'Business Management System',
-  logo:      '',
-  color:     '#0a1f44',
+  nameAr:      'نووريكس',
+  nameEn:      'Noorix',
+  taglineAr:   'نظام إدارة متكامل',
+  taglineEn:   'Business Management System',
+  logo:        '',
+  color:       '#0a1f44',
+  loginDomain: 'noorix.sa',
 };
 
 const get = (key) => localStorage.getItem(KEYS[key]) || DEFAULTS[key];
@@ -38,21 +40,23 @@ export const getBrandTaglineAr = () => get('taglineAr');
 export const getBrandTaglineEn = () => get('taglineEn');
 export const getBrandLogo      = () => get('logo');
 export const getBrandColor     = () => get('color');
+export const getLoginDomain    = () => get('loginDomain');
 
 /** يُرجع الاسم أو الجملة حسب اللغة الحالية */
 export const getBrandName    = (lang = 'ar') => lang === 'en' ? getBrandNameEn()    : getBrandNameAr();
 export const getBrandTagline = (lang = 'ar') => lang === 'en' ? getBrandTaglineEn() : getBrandTaglineAr();
 
-export function saveBranding({ nameAr, nameEn, taglineAr, taglineEn, logoUrl, color }) {
+export function saveBranding({ nameAr, nameEn, taglineAr, taglineEn, logoUrl, color, loginDomain }) {
   const set = (key, val) =>
     val !== undefined && (val ? localStorage.setItem(KEYS[key], val) : localStorage.removeItem(KEYS[key]));
 
-  set('nameAr',    nameAr);
-  set('nameEn',    nameEn);
-  set('taglineAr', taglineAr);
-  set('taglineEn', taglineEn);
-  set('logo',      logoUrl);
-  set('color',     color);
+  set('nameAr',      nameAr);
+  set('nameEn',      nameEn);
+  set('taglineAr',   taglineAr);
+  set('taglineEn',   taglineEn);
+  set('logo',        logoUrl);
+  set('color',       color);
+  set('loginDomain', loginDomain);
 
   applyBranding();
   window.dispatchEvent(new CustomEvent('noorix:branding-changed'));
