@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getText } from '../../i18n/translations';
 import { login as apiLogin } from '../../services/api';
+import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor } from '../../utils/appBranding';
 
 function getLang() {
   return (typeof document !== 'undefined' && document.documentElement?.lang === 'en') ? 'en' : 'ar';
@@ -24,6 +25,11 @@ export default function LoginScreen() {
   const isEnglish = lang === 'en';
   const pageDir   = isEnglish ? 'ltr' : 'rtl';
   const inlineEnd = isEnglish ? 'right' : 'left';
+
+  const brandLogo    = getBrandLogo();
+  const brandName    = getBrandName(lang);
+  const brandTagline = getBrandTagline(lang);
+  const brandColor   = getBrandColor();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,22 +72,34 @@ export default function LoginScreen() {
     >
       <div style={{ width: '100%', maxWidth: 420 }}>
 
-        {/* ── الشعار واسم الشركة ── */}
+        {/* ── الشعار واسم التطبيق ── */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
-            width: 64, height: 64, borderRadius: 18,
-            background: 'linear-gradient(135deg, #2563eb 0%, #0f172a 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 14px',
-            boxShadow: '0 12px 32px rgba(37,99,235,0.28)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            gap: 14, marginBottom: 10,
           }}>
-            <span style={{ color: '#fff', fontSize: 28, fontWeight: 900, lineHeight: 1 }}>N</span>
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--noorix-navy, #0f172a)', letterSpacing: '-0.3px' }}>
-            Noorix
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
-            {t('loginBrandSub')}
+            {/* أيقونة الشعار */}
+            <div style={{
+              width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+              background: brandLogo ? 'transparent' : `linear-gradient(135deg, ${brandColor} 0%, #0f172a 100%)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+              boxShadow: '0 10px 28px rgba(37,99,235,0.22)',
+            }}>
+              {brandLogo
+                ? <img src={brandLogo} alt={brandName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <span style={{ color: '#fff', fontSize: 24, fontWeight: 900, lineHeight: 1 }}>{brandName?.[0] || 'N'}</span>
+              }
+            </div>
+            {/* الاسم */}
+            <div style={{ textAlign: isEnglish ? 'left' : 'right' }}>
+              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--noorix-text)', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
+                {brandName}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 3 }}>
+                {brandTagline || t('loginBrandSub')}
+              </div>
+            </div>
           </div>
         </div>
 
