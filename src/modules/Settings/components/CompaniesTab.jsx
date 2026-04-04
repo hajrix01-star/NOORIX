@@ -273,7 +273,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
 
                 {/* شعار الشركة */}
                 <div style={{ padding: 14, borderRadius: 12, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
-                  <label style={{ ...labelStyle, display: 'block', marginBottom: 10 }}>🖼 شعار الشركة (يظهر كأيقونة التطبيق)</label>
+                  <label style={{ ...labelStyle, display: 'block', marginBottom: 10 }}>🖼 شعار الشركة (يُستخدم في الفواتير والتقارير والشريط الجانبي)</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <div style={{ width: 56, height: 56, borderRadius: 12, background: 'var(--noorix-bg-surface)', border: '2px dashed var(--noorix-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                       {editModal.logoUrl ? (

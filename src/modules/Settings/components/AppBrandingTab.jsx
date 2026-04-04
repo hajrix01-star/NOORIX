@@ -83,6 +83,14 @@ export default function AppBrandingTab() {
   return (
     <div style={{ display: 'grid', gap: 28, maxWidth: 620 }}>
 
+      {/* ── توضيح المستويات الثلاثة ──────────────────────────────────────── */}
+      <div style={{ padding: 14, borderRadius: 12, background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', fontSize: 12, color: 'var(--noorix-text-muted)', display: 'grid', gap: 6 }}>
+        <div style={{ fontWeight: 700, color: 'var(--noorix-text)', marginBottom: 2 }}>ℹ️ كيف تعمل الهويات؟</div>
+        <div>• <strong>هوية التطبيق (هنا)</strong>: الاسم والشعار العام للنظام — يظهر في تبويب المتصفح، أيقونة PWA، وأعلى الشريط الجانبي.</div>
+        <div>• <strong>شعار الشركة</strong> (إدارة الشركات): يظهر بجانب اسم الشركة النشطة في الشريط الجانبي وفي الفواتير والتقارير. لا يؤثر على أيقونة المتصفح.</div>
+        <div>• <strong>إذا لم تضع شعار للتطبيق</strong>، يظهر الحرف الأول من اسم التطبيق كأيقونة في الشريط.</div>
+      </div>
+
       {/* ── معاينة ────────────────────────────────────────────────────────── */}
       <div style={{ padding: 20, borderRadius: 16, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>

@@ -148,11 +148,15 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                   }}>
                     <div style={{
                       width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                      background: 'linear-gradient(135deg, rgba(37,99,235,0.9) 0%, rgba(16,163,74,0.7) 100%)',
+                      background: activeCo?.logoUrl ? 'transparent' : 'linear-gradient(135deg, rgba(37,99,235,0.9) 0%, rgba(16,163,74,0.7) 100%)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontWeight: 800, fontSize: 13, color: '#fff', letterSpacing: '-0.02em',
+                      overflow: 'hidden',
                     }}>
-                      {initial}
+                      {activeCo?.logoUrl
+                        ? <img src={activeCo.logoUrl} alt={coName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : initial
+                      }
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{t('activeCompany')}</div>
