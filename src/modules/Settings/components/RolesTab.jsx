@@ -17,142 +17,180 @@ const inputStyle = {
 
 const levelKeys = Object.keys(PERMISSION_LEVELS);
 
+function Cb({ checked, indeterminate, onChange, disabled }) {
+  return (
+    <input
+      type="checkbox"
+      checked={checked}
+      ref={(el) => { if (el) el.indeterminate = !!indeterminate; }}
+      onChange={onChange}
+      disabled={disabled}
+      style={{
+        width: 15, height: 15,
+        accentColor: 'var(--noorix-accent)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
 function PermissionMatrix({ permissions, onChange, disabled, language }) {
   const isAr = language === 'ar';
 
-  function isChecked(perm) {
-    return permissions.includes(perm);
-  }
+  const isChecked = (perm) => permissions.includes(perm);
 
-  function togglePerm(perm) {
+  const togglePerm = (perm) => {
     if (disabled) return;
-    onChange(
-      isChecked(perm)
-        ? permissions.filter((p) => p !== perm)
-        : [...permissions, perm]
-    );
-  }
+    onChange(isChecked(perm)
+      ? permissions.filter((p) => p !== perm)
+      : [...permissions, perm]);
+  };
 
-  function toggleModule(mod, checked) {
+  const toggleModule = (mod, checked) => {
     if (disabled) return;
     const modPerms = Object.values(mod.permissions);
-    if (checked) {
-      const merged = [...new Set([...permissions, ...modPerms])];
-      onChange(merged);
-    } else {
-      onChange(permissions.filter((p) => !modPerms.includes(p)));
-    }
-  }
+    onChange(checked
+      ? [...new Set([...permissions, ...modPerms])]
+      : permissions.filter((p) => !modPerms.includes(p)));
+  };
 
-  function isModuleFullyChecked(mod) {
-    return Object.values(mod.permissions).every((p) => permissions.includes(p));
-  }
-  function isModulePartiallyChecked(mod) {
+  const isModuleFull    = (mod) => Object.values(mod.permissions).every((p) => permissions.includes(p));
+  const isModulePartial = (mod) => {
     const vals = Object.values(mod.permissions);
-    const count = vals.filter((p) => permissions.includes(p)).length;
-    return count > 0 && count < vals.length;
-  }
+    const n = vals.filter((p) => permissions.includes(p)).length;
+    return n > 0 && n < vals.length;
+  };
 
-  function selectAll() {
-    if (disabled) return;
-    const all = PERMISSION_MODULES.flatMap((m) => Object.values(m.permissions));
-    onChange([...new Set(all)]);
-  }
-  function deselectAll() {
-    if (disabled) return;
-    onChange([]);
-  }
+  const allChecked = PERMISSION_MODULES.every(isModuleFull);
+  const totalPerms = PERMISSION_MODULES.flatMap((m) => Object.values(m.permissions)).length;
 
-  const allChecked = PERMISSION_MODULES.every((m) => isModuleFullyChecked(m));
+  const toggleAll = () => {
+    if (disabled) return;
+    onChange(allChecked ? [] : [...new Set(PERMISSION_MODULES.flatMap((m) => Object.values(m.permissions)))]);
+  };
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 10 }}>
-        <button type="button" className="noorix-btn-nav" style={{ fontSize: 11, padding: '4px 10px' }}
-          onClick={allChecked ? deselectAll : selectAll} disabled={disabled}>
+    <div>
+      {/* شريط رأس المصفوفة */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 8, gap: 8,
+      }}>
+        <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', fontWeight: 500 }}>
+          {isAr
+            ? `${permissions.length} / ${totalPerms} صلاحية`
+            : `${permissions.length} / ${totalPerms} permissions`}
+        </span>
+        <button
+          type="button"
+          className="noorix-btn-nav"
+          style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6 }}
+          onClick={toggleAll}
+          disabled={disabled}
+        >
           {allChecked
-            ? (isAr ? 'إلغاء تحديد الكل' : 'Deselect All')
+            ? (isAr ? 'إلغاء الكل' : 'Deselect All')
             : (isAr ? 'تحديد الكل' : 'Select All')}
         </button>
       </div>
 
-      <table style={{
-        width: '100%', borderCollapse: 'collapse', fontSize: 13,
-        border: '1px solid var(--noorix-border)', borderRadius: 10,
-        overflow: 'hidden',
-      }}>
-        <thead>
-          <tr style={{ background: 'var(--noorix-bg-header, var(--noorix-bg-surface))' }}>
-            <th style={{ ...thStyle, textAlign: 'start', minWidth: 180 }}>
-              {isAr ? 'القسم' : 'Module'}
-            </th>
-            <th style={{ ...thStyle, width: 50, textAlign: 'center' }}>
-              {isAr ? 'الكل' : 'All'}
-            </th>
-            {levelKeys.map((lvl) => (
-              <th key={lvl} style={{ ...thStyle, textAlign: 'center', minWidth: 90 }}>
-                {isAr ? PERMISSION_LEVELS[lvl].ar : PERMISSION_LEVELS[lvl].en}
+      {/* جدول المصفوفة */}
+      <div style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{
+              background: 'var(--noorix-bg-page)',
+              borderBottom: '2px solid var(--noorix-border)',
+            }}>
+              <th style={{ ...thStyle, textAlign: 'start', minWidth: 160 }}>
+                {isAr ? 'القسم' : 'Module'}
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {PERMISSION_MODULES.map((mod, idx) => {
-            const fullChecked = isModuleFullyChecked(mod);
-            const partial = isModulePartiallyChecked(mod);
-            return (
-              <tr key={mod.key} style={{
-                background: idx % 2 === 0 ? 'var(--noorix-bg-surface)' : 'var(--noorix-bg-alt, var(--noorix-bg))',
-                borderBottom: '1px solid var(--noorix-border)',
-              }}>
-                <td style={{ ...tdStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  <span style={{ marginInlineEnd: 6 }}>{mod.icon}</span>
-                  {isAr ? mod.labelAr : mod.labelEn}
-                </td>
-                <td style={{ ...tdStyle, textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={fullChecked}
-                    ref={(el) => { if (el) el.indeterminate = partial; }}
-                    onChange={(e) => toggleModule(mod, e.target.checked)}
-                    disabled={disabled}
-                    style={{ cursor: disabled ? 'not-allowed' : 'pointer', width: 16, height: 16 }}
-                  />
-                </td>
-                {levelKeys.map((lvl) => {
-                  const perm = mod.permissions[lvl];
-                  if (!perm) {
-                    return <td key={lvl} style={{ ...tdStyle, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>—</td>;
-                  }
-                  return (
-                    <td key={lvl} style={{ ...tdStyle, textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={isChecked(perm)}
-                        onChange={() => togglePerm(perm)}
-                        disabled={disabled}
-                        style={{ cursor: disabled ? 'not-allowed' : 'pointer', width: 16, height: 16 }}
-                      />
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+              <th style={{ ...thStyle, width: 44, textAlign: 'center',
+                background: 'rgba(37,99,235,0.07)', borderInline: '1px solid var(--noorix-border)' }}>
+                {isAr ? 'الكل' : 'All'}
+              </th>
+              {levelKeys.map((lvl) => (
+                <th key={lvl} style={{ ...thStyle, textAlign: 'center', minWidth: 76 }}>
+                  {isAr ? PERMISSION_LEVELS[lvl].ar : PERMISSION_LEVELS[lvl].en}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {PERMISSION_MODULES.map((mod, idx) => {
+              const full    = isModuleFull(mod);
+              const partial = isModulePartial(mod);
+              return (
+                <tr key={mod.key} style={{
+                  background: idx % 2 === 0
+                    ? 'var(--noorix-bg-surface)'
+                    : 'var(--noorix-bg-page)',
+                  borderBottom: '1px solid var(--noorix-border)',
+                  transition: 'background 0.1s',
+                }}>
+                  {/* اسم القسم */}
+                  <td style={{ ...tdStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    <span style={{ marginInlineEnd: 5, fontSize: 14 }}>{mod.icon}</span>
+                    {isAr ? mod.labelAr : mod.labelEn}
+                  </td>
 
-      <div style={{ marginTop: 8, fontSize: 11, color: 'var(--noorix-text-muted)' }}>
-        {isAr
-          ? `${permissions.length} صلاحية محددة من أصل ${PERMISSION_MODULES.flatMap((m) => Object.values(m.permissions)).length}`
-          : `${permissions.length} of ${PERMISSION_MODULES.flatMap((m) => Object.values(m.permissions)).length} permissions selected`}
+                  {/* عمود "الكل" */}
+                  <td style={{
+                    ...tdStyle, textAlign: 'center',
+                    background: full
+                      ? 'rgba(37,99,235,0.06)'
+                      : partial ? 'rgba(245,158,11,0.06)' : undefined,
+                    borderInline: '1px solid var(--noorix-border)',
+                  }}>
+                    <Cb
+                      checked={full}
+                      indeterminate={partial}
+                      onChange={(e) => toggleModule(mod, e.target.checked)}
+                      disabled={disabled}
+                    />
+                  </td>
+
+                  {/* أعمدة الصلاحيات */}
+                  {levelKeys.map((lvl) => {
+                    const perm = mod.permissions[lvl];
+                    if (!perm) return (
+                      <td key={lvl} style={{ ...tdStyle, textAlign: 'center', color: 'var(--noorix-border)', fontSize: 16 }}>·</td>
+                    );
+                    return (
+                      <td key={lvl} style={{
+                        ...tdStyle, textAlign: 'center',
+                        background: isChecked(perm) ? 'rgba(22,163,74,0.05)' : undefined,
+                      }}>
+                        <Cb
+                          checked={isChecked(perm)}
+                          onChange={() => togglePerm(perm)}
+                          disabled={disabled}
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-const thStyle = { padding: '10px 12px', fontWeight: 700, fontSize: 12, borderBottom: '2px solid var(--noorix-border)' };
-const tdStyle = { padding: '8px 12px', fontSize: 13 };
+const thStyle = {
+  padding: '7px 10px',
+  fontWeight: 700,
+  fontSize: 12,
+  color: 'var(--noorix-text-muted)',
+  letterSpacing: '0.01em',
+};
+const tdStyle = {
+  padding: '5px 10px',
+  fontSize: 13,
+};
 
 export default function RolesTab({ userRole, language }) {
   const { t } = useTranslation();
@@ -488,8 +526,8 @@ const overlayStyle = {
 };
 
 const modalStyle = {
-  padding: 24, maxWidth: 800, width: '100%',
-  maxHeight: '92vh', overflow: 'auto', borderRadius: 16,
+  padding: '20px 24px', maxWidth: 760, width: '100%',
+  maxHeight: '90vh', overflow: 'auto', borderRadius: 16,
 };
 
 const labelStyle = {
