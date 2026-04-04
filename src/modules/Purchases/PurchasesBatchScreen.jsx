@@ -81,7 +81,7 @@ export default function PurchasesBatchScreen() {
 
   const { suppliers } = useSuppliers(companyId);
   const { flatCategories = [] } = useCategories(companyId);
-  const { paymentVaults: activeVaults = [] } = useVaults({ companyId });
+  const { paymentVaults: activeVaults = [], isLoading: vaultsLoading } = useVaults({ companyId });
 
   useEffect(() => {
     setBatchVaultId('');
@@ -507,7 +507,7 @@ export default function PurchasesBatchScreen() {
             </div>
           </div>
 
-          {activeVaults.length === 0 && (
+          {!vaultsLoading && activeVaults.length === 0 && (
             <div style={{ padding: '10px 16px', fontSize: 13, color: '#b45309', background: 'rgba(245,158,11,0.12)', borderBottom: '1px solid var(--noorix-border)' }}>
               {t('batchPurchasesNoVaults')}
             </div>
