@@ -121,8 +121,20 @@ export class OcrInvoicesService {
     const extracted = extractJson<GeminiExtractedInvoice>(text);
 
     if (!extracted) {
-      this.logger.error(`Gemini OCR could not parse: ${text.substring(0, 500)}`);
-      throw new BadRequestException('تعذّر تحليل نتيجة Gemini — قد تكون الصورة غير واضحة');
+      this.logger.error(`Gemini OCR parse failed. Raw text (first 800): ${text.substring(0, 800)}`);
+      // أرجع كائناً فارغاً مع علامة الخطأ بدلاً من رمي استثناء
+      return {
+        parseError: true,
+        rawText: text.substring(0, 500),
+        supplier: null,
+        supplierMatch: null,
+        vatNumber: null,
+        invoiceNumber: null,
+        invoiceDate: null,
+        totalAmount: null,
+        vatAmount: null,
+        items: [],
+      };
     }
 
     // حاول مطابقة المورد والأصناف

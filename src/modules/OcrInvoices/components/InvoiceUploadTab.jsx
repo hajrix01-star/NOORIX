@@ -57,7 +57,11 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
     try {
       const res = await extractInvoice(imageBase64, mimeType);
       if (res.success) {
-        setExtracted(res.data);
+        if (res.data?.parseError) {
+          setError(t('ocrExtractFailed') + ' — تعذّر قراءة نص الفاتورة. تأكد من وضوح الصورة وأنها فاتورة حقيقية.');
+        } else {
+          setExtracted(res.data);
+        }
       } else {
         setError(res.error || t('ocrExtractFailed'));
       }
