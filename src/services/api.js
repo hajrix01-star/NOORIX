@@ -207,6 +207,23 @@ export async function apiPatch(path, body = {}) {
 }
 
 /**
+ * استدعاء PUT.
+ */
+export async function apiPut(path, body = {}) {
+  const url = new URL(path, getBase());
+  const doFetch = async () => {
+    const res = await safeFetch(url.toString(), { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(body) });
+    return parseResponse(res);
+  };
+  try {
+    const res = await safeFetch(url.toString(), { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(body) });
+    return parseResponse(res, doFetch);
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
+/**
  * استدعاء DELETE.
  */
 export async function apiDelete(path) {

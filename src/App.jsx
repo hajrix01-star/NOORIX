@@ -32,6 +32,7 @@ const EmployeeProfileScreen = React.lazy(() => import('./modules/HR/EmployeeProf
 const ExpensesScreen = React.lazy(() => import('./modules/Expenses/ExpensesScreen'));
 const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
+const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvoicesScreen'));
 
 const THEME_KEY = 'noorix-theme';
 const LANG_KEY = 'noorix-lang';
@@ -332,6 +333,7 @@ export default function App() {
                   <Route path="bank-statement" element={<BankStatementAnalysisScreen />} />
                 </Route>
                 <Route path="/settings" element={<SettingsScreen />} />
+                <Route path="/ocr" element={<OcrInvoicesScreen />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />
               </Routes>

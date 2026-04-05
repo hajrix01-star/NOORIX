@@ -73,6 +73,11 @@ export const PERMISSIONS = {
   USERS_DELETE:     'USERS_DELETE',
 
   CREATE_INVOICE:   'CREATE_INVOICE',
+
+  // ── OCR الفواتير (تجريبي) ──
+  VIEW_OCR:   'VIEW_OCR',
+  OCR_READ:   'OCR_READ',
+  OCR_WRITE:  'OCR_WRITE',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -86,7 +91,7 @@ export const ROLES = {
 
 export type RoleName = (typeof ROLES)[keyof typeof ROLES];
 
-const ALL = Object.values(PERMISSIONS);
+const ALL = Object.values(PERMISSIONS) as Permission[];
 
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   [ROLES.SUPER_ADMIN]: ALL,

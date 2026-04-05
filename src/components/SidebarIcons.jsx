@@ -128,6 +128,18 @@ export function IconFileSpreadsheet({ color = '#0ea5e9', ...props }) {
   );
 }
 
+export function IconOcr({ color = '#8b5cf6', ...props }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+      <polyline points="14 2 14 8 20 8" />
+      <path d="M9 13h6" />
+      <path d="M9 17h6" />
+      <path d="M9 9h1" />
+    </svg>
+  );
+}
+
 export function IconSettings({ color = '#64748b', ...props }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>

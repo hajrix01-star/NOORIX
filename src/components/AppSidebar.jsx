@@ -19,6 +19,7 @@ import {
   IconBox,
   IconPeople,
   IconChartBar,
+  IconOcr,
   IconSettings,
 } from './SidebarIcons';
 
@@ -45,6 +46,7 @@ const SIDEBAR_LINKS = [
       { to: '/reports/bank-statement', labelKey: 'reportBankStatementAnalysis', icon: IconChartBar },
     ],
   },
+  { to: '/ocr', labelKey: 'ocrTitle', icon: IconOcr, permission: 'VIEW_OCR' },
   { to: '/settings', labelKey: 'settings', icon: IconSettings, permission: 'MANAGE_SETTINGS' },
   { to: '/theme-preview', labelKey: 'themePreview', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
 ];

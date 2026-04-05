@@ -995,3 +995,179 @@ model OrderItem {
   @@index([productId])
   @@map("order_items")
 }
+
+// ══════════════════════════════════════════════════
+// OCR INVOICES — قسم استخراج الفواتير التجريبي
+// معزول تماماً عن باقي النظام بـ ocr_ prefix
+// ══════════════════════════════════════════════════
+
+model OcrSupplier {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  nameAr      String   @map("name_ar")
+  nameEn      String?  @map("name_en")
+  taxNumber   String?  @map("tax_number")
+  phone       String?
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  aliases         OcrSupplierAlias[]
+  invoices        OcrInvoice[]
+  correctionRules OcrCorrectionRule[]
+  priceHistory    OcrPriceHistory[]
+  extractionLogs  OcrExtractionLog[]
+
+  @@index([tenantId])
+  @@map("ocr_suppliers")
+}
+
+model OcrSupplierAlias {
+  id         String   @id @default(cuid())
+  supplierId String   @map("supplier_id")
+  alias      String
+  language   String   @default("ar")
+  addedBy    String   @default("support") @map("added_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  supplier OcrSupplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@map("ocr_supplier_aliases")
+}
+
+model OcrItem {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  nameAr    String   @map("name_ar")
+  nameEn    String?  @map("name_en")
+  category  String?
+  unitType  String?  @map("unit_type")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  aliases      OcrItemAlias[]
+  lines        OcrInvoiceLine[]
+  priceHistory OcrPriceHistory[]
+
+  @@index([tenantId])
+  @@map("ocr_items")
+}
+
+model OcrItemAlias {
+  id        String   @id @default(cuid())
+  itemId    String   @map("item_id")
+  alias     String
+  language  String   @default("ar")
+  addedBy   String   @default("support") @map("added_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  item OcrItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@map("ocr_item_aliases")
+}
+
+model OcrInvoice {
+  id            String    @id @default(cuid())
+  tenantId      String    @map("tenant_id")
+  supplierId    String?   @map("supplier_id")
+  invoiceNumber String?   @map("invoice_number")
+  invoiceDate   DateTime? @map("invoice_date")
+  totalAmount   Decimal?  @map("total_amount")  @db.Decimal(14, 2)
+  vatAmount     Decimal?  @map("vat_amount")    @db.Decimal(14, 2)
+  imageUrl      String?   @map("image_url")
+  rawExtraction Json?     @map("raw_extraction")
+  status        String    @default("pending")   // pending | confirmed | rejected
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt      @map("updated_at")
+
+  supplier OcrSupplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  lines    OcrInvoiceLine[]
+
+  @@index([tenantId])
+  @@index([supplierId])
+  @@map("ocr_invoices")
+}
+
+model OcrInvoiceLine {
+  id          String   @id @default(cuid())
+  invoiceId   String   @map("invoice_id")
+  itemId      String?  @map("item_id")
+  rawName     String   @map("raw_name")
+  quantity    Decimal? @db.Decimal(10, 3)
+  unitPrice   Decimal? @map("unit_price")  @db.Decimal(14, 2)
+  totalPrice  Decimal? @map("total_price") @db.Decimal(14, 2)
+  confidence  Float    @default(0)
+  matchStatus String   @default("pending") @map("match_status") // pending | matched | new | rejected
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  invoice OcrInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  item    OcrItem?   @relation(fields: [itemId],    references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([itemId])
+  @@map("ocr_invoice_lines")
+}
+
+model OcrPriceHistory {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  itemId      String   @map("item_id")
+  supplierId  String   @map("supplier_id")
+  price       Decimal  @db.Decimal(14, 2)
+  invoiceDate DateTime @map("invoice_date")
+  invoiceId   String?  @map("invoice_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  item     OcrItem     @relation(fields: [itemId],     references: [id], onDelete: Cascade)
+  supplier OcrSupplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([itemId])
+  @@index([supplierId])
+  @@map("ocr_price_history")
+}
+
+model OcrCorrectionRule {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  entityType  String   @map("entity_type")  // supplier | item
+  supplierId  String?  @map("supplier_id")  // supplier-scoped (null = global)
+  wrongText   String   @map("wrong_text")
+  correctText String   @map("correct_text")
+  occurrences Int      @default(1)
+  status      String   @default("pending")  // pending | confirmed | rejected
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  supplier OcrSupplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([supplierId])
+  @@map("ocr_correction_rules")
+}
+
+model OcrExtractionLog {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  entityType    String   @map("entity_type")  // supplier | item
+  supplierId    String?  @map("supplier_id")
+  extractedText String   @map("extracted_text")
+  normalizedText String? @map("normalized_text")
+  resolvedToId  String?  @map("resolved_to_id")
+  resolvedText  String?  @map("resolved_text")
+  confidence    Float    @default(0)
+  occurrences   Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt      @map("updated_at")
+
+  supplier OcrSupplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([supplierId])
+  @@map("ocr_extraction_logs")
+}

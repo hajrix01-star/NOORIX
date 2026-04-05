@@ -70,6 +70,11 @@ export const PERMISSIONS = {
   USERS_DELETE:     'USERS_DELETE',
 
   CREATE_INVOICE:   'CREATE_INVOICE',
+
+  // ── OCR الفواتير (تجريبي) ──
+  VIEW_OCR:   'VIEW_OCR',
+  OCR_READ:   'OCR_READ',
+  OCR_WRITE:  'OCR_WRITE',
 };
 
 /**
@@ -244,6 +249,17 @@ export const PERMISSION_MODULES = [
       delete: 'DELETE_COMPANY',
     },
   },
+  {
+    key: 'ocr',
+    labelAr: 'OCR الفواتير (تجريبي)',
+    labelEn: 'OCR Invoices (Beta)',
+    icon: '🔍',
+    permissions: {
+      view:  'VIEW_OCR',
+      read:  'OCR_READ',
+      write: 'OCR_WRITE',
+    },
+  },
 ];
 
 /** ترجمة أعمدة الصلاحيات */
@@ -325,6 +341,7 @@ export const ROUTE_PERMISSION = {
   '/reports':       PERMISSIONS.VIEW_REPORTS,
   '/settings':      PERMISSIONS.MANAGE_SETTINGS,
   '/theme-preview': PERMISSIONS.VIEW_DASHBOARD,
+  '/ocr':           PERMISSIONS.VIEW_OCR,
 };
 
 export const REDIRECT_ONLY_PATHS = new Set([

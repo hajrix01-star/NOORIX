@@ -13,6 +13,7 @@ import reports from './reports';
 import shared from './shared';
 import orders from './orders';
 import dashboard from './dashboard';
+import ocr from './ocr';
 
 const t = Object.assign(
   {},
@@ -26,7 +27,8 @@ const t = Object.assign(
   reports,
   shared,
   orders,
-  dashboard
+  dashboard,
+  ocr
 );
 
 /**
