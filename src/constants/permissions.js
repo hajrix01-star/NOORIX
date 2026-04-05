@@ -106,10 +106,13 @@ export const PERMISSION_MODULES = [
     labelEn: 'Sales',
     icon: '🛒',
     permissions: {
-      view:   'VIEW_SALES',
-      read:   'SALES_READ',
-      write:  'SALES_WRITE',
-      delete: 'SALES_DELETE',
+      view:    'VIEW_SALES',
+      read:    'SALES_READ',
+      write:   'SALES_WRITE',
+      delete:  'SALES_DELETE',
+      actions: 'SALES_ACTIONS',
+      history: 'SALES_FULL_HISTORY',
+      list:    'SALES_VIEW_SUMMARIES_LIST',
     },
   },
   {
@@ -118,10 +121,12 @@ export const PERMISSION_MODULES = [
     labelEn: 'Purchases & Invoices',
     icon: '📄',
     permissions: {
-      view:   'VIEW_INVOICES',
-      read:   'INVOICES_READ',
-      write:  'INVOICES_WRITE',
-      delete: 'INVOICES_DELETE',
+      view:    'VIEW_INVOICES',
+      read:    'INVOICES_READ',
+      write:   'INVOICES_WRITE',
+      delete:  'INVOICES_DELETE',
+      actions: 'INVOICES_ACTIONS',
+      create:  'CREATE_INVOICE',
     },
   },
   {
@@ -268,6 +273,10 @@ export const PERMISSION_LEVELS = {
   read:       { ar: 'قراءة البيانات', en: 'Read Data' },
   write:      { ar: 'إنشاء وتعديل', en: 'Create & Edit' },
   delete:     { ar: 'حذف', en: 'Delete' },
+  actions:    { ar: 'إجراءات', en: 'Actions' },
+  create:     { ar: 'إنشاء فاتورة', en: 'Create Invoice' },
+  history:    { ar: 'التاريخ الكامل', en: 'Full History' },
+  list:       { ar: 'قائمة الملخصات', en: 'Summaries List' },
   chatAdv:    { ar: 'محادثة · سلف', en: 'Chat · Advances' },
   chatLeave:  { ar: 'محادثة · إجازات', en: 'Chat · Leaves' },
   chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
@@ -312,12 +321,18 @@ export function hasPermission(roleOrPermissions, permission, userPermissions) {
   const role = (roleOrPermissions || '').toLowerCase();
   if (role === 'super_admin' || role === 'owner') return true;
 
-  if (Array.isArray(userPermissions) && userPermissions.length > 0) {
-    return userPermissions.includes(permission);
+  // فحص في صلاحيات DB (من JWT)
+  if (Array.isArray(userPermissions) && userPermissions.includes(permission)) {
+    return true;
   }
 
+  // فحص في الصلاحيات الثابتة للدور النظامي
   const defaults = SYSTEM_ROLE_PERMISSIONS[role];
-  return Array.isArray(defaults) && defaults.includes(permission);
+  if (Array.isArray(defaults) && defaults.includes(permission)) {
+    return true;
+  }
+
+  return false;
 }
 
 export function isSuperAdmin(role) {

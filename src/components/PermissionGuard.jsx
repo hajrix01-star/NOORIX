@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { getRouteRequiredPermissions, isSuperAdmin } from '../constants/permissions';
+import { getRouteRequiredPermissions, isSuperAdmin, hasPermission } from '../constants/permissions';
 import Forbidden403 from './Forbidden403';
 
 /**
@@ -31,9 +31,7 @@ export default function PermissionGuard({ children, userRole, userPermissions, i
 
   if (isSuperAdmin(userRole)) return children;
 
-  const allowed =
-    Array.isArray(userPermissions) &&
-    requiredList.some((perm) => userPermissions.includes(perm));
+  const allowed = requiredList.some((perm) => hasPermission(userRole, perm, userPermissions));
   if (!allowed) return <Forbidden403 />;
   return children;
 }

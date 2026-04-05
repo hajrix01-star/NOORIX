@@ -155,17 +155,26 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
 /**
  * hasPermission — يدعم الفحص من الدور الثابت أو من مصفوفة صلاحيات (DB).
  * يُستخدم في RolesGuard مع الصلاحيات المحملة في JWT.
+ *
+ * المنطق: صلاحيات DB (من JWT) + الصلاحيات الثابتة للأدوار النظامية = مُدمجة.
+ * إذا كان الدور نظامياً مثل accountant، يحصل على الصلاحيات الثابتة حتى لو لم تكن في DB.
  */
 export function hasPermission(role: string, permission: Permission, userPermissions?: string[]): boolean {
   const r = (role || '').toLowerCase();
   if (r === ROLES.SUPER_ADMIN || r === ROLES.OWNER) return true;
 
-  if (Array.isArray(userPermissions) && userPermissions.length > 0) {
-    return userPermissions.includes(permission);
+  // فحص في صلاحيات DB (من JWT)
+  if (Array.isArray(userPermissions) && userPermissions.includes(permission)) {
+    return true;
   }
 
-  const perms = ROLE_PERMISSIONS[r];
-  return Array.isArray(perms) && perms.includes(permission);
+  // فحص في الصلاحيات الثابتة للدور النظامي
+  const systemPerms = ROLE_PERMISSIONS[r];
+  if (Array.isArray(systemPerms) && systemPerms.includes(permission)) {
+    return true;
+  }
+
+  return false;
 }
 
 export function isSuperAdmin(role: string): boolean {

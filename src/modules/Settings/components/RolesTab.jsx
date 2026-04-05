@@ -6,8 +6,28 @@ import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getRoles, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { PERMISSION_MODULES, PERMISSION_LEVELS } from '../../../constants/permissions';
+import { PERMISSION_MODULES, PERMISSION_LEVELS, hasPermission } from '../../../constants/permissions';
 import Toast from '../../../components/Toast';
+
+const SYSTEM_ROLE_DEFAULTS = {
+  accountant: [
+    'VIEW_DASHBOARD', 'VIEW_CHAT', 'VIEW_INVOICES', 'VIEW_SUPPLIERS', 'VIEW_VAULTS', 'VIEW_REPORTS',
+    'VIEW_SALES', 'VIEW_EMPLOYEES', 'VIEW_ORDERS', 'VIEW_EXPENSES',
+    'INVOICES_READ', 'INVOICES_WRITE', 'INVOICES_ACTIONS',
+    'SALES_READ', 'SALES_WRITE', 'SALES_ACTIONS', 'SALES_FULL_HISTORY', 'SALES_VIEW_SUMMARIES_LIST',
+    'SUPPLIERS_READ', 'VAULTS_READ', 'EXPENSES_READ', 'EXPENSES_WRITE',
+    'ORDERS_READ', 'ORDERS_WRITE', 'REPORTS_READ',
+    'EMPLOYEES_READ', 'EMPLOYEES_WRITE', 'HR_READ', 'HR_WRITE', 'HR_DELETE',
+    'SMART_CHAT_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS',
+    'CHAT_PRESET_FAQ', 'CHAT_PRESET_INCREASES', 'CREATE_INVOICE',
+  ],
+  cashier: [
+    'VIEW_CHAT', 'VIEW_SALES', 'VIEW_INVOICES',
+    'SALES_READ', 'SALES_WRITE', 'SALES_ACTIONS', 'SALES_VIEW_SUMMARIES_LIST',
+    'INVOICES_READ', 'INVOICES_WRITE', 'INVOICES_ACTIONS',
+    'SMART_CHAT_READ', 'CHAT_PRESET_FAQ', 'CREATE_INVOICE',
+  ],
+};
 
 const inputStyle = {
   width: '100%', padding: '9px 12px', borderRadius: 8,
@@ -242,12 +262,21 @@ export default function RolesTab({ userRole, language }) {
   });
 
   function openEdit(r) {
+    let perms = Array.isArray(r.permissions) ? [...r.permissions] : [];
+
+    // إذا كان دوراً نظامياً وصلاحياته في DB فارغة → ادمج الصلاحيات الثابتة
+    const roleName = (r.name || '').toLowerCase();
+    const defaults = SYSTEM_ROLE_DEFAULTS[roleName];
+    if (Array.isArray(defaults)) {
+      perms = [...new Set([...perms, ...defaults])];
+    }
+
     setEditing({
       id: r.id,
       name: r.name,
       nameAr: r.nameAr || '',
       description: r.description || '',
-      permissions: Array.isArray(r.permissions) ? [...r.permissions] : [],
+      permissions: perms,
       isSystem: r.isSystem,
     });
   }
