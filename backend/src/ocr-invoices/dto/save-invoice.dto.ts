@@ -7,6 +7,22 @@ export class SaveInvoiceLineDto {
 
   @IsOptional()
   @IsString()
+  nameAr?: string;
+
+  @IsOptional()
+  @IsString()
+  nameEn?: string;
+
+  @IsOptional()
+  @IsString()
+  size?: string;
+
+  @IsOptional()
+  @IsString()
+  sizeUnit?: string;
+
+  @IsOptional()
+  @IsString()
   itemId?: string;
 
   @IsOptional()

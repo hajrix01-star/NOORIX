@@ -177,7 +177,14 @@ export class OcrInvoicesService {
           { inlineData: { mimeType, data: dto.imageBase64 } },
         ],
       }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
+      generationConfig: { temperature: 0.1, maxOutputTokens: 8192 },
+      // تعطيل كل فلاتر السلامة — الفواتير لا تحتوي محتوى ضار
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT',         threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH',        threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',  threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT',  threshold: 'BLOCK_NONE' },
+      ],
     };
 
     type GeminiRaw = {
@@ -220,18 +227,35 @@ export class OcrInvoicesService {
 
         // ── نجح الطلب ────────────────────────────────────────────────────
         const candidate = rawJson?.candidates?.[0];
+
+        // فحص حظر المحتوى (safety / prompt feedback)
+        const blockReason =
+          (rawJson as { promptFeedback?: { blockReason?: string } })?.promptFeedback?.blockReason
+          || candidate?.finishReason;
+
+        if (blockReason === 'SAFETY' || blockReason === 'RECITATION' || blockReason === 'OTHER') {
+          this.logger.warn(`Gemini blocked (${model}): ${blockReason} → trying next model`);
+          continue;
+        }
+
         const parts = candidate?.content?.parts || [];
         const text = parts.map((p) => p.text || '').join('\n').trim();
 
-        this.logger.log(`Gemini OK (${model}) | finish=${candidate?.finishReason} | parts=${parts.length} | text[300]=${text.substring(0, 300)}`);
+        this.logger.log(`Gemini OK (${model}) | finish=${candidate?.finishReason} | parts=${parts.length} | textLen=${text.length} | text[500]=${text.substring(0, 500)}`);
+
+        if (!text) {
+          this.logger.warn(`Gemini returned empty text (${model}) → trying next model`);
+          continue;
+        }
 
         const extracted = extractJson<GeminiExtractedInvoice>(text);
         if (!extracted) {
-          this.logger.error(`Gemini parse failed (${model}). text(800)=${text.substring(0, 800)}`);
+          this.logger.error(`Gemini parse failed (${model}). textLen=${text.length} text(1000)=${text.substring(0, 1000)}`);
           return {
             parseError: true,
             usedModel: model,
-            rawText: text.substring(0, 500),
+            rawText: text.substring(0, 800),
+            errorDetail: 'JSON parse failed — Gemini returned text but no valid JSON found',
             supplier: null, supplierMatch: null,
             vatNumber: null, invoiceNumber: null,
             invoiceDate: null, totalAmount: null,
@@ -240,18 +264,33 @@ export class OcrInvoicesService {
         }
 
         this.logger.log(`Gemini extracted OK (${model}): supplier=${extracted.supplier?.name} items=${extracted.items?.length}`);
-        return await this.enrichExtraction(tenantId, extracted);
+
+        // enrichExtraction محمي بـ try/catch — لا يُفسد النتيجة
+        try {
+          return await this.enrichExtraction(tenantId, extracted);
+        } catch (enrichErr) {
+          this.logger.error(`enrichExtraction failed: ${(enrichErr as Error).message}. Returning raw extraction.`);
+          return {
+            supplier: extracted.supplier,
+            supplierMatch: null,
+            vatNumber: extracted.vatNumber,
+            invoiceNumber: extracted.invoiceNumber,
+            invoiceDate: extracted.invoiceDate,
+            totalAmount: extracted.totalAmount,
+            vatAmount: extracted.vatAmount,
+            items: (extracted.items || []).map((item) => ({ ...item, itemMatch: null })),
+            enrichError: (enrichErr as Error).message,
+          };
+        }
 
       } catch (err) {
-        // خطأ شبكي — لا نستمر في الـ fallback لأنه ليس مشكلة نموذج
         if (err instanceof BadRequestException) throw err;
-        this.logger.error(`Gemini network error (${model}): ${(err as Error).message}`);
-        throw new BadRequestException('خطأ في الاتصال بـ Gemini');
+        this.logger.error(`Gemini network/runtime error (${model}): ${(err as Error).message} ${(err as Error).stack}`);
+        throw new BadRequestException(`خطأ في الاتصال بـ Gemini: ${(err as Error).message}`);
       }
     }
 
-    // وصلنا هنا يعني كل النماذج فشلت
-    throw new BadRequestException('لا يوجد نموذج Gemini متاح في هذا الحساب. تحقق من GEMINI_API_KEY أو أضف GEMINI_MODEL في .env');
+    throw new BadRequestException('لا يوجد نموذج Gemini متاح. تحقق من GEMINI_API_KEY.');
   }
 
   private async enrichExtraction(tenantId: string, extracted: GeminiExtractedInvoice) {

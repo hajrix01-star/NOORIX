@@ -58,9 +58,15 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
       const res = await extractInvoice(imageBase64, mimeType);
       if (res.success) {
         if (res.data?.parseError) {
-          setError(t('ocrExtractFailed') + ' — تعذّر قراءة نص الفاتورة. تأكد من وضوح الصورة وأنها فاتورة حقيقية.');
+          const detail = res.data.errorDetail || '';
+          const model = res.data.usedModel || '';
+          const rawSnippet = res.data.rawText ? `\n\nGemini raw: ${res.data.rawText.substring(0, 200)}` : '';
+          setError(`${t('ocrExtractFailed')} — تعذّر قراءة الفاتورة.\nModel: ${model}\n${detail}${rawSnippet}`);
         } else {
           setExtracted(res.data);
+          if (res.data?.enrichError) {
+            console.warn('OCR enrichment warning:', res.data.enrichError);
+          }
         }
       } else {
         setError(res.error || t('ocrExtractFailed'));
