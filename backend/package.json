@@ -8,7 +8,7 @@
   },
   "scripts": {
     "prestart:dev": "powershell -ExecutionPolicy Bypass -File ../scripts/kill-port.ps1 -Port 3000",
-    "build": "nest build",
+    "build": "npx prisma generate && nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",

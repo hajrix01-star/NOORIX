@@ -6,7 +6,8 @@ import { apiGet, apiPost, apiPut, apiDelete, apiPatch } from '../../../services/
 // ─── OCR Extraction ───────────────────────────────────────────────────────
 
 export async function extractInvoice(imageBase64, mimeType = 'image/jpeg') {
-  return apiPost('/api/v1/ocr/extract', { imageBase64, mimeType }, { timeout: 60000 });
+  // Gemini Vision قد يأخذ وقتاً — timeout 90 ثانية
+  return apiPost('/api/v1/ocr/extract', { imageBase64, mimeType }, { timeout: 90000 });
 }
 
 // ─── Invoices ─────────────────────────────────────────────────────────────

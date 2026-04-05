@@ -93,10 +93,10 @@ export class OcrInvoicesService {
       contents: [{
         parts: [
           { text: OCR_EXTRACTION_PROMPT },
-          { inline_data: { mime_type: mimeType, data: dto.imageBase64 } },
+          { inlineData: { mimeType, data: dto.imageBase64 } },
         ],
       }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 2048 },
+      generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
     };
 
     const res = await fetch(url, {
@@ -105,17 +105,25 @@ export class OcrInvoicesService {
       body: JSON.stringify(body),
     });
 
+    const rawJson = await res.json().catch(() => null) as Record<string, unknown> | null;
+
     if (!res.ok) {
-      const err = await res.text();
-      this.logger.error(`Gemini OCR error: ${err}`);
-      throw new BadRequestException('فشل الاستخراج من Gemini');
+      const errMsg = (rawJson as { error?: { message?: string } })?.error?.message || res.statusText;
+      this.logger.error(`Gemini OCR error ${res.status}: ${errMsg}`);
+      throw new BadRequestException(`فشل الاستخراج من Gemini: ${errMsg}`);
     }
 
-    const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const candidates = (rawJson as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates;
+    const text = candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    this.logger.log(`Gemini OCR raw: ${text.substring(0, 200)}`);
+
     const extracted = extractJson<GeminiExtractedInvoice>(text);
 
-    if (!extracted) throw new BadRequestException('تعذّر تحليل نتيجة Gemini');
+    if (!extracted) {
+      this.logger.error(`Gemini OCR could not parse: ${text.substring(0, 500)}`);
+      throw new BadRequestException('تعذّر تحليل نتيجة Gemini — قد تكون الصورة غير واضحة');
+    }
 
     // حاول مطابقة المورد والأصناف
     const enriched = await this.enrichExtraction(tenantId, extracted);
@@ -297,6 +305,7 @@ export class OcrInvoicesService {
   // ─── Suppliers CRUD ───────────────────────────────────────────────────────
 
   async getSuppliers(tenantId: string) {
+    if (!tenantId) return [];
     return this.prisma.ocrSupplier.findMany({
       where: { tenantId },
       include: { aliases: true, _count: { select: { invoices: true } } },
@@ -324,6 +333,7 @@ export class OcrInvoicesService {
   // ─── Items CRUD ───────────────────────────────────────────────────────────
 
   async getItems(tenantId: string) {
+    if (!tenantId) return [];
     return this.prisma.ocrItem.findMany({
       where: { tenantId },
       include: { aliases: true, _count: { select: { priceHistory: true } } },
@@ -359,6 +369,7 @@ export class OcrInvoicesService {
   // ─── Invoices CRUD ────────────────────────────────────────────────────────
 
   async getInvoices(tenantId: string) {
+    if (!tenantId) return [];
     return this.prisma.ocrInvoice.findMany({
       where: { tenantId },
       include: {
@@ -430,6 +441,7 @@ export class OcrInvoicesService {
   // ─── Price Alerts ─────────────────────────────────────────────────────────
 
   async getPriceAlerts(tenantId: string) {
+    if (!tenantId) return [];
     const history = await this.prisma.ocrPriceHistory.findMany({
       where: { tenantId },
       include: {
