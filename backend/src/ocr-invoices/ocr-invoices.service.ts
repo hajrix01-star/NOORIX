@@ -9,7 +9,10 @@ import { CreateOcrItemDto } from './dto/create-ocr-item.dto';
 import { SaveInvoiceDto } from './dto/save-invoice.dto';
 
 function getGeminiUrl(): string {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${getGeminiModel()}:generateContent`;
+  const model = getGeminiModel();
+  // gemini-1.5-* و gemini-1.0-* تعمل على v1 فقط، الباقي على v1beta
+  const version = /gemini-1\.[05]/.test(model) ? 'v1' : 'v1beta';
+  return `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent`;
 }
 
 function extractJson<T = Record<string, unknown>>(text: string): T | null {
