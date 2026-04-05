@@ -64,18 +64,20 @@ export default function App() {
   const { isAuthenticated, user, setUser, setToken } = useAuth();
 
   const { isLoading: isMeLoading, isFetched: isMeFetched } = useQuery({
-    queryKey: ['me', isAuthenticated],
+    queryKey: ['me'],
     queryFn: async () => {
       const res = await getMe();
       if (res?.success && res?.data) {
         setUser(res.data);
         return res.data;
       }
-      // فشل التحقق — Token منتهي الصلاحية أو غير صالح
       return null;
     },
-    enabled: !!isAuthenticated && !user,
+    enabled: !!isAuthenticated,
     retry: false,
+    staleTime: 3 * 60 * 1000,          // 3 دقائق — لا يُعاد الجلب قبلها
+    refetchInterval: 5 * 60 * 1000,     // كل 5 دقائق — يجلب الصلاحيات الحية
+    refetchOnWindowFocus: true,          // عند العودة للنافذة — يتحقق فوراً
   });
 
   // إذا انتهى الاستعلام وما زال المستخدم null → Token فاسد → خروج تلقائي

@@ -1,11 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PermissionCacheService } from '../auth/permission-cache.service';
 
 const SYSTEM_ROLES = ['owner', 'super_admin', 'accountant', 'cashier'];
 
 @Injectable()
 export class RolesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly permCache: PermissionCacheService,
+  ) {}
 
   findAll() {
     return this.prisma.role.findMany({
@@ -31,7 +35,7 @@ export class RolesService {
   async update(id: string, data: { nameAr?: string; description?: string; permissions?: string[] }) {
     const role = await this.prisma.role.findUnique({ where: { id } });
     if (!role) throw new NotFoundException('الدور غير موجود');
-    return this.prisma.role.update({
+    const updated = await this.prisma.role.update({
       where: { id },
       data: {
         nameAr: data.nameAr !== undefined ? data.nameAr.trim() || null : undefined,
@@ -39,6 +43,9 @@ export class RolesService {
         permissions: data.permissions !== undefined ? data.permissions : undefined,
       },
     });
+    // إبطال كاش الصلاحيات فوراً → التغييرات تنفّذ بدون إعادة تسجيل دخول
+    this.permCache.invalidate(role.name);
+    return updated;
   }
 
   async remove(id: string) {

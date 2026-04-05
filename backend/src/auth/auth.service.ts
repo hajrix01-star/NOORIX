@@ -64,6 +64,18 @@ export class AuthService {
     });
   }
 
+  /** جلب بيانات المستخدم الكاملة من DB — يُستخدم في /me */
+  async getFullUser(userId: string) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, email: true, nameAr: true, nameEn: true, tenantId: true,
+        role: { select: { name: true, nameAr: true, permissions: true } },
+        userCompanies: { select: { companyId: true } },
+      },
+    });
+  }
+
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

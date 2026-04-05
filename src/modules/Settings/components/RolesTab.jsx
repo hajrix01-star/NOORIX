@@ -245,6 +245,8 @@ export default function RolesTab({ userRole, language }) {
     mutationFn: ({ id, body }) => updateRole(id, body),
     onSuccess: () => {
       invalidate();
+      // أعد جلب /me لتحديث صلاحيات المستخدم الحالي فوراً
+      queryClient.invalidateQueries({ queryKey: ['me'] });
       setEditing(null);
       setToast({ visible: true, message: t('updateSuccess'), type: 'success' });
     },

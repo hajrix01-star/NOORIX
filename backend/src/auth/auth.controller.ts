@@ -57,16 +57,28 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
-  async me(@Req() req: { user: { userId: string; email: string; role: string; companyIds: string[] } }) {
-    const user = req.user;
-    const roleRecord = await this.authService.getRoleWithPermissions(user.role);
+  async me(@Req() req: { user: { userId: string; email: string; role: string; tenantId?: string; companyIds: string[] } }) {
+    const jwtUser = req.user;
+    const dbUser = await this.authService.getFullUser(jwtUser.userId);
+    if (!dbUser) {
+      return {
+        id: jwtUser.userId,
+        email: jwtUser.email,
+        role: jwtUser.role,
+        permissions: [],
+        companyIds: jwtUser.companyIds || [],
+      };
+    }
     return {
-      id: user.userId,
-      email: user.email,
-      role: user.role,
-      roleNameAr: roleRecord?.nameAr ?? null,
-      permissions: roleRecord?.permissions ?? [],
-      companyIds: user.companyIds || [],
+      id:          dbUser.id,
+      email:       dbUser.email,
+      nameAr:      dbUser.nameAr,
+      nameEn:      dbUser.nameEn,
+      role:        dbUser.role.name,
+      roleNameAr:  dbUser.role.nameAr,
+      permissions: Array.isArray(dbUser.role.permissions) ? dbUser.role.permissions : [],
+      tenantId:    dbUser.tenantId,
+      companyIds:  dbUser.userCompanies.map((uc) => uc.companyId),
     };
   }
 }

@@ -6,6 +6,7 @@ import { AuthService }       from './auth.service';
 import { CompanyAccessGuard } from './guards/company-access.guard';
 import { RolesGuard }        from './guards/roles.guard';
 import { JwtStrategy }       from './jwt.strategy';
+import { PermissionCacheService } from './permission-cache.service';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -24,7 +25,7 @@ if (!JWT_SECRET) {
     }),
   ],
   controllers: [AuthController],
-  providers:   [AuthService, JwtStrategy, RolesGuard, CompanyAccessGuard],
-  exports:     [AuthService, RolesGuard, CompanyAccessGuard, JwtModule],
+  providers:   [AuthService, JwtStrategy, RolesGuard, CompanyAccessGuard, PermissionCacheService],
+  exports:     [AuthService, RolesGuard, CompanyAccessGuard, JwtModule, PermissionCacheService],
 })
 export class AuthModule {}
