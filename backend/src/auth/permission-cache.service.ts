@@ -6,7 +6,7 @@
  *
  * عند تعديل دور من الإعدادات → invalidate() → الطلب التالي يجلب الصلاحيات الجديدة.
  */
-import { Injectable } from '@nestjs/common';
+import { Global, Module, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface CacheEntry {
@@ -56,3 +56,10 @@ export class PermissionCacheService {
     }
   }
 }
+
+@Global()
+@Module({
+  providers: [PermissionCacheService],
+  exports:  [PermissionCacheService],
+})
+export class PermissionCacheModule {}

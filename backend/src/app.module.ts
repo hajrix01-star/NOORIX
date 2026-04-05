@@ -32,6 +32,7 @@ import { OrdersModule }         from './orders/orders.module';
 import { DatabaseModule }       from './database/database.module';
 import { BackupModule }         from './backup/backup.module';
 import { OcrInvoicesModule }   from './ocr-invoices/ocr-invoices.module';
+import { PermissionCacheModule } from './auth/permission-cache.service';
 import { TenantMiddleware }    from './common/tenant.middleware';
 import { JwtModule }           from '@nestjs/jwt';
 
@@ -46,6 +47,7 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'noorix-dev-secret-DO-NOT-USE-IN-PR
       limit: 120,
     }]),
     PrismaModule,
+    PermissionCacheModule,
     DatabaseModule,
     AccountingInitModule,
     AccountsModule,
