@@ -321,18 +321,14 @@ export function hasPermission(roleOrPermissions, permission, userPermissions) {
   const role = (roleOrPermissions || '').toLowerCase();
   if (role === 'super_admin' || role === 'owner') return true;
 
-  // فحص في صلاحيات DB (من JWT)
-  if (Array.isArray(userPermissions) && userPermissions.includes(permission)) {
-    return true;
+  // إذا DB فيها صلاحيات صريحة → استخدمها فقط (قرار المشرف)
+  if (Array.isArray(userPermissions) && userPermissions.length > 0) {
+    return userPermissions.includes(permission);
   }
 
-  // فحص في الصلاحيات الثابتة للدور النظامي
+  // الدور لم يُعدّل بعد → استخدم الصلاحيات الثابتة كـ fallback
   const defaults = SYSTEM_ROLE_PERMISSIONS[role];
-  if (Array.isArray(defaults) && defaults.includes(permission)) {
-    return true;
-  }
-
-  return false;
+  return Array.isArray(defaults) && defaults.includes(permission);
 }
 
 export function isSuperAdmin(role) {

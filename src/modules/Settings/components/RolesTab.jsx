@@ -266,11 +266,13 @@ export default function RolesTab({ userRole, language }) {
   function openEdit(r) {
     let perms = Array.isArray(r.permissions) ? [...r.permissions] : [];
 
-    // إذا كان دوراً نظامياً وصلاحياته في DB فارغة → ادمج الصلاحيات الثابتة
-    const roleName = (r.name || '').toLowerCase();
-    const defaults = SYSTEM_ROLE_DEFAULTS[roleName];
-    if (Array.isArray(defaults)) {
-      perms = [...new Set([...perms, ...defaults])];
+    // فقط إذا لم تُعدّل صلاحيات الدور من قبل (فارغة في DB) → اعرض الثابتة كبداية
+    if (perms.length === 0) {
+      const roleName = (r.name || '').toLowerCase();
+      const defaults = SYSTEM_ROLE_DEFAULTS[roleName];
+      if (Array.isArray(defaults)) {
+        perms = [...defaults];
+      }
     }
 
     setEditing({
