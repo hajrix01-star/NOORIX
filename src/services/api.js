@@ -464,6 +464,10 @@ export async function getRoles() {
   return { success: res.success, data: Array.isArray(res.data) ? res.data : [] };
 }
 
+export async function getPermissionsSchema() {
+  return apiGet('/api/v1/roles/permissions-schema');
+}
+
 export async function createRole(body) { return apiPost('/api/v1/roles', body); }
 export async function updateRole(id, body) { return apiPatch(`/api/v1/roles/${id}`, body); }
 export async function deleteRole(id) { return apiDelete(`/api/v1/roles/${id}`); }

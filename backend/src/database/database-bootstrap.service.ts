@@ -5,24 +5,14 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { ROLE_PERMISSIONS } from '../auth/constants/permissions';
+import { SYSTEM_ROLE_SEEDS } from '../auth/constants/permissions';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@noorix.sa';
 const ADMIN_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'Hajrim2h';
 const DEFAULT_TENANT_ID = 'default-tenant-noorix-2024';
 
-const ALL_PERMISSIONS = [
-  'VIEW_OWNER', 'VIEW_DASHBOARD', 'VIEW_CHAT', 'VIEW_SALES', 'VIEW_INVOICES',
-  'VIEW_SUPPLIERS', 'VIEW_VAULTS', 'VIEW_REPORTS', 'INVOICES_READ', 'INVOICES_WRITE',
-  'INVOICES_DELETE', 'INVOICES_ACTIONS', 'SALES_READ', 'SALES_WRITE', 'SALES_DELETE',
-  'SALES_ACTIONS', 'SALES_FULL_HISTORY', 'SALES_VIEW_SUMMARIES_LIST',
-  'SUPPLIERS_READ', 'SUPPLIERS_WRITE', 'SUPPLIERS_DELETE',
-  'VAULTS_READ', 'VAULTS_WRITE', 'VAULTS_DELETE', 'REPORTS_READ', 'SMART_CHAT_READ',
-  'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS', 'CHAT_PRESET_FAQ', 'CHAT_PRESET_INCREASES',
-  'MANAGE_SETTINGS', 'MANAGE_COMPANIES', 'MANAGE_USERS', 'DELETE_COMPANY', 'USERS_DELETE',
-  'VIEW_EMPLOYEES', 'EMPLOYEES_READ', 'EMPLOYEES_WRITE', 'EMPLOYEES_DELETE',
-  'HR_READ', 'HR_WRITE', 'HR_DELETE', 'CREATE_INVOICE',
-];
+// الصلاحيات تُجلب من SYSTEM_ROLE_SEEDS — مصدر الحقيقة الوحيد
+const ALL_PERMISSIONS = SYSTEM_ROLE_SEEDS['owner']?.permissions || [];
 
 @Injectable()
 export class DatabaseBootstrapService implements OnModuleInit {
@@ -67,14 +57,14 @@ export class DatabaseBootstrapService implements OnModuleInit {
 
     for (const name of roleNames) {
       let role = await this.prisma.role.findUnique({ where: { name } });
+      const seed = SYSTEM_ROLE_SEEDS[name];
       if (!role) {
-        const permissions = name === 'owner' || name === 'super_admin' ? ALL_PERMISSIONS : [];
         role = await this.prisma.role.create({
           data: {
             name,
-            nameAr: name === 'owner' ? 'مالك' : name === 'super_admin' ? 'مدير عام' : name === 'accountant' ? 'محاسب' : 'كاشير',
+            nameAr: seed?.nameAr || name,
             isSystem: true,
-            permissions,
+            permissions: seed?.permissions || [],
           },
         });
         this.logger.log(`تم إنشاء دور: ${name}`);
@@ -95,9 +85,10 @@ export class DatabaseBootstrapService implements OnModuleInit {
     for (const name of ['accountant', 'cashier'] as const) {
       const r = await this.prisma.role.findUnique({ where: { name } });
       if (!r) continue;
-      const defaults = ROLE_PERMISSIONS[name] as string[];
+      const seed = SYSTEM_ROLE_SEEDS[name];
+      if (!seed) continue;
       const cur = (r.permissions || []) as string[];
-      const merged = [...new Set([...cur, ...defaults])];
+      const merged = [...new Set([...cur, ...seed.permissions])];
       if (merged.length > cur.length) {
         await this.prisma.role.update({
           where: { id: r.id },

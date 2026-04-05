@@ -1,41 +1,19 @@
 /**
- * RolesTab — إدارة الأدوار والصلاحيات بمصفوفة مهنية
+ * RolesTab — إدارة الأدوار والصلاحيات بمصفوفة ديناميكية.
+ * ✅ المصفوفة تُجلب من Backend API — مصدر حقيقة واحد.
  */
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getRoles, createRole, updateRole, deleteRole } from '../../../services/api';
+import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { PERMISSION_MODULES, PERMISSION_LEVELS, hasPermission } from '../../../constants/permissions';
 import Toast from '../../../components/Toast';
-
-const SYSTEM_ROLE_DEFAULTS = {
-  accountant: [
-    'VIEW_DASHBOARD', 'VIEW_CHAT', 'VIEW_INVOICES', 'VIEW_SUPPLIERS', 'VIEW_VAULTS', 'VIEW_REPORTS',
-    'VIEW_SALES', 'VIEW_EMPLOYEES', 'VIEW_ORDERS', 'VIEW_EXPENSES',
-    'INVOICES_READ', 'INVOICES_WRITE', 'INVOICES_ACTIONS',
-    'SALES_READ', 'SALES_WRITE', 'SALES_ACTIONS', 'SALES_FULL_HISTORY', 'SALES_VIEW_SUMMARIES_LIST',
-    'SUPPLIERS_READ', 'VAULTS_READ', 'EXPENSES_READ', 'EXPENSES_WRITE',
-    'ORDERS_READ', 'ORDERS_WRITE', 'REPORTS_READ',
-    'EMPLOYEES_READ', 'EMPLOYEES_WRITE', 'HR_READ', 'HR_WRITE', 'HR_DELETE',
-    'SMART_CHAT_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS',
-    'CHAT_PRESET_FAQ', 'CHAT_PRESET_INCREASES', 'CREATE_INVOICE',
-  ],
-  cashier: [
-    'VIEW_CHAT', 'VIEW_SALES', 'VIEW_INVOICES',
-    'SALES_READ', 'SALES_WRITE', 'SALES_ACTIONS', 'SALES_VIEW_SUMMARIES_LIST',
-    'INVOICES_READ', 'INVOICES_WRITE', 'INVOICES_ACTIONS',
-    'SMART_CHAT_READ', 'CHAT_PRESET_FAQ', 'CREATE_INVOICE',
-  ],
-};
 
 const inputStyle = {
   width: '100%', padding: '9px 12px', borderRadius: 8,
   border: '1px solid var(--noorix-border)',
   background: 'var(--noorix-bg-surface)', fontSize: 13,
 };
-
-const levelKeys = Object.keys(PERMISSION_LEVELS);
 
 function Cb({ checked, indeterminate, onChange, disabled }) {
   return (
@@ -55,8 +33,9 @@ function Cb({ checked, indeterminate, onChange, disabled }) {
   );
 }
 
-function PermissionMatrix({ permissions, onChange, disabled, language }) {
+function PermissionMatrix({ modules, levels, permissions, onChange, disabled, language }) {
   const isAr = language === 'ar';
+  const levelKeys = Object.keys(levels);
 
   const isChecked = (perm) => permissions.includes(perm);
 
@@ -82,17 +61,16 @@ function PermissionMatrix({ permissions, onChange, disabled, language }) {
     return n > 0 && n < vals.length;
   };
 
-  const allChecked = PERMISSION_MODULES.every(isModuleFull);
-  const totalPerms = PERMISSION_MODULES.flatMap((m) => Object.values(m.permissions)).length;
+  const allChecked = modules.every(isModuleFull);
+  const totalPerms = modules.flatMap((m) => Object.values(m.permissions)).length;
 
   const toggleAll = () => {
     if (disabled) return;
-    onChange(allChecked ? [] : [...new Set(PERMISSION_MODULES.flatMap((m) => Object.values(m.permissions)))]);
+    onChange(allChecked ? [] : [...new Set(modules.flatMap((m) => Object.values(m.permissions)))]);
   };
 
   return (
     <div>
-      {/* شريط رأس المصفوفة */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 8, gap: 8,
@@ -115,7 +93,6 @@ function PermissionMatrix({ permissions, onChange, disabled, language }) {
         </button>
       </div>
 
-      {/* جدول المصفوفة */}
       <div style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -132,13 +109,13 @@ function PermissionMatrix({ permissions, onChange, disabled, language }) {
               </th>
               {levelKeys.map((lvl) => (
                 <th key={lvl} style={{ ...thStyle, textAlign: 'center', minWidth: 76 }}>
-                  {isAr ? PERMISSION_LEVELS[lvl].ar : PERMISSION_LEVELS[lvl].en}
+                  {isAr ? levels[lvl].ar : levels[lvl].en}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {PERMISSION_MODULES.map((mod, idx) => {
+            {modules.map((mod, idx) => {
               const full    = isModuleFull(mod);
               const partial = isModulePartial(mod);
               return (
@@ -149,13 +126,11 @@ function PermissionMatrix({ permissions, onChange, disabled, language }) {
                   borderBottom: '1px solid var(--noorix-border)',
                   transition: 'background 0.1s',
                 }}>
-                  {/* اسم القسم */}
                   <td style={{ ...tdStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>
                     <span style={{ marginInlineEnd: 5, fontSize: 14 }}>{mod.icon}</span>
                     {isAr ? mod.labelAr : mod.labelEn}
                   </td>
 
-                  {/* عمود "الكل" */}
                   <td style={{
                     ...tdStyle, textAlign: 'center',
                     background: full
@@ -171,7 +146,6 @@ function PermissionMatrix({ permissions, onChange, disabled, language }) {
                     />
                   </td>
 
-                  {/* أعمدة الصلاحيات */}
                   {levelKeys.map((lvl) => {
                     const perm = mod.permissions[lvl];
                     if (!perm) return (
@@ -220,6 +194,19 @@ export default function RolesTab({ userRole, language }) {
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [form, setForm] = useState({ name: '', nameAr: '', description: '', permissions: [] });
 
+  // ── جلب المصفوفة من Backend (مصدر الحقيقة الوحيد) ──
+  const { data: schema } = useQuery({
+    queryKey: ['permissions-schema'],
+    queryFn: async () => {
+      const res = await getPermissionsSchema();
+      return res?.success ? res.data : null;
+    },
+    staleTime: 30 * 60 * 1000, // 30 دقيقة — نادراً ما تتغير
+  });
+
+  const modules = schema?.modules || [];
+  const levels  = schema?.levels  || {};
+
   const { data: roles = [], isLoading } = useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
@@ -245,7 +232,6 @@ export default function RolesTab({ userRole, language }) {
     mutationFn: ({ id, body }) => updateRole(id, body),
     onSuccess: () => {
       invalidate();
-      // أعد جلب /me لتحديث صلاحيات المستخدم الحالي فوراً
       queryClient.invalidateQueries({ queryKey: ['me'] });
       setEditing(null);
       setToast({ visible: true, message: t('updateSuccess'), type: 'success' });
@@ -264,29 +250,18 @@ export default function RolesTab({ userRole, language }) {
   });
 
   function openEdit(r) {
-    let perms = Array.isArray(r.permissions) ? [...r.permissions] : [];
-
-    // فقط إذا لم تُعدّل صلاحيات الدور من قبل (فارغة في DB) → اعرض الثابتة كبداية
-    if (perms.length === 0) {
-      const roleName = (r.name || '').toLowerCase();
-      const defaults = SYSTEM_ROLE_DEFAULTS[roleName];
-      if (Array.isArray(defaults)) {
-        perms = [...defaults];
-      }
-    }
-
     setEditing({
       id: r.id,
       name: r.name,
       nameAr: r.nameAr || '',
       description: r.description || '',
-      permissions: perms,
+      permissions: Array.isArray(r.permissions) ? [...r.permissions] : [],
       isSystem: r.isSystem,
     });
   }
 
   const isAr = language === 'ar';
-  const allPermCount = PERMISSION_MODULES.flatMap((m) => Object.values(m.permissions)).length;
+  const allPermCount = modules.flatMap((m) => Object.values(m.permissions)).length;
 
   function renderPermissionSummary(perms) {
     if (!Array.isArray(perms)) return '0';
@@ -297,10 +272,10 @@ export default function RolesTab({ userRole, language }) {
     if (!Array.isArray(perms) || perms.length === 0) {
       return <span style={{ color: 'var(--noorix-text-danger)', fontSize: 11 }}>{isAr ? 'بدون صلاحيات' : 'No permissions'}</span>;
     }
-    if (perms.length >= allPermCount) {
+    if (perms.length >= allPermCount && allPermCount > 0) {
       return <span style={{ color: 'var(--noorix-accent)', fontSize: 11, fontWeight: 700 }}>{isAr ? 'كل الصلاحيات' : 'Full access'}</span>;
     }
-    const activeModules = PERMISSION_MODULES.filter((m) =>
+    const activeModules = modules.filter((m) =>
       Object.values(m.permissions).some((p) => perms.includes(p))
     );
     return (
@@ -328,7 +303,6 @@ export default function RolesTab({ userRole, language }) {
     <div style={{ display: 'grid', gap: 16 }}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      {/* ── رأس القسم ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
@@ -346,7 +320,6 @@ export default function RolesTab({ userRole, language }) {
         </button>
       </div>
 
-      {/* ── قائمة الأدوار ── */}
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: 40, color: 'var(--noorix-text-muted)' }}>
           {t('loading')}
@@ -407,7 +380,6 @@ export default function RolesTab({ userRole, language }) {
         </div>
       )}
 
-      {/* ── نموذج إنشاء دور جديد ── */}
       {showForm && createPortal(
         <div role="dialog" style={overlayStyle} onClick={() => !createMutation.isPending && setShowForm(false)}>
           <div className="noorix-surface-card" style={modalStyle} onClick={(e) => e.stopPropagation()}>
@@ -448,6 +420,8 @@ export default function RolesTab({ userRole, language }) {
                 {isAr ? 'الصلاحيات' : 'Permissions'}
               </h4>
               <PermissionMatrix
+                modules={modules}
+                levels={levels}
                 permissions={form.permissions}
                 onChange={(perms) => setForm((p) => ({ ...p, permissions: perms }))}
                 disabled={false}
@@ -468,7 +442,6 @@ export default function RolesTab({ userRole, language }) {
         document.body,
       )}
 
-      {/* ── نموذج تعديل دور ── */}
       {editing && createPortal(
         <div role="dialog" style={overlayStyle} onClick={() => !updateMutation.isPending && setEditing(null)}>
           <div className="noorix-surface-card" style={modalStyle} onClick={(e) => e.stopPropagation()}>
@@ -517,6 +490,8 @@ export default function RolesTab({ userRole, language }) {
                 {isAr ? 'مصفوفة الصلاحيات' : 'Permissions Matrix'}
               </h4>
               <PermissionMatrix
+                modules={modules}
+                levels={levels}
                 permissions={editing.permissions}
                 onChange={(perms) => setEditing((p) => ({ ...p, permissions: perms }))}
                 disabled={false}

@@ -1,6 +1,9 @@
 /**
- * صلاحيات Noorix — نظام صلاحيات متقدم قائم على الأقسام (Modules).
- * الصلاحيات تُقرأ من قاعدة البيانات عبر user.permissions — لا خريطة ثابتة.
+ * Noorix Permissions — Frontend.
+ *
+ * ✅ مصدر الحقيقة الوحيد = Backend (/roles/permissions-schema).
+ * ✅ هذا الملف يحتوي فقط على: PERMISSIONS strings + hasPermission + routing.
+ * ✅ لا يوجد PERMISSION_MODULES أو SYSTEM_ROLE_PERMISSIONS — تُجلب من API.
  */
 
 export const PERMISSIONS = {
@@ -71,247 +74,14 @@ export const PERMISSIONS = {
 
   CREATE_INVOICE:   'CREATE_INVOICE',
 
-  // ── OCR الفواتير (تجريبي) ──
   VIEW_OCR:   'VIEW_OCR',
   OCR_READ:   'OCR_READ',
   OCR_WRITE:  'OCR_WRITE',
 };
 
 /**
- * مصفوفة الأقسام — لعرض الصلاحيات مجمّعة حسب الوحدة في واجهة الأدوار.
- * كل قسم يحتوي على: view (رؤية الصفحة), read, write, delete.
- */
-export const PERMISSION_MODULES = [
-  {
-    key: 'dashboard',
-    labelAr: 'لوحة التحكم',
-    labelEn: 'Dashboard',
-    icon: '📊',
-    permissions: {
-      view:  'VIEW_DASHBOARD',
-    },
-  },
-  {
-    key: 'ownerDashboard',
-    labelAr: 'لوحة المالك',
-    labelEn: 'Owner Dashboard',
-    icon: '👑',
-    permissions: {
-      view:  'VIEW_OWNER',
-    },
-  },
-  {
-    key: 'sales',
-    labelAr: 'المبيعات',
-    labelEn: 'Sales',
-    icon: '🛒',
-    permissions: {
-      view:    'VIEW_SALES',
-      read:    'SALES_READ',
-      write:   'SALES_WRITE',
-      delete:  'SALES_DELETE',
-      actions: 'SALES_ACTIONS',
-      history: 'SALES_FULL_HISTORY',
-      list:    'SALES_VIEW_SUMMARIES_LIST',
-    },
-  },
-  {
-    key: 'invoices',
-    labelAr: 'المشتريات والفواتير',
-    labelEn: 'Purchases & Invoices',
-    icon: '📄',
-    permissions: {
-      view:    'VIEW_INVOICES',
-      read:    'INVOICES_READ',
-      write:   'INVOICES_WRITE',
-      delete:  'INVOICES_DELETE',
-      actions: 'INVOICES_ACTIONS',
-      create:  'CREATE_INVOICE',
-    },
-  },
-  {
-    key: 'suppliers',
-    labelAr: 'الموردين والتصنيفات',
-    labelEn: 'Suppliers & Categories',
-    icon: '🚚',
-    permissions: {
-      view:   'VIEW_SUPPLIERS',
-      read:   'SUPPLIERS_READ',
-      write:  'SUPPLIERS_WRITE',
-      delete: 'SUPPLIERS_DELETE',
-    },
-  },
-  {
-    key: 'vaults',
-    labelAr: 'الخزائن',
-    labelEn: 'Vaults (Treasury)',
-    icon: '💰',
-    permissions: {
-      view:   'VIEW_VAULTS',
-      read:   'VAULTS_READ',
-      write:  'VAULTS_WRITE',
-      delete: 'VAULTS_DELETE',
-    },
-  },
-  {
-    key: 'expenses',
-    labelAr: 'المصروفات',
-    labelEn: 'Expenses',
-    icon: '💸',
-    permissions: {
-      view:   'VIEW_EXPENSES',
-      read:   'EXPENSES_READ',
-      write:  'EXPENSES_WRITE',
-      delete: 'EXPENSES_DELETE',
-    },
-  },
-  {
-    key: 'orders',
-    labelAr: 'الطلبات',
-    labelEn: 'Orders',
-    icon: '📦',
-    permissions: {
-      view:   'VIEW_ORDERS',
-      read:   'ORDERS_READ',
-      write:  'ORDERS_WRITE',
-      delete: 'ORDERS_DELETE',
-    },
-  },
-  {
-    key: 'employees',
-    labelAr: 'الموظفين',
-    labelEn: 'Employees',
-    icon: '👥',
-    permissions: {
-      view:   'VIEW_EMPLOYEES',
-      read:   'EMPLOYEES_READ',
-      write:  'EMPLOYEES_WRITE',
-      delete: 'EMPLOYEES_DELETE',
-    },
-  },
-  {
-    key: 'hr',
-    labelAr: 'الموارد البشرية (رواتب، إجازات)',
-    labelEn: 'HR (Payroll, Leaves)',
-    icon: '🏢',
-    permissions: {
-      read:   'HR_READ',
-      write:  'HR_WRITE',
-      delete: 'HR_DELETE',
-    },
-  },
-  {
-    key: 'reports',
-    labelAr: 'التقارير',
-    labelEn: 'Reports',
-    icon: '📈',
-    permissions: {
-      view:  'VIEW_REPORTS',
-      read:  'REPORTS_READ',
-    },
-  },
-  {
-    key: 'chat',
-    labelAr: 'المحادثة الذكية',
-    labelEn: 'Smart Chat',
-    icon: '💬',
-    permissions: {
-      view:       'VIEW_CHAT',
-      read:       'SMART_CHAT_READ',
-      chatAdv:    'CHAT_PRESET_ADVANCES',
-      chatLeave:  'CHAT_PRESET_LEAVES',
-      chatDed:    'CHAT_PRESET_DEDUCTIONS',
-      chatFaq:    'CHAT_PRESET_FAQ',
-      chatInc:    'CHAT_PRESET_INCREASES',
-    },
-  },
-  {
-    key: 'settings',
-    labelAr: 'الإعدادات',
-    labelEn: 'Settings',
-    icon: '⚙️',
-    permissions: {
-      view:  'MANAGE_SETTINGS',
-    },
-  },
-  {
-    key: 'users',
-    labelAr: 'إدارة المستخدمين',
-    labelEn: 'User Management',
-    icon: '🔐',
-    permissions: {
-      read:   'MANAGE_USERS',
-      delete: 'USERS_DELETE',
-    },
-  },
-  {
-    key: 'companies',
-    labelAr: 'إدارة الشركات',
-    labelEn: 'Company Management',
-    icon: '🏗️',
-    permissions: {
-      write:  'MANAGE_COMPANIES',
-      delete: 'DELETE_COMPANY',
-    },
-  },
-  {
-    key: 'ocr',
-    labelAr: 'OCR الفواتير (تجريبي)',
-    labelEn: 'OCR Invoices (Beta)',
-    icon: '🔍',
-    permissions: {
-      view:  'VIEW_OCR',
-      read:  'OCR_READ',
-      write: 'OCR_WRITE',
-    },
-  },
-];
-
-/** ترجمة أعمدة الصلاحيات */
-export const PERMISSION_LEVELS = {
-  view:       { ar: 'عرض الصفحة', en: 'View Page' },
-  read:       { ar: 'قراءة البيانات', en: 'Read Data' },
-  write:      { ar: 'إنشاء وتعديل', en: 'Create & Edit' },
-  delete:     { ar: 'حذف', en: 'Delete' },
-  actions:    { ar: 'إجراءات', en: 'Actions' },
-  create:     { ar: 'إنشاء فاتورة', en: 'Create Invoice' },
-  history:    { ar: 'التاريخ الكامل', en: 'Full History' },
-  list:       { ar: 'قائمة الملخصات', en: 'Summaries List' },
-  chatAdv:    { ar: 'محادثة · سلف', en: 'Chat · Advances' },
-  chatLeave:  { ar: 'محادثة · إجازات', en: 'Chat · Leaves' },
-  chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
-  chatFaq:    { ar: 'محادثة · أسئلة', en: 'Chat · FAQ' },
-  chatInc:    { ar: 'محادثة · زيادات', en: 'Chat · Raises' },
-};
-
-/**
- * صلاحيات الأدوار الثابتة عندما تكون permissions في JWT فارغة — يطابق backend/src/auth/constants/permissions.ts
- */
-const SYSTEM_ROLE_PERMISSIONS = {
-  accountant: [
-    'VIEW_DASHBOARD', 'VIEW_CHAT', 'VIEW_INVOICES', 'VIEW_SUPPLIERS', 'VIEW_VAULTS', 'VIEW_REPORTS',
-    'VIEW_SALES', 'VIEW_EMPLOYEES', 'VIEW_ORDERS', 'VIEW_EXPENSES',
-    'INVOICES_READ', 'INVOICES_WRITE', 'INVOICES_ACTIONS',
-    'SALES_READ', 'SALES_WRITE', 'SALES_ACTIONS', 'SALES_FULL_HISTORY', 'SALES_VIEW_SUMMARIES_LIST',
-    'SUPPLIERS_READ', 'VAULTS_READ', 'EXPENSES_READ', 'EXPENSES_WRITE',
-    'ORDERS_READ', 'ORDERS_WRITE', 'REPORTS_READ',
-    'EMPLOYEES_READ', 'EMPLOYEES_WRITE', 'HR_READ', 'HR_WRITE', 'HR_DELETE',
-    'SMART_CHAT_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS',
-    'CHAT_PRESET_FAQ', 'CHAT_PRESET_INCREASES', 'CREATE_INVOICE',
-  ],
-  cashier: [
-    'VIEW_CHAT', 'VIEW_SALES', 'VIEW_INVOICES',
-    'SALES_READ', 'SALES_WRITE', 'SALES_ACTIONS', 'SALES_VIEW_SUMMARIES_LIST',
-    'INVOICES_READ', 'INVOICES_WRITE', 'INVOICES_ACTIONS',
-    'SMART_CHAT_READ', 'CHAT_PRESET_FAQ', 'CREATE_INVOICE',
-  ],
-};
-
-/**
- * hasPermission — يفحص الصلاحية من مصفوفة المستخدم (DB-based).
- * @param {string|string[]} roleOrPermissions - اسم الدور أو مصفوفة الصلاحيات
- * @param {string} permission - الصلاحية المطلوبة
- * @param {string[]} [userPermissions] - مصفوفة الصلاحيات (اختياري إذا مرّرت الدور)
+ * hasPermission — يتحقق من صلاحيات DB فقط (لا fallback).
+ * الأدوار النظامية تُزرع في DB عند أول تشغيل — لا حاجة لـ hardcoded defaults.
  */
 export function hasPermission(roleOrPermissions, permission, userPermissions) {
   if (Array.isArray(roleOrPermissions)) {
@@ -321,14 +91,8 @@ export function hasPermission(roleOrPermissions, permission, userPermissions) {
   const role = (roleOrPermissions || '').toLowerCase();
   if (role === 'super_admin' || role === 'owner') return true;
 
-  // إذا DB فيها صلاحيات صريحة → استخدمها فقط (قرار المشرف)
-  if (Array.isArray(userPermissions) && userPermissions.length > 0) {
-    return userPermissions.includes(permission);
-  }
-
-  // الدور لم يُعدّل بعد → استخدم الصلاحيات الثابتة كـ fallback
-  const defaults = SYSTEM_ROLE_PERMISSIONS[role];
-  return Array.isArray(defaults) && defaults.includes(permission);
+  if (!Array.isArray(userPermissions)) return false;
+  return userPermissions.includes(permission);
 }
 
 export function isSuperAdmin(role) {
@@ -336,7 +100,7 @@ export function isSuperAdmin(role) {
   return r === 'super_admin' || r === 'owner';
 }
 
-/** مسارات الصفحات → صلاحية مطلوبة (سلسلة واحدة أو عدة صلاحيات يكفي واحدة منها) */
+/** مسارات الصفحات → صلاحية مطلوبة */
 export const ROUTE_PERMISSION = {
   '/owner':         PERMISSIONS.VIEW_OWNER,
   '/chat':          PERMISSIONS.VIEW_CHAT,
@@ -347,7 +111,6 @@ export const ROUTE_PERMISSION = {
   '/treasury':      PERMISSIONS.VIEW_VAULTS,
   '/expenses':      PERMISSIONS.VIEW_EXPENSES,
   '/orders':        PERMISSIONS.VIEW_ORDERS,
-  /** القائمة الجانبية تعتمد EMPLOYEES_READ؛ الحارس يقبل أيًا منهما لتفادي 403 عند الانتقال */
   '/hr':            [PERMISSIONS.VIEW_EMPLOYEES, PERMISSIONS.EMPLOYEES_READ],
   '/reports':       PERMISSIONS.VIEW_REPORTS,
   '/settings':      PERMISSIONS.MANAGE_SETTINGS,
@@ -359,9 +122,6 @@ export const REDIRECT_ONLY_PATHS = new Set([
   '/', '/purchasing', '/403',
 ]);
 
-/**
- * صلاحيات المسار الحالي (بما فيه مسارات فرعية مثل /hr/employee/:id)
- */
 export function getRouteRequiredPermissions(pathname) {
   if (REDIRECT_ONLY_PATHS.has(pathname)) return null;
   const direct = ROUTE_PERMISSION[pathname];

@@ -1,15 +1,59 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PermissionCacheService } from '../auth/permission-cache.service';
-
-const SYSTEM_ROLES = ['owner', 'super_admin', 'accountant', 'cashier'];
+import {
+  PERMISSION_MODULES,
+  PERMISSION_LEVELS,
+  SYSTEM_ROLE_SEEDS,
+} from '../auth/constants/permissions';
 
 @Injectable()
-export class RolesService {
+export class RolesService implements OnModuleInit {
+  private readonly logger = new Logger(RolesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly permCache: PermissionCacheService,
   ) {}
+
+  /**
+   * عند بدء التطبيق → يزرع الأدوار النظامية في DB إذا لم تكن موجودة
+   * أو يملأ صلاحياتها إذا كانت فارغة.
+   */
+  async onModuleInit() {
+    for (const [name, seed] of Object.entries(SYSTEM_ROLE_SEEDS)) {
+      try {
+        const existing = await this.prisma.role.findFirst({ where: { name } });
+        if (!existing) {
+          await this.prisma.role.create({
+            data: {
+              name,
+              nameAr: seed.nameAr,
+              permissions: seed.permissions,
+              isSystem: true,
+            },
+          });
+          this.logger.log(`Seeded system role: ${name}`);
+        } else if (!Array.isArray(existing.permissions) || existing.permissions.length === 0) {
+          await this.prisma.role.update({
+            where: { id: existing.id },
+            data: { permissions: seed.permissions, isSystem: true },
+          });
+          this.logger.log(`Filled permissions for system role: ${name}`);
+        }
+      } catch (e) {
+        this.logger.warn(`Failed to seed role ${name}: ${e.message}`);
+      }
+    }
+  }
+
+  /** المصفوفة الكاملة — يُرسل للـ frontend عبر API */
+  getPermissionsSchema() {
+    return {
+      modules: PERMISSION_MODULES,
+      levels: PERMISSION_LEVELS,
+    };
+  }
 
   findAll() {
     return this.prisma.role.findMany({
@@ -43,7 +87,6 @@ export class RolesService {
         permissions: data.permissions !== undefined ? data.permissions : undefined,
       },
     });
-    // إبطال كاش الصلاحيات فوراً → التغييرات تنفّذ بدون إعادة تسجيل دخول
     this.permCache.invalidate(role.name);
     return updated;
   }
