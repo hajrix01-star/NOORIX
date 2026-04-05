@@ -191,10 +191,16 @@ export default function App() {
   }, [cardStyle]);
 
   const toggleLanguage = () => {
+    document.documentElement.classList.add('dir-switching');
     setLanguage((prev) => {
       const next = prev === 'ar' ? 'en' : 'ar';
       try { localStorage.setItem(LANG_KEY, next); } catch (_) {}
       return next;
+    });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('dir-switching');
+      });
     });
   };
 
