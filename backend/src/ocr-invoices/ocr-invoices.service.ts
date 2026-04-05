@@ -13,19 +13,43 @@ function getGeminiUrl(): string {
 }
 
 function extractJson<T = Record<string, unknown>>(text: string): T | null {
-  let t = (text || '').trim();
-  const codeMatch = t.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (codeMatch) t = codeMatch[1].trim();
-  try { return JSON.parse(t) as T; } catch { /* */ }
-  const start = t.indexOf('{');
-  if (start === -1) return null;
-  let depth = 0, end = -1;
-  for (let i = start; i < t.length; i++) {
-    if (t[i] === '{') depth++;
-    else if (t[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+  const raw = (text || '').trim();
+  if (!raw) return null;
+
+  // 1. جرب البحث عن آخر كتلة JSON في النص (لأن gemini-2.5 يضع thinking أولاً)
+  const allJsonBlocks: string[] = [];
+
+  // استخرج من كتل markdown
+  const mdMatches = raw.matchAll(/```(?:json)?\s*([\s\S]*?)```/g);
+  for (const m of mdMatches) allJsonBlocks.push(m[1].trim());
+
+  // استخرج كل {} كبرى في النص
+  let i = 0;
+  while (i < raw.length) {
+    if (raw[i] === '{') {
+      let depth = 0, end = -1;
+      for (let j = i; j < raw.length; j++) {
+        if (raw[j] === '{') depth++;
+        else if (raw[j] === '}') { depth--; if (depth === 0) { end = j; break; } }
+      }
+      if (end !== -1) {
+        allJsonBlocks.push(raw.slice(i, end + 1));
+        i = end + 1;
+        continue;
+      }
+    }
+    i++;
   }
-  if (end === -1) return null;
-  try { return JSON.parse(t.slice(start, end + 1)) as T; } catch { return null; }
+
+  // 2. جرّب كل كتلة — ابدأ من الأخيرة (آخر JSON هو الجواب في نماذج التفكير)
+  for (const block of [...allJsonBlocks].reverse()) {
+    try {
+      const parsed = JSON.parse(block) as T;
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch { /* جرب التالية */ }
+  }
+
+  return null;
 }
 
 interface GeminiExtractedInvoice {
@@ -44,35 +68,19 @@ interface GeminiExtractedInvoice {
   }>;
 }
 
-const OCR_EXTRACTION_PROMPT = `أنت خبير استخراج بيانات الفواتير التجارية السعودية.
-استخرج البيانات من هذه الفاتورة وأرجع JSON صحيحاً بهذا الشكل الدقيق:
+const OCR_EXTRACTION_PROMPT = `Extract invoice data from this image and return ONLY a valid JSON object. No explanation, no markdown, no text before or after — just the raw JSON.
 
-{
-  "supplier": { "name": "اسم المورد أو الشركة البائعة", "confidence": 0.95 },
-  "vatNumber": { "value": "الرقم الضريبي (15 رقم)", "confidence": 0.9 },
-  "invoiceNumber": { "value": "رقم الفاتورة", "confidence": 0.95 },
-  "invoiceDate": { "value": "YYYY-MM-DD", "confidence": 0.95 },
-  "totalAmount": { "value": 1500.00, "confidence": 0.98 },
-  "vatAmount": { "value": 195.65, "confidence": 0.98 },
-  "items": [
-    {
-      "name": "اسم الصنف كما هو في الفاتورة",
-      "quantity": 5,
-      "unitPrice": 60.00,
-      "totalPrice": 300.00,
-      "confidence": 0.90
-    }
-  ]
-}
+Required format:
+{"supplier":{"name":"SUPPLIER NAME","confidence":0.95},"vatNumber":{"value":"TAX_NUMBER","confidence":0.9},"invoiceNumber":{"value":"INV_NUMBER","confidence":0.95},"invoiceDate":{"value":"YYYY-MM-DD","confidence":0.95},"totalAmount":{"value":1500.00,"confidence":0.98},"vatAmount":{"value":195.65,"confidence":0.98},"items":[{"name":"ITEM NAME AS IN INVOICE","quantity":5,"unitPrice":60.00,"totalPrice":300.00,"confidence":0.90}]}
 
-قواعد مهمة:
-- confidence من 0 إلى 1 (1 = متأكد تماماً)
-- إذا لم تجد قيمة، اجعلها null وconfidence = 0
-- أرقام الفاتورة كما هي بدون تعديل
-- أسماء الأصناف كما هي في الفاتورة تماماً
-- التاريخ بصيغة YYYY-MM-DD دائماً
-- المبالغ أرقام عشرية فقط (بدون عملة)
-- أرجع JSON فقط بدون أي نص قبله أو بعده`;
+Rules:
+- confidence: 0.0 to 1.0 (1.0 = certain)
+- Use null for missing values with confidence 0
+- Keep item names exactly as printed
+- Date must be YYYY-MM-DD
+- Amounts are numbers only (no currency symbols)
+- The response must start with { and end with }`;
+
 
 @Injectable()
 export class OcrInvoicesService {
@@ -113,15 +121,19 @@ export class OcrInvoicesService {
       throw new BadRequestException(`فشل الاستخراج من Gemini: ${errMsg}`);
     }
 
-    const candidates = (rawJson as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates;
-    const text = candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const candidates = (rawJson as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }; finishReason?: string }> })?.candidates;
+    const candidate = candidates?.[0];
 
-    this.logger.log(`Gemini OCR raw: ${text.substring(0, 200)}`);
+    // اجمع كل الـ parts (gemini-2.5 يُرجع thinking في part أول وJSON في الأخير)
+    const parts = candidate?.content?.parts || [];
+    const text = parts.map((p) => p.text || '').join('\n').trim();
+
+    this.logger.log(`Gemini OCR finish: ${candidate?.finishReason} | parts: ${parts.length} | text[0..300]: ${text.substring(0, 300)}`);
 
     const extracted = extractJson<GeminiExtractedInvoice>(text);
 
     if (!extracted) {
-      this.logger.error(`Gemini OCR parse failed. Raw text (first 800): ${text.substring(0, 800)}`);
+      this.logger.error(`Gemini OCR parse failed. parts=${parts.length} text(800)=${text.substring(0, 800)}`);
       // أرجع كائناً فارغاً مع علامة الخطأ بدلاً من رمي استثناء
       return {
         parseError: true,
