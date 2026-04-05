@@ -79,6 +79,10 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
     try {
       const lines = (extracted.items || []).map((item) => ({
         rawName:     item.name || '',
+        nameAr:      item.nameAr || null,
+        nameEn:      item.nameEn || null,
+        size:        item.size || null,
+        sizeUnit:    item.sizeUnit || null,
         itemId:      item.itemMatch?.id || null,
         quantity:    item.quantity || null,
         unitPrice:   item.unitPrice || null,
@@ -266,6 +270,11 @@ function FieldRow({ label, value, confidence, match }) {
 function ItemRow({ item, language, t }) {
   const match = item.itemMatch;
   const statusInfo = match ? STATUS_BADGE[match.status] : STATUS_BADGE.new;
+
+  // بناء عرض الاسم: عربي + إنجليزي + حجم
+  const displayName = [item.nameAr, item.nameEn].filter(Boolean).join(' / ') || item.name || '—';
+  const sizeLabel = item.size ? `${item.size}${item.sizeUnit || ''}` : null;
+
   return (
     <div style={{
       padding: '10px 12px',
@@ -273,27 +282,50 @@ function ItemRow({ item, language, t }) {
       background: 'var(--noorix-bg-surface)',
       border: '1px solid var(--noorix-border)',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600, fontSize: 14 }}>{item.name || '—'}</div>
+          {/* الاسم الأساسي */}
+          <div style={{ fontWeight: 600, fontSize: 14 }}>{displayName}</div>
+
+          {/* الحجم */}
+          {sizeLabel && (
+            <span style={{
+              display: 'inline-block', marginTop: 3,
+              fontSize: 11, fontWeight: 700,
+              padding: '2px 8px', borderRadius: 20,
+              background: 'rgba(99,102,241,0.1)', color: '#6366f1',
+            }}>
+              📏 {sizeLabel}
+            </span>
+          )}
+
+          {/* الاسم الكامل كما في الفاتورة (إذا كان مختلفاً) */}
+          {item.name && item.name !== displayName && (
+            <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 2 }}>
+              OCR: {item.name}
+            </div>
+          )}
+
+          {/* المطابقة في الكتالوج */}
           {match && (
             <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 2 }}>
-              ↳ {match.nameAr}
+              ↳ {match.nameAr}{match.nameEn ? ` / ${match.nameEn}` : ''}
+              {match.hasSizes && <span style={{ marginRight: 4, color: '#6366f1' }}>• متعدد الأحجام</span>}
             </div>
           )}
         </div>
         <span style={{
-          fontSize: 11, padding: '3px 8px', borderRadius: 6,
+          fontSize: 11, padding: '3px 8px', borderRadius: 6, flexShrink: 0,
           background: statusInfo.bg, color: statusInfo.color, fontWeight: 700,
         }}>
           {language === 'ar' ? statusInfo.label.ar : statusInfo.label.en}
         </span>
       </div>
       <div style={{ display: 'flex', gap: 16, marginTop: 6, fontSize: 12, color: 'var(--noorix-text-muted)', flexWrap: 'wrap' }}>
-        {item.quantity && <span>الكمية: {item.quantity}</span>}
-        {item.unitPrice && <span>السعر: {item.unitPrice}</span>}
-        {item.totalPrice && <span>الإجمالي: {item.totalPrice}</span>}
-        {item.confidence && (
+        {item.quantity  && <span>الكمية: <strong>{item.quantity}</strong></span>}
+        {item.unitPrice && <span>السعر: <strong>{item.unitPrice}</strong></span>}
+        {item.totalPrice && <span>الإجمالي: <strong>{item.totalPrice}</strong></span>}
+        {item.confidence != null && (
           <span style={{ color: CONFIDENCE_COLOR(item.confidence) }}>
             دقة: {Math.round(item.confidence * 100)}%
           </span>

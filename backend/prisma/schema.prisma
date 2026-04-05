@@ -1043,6 +1043,7 @@ model OcrItem {
   nameEn    String?  @map("name_en")
   category  String?
   unitType  String?  @map("unit_type")
+  hasSizes  Boolean  @default(false) @map("has_sizes") // هل لهذا الصنف أحجام متعددة؟
   notes     String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
@@ -1096,7 +1097,11 @@ model OcrInvoiceLine {
   id          String   @id @default(cuid())
   invoiceId   String   @map("invoice_id")
   itemId      String?  @map("item_id")
-  rawName     String   @map("raw_name")
+  rawName     String   @map("raw_name")   // الاسم الكامل كما في الفاتورة
+  nameAr      String?  @map("name_ar")    // الجزء العربي من الاسم
+  nameEn      String?  @map("name_en")    // الجزء الإنجليزي من الاسم
+  size        String?                     // الحجم مثل "700" أو "2"
+  sizeUnit    String?  @map("size_unit")  // وحدة الحجم مثل "g" أو "L"
   quantity    Decimal? @db.Decimal(10, 3)
   unitPrice   Decimal? @map("unit_price")  @db.Decimal(14, 2)
   totalPrice  Decimal? @map("total_price") @db.Decimal(14, 2)
@@ -1118,6 +1123,8 @@ model OcrPriceHistory {
   itemId      String   @map("item_id")
   supplierId  String   @map("supplier_id")
   price       Decimal  @db.Decimal(14, 2)
+  size        String?                    // الحجم للتتبع المنفصل لكل حجم
+  sizeUnit    String?  @map("size_unit")
   invoiceDate DateTime @map("invoice_date")
   invoiceId   String?  @map("invoice_id")
   createdAt   DateTime @default(now()) @map("created_at")

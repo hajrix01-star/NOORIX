@@ -136,14 +136,14 @@ export default function InvoiceListTab({ invoices = [], loading }) {
           <div
             dir={dir}
             style={{
-              background: 'var(--noorix-bg)',
+              background: '#ffffff',
               borderRadius: 16,
               maxWidth: 640,
               width: '100%',
               maxHeight: '88vh',
               overflowY: 'auto',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-              border: '1px solid var(--noorix-border)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
+              border: '1px solid #e5e7eb',
             }}
           >
             {/* رأس النافذة */}
@@ -151,7 +151,7 @@ export default function InvoiceListTab({ invoices = [], loading }) {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               padding: '20px 24px 16px',
               borderBottom: '1px solid var(--noorix-border)',
-              position: 'sticky', top: 0, background: 'var(--noorix-bg)', zIndex: 1,
+              position: 'sticky', top: 0, background: '#ffffff', zIndex: 1,
             }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>تفاصيل الفاتورة</h3>
@@ -175,8 +175,8 @@ export default function InvoiceListTab({ invoices = [], loading }) {
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px',
                 marginBottom: 20, padding: 16,
-                background: 'var(--noorix-bg-surface)',
-                borderRadius: 12, border: '1px solid var(--noorix-border)',
+                background: '#f9fafb',
+                borderRadius: 12, border: '1px solid #e5e7eb',
               }}>
                 {[
                   { label: 'المورد',        value: viewing.supplier?.nameAr || '—' },
@@ -205,21 +205,32 @@ export default function InvoiceListTab({ invoices = [], loading }) {
                         key={i}
                         style={{
                           padding: '10px 14px', borderRadius: 10,
-                          background: 'var(--noorix-bg-surface)',
-                          border: '1px solid var(--noorix-border)',
+                          background: '#f9fafb',
+                          border: '1px solid #e5e7eb',
                         }}
                       >
-                        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
-                          {line.item?.nameAr || line.rawName}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                          <span style={{ fontWeight: 600, fontSize: 14 }}>
+                            {line.nameAr || line.item?.nameAr || line.rawName}
+                            {line.nameEn ? ` / ${line.nameEn}` : ''}
+                          </span>
+                          {line.size && (
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                              background: 'rgba(99,102,241,0.1)', color: '#6366f1',
+                            }}>
+                              {line.size}{line.sizeUnit || ''}
+                            </span>
+                          )}
                         </div>
-                        {line.rawName !== line.item?.nameAr && line.item && (
-                          <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 4 }}>
+                        {line.rawName !== (line.nameAr || line.item?.nameAr) && (
+                          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>
                             OCR: {line.rawName}
                           </div>
                         )}
                         <div style={{
                           display: 'flex', gap: 16, fontSize: 12,
-                          color: 'var(--noorix-text-muted)', flexWrap: 'wrap',
+                          color: '#6b7280', flexWrap: 'wrap',
                         }}>
                           {line.quantity  && <span>الكمية: <strong>{line.quantity}</strong></span>}
                           {line.unitPrice && <span>السعر: <strong>{Number(line.unitPrice).toLocaleString('ar-SA')}</strong></span>}

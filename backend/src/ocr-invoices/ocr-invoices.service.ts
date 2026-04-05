@@ -71,6 +71,18 @@ function extractJson<T = Record<string, unknown>>(text: string): T | null {
   return null;
 }
 
+interface GeminiExtractedItem {
+  name?: string;       // الاسم الكامل كما في الفاتورة
+  nameAr?: string;     // الجزء العربي فقط
+  nameEn?: string;     // الجزء الإنجليزي فقط
+  size?: string;       // الحجم كرقم فقط: "700" أو "2" أو "500"
+  sizeUnit?: string;   // وحدة الحجم: "g" | "kg" | "ml" | "L" | "pcs" | "حبة"
+  quantity?: number;
+  unitPrice?: number;
+  totalPrice?: number;
+  confidence?: number;
+}
+
 interface GeminiExtractedInvoice {
   supplier?: { name?: string; confidence?: number };
   vatNumber?: { value?: string; confidence?: number };
@@ -78,27 +90,42 @@ interface GeminiExtractedInvoice {
   invoiceDate?: { value?: string; confidence?: number };
   totalAmount?: { value?: number; confidence?: number };
   vatAmount?: { value?: number; confidence?: number };
-  items?: Array<{
-    name?: string;
-    quantity?: number;
-    unitPrice?: number;
-    totalPrice?: number;
-    confidence?: number;
-  }>;
+  items?: GeminiExtractedItem[];
 }
 
 const OCR_EXTRACTION_PROMPT = `Extract invoice data from this image and return ONLY a valid JSON object. No explanation, no markdown, no text before or after — just the raw JSON.
 
 Required format:
-{"supplier":{"name":"SUPPLIER NAME","confidence":0.95},"vatNumber":{"value":"TAX_NUMBER","confidence":0.9},"invoiceNumber":{"value":"INV_NUMBER","confidence":0.95},"invoiceDate":{"value":"YYYY-MM-DD","confidence":0.95},"totalAmount":{"value":1500.00,"confidence":0.98},"vatAmount":{"value":195.65,"confidence":0.98},"items":[{"name":"ITEM NAME AS IN INVOICE","quantity":5,"unitPrice":60.00,"totalPrice":300.00,"confidence":0.90}]}
+{
+  "supplier": {"name": "SUPPLIER NAME", "confidence": 0.95},
+  "vatNumber": {"value": "TAX_NUMBER_15_DIGITS", "confidence": 0.9},
+  "invoiceNumber": {"value": "INV_NUMBER", "confidence": 0.95},
+  "invoiceDate": {"value": "YYYY-MM-DD", "confidence": 0.95},
+  "totalAmount": {"value": 1500.00, "confidence": 0.98},
+  "vatAmount": {"value": 195.65, "confidence": 0.98},
+  "items": [
+    {
+      "name": "FULL ITEM NAME AS PRINTED (e.g. جبن مراعي 700g أو PEPSI CAN 330ML)",
+      "nameAr": "ARABIC PART ONLY (e.g. جبن مراعي)",
+      "nameEn": "ENGLISH PART ONLY (e.g. PEPSI CAN) or null if none",
+      "size": "NUMERIC SIZE ONLY (e.g. 700 or 330 or 2) or null if no size",
+      "sizeUnit": "UNIT ONLY: g or kg or ml or L or pcs or null",
+      "quantity": 5,
+      "unitPrice": 60.00,
+      "totalPrice": 300.00,
+      "confidence": 0.90
+    }
+  ]
+}
 
 Rules:
-- confidence: 0.0 to 1.0 (1.0 = certain)
-- Use null for missing values with confidence 0
-- Keep item names exactly as printed
-- Date must be YYYY-MM-DD
-- Amounts are numbers only (no currency symbols)
-- The response must start with { and end with }`;
+- confidence: 0.0 to 1.0
+- null for missing values
+- nameAr: Arabic text only, nameEn: English/Latin text only — split mixed names
+- size: extract from item name if present (700g → size="700", sizeUnit="g")
+- Date must be YYYY-MM-DD, amounts are numbers only
+- Response must start with { and end with }`;
+
 
 
 @Injectable()
@@ -250,32 +277,51 @@ export class OcrInvoicesService {
       await this.logExtraction(tenantId, 'supplier', supplierName, supplierMatch);
     }
 
-    // مطابقة الأصناف
+    // مطابقة الأصناف — المطابقة على الاسم الأساسي بدون الحجم
     const matchedItems = await Promise.all(
       (extracted.items || []).map(async (item) => {
         if (!item.name) return { ...item, itemMatch: null };
 
+        // استخدم nameAr أو nameEn أو name الكامل للمطابقة (بدون الحجم)
+        const matchName = item.nameAr || item.nameEn || item.name;
+
         const result = findBestMatch(
-          item.name,
+          matchName,
           items,
           (i) => i.nameAr,
-          (i) => i.aliases.map((a) => a.alias),
+          (i) => [
+            ...(i.nameEn ? [i.nameEn] : []),
+            ...i.aliases.map((a) => a.alias),
+          ],
         );
 
-        let itemMatch: { id: string; nameAr: string; score: number; status: string } | null = null;
+        let itemMatch: { id: string; nameAr: string; nameEn?: string | null; score: number; status: string; hasSizes: boolean } | null = null;
         if (result) {
           const status = classifyConfidence(result.score);
           if (status !== 'new') {
+            const matched = result.item as { id: string; nameAr: string; nameEn?: string | null; hasSizes: boolean };
             itemMatch = {
-              id: (result.item as { id: string }).id,
-              nameAr: (result.item as { nameAr: string }).nameAr,
+              id: matched.id,
+              nameAr: matched.nameAr,
+              nameEn: matched.nameEn,
+              hasSizes: matched.hasSizes,
               score: result.score,
               status: status === 'auto' ? 'auto' : 'review',
             };
           }
         }
 
-        await this.logExtraction(tenantId, 'item', item.name, itemMatch, supplierMatch?.id);
+        // تسجيل بالاسم الأساسي (بدون الحجم)
+        await this.logExtraction(tenantId, 'item', matchName, itemMatch, supplierMatch?.id);
+
+        // إذا كان الصنف له حجم — حدّث has_sizes في الكتالوج
+        if (itemMatch && item.size) {
+          await this.prisma.ocrItem.update({
+            where: { id: itemMatch.id },
+            data: { hasSizes: true },
+          }).catch(() => { /* تجاهل خطأ التحديث */ });
+        }
+
         return { ...item, itemMatch };
       }),
     );
@@ -512,12 +558,16 @@ export class OcrInvoicesService {
         status: 'confirmed',
         lines: {
           create: processedLines.map((l) => ({
-            rawName: l.rawName,
-            itemId: l.itemId || null,
-            quantity: l.quantity ? l.quantity : null,
-            unitPrice: l.unitPrice ? l.unitPrice : null,
-            totalPrice: l.totalPrice ? l.totalPrice : null,
-            confidence: l.confidence ?? 0,
+            rawName:     l.rawName,
+            nameAr:      (l as { nameAr?: string }).nameAr || null,
+            nameEn:      (l as { nameEn?: string }).nameEn || null,
+            size:        (l as { size?: string }).size || null,
+            sizeUnit:    (l as { sizeUnit?: string }).sizeUnit || null,
+            itemId:      l.itemId || null,
+            quantity:    l.quantity ? l.quantity : null,
+            unitPrice:   l.unitPrice ? l.unitPrice : null,
+            totalPrice:  l.totalPrice ? l.totalPrice : null,
+            confidence:  l.confidence ?? 0,
             matchStatus: l.matchStatus,
           })),
         },
@@ -525,18 +575,20 @@ export class OcrInvoicesService {
       include: { lines: true },
     });
 
-    // ── 4. حفظ تاريخ الأسعار لكل صنف له مورد وسعر ────────────────────────
+    // ── 4. حفظ تاريخ الأسعار لكل صنف له مورد وسعر (مع الحجم للتمييز) ──
     if (supplierId && invoiceDate) {
       for (const line of processedLines) {
         if (line.itemId && line.unitPrice) {
           await this.prisma.ocrPriceHistory.create({
             data: {
               tenantId,
-              itemId: line.itemId,
+              itemId:      line.itemId,
               supplierId,
-              price: line.unitPrice,
+              price:       line.unitPrice,
+              size:        (line as { size?: string }).size || null,
+              sizeUnit:    (line as { sizeUnit?: string }).sizeUnit || null,
               invoiceDate: new Date(invoiceDate),
-              invoiceId: invoice.id,
+              invoiceId:   invoice.id,
             },
           });
         }
