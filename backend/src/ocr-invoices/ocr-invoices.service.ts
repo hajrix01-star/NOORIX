@@ -8,11 +8,27 @@ import { CreateOcrSupplierDto } from './dto/create-ocr-supplier.dto';
 import { CreateOcrItemDto } from './dto/create-ocr-item.dto';
 import { SaveInvoiceDto } from './dto/save-invoice.dto';
 
-function getGeminiUrl(): string {
-  const model = getGeminiModel();
-  // gemini-1.5-* و gemini-1.0-* تعمل على v1 فقط، الباقي على v1beta
-  const version = /gemini-1\.[05]/.test(model) ? 'v1' : 'v1beta';
+// ─── Gemini Model Fallback Chain ─────────────────────────────────────────────
+// إذا لم يكن النموذج المُعيّن متاحاً، يجرب النظام النماذج بالترتيب تلقائياً
+const GEMINI_FALLBACK_CHAIN = [
+  { model: 'gemini-2.0-flash',     version: 'v1beta' },
+  { model: 'gemini-2.5-flash',     version: 'v1beta' },
+  { model: 'gemini-2.0-flash-exp', version: 'v1beta' },
+  { model: 'gemini-1.5-flash',     version: 'v1'     },
+  { model: 'gemini-1.5-pro',       version: 'v1'     },
+  { model: 'gemini-pro-vision',    version: 'v1beta' },
+];
+
+function buildGeminiUrl(model: string, version: string): string {
   return `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent`;
+}
+
+/** يُرجع قائمة النماذج للمحاولة: النموذج المُعيّن أولاً ثم سلسلة الـ fallback */
+function getGeminiModelsToTry(): Array<{ model: string; version: string }> {
+  const configured = getGeminiModel();
+  const version = /^gemini-1\.[05]/.test(configured) ? 'v1' : 'v1beta';
+  const chain = GEMINI_FALLBACK_CHAIN.filter((m) => m.model !== configured);
+  return [{ model: configured, version }, ...chain];
 }
 
 function extractJson<T = Record<string, unknown>>(text: string): T | null {
@@ -98,9 +114,9 @@ export class OcrInvoicesService {
     if (!apiKey) throw new BadRequestException('Gemini API key not configured');
 
     const mimeType = dto.mimeType || 'image/jpeg';
-    const url = `${getGeminiUrl()}?key=${apiKey}`;
+    const modelsToTry = getGeminiModelsToTry();
 
-    const body = {
+    const requestBody = {
       contents: [{
         parts: [
           { text: OCR_EXTRACTION_PROMPT },
@@ -110,51 +126,78 @@ export class OcrInvoicesService {
       generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
     };
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    type GeminiRaw = {
+      candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+        finishReason?: string;
+      }>;
+      error?: { message?: string; code?: number };
+    };
 
-    const rawJson = await res.json().catch(() => null) as Record<string, unknown> | null;
+    // ── يُجرّب النماذج بالترتيب حتى ينجح أحدها ─────────────────────────
+    for (const { model, version } of modelsToTry) {
+      const url = `${buildGeminiUrl(model, version)}?key=${apiKey}`;
 
-    if (!res.ok) {
-      const errMsg = (rawJson as { error?: { message?: string } })?.error?.message || res.statusText;
-      this.logger.error(`Gemini OCR error ${res.status}: ${errMsg}`);
-      throw new BadRequestException(`فشل الاستخراج من Gemini: ${errMsg}`);
+      let rawJson: GeminiRaw | null = null;
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+        rawJson = await res.json().catch(() => null) as GeminiRaw | null;
+
+        if (!res.ok) {
+          const errMsg = rawJson?.error?.message || res.statusText;
+          const isUnavailable =
+            res.status === 404 ||
+            errMsg.toLowerCase().includes('not found') ||
+            errMsg.toLowerCase().includes('not supported') ||
+            errMsg.toLowerCase().includes('is not found for api version');
+
+          if (isUnavailable) {
+            this.logger.warn(`Gemini model "${model}" unavailable → trying next in chain`);
+            continue; // جرّب النموذج التالي
+          }
+
+          this.logger.error(`Gemini error ${res.status} (${model}): ${errMsg}`);
+          throw new BadRequestException(`فشل الاستخراج من Gemini: ${errMsg}`);
+        }
+
+        // ── نجح الطلب ────────────────────────────────────────────────────
+        const candidate = rawJson?.candidates?.[0];
+        const parts = candidate?.content?.parts || [];
+        const text = parts.map((p) => p.text || '').join('\n').trim();
+
+        this.logger.log(`Gemini OK (${model}) | finish=${candidate?.finishReason} | parts=${parts.length} | text[300]=${text.substring(0, 300)}`);
+
+        const extracted = extractJson<GeminiExtractedInvoice>(text);
+        if (!extracted) {
+          this.logger.error(`Gemini parse failed (${model}). text(800)=${text.substring(0, 800)}`);
+          return {
+            parseError: true,
+            usedModel: model,
+            rawText: text.substring(0, 500),
+            supplier: null, supplierMatch: null,
+            vatNumber: null, invoiceNumber: null,
+            invoiceDate: null, totalAmount: null,
+            vatAmount: null, items: [],
+          };
+        }
+
+        this.logger.log(`Gemini extracted OK (${model}): supplier=${extracted.supplier?.name} items=${extracted.items?.length}`);
+        return await this.enrichExtraction(tenantId, extracted);
+
+      } catch (err) {
+        // خطأ شبكي — لا نستمر في الـ fallback لأنه ليس مشكلة نموذج
+        if (err instanceof BadRequestException) throw err;
+        this.logger.error(`Gemini network error (${model}): ${(err as Error).message}`);
+        throw new BadRequestException('خطأ في الاتصال بـ Gemini');
+      }
     }
 
-    const candidates = (rawJson as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }; finishReason?: string }> })?.candidates;
-    const candidate = candidates?.[0];
-
-    // اجمع كل الـ parts (gemini-2.5 يُرجع thinking في part أول وJSON في الأخير)
-    const parts = candidate?.content?.parts || [];
-    const text = parts.map((p) => p.text || '').join('\n').trim();
-
-    this.logger.log(`Gemini OCR finish: ${candidate?.finishReason} | parts: ${parts.length} | text[0..300]: ${text.substring(0, 300)}`);
-
-    const extracted = extractJson<GeminiExtractedInvoice>(text);
-
-    if (!extracted) {
-      this.logger.error(`Gemini OCR parse failed. parts=${parts.length} text(800)=${text.substring(0, 800)}`);
-      // أرجع كائناً فارغاً مع علامة الخطأ بدلاً من رمي استثناء
-      return {
-        parseError: true,
-        rawText: text.substring(0, 500),
-        supplier: null,
-        supplierMatch: null,
-        vatNumber: null,
-        invoiceNumber: null,
-        invoiceDate: null,
-        totalAmount: null,
-        vatAmount: null,
-        items: [],
-      };
-    }
-
-    // حاول مطابقة المورد والأصناف
-    const enriched = await this.enrichExtraction(tenantId, extracted);
-    return enriched;
+    // وصلنا هنا يعني كل النماذج فشلت
+    throw new BadRequestException('لا يوجد نموذج Gemini متاح في هذا الحساب. تحقق من GEMINI_API_KEY أو أضف GEMINI_MODEL في .env');
   }
 
   private async enrichExtraction(tenantId: string, extracted: GeminiExtractedInvoice) {
