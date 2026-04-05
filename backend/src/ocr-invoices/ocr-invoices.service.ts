@@ -8,6 +8,51 @@ import { CreateOcrSupplierDto } from './dto/create-ocr-supplier.dto';
 import { CreateOcrItemDto } from './dto/create-ocr-item.dto';
 import { SaveInvoiceDto } from './dto/save-invoice.dto';
 
+// ─── Name & Size Parsing Utilities ───────────────────────────────────────────
+
+const SIZE_UNITS = ['kg', 'g', 'gr', 'gm', 'ml', 'l', 'ltr', 'liter', 'pcs', 'pc', 'كجم', 'كيلو', 'جرام', 'مل', 'لتر', 'حبة', 'علبة', 'كيس'];
+const SIZE_REGEX = new RegExp(
+  `(\\d+(?:[.,]\\d+)?)\\s*(${SIZE_UNITS.join('|')})\\.?(?:\\s|$|x|×)`,
+  'gi',
+);
+const ARABIC_RANGE = /[\u0600-\u06FF]/;
+const LATIN_RANGE  = /[A-Za-z]/;
+
+/** يقسّم الاسم المختلط إلى جزء عربي وجزء إنجليزي */
+function splitBilingualName(name: string): { nameAr: string | null; nameEn: string | null } {
+  if (!name) return { nameAr: null, nameEn: null };
+  const hasAr = ARABIC_RANGE.test(name);
+  const hasEn = LATIN_RANGE.test(name);
+  if (!hasAr && !hasEn) return { nameAr: name, nameEn: null };
+  if (hasAr && !hasEn)  return { nameAr: name, nameEn: null };
+  if (!hasAr && hasEn)  return { nameAr: null, nameEn: name };
+
+  // اسم مختلط — استخرج كل كلمة بحسب لغتها
+  const arTokens: string[] = [];
+  const enTokens: string[] = [];
+  name.split(/\s+/).forEach((token) => {
+    if (ARABIC_RANGE.test(token)) arTokens.push(token);
+    else if (LATIN_RANGE.test(token)) enTokens.push(token);
+    else { arTokens.push(token); enTokens.push(token); }
+  });
+  return {
+    nameAr: arTokens.length  ? arTokens.join(' ') : null,
+    nameEn: enTokens.length  ? enTokens.join(' ') : null,
+  };
+}
+
+/** يستخرج الحجم ووحدته من اسم الصنف ويُرجع الاسم مُنظَّفاً */
+function extractSizeFromName(name: string): { cleanName: string; size: string | null; sizeUnit: string | null } {
+  if (!name) return { cleanName: name, size: null, sizeUnit: null };
+  SIZE_REGEX.lastIndex = 0;
+  const match = SIZE_REGEX.exec(name);
+  if (!match) return { cleanName: name.trim(), size: null, sizeUnit: null };
+  const size = match[1].replace(',', '.');
+  const sizeUnit = match[2].toLowerCase();
+  const cleanName = name.replace(match[0], ' ').replace(/\s{2,}/g, ' ').trim();
+  return { cleanName, size, sizeUnit };
+}
+
 // ─── Gemini Model Fallback Chain ─────────────────────────────────────────────
 // إذا لم يكن النموذج المُعيّن متاحاً، يجرب النظام النماذج بالترتيب تلقائياً
 const GEMINI_FALLBACK_CHAIN = [
@@ -72,15 +117,17 @@ function extractJson<T = Record<string, unknown>>(text: string): T | null {
 }
 
 interface GeminiExtractedItem {
-  name?: string;       // الاسم الكامل كما في الفاتورة
-  nameAr?: string;     // الجزء العربي فقط
-  nameEn?: string;     // الجزء الإنجليزي فقط
-  size?: string;       // الحجم كرقم فقط: "700" أو "2" أو "500"
-  sizeUnit?: string;   // وحدة الحجم: "g" | "kg" | "ml" | "L" | "pcs" | "حبة"
+  name?: string;       // الاسم الكامل كما في الفاتورة (Gemini يُرجع هذا فقط)
   quantity?: number;
   unitPrice?: number;
   totalPrice?: number;
   confidence?: number;
+  // هذه الحقول تُضاف بعد الاستخراج في enrichExtraction (ليس من Gemini)
+  nameAr?: string;
+  nameEn?: string;
+  size?: string;
+  sizeUnit?: string;
+  cleanName?: string;
 }
 
 interface GeminiExtractedInvoice {
@@ -93,38 +140,18 @@ interface GeminiExtractedInvoice {
   items?: GeminiExtractedItem[];
 }
 
-const OCR_EXTRACTION_PROMPT = `Extract invoice data from this image and return ONLY a valid JSON object. No explanation, no markdown, no text before or after — just the raw JSON.
+const OCR_EXTRACTION_PROMPT = `Extract all data from this invoice image and return ONLY a raw JSON object. No markdown, no explanation, no text before or after the JSON.
 
-Required format:
-{
-  "supplier": {"name": "SUPPLIER NAME", "confidence": 0.95},
-  "vatNumber": {"value": "TAX_NUMBER_15_DIGITS", "confidence": 0.9},
-  "invoiceNumber": {"value": "INV_NUMBER", "confidence": 0.95},
-  "invoiceDate": {"value": "YYYY-MM-DD", "confidence": 0.95},
-  "totalAmount": {"value": 1500.00, "confidence": 0.98},
-  "vatAmount": {"value": 195.65, "confidence": 0.98},
-  "items": [
-    {
-      "name": "FULL ITEM NAME AS PRINTED (e.g. جبن مراعي 700g أو PEPSI CAN 330ML)",
-      "nameAr": "ARABIC PART ONLY (e.g. جبن مراعي)",
-      "nameEn": "ENGLISH PART ONLY (e.g. PEPSI CAN) or null if none",
-      "size": "NUMERIC SIZE ONLY (e.g. 700 or 330 or 2) or null if no size",
-      "sizeUnit": "UNIT ONLY: g or kg or ml or L or pcs or null",
-      "quantity": 5,
-      "unitPrice": 60.00,
-      "totalPrice": 300.00,
-      "confidence": 0.90
-    }
-  ]
-}
+{"supplier":{"name":"supplier or seller company name","confidence":0.95},"vatNumber":{"value":"15-digit tax number or null","confidence":0.9},"invoiceNumber":{"value":"invoice number or null","confidence":0.95},"invoiceDate":{"value":"YYYY-MM-DD or null","confidence":0.95},"totalAmount":{"value":1500.00,"confidence":0.98},"vatAmount":{"value":195.65,"confidence":0.98},"items":[{"name":"full item name exactly as printed","quantity":5,"unitPrice":60.00,"totalPrice":300.00,"confidence":0.90}]}
 
-Rules:
-- confidence: 0.0 to 1.0
-- null for missing values
-- nameAr: Arabic text only, nameEn: English/Latin text only — split mixed names
-- size: extract from item name if present (700g → size="700", sizeUnit="g")
-- Date must be YYYY-MM-DD, amounts are numbers only
-- Response must start with { and end with }`;
+Important rules:
+- Return ONLY the JSON, starting with { and ending with }
+- confidence is 0.0 to 1.0
+- Use null for any field you cannot find
+- Keep item names exactly as they appear (Arabic, English, or mixed)
+- Date format must be YYYY-MM-DD
+- Amounts must be numbers only (no currency text)
+- Extract ALL items from the invoice, do not skip any`;
 
 
 
@@ -282,8 +309,17 @@ export class OcrInvoicesService {
       (extracted.items || []).map(async (item) => {
         if (!item.name) return { ...item, itemMatch: null };
 
-        // استخدم nameAr أو nameEn أو name الكامل للمطابقة (بدون الحجم)
-        const matchName = item.nameAr || item.nameEn || item.name;
+        // 1. استخرج الحجم من الاسم الكامل
+        const { cleanName, size, sizeUnit } = extractSizeFromName(item.name);
+
+        // 2. قسّم الاسم إلى عربي وإنجليزي (بدون الحجم)
+        const { nameAr, nameEn } = splitBilingualName(cleanName);
+
+        // أضف الحقول المُستخرجة للصنف
+        const enrichedItem = { ...item, nameAr, nameEn, size, sizeUnit, cleanName };
+
+        // استخدم nameAr أو nameEn أو الاسم المُنظَّف للمطابقة
+        const matchName = nameAr || nameEn || cleanName;
 
         const result = findBestMatch(
           matchName,
@@ -315,14 +351,14 @@ export class OcrInvoicesService {
         await this.logExtraction(tenantId, 'item', matchName, itemMatch, supplierMatch?.id);
 
         // إذا كان الصنف له حجم — حدّث has_sizes في الكتالوج
-        if (itemMatch && item.size) {
+        if (itemMatch && size) {
           await this.prisma.ocrItem.update({
             where: { id: itemMatch.id },
             data: { hasSizes: true },
           }).catch(() => { /* تجاهل خطأ التحديث */ });
         }
 
-        return { ...item, itemMatch };
+        return { ...enrichedItem, itemMatch };
       }),
     );
 
