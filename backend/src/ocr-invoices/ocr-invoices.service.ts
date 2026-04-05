@@ -393,12 +393,57 @@ export class OcrInvoicesService {
   }
 
   async saveInvoice(tenantId: string, dto: SaveInvoiceDto) {
-    const { lines, invoiceDate, totalAmount, vatAmount, ...invoiceData } = dto;
+    const { lines, invoiceDate, totalAmount, vatAmount, supplierName, ...invoiceData } = dto;
 
+    // ── 1. إنشاء المورد تلقائياً إذا لم يكن موجوداً ───────────────────────
+    let supplierId = invoiceData.supplierId || null;
+    if (!supplierId && supplierName?.trim()) {
+      // تحقق أولاً إذا كان المورد موجوداً بنفس الاسم لتجنب التكرار
+      const existing = await this.prisma.ocrSupplier.findFirst({
+        where: { tenantId, nameAr: supplierName.trim() },
+      });
+      if (existing) {
+        supplierId = existing.id;
+      } else {
+        const newSupplier = await this.prisma.ocrSupplier.create({
+          data: { tenantId, nameAr: supplierName.trim() },
+        });
+        supplierId = newSupplier.id;
+        this.logger.log(`Auto-created OCR supplier: ${supplierName} (${newSupplier.id})`);
+      }
+    }
+
+    // ── 2. إنشاء الأصناف تلقائياً لكل سطر ليس له itemId ─────────────────
+    const processedLines = await Promise.all(
+      lines.map(async (line) => {
+        let itemId = line.itemId || null;
+        if (!itemId && line.rawName?.trim()) {
+          const existing = await this.prisma.ocrItem.findFirst({
+            where: { tenantId, nameAr: line.rawName.trim() },
+          });
+          if (existing) {
+            itemId = existing.id;
+          } else {
+            const newItem = await this.prisma.ocrItem.create({
+              data: { tenantId, nameAr: line.rawName.trim() },
+            });
+            itemId = newItem.id;
+            this.logger.log(`Auto-created OCR item: ${line.rawName} (${newItem.id})`);
+          }
+        }
+        return {
+          ...line,
+          itemId,
+          matchStatus: itemId && line.itemId ? (line.matchStatus || 'matched') : itemId ? 'new' : 'pending',
+        };
+      }),
+    );
+
+    // ── 3. حفظ الفاتورة مع السطور ────────────────────────────────────────
     const invoice = await this.prisma.ocrInvoice.create({
       data: {
         tenantId,
-        supplierId: invoiceData.supplierId || null,
+        supplierId,
         invoiceNumber: invoiceData.invoiceNumber || null,
         imageUrl: invoiceData.imageUrl || null,
         rawExtraction: invoiceData.rawExtraction ? (invoiceData.rawExtraction as object) : undefined,
@@ -408,29 +453,29 @@ export class OcrInvoicesService {
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         status: 'confirmed',
         lines: {
-          create: lines.map((l) => ({
+          create: processedLines.map((l) => ({
             rawName: l.rawName,
             itemId: l.itemId || null,
             quantity: l.quantity ? l.quantity : null,
             unitPrice: l.unitPrice ? l.unitPrice : null,
             totalPrice: l.totalPrice ? l.totalPrice : null,
             confidence: l.confidence ?? 0,
-            matchStatus: l.matchStatus || 'pending',
+            matchStatus: l.matchStatus,
           })),
         },
       },
       include: { lines: true },
     });
 
-    // حفظ تاريخ الأسعار للأصناف المؤكدة
-    if (dto.supplierId && invoiceDate) {
-      for (const line of lines) {
-        if (line.itemId && line.unitPrice && line.matchStatus === 'matched') {
+    // ── 4. حفظ تاريخ الأسعار لكل صنف له مورد وسعر ────────────────────────
+    if (supplierId && invoiceDate) {
+      for (const line of processedLines) {
+        if (line.itemId && line.unitPrice) {
           await this.prisma.ocrPriceHistory.create({
             data: {
               tenantId,
               itemId: line.itemId,
-              supplierId: dto.supplierId,
+              supplierId,
               price: line.unitPrice,
               invoiceDate: new Date(invoiceDate),
               invoiceId: invoice.id,

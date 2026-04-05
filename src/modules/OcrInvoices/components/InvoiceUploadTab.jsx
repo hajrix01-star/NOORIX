@@ -89,6 +89,8 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
       const payload = {
         supplierId:    extracted.supplierMatch?.id || null,
+        // إذا لم يكن هناك مطابقة، أرسل الاسم المستخرج لإنشاء المورد تلقائياً
+        supplierName:  !extracted.supplierMatch?.id ? (extracted.supplier?.name || null) : null,
         invoiceNumber: extracted.invoiceNumber?.value || null,
         invoiceDate:   extracted.invoiceDate?.value || null,
         totalAmount:   extracted.totalAmount?.value || null,

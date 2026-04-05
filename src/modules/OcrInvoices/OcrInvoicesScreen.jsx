@@ -59,7 +59,9 @@ export default function OcrInvoicesScreen() {
   const handleSaved = useCallback(() => {
     refetchInvoices();
     refetchAlerts();
-  }, [refetchInvoices, refetchAlerts]);
+    refetchSuppliers();
+    refetchItems();
+  }, [refetchInvoices, refetchAlerts, refetchSuppliers, refetchItems]);
 
   const alertsCount = alertsData?.length || 0;
 

@@ -35,6 +35,11 @@ export class SaveInvoiceDto {
   @IsString()
   supplierId?: string;
 
+  /** اسم المورد كما استخرجه OCR — يُستخدم لإنشاء مورد جديد إذا لم يكن هناك supplierId */
+  @IsOptional()
+  @IsString()
+  supplierName?: string;
+
   @IsOptional()
   @IsString()
   invoiceNumber?: string;
