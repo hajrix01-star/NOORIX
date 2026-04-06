@@ -1,7 +1,7 @@
 /**
  * AppSidebar — القائمة الجانبية الرئيسية
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
@@ -96,12 +96,43 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
     ? (lang === 'en' ? pendingCo.nameEn || pendingCo.nameAr : pendingCo.nameAr || pendingCo.nameEn) || '—'
     : '';
 
-  const handleCompanySelect = (e) => {
-    const newId = e.target.value;
+  const handleCompanySelect = (newId) => {
     if (newId && newId !== activeCompany) {
       setPendingCompany(newId);
     }
+    setCoDropOpen(false);
   };
+
+  const [coDropOpen, setCoDropOpen] = useState(false);
+  const coDropBtnRef = useRef(null);
+  const coDropMenuRef = useRef(null);
+  const [coDropPos, setCoDropPos] = useState({ top: 0, left: 0, width: 220 });
+
+  const updateCoDropPos = useCallback(() => {
+    const el = coDropBtnRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setCoDropPos({ top: r.bottom + 4, left: r.left, width: Math.max(r.width, 200) });
+  }, []);
+
+  useEffect(() => {
+    if (!coDropOpen) return undefined;
+    updateCoDropPos();
+    const onClose = () => setCoDropOpen(false);
+    const onMouseDown = (e) => {
+      if (!coDropBtnRef.current?.contains(e.target) && !coDropMenuRef.current?.contains(e.target)) {
+        setCoDropOpen(false);
+      }
+    };
+    window.addEventListener('resize', onClose);
+    window.addEventListener('scroll', onClose, true);
+    document.addEventListener('mousedown', onMouseDown);
+    return () => {
+      window.removeEventListener('resize', onClose);
+      window.removeEventListener('scroll', onClose, true);
+      document.removeEventListener('mousedown', onMouseDown);
+    };
+  }, [coDropOpen, updateCoDropPos]);
 
   const confirmSwitch = () => {
     if (pendingCompany) {
@@ -157,13 +188,17 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
           </div>
           <div style={{ width: '100%', marginTop: 8 }}>
             <div style={{ position: 'relative' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 12px', borderRadius: 10,
-                background: 'rgba(255,255,255,0.07)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                minHeight: 44,
-              }}>
+              <Button
+                ref={coDropBtnRef}
+                onClick={showCompanySwitcher ? () => { updateCoDropPos(); setCoDropOpen((v) => !v); } : undefined}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 12px', borderRadius: 10,
+                  background: 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  minHeight: 44, cursor: showCompanySwitcher ? 'pointer' : 'default',
+                }}
+              >
                 <div style={{
                   width: 30, height: 30, borderRadius: 8, flexShrink: 0,
                   background: activeCo?.logoUrl ? 'transparent' : 'linear-gradient(135deg, rgba(37,99,235,0.9) 0%, rgba(16,163,74,0.7) 100%)',
@@ -176,32 +211,57 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                     : initial
                   }
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, textAlign: 'start' }}>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{t('activeCompany')}</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{coName}</div>
                 </div>
                 {showCompanySwitcher && (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" width="14" height="14" style={{ flexShrink: 0 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" width="14" height="14" style={{ flexShrink: 0, transition: 'transform 150ms', transform: coDropOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                     <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
-              </div>
-              {showCompanySwitcher && (
-                <select
-                  id="company-switcher"
-                  value={activeCompany}
-                  onChange={handleCompanySelect}
+              </Button>
+              {showCompanySwitcher && coDropOpen && createPortal(
+                <div
+                  ref={coDropMenuRef}
+                  role="listbox"
                   style={{
-                    position: 'absolute', inset: 0, opacity: 0,
-                    width: '100%', height: '100%', cursor: 'pointer',
+                    position: 'fixed', zIndex: 99999,
+                    top: coDropPos.top, left: coDropPos.left,
+                    width: coDropPos.width, maxHeight: 240,
+                    overflowY: 'auto', borderRadius: 10,
+                    background: 'var(--noorix-bg-surface)',
+                    border: '1px solid var(--noorix-border)',
+                    boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
                   }}
                 >
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {lang === 'en' ? (c.nameEn || c.nameAr) : (c.nameAr || c.nameEn) || c.id}
-                    </option>
-                  ))}
-                </select>
+                  {companies.map((c) => {
+                    const cName = lang === 'en' ? (c.nameEn || c.nameAr) : (c.nameAr || c.nameEn) || c.id;
+                    const isActive = c.id === activeCompany;
+                    return (
+                      <Button
+                        key={c.id}
+                        role="option"
+                        aria-selected={isActive}
+                        onClick={() => handleCompanySelect(c.id)}
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '10px 14px', borderRadius: 0,
+                          background: isActive ? 'rgba(37,99,235,0.08)' : 'transparent',
+                          borderBottom: '1px solid var(--noorix-border)',
+                          textAlign: 'start', justifyContent: 'flex-start',
+                          fontWeight: isActive ? 700 : 500,
+                          color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text)',
+                          fontSize: 13, minHeight: 'unset',
+                        }}
+                      >
+                        {isActive && <span style={{ fontSize: 10 }}>✓</span>}
+                        {cName}
+                      </Button>
+                    );
+                  })}
+                </div>,
+                document.body,
               )}
             </div>
           </div>

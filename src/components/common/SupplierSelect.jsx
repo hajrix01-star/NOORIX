@@ -11,20 +11,10 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
+import { Input, Button } from '../../ui';
 
 const USAGE_STORAGE_KEY = 'noorix_supplier_usage_v1';
 
-const INPUT_STYLE = {
-  width: '100%',
-  padding: '8px 12px',
-  borderRadius: 8,
-  border: '1px solid var(--noorix-border)',
-  background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)',
-  fontSize: 14,
-  fontFamily: 'inherit',
-  boxSizing: 'border-box',
-};
 
 function supplierLabel(supplier, lang = 'ar') {
   if (lang === 'en') return supplier?.nameEn || supplier?.nameAr || supplier?.id || '';
@@ -199,26 +189,14 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
             const isSelected = s.id === value;
             const isBookmarked = bookmarkedIds.includes(s.id);
             return (
-              <button
+              <Button
                 key={`top-${s.id}`}
-                type="button"
                 role="option"
                 aria-selected={isSelected}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => selectSupplier(s)}
-                style={{
-                  width: '100%',
-                  textAlign: 'right',
-                  padding: '9px 12px',
-                  border: 'none',
-                  borderBottom: '1px solid var(--noorix-border)',
-                  background: isSelected ? 'rgba(37,99,235,0.08)' : 'transparent',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 8,
-                }}
+                className="nx-supplier-option"
+                style={isSelected ? { background: 'rgba(37,99,235,0.08)' } : undefined}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {supplierLabel(s, lang)}
@@ -227,7 +205,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
                   {isBookmarked ? <span style={{ color: '#f59e0b' }}>★</span> : null}
                   <span style={{ color: '#2563eb', fontSize: 11 }}>الأكثر</span>
                 </span>
-              </button>
+              </Button>
             );
           })}
           {topSuppliers.length > 0 && remainingSuppliers.length > 0 && (
@@ -239,32 +217,20 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
             const isSelected = s.id === value;
             const isBookmarked = bookmarkedIds.includes(s.id);
             return (
-              <button
+              <Button
                 key={s.id}
-                type="button"
                 role="option"
                 aria-selected={isSelected}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => selectSupplier(s)}
-                style={{
-                  width: '100%',
-                  textAlign: 'right',
-                  padding: '9px 12px',
-                  border: 'none',
-                  borderBottom: '1px solid var(--noorix-border)',
-                  background: isSelected ? 'rgba(37,99,235,0.08)' : 'transparent',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 8,
-                }}
+                className="nx-supplier-option"
+                style={isSelected ? { background: 'rgba(37,99,235,0.08)' } : undefined}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {supplierLabel(s, lang)}
                 </span>
                 {isBookmarked ? <span style={{ color: '#f59e0b', flexShrink: 0 }}>★</span> : null}
-              </button>
+              </Button>
             );
           }) : (
             <div style={{ padding: '10px 12px', fontSize: 13, color: 'var(--noorix-text-muted)' }}>
@@ -278,7 +244,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
 
   return (
     <div style={{ position: 'relative' }} ref={anchorRef}>
-      <input
+      <Input
         value={query}
         onFocus={() => { setOpen(true); }}
         onClick={() => { setOpen(true); }}
@@ -292,7 +258,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
         autoComplete="off"
         aria-expanded={open}
         aria-haspopup="listbox"
-        style={{ ...INPUT_STYLE, paddingInlineEnd: 36 }}
+        style={{ paddingInlineEnd: 36 }}
       />
       <span
         aria-hidden

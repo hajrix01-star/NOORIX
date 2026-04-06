@@ -17,12 +17,6 @@ const KebabIcon = () => (
   </svg>
 );
 
-const menuItemStyle = {
-  display: 'block', width: '100%', padding: '8px 12px',
-  fontSize: 13, fontWeight: 500, border: 'none', borderRadius: 6,
-  background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
-  whiteSpace: 'nowrap', textAlign: 'right',
-};
 
 export const InvoiceActionsCell = memo(function InvoiceActionsCell({
   row, userRole, userPermissions, companyId, onView, onPrint, onEdit, onDelete,
@@ -87,40 +81,26 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
       ref={menuRef}
       role="menu"
       aria-orientation="vertical"
-      style={{
-        position: 'fixed',
-        zIndex: 9999,
-        top: pos.top,
-        ...(isRtl ? { right: Math.max(VIEWPORT_GAP, window.innerWidth - pos.left - MENU_WIDTH) } : { left: pos.left }),
-        minWidth: 150,
-        width: MENU_WIDTH,
-        maxHeight: MENU_MAX_HEIGHT,
-        overflowY: 'auto',
-        padding: 6,
-        borderRadius: 10,
-        background: 'var(--noorix-bg-surface)',
-        color: 'var(--noorix-text)',
-        border: '1px solid var(--noorix-border)',
-        boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
-      }}
+      className="nx-actions-menu"
+      style={{ top: pos.top, maxHeight: MENU_MAX_HEIGHT, ...(isRtl ? { right: Math.max(VIEWPORT_GAP, window.innerWidth - pos.left - MENU_WIDTH) } : { left: pos.left }) }}
     >
       {canView && (
-        <Button type="button" role="menuitem" onClick={() => run(onView)} style={{ ...menuItemStyle, color: 'var(--noorix-text)' }}>
+        <Button role="menuitem" onClick={() => run(onView)} className="nx-actions-menu-item" style={{ color: 'var(--noorix-text)' }}>
           {t('view')}
         </Button>
       )}
       {canPrint && (
-        <Button type="button" role="menuitem" onClick={() => run(onPrint)} style={{ ...menuItemStyle, color: 'var(--noorix-text)' }}>
+        <Button role="menuitem" onClick={() => run(onPrint)} className="nx-actions-menu-item" style={{ color: 'var(--noorix-text)' }}>
           {t('print')}
         </Button>
       )}
       {showEdit && (
-        <Button type="button" role="menuitem" onClick={() => run(onEdit)} style={{ ...menuItemStyle, color: '#16a34a' }}>
+        <Button role="menuitem" onClick={() => run(onEdit)} className="nx-actions-menu-item" style={{ color: '#16a34a' }}>
           {t('edit')}
         </Button>
       )}
       {showDel && (
-        <Button type="button" role="menuitem" onClick={() => run(onDelete)} style={{ ...menuItemStyle, color: '#dc2626' }}>
+        <Button role="menuitem" onClick={() => run(onDelete)} className="nx-actions-menu-item" style={{ color: '#dc2626' }}>
           {t('delete')}
         </Button>
       )}
@@ -129,23 +109,16 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
 
   return (
     <div style={{ position: 'relative', display: 'inline-flex' }}>
-      <button
+      <Button
         ref={btnRef}
-        type="button"
         aria-label={t('actions')}
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => setOpen((p) => !p)}
-        style={{
-          width: 36, height: 32, minWidth: 36, minHeight: 32, borderRadius: 6, border: '1px solid var(--noorix-border)',
-          background: open ? 'var(--noorix-bg-page)' : 'var(--noorix-bg-surface)',
-          color: 'var(--noorix-text-muted)', cursor: 'pointer',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'background 120ms, color 120ms',
-        }}
+        className={`nx-actions-kebab${open ? ' nx-actions-kebab--open' : ''}`}
       >
         <KebabIcon />
-      </button>
+      </Button>
       {menuContent && createPortal(menuContent, document.body)}
     </div>
   );

@@ -1490,3 +1490,109 @@
   background: var(--noorix-bg-muted);
   color: var(--noorix-text);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   18. Actions Cell Kebab — زر ⋮ في عمود الإجراءات
+   ═══════════════════════════════════════════════════════════ */
+.nx-actions-kebab {
+  width: 36px;
+  height: 32px;
+  min-width: 36px;
+  min-height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--noorix-border);
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, color 120ms;
+  padding: 0;
+}
+
+.nx-actions-kebab:hover:not(:disabled) {
+  background: var(--noorix-bg-page);
+  color: var(--noorix-text);
+}
+
+.nx-actions-kebab--open {
+  background: var(--noorix-bg-page) !important;
+}
+
+.nx-actions-menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 150px;
+  width: 176px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  border: 1px solid var(--noorix-border);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+}
+
+.nx-actions-menu-item {
+  display: flex;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border-radius: 6px;
+  white-space: nowrap;
+  min-height: unset;
+  justify-content: flex-start;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   19. Supplier Dropdown — قائمة بحث الموردين
+   ═══════════════════════════════════════════════════════════ */
+.nx-supplier-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: right;
+  padding: 9px 12px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--noorix-border);
+  background: transparent;
+  font-size: 13px;
+  color: var(--noorix-text);
+  min-height: unset;
+  justify-content: space-between;
+}
+
+.nx-supplier-option:hover:not(:disabled),
+.nx-supplier-option[aria-selected="true"] {
+  background: rgba(37,99,235,0.07);
+}
+
+.nx-supplier-option[aria-selected="true"] {
+  background: rgba(37,99,235,0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   20. Date Filter Bar — شريط فلترة التاريخ
+   ═══════════════════════════════════════════════════════════ */
+.ndfb-mode-group .nx-btn {
+  /* تجاوز padding الافتراضي ليتناسب مع شريط الفلتر */
+  min-height: unset;
+}
+
+.nx-ocr-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  min-height: unset;
+}

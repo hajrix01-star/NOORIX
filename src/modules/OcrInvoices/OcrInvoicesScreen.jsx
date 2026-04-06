@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
+import { Button } from '../../ui';
 import InvoiceUploadTab    from './components/InvoiceUploadTab';
 import InvoiceListTab      from './components/InvoiceListTab';
 import SuppliersCatalogTab from './components/SuppliersCatalogTab';
@@ -77,10 +78,10 @@ export default function OcrInvoicesScreen() {
           { val: itemsCount,    label: isAr ? 'صنف'    : 'Items',     tab: 'items' },
           { val: alertsCount,   label: isAr ? 'تنبيه' : 'Alerts',    tab: 'alerts' },
         ].map(({ val, label, tab }) => (
-          <button key={tab} className="ocr-stat-card" onClick={() => setActiveTab(tab)}>
+          <Button key={tab} className="ocr-stat-card nx-ocr-stat-card" onClick={() => setActiveTab(tab)}>
             <span className="ocr-stat-num">{val}</span>
             <span className="ocr-stat-label">{label}</span>
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -91,7 +92,7 @@ export default function OcrInvoicesScreen() {
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
-              <button
+              <Button
                 key={tab.key}
                 role="tab"
                 aria-selected={isActive}
@@ -102,7 +103,7 @@ export default function OcrInvoicesScreen() {
                 {tab.key === 'alerts' && alertsCount > 0 && (
                   <span className="ocr-tab-badge">{alertsCount}</span>
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>

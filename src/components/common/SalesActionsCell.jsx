@@ -15,20 +15,6 @@ const KebabIcon = () => (
   </svg>
 );
 
-const menuItemStyle = {
-  display: 'block',
-  width: '100%',
-  padding: '8px 12px',
-  fontSize: 13,
-  fontWeight: 500,
-  border: 'none',
-  borderRadius: 6,
-  background: 'transparent',
-  cursor: 'pointer',
-  fontFamily: 'inherit',
-  whiteSpace: 'nowrap',
-  textAlign: 'right',
-};
 
 export const SalesActionsCell = memo(function SalesActionsCell({
   summary, userRole, userPermissions, onPrint, onEdit, onDelete,
@@ -94,30 +80,16 @@ export const SalesActionsCell = memo(function SalesActionsCell({
       ref={menuRef}
       role="menu"
       aria-orientation="vertical"
-      style={{
-        position: 'fixed',
-        zIndex: 9999,
-        top: pos.top,
-        ...(isRtl ? { right: Math.max(VIEWPORT_GAP, window.innerWidth - pos.left - MENU_WIDTH) } : { left: pos.left }),
-        minWidth: 150,
-        width: MENU_WIDTH,
-        maxHeight: MENU_MAX_HEIGHT,
-        overflowY: 'auto',
-        padding: 6,
-        borderRadius: 10,
-        background: 'var(--noorix-bg-surface)',
-        color: 'var(--noorix-text)',
-        border: '1px solid var(--noorix-border)',
-        boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
-      }}
+      className="nx-actions-menu"
+      style={{ top: pos.top, ...(isRtl ? { right: Math.max(VIEWPORT_GAP, window.innerWidth - pos.left - MENU_WIDTH) } : { left: pos.left }) }}
     >
       {items.map((it) => (
         <Button
           key={it.key}
-          type="button"
           role="menuitem"
           onClick={() => run(it.fn)}
-          style={{ ...menuItemStyle, color: it.color }}
+          className="nx-actions-menu-item"
+          style={{ color: it.color }}
         >
           {it.label}
         </Button>
@@ -127,31 +99,16 @@ export const SalesActionsCell = memo(function SalesActionsCell({
 
   return (
     <div style={{ position: 'relative', display: 'inline-flex' }}>
-      <button
+      <Button
         ref={btnRef}
-        type="button"
         aria-label={t('actions')}
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => setOpen((p) => !p)}
-        style={{
-          width: 36,
-          height: 32,
-          minWidth: 36,
-          minHeight: 32,
-          borderRadius: 6,
-          border: '1px solid var(--noorix-border)',
-          background: open ? 'var(--noorix-bg-page)' : 'var(--noorix-bg-surface)',
-          color: 'var(--noorix-text-muted)',
-          cursor: 'pointer',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'background 120ms, color 120ms',
-        }}
+        className={`nx-actions-kebab${open ? ' nx-actions-kebab--open' : ''}`}
       >
         <KebabIcon />
-      </button>
+      </Button>
       {menuContent && createPortal(menuContent, document.body)}
     </div>
   );

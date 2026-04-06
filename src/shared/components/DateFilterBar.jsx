@@ -6,7 +6,7 @@
 import React from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
-import { Input } from '../../ui';
+import { Input, Button } from '../../ui';
 
 export { useDateFilter };
 
@@ -56,14 +56,13 @@ export default function DateFilterBar({ filter }) {
       {/* مجموعة أزرار الوضع */}
       <div className="ndfb-mode-group">
         {MODES.map((m) => (
-          <button
+          <Button
             key={m.id}
-            type="button"
             className={`ndfb-mode-btn${mode === m.id ? ' ndfb-mode-btn--active' : ''}`}
             onClick={() => setMode(m.id)}
           >
             {m.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -131,9 +130,9 @@ export default function DateFilterBar({ filter }) {
       </div>
 
       {/* زر إعادة التعيين */}
-      <button type="button" className="ndfb-reset-btn" onClick={reset} title={t('dateFilterReset')}>
+      <Button className="ndfb-reset-btn" onClick={reset} title={t('dateFilterReset')}>
         ↺
-      </button>
+      </Button>
     </div>
   );
 }
