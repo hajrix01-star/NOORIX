@@ -4,12 +4,7 @@
  */
 import React, { useState, useEffect, memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-
-const IS = {
-  width: '100%', padding: '9px 12px', borderRadius: 8,
-  border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box',
-};
+import { Button, Input, Modal, FormRow } from '../../../ui';
 
 export const SupplierEditModal = memo(function SupplierEditModal({
   supplier, flatCategories = [], onSave, onClose, isSaving,
@@ -58,83 +53,70 @@ export const SupplierEditModal = memo(function SupplierEditModal({
     });
   }
 
-  if (!supplier) return null;
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.45)', padding: 20,
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="noorix-surface-card"
-        style={{ width: '100%', maxWidth: 480, borderRadius: 14, padding: 24, boxShadow: '0 12px 40px rgba(0,0,0,0.22)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{t('editSupplier')}</h4>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--noorix-text-muted)' }}
+    <Modal open={!!supplier} onClose={onClose} title={t('editSupplier')} size="md">
+      <form onSubmit={handleSubmit}>
+        <FormRow cols={2}>
+          <Input
+            label={t('nameAr')}
+            value={form.nameAr}
+            onChange={(e) => set('nameAr', e.target.value)}
+            placeholder={t('nameArPlaceholder')}
+            required
+            autoComplete="off"
+          />
+          <Input
+            label={t('nameEn')}
+            value={form.nameEn}
+            onChange={(e) => set('nameEn', e.target.value)}
+            placeholder={t('nameEnPlaceholder')}
+          />
+          <Input
+            label={t('taxNumber')}
+            value={form.taxNumber}
+            onChange={(e) => set('taxNumber', e.target.value)}
+            placeholder="300000000000003"
+          />
+          <Input
+            label={t('phone')}
+            value={form.phone}
+            onChange={(e) => set('phone', e.target.value)}
+            placeholder="05xxxxxxxx"
+          />
+          <Input
+            type="select"
+            label={t('supplierType')}
+            value={form.supplierType}
+            onChange={(e) => set('supplierType', e.target.value)}
           >
-            ×
-          </button>
+            {SUPPLIER_TYPES.map((st) => <option key={st.value} value={st.value}>{st.label}</option>)}
+          </Input>
+          <Input
+            type="select"
+            label={t('category')}
+            value={form.supplierCategoryId}
+            onChange={(e) => set('supplierCategoryId', e.target.value)}
+          >
+            <option value="">{t('noCategory')}</option>
+            {filteredCategories.map((c) => {
+              const icon = c.icon || c.account?.icon || '';
+              const code = c.account?.code ? ` [${c.account.code}]` : '';
+              return (
+                <option key={c.id} value={c.id}>
+                  {icon} {c.parentId ? `↳ ${c.nameAr}` : c.nameAr}{code}
+                </option>
+              );
+            })}
+          </Input>
+        </FormRow>
+        <div className="nx-toolbar" style={{ marginTop: 14, justifyContent: 'flex-end' }}>
+          <Button type="button" onClick={onClose}>{t('cancel')}</Button>
+          <Button type="submit" variant="success" disabled={isSaving || !form.nameAr.trim()}>
+            {isSaving ? t('saving') : t('saveChanges')}
+          </Button>
         </div>
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('nameAr')}</label>
-              <input value={form.nameAr} onChange={(e) => set('nameAr', e.target.value)} placeholder={t('nameArPlaceholder')} required autoComplete="off" style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('nameEn')}</label>
-              <input value={form.nameEn} onChange={(e) => set('nameEn', e.target.value)} placeholder={t('nameEnPlaceholder')} style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('taxNumber')}</label>
-              <input value={form.taxNumber} onChange={(e) => set('taxNumber', e.target.value)} placeholder="300000000000003" style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('phone')}</label>
-              <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="05xxxxxxxx" style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('supplierType')}</label>
-              <select value={form.supplierType} onChange={(e) => set('supplierType', e.target.value)} style={IS}>
-                {SUPPLIER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('category')}</label>
-              <select value={form.supplierCategoryId} onChange={(e) => set('supplierCategoryId', e.target.value)} style={IS}>
-                <option value="">{t('noCategory')}</option>
-                {filteredCategories.map((c) => {
-                  const icon = c.icon || c.account?.icon || '';
-                  const code = c.account?.code ? ` [${c.account.code}]` : '';
-                  return (
-                    <option key={c.id} value={c.id}>
-                      {icon} {c.parentId ? `↳ ${c.nameAr}` : c.nameAr}{code}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
-            <button type="submit" className="noorix-btn-nav noorix-btn-success" disabled={isSaving || !form.nameAr.trim()}>
-              {isSaving ? t('saving') : t('saveChanges')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 });
 

@@ -9,6 +9,7 @@ import { useApp } from '../../../context/AppContext';
 import { getInvoiceDayCloseReport } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDateISO } from '../../../utils/saudiDate';
+import { Button } from '../../../ui';
 
 function saudiTodayYmd() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -227,17 +228,17 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                   style={{ padding: '4px 8px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
                 />
               </label>
-              <button type="button" className="noorix-btn-nav" onClick={() => refetch()} disabled={isFetching}>
+              <Button onClick={() => refetch()} disabled={isFetching}>
                 {t('dayCloseRefresh')}
-              </button>
+              </Button>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="noorix-btn-nav" onClick={() => window.print()}>
+              <Button onClick={() => window.print()}>
                 {t('dayClosePrint')}
-              </button>
-              <button type="button" className="noorix-btn-nav" onClick={onClose}>
+              </Button>
+              <Button onClick={onClose}>
                 {t('dayCloseClose')}
-              </button>
+              </Button>
             </div>
           </div>
 

@@ -5,6 +5,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Button } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 
@@ -46,9 +47,7 @@ export function BatchPrintSheet({ batch, onClose }) {
       >
         <div className="batch-print-actions no-print" style={{ padding: '12px 20px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 14, fontWeight: 700 }}>{t('batchLabel', batch?.batchId)}</span>
-          <button type="button" onClick={onClose} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-page)', cursor: 'pointer', fontSize: 13 }}>
-            إغلاق
-          </button>
+          <Button onClick={onClose}>إغلاق</Button>
         </div>
 
         <div id="batch-print-content" className="batch-print-content" style={{ padding: 20 }}>

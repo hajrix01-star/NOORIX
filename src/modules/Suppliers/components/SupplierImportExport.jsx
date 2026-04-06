@@ -9,6 +9,7 @@
  *   E: نوع المورد      (purchases | expenses)
  */
 import React, { useRef, useState } from 'react';
+import { Button } from '../../../ui';
 
 /* ─── ثوابت ─────────────────────────────────────────────────────────── */
 const CSV_HEADERS_AR = ['الاسم بالعربي *', 'الاسم بالإنجليزي', 'الرقم الضريبي', 'الهاتف', 'نوع المورد (purchases/expenses)'];
@@ -139,15 +140,6 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
     setResult({ success, failed: errors.length, errors });
   }
 
-  const btnBase = {
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '8px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600,
-    cursor: 'pointer', border: '1px solid var(--noorix-border)',
-    background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)',
-    fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 38,
-    transition: 'background 0.15s',
-  };
-
   return (
     <div style={{ display: 'grid', gap: 10 }}>
       {/* ── شريط الأدوات ── */}
@@ -158,34 +150,28 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
         borderRadius: 10,
         border: '1px solid var(--noorix-border)',
       }}>
-        {/* تنزيل النموذج */}
-        <button type="button" style={{ ...btnBase }} onClick={handleDownloadTemplate}>
-          تنزيل النموذج
-        </button>
+        <Button onClick={handleDownloadTemplate}>تنزيل النموذج</Button>
 
-        {/* استيراد */}
-        <button
-          type="button"
-          style={{ ...btnBase, background: 'rgba(37,99,235,0.08)', color: 'var(--noorix-accent-blue)', borderColor: 'rgba(37,99,235,0.25)' }}
+        <Button
+          variant="primary"
           onClick={() => fileRef.current?.click()}
           disabled={importing}
+          loading={importing}
         >
           {importing ? 'جاري الاستيراد...' : 'استيراد CSV'}
-        </button>
+        </Button>
         <input
           ref={fileRef} type="file" accept=".csv,text/csv"
           style={{ display: 'none' }} onChange={handleFileChange}
         />
 
-        {/* تصدير */}
-        <button
-          type="button"
-          style={{ ...btnBase, background: 'rgba(22,163,74,0.08)', color: 'var(--noorix-accent-green)', borderColor: 'rgba(22,163,74,0.25)' }}
+        <Button
+          variant="success"
           onClick={handleExport}
           disabled={!suppliers.length}
         >
           تصدير ({suppliers.length})
-        </button>
+        </Button>
       </div>
 
       {/* ── نتيجة الاستيراد ── */}

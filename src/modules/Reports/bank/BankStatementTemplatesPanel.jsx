@@ -5,6 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStatementTemplateDelete } from '../../../services/api';
+import { Button, Modal } from '../../../ui';
 
 const COL_LABEL_KEYS = {
   date: 'bankTplColDate',
@@ -162,18 +163,14 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                   ) : null}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <button
-                    type="button"
-                    className="noorix-btn noorix-btn--ghost"
+                  <Button
                     title={tpl.isActive ? t('bankTemplatesDeactivateHint') : t('bankTemplatesActivateHint')}
                     disabled={toggleMut.isPending}
                     onClick={() => toggleMut.mutate({ id: tpl.id, isActive: !tpl.isActive })}
                   >
                     {tpl.isActive ? '○ ' + t('bankTemplatesToggleOff') : '✓ ' + t('bankTemplatesToggleOn')}
-                  </button>
-                  <button type="button" className="noorix-btn noorix-btn--ghost" style={{ color: '#dc2626' }} onClick={() => setDeleteId(tpl.id)}>
-                    {t('delete')}
-                  </button>
+                  </Button>
+                  <Button variant="danger" size="sm" onClick={() => setDeleteId(tpl.id)}>{t('delete')}</Button>
                 </div>
               </div>
             </div>
@@ -181,34 +178,22 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
         })}
       </div>
 
-      {deleteId ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="noorix-modal-backdrop"
-          style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
-          onClick={(e) => e.target === e.currentTarget && setDeleteId(null)}
-        >
-          <div className="noorix-surface-card noorix-modal-card" style={{ padding: 22, maxWidth: 420, width: '100%' }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginTop: 0 }}>{t('bankTemplatesDeleteTitle')}</h3>
-            <p style={{ fontSize: 14, color: 'var(--noorix-text-muted)' }}>{t('bankTemplatesDeleteBody')}</p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-              <button type="button" className="noorix-btn noorix-btn--ghost" onClick={() => setDeleteId(null)}>
-                {t('cancel')}
-              </button>
-              <button
-                type="button"
-                className="noorix-btn noorix-btn--primary"
-                style={{ background: '#dc2626' }}
-                disabled={deleteMut.isPending}
-                onClick={() => deleteMut.mutate(deleteId)}
-              >
-                {deleteMut.isPending ? t('loading') : t('delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <Modal
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        title={t('bankTemplatesDeleteTitle')}
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteId(null)}>{t('cancel')}</Button>
+            <Button variant="danger" disabled={deleteMut.isPending} onClick={() => deleteMut.mutate(deleteId)}>
+              {deleteMut.isPending ? t('loading') : t('delete')}
+            </Button>
+          </>
+        }
+      >
+        <p style={{ fontSize: 14, color: 'var(--noorix-text-muted)' }}>{t('bankTemplatesDeleteBody')}</p>
+      </Modal>
     </div>
   );
 }

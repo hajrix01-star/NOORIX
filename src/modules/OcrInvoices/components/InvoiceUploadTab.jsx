@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Button } from '../../../ui';
 import { extractInvoice, saveOcrInvoice } from '../services/ocrApi';
 
 const CONFIDENCE_COLOR = (c) => {
@@ -213,18 +214,18 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
             <img src={preview} alt="invoice" style={{ width: '100%', borderRadius: 8, maxHeight: 500, objectFit: 'contain' }} />
             <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {!extracted && (
-                <button onClick={handleExtract} disabled={loading} className="noorix-btn noorix-btn--primary" style={{ flex: 1 }}>
+                <Button onClick={handleExtract} disabled={loading} variant="primary" style={{ flex: 1 }}>
                   {loading ? t('ocrExtracting') : t('ocrExtract')}
-                </button>
+                </Button>
               )}
               {extracted && (
                 <>
-                  <button onClick={handleSave} disabled={saving || success} className="noorix-btn noorix-btn--primary" style={{ flex: 1 }}>
+                  <Button onClick={handleSave} disabled={saving || success} variant="primary" style={{ flex: 1 }}>
                     {saving ? t('ocrSaving') : success ? t('ocrSaved') : t('ocrSaveInvoice')}
-                  </button>
-                  <button onClick={handleExtract} disabled={loading} className="noorix-btn" style={{ flex: 1 }}>
+                  </Button>
+                  <Button onClick={handleExtract} disabled={loading} style={{ flex: 1 }}>
                     {loading ? t('ocrExtracting') : (isAr ? 'إعادة استخراج' : 'Re-extract')}
-                  </button>
+                  </Button>
                 </>
               )}
             </div>

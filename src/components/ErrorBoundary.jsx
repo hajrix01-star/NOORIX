@@ -2,6 +2,7 @@
  * Noorix Global Error Boundary — يمنع الشاشة البيضاء ويعرض رسالة اعتذار مع زر تحديث.
  */
 import React from 'react';
+import { Button } from '../ui';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -66,22 +67,12 @@ export class ErrorBoundary extends React.Component {
               </pre>
             )}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={this.handleRetry}
-                className="noorix-topbar-btn"
-                style={{ padding: '10px 20px', fontWeight: 600 }}
-              >
+              <Button type="button" onClick={this.handleRetry}>
                 إعادة المحاولة
-              </button>
-              <button
-                type="button"
-                onClick={this.handleReload}
-                className="noorix-topbar-btn"
-                style={{ padding: '10px 20px', fontWeight: 600, background: 'var(--noorix-primary, #0a1f44)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}
-              >
+              </Button>
+              <Button type="button" variant="primary" onClick={this.handleReload}>
                 إعادة تحميل الصفحة
-              </button>
+              </Button>
             </div>
           </div>
         </div>

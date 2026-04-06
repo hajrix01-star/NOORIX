@@ -10,10 +10,11 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import SmartTable from '../../../components/common/SmartTable';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { Badge, Button, Modal } from '../../../ui';
 
 const STATUS_MAP = {
-  draft: { bg: 'rgba(100,116,139,0.1)', color: '#64748b', labelKey: 'payrollDraft' },
-  completed: { bg: 'rgba(22,163,74,0.1)', color: '#16a34a', labelKey: 'payrollPaid' },
+  draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
+  completed: { labelKey: 'payrollPaid', badgeColor: 'green' },
 };
 
 export function PayrollRunDetailModal({ runId, companyId, companyName, companyLogo, onClose }) {
@@ -31,16 +32,14 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
 
   if (isLoading || !run) {
     return (
-      <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
-        <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
-          <p>{t('loading')}</p>
-        </div>
-      </div>
+      <Modal open={true} onClose={onClose} title={t('loading')} size="sm">
+        <p>{t('loading')}</p>
+      </Modal>
     );
   }
 
   const items = run.items || [];
-  const statusStyle = STATUS_MAP[run.status] || STATUS_MAP.draft;
+  const statusInfo = STATUS_MAP[run.status] || STATUS_MAP.draft;
   const totalNet = new Decimal(run.totalAmount ?? 0);
   const totalBeforeDeduction = items.reduce((s, row) => s.plus(row.grossSalary ?? 0).plus(row.allowancesAdd ?? 0), new Decimal(0));
   const totalDeductions      = items.reduce((s, row) => s.plus(row.deductions   ?? 0).plus(row.advancesDeduct ?? 0), new Decimal(0));
@@ -160,46 +159,42 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   );
 
   return (
-    <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 12 }} onClick={onClose}>
-      <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 1380, width: 'min(97vw, 1380px)', maxHeight: '92vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 8 }}>
-          <div>
-            <h3 style={{ margin: '0 0 4px', fontSize: 18 }}>{run.runNumber || '—'}</h3>
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-              {formatSaudiDate(run.payrollMonth)} — {items.length} {t('employeesList')}
-            </p>
-          </div>
-          <span style={{
-            padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700,
-            background: statusStyle.bg, color: statusStyle.color,
-          }}>
-            {t(statusStyle.labelKey)}
-          </span>
-        </div>
-
-        <SmartTable
-          compact
-          showRowNumbers
-          rowNumberWidth="1%"
-          innerPadding={8}
-          columns={columns}
-          data={items}
-          total={items.length}
-          page={1}
-          pageSize={50}
-          footerCells={footerCells}
-          emptyMessage={t('noDataInPeriod')}
-        />
-
-        {run.notes && (
-          <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{run.notes}</p>
-        )}
-
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16, flexWrap: 'wrap' }}>
-          <button type="button" className="noorix-btn-nav" onClick={handlePrint}>{t('printPayroll')}</button>
-          <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('close') || 'إغلاق'}</button>
-        </div>
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={run.runNumber || '—'}
+      size="xl"
+      footer={
+        <>
+          <Button onClick={handlePrint}>{t('printPayroll')}</Button>
+          <Button variant="ghost" onClick={onClose}>{t('close') || 'إغلاق'}</Button>
+        </>
+      }
+    >
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--noorix-text-muted)' }}>
+          {formatSaudiDate(run.payrollMonth)} — {items.length} {t('employeesList')}
+        </p>
+        <Badge color={statusInfo.badgeColor}>{t(statusInfo.labelKey)}</Badge>
       </div>
-    </div>
+
+      <SmartTable
+        compact
+        showRowNumbers
+        rowNumberWidth="1%"
+        innerPadding={8}
+        columns={columns}
+        data={items}
+        total={items.length}
+        page={1}
+        pageSize={50}
+        footerCells={footerCells}
+        emptyMessage={t('noDataInPeriod')}
+      />
+
+      {run.notes && (
+        <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{run.notes}</p>
+      )}
+    </Modal>
   );
 }

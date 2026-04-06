@@ -9,6 +9,7 @@ import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
 import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
+import { Button, Input } from '../../ui';
 import {
   EN_MONTHS,
   CARD_COLORS,
@@ -117,26 +118,24 @@ export default function ReportsScreen() {
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      <div className="nx-page-header">
         <div style={{ minWidth: 0, flex: '1 1 auto' }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t('reportGeneral')}</h2>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flex: '0 1 auto' }}>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('reportYear')}</label>
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
+          <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-          </select>
-          {!isMobile && <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('reportMonth')}</label>}
+          </Input>
           {!isMobile && (
-            <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
+            <Input type="select" label={t('reportMonth')} value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
               <option value="">{t('allMonths')}</option>
               {EN_MONTHS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}
-            </select>
+            </Input>
           )}
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={!report} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>{t('exportExcel')}</button>
-            <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} disabled={!report} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>{t('exportPdf')}</button>
-            <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!report} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>{t('print')}</button>
+          <div className="nx-toolbar">
+            <Button onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
+            <Button onClick={handleExportPdf} disabled={!report}>{t('exportPdf')}</Button>
+            <Button onClick={handlePrint} disabled={!report}>{t('print')}</Button>
           </div>
         </div>
       </div>

@@ -3,17 +3,11 @@
  * ✅ المصفوفة تُجلب من Backend API — مصدر حقيقة واحد.
  */
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import Toast from '../../../components/Toast';
-
-const inputStyle = {
-  width: '100%', padding: '9px 12px', borderRadius: 8,
-  border: '1px solid var(--noorix-border)',
-  background: 'var(--noorix-bg-surface)', fontSize: 13,
-};
+import { Button, Input, Modal } from '../../../ui';
 
 function Cb({ checked, indeterminate, onChange, disabled }) {
   return (
@@ -80,17 +74,15 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
             ? `${permissions.length} / ${totalPerms} صلاحية`
             : `${permissions.length} / ${totalPerms} permissions`}
         </span>
-        <button
-          type="button"
-          className="noorix-btn-nav"
-          style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6 }}
+        <Button
+          size="sm"
           onClick={toggleAll}
           disabled={disabled}
         >
           {allChecked
             ? (isAr ? 'إلغاء الكل' : 'Deselect All')
             : (isAr ? 'تحديد الكل' : 'Select All')}
-        </button>
+        </Button>
       </div>
 
       <div style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
@@ -184,6 +176,10 @@ const thStyle = {
 const tdStyle = {
   padding: '5px 10px',
   fontSize: 13,
+};
+
+const labelStyle = {
+  display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4,
 };
 
 export default function RolesTab({ userRole, language }) {
@@ -312,12 +308,12 @@ export default function RolesTab({ userRole, language }) {
             {isAr ? 'أنشئ أدوار مخصصة وتحكم بالصلاحيات لكل صفحة وعملية' : 'Create custom roles and control permissions per page and operation'}
           </p>
         </div>
-        <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={() => {
+        <Button variant="primary" onClick={() => {
           setForm({ name: '', nameAr: '', description: '', permissions: [] });
           setShowForm(true);
         }}>
           {isAr ? '+ إنشاء دور جديد' : '+ Create New Role'}
-        </button>
+        </Button>
       </div>
 
       {isLoading ? (
@@ -380,164 +376,128 @@ export default function RolesTab({ userRole, language }) {
         </div>
       )}
 
-      {showForm && createPortal(
-        <div role="dialog" aria-modal="true" style={overlayStyle} onClick={() => !createMutation.isPending && setShowForm(false)}>
-          <div className="noorix-surface-card" style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700 }}>
-              {isAr ? 'إنشاء دور جديد' : 'Create New Role'}
-            </h3>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if (!form.name?.trim()) return;
-              createMutation.mutate({
-                name: form.name.trim().toLowerCase().replace(/\s+/g, '_'),
-                nameAr: form.nameAr?.trim(),
-                description: form.description?.trim(),
-                permissions: form.permissions,
-              });
-            }}>
-              <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-                  <div>
-                    <label style={labelStyle}>{isAr ? 'اسم الدور (إنجليزي) *' : 'Role Name (EN) *'}</label>
-                    <input type="text" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                      placeholder="warehouse_manager" style={inputStyle} required />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'}</label>
-                    <input type="text" value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
-                      placeholder="مدير المستودع" style={inputStyle} />
-                  </div>
-                </div>
-                <div>
-                  <label style={labelStyle}>{isAr ? 'الوصف' : 'Description'}</label>
-                  <input type="text" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-                    style={inputStyle} />
-                </div>
-              </div>
-
-              <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700 }}>
-                {isAr ? 'الصلاحيات' : 'Permissions'}
-              </h4>
-              <PermissionMatrix
-                modules={modules}
-                levels={levels}
-                permissions={form.permissions}
-                onChange={(perms) => setForm((p) => ({ ...p, permissions: perms }))}
-                disabled={false}
-                language={language}
-              />
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button type="submit" className="noorix-btn-primary" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? t('saving') : (isAr ? 'إنشاء الدور' : 'Create Role')}
-                </button>
-                <button type="button" className="noorix-btn-nav" onClick={() => setShowForm(false)}>
-                  {t('cancel')}
-                </button>
-              </div>
-            </form>
+      {/* نموذج إنشاء دور جديد */}
+      <Modal
+        open={showForm}
+        onClose={() => !createMutation.isPending && setShowForm(false)}
+        title={isAr ? 'إنشاء دور جديد' : 'Create New Role'}
+        size="lg"
+      >
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (!form.name?.trim()) return;
+          createMutation.mutate({
+            name: form.name.trim().toLowerCase().replace(/\s+/g, '_'),
+            nameAr: form.nameAr?.trim(),
+            description: form.description?.trim(),
+            permissions: form.permissions,
+          });
+        }}>
+          <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+              <Input type="text" label={isAr ? 'اسم الدور (إنجليزي) *' : 'Role Name (EN) *'} value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="warehouse_manager" required />
+              <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} placeholder="مدير المستودع" />
+            </div>
+            <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
           </div>
-        </div>,
-        document.body,
-      )}
 
-      {editing && createPortal(
-        <div role="dialog" aria-modal="true" style={overlayStyle} onClick={() => !updateMutation.isPending && setEditing(null)}>
-          <div className="noorix-surface-card" style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
-                {isAr ? `تعديل: ${editing.nameAr || editing.name}` : `Edit: ${editing.nameAr || editing.name}`}
-              </h3>
-              {editing.isSystem && (
+          <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700 }}>
+            {isAr ? 'الصلاحيات' : 'Permissions'}
+          </h4>
+          <PermissionMatrix
+            modules={modules}
+            levels={levels}
+            permissions={form.permissions}
+            onChange={(perms) => setForm((p) => ({ ...p, permissions: perms }))}
+            disabled={false}
+            language={language}
+          />
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <Button type="submit" variant="primary" disabled={createMutation.isPending}>
+              {createMutation.isPending ? t('saving') : (isAr ? 'إنشاء الدور' : 'Create Role')}
+            </Button>
+            <Button type="button" onClick={() => setShowForm(false)}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* نافذة تعديل دور */}
+      <Modal
+        open={!!editing}
+        onClose={() => !updateMutation.isPending && setEditing(null)}
+        title={editing ? (isAr ? `تعديل: ${editing.nameAr || editing.name}` : `Edit: ${editing.nameAr || editing.name}`) : ''}
+        size="lg"
+      >
+        {editing && (
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            updateMutation.mutate({
+              id: editing.id,
+              body: {
+                nameAr: editing.nameAr?.trim(),
+                description: editing.description?.trim(),
+                permissions: editing.permissions,
+              },
+            });
+          }}>
+            {editing.isSystem && (
+              <div style={{ marginBottom: 12 }}>
                 <span style={{
                   background: 'var(--noorix-text-muted)', color: '#fff',
                   padding: '2px 10px', borderRadius: 8, fontSize: 10, fontWeight: 700,
                 }}>
                   {isAr ? 'دور نظام' : 'System role'}
                 </span>
+              </div>
+            )}
+            <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={editing.nameAr} onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))} />
+                <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={editing.description} onChange={(e) => setEditing((p) => ({ ...p, description: e.target.value }))} />
+              </div>
+            </div>
+
+            <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700 }}>
+              {isAr ? 'مصفوفة الصلاحيات' : 'Permissions Matrix'}
+            </h4>
+            <PermissionMatrix
+              modules={modules}
+              levels={levels}
+              permissions={editing.permissions}
+              onChange={(perms) => setEditing((p) => ({ ...p, permissions: perms }))}
+              disabled={false}
+              language={language}
+            />
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+              <Button type="submit" variant="primary" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? t('saving') : t('save')}
+              </Button>
+              <Button type="button" onClick={() => setEditing(null)}>
+                {t('close')}
+              </Button>
+              {!editing.isSystem && (
+                <Button
+                  type="button"
+                  variant="danger"
+                  style={{ marginInlineStart: 'auto' }}
+                  onClick={() => {
+                    const msg = isAr
+                      ? `هل تريد حذف الدور "${editing.nameAr || editing.name}"؟`
+                      : `Delete role "${editing.nameAr || editing.name}"?`;
+                    if (confirm(msg)) deleteMutation.mutate(editing.id);
+                  }}
+                  disabled={deleteMutation.isPending}>
+                  {isAr ? 'حذف الدور' : 'Delete Role'}
+                </Button>
               )}
             </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              updateMutation.mutate({
-                id: editing.id,
-                body: {
-                  nameAr: editing.nameAr?.trim(),
-                  description: editing.description?.trim(),
-                  permissions: editing.permissions,
-                },
-              });
-            }}>
-              <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-                  <div>
-                    <label style={labelStyle}>{isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'}</label>
-                    <input type="text" value={editing.nameAr}
-                      onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))}
-                      style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{isAr ? 'الوصف' : 'Description'}</label>
-                    <input type="text" value={editing.description}
-                      onChange={(e) => setEditing((p) => ({ ...p, description: e.target.value }))}
-                      style={inputStyle} />
-                  </div>
-                </div>
-              </div>
-
-              <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700 }}>
-                {isAr ? 'مصفوفة الصلاحيات' : 'Permissions Matrix'}
-              </h4>
-              <PermissionMatrix
-                modules={modules}
-                levels={levels}
-                permissions={editing.permissions}
-                onChange={(perms) => setEditing((p) => ({ ...p, permissions: perms }))}
-                disabled={false}
-                language={language}
-              />
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-                <button type="submit" className="noorix-btn-primary" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? t('saving') : t('save')}
-                </button>
-                <button type="button" className="noorix-btn-nav" onClick={() => setEditing(null)}>
-                  {t('close')}
-                </button>
-                {!editing.isSystem && (
-                  <button type="button" className="noorix-btn-nav" style={{ color: 'var(--noorix-text-danger)', marginInlineStart: 'auto' }}
-                    onClick={() => {
-                      const msg = isAr
-                        ? `هل تريد حذف الدور "${editing.nameAr || editing.name}"؟`
-                        : `Delete role "${editing.nameAr || editing.name}"?`;
-                      if (confirm(msg)) deleteMutation.mutate(editing.id);
-                    }}
-                    disabled={deleteMutation.isPending}>
-                    {isAr ? 'حذف الدور' : 'Delete Role'}
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body,
-      )}
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }
-
-const overlayStyle = {
-  position: 'fixed', inset: 0, background: 'transparent',
-  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9000,
-  padding: 16,
-};
-
-const modalStyle = {
-  padding: '20px 24px', maxWidth: 760, width: '100%',
-  maxHeight: '90vh', overflow: 'auto', borderRadius: 16,
-};
-
-const labelStyle = {
-  display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4,
-};

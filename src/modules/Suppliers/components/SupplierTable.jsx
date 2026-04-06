@@ -6,22 +6,31 @@
  */
 import React, { memo, useState, useEffect } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Badge, Button } from '../../../ui';
 
 const sName = (s, lang) => (lang === 'en' ? s?.nameEn || s?.nameAr : s?.nameAr || s?.nameEn) || '—';
 
 /* ── بادج نوع المورد ── */
-function TypeBadge({ type, t }) {
-  const map = {
-    purchase:  { key: 'categoryTypes',      bg: 'rgba(37,99,235,0.08)',  color: '#2563eb' },
-    purchases: { key: 'categoryTypes',      bg: 'rgba(37,99,235,0.08)',  color: '#2563eb' },
-    expense:   { key: 'categoryTypeExpense', bg: 'rgba(217,119,6,0.08)', color: '#d97706' },
-    expenses:  { key: 'categoryTypeExpense', bg: 'rgba(217,119,6,0.08)', color: '#d97706' },
+function TypeBadge({ type }) {
+  const colorMap = {
+    purchase:  'blue',
+    purchases: 'blue',
+    expense:   'amber',
+    expenses:  'amber',
   };
-  const cfg = map[type] || { key: null, bg: 'rgba(100,116,139,0.08)', color: '#64748b' };
+  const labelMap = {
+    purchase:  'categoryTypes',
+    purchases: 'categoryTypes',
+    expense:   'categoryTypeExpense',
+    expenses:  'categoryTypeExpense',
+  };
+  const { t } = useTranslation();
+  const color = colorMap[type] || 'gray';
+  const labelKey = labelMap[type];
   return (
-    <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: cfg.bg, color: cfg.color }}>
-      {cfg.key ? t(cfg.key) : type}
-    </span>
+    <Badge color={color} size="sm">
+      {labelKey ? t(labelKey) : type}
+    </Badge>
   );
 }
 
@@ -45,12 +54,8 @@ function CB({ checked, indeterminate, onChange, ariaLabel }) {
 function ActionBtns({ onEdit, onDelete, t }) {
   return (
     <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
-      <button type="button" onClick={onEdit} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, cursor: 'pointer', border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', whiteSpace: 'nowrap' }}>
-        ✎ {t('edit')}
-      </button>
-      <button type="button" onClick={onDelete} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, cursor: 'pointer', border: '1px solid #fecaca', background: 'rgba(239,68,68,0.06)', color: 'var(--noorix-accent-red)', whiteSpace: 'nowrap' }}>
-        × {t('delete')}
-      </button>
+      <Button size="sm" onClick={onEdit}>✎ {t('edit')}</Button>
+      <Button size="sm" variant="danger" onClick={onDelete}>× {t('delete')}</Button>
     </div>
   );
 }
@@ -100,20 +105,8 @@ export const SupplierTable = memo(function SupplierTable({
       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--noorix-accent-red)', flex: 1 }}>
         تم تحديد {selectedIds.size} {selectedIds.size === 1 ? 'مورد' : 'موردين'}
       </span>
-      <button
-        type="button"
-        onClick={() => onBulkDelete?.()}
-        style={{ padding: '7px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: 'var(--noorix-accent-red)', color: '#fff' }}
-      >
-        حذف المحددين
-      </button>
-      <button
-        type="button"
-        onClick={() => onSelectAll?.(false)}
-        style={{ padding: '7px 14px', borderRadius: 8, fontSize: 13, cursor: 'pointer', border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text-muted)' }}
-      >
-        إلغاء التحديد
-      </button>
+      <Button variant="danger" onClick={() => onBulkDelete?.()}>حذف المحددين</Button>
+      <Button onClick={() => onSelectAll?.(false)}>إلغاء التحديد</Button>
     </div>
   ) : null;
 
@@ -152,23 +145,23 @@ export const SupplierTable = memo(function SupplierTable({
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
                       <div>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{sName(s, lang)}</div>
-                    {s.nameEn && s.nameAr && lang !== 'en' && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{s.nameEn}</div>}
-                    {s.nameAr && lang === 'en' && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{s.nameAr}</div>}
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{sName(s, lang)}</div>
+                        {s.nameEn && s.nameAr && lang !== 'en' && <div className="nx-cell-muted">{s.nameEn}</div>}
+                        {s.nameAr && lang === 'en' && <div className="nx-cell-muted">{s.nameAr}</div>}
                       </div>
-                      <TypeBadge type={s.supplierType || 'purchases'} t={t} />
+                      <TypeBadge type={s.supplierType || 'purchases'} />
                     </div>
                     {(s.phone || s.taxNumber) && (
                       <div style={{ display: 'flex', gap: 12, marginBottom: 6, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
                         {s.phone && <span>{s.phone}</span>}
-                        {s.taxNumber && <span style={{ fontFamily: 'monospace' }}>{s.taxNumber}</span>}
+                        {s.taxNumber && <span className="nx-cell-num">{s.taxNumber}</span>}
                       </div>
                     )}
                     {cat && (
                       <div style={{ marginBottom: 8 }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: cat.type === 'purchase' ? 'rgba(37,99,235,0.08)' : 'rgba(217,119,6,0.08)', color: cat.type === 'purchase' ? '#2563eb' : '#d97706' }}>
+                        <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
                           {icon && <span>{icon}</span>}{cat.nameAr}
-                        </span>
+                        </Badge>
                       </div>
                     )}
                     <ActionBtns onEdit={() => onEdit?.(s)} onDelete={() => onDelete?.(s)} t={t} />
@@ -235,22 +228,22 @@ export const SupplierTable = memo(function SupplierTable({
                     <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
                   </td>
                   <td style={{ padding: '9px 12px', fontWeight: 700 }}>{sName(s, lang)}</td>
-                  <td style={{ padding: '9px 12px', color: 'var(--noorix-text-muted)', fontSize: 12 }}>{lang === 'en' ? (s.nameAr || '—') : (s.nameEn || '—')}</td>
-                  <td style={{ padding: '9px 12px', fontFamily: 'monospace', fontSize: 12 }}>{s.taxNumber || '—'}</td>
+                  <td style={{ padding: '9px 12px' }} className="nx-cell-muted">{lang === 'en' ? (s.nameAr || '—') : (s.nameEn || '—')}</td>
+                  <td style={{ padding: '9px 12px' }} className="nx-cell-num">{s.taxNumber || '—'}</td>
                   <td style={{ padding: '9px 12px', fontSize: 12 }}>{s.phone || '—'}</td>
                   <td style={{ padding: '9px 12px', fontSize: 12 }}>
                     {cat ? (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         {icon && <span style={{ fontSize: 14 }}>{icon}</span>}
-                        <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: cat.type === 'purchase' ? 'rgba(37,99,235,0.08)' : 'rgba(217,119,6,0.08)', color: cat.type === 'purchase' ? '#2563eb' : '#d97706' }}>
+                        <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
                           {cat.nameAr}
                           {cat.account?.code && <span style={{ marginRight: 4, opacity: 0.7 }}>[{cat.account.code}]</span>}
-                        </span>
+                        </Badge>
                       </span>
                     ) : '—'}
                   </td>
                   <td style={{ padding: '9px 12px' }}>
-                    <TypeBadge type={s.supplierType || 'purchases'} t={t} />
+                    <TypeBadge type={s.supplierType || 'purchases'} />
                   </td>
                   <td style={{ padding: '9px 12px' }}>
                     <ActionBtns onEdit={() => onEdit?.(s)} onDelete={() => onDelete?.(s)} t={t} />

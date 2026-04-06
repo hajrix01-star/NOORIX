@@ -2,7 +2,6 @@
  * النسخ الاحتياطي — لقطة منطقية لكل شركة، سجل، تقرير استرجاع، إعادة رفع خارجي
  */
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
@@ -23,6 +22,7 @@ import {
 import Toast from '../../../components/Toast';
 import { useAuth } from '../../../context/AuthContext';
 import { useApp } from '../../../context/AppContext';
+import { Button, Input, Modal } from '../../../ui';
 
 function formatBackupDate(iso, lang) {
   if (!iso) return '—';
@@ -350,14 +350,14 @@ export default function BackupTab({ activeCompanies = [] }) {
                 </option>
               ))}
             </select>
-            <button
+            <Button
               type="button"
-              className="noorix-btn noorix-btn--primary"
+              variant="primary"
               disabled={!companyId || !activeCompanies.length || triggerMut.isPending}
               onClick={() => triggerMut.mutate()}
             >
               {triggerMut.isPending ? t('loading') : t('backupRunNow')}
-            </button>
+            </Button>
           </div>
           {!activeCompanies.length && (
             <p className="backup-meta-line" style={{ margin: 0 }}>
@@ -442,9 +442,8 @@ export default function BackupTab({ activeCompanies = [] }) {
               </div>
             )}
             <div className="backup-actions-row">
-              <button
+              <Button
                 type="button"
-                className="noorix-btn noorix-btn--secondary"
                 disabled={saveSysMut.isPending}
                 onClick={() =>
                   saveSysMut.mutate({
@@ -456,15 +455,15 @@ export default function BackupTab({ activeCompanies = [] }) {
                 }
               >
                 {saveSysMut.isPending ? t('loading') : t('backupSystemSave')}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="noorix-btn noorix-btn--primary"
+                variant="primary"
                 disabled={runSysMut.isPending}
                 onClick={() => runSysMut.mutate()}
               >
                 {runSysMut.isPending ? t('loading') : t('backupSystemRunNow')}
-              </button>
+              </Button>
             </div>
 
             <h4 className="backup-subtitle">{t('backupSystemJobs')}</h4>
@@ -492,14 +491,14 @@ export default function BackupTab({ activeCompanies = [] }) {
                       <span style={{ color: '#b91c1c', fontSize: 11, wordBreak: 'break-word' }}>{sj.verifyError}</span>
                     )}
                     {sj.status === 'completed' && sj.localRelativePath && (
-                      <button
+                      <Button
                         type="button"
-                        className="noorix-btn noorix-btn--ghost"
+                        variant="ghost"
                         disabled={verifySysMut.isPending}
                         onClick={() => verifySysMut.mutate(sj.id)}
                       >
                         {t('backupVerify')}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -554,27 +553,25 @@ export default function BackupTab({ activeCompanies = [] }) {
                   </div>
                 )}
                 <div className="backup-job-actions">
-                  <button
+                  <Button
                     type="button"
-                    className="noorix-btn noorix-btn--secondary"
                     disabled={reportMut.isPending}
                     onClick={() => reportMut.mutate(j.id)}
                   >
                     {t('backupRestoreReport')}
-                  </button>
+                  </Button>
                   {j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath && (
                     <>
-                      <button
+                      <Button
                         type="button"
-                        className="noorix-btn noorix-btn--secondary"
                         disabled={downloadMut.isPending}
                         onClick={() => downloadMut.mutate(j.id)}
                       >
                         {t('backupDownload')}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
-                        className="noorix-btn noorix-btn--primary"
+                        variant="primary"
                         disabled={importMut.isPending}
                         onClick={() => {
                           setImportNameAr(defaultImportCompanyName(j, t, lang));
@@ -583,26 +580,26 @@ export default function BackupTab({ activeCompanies = [] }) {
                         }}
                       >
                         {t('backupImportNewCompany')}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
-                        className="noorix-btn noorix-btn--ghost"
+                        variant="ghost"
                         disabled={verifyCoMut.isPending}
                         onClick={() => verifyCoMut.mutate(j.id)}
                       >
                         {t('backupVerify')}
-                      </button>
+                      </Button>
                     </>
                   )}
                   {!j.externalUploaded && j.status === 'completed' && j.localRelativePath && (
-                    <button
+                    <Button
                       type="button"
-                      className="noorix-btn noorix-btn--ghost"
+                      variant="ghost"
                       disabled={retryMut.isPending}
                       onClick={() => retryMut.mutate(j.id)}
                     >
                       {t('backupRetryExternal')}
-                    </button>
+                    </Button>
                   )}
                 </div>
               </article>
@@ -611,150 +608,95 @@ export default function BackupTab({ activeCompanies = [] }) {
         </div>
       </section>
 
-      {importModal && createPortal(
+      <Modal
+        open={!!importModal}
+        onClose={() => !importMut.isPending && (setImportModal(null), setImportConfirmed(false))}
+        title={t('backupImportNewCompany')}
+        size="md"
+      >
         <div
-          role="dialog"
-          aria-modal="true"
-          className="noorix-modal-backdrop"
           style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'var(--noorix-modal-overlay-bg)',
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
-            zIndex: 9000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
+            padding: '10px 14px',
+            marginBottom: 14,
+            background: 'rgba(220,38,38,0.08)',
+            border: '1px solid rgba(220,38,38,0.45)',
+            borderRadius: 6,
+            fontSize: 13,
+            color: 'var(--noorix-accent-red)',
+            lineHeight: 1.65,
+            fontWeight: 500,
           }}
-          onClick={(e) => e.target === e.currentTarget && !importMut.isPending && setImportModal(null)}
+          role="alert"
         >
-          <div
-            className="noorix-surface-card noorix-modal-card"
-            style={{ width: 'min(100%, 28rem)', maxWidth: '100%', padding: 18, boxSizing: 'border-box' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ marginTop: 0, fontSize: '1.05rem' }}>{t('backupImportNewCompany')}</h3>
+          {isAr
+            ? '⚠️ تحذير: سيتم إنشاء شركة جديدة كاملة من هذه النسخة الاحتياطية. تأكد من صحة النسخة قبل المتابعة.'
+            : '⚠️ Warning: A new company will be created from this backup. Make sure the backup is correct before proceeding.'}
+        </div>
 
-            {/* تحذير أحمر واضح */}
-            <div
-              style={{
-                padding: '10px 14px',
-                marginBottom: 14,
-                background: 'rgba(220,38,38,0.08)',
-                border: '1px solid rgba(220,38,38,0.45)',
-                borderRadius: 6,
-                fontSize: 13,
-                color: '#b91c1c',
-                lineHeight: 1.65,
-                fontWeight: 500,
-              }}
-              role="alert"
-            >
-              {isAr
-                ? '⚠️ تحذير: سيتم إنشاء شركة جديدة كاملة من هذه النسخة الاحتياطية. تأكد من صحة النسخة قبل المتابعة.'
-                : '⚠️ Warning: A new company will be created from this backup. Make sure the backup is correct before proceeding.'}
-            </div>
+        <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6, margin: '0 0 12px' }}>
+          {t('backupImportWarn')}
+        </p>
 
-            <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6, margin: '0 0 12px' }}>
-              {t('backupImportWarn')}
-            </p>
+        <Input
+          type="text"
+          label={t('backupImportNameLabel')}
+          value={importNameAr}
+          onChange={(e) => setImportNameAr(e.target.value)}
+        />
 
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-              {t('backupImportNameLabel')}
-            </label>
-            <input
-              type="text"
-              className="noorix-bank-filter"
-              style={{ width: '100%', marginBottom: 14 }}
-              value={importNameAr}
-              onChange={(e) => setImportNameAr(e.target.value)}
-            />
-
-            {/* تأكيد مزدوج — checkbox */}
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-                fontSize: 13,
-                marginBottom: 16,
-                cursor: 'pointer',
-                color: 'var(--noorix-text)',
-                lineHeight: 1.5,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={importConfirmed}
-                onChange={(e) => setImportConfirmed(e.target.checked)}
-                style={{ marginTop: 2, flexShrink: 0 }}
-              />
-              <span>
-                {isAr
-                  ? 'أؤكد أنني أرغب في إنشاء شركة جديدة من هذه النسخة الاحتياطية'
-                  : 'I confirm I want to create a new company from this backup'}
-              </span>
-            </label>
-
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="noorix-btn noorix-btn--ghost"
-                disabled={importMut.isPending}
-                onClick={() => { setImportModal(null); setImportConfirmed(false); }}
-              >
-                {t('cancel')}
-              </button>
-              <button
-                type="button"
-                className="noorix-btn noorix-btn--primary"
-                disabled={importMut.isPending || !importNameAr.trim() || !importConfirmed}
-                onClick={() =>
-                  importMut.mutate({ jobId: importModal.jobId, nameAr: importNameAr.trim() })
-                }
-              >
-                {importMut.isPending ? t('loading') : t('backupImportRun')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
-
-      {reportModal && createPortal(
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="noorix-modal-backdrop"
+        <label
           style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'var(--noorix-modal-overlay-bg)',
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
-            zIndex: 9000,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
+            alignItems: 'flex-start',
+            gap: 8,
+            fontSize: 13,
+            margin: '12px 0 16px',
+            cursor: 'pointer',
+            color: 'var(--noorix-text)',
+            lineHeight: 1.5,
           }}
-          onClick={(e) => e.target === e.currentTarget && setReportModal(null)}
         >
-          <div
-            className="noorix-surface-card noorix-modal-card"
-            style={{
-              width: 'min(100%, 36rem)',
-              maxWidth: '100%',
-              maxHeight: '88vh',
-              overflow: 'auto',
-              padding: 18,
-              boxSizing: 'border-box',
-            }}
-            onClick={(e) => e.stopPropagation()}
+          <input
+            type="checkbox"
+            checked={importConfirmed}
+            onChange={(e) => setImportConfirmed(e.target.checked)}
+            style={{ marginTop: 2, flexShrink: 0 }}
+          />
+          <span>
+            {isAr
+              ? 'أؤكد أنني أرغب في إنشاء شركة جديدة من هذه النسخة الاحتياطية'
+              : 'I confirm I want to create a new company from this backup'}
+          </span>
+        </label>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={importMut.isPending}
+            onClick={() => { setImportModal(null); setImportConfirmed(false); }}
           >
-            <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: '1.05rem' }}>{t('backupRestoreReport')}</h3>
+            {t('cancel')}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            disabled={importMut.isPending || !importNameAr.trim() || !importConfirmed}
+            onClick={() => importMut.mutate({ jobId: importModal.jobId, nameAr: importNameAr.trim() })}
+          >
+            {importMut.isPending ? t('loading') : t('backupImportRun')}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={!!reportModal}
+        onClose={() => setReportModal(null)}
+        title={t('backupRestoreReport')}
+        size="md"
+      >
+        {reportModal && (
+          <>
             <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
               {isAr ? reportModal.payload?.messageAr : reportModal.payload?.messageEn || reportModal.payload?.messageAr}
             </p>
@@ -845,47 +787,22 @@ export default function BackupTab({ activeCompanies = [] }) {
             </div>
 
             <div style={{ marginTop: 18, display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => setReportModal(null)}>
+              <Button type="button" variant="primary" onClick={() => setReportModal(null)}>
                 {t('close')}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+          </>
+        )}
+      </Modal>
 
-      {importReportModal && createPortal(
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="noorix-modal-backdrop"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'var(--noorix-modal-overlay-bg)',
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
-            zIndex: 9000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-          }}
-          onClick={(e) => e.target === e.currentTarget && setImportReportModal(null)}
-        >
-          <div
-            className="noorix-surface-card noorix-modal-card"
-            style={{
-              width: 'min(100%, 36rem)',
-              maxWidth: '100%',
-              maxHeight: '88vh',
-              overflow: 'auto',
-              padding: 18,
-              boxSizing: 'border-box',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: '1.05rem' }}>{t('backupImportReportTitle')}</h3>
+      <Modal
+        open={!!importReportModal}
+        onClose={() => setImportReportModal(null)}
+        title={t('backupImportReportTitle')}
+        size="md"
+      >
+        {importReportModal && (
+          <>
             <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
               {t('backupImportOk')}
             </p>
@@ -971,14 +888,13 @@ export default function BackupTab({ activeCompanies = [] }) {
             </div>
 
             <div style={{ marginTop: 18, display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => setImportReportModal(null)}>
+              <Button type="button" variant="primary" onClick={() => setImportReportModal(null)}>
                 {t('close')}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+          </>
+        )}
+      </Modal>
 
       <Toast
         visible={toast.visible}

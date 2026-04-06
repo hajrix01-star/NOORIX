@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import { changePassword } from '../services/api';
+import { Button, Input, Modal } from '../ui';
 
 const MIN_LENGTH = 8;
 
@@ -72,74 +73,27 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
     }
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 12px',
-    borderRadius: 8,
-    border: '1px solid var(--noorix-border)',
-    background: 'var(--noorix-bg-surface)',
-    fontSize: 14,
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-  };
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 10000,
-        background: 'var(--noorix-modal-overlay-bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose?.()}
-    >
-      <div
-        className="noorix-modal-card"
-        style={{
-          borderRadius: 14,
-          maxWidth: 400,
-          width: '100%',
-          padding: 24,
-          boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700 }}>{t('changePassword')}</h3>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-              {t('changePasswordCurrent') || 'كلمة المرور الحالية'}
-            </label>
-            <input
+    <Modal open={true} onClose={onClose} title={t('changePassword')} size="sm">
+      <form onSubmit={handleSubmit}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Input
+            type="password"
+            label={t('changePasswordCurrent') || 'كلمة المرور الحالية'}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+          />
+          <div>
+            <Input
               type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="••••••••"
-              style={inputStyle}
-              autoComplete="current-password"
-            />
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-              {t('changePasswordNew') || 'كلمة المرور الجديدة'}
-            </label>
-            <input
-              type="password"
+              label={t('changePasswordNew') || 'كلمة المرور الجديدة'}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="••••••••"
-              style={inputStyle}
               autoComplete="new-password"
             />
-            {/* مؤشر قوة كلمة المرور */}
             {newPassword && (
               <div style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
@@ -160,16 +114,13 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               </div>
             )}
           </div>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-              {t('changePasswordConfirm') || 'تأكيد كلمة المرور'}
-            </label>
-            <input
+          <div>
+            <Input
               type="password"
+              label={t('changePasswordConfirm') || 'تأكيد كلمة المرور'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
-              style={inputStyle}
               autoComplete="new-password"
             />
             {confirmPassword && confirmPassword !== newPassword && (
@@ -179,20 +130,20 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
             )}
           </div>
           {error && (
-            <div style={{ marginBottom: 16, padding: 10, borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#dc2626', fontSize: 13 }}>
+            <div style={{ padding: 10, borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#dc2626', fontSize: 13 }}>
               {error}
             </div>
           )}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button type="button" className="noorix-btn-nav" onClick={onClose}>
+            <Button type="button" onClick={onClose}>
               {t('cancel')}
-            </button>
-            <button type="submit" className="noorix-btn-nav noorix-btn-primary" disabled={loading}>
+            </Button>
+            <Button type="submit" variant="primary" loading={loading}>
               {loading ? t('loading') : t('save')}
-            </button>
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </Modal>
   );
 }

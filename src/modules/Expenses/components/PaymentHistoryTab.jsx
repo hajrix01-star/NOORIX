@@ -11,8 +11,14 @@ import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Button, Badge, Input } from '../../../ui';
 
 const KIND_LABELS = { fixed_expense: 'ثابت', expense: 'متغير' };
+
+const KIND_STATUS_MAP = {
+  fixed_expense: { color: 'gray',  label: 'ثابت' },
+  expense:       { color: 'amber', label: 'متغير' },
+};
 
 export default function PaymentHistoryTab({ companyId, dateFilter: externalDateFilter }) {
   const { lang } = useTranslation();
@@ -76,23 +82,23 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
 
   const columns = [
     { key: 'invoiceNumber', label: 'رقم السند',
-      render: (_, row) => <span style={{ fontWeight: 600, fontFamily: 'var(--noorix-font-numbers)' }}>{row.invoiceNumber || '—'}</span> },
+      render: (_, row) => <span className="nx-cell-num" style={{ fontWeight: 600 }}>{row.invoiceNumber || '—'}</span> },
     { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد',
-      render: (_, row) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text-muted)' }}>{row.supplierInvoiceNumber || '—'}</span> },
+      render: (_, row) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '—'}</span> },
     { key: 'supplierName', label: 'المورد',
       render: (_, row) => <span>{(lang === 'en' ? row.supplier?.nameEn || row.supplier?.nameAr : row.supplier?.nameAr || row.supplier?.nameEn) || '—'}</span> },
     { key: 'expenseLineName', label: 'بند المصروف',
       render: (_, row) => <span>{row.expenseLine?.nameAr || row.expenseLine?.nameEn || '—'}</span> },
     { key: 'kind', label: 'النوع',
-      render: (v) => <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: v === 'fixed_expense' ? 'rgba(100,116,139,0.12)' : 'rgba(217,119,6,0.12)', color: v === 'fixed_expense' ? '#64748b' : '#d97706' }}>{KIND_LABELS[v] || v}</span> },
+      render: (v) => <Badge {...Badge.fromStatus(v, KIND_STATUS_MAP)} size="sm" /> },
     { key: 'transactionDate', label: 'التاريخ',
-      render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{formatSaudiDate(v)}</span> },
+      render: (v) => <span className="nx-cell-muted">{formatSaudiDate(v)}</span> },
     { key: 'netAmount', label: 'الصافي', numeric: true,
-      render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a' }}>{fmt(v)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v)}</span> },
     { key: 'taxAmount', label: 'الضريبة', numeric: true,
-      render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#d97706' }}>{fmt(v)}</span> },
+      render: (v) => <span className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(v)}</span> },
     { key: 'totalAmount', label: 'الإجمالي', numeric: true,
-      render: (v) => <span style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+      render: (v) => <span className="nx-cell-num" style={{ fontWeight: 700 }}>{fmt(v)}</span> },
   ];
 
   if (isError) {
@@ -114,19 +120,19 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           </label>
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8, marginTop: 16, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <select
+      <div className="nx-toolbar" style={{ marginTop: 16, marginBottom: 12 }}>
+        <Input
+          type="select"
           value={filterKind}
           onChange={(e) => setFilterKind(e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', fontSize: 13 }}
         >
           <option value="">الكل (ثابت + متغير)</option>
           <option value="fixed_expense">ثابت فقط</option>
           <option value="expense">متغير فقط</option>
-        </select>
-        <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!activeItems.length}>طباعة</button>
-        <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>Excel</button>
-        <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', filename: 'payment-history.pdf' })} disabled={!activeItems.length}>PDF</button>
+        </Input>
+        <Button onClick={handlePrint} disabled={!activeItems.length}>طباعة</Button>
+        <Button onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>Excel</Button>
+        <Button onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', filename: 'payment-history.pdf' })} disabled={!activeItems.length}>PDF</Button>
       </div>
       <div style={{ marginTop: 8 }}>
         <SmartTable
@@ -141,9 +147,9 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
             activeItems.length > 0 ? (
               <div style={{ padding: 16, background: 'var(--noorix-bg-page)', borderRadius: 8, marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <span style={{ fontSize: 14, color: 'var(--noorix-text-muted)' }}>عدد السجلات: <strong>{activeItems.length}</strong></span>
-                <span style={{ fontSize: 14 }}>الصافي: <strong style={{ color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)}</strong></span>
-                <span style={{ fontSize: 14 }}>الضريبة: <strong style={{ color: '#d97706', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)}</strong></span>
-                <span style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>الإجمالي: {fmt(totalAmount)} ر.س</span>
+                <span style={{ fontSize: 14 }}>الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
+                <span style={{ fontSize: 14 }}>الضريبة: <strong className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(totalTax)}</strong></span>
+                <span className="nx-cell-num" style={{ fontSize: 16, fontWeight: 700 }}>الإجمالي: {fmt(totalAmount)} ر.س</span>
               </div>
             ) : null
           }

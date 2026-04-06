@@ -11,6 +11,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
+import { Button, Modal } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
@@ -118,7 +119,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   };
 
   const columns = [
-    { key: 'documentNumber', label: t('documentNumber'), render: (_, r) => <span style={{ fontSize: 12, fontFamily: 'var(--noorix-font-numbers)' }}>{r.documentNumber || r.referenceId || '—'}</span> },
+    { key: 'documentNumber', label: t('documentNumber'), render: (_, r) => <span className="nx-cell-num">{r.documentNumber || r.referenceId || '—'}</span> },
     { key: 'transactionDate', label: t('date'), render: (v) => <span style={{ fontSize: 12 }}>{formatSaudiDate(v)}</span> },
     { key: 'referenceType', label: t('type'), render: (v) => <span style={{ fontSize: 12 }}>{v || '—'}</span> },
     { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a' }}>{fmt(v)}</span> : <span>—</span> },
@@ -155,47 +156,49 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
 
   const isPaginatedTotal = vault?.totalIn != null && (data?.total ?? 0) > items.length;
 
+  const modalTitle = `${vault ? vaultDisplayName(vault, lang) : t('vaults')} — ${t('transactions')}${periodLabel ? ` (${periodLabel})` : ''}`;
+
   return (
-    <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }} onClick={onClose}>
-      <div className="noorix-surface-card" style={{ maxWidth: 720, width: '100%', maxHeight: '90vh', overflow: 'auto', padding: 20 }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>{vault ? vaultDisplayName(vault, lang) : t('vaults')} — {t('transactions')}{periodLabel ? ` (${periodLabel})` : ''}</h3>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>Excel</button>
-            <button type="button" className="noorix-btn-nav" onClick={handlePrintPdf} disabled={!items.length}>PDF</button>
-            <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('close')}</button>
-          </div>
-        </div>
-        {isPaginatedTotal && (
-          <div style={{
-            fontSize: 12,
-            color: 'var(--noorix-text-muted)',
-            background: 'var(--noorix-bg-surface)',
-            border: '1px solid var(--noorix-border)',
-            borderRadius: 8,
-            padding: '7px 12px',
-            marginBottom: 12,
-            lineHeight: 1.5,
-          }}>
-            ℹ️ المجموع الظاهر في الأسفل يعكس إجمالي حركات الفترة بأكملها ({data?.total?.toLocaleString('en')} حركة)، وليس مجموع الصفحة الحالية فقط. للاطلاع على جميع الحركات استخدم تصدير Excel.
-          </div>
-        )}
-        <SmartTable
-          columns={columns}
-          data={items}
-          showRowNumbers
-          rowNumberWidth="1%"
-          total={data?.total ?? 0}
-          page={page}
-          pageSize={PAGE_SIZE}
-          onPageChange={setPage}
-          isLoading={isLoading}
-          title=""
-          emptyMessage={t('noDataInPeriod')}
-          footerCells={footerCells}
-          renderMobileCard={renderMobileCard}
-        />
+    <Modal
+      open
+      onClose={onClose}
+      title={modalTitle}
+      size="lg"
+    >
+      <div className="nx-toolbar" style={{ marginBottom: 16 }}>
+        <Button onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>Excel</Button>
+        <Button onClick={handlePrintPdf} disabled={!items.length}>PDF</Button>
       </div>
-    </div>
+
+      {isPaginatedTotal && (
+        <div style={{
+          fontSize: 12,
+          color: 'var(--noorix-text-muted)',
+          background: 'var(--noorix-bg-surface)',
+          border: '1px solid var(--noorix-border)',
+          borderRadius: 8,
+          padding: '7px 12px',
+          marginBottom: 12,
+          lineHeight: 1.5,
+        }}>
+          ℹ️ المجموع الظاهر في الأسفل يعكس إجمالي حركات الفترة بأكملها ({data?.total?.toLocaleString('en')} حركة)، وليس مجموع الصفحة الحالية فقط. للاطلاع على جميع الحركات استخدم تصدير Excel.
+        </div>
+      )}
+      <SmartTable
+        columns={columns}
+        data={items}
+        showRowNumbers
+        rowNumberWidth="1%"
+        total={data?.total ?? 0}
+        page={page}
+        pageSize={PAGE_SIZE}
+        onPageChange={setPage}
+        isLoading={isLoading}
+        title=""
+        emptyMessage={t('noDataInPeriod')}
+        footerCells={footerCells}
+        renderMobileCard={renderMobileCard}
+      />
+    </Modal>
   );
 }

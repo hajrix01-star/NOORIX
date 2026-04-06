@@ -7,10 +7,16 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
+import { Button, Badge, Input } from '../../../ui';
 
 const KIND_LABELS = {
   fixed_expense: { label: 'ثابت', bg: 'rgba(100,116,139,0.12)', color: '#64748b' },
   expense: { label: 'متغير', bg: 'rgba(217,119,6,0.12)', color: '#d97706' },
+};
+
+const KIND_STATUS_MAP = {
+  fixed_expense: { color: 'gray',  label: 'ثابت' },
+  expense:       { color: 'amber', label: 'متغير' },
 };
 
 export default function ExpenseLineList({
@@ -48,32 +54,18 @@ export default function ExpenseLineList({
         </button>
       ) },
     { key: 'kind', label: 'النوع', sortable: true,
-      render: (v) => {
-        const s = KIND_LABELS[v] || { label: v, bg: 'rgba(100,116,139,0.08)', color: '#64748b' };
-        return (
-          <span style={{
-            padding: '4px 10px',
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 600,
-            background: s.bg,
-            color: s.color,
-          }}>
-            {s.label}
-          </span>
-        );
-      } },
+      render: (v) => <Badge {...Badge.fromStatus(v, KIND_STATUS_MAP)} size="sm" /> },
     { key: 'categoryName', label: 'الفئة', sortable: true,
-      render: (v) => <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-ellipsis">{v || '—'}</span> },
     { key: 'supplierName', label: 'المورد', sortable: true,
-      render: (v) => <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-ellipsis">{v || '—'}</span> },
     { key: 'serviceNumber', label: 'رقم الخدمة',
-      render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-num">{v || '—'}</span> },
     { key: 'actions', label: 'إجراءات',
       render: (_, row) => (
         <span style={{ display: 'inline-flex', gap: 6 }}>
-          <button type="button" className="noorix-btn-nav" style={{ fontSize: 12 }} onClick={(e) => { e.stopPropagation(); onEditLine?.(row); }}>تعديل</button>
-          <button type="button" className="noorix-btn-nav" style={{ fontSize: 12, color: 'var(--noorix-text-danger)' }} onClick={(e) => { e.stopPropagation(); onDeleteLine?.(row); }}>حذف</button>
+          <Button size="sm" onClick={(e) => { e.stopPropagation(); onEditLine?.(row); }}>تعديل</Button>
+          <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); onDeleteLine?.(row); }}>حذف</Button>
         </span>
       ) },
   ], [onLineClick, onEditLine, onDeleteLine]);
@@ -110,18 +102,16 @@ export default function ExpenseLineList({
           >
             {row.nameAr || row.nameEn || '—'}
           </button>
-          <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: kindS.bg, color: kindS.color, flexShrink: 0 }}>
-            {kindS.label}
-          </span>
+          <Badge {...Badge.fromStatus(row.kind, KIND_STATUS_MAP)} size="sm" />
         </div>
         <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {row.categoryName && row.categoryName !== '—' && <span>{row.categoryName}</span>}
           {row.supplierName && row.supplierName !== '—' && <span>{row.supplierName}</span>}
-          {row.serviceNumber && <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>#{row.serviceNumber}</span>}
+          {row.serviceNumber && <span className="nx-cell-num">#{row.serviceNumber}</span>}
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" className="noorix-btn-nav" style={{ fontSize: 13, padding: '6px 14px', minHeight: 36 }} onClick={() => onEditLine?.(row)}>تعديل</button>
-          <button type="button" className="noorix-btn-nav" style={{ fontSize: 13, padding: '6px 14px', minHeight: 36, color: 'var(--noorix-text-danger)' }} onClick={() => onDeleteLine?.(row)}>حذف</button>
+          <Button size="sm" onClick={() => onEditLine?.(row)}>تعديل</Button>
+          <Button size="sm" variant="danger" onClick={() => onDeleteLine?.(row)}>حذف</Button>
         </div>
       </div>
     );
@@ -147,53 +137,25 @@ export default function ExpenseLineList({
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <select
+      <div className="nx-toolbar" style={{ marginBottom: 16 }}>
+        <Input
+          type="select"
           value={filterKind}
           onChange={(e) => onFilterKindChange(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            borderRadius: 8,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-            fontSize: 14,
-            flex: '0 1 auto',
-          }}
         >
           <option value="">{t('allTypes') || 'كل الأنواع'}</option>
           <option value="fixed_expense">{t('fixedExpense') || 'ثابت'}</option>
           <option value="expense">{t('variableExpense') || 'متغير'}</option>
-        </select>
-        <button
-          type="button"
-          onClick={onCreateLine}
-          style={{
-            padding: '10px 16px',
-            borderRadius: 8,
-            border: '2px solid var(--noorix-accent-blue)',
-            background: 'rgba(37,99,235,0.1)',
-            color: 'var(--noorix-accent-blue)',
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontSize: 14,
-            whiteSpace: 'nowrap',
-          }}
-        >
+        </Input>
+        <Button variant="primary" onClick={onCreateLine}>
           + {t('addExpenseLine') || 'إضافة بند مصروف'}
-        </button>
-        <button
-          type="button"
-          className="noorix-btn-nav"
-          onClick={onRefresh}
-          style={{ fontSize: 13 }}
-        >
+        </Button>
+        <Button onClick={onRefresh}>
           {t('refresh') || 'تحديث'}
-        </button>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>{t('print') || 'طباعة'}</button>
-          <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>Excel</button>
-          <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'بنود المصاريف', filename: 'expense-lines.pdf' })} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>PDF</button>
-        </div>
+        </Button>
+        <Button onClick={handlePrint} disabled={!tableData.length}>{t('print') || 'طباعة'}</Button>
+        <Button onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>Excel</Button>
+        <Button onClick={() => exportTableToPdf({ data: exportData, title: 'بنود المصاريف', filename: 'expense-lines.pdf' })} disabled={!tableData.length}>PDF</Button>
       </div>
 
       <SmartTable

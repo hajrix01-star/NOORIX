@@ -9,6 +9,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
+import { Button, Modal } from '../../../ui';
 
 const KIND_LABELS = { fixed_expense: 'ثابت', expense: 'متغير' };
 
@@ -49,17 +50,17 @@ export default function ExpenseLineDetailModal({
 
   const paymentColumns = [
     { key: 'invoiceNumber', label: 'رقم السند',
-      render: (_, row) => <span style={{ fontWeight: 600, fontFamily: 'var(--noorix-font-numbers)' }}>{row.invoiceNumber || '—'}</span> },
+      render: (_, row) => <span className="nx-cell-num" style={{ fontWeight: 600 }}>{row.invoiceNumber || '—'}</span> },
     { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد',
-      render: (_, row) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text-muted)' }}>{row.supplierInvoiceNumber || '—'}</span> },
+      render: (_, row) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '—'}</span> },
     { key: 'transactionDate', label: 'التاريخ',
-      render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{formatSaudiDate(v) || '—'}</span> },
+      render: (v) => <span className="nx-cell-muted">{formatSaudiDate(v) || '—'}</span> },
     { key: 'totalAmount', label: 'المبلغ',
-      render: (v) => <span style={{ fontWeight: 600, fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a' }}>{fmt(v)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--green" style={{ fontWeight: 600 }}>{fmt(v)}</span> },
     { key: 'vaultName', label: 'الخزنة',
-      render: (_, row) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{row.vaultName || row.vault?.nameAr || '—'}</span> },
+      render: (_, row) => <span className="nx-cell-muted">{row.vaultName || row.vault?.nameAr || '—'}</span> },
     { key: 'notes', label: 'ملاحظات',
-      render: (v) => <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-ellipsis">{v || '—'}</span> },
   ];
 
   const paymentExportData = payments.map((p) => ({
@@ -89,94 +90,45 @@ export default function ExpenseLineDetailModal({
     }
   }
 
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'var(--noorix-modal-overlay-bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2000,
-        padding: 24,
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="noorix-modal-card"
-        style={{
-          borderRadius: 12,
-          maxWidth: 800,
-          width: '100%',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ padding: 24, borderBottom: '1px solid var(--noorix-border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: 20, fontWeight: 700 }}>
-                {lineLoading ? <span style={{ color: 'var(--noorix-text-muted)', fontSize: 16 }}>جاري التحميل…</span> : (line?.nameAr || line?.nameEn || '—')}
-              </h2>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-                <span>النوع: {KIND_LABELS[line?.kind] || line?.kind || '—'}</span>
-                <span>الفئة: {line?.category?.nameAr || '—'}</span>
-                <span>المورد: {(lang === 'en' ? line?.supplier?.nameEn || line?.supplier?.nameAr : line?.supplier?.nameAr || line?.supplier?.nameEn) || '—'}</span>
-                {line?.serviceNumber && <span>رقم الخدمة: {line.serviceNumber}</span>}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                border: '1px solid var(--noorix-border)',
-                background: 'var(--noorix-bg-surface)',
-                cursor: 'pointer',
-                fontSize: 13,
-              }}
-            >
-              إغلاق
-            </button>
-          </div>
-        </div>
+  const modalTitle = lineLoading
+    ? 'جاري التحميل…'
+    : (line?.nameAr || line?.nameEn || '—');
 
-        <div style={{ padding: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>سجل المدفوعات</h3>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="noorix-btn-nav" onClick={handlePrintPayments} disabled={!payments.length}>طباعة</button>
-              <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(paymentExportData, `payments-${line?.nameAr || 'line'}.xlsx`)} disabled={!payments.length}>Excel</button>
-              <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: paymentExportData, title: `سجل مدفوعات - ${line?.nameAr || line?.nameEn || ''}`, filename: `payments-${line?.nameAr || 'line'}.pdf` })} disabled={!payments.length}>PDF</button>
-            </div>
-          </div>
-          {dateFilter?.startDate && (
-            <p style={{ margin: '0 0 12px 0', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-              الفترة: {formatSaudiDate(dateFilter.startDate)} — {formatSaudiDate(dateFilter.endDate)}
-            </p>
-          )}
-          <p style={{ margin: '0 0 16px 0', fontSize: 14, fontWeight: 600 }}>
-            إجمالي المدفوع في الفترة: <span style={{ color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalPaid)}</span>
-          </p>
-          <SmartTable
-            columns={paymentColumns}
-            data={payments}
-            showRowNumbers
-            rowNumberWidth="1%"
-            isLoading={paymentsLoading}
-            emptyMessage="لا توجد مدفوعات لهذا البند في الفترة المحددة."
-            keyExtractor={(row) => row.id}
-          />
+  return (
+    <Modal open={true} onClose={onClose} title={modalTitle} size="lg">
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 16 }}>
+        <span>النوع: {KIND_LABELS[line?.kind] || line?.kind || '—'}</span>
+        <span>الفئة: {line?.category?.nameAr || '—'}</span>
+        <span>المورد: {(lang === 'en' ? line?.supplier?.nameEn || line?.supplier?.nameAr : line?.supplier?.nameAr || line?.supplier?.nameEn) || '—'}</span>
+        {line?.serviceNumber && <span>رقم الخدمة: {line.serviceNumber}</span>}
+      </div>
+
+      <div className="nx-page-header" style={{ marginBottom: 12 }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>سجل المدفوعات</h3>
+        <div className="nx-toolbar">
+          <Button onClick={handlePrintPayments} disabled={!payments.length}>طباعة</Button>
+          <Button onClick={() => exportToExcel(paymentExportData, `payments-${line?.nameAr || 'line'}.xlsx`)} disabled={!payments.length}>Excel</Button>
+          <Button onClick={() => exportTableToPdf({ data: paymentExportData, title: `سجل مدفوعات - ${line?.nameAr || line?.nameEn || ''}`, filename: `payments-${line?.nameAr || 'line'}.pdf` })} disabled={!payments.length}>PDF</Button>
         </div>
       </div>
-    </div>
+
+      {dateFilter?.startDate && (
+        <p style={{ margin: '0 0 12px 0', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+          الفترة: {formatSaudiDate(dateFilter.startDate)} — {formatSaudiDate(dateFilter.endDate)}
+        </p>
+      )}
+      <p style={{ margin: '0 0 16px 0', fontSize: 14, fontWeight: 600 }}>
+        إجمالي المدفوع في الفترة: <span className="nx-cell-num nx-cell-num--green">{fmt(totalPaid)}</span>
+      </p>
+      <SmartTable
+        columns={paymentColumns}
+        data={payments}
+        showRowNumbers
+        rowNumberWidth="1%"
+        isLoading={paymentsLoading}
+        emptyMessage="لا توجد مدفوعات لهذا البند في الفترة المحددة."
+        keyExtractor={(row) => row.id}
+      />
+    </Modal>
   );
 }

@@ -6,7 +6,8 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { getCompany, updateCompany } from '../../../services/api';
-import { inputStyle, labelStyle } from '../constants/settingsConstants';
+import { labelStyle } from '../constants/settingsConstants';
+import { Button, Input } from '../../../ui';
 
 export default function TaxSettingsTab() {
   const queryClient = useQueryClient();
@@ -102,15 +103,14 @@ export default function TaxSettingsTab() {
 
           {/* نسبة الضريبة */}
           <div>
-            <label style={labelStyle}>نسبة الضريبة (%)</label>
-            <input
+            <Input
               type="number"
+              label="نسبة الضريبة (%)"
               min={0}
               max={100}
               step={0.01}
               value={vatRate}
               onChange={(e) => setVatRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-              style={Object.assign({}, inputStyle, { fontFamily: 'var(--noorix-font-numbers)', maxWidth: 120 })}
             />
             <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
               القيمة الافتراضية 15% (ZATCA / السعودية)
@@ -132,15 +132,15 @@ export default function TaxSettingsTab() {
           )}
 
           {hasChanges && (
-            <button
+            <Button
               type="button"
-              className="noorix-btn-nav noorix-btn-success"
+              variant="success"
               onClick={handleSave}
               disabled={updateMutation.isPending}
-              style={{ alignSelf: 'flex-start', padding: '10px 20px' }}
+              style={{ alignSelf: 'flex-start' }}
             >
               {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
-            </button>
+            </Button>
           )}
 
           {updateMutation.isSuccess && (

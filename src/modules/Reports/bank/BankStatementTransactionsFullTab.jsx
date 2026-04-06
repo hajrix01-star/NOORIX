@@ -7,6 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getTxKey } from './bankAnalysisUtils';
 import { FALLBACK_CATEGORIES } from './bankAnalysisUtils';
+import { Button } from '../../../ui';
 
 export default function BankStatementTransactionsFullTab({
   statement,
@@ -223,9 +224,7 @@ export default function BankStatementTransactionsFullTab({
             fontSize: 13,
           }}
         />
-        <button type="button" className="noorix-btn noorix-btn--primary" style={{ fontSize: 12 }} onClick={onCreateCategory}>
-          {t('bankStatementAddCategory')}
-        </button>
+        <Button variant="primary" size="sm" onClick={onCreateCategory}>{t('bankStatementAddCategory')}</Button>
       </div>
 
       {/* ── الجدول ── */}
@@ -347,49 +346,28 @@ export default function BankStatementTransactionsFullTab({
                             ))}
                           </select>
                           <div style={{ display: 'flex', gap: 4 }}>
-                            <button
-                              type="button"
-                              className="noorix-btn noorix-btn--primary"
-                              style={{ fontSize: 11, padding: '3px 10px' }}
+                            <Button
+                              variant="primary"
+                              size="sm"
                               disabled={updateCategoryMutation.isPending}
                               onClick={() => handleCategoryChange(tx.id, editingCategory || null)}
                             >
                               {t('save')}
-                            </button>
-                            <button
-                              type="button"
-                              className="noorix-btn noorix-btn--ghost"
-                              style={{ fontSize: 11 }}
-                              onClick={() => setEditingTxId(null)}
-                            >
-                              {t('cancel')}
-                            </button>
+                            </Button>
+                            <Button size="sm" onClick={() => setEditingTxId(null)}>{t('cancel')}</Button>
                           </div>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          className="noorix-btn noorix-btn--ghost"
-                          style={{
-                            fontSize: 11,
-                            textAlign: 'start',
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                            border: '1px solid var(--noorix-border)',
-                            background: 'var(--noorix-bg-muted)',
-                            maxWidth: 150,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            display: 'block',
-                          }}
+                        <Button
+                          size="sm"
+                          style={{ textAlign: 'start', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
                           onClick={() => {
                             setEditingTxId(tx.id);
                             setEditingCategory(catId);
                           }}
                         >
                           {tx.category?.nameAr || tx.category?.nameEn || t('uncategorized')}
-                        </button>
+                        </Button>
                       )}
                     </td>
 
@@ -458,43 +436,23 @@ export default function BankStatementTransactionsFullTab({
                             }}
                           />
                           <div style={{ display: 'flex', gap: 4 }}>
-                            <button
-                              type="button"
-                              className="noorix-btn noorix-btn--primary"
-                              style={{ fontSize: 11, padding: '3px 10px' }}
-                              disabled={updateNoteMutation.isPending}
-                              onClick={() => handleNoteChange(tx.id)}
-                            >
+                            <Button variant="primary" size="sm" disabled={updateNoteMutation.isPending} onClick={() => handleNoteChange(tx.id)}>
                               {t('save')}
-                            </button>
-                            <button
-                              type="button"
-                              className="noorix-btn noorix-btn--ghost"
-                              style={{ fontSize: 11 }}
-                              onClick={() => { setEditingNoteId(null); setEditingNote(''); }}
-                            >
-                              {t('cancel')}
-                            </button>
+                            </Button>
+                            <Button size="sm" onClick={() => { setEditingNoteId(null); setEditingNote(''); }}>{t('cancel')}</Button>
                           </div>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          className="noorix-btn noorix-btn--ghost"
-                          style={{
-                            fontSize: 11,
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                            border: '1px solid var(--noorix-border)',
-                            color: tx.note ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-                          }}
+                        <Button
+                          size="sm"
+                          style={{ color: tx.note ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)' }}
                           onClick={() => {
                             setEditingNoteId(tx.id);
                             setEditingNote(tx.note || '');
                           }}
                         >
                           {tx.note ? `${(tx.note || '').slice(0, 20)}…` : '+ ملاحظة'}
-                        </button>
+                        </Button>
                       )}
                     </td>
                   </tr>

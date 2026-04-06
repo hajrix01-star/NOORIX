@@ -13,6 +13,7 @@ import {
   overtimePay,
   SAUDI_STANDARD_HOURS,
 } from '../utils/employeeSalaryMath';
+import { Button, Input, Modal } from '../../../ui';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ALLOWANCE_NAME_EN_MAP = {
@@ -241,19 +242,23 @@ function buildPrintWindow(title, html) {
 
 function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }) {
   return (
-    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
-      <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 920, width: '96%', maxHeight: '92vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>{title}</h3>
-        {children}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap', marginTop: 16 }}>
-          <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('close')}</button>
-          <button type="button" className="noorix-btn-nav" onClick={onPrint}>{t('print') || 'طباعة'}</button>
-          <button type="button" className="noorix-btn-nav" style={{ background: 'var(--btn-primary-bg)', color: '#fff' }} disabled={saving} onClick={onSave}>
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={title}
+      size="lg"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>{t('close')}</Button>
+          <Button onClick={onPrint}>{t('print') || 'طباعة'}</Button>
+          <Button variant="primary" disabled={saving} onClick={onSave}>
             {saving ? t('saving') : (t('saveToDocuments') || 'حفظ في المستندات')}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </>
+      }
+    >
+      {children}
+    </Modal>
   );
 }
 
@@ -604,15 +609,12 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
   return (
     <ModalShell title={t('documentContract') || 'عقد عمل'} onClose={onClose} onPrint={handlePrint} onSave={handleSaveToDocuments} saving={saving} t={t}>
       <div style={{ padding: '8px 4px 12px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <label style={{ fontSize: 12, fontWeight: 600 }}>
-          تاريخ انتهاء العقد (اختياري):
-          <input
-            type="date"
-            value={contractEnd}
-            onChange={(e) => setContractEnd(e.target.value)}
-            style={{ marginRight: 8, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', fontSize: 13 }}
-          />
-        </label>
+        <Input
+          type="date"
+          label="تاريخ انتهاء العقد (اختياري)"
+          value={contractEnd}
+          onChange={(e) => setContractEnd(e.target.value)}
+        />
         {contractEnd && (
           <button type="button" style={{ fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setContractEnd('')}>✕ إزالة</button>
         )}

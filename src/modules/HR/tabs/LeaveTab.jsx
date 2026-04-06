@@ -14,6 +14,7 @@ import { LeaveFormModal } from '../components/LeaveFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { Button, Badge, Input } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
@@ -29,6 +30,8 @@ const STATUS_MAP = {
   approved: { bg: 'rgba(22,163,74,0.1)', color: '#16a34a', labelKey: 'statusApproved' },
   rejected: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', labelKey: 'statusRejected' },
 };
+
+const statusColorMap = { pending: 'amber', approved: 'green', rejected: 'red' };
 
 export default function LeaveTab() {
   const { t, lang } = useTranslation();
@@ -85,20 +88,16 @@ export default function LeaveTab() {
     { key: 'leaveType', label: t('leaveType'), sortable: true, width: 130, minWidth: 120,
       render: (v) => <span style={{ fontSize: 13 }}>{t(TYPE_MAP[v] || 'leaveOther')}</span> },
     { key: 'startDate', label: t('startDate'), sortable: true, width: 120, minWidth: 115,
-      render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{formatSaudiDate(v)}</span> },
+      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'endDate', label: t('endDate'), sortable: true, width: 120, minWidth: 115,
-      render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{formatSaudiDate(v)}</span> },
+      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'daysCount', label: t('daysCount'), numeric: true, sortable: true, width: 90, minWidth: 85,
-      render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{v ?? '—'}</span> },
+      render: (v) => <span className="nx-cell-num">{v ?? '—'}</span> },
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
       render: (v) => (
-        <span style={{
-          padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-          background: statusStyles[v]?.bg || 'rgba(100,116,139,0.1)',
-          color: statusStyles[v]?.color || '#64748b',
-        }}>
+        <Badge color={statusColorMap[v] || 'gray'} size="sm">
           {statusStyles[v]?.label || v}
-        </span>
+        </Badge>
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
@@ -121,12 +120,12 @@ export default function LeaveTab() {
   }));
 
   const renderMobileCard = useCallback((row) => {
-    const ss = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
+    const ss = statusStyles[row.status] || { label: row.status };
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
           <span style={{ fontWeight: 700, fontSize: 14 }}>{row.employeeName}</span>
-          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: ss.bg, color: ss.color, flexShrink: 0 }}>{ss.label}</span>
+          <Badge color={statusColorMap[row.status] || 'gray'} size="sm" style={{ flexShrink: 0 }}>{ss.label}</Badge>
         </div>
         <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>
           {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
@@ -147,8 +146,8 @@ export default function LeaveTab() {
         </div>
         {row.status === 'pending' && (
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" className="noorix-btn-nav" style={{ fontSize: 13, padding: '6px 14px', minHeight: 36, color: '#16a34a' }} onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'approved' })}>{t('statusApproved')}</button>
-            <button type="button" className="noorix-btn-nav" style={{ fontSize: 13, padding: '6px 14px', minHeight: 36, color: '#ef4444' }} onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'rejected' })}>{t('statusRejected')}</button>
+            <Button variant="success" size="sm" onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'approved' })}>{t('statusApproved')}</Button>
+            <Button variant="danger" size="sm" onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'rejected' })}>{t('statusRejected')}</Button>
           </div>
         )}
       </div>
@@ -156,29 +155,22 @@ export default function LeaveTab() {
   }, [statusStyles, t, updateStatusMutation]);
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div className="nx-toolbar">
         <label style={{ fontSize: 13, fontWeight: 600 }}>{t('dateFilterYear')}</label>
-        <select
-          value={year}
-          onChange={(e) => setYear(parseInt(e.target.value, 10))}
-          style={{
-            padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)', fontSize: 14,
-          }}
-        >
+        <Input type="select" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
           {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
             <option key={y} value={y}>{y}</option>
           ))}
-        </select>
+        </Input>
         <div style={{ marginRight: 'auto', display: 'flex', gap: 8 }}>
-          <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>{t('exportExcel')}</button>
+          <Button onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>{t('exportExcel')}</Button>
         </div>
-        <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={() => setShowAdd(true)}>
+        <Button variant="primary" onClick={() => setShowAdd(true)}>
           {t('addLeave')}
-        </button>
+        </Button>
       </div>
 
       <SmartTable
@@ -194,7 +186,7 @@ export default function LeaveTab() {
         onPageChange={setPage}
         isLoading={isLoading}
         title={t('hrTabLeave')}
-        badge={<span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{allFilteredData.length}</span>}
+        badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
         searchValue={searchText}
         onSearchChange={setSearch}
         sortKey={sortKey}

@@ -6,6 +6,7 @@
 import React from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
+import { Input } from '../../ui';
 
 export { useDateFilter };
 
@@ -27,14 +28,6 @@ function ymd(y, m, d) {
 }
 
 // ——— مكوّن الواجهة ———
-const SEL = {
-  base: {
-    height: 34, padding: '0 10px', borderRadius: 8,
-    border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-    color: 'var(--noorix-text)', fontSize: 13, fontFamily: 'inherit', cursor: 'pointer',
-    outline: 'none',
-  },
-};
 
 export default function DateFilterBar({ filter }) {
   const { t } = useTranslation();
@@ -78,34 +71,33 @@ export default function DateFilterBar({ filter }) {
       <div className="ndfb-fields">
         {mode === 'month' && (
           <>
-            <select
+            <Input
+              type="select"
               value={selYear}
               onChange={(e) => setSelYear(Number(e.target.value))}
-              style={SEL.base}
             >
               {years.map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}
-            </select>
-            <select
+            </Input>
+            <Input
+              type="select"
               value={selMonth}
               onChange={(e) => setSelMonth(Number(e.target.value))}
-              style={{ ...SEL.base, minWidth: 110 }}
             >
               {MONTH_NAMES_EN.map((name, i) => (
                 <option key={i + 1} value={i + 1}>{name}</option>
               ))}
-            </select>
+            </Input>
           </>
         )}
 
         {mode === 'day' && (
-          <input
+          <Input
             type="date"
             value={selDay}
             max={ymd(now.year, now.month, now.day)}
             onChange={(e) => setSelDay(e.target.value)}
-            style={{ ...SEL.base, minWidth: 150 }}
           />
         )}
 
@@ -113,21 +105,19 @@ export default function DateFilterBar({ filter }) {
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('dateFilterFrom')}</span>
-              <input
+              <Input
                 type="date"
                 value={rangeStart}
                 onChange={(e) => setRangeStart(e.target.value)}
-                style={{ ...SEL.base, minWidth: 140 }}
               />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('dateFilterTo')}</span>
-              <input
+              <Input
                 type="date"
                 value={rangeEnd}
                 min={rangeStart}
                 onChange={(e) => setRangeEnd(e.target.value)}
-                style={{ ...SEL.base, minWidth: 140 }}
               />
             </div>
           </>

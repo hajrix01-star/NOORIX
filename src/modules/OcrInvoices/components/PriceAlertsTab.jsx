@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Button } from '../../../ui';
 import { bulkDeletePriceHistory } from '../services/ocrApi';
 
 const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -215,9 +216,9 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
 
         {selected.size > 0 && (
           <>
-            <button className="noorix-btn" style={{ fontSize: 13 }} onClick={dismissSelected}>
+            <Button size="sm" onClick={dismissSelected}>
               {isAr ? `إخفاء (${selected.size})` : `Dismiss (${selected.size})`}
-            </button>
+            </Button>
             <button className="inv-delete-btn" onClick={handleBulkDeleteHistory} disabled={deleting}>
               {isAr ? `حذف السجل (${selected.size})` : `Delete (${selected.size})`}
             </button>
@@ -281,10 +282,10 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
       )}
 
       {dismissed.size > 0 && (
-        <button onClick={() => { setDismissed(new Set()); try { localStorage.removeItem('noorix-dismissed-alerts'); } catch {} }}
-          className="noorix-btn" style={{ alignSelf: 'center', fontSize: 13 }}>
-          {isAr ? `إظهار ${dismissed.size} تنبيه مخفي` : `Show ${dismissed.size} dismissed`}
-        </button>
+      <Button onClick={() => { setDismissed(new Set()); try { localStorage.removeItem('noorix-dismissed-alerts'); } catch {} }}
+        style={{ alignSelf: 'center' }}>
+        {isAr ? `إظهار ${dismissed.size} تنبيه مخفي` : `Show ${dismissed.size} dismissed`}
+      </Button>
       )}
 
       {comparing && (

@@ -18,6 +18,7 @@ import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { Button, Badge, Modal, Input } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
@@ -97,6 +98,8 @@ export default function AdvancesTab() {
   const totalAmount = sumAmounts(allFilteredData.filter((r) => r.status !== 'cancelled'), 'totalAmount');
   const outstandingCount = allFilteredData.filter((r) => r.status !== 'cancelled' && r.settlementStatus !== 'settled').length;
 
+  const statusColorMap = { cancelled: 'gray', settled: 'red', partial: 'blue', outstanding: 'amber' };
+
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
       render: (v, row) => (
@@ -112,9 +115,7 @@ export default function AdvancesTab() {
       ) },
     { key: 'totalAmount', label: t('advanceAmount'), numeric: true, sortable: true, width: 140, minWidth: 130,
       render: (v, row) => (
-        <span style={{
-          fontFamily: 'var(--noorix-font-numbers)',
-          fontSize: 13,
+        <span className="nx-cell-num" style={{
           color: row.settlementStatus === 'settled' ? '#b91c1c' : 'inherit',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
         }}
@@ -136,42 +137,29 @@ export default function AdvancesTab() {
       ) },
     { key: 'settledAmount', label: t('advanceSettledAmount'), numeric: true, width: 120, minWidth: 110,
       render: (_, row) => (
-        <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: row.settlementStatus === 'settled' ? '#b91c1c' : 'inherit' }}>
+        <span className="nx-cell-num" style={{ color: row.settlementStatus === 'settled' ? '#b91c1c' : 'inherit' }}>
           {hrFmt(row.settledAmountNum || 0)}
         </span>
       ) },
     { key: 'remainingAmount', label: t('advanceRemainingAmount'), numeric: true, width: 120, minWidth: 110,
       render: (_, row) => (
-        <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: row.remainingAmount > 0 ? '#f59e0b' : '#16a34a' }}>
+        <span className="nx-cell-num" style={{ color: row.remainingAmount > 0 ? '#f59e0b' : '#16a34a' }}>
           {hrFmt(row.remainingAmount || 0)}
         </span>
       ) },
     { key: 'settledAt', label: t('advanceSettlementDate'), width: 125, minWidth: 120,
       render: (v, row) => (
-        <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>
+        <span className="nx-cell-muted-sm">
           {row.settledAt ? formatSaudiDate(row.settledAt) : '—'}
         </span>
       ) },
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
       render: (_, row) => (
-        <span style={{
-          padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-          background: row.settlementStatus === 'cancelled'
-            ? 'rgba(100,116,139,0.1)'
-            : row.settlementStatus === 'settled'
-              ? 'rgba(239,68,68,0.1)'
-              : row.settlementStatus === 'partial'
-                ? 'rgba(37,99,235,0.1)'
-                : 'rgba(245,158,11,0.1)',
-          color: row.settlementStatus === 'cancelled'
-            ? '#64748b'
-            : row.settlementStatus === 'settled'
-              ? '#b91c1c'
-              : row.settlementStatus === 'partial'
-                ? '#2563eb'
-                : '#f59e0b',
-          textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
-        }}>
+        <Badge
+          color={statusColorMap[row.settlementStatus] || 'amber'}
+          size="sm"
+          style={{ textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none' }}
+        >
           {row.settlementStatus === 'cancelled'
             ? t('cancelled')
             : row.settlementStatus === 'settled'
@@ -179,7 +167,7 @@ export default function AdvancesTab() {
               : row.settlementStatus === 'partial'
                 ? t('advanceStatusPartial')
                 : t('advanceOutstanding')}
-        </span>
+        </Badge>
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
@@ -227,16 +215,9 @@ export default function AdvancesTab() {
           : t('advanceOutstanding'),
   }));
 
-  const settlementColors = {
-    settled: { bg: 'rgba(239,68,68,0.1)', color: '#b91c1c' },
-    partial: { bg: 'rgba(37,99,235,0.1)', color: '#2563eb' },
-    outstanding: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
-    cancelled: { bg: 'rgba(100,116,139,0.1)', color: '#64748b' },
-  };
   const settlementLabels = { settled: t('advanceSettled'), partial: t('advanceStatusPartial'), outstanding: t('advanceOutstanding'), cancelled: t('cancelled') };
 
   const renderMobileCard = useCallback((row) => {
-    const sColor = settlementColors[row.settlementStatus] || settlementColors.outstanding;
     const sLabel = settlementLabels[row.settlementStatus] || row.settlementStatus;
     const settled = row.settlementStatus === 'settled';
     return (
@@ -245,9 +226,13 @@ export default function AdvancesTab() {
           <span style={{ fontWeight: 700, fontSize: 15, textDecoration: settled ? 'line-through' : 'none', color: settled ? '#b91c1c' : 'var(--noorix-text)' }}>
             {row.employeeName}
           </span>
-          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: sColor.bg, color: sColor.color, flexShrink: 0, textDecoration: settled ? 'line-through' : 'none' }}>
+          <Badge
+            color={statusColorMap[row.settlementStatus] || 'amber'}
+            size="sm"
+            style={{ flexShrink: 0, textDecoration: settled ? 'line-through' : 'none' }}
+          >
             {sLabel}
-          </span>
+          </Badge>
         </div>
         <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{formatSaudiDate(row.transactionDate)}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
@@ -277,43 +262,31 @@ export default function AdvancesTab() {
   }, [t]);
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
-        <select
-          value={employeeFilter}
-          onChange={(e) => setEmployeeFilter(e.target.value)}
-          style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}
-        >
+      <div className="nx-toolbar" style={{ justifyContent: 'flex-end', marginBottom: 8 }}>
+        <Input type="select" value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
           <option value="">{t('advancesFilterEmployee')} — {t('advancesFilterAll')}</option>
           {employeeOptions.map((name) => (
             <option key={name} value={name}>{name}</option>
           ))}
-        </select>
-        <select
-          value={monthFilter}
-          onChange={(e) => setMonthFilter(e.target.value)}
-          style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}
-        >
+        </Input>
+        <Input type="select" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}>
           <option value="">{t('advancesFilterMonth')} — {t('advancesFilterAll')}</option>
           {monthOptions.map((month) => (
             <option key={month} value={month}>{month}</option>
           ))}
-        </select>
-        <select
-          value={settlementFilter}
-          onChange={(e) => setSettlementFilter(e.target.value)}
-          style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}
-        >
+        </Input>
+        <Input type="select" value={settlementFilter} onChange={(e) => setSettlementFilter(e.target.value)}>
           <option value="all">{t('advancesFilterSettlement')} — {t('advancesFilterAll')}</option>
           <option value="outstanding">{t('advancesFilterOutstandingOnly')}</option>
           <option value="settled">{t('advancesFilterSettledOnly')}</option>
-        </select>
-        <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'advances.xlsx')}>{t('exportExcel')}</button>
-        <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={() => setShowAdvance(true)}>
+        </Input>
+        <Button onClick={() => exportToExcel(exportData, 'advances.xlsx')}>{t('exportExcel')}</Button>
+        <Button variant="primary" onClick={() => setShowAdvance(true)}>
           {t('payAdvance')}
-        </button>
+        </Button>
       </div>
 
       <SmartTable
@@ -329,7 +302,7 @@ export default function AdvancesTab() {
         onPageChange={setPage}
         isLoading={isLoading}
         title={t('hrTabAdvances')}
-        badge={<span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{allFilteredData.length}</span>}
+        badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
         searchValue={searchText}
         onSearchChange={setSearch}
         sortKey={sortKey}
@@ -412,20 +385,24 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
   }
 
   return (
-    <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
-      <div className="noorix-surface-card" style={{ padding: 20, maxWidth: 520, width: '95%' }} onClick={(e) => e.stopPropagation()}>
-        <h4 style={{ marginTop: 0 }}>{t('editAdvance')}</h4>
-        <div style={{ display: 'grid', gap: 10 }}>
-          <input type="number" min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
-          <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
-          <button type="button" className="noorix-btn-nav noorix-btn-primary" disabled={saving} onClick={submit}>{saving ? t('saving') : t('saveChanges')}</button>
-        </div>
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={t('editAdvance')}
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+          <Button variant="primary" disabled={saving} onClick={submit}>{saving ? t('saving') : t('saveChanges')}</Button>
+        </>
+      }
+    >
+      <div style={{ display: 'grid', gap: 10 }}>
+        <Input type="number" label={t('advanceAmount')} min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
+        <Input type="date" label={t('advanceLoanDate')} value={date} onChange={(e) => setDate(e.target.value)} />
+        <Input multiline rows={3} label="ملاحظات" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -488,36 +465,40 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
   }
 
   return (
-    <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
-      <div className="noorix-surface-card" style={{ padding: 20, maxWidth: 560, width: '95%' }} onClick={(e) => e.stopPropagation()}>
-        <h4 style={{ marginTop: 0 }}>{t('settleAdvance')}</h4>
-        <div style={{ marginBottom: 8, fontSize: 13 }}>{t('advanceRemainingAmount')}: <strong>{hrFmt(remaining)}</strong></div>
-        <div style={{ display: 'grid', gap: 10 }}>
-          <select value={settlementType} onChange={(e) => setSettlementType(e.target.value)}>
-            <option value="full">{t('settlementFull')}</option>
-            <option value="partial">{t('settlementPartial')}</option>
-            <option value="defer">{t('settlementDefer')}</option>
-          </select>
-          {settlementType === 'partial' && (
-            <input type="number" min="0.01" step="0.01" value={settleAmount} onChange={(e) => setSettleAmount(e.target.value)} />
-          )}
-          {settlementType === 'defer' ? (
-            <input type="month" value={deferMonth} onChange={(e) => setDeferMonth(e.target.value)} />
-          ) : (
-            <>
-              <input type="date" value={settleDate} onChange={(e) => setSettleDate(e.target.value)} />
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input type="checkbox" checked={applyToSalary} onChange={(e) => setApplyToSalary(e.target.checked)} />
-                {t('applyToSalaryDeduction')}
-              </label>
-            </>
-          )}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
-          <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
-          <button type="button" className="noorix-btn-nav noorix-btn-primary" disabled={saving} onClick={submit}>{saving ? t('saving') : t('saveChanges')}</button>
-        </div>
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={t('settleAdvance')}
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+          <Button variant="primary" disabled={saving} onClick={submit}>{saving ? t('saving') : t('saveChanges')}</Button>
+        </>
+      }
+    >
+      <div style={{ marginBottom: 8, fontSize: 13 }}>{t('advanceRemainingAmount')}: <strong>{hrFmt(remaining)}</strong></div>
+      <div style={{ display: 'grid', gap: 10 }}>
+        <Input type="select" label="نوع التسوية" value={settlementType} onChange={(e) => setSettlementType(e.target.value)}>
+          <option value="full">{t('settlementFull')}</option>
+          <option value="partial">{t('settlementPartial')}</option>
+          <option value="defer">{t('settlementDefer')}</option>
+        </Input>
+        {settlementType === 'partial' && (
+          <Input type="number" label={t('advanceSettledAmount')} min="0.01" step="0.01" value={settleAmount} onChange={(e) => setSettleAmount(e.target.value)} />
+        )}
+        {settlementType === 'defer' ? (
+          <Input type="month" label="شهر التأجيل" value={deferMonth} onChange={(e) => setDeferMonth(e.target.value)} />
+        ) : (
+          <>
+            <Input type="date" label={t('advanceSettlementDate')} value={settleDate} onChange={(e) => setSettleDate(e.target.value)} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="checkbox" checked={applyToSalary} onChange={(e) => setApplyToSalary(e.target.checked)} />
+              {t('applyToSalaryDeduction')}
+            </label>
+          </>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }

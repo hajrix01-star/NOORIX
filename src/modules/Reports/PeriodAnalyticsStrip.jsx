@@ -7,6 +7,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { usePeriodAnalytics } from '../../hooks/useReports';
 import { fmt } from '../../utils/format';
 import { monthDateBounds, drillToSearchParams } from '../../utils/reportDrillLinks';
+import { Button } from '../../ui';
 
 const KIND_ORDER = ['sale', 'purchase', 'expense', 'fixed_expense', 'hr_expense', 'salary', 'advance'];
 
@@ -62,7 +63,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
         <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{from} — {to}</div>
       </div>
       {isLoading && <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>}
-      {isError && <div style={{ fontSize: 13, color: '#dc2626' }}>{t('loadDataFailed')}</div>}
+      {isError && <div style={{ fontSize: 13, color: 'var(--noorix-error)' }}>{t('loadDataFailed')}</div>}
       {!isLoading && !isError && data && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
           <div>
@@ -70,10 +71,8 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {byKindRows.length === 0 && <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>—</span>}
               {byKindRows.map((row) => (
-                <button
+                <Button
                   key={row.kind}
-                  type="button"
-                  className="noorix-btn-nav"
                   onClick={() => {
                     const path = row.kind === 'sale' ? '/sales' : '/invoices';
                     const q = row.kind === 'sale' ? { from, to } : { from, to, kind: row.kind };
@@ -84,19 +83,15 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     textAlign: 'start',
-                    padding: '8px 10px',
-                    borderRadius: 10,
-                    border: '1px solid var(--noorix-border)',
-                    background: 'var(--noorix-bg-surface)',
-                    cursor: 'pointer',
                     fontSize: 12,
+                    width: '100%',
                   }}
                 >
                   <span style={{ fontWeight: 700 }}>{kindLabel(t, row.kind)}</span>
                   <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#2563eb' }}>
                     {fmt(row.total, 0)} <small style={{ opacity: 0.7 }}>({row.count})</small>
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -107,10 +102,8 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                 <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>—</span>
               )}
               {(data.topSuppliers || []).map((s) => (
-                <button
+                <Button
                   key={s.supplierId}
-                  type="button"
-                  className="noorix-btn-nav"
                   onClick={() =>
                     navigate(`/invoices?${drillToSearchParams({ from, to, supplierId: s.supplierId })}`)
                   }
@@ -119,12 +112,8 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     textAlign: 'start',
-                    padding: '8px 10px',
-                    borderRadius: 10,
-                    border: '1px solid var(--noorix-border)',
-                    background: 'var(--noorix-bg-surface)',
-                    cursor: 'pointer',
                     fontSize: 12,
+                    width: '100%',
                   }}
                 >
                   <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '58%' }} title={lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}>
@@ -133,7 +122,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                   <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#dc2626', flexShrink: 0 }}>
                     {fmt(Number(s.totalAmount || 0), 0)} <small style={{ opacity: 0.7 }}>({s.invoiceCount})</small>
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>

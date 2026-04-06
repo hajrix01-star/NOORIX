@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '../../../ui';
 
 /** علامة ⓘ: التمرير يعرض التعليمات؛ الضغط يثبتها حتى النقر خارجها */
 export function OrdersImportHelpTrigger({ t, variant }) {
@@ -28,9 +29,8 @@ export function OrdersImportHelpTrigger({ t, variant }) {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <button
+      <Button
         type="button"
-        className="noorix-btn-nav"
         aria-expanded={visible}
         aria-haspopup="dialog"
         title={t('ordersImportHelpTooltip')}
@@ -48,7 +48,7 @@ export function OrdersImportHelpTrigger({ t, variant }) {
         }}
       >
         ⓘ {t('ordersImportHelpBadge')}
-      </button>
+      </Button>
       {visible && (
         <div
           role="dialog"

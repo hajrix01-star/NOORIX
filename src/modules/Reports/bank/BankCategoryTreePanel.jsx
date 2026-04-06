@@ -5,6 +5,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Button, Modal } from '../../../ui';
 import {
   bankStatementTreeCategoriesList,
   bankStatementTreeCategoryCreate,
@@ -215,25 +216,21 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <input type="text" value={newParentKeyword} onChange={(e) => setNewParentKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addParentKw())} placeholder="…" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
-              <button type="button" className="noorix-btn noorix-btn--ghost" onClick={addParentKw}>
-                +
-              </button>
+              <Button onClick={addParentKw}>+</Button>
             </div>
           </div>
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontWeight: 600 }}>{t('bankTreeSubClassifications')}</span>
-              <button
-                type="button"
-                className="noorix-btn noorix-btn--ghost"
+              <Button
                 onClick={() => {
                   setClassifications((p) => [...p, { ...EMPTY }]);
                   setActiveClassIdx(classifications.length);
                 }}
               >
                 + {t('bankTreeAddSub')}
-              </button>
+              </Button>
             </div>
             {classifications.map((cl, idx) => (
               <div
@@ -256,10 +253,9 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                     style={{ ...inputStyle, marginTop: 0, flex: 1 }}
                   />
                   {classifications.length > 1 ? (
-                    <button
-                      type="button"
-                      className="noorix-btn noorix-btn--ghost"
-                      style={{ color: '#dc2626' }}
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         setClassifications((p) => p.filter((_, i) => i !== idx));
@@ -267,7 +263,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                       }}
                     >
                       {t('delete')}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
@@ -299,9 +295,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                       style={{ ...inputStyle, marginTop: 0, flex: 1 }}
                       placeholder={t('bankTreeAddKeywordPlaceholder')}
                     />
-                    <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => addKw(idx)} disabled={!newKeyword.trim()}>
-                      +
-                    </button>
+                    <Button variant="primary" onClick={() => addKw(idx)} disabled={!newKeyword.trim()}>+</Button>
                   </div>
                 ) : null}
               </div>
@@ -309,12 +303,8 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
-          <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onClose}>
-            {t('cancel')}
-          </button>
-          <button type="button" className="noorix-btn noorix-btn--primary" onClick={handleSave} disabled={pending}>
-            {pending ? t('loading') : t('save')}
-          </button>
+          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+          <Button variant="primary" onClick={handleSave} disabled={pending}>{pending ? t('loading') : t('save')}</Button>
         </div>
       </div>
     </div>
@@ -400,12 +390,8 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
             <input type="checkbox" checked={active} onChange={() => onToggle()} />
             {t('bankTreeActive')}
           </label>
-          <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onEdit}>
-            {t('edit')}
-          </button>
-          <button type="button" className="noorix-btn noorix-btn--ghost" style={{ color: '#dc2626' }} onClick={onDelete}>
-            {t('delete')}
-          </button>
+          <Button size="sm" onClick={onEdit}>{t('edit')}</Button>
+          <Button variant="danger" size="sm" onClick={onDelete}>{t('delete')}</Button>
         </div>
       </div>
     </div>
@@ -658,31 +644,18 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
         ) : null}
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, alignItems: 'center' }}>
-        <button type="button" className="noorix-btn noorix-btn--primary" onClick={openNew}>
-          + {t('bankTreeAddCategory')}
-        </button>
+      <div className="nx-toolbar" style={{ marginBottom: 16 }}>
+        <Button variant="primary" onClick={openNew}>+ {t('bankTreeAddCategory')}</Button>
         {!isLoading && sortedCategories.length === 0 && inactiveCategories.length === 0 ? (
-          <button
-            type="button"
-            className="noorix-btn noorix-btn--secondary"
-            disabled={seedDefaultsMut.isPending}
-            onClick={() => seedDefaultsMut.mutate()}
-          >
+          <Button disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
             {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
-          </button>
+          </Button>
         ) : null}
         {activeFlat.length > 0 && categories.length === 0 ? (
-          <button type="button" className="noorix-btn noorix-btn--ghost" onClick={() => setShowMigrate(true)}>
-            {t('bankTreeMigrateOldRules', String(activeFlat.length))}
-          </button>
+          <Button onClick={() => setShowMigrate(true)}>{t('bankTreeMigrateOldRules', String(activeFlat.length))}</Button>
         ) : null}
-        <button type="button" className="noorix-btn noorix-btn--secondary" disabled={exportBusy} onClick={handleExportRules}>
-          {exportBusy ? '…' : t('bankRulesExport')}
-        </button>
-        <button type="button" className="noorix-btn noorix-btn--secondary" onClick={openImportModal}>
-          {t('bankRulesImport')}
-        </button>
+        <Button disabled={exportBusy} onClick={handleExportRules}>{exportBusy ? '…' : t('bankRulesExport')}</Button>
+        <Button onClick={openImportModal}>{t('bankRulesImport')}</Button>
       </div>
 
       {isLoading ? <p style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}…</p> : null}
@@ -696,17 +669,10 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
             {t('bankTreeSeedDefaultsHint')}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
-            <button type="button" className="noorix-btn noorix-btn--primary" onClick={openNew}>
-              {t('bankTreeCreateFirst')}
-            </button>
-            <button
-              type="button"
-              className="noorix-btn noorix-btn--secondary"
-              disabled={seedDefaultsMut.isPending}
-              onClick={() => seedDefaultsMut.mutate()}
-            >
+            <Button variant="primary" onClick={openNew}>{t('bankTreeCreateFirst')}</Button>
+            <Button disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
               {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -760,109 +726,99 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
         t={t}
       />
 
-      {showMigrate ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="noorix-modal-backdrop"
-          style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
-          onClick={(e) => e.target === e.currentTarget && !migrating && setShowMigrate(false)}
-        >
-          <div className="noorix-surface-card noorix-modal-card" style={{ padding: 22, maxWidth: 480, width: '100%' }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginTop: 0 }}>{t('bankTreeMigrateTitle')}</h3>
-            <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeMigrateBody', String(activeFlat.length), String(groupedForMigrate.length))}</p>
-            <div style={{ maxHeight: 200, overflow: 'auto', marginTop: 12, display: 'grid', gap: 8 }}>
-              {groupedForMigrate.map((g, i) => (
-                <div key={i} style={{ padding: 8, borderRadius: 8, background: 'var(--noorix-bg-muted)', fontSize: 12 }}>
-                  <strong>{g.categoryName}</strong> — {g.keywords.slice(0, 6).join(', ')}
-                  {g.keywords.length > 6 ? '…' : ''}
-                </div>
-              ))}
+      <Modal
+        open={showMigrate}
+        onClose={() => !migrating && setShowMigrate(false)}
+        title={t('bankTreeMigrateTitle')}
+        size="md"
+        closeOnBackdrop={!migrating}
+        footer={
+          <>
+            <Button variant="ghost" disabled={migrating} onClick={() => setShowMigrate(false)}>{t('cancel')}</Button>
+            <Button variant="primary" disabled={migrating} onClick={runMigrate}>
+              {migrating ? t('loading') : t('bankTreeMigrateRun')}
+            </Button>
+          </>
+        }
+      >
+        <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeMigrateBody', String(activeFlat.length), String(groupedForMigrate.length))}</p>
+        <div style={{ maxHeight: 200, overflow: 'auto', marginTop: 12, display: 'grid', gap: 8 }}>
+          {groupedForMigrate.map((g, i) => (
+            <div key={i} style={{ padding: 8, borderRadius: 8, background: 'var(--noorix-bg-muted)', fontSize: 12 }}>
+              <strong>{g.categoryName}</strong> — {g.keywords.slice(0, 6).join(', ')}
+              {g.keywords.length > 6 ? '…' : ''}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
-              <button type="button" className="noorix-btn noorix-btn--ghost" disabled={migrating} onClick={() => setShowMigrate(false)}>
-                {t('cancel')}
-              </button>
-              <button type="button" className="noorix-btn noorix-btn--primary" disabled={migrating} onClick={runMigrate}>
-                {migrating ? t('loading') : t('bankTreeMigrateRun')}
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
-      ) : null}
+      </Modal>
 
-      {showImportModal ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="noorix-modal-backdrop"
-          style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
-          onClick={(e) => e.target === e.currentTarget && !importBusy && setShowImportModal(false)}
-        >
-          <div className="noorix-surface-card noorix-modal-card" style={{ padding: 22, maxWidth: 440, width: '100%' }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginTop: 0 }}>{t('bankRulesImport')}</h3>
-            <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
-              {otherCompanies.length > 0 ? (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                  <input type="radio" name="impSrc" checked={importSource === 'company'} onChange={() => setImportSource('company')} />
-                  {t('bankRulesImportSourceCompany')}
-                </label>
-              ) : (
-                <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', margin: 0 }}>{t('bankRulesNoOtherCompanies')}</p>
-              )}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                <input type="radio" name="impSrc" checked={importSource === 'file'} onChange={() => setImportSource('file')} />
-                {t('bankRulesImportSourceFile')}
-              </label>
-              {importSource === 'company' && otherCompanies.length > 0 ? (
-                <select
-                  value={importSourceCompanyId}
-                  onChange={(e) => setImportSourceCompanyId(e.target.value)}
-                  style={{ ...inputStyle, marginTop: 0 }}
-                >
-                  <option value="">{t('bankRulesSelectCompany')}</option>
-                  {otherCompanies.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nameAr || c.nameEn || c.name || c.id}
-                    </option>
-                  ))}
-                </select>
+      <Modal
+        open={showImportModal}
+        onClose={() => !importBusy && setShowImportModal(false)}
+        title={t('bankRulesImport')}
+        size="sm"
+        closeOnBackdrop={!importBusy}
+        footer={
+          <>
+            <Button variant="ghost" disabled={importBusy} onClick={() => setShowImportModal(false)}>{t('cancel')}</Button>
+            <Button variant="primary" disabled={importBusy} onClick={runPackImport}>
+              {importBusy ? t('loading') : t('bankRulesImportRun')}
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
+          {otherCompanies.length > 0 ? (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+              <input type="radio" name="impSrc" checked={importSource === 'company'} onChange={() => setImportSource('company')} />
+              {t('bankRulesImportSourceCompany')}
+            </label>
+          ) : (
+            <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', margin: 0 }}>{t('bankRulesNoOtherCompanies')}</p>
+          )}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+            <input type="radio" name="impSrc" checked={importSource === 'file'} onChange={() => setImportSource('file')} />
+            {t('bankRulesImportSourceFile')}
+          </label>
+          {importSource === 'company' && otherCompanies.length > 0 ? (
+            <select
+              value={importSourceCompanyId}
+              onChange={(e) => setImportSourceCompanyId(e.target.value)}
+              style={{ ...inputStyle, marginTop: 0 }}
+            >
+              <option value="">{t('bankRulesSelectCompany')}</option>
+              {otherCompanies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nameAr || c.nameEn || c.name || c.id}
+                </option>
+              ))}
+            </select>
+          ) : null}
+          {importSource === 'file' ? (
+            <div>
+              <input
+                type="file"
+                accept="application/json,.json"
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                style={{ fontSize: 13, maxWidth: '100%' }}
+              />
+              {importFile ? (
+                <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>{importFile.name}</div>
               ) : null}
-              {importSource === 'file' ? (
-                <div>
-                  <input
-                    type="file"
-                    accept="application/json,.json"
-                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                    style={{ fontSize: 13, maxWidth: '100%' }}
-                  />
-                  {importFile ? (
-                    <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>{importFile.name}</div>
-                  ) : null}
-                </div>
-              ) : null}
-              <div style={{ borderTop: '1px solid var(--noorix-border)', paddingTop: 10, display: 'grid', gap: 8 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                  <input type="radio" name="impMode" checked={importMode === 'merge'} onChange={() => setImportMode('merge')} />
-                  {t('bankRulesImportModeMerge')}
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                  <input type="radio" name="impMode" checked={importMode === 'replace'} onChange={() => setImportMode('replace')} />
-                  {t('bankRulesImportModeReplace')}
-                </label>
-              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
-              <button type="button" className="noorix-btn noorix-btn--ghost" disabled={importBusy} onClick={() => setShowImportModal(false)}>
-                {t('cancel')}
-              </button>
-              <button type="button" className="noorix-btn noorix-btn--primary" disabled={importBusy} onClick={runPackImport}>
-                {importBusy ? t('loading') : t('bankRulesImportRun')}
-              </button>
-            </div>
+          ) : null}
+          <div style={{ borderTop: '1px solid var(--noorix-border)', paddingTop: 10, display: 'grid', gap: 8 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+              <input type="radio" name="impMode" checked={importMode === 'merge'} onChange={() => setImportMode('merge')} />
+              {t('bankRulesImportModeMerge')}
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+              <input type="radio" name="impMode" checked={importMode === 'replace'} onChange={() => setImportMode('replace')} />
+              {t('bankRulesImportModeReplace')}
+            </label>
           </div>
         </div>
-      ) : null}
+      </Modal>
     </div>
   );
 }

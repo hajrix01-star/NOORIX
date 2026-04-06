@@ -6,6 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
+import { Button } from '../../ui';
 import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';
 import { ItemsManageTab } from './components/ItemsManageTab';
@@ -49,13 +50,13 @@ export default function OrdersScreen() {
   ];
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div className="nx-screen">
       <div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('ordersTitle')}</h1>
+        <h1 className="nx-page-title">{t('ordersTitle')}</h1>
       </div>
 
       {!companyId && (
-        <div className="noorix-surface-card" style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+        <div className="noorix-surface-card nx-empty-state">
           {t('pleaseSelectCompany')}
         </div>
       )}
@@ -65,10 +66,9 @@ export default function OrdersScreen() {
           {/* تبويبات */}
           <div style={{ display: 'flex', borderBottom: '2px solid var(--noorix-border)', gap: 0, flexWrap: 'wrap' }}>
             {tabs.map((tab) => (
-              <button
+              <Button
                 key={tab.id}
                 type="button"
-                className="noorix-btn-nav"
                 onClick={() => setActiveTab(tab.id)}
                 style={{
                   borderRadius: 0, border: 'none', margin: 0,
@@ -80,7 +80,7 @@ export default function OrdersScreen() {
                 }}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
 

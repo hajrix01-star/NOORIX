@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Button } from '../../../ui';
 import {
   createOcrItem, updateOcrItem, deleteOcrItem, getItemPriceHistory, addItemAlias,
   findDuplicateItems, mergeOcrItems, bulkDeleteOcrItems,
@@ -22,10 +23,10 @@ function ItemForm({ initial = {}, onSave, onCancel, loading }) {
       <input placeholder={t('ocrItemCategory')} value={form.category} onChange={f('category')} style={inputStyle} />
       <input placeholder={t('ocrItemUnit')} value={form.unitType} onChange={f('unitType')} style={inputStyle} />
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={() => onSave(form)} disabled={loading || !form.nameAr} className="noorix-btn noorix-btn--primary" style={{ flex: 1 }}>
+        <Button onClick={() => onSave(form)} disabled={loading || !form.nameAr} variant="primary" style={{ flex: 1 }}>
           {loading ? '...' : t('ocrSave')}
-        </button>
-        <button onClick={onCancel} className="noorix-btn" style={{ flex: 1 }}>{t('ocrCancel')}</button>
+        </Button>
+        <Button onClick={onCancel} style={{ flex: 1 }}>{t('ocrCancel')}</Button>
       </div>
     </div>
   );
@@ -155,10 +156,10 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
           {search && <button className="inv-search-clear" onClick={() => setSearch('')}>✕</button>}
         </div>
 
-        <button onClick={() => setAdding(true)} className="noorix-btn noorix-btn--primary" style={{ fontSize: 13 }}>+ {t('ocrAddItem')}</button>
-        <button onClick={handleFindDuplicates} disabled={dupLoading} className="noorix-btn" style={{ fontSize: 13 }}>
+        <Button onClick={() => setAdding(true)} variant="primary" size="sm">+ {t('ocrAddItem')}</Button>
+        <Button onClick={handleFindDuplicates} disabled={dupLoading} size="sm">
           {isAr ? 'كشف التكرار' : 'Find Duplicates'}
-        </button>
+        </Button>
 
         {selected.size > 0 && (
           <button className="inv-delete-btn" onClick={handleBulkDelete} disabled={deleting}>
@@ -195,10 +196,10 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                       {item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'} · {item._count?.lines || 0} {isAr ? 'سطر' : 'lines'}
                     </div>
                     {group.items.filter((o) => o.id !== item.id).map((other) => (
-                      <button key={other.id} onClick={() => handleMerge(item.id, other.id)} disabled={!!merging}
-                        className="noorix-btn noorix-btn--primary" style={{ fontSize: 11, padding: '4px 10px' }}>
+                      <Button key={other.id} onClick={() => handleMerge(item.id, other.id)} disabled={!!merging}
+                        variant="primary" size="sm">
                         {merging === `${item.id}-${other.id}` ? '...' : (isAr ? 'احتفظ بهذا — ادمج الآخر' : 'Keep this — merge other')}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 ))}
@@ -243,8 +244,8 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                     <span className="ocr-catalog-badge">{item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 4, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => setEditing(item)} className="noorix-btn" style={{ padding: '4px 10px', fontSize: 11 }}>{t('ocrEdit')}</button>
-                    <button onClick={() => handleDelete(item.id)} className="noorix-btn" style={{ padding: '4px 10px', fontSize: 11, color: '#b91c1c' }}>{t('ocrDelete')}</button>
+                    <Button onClick={() => setEditing(item)} size="sm">{t('ocrEdit')}</Button>
+                    <Button onClick={() => handleDelete(item.id)} size="sm" variant="danger">{t('ocrDelete')}</Button>
                   </div>
                 </div>
               )}
@@ -288,7 +289,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                   <option value="ar">AR</option>
                   <option value="en">EN</option>
                 </select>
-                <button onClick={handleAddAlias} className="noorix-btn noorix-btn--primary">+</button>
+                <Button onClick={handleAddAlias} variant="primary">+</Button>
               </div>
 
               {/* Price history */}

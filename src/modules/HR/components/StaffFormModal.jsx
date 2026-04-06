@@ -14,12 +14,7 @@ import {
   mergeOvertimeWorkDaysIntoSchedule,
   DEFAULT_OVERTIME_WORK_DAYS,
 } from '../utils/employeeSalaryMath';
-
-const IS = {
-  width: '100%', padding: '9px 12px', borderRadius: 8,
-  border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box',
-};
+import { Button, Input, Modal } from '../../../ui';
 
 const EMPTY = {
   name: '', nameEn: '', jobTitle: '', iqamaNumber: '',
@@ -114,7 +109,7 @@ export const StaffFormModal = memo(function StaffFormModal({
   };
 
   function handleSubmit(e) {
-    e.preventDefault();
+    e?.preventDefault?.();
     setAllowanceError('');
     if (!form.name.trim()) return;
     const basic = roundMoney2(form.basicSalary);
@@ -167,198 +162,225 @@ export const StaffFormModal = memo(function StaffFormModal({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 2000,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--noorix-modal-overlay-bg)', padding: 20,
-        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={isEdit ? t('editEmployee') : t('addEmployee')}
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+          <Button variant="success" onClick={handleSubmit} disabled={isSaving || !form.name.trim()}>
+            {isSaving ? t('saving') : t('saveChanges')}
+          </Button>
+        </>
+      }
     >
-      <div
-        className="noorix-surface-card"
-        style={{ width: '100%', maxWidth: 520, maxHeight: '90vh', overflow: 'auto', borderRadius: 14, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 8 }}>
-          <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
-            {isEdit ? t('editEmployee') : t('addEmployee')}
-          </h4>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--noorix-text-muted)', minWidth: 32, minHeight: 32 }}
-          >
-            ×
-          </button>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div className="staff-form-names-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('employeeName')} *</label>
-              <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={t('employeeNamePlaceholder')} required style={IS} />
+      <form onSubmit={handleSubmit}>
+        <div className="staff-form-names-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+          <Input
+            label={`${t('employeeName')} *`}
+            value={form.name}
+            onChange={(e) => set('name', e.target.value)}
+            placeholder={t('employeeNamePlaceholder')}
+            required
+          />
+          <Input
+            label="Name (English)"
+            value={form.nameEn}
+            onChange={(e) => set('nameEn', e.target.value)}
+            placeholder="Employee name in English"
+            style={{ direction: 'ltr', textAlign: 'left' }}
+          />
+          <Input
+            label={t('jobTitle')}
+            value={form.jobTitle}
+            onChange={(e) => set('jobTitle', e.target.value)}
+            placeholder={t('jobTitlePlaceholder')}
+          />
+          <Input
+            type="date"
+            label={t('joinDate')}
+            value={form.joinDate}
+            onChange={(e) => set('joinDate', e.target.value)}
+            required
+          />
+          <Input
+            label={t('iqamaNumber')}
+            value={form.iqamaNumber}
+            onChange={(e) => set('iqamaNumber', e.target.value)}
+            placeholder="1234567890"
+          />
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            label={t('basicSalary')}
+            value={form.basicSalary}
+            onChange={(e) => set('basicSalary', e.target.value)}
+            required
+          />
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            label={t('housingAllowance')}
+            value={form.housingAllowance}
+            onChange={(e) => set('housingAllowance', e.target.value)}
+          />
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            label={t('transportAllowance')}
+            value={form.transportAllowance}
+            onChange={(e) => set('transportAllowance', e.target.value)}
+          />
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            label={t('otherAllowance')}
+            value={form.otherAllowance}
+            onChange={(e) => set('otherAllowance', e.target.value)}
+          />
+          <Input
+            label={t('workHours')}
+            value={form.workHours}
+            onChange={(e) => set('workHours', e.target.value)}
+            placeholder={t('workHoursPlaceholder')}
+          />
+          <Input
+            label={t('workSchedule')}
+            value={form.workSchedule}
+            onChange={(e) => set('workSchedule', e.target.value)}
+            placeholder={t('workSchedulePlaceholder')}
+          />
+          <div>
+            <Input
+              type="number"
+              min={1}
+              max={31}
+              label={t('overtimeWorkDaysPerMonth')}
+              value={overtimeWorkDays}
+              onChange={(e) => setOvertimeWorkDays(e.target.value)}
+            />
+            <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4, lineHeight: 1.45 }}>
+              {t('overtimeWorkDaysHelp')}
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Name (English)</label>
-              <input
-                value={form.nameEn}
-                onChange={(e) => set('nameEn', e.target.value)}
-                placeholder="Employee name in English"
-                style={{ ...IS, direction: 'ltr', textAlign: 'left' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('jobTitle')}</label>
-              <input value={form.jobTitle} onChange={(e) => set('jobTitle', e.target.value)} placeholder={t('jobTitlePlaceholder')} style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('joinDate')}</label>
-              <input type="date" value={form.joinDate} onChange={(e) => set('joinDate', e.target.value)} required style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('iqamaNumber')}</label>
-              <input value={form.iqamaNumber} onChange={(e) => set('iqamaNumber', e.target.value)} placeholder="1234567890" style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('basicSalary')}</label>
-              <input type="number" step="0.01" min="0" value={form.basicSalary} onChange={(e) => set('basicSalary', e.target.value)} required style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('housingAllowance')}</label>
-              <input type="number" step="0.01" min="0" value={form.housingAllowance} onChange={(e) => set('housingAllowance', e.target.value)} style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('transportAllowance')}</label>
-              <input type="number" step="0.01" min="0" value={form.transportAllowance} onChange={(e) => set('transportAllowance', e.target.value)} style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('otherAllowance')}</label>
-              <input type="number" step="0.01" min="0" value={form.otherAllowance} onChange={(e) => set('otherAllowance', e.target.value)} style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('workHours')}</label>
-              <input value={form.workHours} onChange={(e) => set('workHours', e.target.value)} placeholder={t('workHoursPlaceholder')} style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('workSchedule')}</label>
-              <input value={form.workSchedule} onChange={(e) => set('workSchedule', e.target.value)} placeholder={t('workSchedulePlaceholder')} style={IS} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('overtimeWorkDaysPerMonth')}</label>
-              <input
-                type="number"
-                min={1}
-                max={31}
-                value={overtimeWorkDays}
-                onChange={(e) => setOvertimeWorkDays(e.target.value)}
-                style={IS}
-              />
-              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4, lineHeight: 1.45 }}>
-                {t('overtimeWorkDaysHelp')}
-              </div>
-            </div>
-            {isEdit && (
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('status')}</label>
-                <select value={form.status} onChange={(e) => set('status', e.target.value)} style={IS}>
-                  <option value="active">{t('statusActive')}</option>
-                  <option value="on_leave">{t('statusOnLeave')}</option>
-                  <option value="terminated">{t('statusTerminated')}</option>
-                  <option value="archived">{t('statusArchived')}</option>
-                </select>
-              </div>
-            )}
           </div>
-          {isEdit && form.status === 'terminated' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('terminationReason')}</label>
-                <select value={form.terminationReason} onChange={(e) => set('terminationReason', e.target.value)} style={IS}>
-                  <option value="">{t('terminationReasonPlaceholder')}</option>
-                  {terminationReasonOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--noorix-text-muted)' }}>
-                  {t('terminationReasonExamples')}
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('terminationClause')}</label>
-                <select value={form.terminationClause} onChange={(e) => set('terminationClause', e.target.value)} style={IS}>
-                  <option value="">{t('terminationClausePlaceholder')}</option>
-                  <option value={t('terminationClauseArt80')}>{t('terminationClauseArt80')}</option>
-                  <option value={t('terminationClauseArt77')}>{t('terminationClauseArt77')}</option>
-                  <option value={t('terminationClauseArt74')}>{t('terminationClauseArt74')}</option>
-                  <option value={t('terminationClauseArt81')}>{t('terminationClauseArt81')}</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('terminationDate')}</label>
-                <input type="date" value={form.terminationDate || ''} onChange={(e) => set('terminationDate', e.target.value)} style={IS} />
-              </div>
-            </div>
+          {isEdit && (
+            <Input
+              type="select"
+              label={t('status')}
+              value={form.status}
+              onChange={(e) => set('status', e.target.value)}
+            >
+              <option value="active">{t('statusActive')}</option>
+              <option value="on_leave">{t('statusOnLeave')}</option>
+              <option value="terminated">{t('statusTerminated')}</option>
+              <option value="archived">{t('statusArchived')}</option>
+            </Input>
           )}
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('notes')}</label>
-            <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2} style={{ ...IS, resize: 'vertical' }} />
-          </div>
-          <div style={{ marginBottom: 18, border: '1px solid var(--noorix-border)', borderRadius: 12, padding: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-              <strong style={{ fontSize: 13 }}>{t('customAllowances')}</strong>
-              <button type="button" className="noorix-btn-nav" style={{ padding: '6px 10px' }} onClick={() => addAllowanceRow()}>
-                {t('addCustomAllowance')}
-              </button>
+        </div>
+        {isEdit && form.status === 'terminated' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
+            <div>
+              <Input
+                type="select"
+                label={t('terminationReason')}
+                value={form.terminationReason}
+                onChange={(e) => set('terminationReason', e.target.value)}
+              >
+                <option value="">{t('terminationReasonPlaceholder')}</option>
+                {terminationReasonOptions.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </Input>
+              <div style={{ marginTop: 4, fontSize: 11, color: 'var(--noorix-text-muted)' }}>
+                {t('terminationReasonExamples')}
+              </div>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-              {ALLOWANCE_TEMPLATES.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className="noorix-btn-nav"
-                  style={{ padding: '6px 10px' }}
-                  onClick={() => addAllowanceRow(t(item.labelKey))}
-                >
-                  {t(item.labelKey)}
-                </button>
-              ))}
-            </div>
-            {customAllowances.length === 0 && (
-              <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('noCustomAllowances')}</div>
-            )}
-            <div style={{ display: 'grid', gap: 8 }}>
-              {customAllowances.map((row) => (
-                <div key={row.rowId} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr auto', gap: 8, alignItems: 'end' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('customAllowanceName')}</label>
-                    <input value={row.nameAr} onChange={(e) => setAllowance(row.rowId, { nameAr: e.target.value })} style={IS} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('customAllowanceAmount')}</label>
-                    <input type="number" min="0" step="0.01" value={row.amount} onChange={(e) => setAllowance(row.rowId, { amount: e.target.value })} style={IS} />
-                  </div>
-                  <button type="button" className="noorix-btn-nav" style={{ padding: '9px 10px' }} onClick={() => removeAllowanceRow(row.rowId)}>
-                    {t('delete') || 'حذف'}
-                  </button>
-                </div>
-              ))}
-            </div>
-            {allowanceError && (
-              <div style={{ marginTop: 10, fontSize: 12, color: '#dc2626' }}>{allowanceError}</div>
-            )}
+            <Input
+              type="select"
+              label={t('terminationClause')}
+              value={form.terminationClause}
+              onChange={(e) => set('terminationClause', e.target.value)}
+            >
+              <option value="">{t('terminationClausePlaceholder')}</option>
+              <option value={t('terminationClauseArt80')}>{t('terminationClauseArt80')}</option>
+              <option value={t('terminationClauseArt77')}>{t('terminationClauseArt77')}</option>
+              <option value={t('terminationClauseArt74')}>{t('terminationClauseArt74')}</option>
+              <option value={t('terminationClauseArt81')}>{t('terminationClauseArt81')}</option>
+            </Input>
+            <Input
+              type="date"
+              label={t('terminationDate')}
+              value={form.terminationDate || ''}
+              onChange={(e) => set('terminationDate', e.target.value)}
+            />
           </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-            <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
-            <button type="submit" className="noorix-btn-nav noorix-btn-success" disabled={isSaving || !form.name.trim()}>
-              {isSaving ? t('saving') : t('saveChanges')}
-            </button>
+        )}
+        <div style={{ marginBottom: 14 }}>
+          <Input
+            multiline
+            label={t('notes')}
+            value={form.notes}
+            onChange={(e) => set('notes', e.target.value)}
+            rows={2}
+            style={{ resize: 'vertical' }}
+          />
+        </div>
+        <div style={{ marginBottom: 18, border: '1px solid var(--noorix-border)', borderRadius: 12, padding: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+            <strong style={{ fontSize: 13 }}>{t('customAllowances')}</strong>
+            <Button type="button" size="sm" onClick={() => addAllowanceRow()}>
+              {t('addCustomAllowance')}
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+            {ALLOWANCE_TEMPLATES.map((item) => (
+              <Button
+                key={item.key}
+                type="button"
+                size="sm"
+                onClick={() => addAllowanceRow(t(item.labelKey))}
+              >
+                {t(item.labelKey)}
+              </Button>
+            ))}
+          </div>
+          {customAllowances.length === 0 && (
+            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('noCustomAllowances')}</div>
+          )}
+          <div style={{ display: 'grid', gap: 8 }}>
+            {customAllowances.map((row) => (
+              <div key={row.rowId} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                <Input
+                  label={t('customAllowanceName')}
+                  value={row.nameAr}
+                  onChange={(e) => setAllowance(row.rowId, { nameAr: e.target.value })}
+                />
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  label={t('customAllowanceAmount')}
+                  value={row.amount}
+                  onChange={(e) => setAllowance(row.rowId, { amount: e.target.value })}
+                />
+                <Button type="button" variant="danger" size="sm" onClick={() => removeAllowanceRow(row.rowId)}>
+                  {t('delete') || 'حذف'}
+                </Button>
+              </div>
+            ))}
+          </div>
+          {allowanceError && (
+            <div style={{ marginTop: 10, fontSize: 12, color: '#dc2626' }}>{allowanceError}</div>
+          )}
+        </div>
+      </form>
+    </Modal>
   );
 });
 

@@ -2,8 +2,9 @@
  * PurchasesBatchScreen — إدخال جماعي لفواتير الموردين
  * تصميم احترافي متكامل — جدول موحد مثل الفواتير، اختصارات مدمجة، ملخص متسق
  */
-import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Decimal from 'decimal.js';
+import { Button, Badge } from '../../ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
@@ -27,14 +28,6 @@ import { BatchSummaryBar } from './components/BatchSummaryBar';
 
 const PAGE_SIZE = 50;
 
-const Badge = memo(function Badge({ map, value }) {
-  const s = map[value] || { bg: 'rgba(100,116,139,0.08)', color: '#64748b', label: value };
-  return (
-    <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
-      {s.label}
-    </span>
-  );
-});
 
 /* ── Bookmarks ────────────────────────────────────────────────── */
 const BM_KEY = 'noorix_supplier_bookmarks_v1';
@@ -109,10 +102,10 @@ export default function PurchasesBatchScreen() {
   });
 
   // ── بيانات جدول الدفعات — ملخص من السيرفر (كل الدفعات في الفترة) ──
-  const statusStyles = useMemo(() => ({
-    active:    { bg: 'rgba(22,163,74,0.1)',  color: '#16a34a', label: t('statusActive') },
-    cancelled: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', label: t('statusCancelled') },
-    partial:   { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', label: t('statusPartial') || 'جزئي' },
+  const statusBadgeMap = useMemo(() => ({
+    active:    { color: 'green', label: t('statusActive') },
+    cancelled: { color: 'red',   label: t('statusCancelled') },
+    partial:   { color: 'amber', label: t('statusPartial') || 'جزئي' },
   }), [t]);
 
   const batchesTableData = useMemo(() => {
@@ -222,44 +215,47 @@ export default function PurchasesBatchScreen() {
       render: (v) => <span style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
     /* الحالة — شارة ضيقة */
     { key: 'status', label: t('statusLabel'), shrink: true,
-      render: (v) => <Badge map={statusStyles} value={v} /> },
+      render: (v) => <Badge {...Badge.fromStatus(v, statusBadgeMap)} size="sm" /> },
     /* الإجراءات — بدون shrink + minWidth يمنع تداخل الأزرار مع بقية الأعمدة */
     { key: 'actions', label: t('actions'), align: 'center', minWidth: 220,
       render: (_, row) => {
         const canCancel = row.status === 'active' || row.status === 'partial';
         return (
           <div className="noorix-actions-row" style={{ flexWrap: 'wrap', justifyContent: 'center', maxWidth: 280 }}>
-            <button type="button" className="noorix-btn-nav"
+            <Button
+              size="sm"
               onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
               disabled={batchActionLoading === row.batchId}
-              style={{ padding: '4px 10px', fontSize: 11, whiteSpace: 'nowrap' }} title={t('print')}>
+              title={t('print')}>
               {batchActionLoading === row.batchId ? '…' : t('print')}
-            </button>
-            <button type="button" className="noorix-btn-nav"
+            </Button>
+            <Button
+              size="sm"
               onClick={() => openBatchWithInvoices(row, setEditingBatch)}
               disabled={batchActionLoading === row.batchId}
-              style={{ padding: '4px 10px', fontSize: 11, whiteSpace: 'nowrap' }} title={t('edit')}>
+              title={t('edit')}>
               ✎ {batchActionLoading === row.batchId ? '…' : t('edit')}
-            </button>
-            <button type="button" className="noorix-btn-nav"
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
               onClick={() => handleCancelBatch(row)} disabled={!canCancel || batchActionLoading === row.batchId}
-              style={{ padding: '4px 10px', fontSize: 11, whiteSpace: 'nowrap', borderColor: '#fecaca', background: 'rgba(239,68,68,0.06)', color: '#dc2626' }} title={t('cancel')}>
+              title={t('cancel')}>
               × {t('cancel')}
-            </button>
+            </Button>
           </div>
         );
       },
     },
-  ], [t, statusStyles, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
+  ], [t, statusBadgeMap, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
 
   const renderBatchMobileCard = useCallback((row) => {
-    const ss = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
     const canCancel = row.status === 'active' || row.status === 'partial';
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
           <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14 }}>{row.batchId}</span>
-          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: ss.bg, color: ss.color, flexShrink: 0 }}>{ss.label}</span>
+          <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
         </div>
         <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 6 }}>
           <span>{formatSaudiDate(row.transactionDate)}</span>
@@ -284,13 +280,13 @@ export default function PurchasesBatchScreen() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34 }} onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId}>{t('print')}</button>
-          <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34 }} onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId}>✎ {t('edit')}</button>
-          {canCancel && <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34, borderColor: '#fecaca', background: 'rgba(239,68,68,0.06)', color: '#dc2626' }} onClick={() => handleCancelBatch(row)} disabled={batchActionLoading === row.batchId}>× {t('cancel')}</button>}
+          <Button size="sm" onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId}>{t('print')}</Button>
+          <Button size="sm" onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId}>✎ {t('edit')}</Button>
+          {canCancel && <Button size="sm" variant="danger" onClick={() => handleCancelBatch(row)} disabled={batchActionLoading === row.batchId}>× {t('cancel')}</Button>}
         </div>
       </div>
     );
-  }, [statusStyles, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
+  }, [statusBadgeMap, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
 
   /* صف التذييل: # + batchId + تاريخ + عدد + مورد + خزنة + صافي + ضريبة + إجمالي + حالة + إجراءات = 11 عموداً */
   const batchesFooterCells = (
@@ -406,9 +402,9 @@ export default function PurchasesBatchScreen() {
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       {/* ── الهيدر ── */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>{t('batchPurchasesTitle')}</h1>
+      <header className="nx-page-header">
+        <div className="nx-page-header__titles">
+          <h1 className="nx-page-title">{t('batchPurchasesTitle')}</h1>
         </div>
       </header>
 
@@ -558,14 +554,12 @@ export default function PurchasesBatchScreen() {
               </table>
             </div>
 
-            <button
-              type="button"
-              className="noorix-btn-nav"
+            <Button
               onClick={addRow}
-              style={{ marginTop: 12, fontSize: 13 }}
+              style={{ marginTop: 12 }}
             >
               {t('addRow')}
-            </button>
+            </Button>
 
             <BatchSummaryBar
               count={summary.count}
@@ -575,24 +569,20 @@ export default function PurchasesBatchScreen() {
             />
 
             {/* أزرار الإجراءات */}
-            <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap', width: '100%' }}>
-              <button
-                type="button"
-                className="noorix-btn-nav noorix-btn-success"
+            <div className="nx-toolbar" style={{ marginTop: 20 }}>
+              <Button
+                variant="success"
                 disabled={saveMutation.isPending || summary.count === 0 || !batchVaultId || activeVaults.length === 0}
                 onClick={() => saveMutation.mutate()}
-                style={{ flex: '1 1 200px', padding: '12px 20px', fontSize: 14, fontWeight: 700, minWidth: 0 }}
+                style={{ flex: '1 1 200px', minWidth: 0 }}
               >
                 {saveMutation.isPending ? t('saving') : t('saveBatch', summary.count)}
-              </button>
-              <button
-                type="button"
-                className="noorix-btn-nav"
+              </Button>
+              <Button
                 onClick={() => window.print()}
-                style={{ padding: '12px 20px', fontSize: 14, flexShrink: 0, flex: '0 1 auto' }}
               >
                 {t('print')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -623,7 +613,7 @@ export default function PurchasesBatchScreen() {
             badge={
               <>
                 <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>— {dateFilter.label}</span>
-                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{t('batchCount', displayedTotal)}</span>
+                <Badge color="blue" size="sm">{t('batchCount', displayedTotal)}</Badge>
               </>
             }
             searchValue={batchSearchInput}

@@ -7,6 +7,7 @@ import React, { memo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { hasPermission } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
+import { Button } from '../../ui';
 
 const KebabIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -74,7 +75,7 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  if (!showAny) return <span style={{ color: 'var(--noorix-text-muted)', fontSize: 12 }}>—</span>;
+  if (!showAny) return <span className="nx-cell-muted">—</span>;
 
   const close = () => setOpen(false);
   const run = (fn) => { close(); fn?.(row); };
@@ -104,24 +105,24 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
       }}
     >
       {canView && (
-        <button type="button" role="menuitem" onClick={() => run(onView)} style={{ ...menuItemStyle, color: 'var(--noorix-text)' }}>
+        <Button type="button" role="menuitem" onClick={() => run(onView)} style={{ ...menuItemStyle, color: 'var(--noorix-text)' }}>
           {t('view')}
-        </button>
+        </Button>
       )}
       {canPrint && (
-        <button type="button" role="menuitem" onClick={() => run(onPrint)} style={{ ...menuItemStyle, color: 'var(--noorix-text)' }}>
+        <Button type="button" role="menuitem" onClick={() => run(onPrint)} style={{ ...menuItemStyle, color: 'var(--noorix-text)' }}>
           {t('print')}
-        </button>
+        </Button>
       )}
       {showEdit && (
-        <button type="button" role="menuitem" onClick={() => run(onEdit)} style={{ ...menuItemStyle, color: '#16a34a' }}>
+        <Button type="button" role="menuitem" onClick={() => run(onEdit)} style={{ ...menuItemStyle, color: '#16a34a' }}>
           {t('edit')}
-        </button>
+        </Button>
       )}
       {showDel && (
-        <button type="button" role="menuitem" onClick={() => run(onDelete)} style={{ ...menuItemStyle, color: '#dc2626' }}>
+        <Button type="button" role="menuitem" onClick={() => run(onDelete)} style={{ ...menuItemStyle, color: '#dc2626' }}>
           {t('delete')}
-        </button>
+        </Button>
       )}
     </div>
   );

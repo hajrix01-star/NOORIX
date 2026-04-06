@@ -7,6 +7,7 @@ import { createExpenseLine, updateExpenseLine } from '../../../services/api';
 import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Button, Modal, Input } from '../../../ui';
 
 export default function ExpenseLineFormModal({ companyId, editing, onClose, onSaved }) {
   const { lang } = useTranslation();
@@ -107,145 +108,99 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
     }
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 12px',
-    borderRadius: 8,
-    border: '1px solid var(--noorix-border)',
-    background: 'var(--noorix-bg-surface)',
-    fontSize: 14,
-    boxSizing: 'border-box',
-  };
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const footer = (
+    <>
+      <Button onClick={onClose}>إلغاء</Button>
+      <Button variant="primary" type="submit" form="expense-line-form-modal" disabled={isPending}>
+        {isPending ? 'جاري الحفظ...' : (editing ? 'تحديث' : 'حفظ')}
+      </Button>
+    </>
+  );
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'var(--noorix-modal-overlay-bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2000,
-        padding: 24,
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={editing ? 'تعديل بند مصروف' : 'إضافة بند مصروف'}
+      size="md"
+      footer={footer}
     >
-      <div
-        className="noorix-modal-card"
-        style={{
-          borderRadius: 12,
-          maxWidth: 480,
-          width: '100%',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <form onSubmit={handleSubmit} style={{ padding: 24 }}>
-          <h2 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 700 }}>{editing ? 'تعديل بند مصروف' : 'إضافة بند مصروف'}</h2>
-          {error && (
-            <div style={{ padding: 12, marginBottom: 16, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>اسم البند (عربي) *</label>
-            <input
-              type="text"
-              value={form.nameAr}
-              onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
-              placeholder="مثال: هاتف رقم 1، كهرباء الفرع 1"
-              style={inputStyle}
-              required
-            />
+      <form id="expense-line-form-modal" onSubmit={handleSubmit}>
+        {error && (
+          <div style={{ padding: 12, marginBottom: 16, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
+            {error}
           </div>
+        )}
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>النوع *</label>
-            <select
-              value={form.kind}
-              onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))}
-              style={inputStyle}
-            >
-              <option value="expense">متغير</option>
-              <option value="fixed_expense">ثابت</option>
-            </select>
-          </div>
+        <Input
+          type="text"
+          label="اسم البند (عربي) *"
+          value={form.nameAr}
+          onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
+          placeholder="مثال: هاتف رقم 1، كهرباء الفرع 1"
+          required
+        />
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>الفئة *</label>
-            <select
-              value={form.categoryId}
-              onChange={(e) => setForm((p) => ({ ...p, categoryId: e.target.value }))}
-              style={inputStyle}
-              required
-            >
-              <option value="">— اختر الفئة —</option>
-              {expenseCategoriesGrouped.map((parent) => (
-                <optgroup key={parent.id} label={`${parent.nameAr || parent.nameEn || '—'} (فئة رئيسية)`}>
-                  <option value={parent.id}>{parent.nameAr || parent.nameEn} — رئيسية</option>
-                  {(parent.children || []).map((child) => (
-                    <option key={child.id} value={child.id}>↳ {child.nameAr || child.nameEn} — فرعية</option>
-                  ))}
-                </optgroup>
+        <Input
+          type="select"
+          label="النوع *"
+          value={form.kind}
+          onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))}
+        >
+          <option value="expense">متغير</option>
+          <option value="fixed_expense">ثابت</option>
+        </Input>
+
+        <Input
+          type="select"
+          label="الفئة *"
+          value={form.categoryId}
+          onChange={(e) => setForm((p) => ({ ...p, categoryId: e.target.value }))}
+          required
+        >
+          <option value="">— اختر الفئة —</option>
+          {expenseCategoriesGrouped.map((parent) => (
+            <optgroup key={parent.id} label={`${parent.nameAr || parent.nameEn || '—'} (فئة رئيسية)`}>
+              <option value={parent.id}>{parent.nameAr || parent.nameEn} — رئيسية</option>
+              {(parent.children || []).map((child) => (
+                <option key={child.id} value={child.id}>↳ {child.nameAr || child.nameEn} — فرعية</option>
               ))}
-            </select>
-          </div>
+            </optgroup>
+          ))}
+        </Input>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>المورد *</label>
-            <select
-              value={form.supplierId}
-              onChange={(e) => setForm((p) => ({ ...p, supplierId: e.target.value }))}
-              style={inputStyle}
-              required
-            >
-              <option value="">— اختر المورد —</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}</option>
-              ))}
-            </select>
-          </div>
+        <Input
+          type="select"
+          label="المورد *"
+          value={form.supplierId}
+          onChange={(e) => setForm((p) => ({ ...p, supplierId: e.target.value }))}
+          required
+        >
+          <option value="">— اختر المورد —</option>
+          {suppliers.map((s) => (
+            <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}</option>
+          ))}
+        </Input>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>رقم الخدمة / العداد</label>
-            <input
-              type="text"
-              value={form.serviceNumber}
-              onChange={(e) => setForm((p) => ({ ...p, serviceNumber: e.target.value }))}
-              placeholder="اختياري"
-              style={inputStyle}
-            />
-          </div>
+        <Input
+          type="text"
+          label="رقم الخدمة / العداد"
+          value={form.serviceNumber}
+          onChange={(e) => setForm((p) => ({ ...p, serviceNumber: e.target.value }))}
+          placeholder="اختياري"
+        />
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>ملاحظات</label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-              placeholder="اختياري"
-              rows={3}
-              style={{ ...inputStyle, resize: 'vertical' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-page)', cursor: 'pointer' }}>
-              إلغاء
-            </button>
-            <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--noorix-accent-blue)', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
-              {createMutation.isPending || updateMutation.isPending ? 'جاري الحفظ...' : (editing ? 'تحديث' : 'حفظ')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <Input
+          multiline
+          label="ملاحظات"
+          value={form.notes}
+          onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+          placeholder="اختياري"
+          rows={3}
+        />
+      </form>
+    </Modal>
   );
 }

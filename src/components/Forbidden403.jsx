@@ -1,7 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../ui';
 
 export default function Forbidden403() {
+  const navigate = useNavigate();
   return (
     <div
       style={{
@@ -21,9 +23,9 @@ export default function Forbidden403() {
         <p style={{ margin: '0 0 20px', color: 'var(--noorix-text-muted)', fontSize: 14 }}>
           لا تملك صلاحية لعرض هذه الصفحة. ما لا تملك صلاحية عليه لا تراه.
         </p>
-        <Link to="/" className="noorix-btn-nav" style={{ display: 'inline-block', padding: '10px 20px', textDecoration: 'none' }}>
+        <Button variant="primary" onClick={() => navigate('/')}>
           العودة للوحة التحكم
-        </Link>
+        </Button>
       </div>
     </div>
   );

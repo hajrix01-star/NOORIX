@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { AVAILABLE_ANALYSIS_CARDS } from './useBankStatementView';
+import { Button } from '../../../ui';
 import {
   buildDailyChartData,
   buildDepositsByCategory,
@@ -186,22 +187,9 @@ function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }) 
           <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
           <span style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.35 }}>{title}</span>
         </div>
-        <button
-          type="button"
-          className="noorix-btn noorix-btn--ghost"
-          onClick={() => onRemove(cardId)}
-          style={{
-            fontSize: 12,
-            color: '#64748b',
-            border: '1px solid var(--noorix-border)',
-            borderRadius: 8,
-            padding: '6px 12px',
-            flexShrink: 0,
-            whiteSpace: 'nowrap',
-          }}
-        >
+        <Button size="sm" onClick={() => onRemove(cardId)} style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
           {removeLabel}
-        </button>
+        </Button>
       </div>
       <div style={{ padding: '18px 20px' }}>{children}</div>
     </div>
@@ -423,14 +411,9 @@ export default function BankStatementAnalysisCardsTab({
                           {fmt(Number(tx.debit))}
                         </td>
                         <td style={{ padding: '8px 10px', textAlign: 'center', verticalAlign: 'middle' }}>
-                          <button
-                            type="button"
-                            className="noorix-btn noorix-btn--ghost"
-                            style={{ fontSize: 11, padding: '4px 8px' }}
-                            onClick={() => { setTypeFilter('debit'); setActiveTab('transactions'); }}
-                          >
+                          <Button size="sm" onClick={() => { setTypeFilter('debit'); setActiveTab('transactions'); }}>
                             {t('bankViewTransactions')}
-                          </button>
+                        </Button>
                         </td>
                       </tr>
                     ))}
@@ -483,23 +466,14 @@ export default function BankStatementAnalysisCardsTab({
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, alignItems: 'center' }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{t('bankPieViewMode')}</span>
             {(['combined', 'debit', 'credit']).map((m) => (
-              <button
+              <Button
                 key={m}
-                type="button"
+                size="sm"
+                variant={pieMode === m ? 'primary' : 'default'}
                 onClick={() => setPieMode(m)}
-                className="noorix-btn"
-                style={{
-                  fontSize: 12,
-                  padding: '6px 12px',
-                  borderRadius: 8,
-                  border: pieMode === m ? '2px solid var(--noorix-accent-blue)' : '1px solid var(--noorix-border)',
-                  background: pieMode === m ? 'rgba(37,99,235,0.1)' : 'var(--noorix-surface)',
-                  fontWeight: pieMode === m ? 700 : 500,
-                  cursor: 'pointer',
-                }}
               >
                 {t(`bankPieMode_${m}`)}
-              </button>
+              </Button>
             ))}
           </div>
           <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
@@ -995,15 +969,12 @@ export default function BankStatementAnalysisCardsTab({
           {activeCards.length} بطاقة معروضة
         </span>
         <div style={{ position: 'relative' }}>
-          <button
-            type="button"
-            className="noorix-btn noorix-btn--secondary"
-            style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
+          <Button
+            size="sm"
             onClick={() => setAddOpen((v) => !v)}
             disabled={availableToAdd.length === 0}
           >
-            <span>+</span>
-            {t('bankAddAnalysisCard')}
+            + {t('bankAddAnalysisCard')}
             {availableToAdd.length > 0 && (
               <span
                 style={{
@@ -1013,16 +984,17 @@ export default function BankStatementAnalysisCardsTab({
                   width: 18,
                   height: 18,
                   fontSize: 10,
-                  display: 'flex',
+                  display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 700,
+                  marginInlineStart: 6,
                 }}
               >
                 {availableToAdd.length}
               </span>
             )}
-          </button>
+          </Button>
           {addOpen && availableToAdd.length > 0 && (
             <div
               className="bank-analysis-add-menu"

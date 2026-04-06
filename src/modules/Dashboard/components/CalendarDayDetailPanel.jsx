@@ -7,6 +7,7 @@ import { useApp } from '../../../context/AppContext';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
+import { Button, Input } from '../../../ui';
 
 export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, summaries, companyId, companyName, onPrint, dayNote, onSaveNote }) {
   const { t, lang } = useTranslation();
@@ -51,7 +52,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{formatSaudiDate(dateStr)}</h4>
         {onPrint && (
-          <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={onPrint} style={{ padding: '6px 10px', fontSize: 11 }}>{t('print')}</button>
+          <Button variant="primary" onClick={onPrint}>{t('print')}</Button>
         )}
       </div>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -67,23 +68,14 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
 
       {/* ملاحظة اليوم */}
       <div>
-        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--noorix-text-muted)', display: 'block', marginBottom: 4 }}>{t('dashboardDayNote')}</label>
-        <textarea
+        <Input
+          multiline
+          label={t('dashboardDayNote')}
           value={noteInput}
           onChange={(e) => setNoteInput(e.target.value)}
           onBlur={handleBlurNote}
           placeholder={t('dashboardDayNotePlaceholder')}
           rows={2}
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            borderRadius: 8,
-            border: '1px solid var(--noorix-border)',
-            fontSize: 12,
-            fontFamily: 'inherit',
-            resize: 'vertical',
-            minHeight: 48,
-          }}
         />
         {isSavingNote && <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>…</span>}
       </div>
@@ -107,9 +99,9 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
               return (
                 <tr key={s.id} style={{ borderTop: '1px solid var(--noorix-border)' }}>
                   <td style={{ padding: '6px 8px' }}>{s.summaryNumber || '—'}</td>
-                  <td style={{ padding: '6px 8px', fontSize: 11, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }} title={chText || ''}>{chText || '—'}</td>
-                  <td style={{ padding: '6px 8px', fontFamily: 'var(--noorix-font-numbers)' }}>{s.customerCount ?? 0}</td>
-                  <td style={{ padding: '6px 8px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, color: '#16a34a' }}>{fmt(Number(s.totalAmount || 0), 2)}</td>
+                  <td className="nx-cell-ellipsis" style={{ padding: '6px 8px' }} title={chText || ''}>{chText || '—'}</td>
+                  <td className="nx-cell-num" style={{ padding: '6px 8px' }}>{s.customerCount ?? 0}</td>
+                  <td className="nx-cell-num" style={{ padding: '6px 8px', fontWeight: 600, color: '#16a34a' }}>{fmt(Number(s.totalAmount || 0), 2)}</td>
                 </tr>
               );
             })}

@@ -1,6 +1,5 @@
 /**
  * OrderFormModal — نافذة إدخال الطلب
- * متكيفة مع الجوال: على الديسك توب نافذة مركزية، على الجوال Bottom Sheet أو نافذة كاملة
  */
 import React, { useState, useMemo, useEffect } from 'react';
 import Decimal from 'decimal.js';
@@ -8,15 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { ProductSearchInput } from '../../../components/common/ProductSearchInput';
-
-const inputStyle = {
-  width: '100%', padding: '12px 14px', borderRadius: 8,
-  border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)', fontSize: 15, fontFamily: 'inherit', boxSizing: 'border-box',
-  minHeight: 44,
-};
-
-const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 600;
+import { Button, Input, Modal } from '../../../ui';
 
 export function OrderFormModal({
   companyId,
@@ -48,14 +39,6 @@ export function OrderFormModal({
   });
   const [addRow, setAddRow] = useState({ productId: '', variantKey: '', size: '', packaging: '', unit: '', quantity: '', unitPrice: '' });
   const [savedOrder, setSavedOrder] = useState(null);
-  const [mobileLayout, setMobileLayout] = useState(false);
-
-  useEffect(() => {
-    const check = () => setMobileLayout(isMobile());
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   const productsById = useMemo(() => {
     const m = new Map();
@@ -179,306 +162,282 @@ export function OrderFormModal({
     setSavedOrder(null);
   }
 
+  const cellInputStyle = {
+    width: '100%', padding: '6px 8px', borderRadius: 6,
+    border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
+    color: 'var(--noorix-text)', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box',
+    minHeight: 36,
+  };
+
   // شاشة النجاح بعد الحفظ
   if (savedOrder) {
     return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="noorix-modal-overlay order-form-modal-overlay"
-        style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'var(--noorix-modal-overlay-bg)', display: 'flex',
-          alignItems: mobileLayout ? 'flex-end' : 'center', justifyContent: 'center', padding: mobileLayout ? 0 : 20,
-          backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-        }}
-        onClick={(e) => e.target === e.currentTarget && (resetForm(), onClose?.())}
+      <Modal
+        open
+        onClose={() => { resetForm(); onClose?.(); }}
+        size="sm"
+        hideClose={false}
       >
-        <div
-          className="noorix-order-form-modal noorix-order-form-modal--success noorix-modal-card"
-          style={{
-            borderRadius: mobileLayout ? '16px 16px 0 0' : 16,
-            width: '100%', maxWidth: 480, maxHeight: mobileLayout ? '90vh' : '90vh',
-            overflow: 'auto', boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div style={{ textAlign: 'center', padding: '24px 20px' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}></div>
-            <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>{t('orderSaved')}</h3>
-            <p style={{ margin: '0 0 16px', fontSize: 14, color: 'var(--noorix-text-muted)' }}>
-              {t('orderNumber')}: <strong style={{ color: 'var(--noorix-accent-blue)' }}>{savedOrder.orderNumber}</strong>
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('total')}</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedOrder.totalAmount ?? 0, 2)} ﷼</div>
-              </div>
+        <div style={{ textAlign: 'center', padding: '8px 0' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}></div>
+          <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>{t('orderSaved')}</h3>
+          <p style={{ margin: '0 0 16px', fontSize: 14, color: 'var(--noorix-text-muted)' }}>
+            {t('orderNumber')}: <strong style={{ color: 'var(--noorix-accent-blue)' }}>{savedOrder.orderNumber}</strong>
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('total')}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedOrder.totalAmount ?? 0, 2)} ﷼</div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-              <button type="button" className="noorix-btn-nav noorix-btn-success" style={{ padding: '12px 28px', fontSize: 15, width: '100%', maxWidth: 280 }} onClick={() => onWhatsApp?.(savedOrder)}>
-                {t('sendWhatsApp')} — {t('order')}
-              </button>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-                <button type="button" className="noorix-btn-nav" onClick={() => { resetForm(); }}>{t('ordersAddNewOrder')}</button>
-                <button type="button" className="noorix-btn-nav" onClick={() => { onClose?.(); resetForm(); }}>{t('close')}</button>
-              </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+            <Button variant="success" fullWidth onClick={() => onWhatsApp?.(savedOrder)}>
+              {t('sendWhatsApp')} — {t('order')}
+            </Button>
+            <div className="nx-toolbar" style={{ justifyContent: 'center' }}>
+              <Button onClick={() => { resetForm(); }}>{t('ordersAddNewOrder')}</Button>
+              <Button onClick={() => { onClose?.(); resetForm(); }}>{t('close')}</Button>
             </div>
           </div>
         </div>
-      </div>
+      </Modal>
     );
   }
 
-  const modalContent = (
-    <>
-      <div style={{ flexShrink: 0, padding: '16px 20px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{isEdit ? t('ordersEditOrder') : t('ordersNewOrder')}</h3>
-        <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ padding: '8px 14px', minHeight: 40 }}>✕ {t('close')}</button>
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={isEdit ? t('ordersEditOrder') : t('ordersNewOrder')}
+      size="lg"
+      footer={
+        <Button
+          variant="success"
+          fullWidth
+          disabled={(isEdit ? updateOrder?.isPending : createOrder.isPending) || totalAmount.lte(0) || products.length === 0}
+          loading={isEdit ? updateOrder?.isPending : createOrder.isPending}
+          onClick={handleSave}
+        >
+          {t('save')}
+        </Button>
+      }
+    >
+      <div style={{ display: 'grid', gap: 16, marginBottom: 18 }}>
+        <Input
+          type="date"
+          label={`${t('orderDate')} *`}
+          value={orderDate}
+          onChange={(e) => setOrderDate(e.target.value)}
+        />
+        <Input
+          type="select"
+          label={`${t('orderType')} *`}
+          value={orderType}
+          onChange={(e) => setOrderType(e.target.value)}
+        >
+          <option value="external">{t('orderTypeExternal')}</option>
+          <option value="internal">{t('orderTypeInternal')}</option>
+        </Input>
+        {orderType === 'external' && (
+          <Input
+            type="number"
+            label={t('pettyCashAmount')}
+            min="0"
+            step="0.01"
+            value={pettyCashAmount}
+            onChange={(e) => setPettyCashAmount(e.target.value)}
+            placeholder="0.00"
+          />
+        )}
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: 20, paddingBottom: 12 }}>
-        <div style={{ display: 'grid', gap: 16, marginBottom: 18 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('orderDate')} *</label>
-            <input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} style={inputStyle} />
+      <div style={{ marginBottom: 18 }}>
+        <label style={{ fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>{t('orderItems')}</label>
+        {products.length === 0 ? (
+          <div style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
+            {t('ordersNoProducts')}
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('orderType')} *</label>
-            <select value={orderType} onChange={(e) => setOrderType(e.target.value)} style={inputStyle}>
-              <option value="external">{t('orderTypeExternal')}</option>
-              <option value="internal">{t('orderTypeInternal')}</option>
-            </select>
-          </div>
-          {orderType === 'external' && (
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('pettyCashAmount')}</label>
-              <input type="number" min="0" step="0.01" value={pettyCashAmount} onChange={(e) => setPettyCashAmount(e.target.value)} placeholder="0.00" style={inputStyle} />
-            </div>
-          )}
-        </div>
-
-        <div style={{ marginBottom: 18 }}>
-          <label style={{ fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>{t('orderItems')}</label>
-          {products.length === 0 ? (
-            <div style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
-              {t('ordersNoProducts')}
-            </div>
-          ) : (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: mobileLayout ? '1fr' : '1fr minmax(120px,1fr) minmax(70px,1fr) minmax(80px,1fr) auto', gap: 8, alignItems: 'end', marginBottom: 12 }}>
-                <div>
-                  <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('product')}</label>
-                  <ProductSearchInput
-                    products={products}
-                    productsById={productsById}
-                    value={addRow.productId}
-                    onChange={(pid) => setAddRow((r) => ({ ...r, productId: pid }))}
-                    onSelectProduct={(sel) => setAddRow((r) => ({
-                      ...r,
-                      productId: sel.productId,
-                      variantKey: sel.variantKey || '',
-                      size: sel.size || '',
-                      packaging: sel.packaging || '',
-                      unit: sel.unit || 'piece',
-                      unitPrice: sel.unitPrice || '',
-                    }))}
-                    placeholder={t('searchProduct') ? `${t('searchProduct')} — ${t('selectProduct')}` : 'ابحث بالعربي أو الإنجليزي — اختر الصنف'}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{productVariants.length > 0 ? t('ordersProductVariants') : t('ordersProductSize')}</label>
-                  {productVariants.length > 0 ? (
-                    <select
-                      value={addRow.variantKey}
-                      onChange={(e) => {
-                        const key = e.target.value;
-                        const v = productVariants.find((x) => x._key === key);
-                        if (v) setAddRow((r) => ({ ...r, variantKey: key, size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', unitPrice: v.lastPrice ? String(v.lastPrice) : '' }));
-                      }}
-                      style={inputStyle}
-                    >
-                      <option value="">—</option>
-                      {productVariants.map((v, i) => (
-                        <option key={v._key} value={v._key}>
-                          {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'} — {fmt(v.lastPrice ?? 0, 2)} ﷼
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <select
-                      value={addRow.size}
-                      onChange={(e) => setAddRow((r) => ({ ...r, size: e.target.value }))}
-                      style={inputStyle}
-                    >
-                      <option value="">—</option>
-                      {(productsById.get(addRow.productId)?.sizes || '').split(/[,،]/).map((x) => x.trim()).filter(Boolean).map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('quantity')}</label>
-                  <input type="number" min="0" step="0.01" value={addRow.quantity} onChange={(e) => setAddRow((r) => ({ ...r, quantity: e.target.value }))} placeholder="0" style={inputStyle} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('unitPrice')}</label>
-                  <input type="number" min="0" step="0.01" value={addRow.unitPrice} onChange={(e) => setAddRow((r) => ({ ...r, unitPrice: e.target.value }))} placeholder="0" style={inputStyle} />
-                </div>
-                <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={addItemFromRow} style={{ padding: '10px 14px', minHeight: 44 }}>+ {t('add')}</button>
+        ) : (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr minmax(120px,1fr) minmax(70px,1fr) minmax(80px,1fr) auto', gap: 8, alignItems: 'end', marginBottom: 12 }}>
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('product')}</label>
+                <ProductSearchInput
+                  products={products}
+                  productsById={productsById}
+                  value={addRow.productId}
+                  onChange={(pid) => setAddRow((r) => ({ ...r, productId: pid }))}
+                  onSelectProduct={(sel) => setAddRow((r) => ({
+                    ...r,
+                    productId: sel.productId,
+                    variantKey: sel.variantKey || '',
+                    size: sel.size || '',
+                    packaging: sel.packaging || '',
+                    unit: sel.unit || 'piece',
+                    unitPrice: sel.unitPrice || '',
+                  }))}
+                  placeholder={t('searchProduct') ? `${t('searchProduct')} — ${t('selectProduct')}` : 'ابحث بالعربي أو الإنجليزي — اختر الصنف'}
+                />
               </div>
-              <div style={{ overflowX: 'auto', border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)' }}>
-                      <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('product')}</th>
-                      <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('ordersProductSize')} / {t('ordersProductPackaging')}</th>
-                      <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('quantity')}</th>
-                      <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('unitPrice')}</th>
-                      <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('total')}</th>
-                      <th style={{ width: 44, padding: '8px 4px' }} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((it, idx) => {
-                      const p = productsById.get(it.productId);
-                      const variantsArr = Array.isArray(p?.variants) ? p.variants : [];
-                      const sizesArr = p?.sizes ? String(p.sizes).split(/[,،]/).map((x) => x.trim()).filter(Boolean) : [];
-                      const variantLabel = [it.size, it.packaging, it.unit].filter(Boolean).join(' / ') || '—';
-                      return (
-                        <tr key={idx} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
-                          <td style={{ padding: '8px 10px', minWidth: 140 }}>
-                            <ProductSearchInput
-                              products={products}
-                              productsById={productsById}
-                              value={it.productId}
-                              onChange={(pid) => updateItem(idx, 'productId', pid)}
-                              onSelectProduct={(sel) => {
-                                setItems((prev) => {
-                                  const next = [...prev];
-                                  next[idx] = {
-                                    ...next[idx],
-                                    productId: sel.productId,
-                                    size: sel.size || '',
-                                    packaging: sel.packaging || '',
-                                    unit: sel.unit || 'piece',
-                                    unitPrice: sel.unitPrice || next[idx].unitPrice,
-                                  };
-                                  return next;
-                                });
-                              }}
-                              placeholder={t('selectProduct')}
-                              compact
-                            />
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            {variantsArr.length > 0 ? (
-                              <select
-                                value={`${it.size || ''}|${it.packaging || ''}|${it.unit || ''}`}
-                                onChange={(e) => {
-                                  const v = variantsArr.find((x) => `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}` === e.target.value);
-                                  if (v) {
-                                    setItems((prev) => {
-                                      const next = [...prev];
-                                      next[idx] = { ...next[idx], size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', unitPrice: v.lastPrice ? String(v.lastPrice) : next[idx].unitPrice };
-                                      return next;
-                                    });
-                                  }
-                                }}
-                                style={{ ...inputStyle, padding: '6px 8px', minHeight: 36 }}
-                              >
-                                {variantsArr.map((v) => (
-                                  <option key={`${v.size}|${v.packaging}|${v.unit}`} value={`${v.size || ''}|${v.packaging || ''}|${v.unit || ''}`}>
-                                    {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : sizesArr.length > 0 ? (
-                              <select value={it.size} onChange={(e) => updateItem(idx, 'size', e.target.value)} style={{ ...inputStyle, padding: '6px 8px', minHeight: 36 }}>
-                                <option value="">—</option>
-                                {sizesArr.map((s) => (
-                                  <option key={s} value={s}>{s}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span style={{ color: 'var(--noorix-text-muted)' }}>{variantLabel}</span>
-                            )}
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <input type="number" min="0" step="0.01" value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} style={{ ...inputStyle, padding: '6px 8px', minHeight: 36, width: 70 }} />
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} style={{ ...inputStyle, padding: '6px 8px', minHeight: 36, width: 80 }} />
-                          </td>
-                          <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600 }}>{fmt(enrichedItems[idx]?.amount ?? 0, 2)}</td>
-                          <td style={{ padding: '8px 4px' }}>
-                            <button type="button" className="noorix-btn-nav" onClick={() => removeItem(idx)} style={{ padding: '6px 10px', color: '#dc2626' }}>✕</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {items.length === 0 && (
-                  <div style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('ordersSelectProductAndAdd') || 'اختر صنفاً واضغط إضافة'}</div>
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{productVariants.length > 0 ? t('ordersProductVariants') : t('ordersProductSize')}</label>
+                {productVariants.length > 0 ? (
+                  <select
+                    value={addRow.variantKey}
+                    onChange={(e) => {
+                      const key = e.target.value;
+                      const v = productVariants.find((x) => x._key === key);
+                      if (v) setAddRow((r) => ({ ...r, variantKey: key, size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', unitPrice: v.lastPrice ? String(v.lastPrice) : '' }));
+                    }}
+                    style={cellInputStyle}
+                  >
+                    <option value="">—</option>
+                    {productVariants.map((v) => (
+                      <option key={v._key} value={v._key}>
+                        {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'} — {fmt(v.lastPrice ?? 0, 2)} ﷼
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    value={addRow.size}
+                    onChange={(e) => setAddRow((r) => ({ ...r, size: e.target.value }))}
+                    style={cellInputStyle}
+                  >
+                    <option value="">—</option>
+                    {(productsById.get(addRow.productId)?.sizes || '').split(/[,،]/).map((x) => x.trim()).filter(Boolean).map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                 )}
               </div>
-            </>
-          )}
-        </div>
-
-        <div style={{ marginBottom: 18 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('notes')}</label>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder={t('notesPlaceholder')} style={{ ...inputStyle, resize: 'vertical', minHeight: 60 }} />
-        </div>
-
-        <div className="noorix-summary-bar" style={{ marginBottom: 8 }}>
-          <div className="noorix-summary-bar__item">
-            <div className="noorix-summary-bar__label">{t('total')}</div>
-            <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount, 2)} ﷼</div>
-          </div>
-        </div>
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('quantity')}</label>
+                <input type="number" min="0" step="0.01" value={addRow.quantity} onChange={(e) => setAddRow((r) => ({ ...r, quantity: e.target.value }))} placeholder="0" style={cellInputStyle} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('unitPrice')}</label>
+                <input type="number" min="0" step="0.01" value={addRow.unitPrice} onChange={(e) => setAddRow((r) => ({ ...r, unitPrice: e.target.value }))} placeholder="0" style={cellInputStyle} />
+              </div>
+              <Button variant="primary" onClick={addItemFromRow}>+ {t('add')}</Button>
+            </div>
+            <div style={{ overflowX: 'auto', border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)' }}>
+                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('product')}</th>
+                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('ordersProductSize')} / {t('ordersProductPackaging')}</th>
+                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('quantity')}</th>
+                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('unitPrice')}</th>
+                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('total')}</th>
+                    <th style={{ width: 44, padding: '8px 4px' }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((it, idx) => {
+                    const p = productsById.get(it.productId);
+                    const variantsArr = Array.isArray(p?.variants) ? p.variants : [];
+                    const sizesArr = p?.sizes ? String(p.sizes).split(/[,،]/).map((x) => x.trim()).filter(Boolean) : [];
+                    const variantLabel = [it.size, it.packaging, it.unit].filter(Boolean).join(' / ') || '—';
+                    return (
+                      <tr key={idx} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
+                        <td style={{ padding: '8px 10px', minWidth: 140 }}>
+                          <ProductSearchInput
+                            products={products}
+                            productsById={productsById}
+                            value={it.productId}
+                            onChange={(pid) => updateItem(idx, 'productId', pid)}
+                            onSelectProduct={(sel) => {
+                              setItems((prev) => {
+                                const next = [...prev];
+                                next[idx] = {
+                                  ...next[idx],
+                                  productId: sel.productId,
+                                  size: sel.size || '',
+                                  packaging: sel.packaging || '',
+                                  unit: sel.unit || 'piece',
+                                  unitPrice: sel.unitPrice || next[idx].unitPrice,
+                                };
+                                return next;
+                              });
+                            }}
+                            placeholder={t('selectProduct')}
+                            compact
+                          />
+                        </td>
+                        <td style={{ padding: '8px 10px' }}>
+                          {variantsArr.length > 0 ? (
+                            <select
+                              value={`${it.size || ''}|${it.packaging || ''}|${it.unit || ''}`}
+                              onChange={(e) => {
+                                const v = variantsArr.find((x) => `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}` === e.target.value);
+                                if (v) {
+                                  setItems((prev) => {
+                                    const next = [...prev];
+                                    next[idx] = { ...next[idx], size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', unitPrice: v.lastPrice ? String(v.lastPrice) : next[idx].unitPrice };
+                                    return next;
+                                  });
+                                }
+                              }}
+                              style={cellInputStyle}
+                            >
+                              {variantsArr.map((v) => (
+                                <option key={`${v.size}|${v.packaging}|${v.unit}`} value={`${v.size || ''}|${v.packaging || ''}|${v.unit || ''}`}>
+                                  {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'}
+                                </option>
+                              ))}
+                            </select>
+                          ) : sizesArr.length > 0 ? (
+                            <select value={it.size} onChange={(e) => updateItem(idx, 'size', e.target.value)} style={cellInputStyle}>
+                              <option value="">—</option>
+                              {sizesArr.map((s) => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="nx-cell-muted">{variantLabel}</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '8px 10px' }}>
+                          <input type="number" min="0" step="0.01" value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} style={{ ...cellInputStyle, width: 70 }} />
+                        </td>
+                        <td style={{ padding: '8px 10px' }}>
+                          <input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} style={{ ...cellInputStyle, width: 80 }} />
+                        </td>
+                        <td className="nx-cell-num" style={{ padding: '8px 10px', fontWeight: 600 }}>{fmt(enrichedItems[idx]?.amount ?? 0, 2)}</td>
+                        <td style={{ padding: '8px 4px' }}>
+                          <Button size="sm" variant="danger" onClick={() => removeItem(idx)}>✕</Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {items.length === 0 && (
+                <div style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('ordersSelectProductAndAdd') || 'اختر صنفاً واضغط إضافة'}</div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      <div style={{ flexShrink: 0, padding: '16px 20px', borderTop: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
-        <button
-          type="button"
-          className="noorix-btn-nav noorix-btn-success"
-          disabled={(isEdit ? updateOrder?.isPending : createOrder.isPending) || totalAmount.lte(0) || products.length === 0}
-          onClick={handleSave}
-          style={{ width: '100%', padding: '14px 16px', fontSize: 16, minHeight: 48 }}
-        >
-          {(isEdit ? updateOrder?.isPending : createOrder.isPending) ? t('saving') : t('save')}
-        </button>
+      <div style={{ marginBottom: 18 }}>
+        <Input
+          multiline
+          label={t('notes')}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={2}
+          placeholder={t('notesPlaceholder')}
+        />
       </div>
-    </>
-  );
 
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="noorix-modal-overlay order-form-modal-overlay"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'var(--noorix-modal-overlay-bg)', display: 'flex',
-        alignItems: mobileLayout ? 'flex-end' : 'center', justifyContent: 'center', padding: mobileLayout ? 0 : 20,
-        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose?.()}
-    >
-      <div
-        className="noorix-order-form-modal noorix-modal-card"
-        style={{
-          borderRadius: mobileLayout ? '16px 16px 0 0' : 16,
-          width: '100%', maxWidth: 620, maxHeight: mobileLayout ? '95vh' : '90vh',
-          display: 'flex', flexDirection: 'column', boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {modalContent}
+      <div className="noorix-summary-bar">
+        <div className="noorix-summary-bar__item">
+          <div className="noorix-summary-bar__label">{t('total')}</div>
+          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount, 2)} ﷼</div>
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

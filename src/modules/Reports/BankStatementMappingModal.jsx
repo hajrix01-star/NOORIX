@@ -9,6 +9,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementConfirmMapping, bankStatementGet, bankStatementSuggestHeaderMetadata } from '../../services/api';
+import { Button, Modal } from '../../ui';
 import {
   autoDetectRows,
   autoDetectColumns,
@@ -224,43 +225,31 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="noorix-modal-backdrop"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'var(--noorix-modal-overlay-bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2000,
-        padding: 12,
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-      }}
-    >
-      <div
-        className="noorix-surface-card"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 'min(960px, 98vw)',
-          maxHeight: '92vh',
-          overflow: 'auto',
-          padding: 22,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, gap: 12 }}>
+    <Modal
+      open={!!statement}
+      onClose={onClose}
+      title={t('bankMapTitle')}
+      size="full"
+      footer={
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{t('bankMapTitle')}</h2>
-            <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankMapSubtitle')}</p>
+            {!canConfirm ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#b45309' }}>
+                <span>⚠</span>
+                <span>{t('bankMapRequiredWarningStrict')}</span>
+              </div>
+            ) : null}
           </div>
-          <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onClose} aria-label="إغلاق">
-            ← {t('cancel')}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+            <Button variant="primary" onClick={handleConfirm} disabled={!canConfirm || isSubmitting}>
+              {isSubmitting ? t('bankStatementAIApplying') : t('bankMapConfirmAnalyze')}
+            </Button>
+          </div>
         </div>
+      }
+    >
+        <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankMapSubtitle')}</p>
 
         <div
           style={{
@@ -435,30 +424,6 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            {!canConfirm ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#b45309' }}>
-                <span>⚠</span>
-                <span>{t('bankMapRequiredWarningStrict')}</span>
-              </div>
-            ) : null}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onClose}>
-              {t('cancel')}
-            </button>
-            <button
-              type="button"
-              className="noorix-btn noorix-btn--primary"
-              onClick={handleConfirm}
-              disabled={!canConfirm || isSubmitting}
-            >
-              {isSubmitting ? t('bankStatementAIApplying') : t('bankMapConfirmAnalyze')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

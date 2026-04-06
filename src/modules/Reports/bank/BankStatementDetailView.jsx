@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import useBankStatementView from './useBankStatementView';
+import { Button, Modal } from '../../../ui';
 import BankStatementSummaryCards from './BankStatementSummaryCards';
 import BankStatementAnalysisCardsTab from './BankStatementAnalysisCardsTab';
 import BankStatementTransactionsFullTab from './BankStatementTransactionsFullTab';
@@ -38,9 +39,7 @@ export default function BankStatementDetailView({
     return (
       <div style={{ padding: 48, textAlign: 'center' }}>
         <p style={{ fontSize: 16 }}>{t('bankStatementNotFound')}</p>
-        <button type="button" className="noorix-btn noorix-btn--primary" style={{ marginTop: 16 }} onClick={onBack}>
-          {t('bankBackToList')}
-        </button>
+        <Button variant="primary" style={{ marginTop: 16 }} onClick={onBack}>{t('bankBackToList')}</Button>
       </div>
     );
   }
@@ -48,9 +47,7 @@ export default function BankStatementDetailView({
   if (vm.statement.status === 'mapping') {
     return (
       <div style={{ padding: 24 }}>
-        <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onBack}>
-          ← {t('bankBackToList')}
-        </button>
+        <Button variant="ghost" onClick={onBack}>← {t('bankBackToList')}</Button>
         <p style={{ marginTop: 16 }}>{t('bankStatementMappingRequired')}</p>
       </div>
     );
@@ -71,10 +68,9 @@ export default function BankStatementDetailView({
   };
 
   const tabBtn = (id, label, count) => (
-    <button
+    <Button
       key={id}
       type="button"
-      className="noorix-btn-nav"
       style={{
         margin: 0,
         borderRadius: 0,
@@ -106,56 +102,16 @@ export default function BankStatementDetailView({
           {count}
         </span>
       ) : null}
-    </button>
+    </Button>
   );
 
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       {/* ── رأس الصفحة: زر الرجوع + أدوات ── */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 10,
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 18px',
-          background: 'var(--noorix-surface)',
-          borderRadius: 14,
-          border: '1px solid var(--noorix-border)',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
-        }}
-      >
-        {/* زر الرجوع */}
-        <button
-          type="button"
-          onClick={onBack}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '9px 18px',
-            borderRadius: 10,
-            border: '1.5px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-muted)',
-            cursor: 'pointer',
-            fontWeight: 700,
-            fontSize: 14,
-            color: 'var(--noorix-text)',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--noorix-accent-blue)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'var(--noorix-accent-blue)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--noorix-bg-muted)'; e.currentTarget.style.color = 'var(--noorix-text)'; e.currentTarget.style.borderColor = 'var(--noorix-border)'; }}
-        >
-          <span style={{ fontSize: 18, lineHeight: 1 }}>←</span>
-          {t('bankBackToList')}
-        </button>
-
-        {/* أدوات */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          <button
-            type="button"
-            className="noorix-btn noorix-btn--secondary"
+      <div className="nx-page-header" style={{ padding: '14px 18px', background: 'var(--noorix-surface)', borderRadius: 14, border: '1px solid var(--noorix-border)', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+        <Button onClick={onBack}>← {t('bankBackToList')}</Button>
+        <div className="nx-toolbar">
+          <Button
             disabled={vm.reclassifyMutation.isPending}
             onClick={() => {
               vm.reclassifyMutation.mutate(undefined, {
@@ -165,10 +121,8 @@ export default function BankStatementDetailView({
             }}
           >
             {vm.reclassifyMutation.isPending ? '⟳ ' + t('loading') : t('bankReclassify')}
-          </button>
-          <button
-            type="button"
-            className="noorix-btn noorix-btn--secondary"
+          </Button>
+          <Button
             onClick={() =>
               exportBankStatementExcel({
                 statement: stmt,
@@ -180,10 +134,8 @@ export default function BankStatementDetailView({
             }
           >
             {t('bankExportExcel')}
-          </button>
-          <button
-            type="button"
-            className="noorix-btn noorix-btn--secondary"
+          </Button>
+          <Button
             onClick={() =>
               printBankStatement({
                 statement: stmt,
@@ -194,17 +146,8 @@ export default function BankStatementDetailView({
             }
           >
             {t('bankPrint')}
-          </button>
-          {onDelete ? (
-            <button
-              type="button"
-              className="noorix-btn"
-              style={{ borderColor: '#dc2626', color: '#dc2626' }}
-              onClick={onDelete}
-            >
-              {t('delete')}
-            </button>
-          ) : null}
+          </Button>
+          {onDelete && <Button variant="danger" onClick={onDelete}>{t('delete')}</Button>}
         </div>
       </div>
 
@@ -305,21 +248,19 @@ export default function BankStatementDetailView({
         </div>
       </div>
 
-      {vm.cardToDelete ? (
-        <div role="dialog" aria-modal="true" className="noorix-modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
-          <div className="noorix-surface-card" style={{ padding: 20, maxWidth: 400, width: '90%' }}>
-            <p style={{ marginTop: 0 }}>{t('bankConfirmRemoveCard')}</p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-              <button type="button" className="noorix-btn noorix-btn--ghost" onClick={() => vm.setCardToDelete(null)}>
-                {t('cancel')}
-              </button>
-              <button type="button" className="noorix-btn noorix-btn--primary" onClick={() => vm.removeCard(vm.cardToDelete)}>
-                {t('delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <Modal
+        open={!!vm.cardToDelete}
+        onClose={() => vm.setCardToDelete(null)}
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => vm.setCardToDelete(null)}>{t('cancel')}</Button>
+            <Button variant="danger" onClick={() => vm.removeCard(vm.cardToDelete)}>{t('delete')}</Button>
+          </>
+        }
+      >
+        <p style={{ marginTop: 0 }}>{t('bankConfirmRemoveCard')}</p>
+      </Modal>
     </div>
   );
 }

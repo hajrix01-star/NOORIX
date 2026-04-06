@@ -4,6 +4,7 @@
  */
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
+import { Button } from '../../ui';
 import { useApp } from '../../context/AppContext';
 import { useOwnerReports } from '../../hooks/useOwnerReports';
 import { EN_MONTHS } from '../Reports/reportHelpers';
@@ -171,8 +172,8 @@ export default function OwnerDashboardScreen() {
 
   if (companyList.length === 0) {
     return (
-      <div style={{ display: 'grid', gap: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('ownerDashboard')}</h1>
+      <div className="nx-screen">
+        <h1 className="nx-page-title">{t('ownerDashboard')}</h1>
         <div className="noorix-surface-card" style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)', marginTop: 16 }}>
           {t('pleaseSelectCompany')}
         </div>
@@ -181,13 +182,13 @@ export default function OwnerDashboardScreen() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ minWidth: 0, flex: '1 1 auto' }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('ownerDashboard')}</h1>
-          <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('ownerDashboardDesc')}</p>
+    <div className="nx-screen">
+      <div className="nx-page-header">
+        <div className="nx-page-header__titles">
+          <h1 className="nx-page-title">{t('ownerDashboard')}</h1>
+          <p className="nx-page-desc">{t('ownerDashboardDesc')}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div className="nx-toolbar">
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
@@ -207,8 +208,8 @@ export default function OwnerDashboardScreen() {
               <option key={i} value={i + 1}>{m}</option>
             ))}
           </select>
-          <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handleExportExcel} style={{ padding: '8px 12px', fontSize: 12 }}>Excel</button>
-          <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} style={{ padding: '8px 12px', fontSize: 12 }}>PDF</button>
+          <Button variant="primary" onClick={handleExportExcel} size="sm">Excel</Button>
+          <Button onClick={handleExportPdf} size="sm">PDF</Button>
         </div>
       </div>
 
@@ -216,8 +217,8 @@ export default function OwnerDashboardScreen() {
       <div className="noorix-surface-card" style={{ padding: isMobile ? 12 : 16, border: '1px solid var(--noorix-border)', borderRadius: CARD_BORDER_RADIUS }}>
         <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('ownerSelectCompanies')}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-          <button type="button" className="noorix-btn-nav" onClick={selectAll} style={{ padding: '6px 10px', fontSize: 11 }}>{t('ownerAllCompanies')}</button>
-          <button type="button" className="noorix-btn-nav" onClick={selectNone} style={{ padding: '6px 10px', fontSize: 11 }}>{lang === 'ar' ? 'إخفاء الكل' : 'Hide all'}</button>
+          <Button onClick={selectAll} size="sm">{t('ownerAllCompanies')}</Button>
+          <Button onClick={selectNone} size="sm">{lang === 'ar' ? 'إخفاء الكل' : 'Hide all'}</Button>
           {companyList.map((c, i) => {
             const isVisible = allSelected ? true : selectedCompanyIds.has(c.id);
             return (

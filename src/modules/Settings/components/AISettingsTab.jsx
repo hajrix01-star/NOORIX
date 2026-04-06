@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getHealth, testGemini } from '../../../services/api';
+import { Button } from '../../../ui';
 
 const STATUS_ONLINE = 'online';
 const STATUS_OFFLINE = 'offline';
@@ -114,38 +115,21 @@ export default function AISettingsTab() {
             </span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <Button
               type="button"
-              className="noorix-btn"
               onClick={handleRefresh}
               disabled={healthLoading}
-              style={{
-                padding: '8px 14px',
-                fontSize: 13,
-                background: 'var(--noorix-surface)',
-                border: '1px solid var(--noorix-border)',
-                borderRadius: 6,
-              }}
             >
               {healthLoading ? (lang === 'ar' ? 'جاري...' : 'Loading...') : (lang === 'ar' ? 'تحديث' : 'Refresh')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="noorix-btn"
+              variant="success"
               onClick={handleTest}
               disabled={testMutation.isPending || !isOnline}
-              style={{
-                padding: '8px 14px',
-                fontSize: 13,
-                background: 'var(--noorix-accent-green)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                fontWeight: 600,
-              }}
             >
               {testMutation.isPending ? (lang === 'ar' ? 'جاري الفحص...' : 'Testing...') : (lang === 'ar' ? 'فحص Gemini' : 'Test Gemini')}
-            </button>
+            </Button>
           </div>
         </div>
 

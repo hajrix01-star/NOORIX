@@ -13,6 +13,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { parseOvertimeWorkDaysPerMonth, totalSalary } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { Button, Modal } from '../../../ui';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -359,7 +360,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   const isIncluded = (empId) => items.some((i) => i.employeeId === empId);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     setError('');
     if (items.length === 0) {
       setError(t('noEmployees'));
@@ -420,230 +421,211 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   if (isEditMode && isLoadingRun) {
     return (
-      <div
-        className="modal-overlay"
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 12 }}
-        onClick={onClose}
-      >
-        <div className="noorix-surface-card" style={{ padding: 24, minWidth: 320 }} onClick={(e) => e.stopPropagation()}>
-          {t('loading')}
-        </div>
-      </div>
+      <Modal open={true} onClose={onClose} title={t('loading')} size="sm">
+        {t('loading')}
+      </Modal>
     );
   }
 
   return (
-    <div
-      className="modal-overlay"
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 12 }}
-      onClick={onClose}
-      role="presentation"
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={modalTitle}
+      size="xl"
+      footer={
+        <>
+          <div style={{ fontWeight: 800, fontSize: 'clamp(15px, 2.4vw, 17px)', fontFamily: 'var(--noorix-font-numbers)' }}>
+            {t('payrollTotal')}: {hrFmt(totalNet)}
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Button variant="ghost" onClick={onClose}>
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              disabled={submitting || items.length === 0 || alreadyExists}
+              style={{ minWidth: 120, fontWeight: 700 }}
+            >
+              {primaryLabel}
+            </Button>
+          </div>
+        </>
+      }
     >
-      <div
-        className="noorix-surface-card prfm-modal-root"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-labelledby="prfm-modal-title"
-        aria-modal="true"
-      >
-        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--noorix-border)', flexShrink: 0 }}>
-          <h3 id="prfm-modal-title" style={{ margin: 0, fontSize: 19, fontWeight: 800, letterSpacing: '-0.02em' }}>
-            {modalTitle}
-          </h3>
-          <p style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6, maxWidth: '72ch' }}>
+      <form className="prfm-modal-form" onSubmit={handleSubmit}>
+        <div style={{ padding: '4px 0 12px' }}>
+          <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6, maxWidth: '72ch' }}>
             {t('payrollGrossFixedPackageHint')}
           </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('payrollMonth')}</label>
+              <input
+                type="month"
+                className="prfm-modal-field"
+                value={payrollMonth ? payrollMonth.slice(0, 7) : ''}
+                onChange={(e) => setPayrollMonth(e.target.value ? `${e.target.value}-01` : defaultMonth)}
+              />
+              {alreadyExists && (
+                <span style={{ fontSize: 12, color: 'var(--noorix-accent-amber)', marginTop: 6, display: 'block', fontWeight: 600 }}>
+                  {t('payrollMonthExists') || 'مسيرة لهذا الشهر موجودة'}
+                </span>
+              )}
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('notes')}</label>
+              <input
+                type="text"
+                className="prfm-modal-field"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={t('notes')}
+              />
+            </div>
+          </div>
         </div>
 
-        <form className="prfm-modal-form" onSubmit={handleSubmit}>
-          <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)', gap: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('payrollMonth')}</label>
-                <input
-                  type="month"
-                  className="prfm-modal-field"
-                  value={payrollMonth ? payrollMonth.slice(0, 7) : ''}
-                  onChange={(e) => setPayrollMonth(e.target.value ? `${e.target.value}-01` : defaultMonth)}
-                />
-                {alreadyExists && (
-                  <span style={{ fontSize: 12, color: 'var(--noorix-accent-amber)', marginTop: 6, display: 'block', fontWeight: 600 }}>
-                    {t('payrollMonthExists') || 'مسيرة لهذا الشهر موجودة'}
-                  </span>
-                )}
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('notes')}</label>
-                <input
-                  type="text"
-                  className="prfm-modal-field"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={t('notes')}
-                />
-              </div>
-            </div>
-          </div>
+        <div
+          style={{
+            padding: '14px 0 10px',
+            flexShrink: 0,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 10,
+          }}
+        >
+          <span style={{ fontSize: 14, fontWeight: 700 }}>{t('employeesList')} ({items.length})</span>
+          <Button type="button" onClick={isEditMode ? loadEditingItems : initItems}>
+            {t('refresh') || 'تحديث'}
+          </Button>
+        </div>
 
+        <div className="prfm-modal-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th style={{ minWidth: 200 }}>{t('employeeName')}</th>
+                <th>{t('payrollAdvanceDates')}</th>
+                <th>{t('grossSalary')}</th>
+                <th>{t('payrollAllowances')}</th>
+                <th>{t('payrollDeductions')}</th>
+                <th>{t('payrollAdvances')}</th>
+                <th style={{ textAlign: 'center' }}>{t('payrollDeferAdvanceDeduct')}</th>
+                <th>{t('netSalary')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayEmployees.map((emp) => {
+                const idx = items.findIndex((i) => i.employeeId === emp.id);
+                const included = idx >= 0;
+                return (
+                  <tr key={emp.id}>
+                    <td>
+                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', lineHeight: 1.45 }}>
+                        <input
+                          type="checkbox"
+                          checked={included}
+                          onChange={() => toggleInclude(emp)}
+                          style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
+                          aria-label={t('employeeName')}
+                        />
+                        <span style={{ fontWeight: included ? 600 : 400 }}>{employeeDisplayName(emp, lang)}</span>
+                      </label>
+                    </td>
+                    {included ? (
+                      <>
+                        <td style={{ color: 'var(--noorix-text-muted)', fontSize: 12, maxWidth: 160, lineHeight: 1.45 }} title={items[idx].advanceDates || ''}>
+                          {items[idx].advanceDates || '—'}
+                        </td>
+                        <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>{hrFmt(items[idx].grossSalary)}</td>
+                        <td>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step={1}
+                            min={0}
+                            className="prfm-modal-num"
+                            value={items[idx].allowancesAdd ?? 0}
+                            onChange={(e) => updateItem(idx, 'allowancesAdd', e.target.value)}
+                            onFocus={selectInput}
+                            aria-label={t('payrollAllowances')}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step={1}
+                            min={0}
+                            className="prfm-modal-num"
+                            value={items[idx].deductions ?? 0}
+                            onChange={(e) => updateItem(idx, 'deductions', e.target.value)}
+                            onFocus={selectInput}
+                            aria-label={t('payrollDeductions')}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step={1}
+                            min={0}
+                            className="prfm-modal-num"
+                            value={items[idx].advancesDeduct ?? 0}
+                            onChange={(e) => updateItem(idx, 'advancesDeduct', e.target.value)}
+                            disabled={items[idx].deferAdvances}
+                            onFocus={selectInput}
+                            aria-label={t('payrollAdvances')}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', padding: '6px 4px' }}>
+                            <input
+                              type="checkbox"
+                              checked={!!items[idx].deferAdvances}
+                              onChange={() => toggleDefer(idx)}
+                              style={{ width: 18, height: 18 }}
+                              aria-label={t('payrollDeferAdvanceDeduct')}
+                            />
+                          </label>
+                        </td>
+                        <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, fontSize: 14, whiteSpace: 'nowrap' }}>{hrFmt(items[idx].netSalary)}</td>
+                      </>
+                    ) : (
+                      <td colSpan={7} style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>
+                        —
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {error && (
           <div
             style={{
-              padding: '14px 24px 10px',
+              margin: '12px 0 0',
+              padding: '12px 14px',
+              background: 'rgba(239,68,68,0.12)',
+              borderRadius: 10,
+              border: '1px solid rgba(239,68,68,0.25)',
+              color: 'var(--noorix-accent-red)',
+              fontSize: 13,
+              fontWeight: 600,
               flexShrink: 0,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 10,
             }}
+            role="alert"
           >
-            <span style={{ fontSize: 14, fontWeight: 700 }}>{t('employeesList')} ({items.length})</span>
-            <button type="button" className="noorix-btn-nav" onClick={isEditMode ? loadEditingItems : initItems}>
-              {t('refresh') || 'تحديث'}
-            </button>
+            {error}
           </div>
-
-          <div className="prfm-modal-scroll" style={{ margin: '0 24px' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th style={{ minWidth: 200 }}>{t('employeeName')}</th>
-                  <th>{t('payrollAdvanceDates')}</th>
-                  <th>{t('grossSalary')}</th>
-                  <th>{t('payrollAllowances')}</th>
-                  <th>{t('payrollDeductions')}</th>
-                  <th>{t('payrollAdvances')}</th>
-                  <th style={{ textAlign: 'center' }}>{t('payrollDeferAdvanceDeduct')}</th>
-                  <th>{t('netSalary')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayEmployees.map((emp) => {
-                  const idx = items.findIndex((i) => i.employeeId === emp.id);
-                  const included = idx >= 0;
-                  return (
-                    <tr key={emp.id}>
-                      <td>
-                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', lineHeight: 1.45 }}>
-                          <input
-                            type="checkbox"
-                            checked={included}
-                            onChange={() => toggleInclude(emp)}
-                            style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
-                            aria-label={t('employeeName')}
-                          />
-                          <span style={{ fontWeight: included ? 600 : 400 }}>{employeeDisplayName(emp, lang)}</span>
-                        </label>
-                      </td>
-                      {included ? (
-                        <>
-                          <td style={{ color: 'var(--noorix-text-muted)', fontSize: 12, maxWidth: 160, lineHeight: 1.45 }} title={items[idx].advanceDates || ''}>
-                            {items[idx].advanceDates || '—'}
-                          </td>
-                          <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>{hrFmt(items[idx].grossSalary)}</td>
-                          <td>
-                            <input
-                              type="number"
-                              inputMode="decimal"
-                              step={1}
-                              min={0}
-                              className="prfm-modal-num"
-                              value={items[idx].allowancesAdd ?? 0}
-                              onChange={(e) => updateItem(idx, 'allowancesAdd', e.target.value)}
-                              onFocus={selectInput}
-                              aria-label={t('payrollAllowances')}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              inputMode="decimal"
-                              step={1}
-                              min={0}
-                              className="prfm-modal-num"
-                              value={items[idx].deductions ?? 0}
-                              onChange={(e) => updateItem(idx, 'deductions', e.target.value)}
-                              onFocus={selectInput}
-                              aria-label={t('payrollDeductions')}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              inputMode="decimal"
-                              step={1}
-                              min={0}
-                              className="prfm-modal-num"
-                              value={items[idx].advancesDeduct ?? 0}
-                              onChange={(e) => updateItem(idx, 'advancesDeduct', e.target.value)}
-                              disabled={items[idx].deferAdvances}
-                              onFocus={selectInput}
-                              aria-label={t('payrollAdvances')}
-                            />
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', padding: '6px 4px' }}>
-                              <input
-                                type="checkbox"
-                                checked={!!items[idx].deferAdvances}
-                                onChange={() => toggleDefer(idx)}
-                                style={{ width: 18, height: 18 }}
-                                aria-label={t('payrollDeferAdvanceDeduct')}
-                              />
-                            </label>
-                          </td>
-                          <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, fontSize: 14, whiteSpace: 'nowrap' }}>{hrFmt(items[idx].netSalary)}</td>
-                        </>
-                      ) : (
-                        <td colSpan={7} style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>
-                          —
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {error && (
-            <div
-              style={{
-                margin: '12px 24px 0',
-                padding: '12px 14px',
-                background: 'rgba(239,68,68,0.12)',
-                borderRadius: 10,
-                border: '1px solid rgba(239,68,68,0.25)',
-                color: 'var(--noorix-accent-red)',
-                fontSize: 13,
-                fontWeight: 600,
-                flexShrink: 0,
-              }}
-              role="alert"
-            >
-              {error}
-            </div>
-          )}
-
-          <div className="prfm-modal-footer" style={{ marginTop: 'auto' }}>
-            <div style={{ fontWeight: 800, fontSize: 'clamp(15px, 2.4vw, 17px)', fontFamily: 'var(--noorix-font-numbers)' }}>
-              {t('payrollTotal')}: {hrFmt(totalNet)}
-            </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button type="button" className="noorix-btn-nav" onClick={onClose}>
-                {t('cancel')}
-              </button>
-              <button
-                type="submit"
-                className="noorix-btn-nav"
-                style={{ background: 'var(--btn-primary-bg)', color: '#fff', minWidth: 120, fontWeight: 700 }}
-                disabled={submitting || items.length === 0 || alreadyExists}
-              >
-                {primaryLabel}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+        )}
+      </form>
+    </Modal>
   );
 }

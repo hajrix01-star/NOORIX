@@ -14,6 +14,7 @@ import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { hrFmt } from '../utils/hrFmt';
 import { parseWorkHours } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { Button, Input } from '../../../ui';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -84,12 +85,6 @@ export default function EOSCalcTab() {
   const fullAward = sal.times(firstFiveYears).times(0.5).plus(sal.times(remainingYears));
   const eligibilityFactor = getEligibilityFactor(terminationReason, serviceYears.toNumber());
   const eosAmount = fullAward.times(eligibilityFactor);
-
-  const inputStyle = {
-    width: '100%', padding: '10px 12px', borderRadius: 8,
-    border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-    fontSize: 14, fontFamily: 'inherit',
-  };
 
   const allowanceRows = useMemo(() => {
     if (!emp) return [];
@@ -253,42 +248,33 @@ export default function EOSCalcTab() {
       <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>{t('hrTabEOSCalc')}</h3>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('selectEmployee')}</label>
-        <select
-          value={selectedEmployee}
-          onChange={(e) => setSelectedEmployee(e.target.value)}
-          style={inputStyle}
-        >
+        <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)}>
           <option value="">—</option>
           {employees.map((e) => (
             <option key={e.id} value={e.id}>{employeeDisplayName(e, lang, e.id)}</option>
           ))}
-        </select>
+        </Input>
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('eosCalcJoinDate')}</label>
-        <input type="date" value={jd ? jd.slice(0, 10) : ''} onChange={(e) => setJoinDate(e.target.value)} style={inputStyle} />
+        <Input type="date" label={t('eosCalcJoinDate')} value={jd ? jd.slice(0, 10) : ''} onChange={(e) => setJoinDate(e.target.value)} />
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('eosCalcEndDate')}</label>
-        <input type="date" value={ed ? ed.slice(0, 10) : ''} onChange={(e) => setEndDate(e.target.value)} style={inputStyle} />
+        <Input type="date" label={t('eosCalcEndDate')} value={ed ? ed.slice(0, 10) : ''} onChange={(e) => setEndDate(e.target.value)} />
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('eosCalcSalary')}</label>
-        <input type="number" min="0" step="0.01" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} style={inputStyle} />
+        <Input type="number" label={t('eosCalcSalary')} min="0" step="0.01" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} />
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('eosCalcReason')}</label>
-        <select value={terminationReason} onChange={(e) => setTerminationReason(e.target.value)} style={inputStyle}>
+        <Input type="select" label={t('eosCalcReason')} value={terminationReason} onChange={(e) => setTerminationReason(e.target.value)}>
           <option value="employer">{t('eosCalcReasonEmployer')}</option>
           <option value="resignation">{t('eosCalcReasonResignation')}</option>
           <option value="article81">{t('eosCalcReasonArticle81')}</option>
           <option value="article80">{t('eosCalcReasonArticle80')}</option>
-        </select>
+        </Input>
       </div>
 
       <div className="noorix-result-panel noorix-result-panel--green">
@@ -338,14 +324,12 @@ export default function EOSCalcTab() {
           {eligibilityFactor.eq(0) ? t('eosCalcNoEntitlement') : t('eosCalcLegalNote')}
         </div>
       </div>
-      <button
-        type="button"
-        className="noorix-btn-nav"
+      <Button
         onClick={handlePrint}
         style={{ width: '100%', marginTop: 12, padding: 10 }}
       >
         {t('printCalc')}
-      </button>
+      </Button>
     </div>
   );
 }

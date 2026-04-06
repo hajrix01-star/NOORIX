@@ -10,6 +10,7 @@ import { getEmployees } from '../../../services/api';
 import { createResidency, updateResidency, createInvoice } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { Button, Input, Modal } from '../../../ui';
 
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'statusActive' },
@@ -52,7 +53,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
   const activeEmployees = (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     setError('');
     if (!employeeId || !iqamaNumber || !expiryDate) {
       setError(t('requiredFields') || 'الحقول المطلوبة ناقصة');
@@ -117,162 +118,135 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
   };
 
   return (
-    <div
-      className="modal-overlay"
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}
-      onClick={onClose}
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={isEdit ? t('editResidency') : t('addResidency')}
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
+            {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}
+          </Button>
+        </>
+      }
     >
-      <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 400, width: '95%' }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>{isEdit ? t('editResidency') : t('addResidency')}</h3>
+      <form onSubmit={handleSubmit}>
+        <Input
+          type="select"
+          label={t('selectEmployee')}
+          value={employeeId}
+          onChange={(e) => setEmployeeId(e.target.value)}
+          required
+          disabled={isEdit}
+        >
+          <option value="">—</option>
+          {activeEmployees.map((emp) => (
+            <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
+          ))}
+        </Input>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('selectEmployee')}</label>
-            <select
-              value={employeeId}
-              onChange={(e) => setEmployeeId(e.target.value)}
-              required
-              disabled={isEdit}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-            >
-              <option value="">—</option>
-              {activeEmployees.map((emp) => (
-                <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
-              ))}
-            </select>
-          </div>
+        <Input
+          label={t('iqamaNumber')}
+          value={iqamaNumber}
+          onChange={(e) => setIqamaNumber(e.target.value)}
+          required
+          placeholder="1234567890"
+        />
 
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('iqamaNumber')}</label>
-            <input
-              type="text"
-              value={iqamaNumber}
-              onChange={(e) => setIqamaNumber(e.target.value)}
-              required
-              placeholder="1234567890"
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-            />
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Input
+            type="date"
+            label={t('startDate')}
+            value={issueDate}
+            onChange={(e) => setIssueDate(e.target.value)}
+          />
+          <Input
+            type="date"
+            label={t('expiryDate')}
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+            required
+          />
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('startDate')}</label>
+        {!isEdit && (
+          <>
+            <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               <input
-                type="date"
-                value={issueDate}
-                onChange={(e) => setIssueDate(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
+                type="checkbox"
+                id="createInvoiceResidency"
+                checked={createInvoiceForResidency}
+                onChange={(e) => setCreateInvoiceForResidency(e.target.checked)}
               />
+              <label htmlFor="createInvoiceResidency" style={{ fontSize: 13, cursor: 'pointer' }}>{t('residencyIssueInvoice') || 'إصدار فاتورة إقامة'}</label>
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('expiryDate')}</label>
-              <input
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                required
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-              />
-            </div>
-          </div>
-
-          {!isEdit && (
-            <>
-              <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  id="createInvoiceResidency"
-                  checked={createInvoiceForResidency}
-                  onChange={(e) => setCreateInvoiceForResidency(e.target.checked)}
-                />
-                <label htmlFor="createInvoiceResidency" style={{ fontSize: 13, cursor: 'pointer' }}>{t('residencyIssueInvoice') || 'إصدار فاتورة إقامة'}</label>
-              </div>
-              {createInvoiceForResidency && (
-                <>
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('residencyServiceType') || 'نوع الخدمة'}</label>
-                    <select
-                      value={residencyServiceType}
-                      onChange={(e) => setResidencyServiceType(e.target.value)}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-                    >
-                      <option value="renewal">{t('opResidencyRenewal') || 'تجديد إقامة'}</option>
-                      <option value="new">{t('residencyNew') || 'إقامة جديدة'}</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('advanceAmount')}</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={invoiceAmount}
-                      onChange={(e) => setInvoiceAmount(e.target.value)}
-                      placeholder="0"
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('selectVault')}</label>
-                    <select
-                      value={vaultId}
-                      onChange={(e) => setVaultId(e.target.value)}
-                      required
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-                    >
-                      <option value="">— اختر الخزينة —</option>
-                      {vaults.map((v) => (
-                        <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
-                      ))}
-                    </select>
-                  </div>
+            {createInvoiceForResidency && (
+              <>
+                <Input
+                  type="select"
+                  label={t('residencyServiceType') || 'نوع الخدمة'}
+                  value={residencyServiceType}
+                  onChange={(e) => setResidencyServiceType(e.target.value)}
+                >
+                  <option value="renewal">{t('opResidencyRenewal') || 'تجديد إقامة'}</option>
+                  <option value="new">{t('residencyNew') || 'إقامة جديدة'}</option>
+                </Input>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    label={t('advanceAmount')}
+                    value={invoiceAmount}
+                    onChange={(e) => setInvoiceAmount(e.target.value)}
+                    placeholder="0"
+                  />
+                  <Input
+                    type="select"
+                    label={t('selectVault')}
+                    value={vaultId}
+                    onChange={(e) => setVaultId(e.target.value)}
+                    required
+                  >
+                    <option value="">— اختر الخزينة —</option>
+                    {vaults.map((v) => (
+                      <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
+                    ))}
+                  </Input>
                 </div>
-                </>
-              )}
-            </>
-          )}
+              </>
+            )}
+          </>
+        )}
 
-          {isEdit && (
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('status')}</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-              >
-                {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
-                ))}
-              </select>
-            </div>
-          )}
+        {isEdit && (
+          <Input
+            type="select"
+            label={t('status')}
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
+            ))}
+          </Input>
+        )}
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('notes')}</label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('notes')}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-            />
+        <Input
+          label={t('notes')}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder={t('notes')}
+        />
+
+        {error && (
+          <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
+            {error}
           </div>
-
-          {error && (
-            <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-            <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
-            <button type="submit" className="noorix-btn-nav" style={{ background: 'var(--btn-primary-bg)', color: '#fff' }} disabled={submitting}>
-              {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        )}
+      </form>
+    </Modal>
   );
 }

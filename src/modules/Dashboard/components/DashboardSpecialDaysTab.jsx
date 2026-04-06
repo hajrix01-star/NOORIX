@@ -4,6 +4,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getStoredSpecialDays, setStoredSpecialDays } from '../utils/dashboardStorage';
+import { Button, Input } from '../../../ui';
 
 const DEFAULT_COLORS = ['#f59e0b', '#eab308', '#84cc16', '#22c55e', '#8b5cf6'];
 
@@ -18,7 +19,6 @@ function ymd(y, m, d) {
 export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth }) {
   const { t } = useTranslation();
   const now = new Date();
-  const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
   const month = selectedMonth || currentMonth;
   const lastDay = lastDayOfMonth(year, month);
@@ -92,30 +92,32 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         <div style={{ padding: 20, marginBottom: 20, background: 'var(--noorix-bg-muted)', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
           <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('dashboardSpecialDaysFromTo')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 140 }}>
-                <label style={{ display: 'block', fontSize: 11, marginBottom: 4, color: 'var(--noorix-text-muted)' }}>{t('dateFilterFrom')}</label>
-                <input type="date" value={newFrom} onChange={(e) => setNewFrom(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', fontSize: 13 }} />
+                <Input type="date" label={t('dateFilterFrom')} value={newFrom} onChange={(e) => setNewFrom(e.target.value)} />
               </div>
               <div style={{ flex: 1, minWidth: 140 }}>
-                <label style={{ display: 'block', fontSize: 11, marginBottom: 4, color: 'var(--noorix-text-muted)' }}>{t('dateFilterTo')}</label>
-                <input type="date" value={newTo} onChange={(e) => setNewTo(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', fontSize: 13 }} />
+                <Input type="date" label={t('dateFilterTo')} value={newTo} onChange={(e) => setNewTo(e.target.value)} />
               </div>
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 11, marginBottom: 4, color: 'var(--noorix-text-muted)' }}>{t('dashboardSpecialDayName')}</label>
-              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t('dashboardSpecialDayName')} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', fontSize: 13 }} />
-            </div>
+            <Input
+              label={t('dashboardSpecialDayName')}
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder={t('dashboardSpecialDayName')}
+            />
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handleAdd} style={{ padding: '8px 16px', fontSize: 12 }}>{t('save')}</button>
-              <button type="button" className="noorix-btn-nav" onClick={() => { setShowForm(false); setNewFrom(startDate); setNewTo(endDate); setNewName(''); }} style={{ padding: '8px 16px', fontSize: 12 }}>{t('cancel')}</button>
+              <Button variant="primary" onClick={handleAdd}>{t('save')}</Button>
+              <Button onClick={() => { setShowForm(false); setNewFrom(startDate); setNewTo(endDate); setNewName(''); }}>{t('cancel')}</Button>
             </div>
           </div>
         </div>
       )}
 
       {!showForm && (
-        <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={() => { setShowForm(true); setNewFrom(startDate); setNewTo(endDate); }} style={{ marginBottom: 12, padding: '8px 14px', fontSize: 12 }}>+ {t('add')}</button>
+        <Button variant="primary" onClick={() => { setShowForm(true); setNewFrom(startDate); setNewTo(endDate); }} style={{ marginBottom: 12 }}>
+          + {t('add')}
+        </Button>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -124,14 +126,20 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
             <div style={{ width: 12, height: 12, borderRadius: 6, background: sp.color || '#8b5cf6', flexShrink: 0 }} />
             {editingId === sp.id ? (
               <>
-                <input type="text" value={editingName} onChange={(e) => setEditingName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { handleUpdate(sp.id, { name: editingName.trim() || sp.name }); } }} autoFocus style={{ flex: 1, padding: '8px 10px', fontSize: 13, border: '1px solid var(--noorix-border)', borderRadius: 8 }} />
-                <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={() => { handleUpdate(sp.id, { name: editingName.trim() || sp.name }); setEditingId(null); }} style={{ padding: '6px 12px', fontSize: 11 }}>✓</button>
+                <Input
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { handleUpdate(sp.id, { name: editingName.trim() || sp.name }); } }}
+                  autoFocus
+                  style={{ flex: 1 }}
+                />
+                <Button variant="primary" onClick={() => { handleUpdate(sp.id, { name: editingName.trim() || sp.name }); setEditingId(null); }}>✓</Button>
               </>
             ) : (
               <>
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 600, cursor: 'pointer' }} onClick={() => { setEditingId(sp.id); setEditingName(sp.name || ''); }} title={t('edit')}>{sp.name || '—'}</span>
                 <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{sp.fromDate} — {sp.toDate}</span>
-                <button type="button" className="noorix-btn-nav" onClick={() => handleRemove(sp.id)} style={{ padding: '6px 10px', fontSize: 11, color: '#dc2626' }}>✕</button>
+                <Button variant="danger" onClick={() => handleRemove(sp.id)}>✕</Button>
               </>
             )}
           </div>

@@ -5,6 +5,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementUpload } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
+import { Button, Modal } from '../../ui';
 
 const STEPS = [
   { id: 'upload', labelKey: 'bankStatementStepUpload' },
@@ -82,145 +83,117 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="noorix-modal-backdrop"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'var(--noorix-modal-overlay-bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2000,
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-      }}
+    <Modal
+      open
+      onClose={onClose}
+      title={t('bankStatementUploadTitle')}
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            {step >= 4 ? t('close') : t('cancel')}
+          </Button>
+          {step >= 4 && result?.status === 'mapping' && (
+            <Button variant="primary" onClick={onClose}>
+              {t('bankStatementGoToMapping')}
+            </Button>
+          )}
+        </>
+      }
     >
-      <div
-        className="noorix-surface-card"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 'min(520px, 95vw)',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          padding: 24,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{t('bankStatementUploadTitle')}</h2>
-          <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onClose} aria-label="إغلاق">
-            ✕
-          </button>
-        </div>
+      {/* خطوات التقدم */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
+        {STEPS.map((s, i) => (
+          <div
+            key={s.id}
+            style={{
+              flex: 1,
+              height: 4,
+              borderRadius: 2,
+              background: i <= step ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
+            }}
+            title={t(s.labelKey)}
+          />
+        ))}
+      </div>
 
-        {/* خطوات التقدم */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
-          {STEPS.map((s, i) => (
-            <div
-              key={s.id}
-              style={{
-                flex: 1,
-                height: 4,
-                borderRadius: 2,
-                background: i <= step ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
-              }}
-              title={t(s.labelKey)}
-            />
-          ))}
+      {error && (
+        <div
+          style={{
+            padding: 12,
+            marginBottom: 16,
+            background: 'rgba(239,68,68,0.1)',
+            borderRadius: 8,
+            color: 'var(--noorix-error)',
+            fontSize: 13,
+          }}
+        >
+          {error}
         </div>
+      )}
 
-        {error && (
+      {!file ? (
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            border: `2px dashed ${isDragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
+            borderRadius: 12,
+            padding: 40,
+            textAlign: 'center',
+            cursor: 'pointer',
+            background: isDragging ? 'rgba(37,99,235,0.05)' : 'var(--noorix-bg-muted)',
+          }}
+        >
+          <div style={{ fontSize: 36, marginBottom: 8 }}></div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--noorix-text)' }}>
+            {t('bankStatementDragDrop')}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
+            Excel (.xlsx, .xls) أو CSV
+          </div>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleInputChange} hidden />
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: 12 }}>
           <div
             style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
               padding: 12,
-              marginBottom: 16,
-              background: 'rgba(239,68,68,0.1)',
+              background: 'var(--noorix-bg-muted)',
               borderRadius: 8,
-              color: 'var(--noorix-error)',
-              fontSize: 13,
             }}
           >
-            {error}
-          </div>
-        )}
-
-        {!file ? (
-          <div
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: `2px dashed ${isDragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
-              borderRadius: 12,
-              padding: 40,
-              textAlign: 'center',
-              cursor: 'pointer',
-              background: isDragging ? 'rgba(37,99,235,0.05)' : 'var(--noorix-bg-muted)',
-            }}
-          >
-            <div style={{ fontSize: 36, marginBottom: 8 }}></div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--noorix-text)' }}>
-              {t('bankStatementDragDrop')}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
-              Excel (.xlsx, .xls) أو CSV
-            </div>
-            <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleInputChange} hidden />
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: 12 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: 12,
-                background: 'var(--noorix-bg-muted)',
-                borderRadius: 8,
-              }}
-            >
-              <span style={{ fontSize: 24 }}></span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, color: 'var(--noorix-text)' }}>{file.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-                  {raw?.length ?? 0} صف • {step >= 4 ? t('bankStatementStepDone') : STEPS[step] && t(STEPS[step].labelKey)}
-                </div>
+            <span style={{ fontSize: 24 }}></span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, color: 'var(--noorix-text)' }}>{file.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                {raw?.length ?? 0} صف • {step >= 4 ? t('bankStatementStepDone') : STEPS[step] && t(STEPS[step].labelKey)}
               </div>
-              {step >= 4 && (
-                <span style={{ color: 'var(--noorix-success)', fontSize: 14 }}>✓</span>
-              )}
             </div>
-            {result?.status === 'mapping' && (
-              <div
-                style={{
-                  padding: 12,
-                  background: 'rgba(34,197,94,0.1)',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  color: 'var(--noorix-text)',
-                }}
-              >
-                {t('bankStatementMappingRequired')}
-              </div>
+            {step >= 4 && (
+              <span style={{ color: 'var(--noorix-success)', fontSize: 14 }}>✓</span>
             )}
           </div>
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20, gap: 8 }}>
-          <button type="button" className="noorix-btn noorix-btn--ghost" onClick={onClose}>
-            {step >= 4 ? t('close') : t('cancel')}
-          </button>
-          {step >= 4 && result?.status === 'mapping' && (
-            <button type="button" className="noorix-btn noorix-btn--primary" onClick={onClose}>
-              {t('bankStatementGoToMapping')}
-            </button>
+          {result?.status === 'mapping' && (
+            <div
+              style={{
+                padding: 12,
+                background: 'rgba(34,197,94,0.1)',
+                borderRadius: 8,
+                fontSize: 13,
+                color: 'var(--noorix-text)',
+              }}
+            >
+              {t('bankStatementMappingRequired')}
+            </div>
           )}
         </div>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 }

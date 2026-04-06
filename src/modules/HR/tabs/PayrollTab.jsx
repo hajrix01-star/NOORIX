@@ -17,6 +17,7 @@ import { PayrollRunFormModal } from '../components/PayrollRunFormModal';
 import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
+import { Button, Badge, Input } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
@@ -24,6 +25,8 @@ const STATUS_MAP = {
   draft: { bg: 'rgba(100,116,139,0.1)', color: '#64748b', labelKey: 'payrollDraft' },
   completed: { bg: 'rgba(22,163,74,0.1)', color: '#16a34a', labelKey: 'payrollPaid' },
 };
+
+const statusColorMap = { draft: 'gray', completed: 'green' };
 
 export default function PayrollTab() {
   const { t } = useTranslation();
@@ -118,22 +121,18 @@ export default function PayrollTab() {
 
   const columns = useMemo(() => [
     { key: 'runNumber', label: t('payrollRunNumber'), sortable: true, width: 150, minWidth: 140,
-      render: (v) => <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', whiteSpace: 'nowrap', fontSize: 13 }}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-accent" style={{ whiteSpace: 'nowrap', fontSize: 13 }}>{v || '—'}</span> },
     { key: 'month', label: t('payrollMonth'), sortable: true, width: 130, minWidth: 120,
       render: (v) => <span style={{ fontSize: 13 }}>{v || '—'}</span> },
     { key: 'grossTotal', label: t('payrollGross'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{hrFmt(v)}</span> },
+      render: (v) => <span className="nx-cell-num" style={{ fontSize: 13 }}>{hrFmt(v)}</span> },
     { key: 'netTotal', label: t('payrollNet'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v) => <span style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{hrFmt(v)}</span> },
+      render: (v) => <span className="nx-cell-num" style={{ fontWeight: 700, fontSize: 13 }}>{hrFmt(v)}</span> },
     { key: 'status', label: t('payrollStatus'), width: 120, minWidth: 110,
       render: (v) => (
-        <span style={{
-          padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-          background: statusStyles[v]?.bg || 'rgba(100,116,139,0.1)',
-          color: statusStyles[v]?.color || '#64748b',
-        }}>
+        <Badge color={statusColorMap[v] || 'gray'} size="sm">
           {statusStyles[v]?.label || v}
-        </span>
+        </Badge>
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
@@ -167,14 +166,14 @@ export default function PayrollTab() {
   }));
 
   const renderMobileCard = useCallback((row) => {
-    const ss = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
+    const ss = statusStyles[row.status] || { label: row.status };
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-          <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14 }}>{row.runNumber}</span>
-          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: ss.bg, color: ss.color, flexShrink: 0 }}>{ss.label}</span>
+          <span className="nx-cell-num nx-cell-accent" style={{ fontSize: 14 }}>{row.runNumber}</span>
+          <Badge color={statusColorMap[row.status] || 'gray'} size="sm" style={{ flexShrink: 0 }}>{ss.label}</Badge>
         </div>
-        {row.month && <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{row.month}</div>}
+        {row.month && <div className="nx-cell-muted" style={{ marginBottom: 8 }}>{row.month}</div>}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('payrollGross')}</div>
@@ -223,34 +222,23 @@ export default function PayrollTab() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div className="nx-toolbar">
         <label style={{ fontSize: 13, fontWeight: 600 }}>{t('dateFilterYear')}</label>
-        <select
-          value={year}
-          onChange={(e) => setYear(parseInt(e.target.value, 10))}
-          style={{
-            padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)', fontSize: 14,
-          }}
-        >
+        <Input type="select" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
           {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
             <option key={y} value={y}>{y}</option>
           ))}
-        </select>
+        </Input>
         <div style={{ marginRight: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" className="noorix-btn-nav" onClick={handleExportExcel}>{t('exportExcel')}</button>
-          <button type="button" className="noorix-btn-nav" onClick={handlePrint}>{t('printPayroll')}</button>
+          <Button onClick={handleExportExcel}>{t('exportExcel')}</Button>
+          <Button onClick={handlePrint}>{t('printPayroll')}</Button>
         </div>
-        <button
-          type="button"
-          className="noorix-btn-nav noorix-btn-primary"
-          onClick={() => setShowCreate(true)}
-        >
+        <Button variant="primary" onClick={() => setShowCreate(true)}>
           {t('createPayrollRun')}
-        </button>
+        </Button>
       </div>
 
       <SmartTable
@@ -268,8 +256,8 @@ export default function PayrollTab() {
         title={t('hrTabPayroll')}
         badge={
           <>
-            <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>— {year}</span>
-            <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{allFilteredData.length}</span>
+            <span className="nx-cell-muted">— {year}</span>
+            <span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>
           </>
         }
         searchValue={searchText}

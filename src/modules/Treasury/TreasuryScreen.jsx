@@ -9,6 +9,7 @@ import { fmt, sumAmounts } from '../../utils/format';
 import VaultCard          from './components/VaultCard';
 import VaultFormModal     from './components/VaultFormModal';
 import VaultTransactionsModal from './components/VaultTransactionsModal';
+import { Button } from '../../ui';
 
 export default function TreasuryScreen() {
   const { activeCompanyId } = useApp();
@@ -138,29 +139,28 @@ export default function TreasuryScreen() {
   );
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type}
         onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       {/* هيدر */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div className="nx-page-header">
         <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{t('vaults')}</h1>
+          <h1 className="nx-page-title">{t('vaults')}</h1>
           {hasCompany && isFetching && !isLoading && (
             <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--noorix-accent-blue)', fontWeight: 600 }}>
               {t('vaultsSyncing')}
             </p>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="nx-toolbar">
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--noorix-text-muted)', cursor: 'pointer' }}>
             <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
             {t('showArchived')}
           </label>
-          <button type="button" className="noorix-btn-nav noorix-btn-primary"
-            onClick={() => { setShowAddForm(true); setSaveError(''); }}>
+          <Button variant="primary" onClick={() => { setShowAddForm(true); setSaveError(''); }}>
             + {t('addVault')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -257,7 +257,7 @@ export default function TreasuryScreen() {
               </div>
               <h3 style={{ margin: '0 0 6px', fontSize: 15 }}>{t('noVaults')}</h3>
               <p style={{ margin: '0 0 18px', color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('addFirstVault')}</p>
-              <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={() => setShowAddForm(true)}>{t('addVault')}</button>
+              <Button variant="primary" onClick={() => setShowAddForm(true)}>{t('addVault')}</Button>
             </div>
           )}
         </>

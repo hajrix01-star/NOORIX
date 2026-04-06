@@ -24,6 +24,7 @@ import {
   mergeOvertimeWorkDaysIntoSchedule,
 } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { Button, Input, FormRow } from '../../../ui';
 
 function toDecimal(value) {
   return new Decimal(value || 0);
@@ -149,12 +150,6 @@ export default function SalaryCalcTab() {
       },
     });
   }
-
-  const inputStyle = {
-    width: '100%', padding: '10px 12px', borderRadius: 8,
-    border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-    fontSize: 14, fontFamily: 'inherit',
-  };
 
   const employeeAllowanceRows = useMemo(() => {
     if (!emp) return [];
@@ -284,12 +279,7 @@ export default function SalaryCalcTab() {
       <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>{t('hrTabSalaryCalc')}</h3>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('selectEmployee')}</label>
-        <select
-          value={selectedEmployee}
-          onChange={(e) => setSelectedEmployee(e.target.value)}
-          style={inputStyle}
-        >
+        <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)}>
           <option value="">— {t('salaryCalcSelectOrEnter') || 'اختر أو أدخل يدوياً'} —</option>
           {employees.map((e) => (
             <option key={e.id} value={e.id}>
@@ -297,72 +287,57 @@ export default function SalaryCalcTab() {
               {e.workHours ? ` (${parseWorkHours(e.workHours)} ${t('salaryCalcHour')})` : ''}
             </option>
           ))}
-        </select>
+        </Input>
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-          {t('salaryCalcGross')} <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 400 }}>(الإجمالي الشهري شامل الأوفر تايم)</span>
-        </label>
-        <input
+        <Input
           type="number"
+          label={t('salaryCalcGross')}
           min="0"
           step="0.01"
           value={targetTotal}
           onChange={(e) => setTargetTotal(e.target.value)}
-          style={inputStyle}
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+      <FormRow style={{ marginBottom: 16 }}>
         <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-            {t('salaryCalcHoursPerDay')} <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 400 }}>({t('salaryCalcSaudiStandard') || 'السعودية: 8'})</span>
-          </label>
-          <input
+          <Input
             type="number"
+            label={t('salaryCalcHoursPerDay')}
             min="1"
             max="12"
             step="0.5"
             value={hoursPerDay}
             onChange={(e) => setHoursPerDay(e.target.value)}
-            style={inputStyle}
           />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('salaryCalcDaysPerMonth')} <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 400 }}>({t('salaryCalcForDeduction') || 'للخصم'})</span></label>
-          <input type="number" min="1" max="31" value={daysPerMonth} onChange={(e) => setDaysPerMonth(e.target.value)} style={inputStyle} />
+          <Input
+            type="number"
+            label={t('salaryCalcDaysPerMonth')}
+            min="1"
+            max="31"
+            value={daysPerMonth}
+            onChange={(e) => setDaysPerMonth(e.target.value)}
+          />
           <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6, lineHeight: 1.45 }}>
             {t('salaryCalcOvertimeWorkDaysHint')}
           </div>
         </div>
-      </div>
+      </FormRow>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
-        <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('housingAllowance')}</label>
-          <input type="number" step="0.01" min="0" value={housingAllowance} onChange={(e) => setHousingAllowance(e.target.value)} style={inputStyle} />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('transportAllowance')}</label>
-          <input type="number" step="0.01" min="0" value={transportAllowance} onChange={(e) => setTransportAllowance(e.target.value)} style={inputStyle} />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('otherAllowance')}</label>
-          <input type="number" step="0.01" min="0" value={otherAllowance} onChange={(e) => setOtherAllowance(e.target.value)} style={inputStyle} />
-        </div>
+        <Input type="number" step="0.01" min="0" label={t('housingAllowance')} value={housingAllowance} onChange={(e) => setHousingAllowance(e.target.value)} />
+        <Input type="number" step="0.01" min="0" label={t('transportAllowance')} value={transportAllowance} onChange={(e) => setTransportAllowance(e.target.value)} />
+        <Input type="number" step="0.01" min="0" label={t('otherAllowance')} value={otherAllowance} onChange={(e) => setOtherAllowance(e.target.value)} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-        <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('salaryCalcVacationDays')}</label>
-          <input type="number" min="0" value={vacationDays} onChange={(e) => setVacationDays(e.target.value)} style={inputStyle} />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>ساعات الأوفر تايم اليومية</label>
-          <input type="number" value={overtimeHoursPerDay} readOnly style={{ ...inputStyle, background: 'var(--noorix-bg-muted)' }} />
-        </div>
-      </div>
+      <FormRow style={{ marginBottom: 20 }}>
+        <Input type="number" min="0" label={t('salaryCalcVacationDays')} value={vacationDays} onChange={(e) => setVacationDays(e.target.value)} />
+        <Input type="number" label="ساعات الأوفر تايم اليومية" value={overtimeHoursPerDay} readOnly style={{ background: 'var(--noorix-bg-muted)' }} />
+      </FormRow>
 
       <div className="noorix-result-panel" style={{ marginBottom: 20 }}>
         <div className="noorix-result-panel__stripe" />
@@ -424,24 +399,21 @@ export default function SalaryCalcTab() {
       )}
 
       {emp && (
-        <button
-          type="button"
-          className="noorix-btn-nav noorix-btn-success"
+        <Button
+          variant="success"
           onClick={handleUpdateSalary}
           disabled={updateMutation.isPending || basic.lte(0) || inverseWarning}
           style={{ width: '100%', padding: 12, fontWeight: 700 }}
         >
           {updateMutation.isPending ? t('saving') : (t('salaryCalcUpdateEmployee') || 'تحديث الراتب للموظف')}
-        </button>
+        </Button>
       )}
-      <button
-        type="button"
-        className="noorix-btn-nav"
+      <Button
         onClick={handlePrint}
         style={{ width: '100%', padding: 10, marginTop: 8 }}
       >
         {t('printCalc')}
-      </button>
+      </Button>
 
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onClose={() => setToast((p) => ({ ...p, visible: false }))} />
     </div>

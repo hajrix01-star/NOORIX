@@ -8,6 +8,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
+import { Button, Input } from '../../ui';
 
 const STORAGE_KEY = 'noorix_tax_report_v1';
 
@@ -244,27 +245,25 @@ export default function TaxReportTab() {
 
   return (
     <div style={{ display: 'grid', gap: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="nx-page-header">
         <div>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{lang === 'ar' ? 'تقرير الضرائب — نموذج الإفصاح الضريبي' : 'Tax Report — ZATCA Disclosure Form'}</h2>
           <p style={{ marginTop: 6, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
             {lang === 'ar' ? 'مطابق لنموذج مصلحة الزكاة والضريبة والجمارك. جميع الحقول قابلة للتعديل.' : 'Matches ZATCA tax disclosure form. All fields are editable.'}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('reportYear')}</label>
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
+        <div className="nx-toolbar">
+          <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {[currentYear, currentYear - 1, currentYear - 2].map((y) => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <label style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{lang === 'ar' ? 'الفترة' : 'Period'}</label>
-          <select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
+          </Input>
+          <Input type="select" label={lang === 'ar' ? 'الفترة' : 'Period'} value={period} onChange={(e) => setPeriod(e.target.value)}>
             {periodOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <button type="button" className="noorix-btn-nav" onClick={handleImportFromSystem} disabled={!activeCompanyId || importLoading}>
+          </Input>
+          <Button onClick={handleImportFromSystem} disabled={!activeCompanyId || importLoading}>
             {importLoading ? t('loading') : (lang === 'ar' ? 'استيراد من النظام' : 'Import from system')}
-          </button>
-          <button type="button" className="noorix-btn-nav" onClick={handlePrint}>{t('print')}</button>
-          <button type="button" className="noorix-btn-nav" onClick={handleExportExcel}>{t('exportExcel')}</button>
+          </Button>
+          <Button onClick={handlePrint}>{t('print')}</Button>
+          <Button onClick={handleExportExcel}>{t('exportExcel')}</Button>
         </div>
       </div>
 

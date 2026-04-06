@@ -7,12 +7,7 @@ import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { updateInvoice } from '../../../services/api';
 import { fmt } from '../../../utils/format';
-
-const inputBase = {
-  width: '100%', padding: '8px 12px', borderRadius: 8, fontSize: 13,
-  border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)', fontFamily: 'inherit', boxSizing: 'border-box',
-};
+import { Button, Input, Modal } from '../../../ui';
 
 export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClose }) {
   const { t } = useTranslation();
@@ -93,119 +88,92 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
   if (!invoice) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.45)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose?.()}
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={t('editInvoice')}
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button variant="success" disabled={saving} onClick={handleSave}>
+            {saving ? t('saving') : t('saveChanges')}
+          </Button>
+        </>
+      }
     >
-      <div
-        className="noorix-surface-card"
-        style={{
-          borderRadius: 12, maxWidth: 480, width: '100%',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)', overflow: 'hidden',
-          display: 'flex', flexDirection: 'column', maxHeight: '90vh',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--noorix-border)', flexShrink: 0 }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{t('editInvoice')}</h3>
-          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-            {invoice.supplierInvoiceNumber || invoice.invoiceNumber}
-          </p>
+      <div className="invoice-edit-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <p style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+          {invoice.supplierInvoiceNumber || invoice.invoiceNumber}
+        </p>
+
+        {error && (
+          <div style={{ padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#dc2626', fontSize: 13 }}>
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('supplier')}</label>
+          <SupplierSelect
+            suppliers={suppliers}
+            value={form.supplierId}
+            onChange={(v) => updateField('supplierId', v)}
+            bookmarkedIds={[]}
+            placeholder={t('selectSupplier')}
+          />
         </div>
 
-        <div className="invoice-edit-modal-body" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {error && (
-            <div style={{ padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#dc2626', fontSize: 13 }}>
-              {error}
+        <Input
+          label={`${t('supplierInvoiceNumber')} *`}
+          value={form.supplierInvoiceNumber}
+          onChange={(e) => updateField('supplierInvoiceNumber', e.target.value)}
+          placeholder={t('invoiceNumberPlaceholder')}
+        />
+
+        <Input
+          type="select"
+          label={t('kind')}
+          value={form.kind}
+          onChange={(e) => updateField('kind', e.target.value)}
+        >
+          <option value="purchase">{t('purchaseType')}</option>
+          <option value="expense">{t('expenseType')}</option>
+        </Input>
+
+        <div>
+          <Input
+            type="number"
+            min="0.01"
+            step="0.01"
+            label={t('totalAmountInclTax') || 'الإجمالي (شامل الضريبة) *'}
+            value={form.totalAmount}
+            onChange={(e) => updateField('totalAmount', e.target.value)}
+            style={{ fontFamily: 'var(--noorix-font-numbers)' }}
+          />
+          {form.totalAmount && parseFloat(form.totalAmount) > 0 && (
+            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
+              {t('netShort')}: {form.netAmount} | {t('tax')}: {form.taxAmount}
             </div>
           )}
-
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('supplier')}</label>
-            <SupplierSelect
-              suppliers={suppliers}
-              value={form.supplierId}
-              onChange={(v) => updateField('supplierId', v)}
-              bookmarkedIds={[]}
-              placeholder={t('selectSupplier')}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('supplierInvoiceNumber')} *</label>
-            <input
-              value={form.supplierInvoiceNumber}
-              onChange={(e) => updateField('supplierInvoiceNumber', e.target.value)}
-              style={inputBase}
-              placeholder={t('invoiceNumberPlaceholder')}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('kind')}</label>
-            <select value={form.kind} onChange={(e) => updateField('kind', e.target.value)} style={inputBase}>
-              <option value="purchase">{t('purchaseType')}</option>
-              <option value="expense">{t('expenseType')}</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('totalAmountInclTax') || 'الإجمالي (شامل الضريبة) *'}</label>
-            <input
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={form.totalAmount}
-              onChange={(e) => updateField('totalAmount', e.target.value)}
-              style={{ ...inputBase, fontFamily: 'var(--noorix-font-numbers)' }}
-            />
-            {form.totalAmount && parseFloat(form.totalAmount) > 0 && (
-              <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
-                {t('netShort')}: {form.netAmount} | {t('tax')}: {form.taxAmount}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('transactionDateLabel')}</label>
-            <input
-              type="date"
-              value={form.transactionDate}
-              onChange={(e) => updateField('transactionDate', e.target.value)}
-              style={inputBase}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('notesLabel')}</label>
-            <input
-              value={form.notes}
-              onChange={(e) => updateField('notes', e.target.value)}
-              style={inputBase}
-              placeholder={t('invoiceNotesPlaceholder')}
-            />
-          </div>
         </div>
 
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--noorix-border)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
-          <button type="button" className="noorix-btn-nav" onClick={onClose}>
-            {t('cancel')}
-          </button>
-          <button
-            type="button"
-            className="noorix-btn-nav noorix-btn-success"
-            disabled={saving}
-            onClick={handleSave}
-          >
-            {saving ? t('saving') : t('saveChanges')}
-          </button>
-        </div>
+        <Input
+          type="date"
+          label={t('transactionDateLabel')}
+          value={form.transactionDate}
+          onChange={(e) => updateField('transactionDate', e.target.value)}
+        />
+
+        <Input
+          label={t('notesLabel')}
+          value={form.notes}
+          onChange={(e) => updateField('notes', e.target.value)}
+          placeholder={t('invoiceNotesPlaceholder')}
+        />
       </div>
-    </div>
+    </Modal>
   );
 }

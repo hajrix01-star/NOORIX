@@ -14,12 +14,11 @@ const REPORT_SUB_LINKS = [
 
 export default function ReportsLayout() {
   const { t } = useTranslation();
-  const navClass = ({ isActive }) => `noorix-btn-nav${isActive ? ' noorix-btn-nav--active' : ''}`;
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div className="nx-screen">
       <div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('reports')}</h1>
+        <h1 className="nx-page-title">{t('reports')}</h1>
       </div>
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -28,7 +27,6 @@ export default function ReportsLayout() {
             <NavLink
               key={link.to}
               to={link.to}
-              className={navClass}
               style={({ isActive }) => ({
                 margin: 0,
                 borderRadius: 0,

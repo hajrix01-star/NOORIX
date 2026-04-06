@@ -3,6 +3,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS } from '../constants/treasuryConstants';
+import { Badge } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
 export function parseVaultType(type) {
@@ -251,33 +252,21 @@ const VaultCard = memo(function VaultCard({
           display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center',
         }}>
           {vault.isSalesChannel && (
-            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700, background: '#16a34a14', color: '#16a34a', border: '1px solid #16a34a25' }}>
-              {t('salesChannel')}
-            </span>
+            <Badge color="green" size="sm">{t('salesChannel')}</Badge>
           )}
           {vault.showAsPaymentMethod === false && (
-            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700, background: '#f59e0b14', color: '#d97706', border: '1px solid #f59e0b30' }}>
-              {t('paymentMethodHiddenBadge')}
-            </span>
+            <Badge color="amber" size="sm">{t('paymentMethodHiddenBadge')}</Badge>
           )}
           {vault.isSalesChannel && vault.paymentMethod && (() => {
             const pm = PAYMENT_METHODS.find((m) => m.value === vault.paymentMethod);
             const pmLabel = pm?.labelKey ? t(pm.labelKey) : (pm?.label ?? vault.paymentMethod);
-            return (
-              <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 600, background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)', border: '1px solid var(--noorix-border)' }}>
-                {pmLabel}
-              </span>
-            );
+            return <Badge color="gray" size="sm">{pmLabel}</Badge>;
           })()}
           {vault.account?.code && (
-            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 600, background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)', border: '1px solid var(--noorix-border)', marginRight: 'auto' }}>
-              {vault.account.code}
-            </span>
+            <Badge color="gray" size="sm" style={{ marginRight: 'auto' }}>{vault.account.code}</Badge>
           )}
           {isArchived && (
-            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700, background: '#d9780614', color: '#d97806', border: '1px solid #d9780625' }}>
-              {t('archived')}
-            </span>
+            <Badge color="amber" size="sm">{t('archived')}</Badge>
           )}
         </div>
       )}

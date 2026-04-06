@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Button } from '../../../ui';
 import {
   createOcrSupplier, updateOcrSupplier, deleteOcrSupplier, addSupplierAlias,
   bulkDeleteOcrSuppliers,
@@ -21,10 +22,10 @@ function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
       <input placeholder={t('ocrSupplierTax')} value={form.taxNumber} onChange={f('taxNumber')} style={inputStyle} />
       <input placeholder={t('ocrSupplierPhone')} value={form.phone} onChange={f('phone')} style={inputStyle} />
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={() => onSave(form)} disabled={loading || !form.nameAr} className="noorix-btn noorix-btn--primary" style={{ flex: 1 }}>
+        <Button onClick={() => onSave(form)} disabled={loading || !form.nameAr} variant="primary" style={{ flex: 1 }}>
           {loading ? '...' : t('ocrSave')}
-        </button>
-        <button onClick={onCancel} className="noorix-btn" style={{ flex: 1 }}>{t('ocrCancel')}</button>
+        </Button>
+        <Button onClick={onCancel} style={{ flex: 1 }}>{t('ocrCancel')}</Button>
       </div>
     </div>
   );
@@ -117,7 +118,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
           {search && <button className="inv-search-clear" onClick={() => setSearch('')}>✕</button>}
         </div>
 
-        <button onClick={() => setAdding(true)} className="noorix-btn noorix-btn--primary" style={{ fontSize: 13 }}>+ {t('ocrAddSupplier')}</button>
+        <Button onClick={() => setAdding(true)} variant="primary" size="sm">+ {t('ocrAddSupplier')}</Button>
 
         {selected.size > 0 && (
           <button className="inv-delete-btn" onClick={handleBulkDelete} disabled={deleting}>
@@ -156,8 +157,8 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
                   </div>
                   <span className="ocr-catalog-badge">{s._count?.invoices || 0} {isAr ? 'فاتورة' : 'inv.'}</span>
                   <div style={{ display: 'flex', gap: 4 }}>
-                    <button onClick={() => setEditing(s)} className="noorix-btn" style={{ padding: '5px 10px', fontSize: 12 }}>{t('ocrEdit')}</button>
-                    <button onClick={() => handleDelete(s.id)} className="noorix-btn" style={{ padding: '5px 10px', fontSize: 12, color: '#b91c1c' }}>{t('ocrDelete')}</button>
+                    <Button onClick={() => setEditing(s)} size="sm">{t('ocrEdit')}</Button>
+                    <Button onClick={() => handleDelete(s.id)} size="sm" variant="danger">{t('ocrDelete')}</Button>
                   </div>
                 </div>
               )}
@@ -194,7 +195,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
                   <option value="ar">AR</option>
                   <option value="en">EN</option>
                 </select>
-                <button onClick={handleAddAlias} className="noorix-btn noorix-btn--primary">+</button>
+                <Button onClick={handleAddAlias} variant="primary">+</Button>
               </div>
             </div>
           </div>

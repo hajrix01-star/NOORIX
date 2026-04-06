@@ -9,6 +9,7 @@ import { useSales } from '../../../hooks/useSales';
 import { CARD_COLORS, CARD_BORDER_RADIUS } from '../../../utils/cardStyles';
 import { fmt } from '../../../utils/format';
 import CalendarDayDetailPanel from './CalendarDayDetailPanel';
+import { Button, Input, Modal } from '../../../ui';
 import {
   getStoredTargets,
   setStoredTargets,
@@ -308,17 +309,15 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           <div style={{ fontSize: 13, fontWeight: 700, color: CARD_COLORS.sales.accent }}>
             {t('dashboardCalendar')} — {monthLabel} {year}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className={`noorix-btn-nav ${isSelectionMode ? 'noorix-btn-primary' : ''}`}
+          <div className="nx-toolbar">
+            <Button
+              variant={isSelectionMode ? 'primary' : undefined}
               onClick={() => { setIsSelectionMode((p) => !p); if (isSelectionMode) setSelectedDates(new Set()); }}
-              style={{ padding: '6px 10px', fontSize: 11 }}
             >
               {isSelectionMode ? '✓ ' + t('dashboardSelectDaysModeOff') : '☑ ' + t('dashboardSelectDaysMode')}
-            </button>
-            <button type="button" className="noorix-btn-nav" onClick={() => setShowTargetsPanel(!showTargetsPanel)} style={{ padding: '6px 10px', fontSize: 11 }}>⚙ {t('dashboardSetTarget')}</button>
-            <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handlePrintCalendar} style={{ padding: '6px 10px', fontSize: 11 }}>{t('print')}</button>
+            </Button>
+            <Button onClick={() => setShowTargetsPanel(!showTargetsPanel)}>⚙ {t('dashboardSetTarget')}</Button>
+            <Button variant="primary" onClick={handlePrintCalendar}>{t('print')}</Button>
           </div>
         </div>
 
@@ -327,14 +326,22 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('dashboardTargetOverall')}</div>
             {editingTarget ? (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-                <input type="number" min="0" step="0.01" value={targetInput} onChange={(e) => setTargetInput(e.target.value)} placeholder={t('dashboardSalesTarget')} style={{ width: 120, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--noorix-border)', fontSize: 12 }} />
-                <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handleSaveOverallTarget} style={{ padding: '6px 10px', fontSize: 11 }}>{t('save')}</button>
-                <button type="button" className="noorix-btn-nav" onClick={() => { setEditingTarget(false); setTargetInput(''); }} style={{ padding: '6px 10px', fontSize: 11 }}>{t('cancel')}</button>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={targetInput}
+                  onChange={(e) => setTargetInput(e.target.value)}
+                  placeholder={t('dashboardSalesTarget')}
+                  style={{ width: 120 }}
+                />
+                <Button variant="primary" onClick={handleSaveOverallTarget}>{t('save')}</Button>
+                <Button onClick={() => { setEditingTarget(false); setTargetInput(''); }}>{t('cancel')}</Button>
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
                 <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{targets.overall != null ? fmt(targets.overall, 2) : '—'} ﷼</span>
-                <button type="button" className="noorix-btn-nav" onClick={() => { setTargetInput(targets.overall != null ? String(targets.overall) : ''); setEditingTarget(true); }} style={{ padding: '4px 8px', fontSize: 10 }}>{t('edit')}</button>
+                <Button onClick={() => { setTargetInput(targets.overall != null ? String(targets.overall) : ''); setEditingTarget(true); }}>{t('edit')}</Button>
               </div>
             )}
             <div style={{ fontWeight: 700, marginBottom: 6 }}>{t('dashboardTargetByDay')}</div>
@@ -342,14 +349,14 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
               {DOW_KEYS.map((dow) => (
                 <div key={dow} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ minWidth: 50, fontSize: 11 }}>{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
-                  <input
+                  <Input
                     type="number"
                     min="0"
                     step="0.01"
                     placeholder="—"
                     defaultValue={targets.byDow[dow] ?? ''}
                     onBlur={(e) => handleSaveDowTarget(dow, e.target.value)}
-                    style={{ width: 70, padding: '4px 6px', borderRadius: 4, border: '1px solid var(--noorix-border)', fontSize: 11 }}
+                    style={{ width: 70 }}
                   />
                 </div>
               ))}
@@ -442,11 +449,11 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         {isSelectionMode && selectedDatesSorted.length > 0 && (
           <div style={{ marginTop: 12, padding: 10, background: 'rgba(37,99,235,0.08)', borderRadius: 8, border: '1px solid rgba(37,99,235,0.2)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6 }}>{t('dashboardSelectedDays')}: {selectedDatesSorted.length}</div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={() => setShowAddSpecialModal(true)} style={{ padding: '6px 12px', fontSize: 11 }}>
+            <div className="nx-toolbar">
+              <Button variant="primary" onClick={() => setShowAddSpecialModal(true)}>
                 + {t('dashboardAddAsSpecialDays')}
-              </button>
-              <button type="button" className="noorix-btn-nav" onClick={() => setSelectedDates(new Set())} style={{ padding: '6px 10px', fontSize: 10 }}>{t('cancel')}</button>
+              </Button>
+              <Button onClick={() => setSelectedDates(new Set())}>{t('cancel')}</Button>
             </div>
           </div>
         )}
@@ -510,27 +517,26 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
       </div>
 
       {/* نافذة إضافة أيام خاصة من التحديد */}
-      {showAddSpecialModal && selectedDatesSorted.length > 0 && (
-        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 24 }}
-          onClick={() => setShowAddSpecialModal(false)}>
-          <div className="noorix-modal-card" style={{ borderRadius: 12, padding: 20, maxWidth: 400, width: '100%', border: '1px solid var(--noorix-border)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }} onClick={(e) => e.stopPropagation()}>
-            <h4 style={{ margin: '0 0 12px', fontSize: 16 }}>{t('dashboardAddAsSpecialDays')}</h4>
-            <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-              {selectedDatesSorted[0]} — {selectedDatesSorted[selectedDatesSorted.length - 1]} ({selectedDatesSorted.length} {lang === 'ar' ? 'أيام' : 'days'})
-            </p>
-            <input
-              type="text"
-              value={newSpecialName}
-              onChange={(e) => setNewSpecialName(e.target.value)}
-              placeholder={t('dashboardSpecialDayName')}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', fontSize: 13, marginBottom: 16 }}
-            />
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" className="noorix-btn-nav" onClick={() => { setShowAddSpecialModal(false); setNewSpecialName(''); }}>{t('cancel')}</button>
-              <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handleAddSelectedAsSpecial}>{t('save')}</button>
-            </div>
+      {selectedDatesSorted.length > 0 && (
+        <Modal
+          open={showAddSpecialModal}
+          onClose={() => { setShowAddSpecialModal(false); setNewSpecialName(''); }}
+          title={t('dashboardAddAsSpecialDays')}
+          size="sm"
+        >
+          <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+            {selectedDatesSorted[0]} — {selectedDatesSorted[selectedDatesSorted.length - 1]} ({selectedDatesSorted.length} {lang === 'ar' ? 'أيام' : 'days'})
+          </p>
+          <Input
+            value={newSpecialName}
+            onChange={(e) => setNewSpecialName(e.target.value)}
+            placeholder={t('dashboardSpecialDayName')}
+          />
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+            <Button onClick={() => { setShowAddSpecialModal(false); setNewSpecialName(''); }}>{t('cancel')}</Button>
+            <Button variant="primary" onClick={handleAddSelectedAsSpecial}>{t('save')}</Button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

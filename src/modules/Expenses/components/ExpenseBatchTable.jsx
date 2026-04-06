@@ -12,6 +12,7 @@ import { fmt, calcReverseVat } from '../../../utils/format';
 import Toast from '../../../components/Toast';
 import SmartTable from '../../../components/common/SmartTable';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { Button, Input } from '../../../ui';
 
 const EMPTY_ROW = () => ({
   key: `${Date.now()}-${Math.random()}`,
@@ -124,25 +125,15 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
   });
 
   const columns = [
-    { key: 'index', label: '#', shrink: true, render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{v}</span> },
+    { key: 'index', label: '#', shrink: true, render: (v) => <span className="nx-cell-muted">{v}</span> },
     {
       key: 'expenseLineId',
       label: 'بند المصروف (يُملأ تلقائياً)',
       render: (_, row) => (
-        <select
+        <Input
+          type="select"
           value={row.expenseLineId}
-          onChange={(e) => {
-            const line = expenseLines.find((l) => l.id === e.target.value);
-            updateRow(row.index - 1, { expenseLineId: e.target.value });
-          }}
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            borderRadius: 6,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-            fontSize: 13,
-          }}
+          onChange={(e) => updateRow(row.index - 1, { expenseLineId: e.target.value })}
         >
           <option value="">— اختر —</option>
           {expenseLines.map((l) => (
@@ -150,28 +141,20 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
               {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? 'ثابت' : 'متغير'})
             </option>
           ))}
-        </select>
+        </Input>
       ),
     },
-    { key: 'categoryName', label: 'الفئة', render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{v}</span> },
-    { key: 'supplierName', label: 'المورد', render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{v}</span> },
+    { key: 'categoryName', label: 'الفئة', render: (v) => <span className="nx-cell-muted">{v}</span> },
+    { key: 'supplierName', label: 'المورد', render: (v) => <span className="nx-cell-muted">{v}</span> },
     {
       key: 'supplierInvoiceNumber',
       label: 'رقم فاتورة المورد',
       render: (v, row) => (
-        <input
+        <Input
           type="text"
           value={v}
           onChange={(e) => updateRow(row.index - 1, { supplierInvoiceNumber: e.target.value })}
           placeholder="مطلوب للفواتير الخاضعة للضريبة"
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            borderRadius: 6,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-            fontSize: 13,
-          }}
         />
       ),
     },
@@ -179,44 +162,27 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       key: 'totalInclusive',
       label: 'الإجمالي',
       render: (v, row) => (
-        <input
+        <Input
           type="number"
           step="0.01"
           min="0"
           value={v}
           onChange={(e) => updateRow(row.index - 1, { totalInclusive: e.target.value })}
           placeholder="0.00"
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            borderRadius: 6,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-            fontSize: 13,
-            fontFamily: 'var(--noorix-font-numbers)',
-          }}
         />
       ),
     },
-    { key: 'net', label: 'الصافي', numeric: true, render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a' }}>{fmt(v)}</span> },
-    { key: 'tax', label: 'الضريبة', numeric: true, render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#d97706' }}>{fmt(v)}</span> },
+    { key: 'net', label: 'الصافي', numeric: true, render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v)}</span> },
+    { key: 'tax', label: 'الضريبة', numeric: true, render: (v) => <span className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(v)}</span> },
     {
       key: 'notes',
       label: 'ملاحظات',
       render: (v, row) => (
-        <input
+        <Input
           type="text"
           value={v}
           onChange={(e) => updateRow(row.index - 1, { notes: e.target.value })}
           placeholder="اختياري"
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            borderRadius: 6,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-            fontSize: 13,
-          }}
         />
       ),
     },
@@ -225,9 +191,9 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       label: '',
       shrink: true,
       render: (_, row) => (
-        <button type="button" onClick={() => removeRow(row.index - 1)} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #fecaca', background: 'rgba(239,68,68,0.06)', color: '#dc2626', cursor: 'pointer', fontSize: 12 }}>
+        <Button variant="danger" size="sm" onClick={() => removeRow(row.index - 1)}>
           حذف
-        </button>
+        </Button>
       ),
     },
   ];
@@ -235,35 +201,26 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ flex: '0 1 auto' }}>
-          <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>تاريخ العملية</label>
-          <input
-            type="date"
-            value={batchDate}
-            onChange={(e) => setBatchDate(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', width: '100%' }}
-          />
-        </div>
+        <Input
+          label="تاريخ العملية"
+          type="date"
+          value={batchDate}
+          onChange={(e) => setBatchDate(e.target.value)}
+        />
         <div style={{ flex: '1 1 160px', minWidth: 0 }}>
-          <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>الخزينة *</label>
-          <select
+          <Input
+            label="الخزينة *"
+            type="select"
             value={vaultId}
             onChange={(e) => setVaultId(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', width: '100%' }}
           >
             <option value="">— اختر الخزينة —</option>
             {activeVaults.map((v) => (
               <option key={v.id} value={v.id}>{v.nameAr || v.nameEn}</option>
             ))}
-          </select>
+          </Input>
         </div>
-        <button
-          type="button"
-          onClick={addRow}
-          style={{ padding: '10px 16px', borderRadius: 8, border: '2px dashed var(--noorix-border)', background: 'transparent', cursor: 'pointer', fontSize: 14, whiteSpace: 'nowrap' }}
-        >
-          + إضافة صف
-        </button>
+        <Button onClick={addRow}>+ إضافة صف</Button>
       </div>
 
       <SmartTable columns={columns} data={tableData} keyExtractor={(r) => r.key} showRowNumbers rowNumberWidth="1%" />
@@ -286,15 +243,14 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
           <div className="noorix-summary-bar__value">{fmt(summary.total)} ﷼</div>
         </div>
       </div>
-      <button
-        type="button"
+      <Button
+        variant="primary"
         onClick={() => saveMutation.mutate()}
         disabled={saveMutation.isPending || validRows.length === 0 || !vaultId}
-        className="noorix-btn-nav noorix-btn-primary"
-        style={{ width: '100%', padding: '12px 16px', marginTop: 12, fontSize: 15, fontWeight: 700 }}
+        style={{ width: '100%', marginTop: 12 }}
       >
         {saveMutation.isPending ? 'جاري الحفظ...' : 'حفظ الدفعة'}
-      </button>
+      </Button>
 
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onClose={() => setToast((p) => ({ ...p, visible: false }))} />
     </div>

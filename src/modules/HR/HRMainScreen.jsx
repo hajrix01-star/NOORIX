@@ -61,12 +61,12 @@ export default function HRMainScreen() {
   }).length;
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="nx-screen">
 
       {/* ── ترويسة الصفحة ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      <div className="nx-page-header">
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('staffTitle')}</h1>
+          <h1 className="nx-page-title">{t('staffTitle')}</h1>
         </div>
         {companyId && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

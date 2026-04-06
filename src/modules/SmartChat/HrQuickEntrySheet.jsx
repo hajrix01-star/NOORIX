@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
+import { Button, Modal } from '../../ui';
 import { getEmployees, createLeave, createDeduction, createMovement, createCustomAllowance } from '../../services/api';
 import { createAdvance } from '../../services/financialApi';
 import { useVaults } from '../../hooks/useVaults';
@@ -58,8 +59,8 @@ const inputBase = {
   fontFamily: 'inherit',
 };
 
-/** @param {{ mode: string, companyId: string, onClose: () => void, onRecorded?: (o: { textAr: string, textEn: string }) => void, variant?: 'sheet' | 'modal' }} props */
-export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, variant = 'sheet' }) {
+/** @param {{ mode: string, companyId: string, onClose: () => void, onRecorded?: (o: { textAr: string, textEn: string }) => void }} props */
+export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
   const { t, lang } = useTranslation();
   const qc = useQueryClient();
   const isAr = lang === 'ar';
@@ -381,94 +382,23 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   };
 
   const segmentBtn = (tab, label) => (
-    <button
-      type="button"
+    <Button
       key={tab}
       onClick={() => { setIncTab(tab); setFormError(''); }}
-      className={incTab === tab ? 'noorix-btn-primary' : 'noorix-btn-nav'}
-      style={{
-        flex: 1,
-        minHeight: 48,
-        borderRadius: 10,
-        fontSize: 14,
-        fontWeight: 700,
-        border: incTab === tab ? undefined : '1px solid var(--noorix-border)',
-      }}
+      variant={incTab === tab ? 'primary' : 'default'}
+      style={{ flex: 1, minHeight: 48 }}
     >
       {label}
-    </button>
+    </Button>
   );
 
-  const isModal = variant === 'modal';
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="hr-sheet-title"
-      dir={dir}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1002,
-        background: 'rgba(0,0,0,0.48)',
-        display: 'flex',
-        alignItems: isModal ? 'center' : 'flex-end',
-        justifyContent: 'center',
-        padding: isModal ? 20 : 0,
-        paddingBottom: isModal ? 20 : 'env(safe-area-inset-bottom)',
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="noorix-surface-card noorix-light-sheet"
-        style={{
-          width: '100%',
-          maxWidth: 480,
-          maxHeight: isModal ? 'min(90vh, 640px)' : 'min(92vh, 680px)',
-          margin: '0 auto',
-          borderRadius: isModal ? 16 : '20px 20px 0 0',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: isModal ? '0 16px 48px rgba(0,0,0,0.2)' : '0 -8px 32px rgba(0,0,0,0.15)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header
-          style={{
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 24 }}>{meta.icon}</span>
-            <h2 id="hr-sheet-title" style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--noorix-text)' }}>
-              {title}
-            </h2>
-          </div>
-          <button
-            type="button"
-            className="noorix-btn-nav"
-            onClick={onClose}
-            style={{ minHeight: 40, minWidth: 40, padding: '8px 12px', fontSize: 14 }}
-            aria-label={isAr ? 'إغلاق' : 'Close'}
-          >
-            {isAr ? '✕' : '✕'}
-          </button>
-        </header>
-
+    <Modal open={true} onClose={onClose} title={title} size="sm">
         <div
+          dir={dir}
           style={{
-            flex: 1,
             overflowY: 'auto',
             WebkitOverflowScrolling: 'touch',
-            padding: 20,
           }}
         >
           {confirmStep && pendingData && (
@@ -478,18 +408,17 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                 {isAr ? pendingData.report?.textAr : pendingData.report?.textEn}
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
-                <button type="button" className="noorix-btn-nav" onClick={() => setConfirmStep(false)} style={{ flex: 1, minHeight: 50 }}>
+                <Button onClick={() => setConfirmStep(false)} style={{ flex: 1, minHeight: 50 }}>
                   {isAr ? 'رجوع' : 'Back'}
-                </button>
-                <button
-                  type="button"
-                  className="noorix-btn-primary"
+                </Button>
+                <Button
+                  variant="primary"
                   onClick={handleConfirmSave}
                   disabled={submitting}
                   style={{ flex: 1, minHeight: 50, fontSize: 15 }}
                 >
                   {submitting ? (isAr ? 'جاري الحفظ...' : 'Saving...') : t('confirmSave')}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -547,12 +476,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                 <input id="adv-notes" type="text" value={advNotes} onChange={(e) => setAdvNotes(e.target.value)} style={inputBase} placeholder={isAr ? 'سبب أو تفاصيل' : 'Reason or details'} />
               </Field>
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>
+                <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>
                   {t('cancel')}
-                </button>
-                <button type="submit" className="noorix-btn-primary" disabled={submitting || vaults.length === 0} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>
+                </Button>
+                <Button type="submit" variant="primary" disabled={submitting || vaults.length === 0} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>
                   {submitting ? t('saving') : t('payAdvance')}
-                </button>
+                </Button>
               </div>
             </form>
           )}
@@ -584,8 +513,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                 <input id="lv-notes" type="text" value={lvNotes} onChange={(e) => setLvNotes(e.target.value)} style={inputBase} />
               </Field>
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</button>
-                <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : t('add')}</button>
+                <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
+                <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : t('add')}</Button>
               </div>
             </form>
           )}
@@ -612,8 +541,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                 <input id="dd-notes" type="text" value={ddNotes} onChange={(e) => setDdNotes(e.target.value)} style={inputBase} placeholder={isAr ? 'السبب' : 'Reason'} />
               </Field>
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</button>
-                <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : (isAr ? 'حفظ الخصم' : 'Save deduction')}</button>
+                <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
+                <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : (isAr ? 'حفظ الخصم' : 'Save deduction')}</Button>
               </div>
             </form>
           )}
@@ -651,8 +580,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                     <input id="mv-notes" type="text" value={mvNotes} onChange={(e) => setMvNotes(e.target.value)} style={inputBase} />
                   </Field>
                   <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                    <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</button>
-                    <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ' : 'Save')}</button>
+                    <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
+                    <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ' : 'Save')}</Button>
                   </div>
                 </form>
               ) : (
@@ -665,15 +594,14 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
                     <input id="al-amt" type="number" inputMode="decimal" step="0.01" min="0" value={alAmount} onChange={(e) => setAlAmount(e.target.value)} style={inputBase} />
                   </Field>
                   <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                    <button type="button" className="noorix-btn-nav" onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</button>
-                    <button type="submit" className="noorix-btn-primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ البدلة' : 'Save allowance')}</button>
+                    <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
+                    <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ البدلة' : 'Save allowance')}</Button>
                   </div>
                 </form>
               )}
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

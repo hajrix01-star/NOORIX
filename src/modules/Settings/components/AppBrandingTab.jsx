@@ -2,6 +2,7 @@
  * AppBrandingTab — إعدادات هوية التطبيق بدعم ثنائي اللغة (عربي / إنجليزي).
  */
 import React, { useState, useRef } from 'react';
+import { Button, Input } from '../../../ui';
 import {
   getBrandNameAr, getBrandNameEn,
   getBrandTaglineAr, getBrandTaglineEn,
@@ -18,16 +19,6 @@ const inputStyle = {
   color: 'var(--noorix-text)',
   fontSize: 14,
   boxSizing: 'border-box',
-};
-
-const labelStyle = {
-  display: 'block',
-  fontSize: 11,
-  fontWeight: 700,
-  color: 'var(--noorix-text-muted)',
-  marginBottom: 5,
-  textTransform: 'uppercase',
-  letterSpacing: 0.6,
 };
 
 const sectionTitle = {
@@ -132,28 +123,22 @@ export default function AppBrandingTab() {
       <div>
         <div style={sectionTitle}>اسم التطبيق</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 12 }}>
-          <div>
-            <label style={{ ...labelStyle, direction: 'rtl' }}>بالعربي</label>
-            <input
-              type="text"
-              value={nameAr}
-              onChange={(e) => setNameAr(e.target.value)}
-              placeholder="نووريكس"
-              style={{ ...inputStyle, direction: 'rtl', textAlign: 'right' }}
-              maxLength={40}
-            />
-          </div>
-          <div>
-            <label style={{ ...labelStyle, direction: 'ltr' }}>In English</label>
-            <input
-              type="text"
-              value={nameEn}
-              onChange={(e) => setNameEn(e.target.value)}
-              placeholder="Noorix"
-              style={{ ...inputStyle, direction: 'ltr', textAlign: 'left' }}
-              maxLength={40}
-            />
-          </div>
+          <Input
+            type="text"
+            label="بالعربي"
+            value={nameAr}
+            onChange={(e) => setNameAr(e.target.value)}
+            placeholder="نووريكس"
+            maxLength={40}
+          />
+          <Input
+            type="text"
+            label="In English"
+            value={nameEn}
+            onChange={(e) => setNameEn(e.target.value)}
+            placeholder="Noorix"
+            maxLength={40}
+          />
         </div>
         <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
           يظهر في تبويب المتصفح وأعلى القائمة الجانبية حسب لغة التطبيق
@@ -164,28 +149,22 @@ export default function AppBrandingTab() {
       <div>
         <div style={sectionTitle}>الجملة التعريفية (تحت الاسم)</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 12 }}>
-          <div>
-            <label style={{ ...labelStyle, direction: 'rtl' }}>بالعربي</label>
-            <input
-              type="text"
-              value={taglineAr}
-              onChange={(e) => setTaglineAr(e.target.value)}
-              placeholder="نظام إدارة متكامل"
-              style={{ ...inputStyle, direction: 'rtl', textAlign: 'right' }}
-              maxLength={60}
-            />
-          </div>
-          <div>
-            <label style={{ ...labelStyle, direction: 'ltr' }}>In English</label>
-            <input
-              type="text"
-              value={taglineEn}
-              onChange={(e) => setTaglineEn(e.target.value)}
-              placeholder="Business Management System"
-              style={{ ...inputStyle, direction: 'ltr', textAlign: 'left' }}
-              maxLength={60}
-            />
-          </div>
+          <Input
+            type="text"
+            label="بالعربي"
+            value={taglineAr}
+            onChange={(e) => setTaglineAr(e.target.value)}
+            placeholder="نظام إدارة متكامل"
+            maxLength={60}
+          />
+          <Input
+            type="text"
+            label="In English"
+            value={taglineEn}
+            onChange={(e) => setTaglineEn(e.target.value)}
+            placeholder="Business Management System"
+            maxLength={60}
+          />
         </div>
         <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
           تظهر أسفل الاسم في القائمة الجانبية وفي تذييلها
@@ -209,36 +188,20 @@ export default function AppBrandingTab() {
             }
           </div>
           <div style={{ flex: 1, display: 'grid', gap: 8 }}>
-            <input
+            <Input
               type="url"
               value={logoUrl}
               onChange={(e) => setLogoUrl(e.target.value)}
               placeholder="https://رابط-الشعار.com/logo.png"
-              style={{ ...inputStyle, fontSize: 13 }}
             />
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              style={{
-                padding: '9px 16px', borderRadius: 10,
-                border: '1px solid var(--noorix-border)',
-                background: 'var(--noorix-bg-surface)',
-                color: 'var(--noorix-text)',
-                fontSize: 13, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}
-            >
+            <Button type="button" onClick={() => fileRef.current?.click()}>
               رفع صورة من الجهاز
-            </button>
+            </Button>
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
             {logoUrl && (
-              <button
-                type="button"
-                onClick={() => setLogoUrl('')}
-                style={{ fontSize: 12, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right', padding: 0 }}
-              >
+              <Button type="button" variant="danger" onClick={() => setLogoUrl('')}>
                 ✕ إزالة الشعار
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -293,33 +256,13 @@ export default function AppBrandingTab() {
       </div>
 
       {/* ── أزرار ─────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button
-          type="button"
-          onClick={handleSave}
-          style={{
-            padding: '11px 28px', borderRadius: 10,
-            background: saved ? '#16a34a' : 'var(--btn-primary-bg, #1a3a6c)',
-            color: '#fff', fontWeight: 700, fontSize: 14,
-            border: 'none', cursor: 'pointer',
-            transition: 'background 0.2s', minWidth: 140,
-          }}
-        >
+      <div className="nx-toolbar">
+        <Button type="button" variant="primary" onClick={handleSave}>
           {saved ? '✓ تم الحفظ' : 'حفظ وتطبيق'}
-        </button>
-        <button
-          type="button"
-          onClick={handleReset}
-          style={{
-            padding: '11px 20px', borderRadius: 10,
-            background: 'var(--noorix-bg-muted)',
-            color: 'var(--noorix-text-muted)',
-            fontWeight: 600, fontSize: 13,
-            border: '1px solid var(--noorix-border)', cursor: 'pointer',
-          }}
-        >
+        </Button>
+        <Button type="button" onClick={handleReset}>
           إعادة الضبط الافتراضي
-        </button>
+        </Button>
       </div>
 
       {/* ── ملاحظة PWA ────────────────────────────────────────────────────── */}

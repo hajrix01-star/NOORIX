@@ -8,6 +8,7 @@ import { useApp } from '../../../context/AppContext';
 import { getEmployees } from '../../../services/api';
 import { createLeave } from '../../../services/api';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { Button, Input, Modal } from '../../../ui';
 
 const TYPE_MAP = {
   annual: 'leaveAnnual',
@@ -64,7 +65,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     setError('');
     if (!employeeId || !startDate || !endDate) {
       setError(t('requiredFields') || 'الحقول المطلوبة ناقصة');
@@ -100,103 +101,84 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
   };
 
   return (
-    <div
-      className="modal-overlay"
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}
-      onClick={onClose}
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={t('addLeave')}
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
+            {submitting ? t('saving') : t('add')}
+          </Button>
+        </>
+      }
     >
-      <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 400, width: '95%' }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>{t('addLeave')}</h3>
+      <form onSubmit={handleSubmit}>
+        <Input
+          type="select"
+          label={t('selectEmployee')}
+          value={employeeId}
+          onChange={(e) => setEmployeeId(e.target.value)}
+          required
+        >
+          <option value="">—</option>
+          {activeEmployees.map((emp) => (
+            <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
+          ))}
+        </Input>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('selectEmployee')}</label>
-            <select
-              value={employeeId}
-              onChange={(e) => setEmployeeId(e.target.value)}
-              required
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-            >
-              <option value="">—</option>
-              {activeEmployees.map((emp) => (
-                <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
-              ))}
-            </select>
+        <Input
+          type="select"
+          label={t('leaveType')}
+          value={leaveType}
+          onChange={(e) => setLeaveType(e.target.value)}
+        >
+          {Object.keys(TYPE_MAP).map((k) => (
+            <option key={k} value={k}>{t(TYPE_MAP[k])}</option>
+          ))}
+        </Input>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Input
+            type="date"
+            label={t('startDate')}
+            value={startDate}
+            onChange={(e) => handleStartEndChange('startDate', e.target.value)}
+            required
+          />
+          <Input
+            type="date"
+            label={t('endDate')}
+            value={endDate}
+            onChange={(e) => handleStartEndChange('endDate', e.target.value)}
+            required
+          />
+        </div>
+
+        <Input
+          type="number"
+          min="1"
+          label={t('daysCount')}
+          value={daysCount}
+          onChange={(e) => setDaysCount(e.target.value)}
+          placeholder="0"
+        />
+
+        <Input
+          label={t('notes')}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder={t('notes')}
+        />
+
+        {error && (
+          <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
+            {error}
           </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('leaveType')}</label>
-            <select
-              value={leaveType}
-              onChange={(e) => setLeaveType(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-            >
-              {Object.keys(TYPE_MAP).map((k) => (
-                <option key={k} value={k}>{t(TYPE_MAP[k])}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('startDate')}</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => handleStartEndChange('startDate', e.target.value)}
-                required
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('endDate')}</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => handleStartEndChange('endDate', e.target.value)}
-                required
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-              />
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('daysCount')}</label>
-            <input
-              type="number"
-              min="1"
-              value={daysCount}
-              onChange={(e) => setDaysCount(e.target.value)}
-              placeholder="0"
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-            />
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>{t('notes')}</label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('notes')}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
-            />
-          </div>
-
-          {error && (
-            <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-            <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('cancel')}</button>
-            <button type="submit" className="noorix-btn-nav" style={{ background: 'var(--btn-primary-bg)', color: '#fff' }} disabled={submitting}>
-              {submitting ? t('saving') : t('add')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        )}
+      </form>
+    </Modal>
   );
 }

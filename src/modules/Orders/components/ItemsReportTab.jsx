@@ -10,6 +10,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import Toast from '../../../components/Toast';
+import { Button, Input, Modal } from '../../../ui';
 
 const CHART_COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
 
@@ -60,62 +61,41 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
   const title = isProduct ? (product?.productNameAr || product?.nameAr || product?.productNameEn || product?.nameEn || productId) : (category?.nameAr || category?.nameEn || categoryId);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Modal
+      open
+      onClose={onClose}
+      title={`${t('ordersPurchaseHistory')} — ${title}`}
+      size="md"
     >
-      <div
-        className="noorix-modal-card"
-        style={{
-          borderRadius: 14,
-          maxWidth: 560,
-          width: '100%',
-          maxHeight: '85vh',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: 16 }}>{t('ordersPurchaseHistory')} — {title}</h3>
-          <button type="button" className="noorix-btn-nav" onClick={onClose}>✕</button>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-          {isLoading ? (
-            <div style={{ textAlign: 'center', padding: 40, color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>
-          ) : history.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 40, color: 'var(--noorix-text-muted)' }}>{t('ordersNoPurchaseHistory')}</div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('orderNumber')}</th>
-                  <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('orderDate')}</th>
-                  <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('quantity')}</th>
-                  <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('unitPrice')}</th>
-                  <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('total')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((h, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
-                    <td style={{ padding: '8px 10px' }}>{h.orderNumber}</td>
-                    <td style={{ padding: '8px 10px' }}>{formatSaudiDate(h.orderDate)}</td>
-                    <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(h.quantity, 2)}</td>
-                    <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(h.unitPrice, 2)}</td>
-                    <td style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600 }}>{fmt(h.amount, 2)} ﷼</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-    </div>
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>
+      ) : history.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--noorix-text-muted)' }}>{t('ordersNoPurchaseHistory')}</div>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
+              <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('orderNumber')}</th>
+              <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('orderDate')}</th>
+              <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('quantity')}</th>
+              <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('unitPrice')}</th>
+              <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('total')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.map((h, i) => (
+              <tr key={i} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
+                <td style={{ padding: '8px 10px' }}>{h.orderNumber}</td>
+                <td style={{ padding: '8px 10px' }}>{formatSaudiDate(h.orderDate)}</td>
+                <td style={{ padding: '8px 10px' }} className="nx-cell-num">{fmt(h.quantity, 2)}</td>
+                <td style={{ padding: '8px 10px' }} className="nx-cell-num">{fmt(h.unitPrice, 2)}</td>
+                <td style={{ padding: '8px 10px' }} className="nx-cell-num nx-cell-num--green">{fmt(h.amount, 2)} ﷼</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Modal>
   );
 }
 
@@ -178,23 +158,34 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
   };
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="noorix-print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div className="noorix-print-hide nx-page-header">
         <DateFilterBar filter={dateFilter} />
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select value={filterMode} onChange={(e) => setFilterMode(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', fontSize: 13 }}>
+        <div className="nx-toolbar">
+          <Input
+            type="select"
+            value={filterMode}
+            onChange={(e) => setFilterMode(e.target.value)}
+          >
             <option value="all">{t('ordersFilterAll')}</option>
             <option value="top">{t('ordersFilterTop')}</option>
             <option value="bottom">{t('ordersFilterBottom')}</option>
-          </select>
+          </Input>
           {(filterMode === 'top' || filterMode === 'bottom') && (
-            <input type="number" min={1} max={50} value={filterCount} onChange={(e) => setFilterCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 5)))} style={{ width: 60, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', fontSize: 13 }} />
+            <Input
+              type="number"
+              min={1}
+              max={50}
+              value={filterCount}
+              onChange={(e) => setFilterCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 5)))}
+              style={{ width: 80 }}
+            />
           )}
-          <button type="button" className="noorix-btn-nav noorix-print-hide" onClick={() => window.print()} disabled={filtered.length === 0}>{t('print')}</button>
-          <button type="button" className="noorix-btn-nav noorix-print-hide" onClick={handleExportExcel} disabled={filtered.length === 0}>Excel</button>
-          <button type="button" className="noorix-btn-nav noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>PDF</button>
+          <Button type="button" className="noorix-print-hide" onClick={() => window.print()} disabled={filtered.length === 0}>{t('print')}</Button>
+          <Button type="button" className="noorix-print-hide" onClick={handleExportExcel} disabled={filtered.length === 0}>Excel</Button>
+          <Button type="button" className="noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>PDF</Button>
         </div>
       </div>
 
@@ -274,13 +265,13 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
                           {r.categoryNameAr || r.categoryNameEn || '—'}
                         </button>
                       ) : (
-                        <span style={{ color: 'var(--noorix-text-muted)' }}>—</span>
+                        <span className="nx-cell-muted">—</span>
                       )}
                     </td>
-                    <td style={{ padding: '10px 12px', color: 'var(--noorix-text-muted)' }}>{r.unit || '—'}</td>
-                    <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(r.quantity ?? 0, 2)}</td>
-                    <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600 }}>{fmt(r.amount ?? 0, 2)} ﷼</td>
-                    <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{r.orderCount ?? 0}</td>
+                    <td className="nx-cell-muted" style={{ padding: '10px 12px' }}>{r.unit || '—'}</td>
+                    <td className="nx-cell-num" style={{ padding: '10px 12px' }}>{fmt(r.quantity ?? 0, 2)}</td>
+                    <td className="nx-cell-num nx-cell-num--green" style={{ padding: '10px 12px' }}>{fmt(r.amount ?? 0, 2)} ﷼</td>
+                    <td className="nx-cell-num" style={{ padding: '10px 12px' }}>{r.orderCount ?? 0}</td>
                   </tr>
                 ))}
               </tbody>

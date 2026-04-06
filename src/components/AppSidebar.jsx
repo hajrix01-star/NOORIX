@@ -8,6 +8,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
+import { Button } from '../ui';
 import {
   IconCrown,
   IconGrid,
@@ -306,32 +307,12 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
               {t('switchCompanyConfirmBody')} <strong style={{ color: 'var(--noorix-text, #111)' }}>{pendingName}</strong>؟
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <button
-                type="button"
-                onClick={cancelSwitch}
-                style={{
-                  flex: 1, padding: '10px 16px', borderRadius: 10, cursor: 'pointer',
-                  background: 'var(--noorix-bg-muted, #f3f4f6)',
-                  border: '1px solid var(--noorix-border, #e5e7eb)',
-                  color: 'var(--noorix-text-muted, #6b7280)', fontWeight: 600, fontSize: 14,
-                  fontFamily: 'inherit',
-                }}
-              >
+              <Button onClick={cancelSwitch} style={{ flex: 1 }}>
                 {t('cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={confirmSwitch}
-                style={{
-                  flex: 1, padding: '10px 16px', borderRadius: 10, cursor: 'pointer',
-                  background: 'var(--noorix-accent, #2563eb)',
-                  border: 'none',
-                  color: '#fff', fontWeight: 700, fontSize: 14,
-                  fontFamily: 'inherit',
-                }}
-              >
+              </Button>
+              <Button variant="primary" onClick={confirmSwitch} style={{ flex: 1 }}>
                 {t('switchCompanyConfirmBtn')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>,

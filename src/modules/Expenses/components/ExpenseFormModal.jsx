@@ -8,6 +8,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { createInvoice, getExpenseLines } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { getSaudiToday } from '../../../utils/saudiDate';
+import { Button, Modal, Input } from '../../../ui';
 
 export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   const { t } = useTranslation();
@@ -87,143 +88,88 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
     });
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 12px',
-    borderRadius: 8,
-    border: '1px solid var(--noorix-border)',
-    background: 'var(--noorix-bg-surface)',
-    fontSize: 14,
-    boxSizing: 'border-box',
-  };
+  const footer = (
+    <>
+      <Button onClick={onClose}>إلغاء</Button>
+      <Button variant="primary" type="submit" form="expense-form-modal" disabled={createMutation.isPending}>
+        {createMutation.isPending ? 'جاري الحفظ...' : 'حفظ وإصدار الفاتورة'}
+      </Button>
+    </>
+  );
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'var(--noorix-modal-overlay-bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2000,
-        padding: 24,
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="noorix-modal-card"
-        style={{
-          borderRadius: 12,
-          maxWidth: 480,
-          width: '100%',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <form onSubmit={handleSubmit} style={{ padding: 24 }}>
-          <h2 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 700 }}>تسجيل مصروف</h2>
-          {error && (
-            <div style={{ padding: 12, marginBottom: 16, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>بند المصروف *</label>
-            <select
-              value={form.expenseLineId}
-              onChange={(e) => setForm((p) => ({ ...p, expenseLineId: e.target.value }))}
-              style={inputStyle}
-              required
-            >
-              <option value="">— اختر البند —</option>
-              {expenseLines.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? 'ثابت' : 'متغير'})
-                </option>
-              ))}
-            </select>
+    <Modal open={true} onClose={onClose} title="تسجيل مصروف" size="md" footer={footer}>
+      <form id="expense-form-modal" onSubmit={handleSubmit}>
+        {error && (
+          <div style={{ padding: 12, marginBottom: 16, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
+            {error}
           </div>
+        )}
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>رقم فاتورة المورد {selectedLine?.category?.account?.taxExempt ? '(اختياري — معفى من الضريبة)' : '*'}</label>
-            <input
-              type="text"
-              value={form.supplierInvoiceNumber}
-              onChange={(e) => setForm((p) => ({ ...p, supplierInvoiceNumber: e.target.value }))}
-              placeholder="الرقم الموجود على فاتورة المورد (مثال: INV-2024-001)"
-              style={inputStyle}
-            />
-          </div>
+        <Input
+          type="select"
+          label="بند المصروف *"
+          value={form.expenseLineId}
+          onChange={(e) => setForm((p) => ({ ...p, expenseLineId: e.target.value }))}
+          required
+        >
+          <option value="">— اختر البند —</option>
+          {expenseLines.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? 'ثابت' : 'متغير'})
+            </option>
+          ))}
+        </Input>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>المبلغ (شامل الضريبة) *</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={form.totalAmount}
-              onChange={(e) => setForm((p) => ({ ...p, totalAmount: e.target.value }))}
-              placeholder="0.00"
-              style={inputStyle}
-              required
-            />
-          </div>
+        <Input
+          type="text"
+          label={`رقم فاتورة المورد ${selectedLine?.category?.account?.taxExempt ? '(اختياري — معفى من الضريبة)' : '*'}`}
+          value={form.supplierInvoiceNumber}
+          onChange={(e) => setForm((p) => ({ ...p, supplierInvoiceNumber: e.target.value }))}
+          placeholder="الرقم الموجود على فاتورة المورد (مثال: INV-2024-001)"
+        />
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>تاريخ العملية *</label>
-            <input
-              type="date"
-              value={form.transactionDate}
-              onChange={(e) => setForm((p) => ({ ...p, transactionDate: e.target.value }))}
-              style={inputStyle}
-              required
-            />
-          </div>
+        <Input
+          type="number"
+          label="المبلغ (شامل الضريبة) *"
+          step="0.01"
+          min="0.01"
+          value={form.totalAmount}
+          onChange={(e) => setForm((p) => ({ ...p, totalAmount: e.target.value }))}
+          placeholder="0.00"
+          required
+        />
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>الخزينة *</label>
-            <select
-              value={form.vaultId}
-              onChange={(e) => setForm((p) => ({ ...p, vaultId: e.target.value }))}
-              style={inputStyle}
-              required
-            >
-              <option value="">— اختر الخزينة —</option>
-              {activeVaults.map((v) => (
-                <option key={v.id} value={v.id}>{v.nameAr || v.nameEn}</option>
-              ))}
-            </select>
-          </div>
+        <Input
+          type="date"
+          label="تاريخ العملية *"
+          value={form.transactionDate}
+          onChange={(e) => setForm((p) => ({ ...p, transactionDate: e.target.value }))}
+          required
+        />
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>ملاحظات (للخدمة ورقمها)</label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-              placeholder="مثال: كهرباء - عداد 12345 - 1,200 ر.س"
-              rows={3}
-              style={{ ...inputStyle, resize: 'vertical' }}
-            />
-          </div>
+        <Input
+          type="select"
+          label="الخزينة *"
+          value={form.vaultId}
+          onChange={(e) => setForm((p) => ({ ...p, vaultId: e.target.value }))}
+          required
+        >
+          <option value="">— اختر الخزينة —</option>
+          {activeVaults.map((v) => (
+            <option key={v.id} value={v.id}>{v.nameAr || v.nameEn}</option>
+          ))}
+        </Input>
 
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-page)', cursor: 'pointer' }}>
-              إلغاء
-            </button>
-            <button type="submit" disabled={createMutation.isPending} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--noorix-accent-blue)', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
-              {createMutation.isPending ? 'جاري الحفظ...' : 'حفظ وإصدار الفاتورة'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <Input
+          multiline
+          label="ملاحظات (للخدمة ورقمها)"
+          value={form.notes}
+          onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+          placeholder="مثال: كهرباء - عداد 12345 - 1,200 ر.س"
+          rows={3}
+        />
+      </form>
+    </Modal>
   );
 }

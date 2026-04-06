@@ -2,14 +2,14 @@
  * CompaniesTab — تبويب إدارة الشركات
  */
 import React, { useState, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompanies, createCompany, updateCompany, deleteCompany } from '../../../services/api';
 import {
-  inputStyle, labelStyle,
+  labelStyle,
   getDeleteCode, setDeleteCode, DEFAULT_DELETE_CODE,
   fileToDataUrl,
 } from '../constants/settingsConstants';
+import { Button, Input, Modal } from '../../../ui';
 
 export default function CompaniesTab({ onCompanyCreated }) {
   const queryClient = useQueryClient();
@@ -101,14 +101,12 @@ export default function CompaniesTab({ onCompanyCreated }) {
     deleteMutation.mutate(editModal.id);
   };
 
-  const BASE_BTN = 'noorix-btn-nav';
-
   return (
     <div style={{ display: 'grid', gap: 24 }}>
       {isError && (
         <div style={{ padding: 12, borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid var(--noorix-accent-red)', fontSize: 13 }}>
           لا يمكن الاتصال بالسيرفر.
-          <button type="button" onClick={() => refetch()} className={BASE_BTN} style={{ marginRight: 8, fontSize: 12 }}>إعادة المحاولة</button>
+          <Button onClick={() => refetch()} style={{ marginRight: 8, fontSize: 12 }}>إعادة المحاولة</Button>
         </div>
       )}
 
@@ -120,10 +118,10 @@ export default function CompaniesTab({ onCompanyCreated }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <button type="button" className={`${BASE_BTN}${showAddForm ? '' : ' noorix-btn-primary'}`} onClick={() => setShowAddForm((v) => !v)}>
+      <div className="nx-toolbar">
+        <Button variant={showAddForm ? undefined : 'primary'} onClick={() => setShowAddForm((v) => !v)}>
           {showAddForm ? 'إلغاء الإضافة' : 'إضافة شركة'}
-        </button>
+        </Button>
         {!isEmpty && (
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--noorix-text-muted)', cursor: 'pointer' }}>
             <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
@@ -137,24 +135,24 @@ export default function CompaniesTab({ onCompanyCreated }) {
           <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>إضافة شركة جديدة</h3>
           <form onSubmit={(e) => { e.preventDefault(); if (!nameAr.trim()) return; addMutation.mutate({ nameAr: nameAr.trim(), nameEn: nameEn.trim() || undefined, taxNumber: taxNumber.trim() || undefined, phone: phone.trim() || undefined, address: address.trim() || undefined, email: email.trim() || undefined, logoUrl: logoUrl.trim() || undefined }); }}
             style={{ display: 'grid', gap: 12, maxWidth: 480 }}>
-            <div><label style={labelStyle}>الاسم بالعربي *</label><input type="text" value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder="مطعم المعلم الشامي" required style={inputStyle} /></div>
-            <div><label style={labelStyle}>الاسم بالإنجليزي</label><input type="text" value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="Al-Moalem Al-Shami" style={inputStyle} /></div>
-            <div><label style={labelStyle}>الرقم الضريبي</label><input type="text" value={taxNumber} onChange={(e) => setTaxNumber(e.target.value)} placeholder="300000000000003" style={inputStyle} /></div>
-            <div><label style={labelStyle}>رقم الهاتف</label><input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" style={inputStyle} /></div>
-            <div><label style={labelStyle}>العنوان</label><input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="الرياض، حي..." style={inputStyle} /></div>
-            <div><label style={labelStyle}>البريد الإلكتروني</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@example.com" style={inputStyle} /></div>
+            <Input type="text" label="الاسم بالعربي *" value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder="مطعم المعلم الشامي" required />
+            <Input type="text" label="الاسم بالإنجليزي" value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="Al-Moalem Al-Shami" />
+            <Input type="text" label="الرقم الضريبي" value={taxNumber} onChange={(e) => setTaxNumber(e.target.value)} placeholder="300000000000003" />
+            <Input type="text" label="رقم الهاتف" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" />
+            <Input type="text" label="العنوان" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="الرياض، حي..." />
+            <Input type="email" label="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@example.com" />
             <div>
               <label style={labelStyle}>شعار الشركة</label>
-              <input type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
+              <Input type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." />
               <input type="file" accept="image/*" onChange={handleLogoFile} style={{ marginTop: 6, fontSize: 13 }} />
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" disabled={addMutation.isPending || !nameAr.trim()} className={`${BASE_BTN} noorix-btn-success`}>
+            <div className="nx-toolbar">
+              <Button type="submit" variant="success" disabled={addMutation.isPending || !nameAr.trim()}>
                 {addMutation.isPending ? 'جاري الإضافة...' : 'حفظ الشركة'}
-              </button>
-              <button type="button" className={BASE_BTN} onClick={() => setShowAddForm(false)}>إلغاء</button>
+              </Button>
+              <Button type="button" onClick={() => setShowAddForm(false)}>إلغاء</Button>
             </div>
-            {addMutation.isError && <p style={{ margin: 0, fontSize: 13, color: '#ef4444' }}>{addMutation.error?.message}</p>}
+            {addMutation.isError && <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-accent-red)' }}>{addMutation.error?.message}</p>}
           </form>
         </div>
       )}
@@ -194,7 +192,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">البريد</span>
-                  <span className="noorix-exec-card__stat-value" style={{ fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email || '—'}</span>
+                  <span className="noorix-exec-card__stat-value nx-cell-ellipsis" style={{ fontSize: 11 }}>{c.email || '—'}</span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">الحالة</span>
@@ -207,133 +205,94 @@ export default function CompaniesTab({ onCompanyCreated }) {
         </div>
       )}
 
-      {/* نافذة التعديل — portal لضمان ظهورها فوق كل شيء */}
-      {editModal && createPortal(
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16, backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
-          onClick={() => !updateMutation.isPending && !deleteMutation.isPending && setEditModal(null)}
-        >
-          <div
-            className="noorix-modal-card"
-            style={{
-              width: 'min(540px, 100%)',
-              maxHeight: '92dvh',
-              display: 'flex',
-              flexDirection: 'column',
-              border: '1px solid var(--noorix-border)',
-              borderRadius: 18,
-              boxShadow: '0 32px 64px rgba(0,0,0,0.28)',
-              overflow: 'hidden',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* رأس النافذة */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--noorix-border)', flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {editModal.logoUrl ? (
-                  <img src={editModal.logoUrl} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--noorix-border)' }} />
-                ) : (
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--noorix-bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: 'var(--noorix-text-muted)' }}>—</div>
-                )}
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>تعديل الشركة</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--noorix-text)' }}>{editModal.nameAr || '—'}</div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditModal(null)}
-                style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                aria-label="إغلاق"
-              >×</button>
-            </div>
-
-            {/* محتوى النافذة */}
-            <div style={{ overflow: 'auto', flex: 1, padding: '20px' }}>
-              <form
-                id="edit-company-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  updateMutation.mutate({ id: editModal.id, body: { nameAr: editModal.nameAr.trim(), nameEn: editModal.nameEn.trim() || undefined, taxNumber: editModal.taxNumber.trim() || undefined, phone: editModal.phone.trim() || undefined, address: editModal.address.trim() || undefined, email: editModal.email.trim() || undefined, logoUrl: editModal.logoUrl.trim() || undefined } });
-                }}
-                style={{ display: 'grid', gap: 14 }}
-              >
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: 12 }}>
-                  <div><label style={labelStyle}>الاسم بالعربي *</label><input type="text" value={editModal.nameAr} onChange={(e) => setEditModal((p) => ({ ...p, nameAr: e.target.value }))} required style={inputStyle} /></div>
-                  <div><label style={labelStyle}>الاسم بالإنجليزي</label><input type="text" value={editModal.nameEn} onChange={(e) => setEditModal((p) => ({ ...p, nameEn: e.target.value }))} style={inputStyle} /></div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: 12 }}>
-                  <div><label style={labelStyle}>الرقم الضريبي</label><input type="text" value={editModal.taxNumber} onChange={(e) => setEditModal((p) => ({ ...p, taxNumber: e.target.value }))} placeholder="300000000000003" style={inputStyle} /></div>
-                  <div><label style={labelStyle}>رقم الهاتف</label><input type="text" value={editModal.phone} onChange={(e) => setEditModal((p) => ({ ...p, phone: e.target.value }))} placeholder="05xxxxxxxx" style={inputStyle} /></div>
-                </div>
-                <div><label style={labelStyle}>العنوان</label><input type="text" value={editModal.address} onChange={(e) => setEditModal((p) => ({ ...p, address: e.target.value }))} placeholder="الرياض، حي..." style={inputStyle} /></div>
-                <div><label style={labelStyle}>البريد الإلكتروني</label><input type="email" value={editModal.email} onChange={(e) => setEditModal((p) => ({ ...p, email: e.target.value }))} placeholder="info@example.com" style={inputStyle} /></div>
-
-                {/* شعار الشركة */}
-                <div style={{ padding: 14, borderRadius: 12, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
-                  <label style={{ ...labelStyle, display: 'block', marginBottom: 10 }}>شعار الشركة (يُستخدم في الفواتير والتقارير والشريط الجانبي)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 12, background: 'var(--noorix-bg-surface)', border: '2px dashed var(--noorix-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                      {editModal.logoUrl ? (
-                        <img src={editModal.logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <span style={{ fontSize: 24, color: 'var(--noorix-text-muted)' }}>—</span>
-                      )}
-                    </div>
-                    <div style={{ flex: 1, display: 'grid', gap: 8 }}>
-                      <input type="url" value={editModal.logoUrl} onChange={(e) => setEditModal((p) => ({ ...p, logoUrl: e.target.value }))} placeholder="https://رابط-الصورة.com/logo.png" style={{ ...inputStyle, fontSize: 12 }} />
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--noorix-text-muted)', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
-                        رفع صورة من الجهاز
-                        <input type="file" accept="image/*" onChange={(e) => handleLogoFile(e, true)} style={{ display: 'none' }} />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {updateMutation.isError && <p style={{ margin: 0, fontSize: 13, color: '#ef4444', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: 8 }}>{updateMutation.error?.message}</p>}
-              </form>
-
-              {/* قسم الحذف */}
-              <div style={{ marginTop: 24, padding: 14, borderRadius: 12, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', marginBottom: 12 }}>⚠ منطقة الخطر</div>
-                <div style={{ display: 'grid', gap: 10 }}>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 11 }}>رقم سر الحذف (للضبط)</label>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <input type="password" value={deleteCodeSetting} onChange={(e) => setDeleteCodeSetting(e.target.value)} placeholder="رقم سري" style={{ ...inputStyle, maxWidth: 130, minWidth: 0, flex: '1 1 100px', fontSize: 12 }} />
-                      <button type="button" onClick={() => { const v = (deleteCodeSetting || '').trim() || DEFAULT_DELETE_CODE; setDeleteCode(v); setDeleteCodeSetting(v); }} className={BASE_BTN} style={{ fontSize: 12, flexShrink: 0 }}>حفظ الرقم</button>
-                    </div>
-                  </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 11 }}>أدخل رقم التأكيد لحذف الشركة</label>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <input type="password" value={deleteConfirmCode} onChange={(e) => setDeleteConfirmCode(e.target.value)} placeholder="رقم التأكيد" style={{ ...inputStyle, maxWidth: 130, minWidth: 0, flex: '1 1 100px', fontSize: 12 }} />
-                      <button type="button" onClick={handleDelete} disabled={deleteMutation.isPending} className={`${BASE_BTN} noorix-btn-danger`} style={{ fontSize: 12, flexShrink: 0 }}>
-                        {deleteMutation.isPending ? 'جاري...' : 'حذف الشركة'}
-                      </button>
-                    </div>
-                  </div>
-                  {deleteMutation.isError && <p style={{ margin: 0, fontSize: 12, color: '#ef4444' }}>{deleteMutation.error?.message}</p>}
-                </div>
-              </div>
-            </div>
-
-            {/* تذييل النافذة */}
-            <div style={{ display: 'flex', gap: 10, padding: '14px 20px', borderTop: '1px solid var(--noorix-border)', flexShrink: 0, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              {!editModal.isArchived && (
-                <button type="button" onClick={() => updateMutation.mutate({ id: editModal.id, body: { isArchived: true } })} disabled={updateMutation.isPending} className={`${BASE_BTN} noorix-btn-warning`}>أرشفة</button>
-              )}
-              <button type="button" onClick={() => setEditModal(null)} className={BASE_BTN}>إلغاء</button>
-              <button type="submit" form="edit-company-form" disabled={updateMutation.isPending || !editModal.nameAr?.trim()} className={`${BASE_BTN} noorix-btn-success`} style={{ minWidth: 120 }}>
-                {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
-              </button>
-            </div>
+      <Modal
+        open={!!editModal}
+        onClose={() => !updateMutation.isPending && !deleteMutation.isPending && setEditModal(null)}
+        title={editModal ? `تعديل الشركة — ${editModal.nameAr || '—'}` : ''}
+        size="md"
+        footer={
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {editModal && !editModal.isArchived && (
+              <Button variant="warning" onClick={() => updateMutation.mutate({ id: editModal.id, body: { isArchived: true } })} disabled={updateMutation.isPending}>أرشفة</Button>
+            )}
+            <Button onClick={() => setEditModal(null)}>إلغاء</Button>
+            <Button type="submit" form="edit-company-form" variant="success" disabled={updateMutation.isPending || !editModal?.nameAr?.trim()} style={{ minWidth: 120 }}>
+              {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+            </Button>
           </div>
-        </div>,
-        document.body
-      )}
+        }
+      >
+        {editModal && (
+          <>
+            <form
+              id="edit-company-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateMutation.mutate({ id: editModal.id, body: { nameAr: editModal.nameAr.trim(), nameEn: editModal.nameEn.trim() || undefined, taxNumber: editModal.taxNumber.trim() || undefined, phone: editModal.phone.trim() || undefined, address: editModal.address.trim() || undefined, email: editModal.email.trim() || undefined, logoUrl: editModal.logoUrl.trim() || undefined } });
+              }}
+              style={{ display: 'grid', gap: 14 }}
+            >
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: 12 }}>
+                <Input type="text" label="الاسم بالعربي *" value={editModal.nameAr} onChange={(e) => setEditModal((p) => ({ ...p, nameAr: e.target.value }))} required />
+                <Input type="text" label="الاسم بالإنجليزي" value={editModal.nameEn} onChange={(e) => setEditModal((p) => ({ ...p, nameEn: e.target.value }))} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: 12 }}>
+                <Input type="text" label="الرقم الضريبي" value={editModal.taxNumber} onChange={(e) => setEditModal((p) => ({ ...p, taxNumber: e.target.value }))} placeholder="300000000000003" />
+                <Input type="text" label="رقم الهاتف" value={editModal.phone} onChange={(e) => setEditModal((p) => ({ ...p, phone: e.target.value }))} placeholder="05xxxxxxxx" />
+              </div>
+              <Input type="text" label="العنوان" value={editModal.address} onChange={(e) => setEditModal((p) => ({ ...p, address: e.target.value }))} placeholder="الرياض، حي..." />
+              <Input type="email" label="البريد الإلكتروني" value={editModal.email} onChange={(e) => setEditModal((p) => ({ ...p, email: e.target.value }))} placeholder="info@example.com" />
+
+              {/* شعار الشركة */}
+              <div style={{ padding: 14, borderRadius: 12, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
+                <label style={{ ...labelStyle, display: 'block', marginBottom: 10 }}>شعار الشركة (يُستخدم في الفواتير والتقارير والشريط الجانبي)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 12, background: 'var(--noorix-bg-surface)', border: '2px dashed var(--noorix-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                    {editModal.logoUrl ? (
+                      <img src={editModal.logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: 24, color: 'var(--noorix-text-muted)' }}>—</span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, display: 'grid', gap: 8 }}>
+                    <Input type="url" value={editModal.logoUrl} onChange={(e) => setEditModal((p) => ({ ...p, logoUrl: e.target.value }))} placeholder="https://رابط-الصورة.com/logo.png" />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--noorix-text-muted)', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
+                      رفع صورة من الجهاز
+                      <input type="file" accept="image/*" onChange={(e) => handleLogoFile(e, true)} style={{ display: 'none' }} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {updateMutation.isError && <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-accent-red)', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: 8 }}>{updateMutation.error?.message}</p>}
+            </form>
+
+            {/* قسم الخطر */}
+            <div style={{ marginTop: 24, padding: 14, borderRadius: 12, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--noorix-accent-red)', marginBottom: 12 }}>⚠ منطقة الخطر</div>
+              <div style={{ display: 'grid', gap: 10 }}>
+                <div>
+                  <label style={{ ...labelStyle, fontSize: 11 }}>رقم سر الحذف (للضبط)</label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <Input type="password" value={deleteCodeSetting} onChange={(e) => setDeleteCodeSetting(e.target.value)} placeholder="رقم سري" />
+                    <Button onClick={() => { const v = (deleteCodeSetting || '').trim() || DEFAULT_DELETE_CODE; setDeleteCode(v); setDeleteCodeSetting(v); }}>حفظ الرقم</Button>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ ...labelStyle, fontSize: 11 }}>أدخل رقم التأكيد لحذف الشركة</label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <Input type="password" value={deleteConfirmCode} onChange={(e) => setDeleteConfirmCode(e.target.value)} placeholder="رقم التأكيد" />
+                    <Button variant="danger" onClick={handleDelete} disabled={deleteMutation.isPending}>
+                      {deleteMutation.isPending ? 'جاري...' : 'حذف الشركة'}
+                    </Button>
+                  </div>
+                </div>
+                {deleteMutation.isError && <p style={{ margin: 0, fontSize: 12, color: 'var(--noorix-accent-red)' }}>{deleteMutation.error?.message}</p>}
+              </div>
+            </div>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

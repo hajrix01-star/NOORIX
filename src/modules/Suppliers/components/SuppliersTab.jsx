@@ -13,12 +13,7 @@ import { SupplierForm }        from './SupplierForm';
 import { SupplierTable }       from './SupplierTable';
 import { SupplierEditModal }   from './SupplierEditModal';
 import SupplierImportExport    from './SupplierImportExport';
-
-const IS = {
-  width: '100%', padding: '9px 12px', borderRadius: 8,
-  border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box',
-};
+import { Button, Input }       from '../../../ui';
 
 export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   const { t } = useTranslation();
@@ -116,7 +111,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="nx-screen">
       <Toast
         visible={toast.visible}
         message={toast.message}
@@ -125,21 +120,19 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
       />
 
       {/* ── شريط البحث + إضافة ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <input
-          type="text"
+      <div className="nx-page-header">
+        <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('searchByNameOrTax')}
-          style={{ ...IS, maxWidth: 320, flex: '1 1 160px' }}
+          style={{ maxWidth: 320, flex: '1 1 160px' }}
         />
-        <button
-          type="button"
-          className={`noorix-btn-nav${showForm ? '' : ' noorix-btn-primary'}`}
+        <Button
+          variant={showForm ? 'default' : 'primary'}
           onClick={() => setShowForm((v) => !v)}
         >
           {showForm ? t('cancel') : t('addSupplier')}
-        </button>
+        </Button>
       </div>
 
       {/* ── استيراد / تصدير ── */}
@@ -178,15 +171,13 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
       }
 
       {/* ── مودال التعديل ── */}
-      {editingSupplier && (
-        <SupplierEditModal
-          supplier={editingSupplier}
-          flatCategories={flatCategories}
-          onSave={handleEditSave}
-          onClose={() => setEditingSupplier(null)}
-          isSaving={update.isPending}
-        />
-      )}
+      <SupplierEditModal
+        supplier={editingSupplier}
+        flatCategories={flatCategories}
+        onSave={handleEditSave}
+        onClose={() => setEditingSupplier(null)}
+        isSaving={update.isPending}
+      />
     </div>
   );
 });

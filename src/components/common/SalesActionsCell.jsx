@@ -5,6 +5,7 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { hasPermission } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
+import { Button } from '../../ui';
 
 const KebabIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -45,7 +46,7 @@ export const SalesActionsCell = memo(function SalesActionsCell({
   const canDel   = (userRole || '').toLowerCase() === 'owner';
   const showAny  = canPrint || canEdit || canDel;
 
-  if (!showAny) return <span style={{ color: 'var(--noorix-text-muted)', fontSize: 12 }}>—</span>;
+  if (!showAny) return <span className="nx-cell-muted">—</span>;
 
   const items = [];
   if (canPrint) items.push({ key: 'print', label: t('printWhatsApp'), fn: onPrint, color: '#2563eb' });
@@ -111,7 +112,7 @@ export const SalesActionsCell = memo(function SalesActionsCell({
       }}
     >
       {items.map((it) => (
-        <button
+        <Button
           key={it.key}
           type="button"
           role="menuitem"
@@ -119,7 +120,7 @@ export const SalesActionsCell = memo(function SalesActionsCell({
           style={{ ...menuItemStyle, color: it.color }}
         >
           {it.label}
-        </button>
+        </Button>
       ))}
     </div>
   );

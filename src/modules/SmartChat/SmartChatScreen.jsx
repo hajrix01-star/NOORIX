@@ -18,6 +18,7 @@ import ExpenseFormModal from '../Expenses/components/ExpenseFormModal';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { loadChat, saveChat, filterByDate } from './chatStorage';
 import './SmartChatScreen.css';
+import { Button, Modal } from '../../ui';
 
 function SendIcon() {
   return (
@@ -443,9 +444,9 @@ export default function SmartChatScreen() {
                 title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
               />
               {dateFilter ? (
-                <button type="button" onClick={() => setDateFilter('')} className="noorix-btn-nav noorix-smart-chat-filter-clear">
+                <Button size="sm" onClick={() => setDateFilter('')} className="noorix-smart-chat-filter-clear">
                   {t('chatClearFilter')}
-                </button>
+                </Button>
               ) : null}
             </div>
           </header>
@@ -534,21 +535,15 @@ export default function SmartChatScreen() {
       )}
 
       {faqOpen && (
-        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 10050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setFaqOpen(false)}>
-          <div className="noorix-surface-card noorix-light-sheet" style={{ maxWidth: 520, width: '100%', maxHeight: 'min(80vh, 560px)', overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 14, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 700, fontSize: 16 }}>{isAr ? 'أسئلة جاهزة' : 'Suggested questions'}</span>
-              <button type="button" className="noorix-btn-nav" onClick={() => setFaqOpen(false)}>{isAr ? 'إغلاق' : 'Close'}</button>
-            </div>
-            <div style={{ padding: 16, overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {visibleFaqQuestions.map((q, i) => (
-                <button key={i} type="button" className="noorix-btn-nav" style={{ textAlign: isAr ? 'right' : 'left', padding: '14px 16px', fontSize: 15 }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
-                  {isAr ? q.ar : q.en}
-                </button>
-              ))}
-            </div>
+        <Modal open={true} onClose={() => setFaqOpen(false)} title={isAr ? 'أسئلة جاهزة' : 'Suggested questions'} size="md">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {visibleFaqQuestions.map((q, i) => (
+              <button key={i} type="button" className="noorix-btn-nav" style={{ textAlign: isAr ? 'right' : 'left', padding: '14px 16px', fontSize: 15, width: '100%', background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)', borderRadius: 8, cursor: 'pointer', color: 'var(--noorix-text)' }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
+                {isAr ? q.ar : q.en}
+              </button>
+            ))}
           </div>
-        </div>
+        </Modal>
       )}
 
       {entryMode && activeCompanyId && (
@@ -602,21 +597,15 @@ export default function SmartChatScreen() {
 
       {expenseMode === 'editLine' && activeCompanyId && (
         expenseEditLine === undefined ? (
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 10051, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setExpenseMode(null)}>
-            <div className="noorix-surface-card noorix-light-sheet" style={{ maxWidth: 400, width: '100%', maxHeight: '80vh', overflow: 'auto', padding: 20, borderRadius: 14 }} onClick={(e) => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <strong>{t('chatEditFixedExpense')}</strong>
-                <button type="button" className="noorix-btn-nav" onClick={() => setExpenseMode(null)}>✕</button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {expenseLines.filter((l) => l.isActive !== false).map((line) => (
-                  <button key={line.id} type="button" className="noorix-btn-nav" style={{ textAlign: isAr ? 'right' : 'left', padding: '12px 14px' }} onClick={() => setExpenseEditLine(line)}>
-                    {line.nameAr || line.nameEn || line.name || '—'}
-                  </button>
-                ))}
-              </div>
+          <Modal open={true} onClose={() => setExpenseMode(null)} title={t('chatEditFixedExpense')} size="sm">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {expenseLines.filter((l) => l.isActive !== false).map((line) => (
+                <button key={line.id} type="button" style={{ textAlign: isAr ? 'right' : 'left', padding: '12px 14px', width: '100%', background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)', borderRadius: 8, cursor: 'pointer', color: 'var(--noorix-text)' }} onClick={() => setExpenseEditLine(line)}>
+                  {line.nameAr || line.nameEn || line.name || '—'}
+                </button>
+              ))}
             </div>
-          </div>
+          </Modal>
         ) : (
           <ExpenseLineFormModal
             companyId={activeCompanyId}

@@ -15,6 +15,7 @@ import {
 import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import Toast from '../../components/Toast';
+import { Button, Badge, Modal } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
 import BankStatementDetailView from './bank/BankStatementDetailView';
@@ -135,7 +136,7 @@ export default function BankStatementAnalysisScreen() {
 
   if (selectedStatementId) {
     return (
-      <div style={{ display: 'grid', gap: 18 }}>
+      <div className="nx-screen">
         <BankStatementDetailView
           statementId={selectedStatementId}
           companyId={companyId}
@@ -148,40 +149,22 @@ export default function BankStatementAnalysisScreen() {
           onRefresh={invalidate}
         />
 
-        {deleteConfirmId ? (
-          <div
-            className="noorix-modal-backdrop"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.4)',
-              zIndex: 1200,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            onClick={(e) => e.target === e.currentTarget && setDeleteConfirmId(null)}
-          >
-            <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 400, width: '90%' }} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{ marginTop: 0 }}>{t('confirmDelete')}</h3>
-              <p style={{ color: 'var(--noorix-text-muted)', fontSize: 14 }}>{t('bankDeleteStatementConfirm')}</p>
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-                <button type="button" className="noorix-btn noorix-btn--ghost" onClick={() => setDeleteConfirmId(null)}>
-                  {t('cancel')}
-                </button>
-                <button
-                  type="button"
-                  className="noorix-btn noorix-btn--primary"
-                  style={{ background: '#dc2626' }}
-                  disabled={deleteMutation.isPending}
-                  onClick={() => deleteMutation.mutate(deleteConfirmId)}
-                >
-                  {deleteMutation.isPending ? t('loading') : t('delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
+        <Modal
+          open={!!deleteConfirmId}
+          onClose={() => setDeleteConfirmId(null)}
+          title={t('confirmDelete')}
+          size="sm"
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>{t('cancel')}</Button>
+              <Button variant="danger" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteConfirmId)}>
+                {deleteMutation.isPending ? t('loading') : t('delete')}
+              </Button>
+            </>
+          }
+        >
+          <p style={{ color: 'var(--noorix-text-muted)', fontSize: 14 }}>{t('bankDeleteStatementConfirm')}</p>
+        </Modal>
 
         <Toast
           visible={toast.visible}
@@ -194,17 +177,13 @@ export default function BankStatementAnalysisScreen() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--noorix-text)' }}>
-            {t('reportBankStatementAnalysis')}
-          </h1>
-        </div>
-        <button type="button" className="noorix-btn noorix-btn--primary noorix-bank-cta" onClick={() => setShowUpload(true)}>
+    <div className="nx-screen">
+      <div className="nx-page-header">
+        <h1 className="nx-page-title">{t('reportBankStatementAnalysis')}</h1>
+        <Button variant="primary" onClick={() => setShowUpload(true)}>
           <span aria-hidden style={{ fontSize: 18, lineHeight: 1, opacity: 0.95 }}>＋</span>
           {t('bankStatementUploadNew')}
-        </button>
+        </Button>
       </div>
 
       {completedStatements.length > 0 && (
@@ -305,10 +284,10 @@ export default function BankStatementAnalysisScreen() {
                   <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}></div>
                   <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{t('bankStatementEmptyTitle')}</div>
                   <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 16 }}>{t('bankStatementEmptyDesc')}</div>
-                  <button type="button" className="noorix-btn noorix-btn--primary noorix-bank-cta" onClick={() => setShowUpload(true)}>
+                  <Button variant="primary" onClick={() => setShowUpload(true)}>
                     <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>＋</span>
                     {t('bankStatementUploadNew')}
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -350,12 +329,7 @@ export default function BankStatementAnalysisScreen() {
                     {statements.map((stmt) => {
                       const start = stmt.startDate?.slice(0, 10);
                       const end = stmt.endDate?.slice(0, 10);
-                      const statusBadge =
-                        stmt.status === 'mapping'
-                          ? { bg: 'rgba(234,179,8,0.2)', color: 'rgb(161,98,7)' }
-                          : stmt.status === 'completed'
-                            ? { bg: 'rgba(34,197,94,0.2)', color: 'rgb(22,101,52)' }
-                            : { bg: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)' };
+                      const statusColor = stmt.status === 'mapping' ? 'amber' : stmt.status === 'completed' ? 'green' : 'gray';
                       return (
                         <div
                           key={stmt.id}
@@ -377,17 +351,9 @@ export default function BankStatementAnalysisScreen() {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                               <span style={{ fontWeight: 600 }}>{stmt.companyName || stmt.fileName || 'كشف'}</span>
-                              <span
-                                style={{
-                                  fontSize: 11,
-                                  padding: '2px 8px',
-                                  borderRadius: 6,
-                                  background: statusBadge.bg,
-                                  color: statusBadge.color,
-                                }}
-                              >
+                              <Badge color={statusColor} size="sm">
                                 {stmt.status === 'mapping' ? t('bankStatementStatusMapping') : t('bankStatementStatusCompleted')}
-                              </span>
+                              </Badge>
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
                               {stmt.bankName || '—'} • {start && end ? `${start} – ${end}` : stmt.fileName}
