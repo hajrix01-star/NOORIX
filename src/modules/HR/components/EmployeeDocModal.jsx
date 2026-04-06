@@ -241,7 +241,7 @@ function buildPrintWindow(title, html) {
 
 function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }) {
   return (
-    <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
       <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 920, width: '96%', maxHeight: '92vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>{title}</h3>
         {children}

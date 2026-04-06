@@ -66,7 +66,7 @@ const ENTITY_CONFIG = {
 
 const S = {
   overlay: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+    position: 'fixed', inset: 0, background: 'transparent',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     zIndex: 1200, padding: 16,
   },

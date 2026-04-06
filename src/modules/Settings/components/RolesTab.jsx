@@ -381,7 +381,7 @@ export default function RolesTab({ userRole, language }) {
       )}
 
       {showForm && createPortal(
-        <div role="dialog" style={overlayStyle} onClick={() => !createMutation.isPending && setShowForm(false)}>
+        <div role="dialog" aria-modal="true" style={overlayStyle} onClick={() => !createMutation.isPending && setShowForm(false)}>
           <div className="noorix-surface-card" style={modalStyle} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700 }}>
               {isAr ? 'إنشاء دور جديد' : 'Create New Role'}
@@ -443,7 +443,7 @@ export default function RolesTab({ userRole, language }) {
       )}
 
       {editing && createPortal(
-        <div role="dialog" style={overlayStyle} onClick={() => !updateMutation.isPending && setEditing(null)}>
+        <div role="dialog" aria-modal="true" style={overlayStyle} onClick={() => !updateMutation.isPending && setEditing(null)}>
           <div className="noorix-surface-card" style={modalStyle} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
@@ -528,7 +528,7 @@ export default function RolesTab({ userRole, language }) {
 }
 
 const overlayStyle = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+  position: 'fixed', inset: 0, background: 'transparent',
   display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9000,
   padding: 16,
 };

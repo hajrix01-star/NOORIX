@@ -231,7 +231,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
           onClick={() => setOpen(false)}
           style={{
             position: 'fixed', inset: 0, zIndex: 10049,
-            background: 'rgba(0,0,0,0.25)',
+            background: 'transparent',
             WebkitTapHighlightColor: 'transparent',
           }}
         />,
