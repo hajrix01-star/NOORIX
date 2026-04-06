@@ -24,6 +24,8 @@
  */
 import React, { memo, useCallback, useState, useEffect } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
+import Button from '../../ui/Button';
+import Input  from '../../ui/Input';
 
 // ── Column Definition ────────────────────────────────────────
 /**
@@ -53,17 +55,14 @@ const Pagination = memo(function Pagination({ page, totalPages, onPageChange, t 
 
   if (totalPages <= 1) return null;
   return (
-    <div style={{
-      padding: '10px 16px', borderTop: '1px solid var(--noorix-border)',
-      display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', flexWrap: 'wrap',
-    }}>
-      <button type="button" className="noorix-btn-nav" onClick={() => go(1)} disabled={page === 1}>«</button>
-      <button type="button" className="noorix-btn-nav" onClick={() => go(page - 1)} disabled={page === 1}>‹</button>
-      <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', padding: '0 8px' }}>
+    <div className="nx-table-pagination">
+      <Button size="sm" onClick={() => go(1)}        disabled={page === 1}>«</Button>
+      <Button size="sm" onClick={() => go(page - 1)} disabled={page === 1}>‹</Button>
+      <span className="nx-table-pagination__label">
         {t('pageLabel', page, totalPages)}
       </span>
-      <button type="button" className="noorix-btn-nav" onClick={() => go(page + 1)} disabled={page === totalPages}>›</button>
-      <button type="button" className="noorix-btn-nav" onClick={() => go(totalPages)} disabled={page === totalPages}>»</button>
+      <Button size="sm" onClick={() => go(page + 1)} disabled={page === totalPages}>›</Button>
+      <Button size="sm" onClick={() => go(totalPages)} disabled={page === totalPages}>»</Button>
     </div>
   );
 });
@@ -127,7 +126,7 @@ const SmartTable = memo(function SmartTable({
   const emptyMsg   = emptyMessage ?? t('noDataInPeriod');
 
   return (
-    <div className="noorix-surface-card noorix-table-frame" style={{ overflow: 'hidden', padding: innerPadding }}>
+    <div className="noorix-surface-card noorix-table-frame nx-table-frame" style={{ overflow: 'hidden', padding: innerPadding }}>
       {/* ── رأس الجدول ── */}
       {(title || badge || onSearchChange) && (
         <div style={{
@@ -137,17 +136,14 @@ const SmartTable = memo(function SmartTable({
           {title && <span style={{ fontWeight: 700, fontSize: 15, flexShrink: 0 }}>{title}</span>}
           {badge && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>{badge}</div>}
           {onSearchChange && (
-            <input
+            <Input
               type="search"
               value={searchValue ?? ''}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              style={{
-                marginInlineStart: 'auto', padding: '5px 10px', borderRadius: 4, fontSize: 12.5,
-                border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-page)',
-                minWidth: 120, width: '100%', maxWidth: 220, outline: 'none',
-                flex: '0 1 auto',
-              }}
+              size="sm"
+              className="nx-table-search"
+              aria-label={t('searchPlaceholder')}
             />
           )}
         </div>

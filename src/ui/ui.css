@@ -1,0 +1,1048 @@
+/**
+ * ui.css — نظام مكوّنات نووريكس الذري
+ * يتضمن: Button | Input | Card | Badge | Modal | Spinner | Divider | FormRow | Table
+ * ─────────────────────────────────────
+ * مبني فوق CSS Variables الموجودة في index.css
+ * كل قسم مُعلَّق بوضوح ويمكن تعديله من مكان واحد
+ */
+
+/* ═══════════════════════════════════════════════════════════
+   1. Spinner — نوع التحميل
+   ═══════════════════════════════════════════════════════════ */
+@keyframes nx-spin {
+  to { transform: rotate(360deg); }
+}
+
+.nx-spinner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.nx-spinner__label {
+  font-size: 13px;
+  color: var(--noorix-text-muted);
+  font-family: var(--noorix-font-primary);
+}
+
+.nx-spinner-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 200px;
+  padding: 40px;
+}
+
+.nx-spinner__label--page {
+  font-size: 14px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   2. Button — الأزرار
+   ═══════════════════════════════════════════════════════════ */
+.nx-btn {
+  /* تخطيط */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  /* مقاس افتراضي (md) */
+  min-height: 38px;
+  padding: 8px 18px;
+  font-size: 14px;
+
+  /* مظهر */
+  border-radius: 9px;
+  border: 1px solid var(--btn-default-border);
+  background: var(--btn-default-bg);
+  color: var(--btn-default-text);
+  font-family: var(--noorix-font-primary);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  vertical-align: middle;
+
+  /* انتقال */
+  transition:
+    background var(--noorix-transition),
+    border-color var(--noorix-transition),
+    box-shadow var(--noorix-transition),
+    transform 120ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 150ms;
+}
+
+/* — hover / active / disabled / focus ── */
+.nx-btn:hover:not(:disabled) {
+  background: var(--btn-default-hover);
+  border-color: #a8bcd4;
+  box-shadow: 0 1px 4px rgba(10,31,68,0.1), 0 2px 8px rgba(10,31,68,0.06);
+}
+.nx-btn:active:not(:disabled)  { transform: translateY(1px); }
+.nx-btn:disabled                { opacity: 0.45; cursor: not-allowed; }
+.nx-btn:focus-visible {
+  outline: 2px solid var(--noorix-accent-blue);
+  outline-offset: 2px;
+}
+
+/* — Variants ── */
+.nx-btn--primary {
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-bg);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(37,99,235,0.2);
+}
+.nx-btn--primary:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3), 0 4px 16px rgba(37,99,235,0.12);
+  color: #fff;
+}
+
+.nx-btn--success {
+  background: var(--btn-success-bg);
+  border-color: var(--btn-success-bg);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(22,163,74,0.2);
+}
+.nx-btn--success:hover:not(:disabled) {
+  background: var(--btn-success-hover);
+  border-color: var(--btn-success-hover);
+  box-shadow: 0 2px 8px rgba(22,163,74,0.25);
+  color: #fff;
+}
+
+.nx-btn--danger {
+  background: var(--btn-danger-bg);
+  border-color: var(--btn-danger-bg);
+  color: #fff;
+}
+.nx-btn--danger:hover:not(:disabled) {
+  background: var(--btn-danger-hover);
+  border-color: var(--btn-danger-hover);
+  color: #fff;
+}
+
+.nx-btn--warning {
+  background: var(--btn-warning-bg);
+  border-color: var(--btn-warning-bg);
+  color: #fff;
+}
+.nx-btn--warning:hover:not(:disabled) {
+  background: var(--btn-warning-hover);
+  border-color: var(--btn-warning-hover);
+  color: #fff;
+}
+
+.nx-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--noorix-text-muted);
+  box-shadow: none;
+}
+.nx-btn--ghost:hover:not(:disabled) {
+  background: var(--btn-default-hover);
+  border-color: var(--btn-default-border);
+  color: var(--noorix-text);
+}
+
+/* — Sizes ── */
+.nx-btn--sm {
+  min-height: 30px;
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 7px;
+  gap: 5px;
+}
+
+.nx-btn--lg {
+  min-height: 48px;
+  padding: 12px 24px;
+  font-size: 15px;
+  border-radius: 10px;
+  gap: 8px;
+}
+
+/* — fullWidth ── */
+.nx-btn--full { width: 100%; }
+
+/* — Loading ── */
+.nx-btn--loading { cursor: wait; }
+
+.nx-btn__spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: currentColor;
+  animation: nx-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.nx-btn--default .nx-btn__spinner,
+.nx-btn--ghost   .nx-btn__spinner {
+  border-color: rgba(0,0,0,0.12);
+  border-top-color: var(--noorix-text-muted);
+}
+
+.nx-btn--sm .nx-btn__spinner { width: 12px; height: 12px; }
+.nx-btn--lg .nx-btn__spinner { width: 20px; height: 20px; border-width: 3px; }
+
+.nx-btn__icon { font-size: 15px; line-height: 1; flex-shrink: 0; }
+.nx-btn__label { line-height: 1.3; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   3. Input — حقول الإدخال
+   ═══════════════════════════════════════════════════════════ */
+.nx-input {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
+.nx-input__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-primary);
+  display: block;
+}
+
+.nx-input__required {
+  color: var(--noorix-accent-red, #dc2626);
+  margin-inline-start: 2px;
+}
+
+/* ─ الحقل الأساسي ─ */
+.nx-input__field {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-family: var(--noorix-font-primary);
+  border: 1.5px solid var(--noorix-border);
+  border-radius: 8px;
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  transition: border-color 150ms, box-shadow 150ms;
+  outline: none;
+  min-height: 40px;
+}
+
+.nx-input__field::placeholder { color: var(--noorix-text-muted-2, #8fa0b4); }
+
+.nx-input__field:focus {
+  border-color: var(--noorix-accent-blue);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.nx-input__field:disabled,
+.nx-input__field--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--noorix-bg-muted);
+}
+
+.nx-input__field--readonly {
+  background: var(--noorix-bg-muted);
+  cursor: default;
+}
+
+/* — Error state ── */
+.nx-input--has-error .nx-input__field,
+.nx-input__field--error {
+  border-color: var(--noorix-accent-red, #dc2626);
+}
+.nx-input--has-error .nx-input__field:focus {
+  box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+}
+
+/* — Select ── */
+.nx-input__field--select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6a7e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 12px center;
+  padding-left: 36px;
+}
+[dir='rtl'] .nx-input__field--select {
+  background-position: right 12px center;
+  padding-left: 12px;
+  padding-right: 36px;
+}
+
+/* — Textarea ── */
+.nx-input__field--textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* — Sizes ── */
+.nx-input__field--sm  { padding: 6px 10px; font-size: 13px; min-height: 32px; border-radius: 6px; }
+.nx-input__field--lg  { padding: 12px 16px; font-size: 15px; min-height: 48px; border-radius: 10px; }
+
+/* — Prefix / Suffix wrapper ── */
+.nx-input__wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.nx-input__prefix,
+.nx-input__suffix {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--noorix-text-muted);
+  background: var(--noorix-bg-muted);
+  border: 1.5px solid var(--noorix-border);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.nx-input__prefix {
+  border-radius: 8px 0 0 8px;
+  border-inline-end: none;
+}
+[dir='rtl'] .nx-input__prefix {
+  border-radius: 0 8px 8px 0;
+  border-inline-end: 1.5px solid var(--noorix-border);
+  border-inline-start: none;
+}
+
+.nx-input__suffix {
+  border-radius: 0 8px 8px 0;
+  border-inline-start: none;
+}
+[dir='rtl'] .nx-input__suffix {
+  border-radius: 8px 0 0 8px;
+  border-inline-start: 1.5px solid var(--noorix-border);
+  border-inline-end: none;
+}
+
+.nx-input__field--prefixed {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+[dir='rtl'] .nx-input__field--prefixed {
+  border-start-start-radius: 8px;
+  border-end-start-radius: 8px;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.nx-input__field--suffixed {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+[dir='rtl'] .nx-input__field--suffixed {
+  border-start-end-radius: 8px;
+  border-end-end-radius: 8px;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+/* — Hint / Error text ── */
+.nx-input__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--noorix-text-muted);
+  line-height: 1.4;
+}
+.nx-input__error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--noorix-accent-red, #dc2626);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   4. Card — البطاقات
+   ═══════════════════════════════════════════════════════════ */
+
+/* Padding scale */
+.nx-card--pad-none { padding: 0; }
+.nx-card--pad-sm   { padding: 12px; }
+.nx-card--pad-md   { padding: 20px; }
+.nx-card--pad-lg   { padding: 28px; }
+
+/* ─ Surface ─ */
+.nx-card--surface {
+  background: var(--noorix-bg-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 14px;
+  box-shadow: var(--noorix-shadow);
+  transition: box-shadow var(--noorix-transition);
+  padding: 20px;
+}
+
+.nx-card--clickable {
+  cursor: pointer;
+}
+.nx-card--clickable:hover {
+  box-shadow: var(--noorix-shadow-md);
+}
+
+/* ─ Plain ─ */
+.nx-card--plain {
+  background: transparent;
+}
+
+/* ─ Exec ─ */
+.nx-card--exec {
+  background: var(--noorix-bg-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 14px;
+  border-inline-start-width: 4px;
+  box-shadow: var(--noorix-shadow-sm);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nx-card--stripe-green  { border-inline-start-color: var(--noorix-accent-green);  }
+.nx-card--stripe-blue   { border-inline-start-color: var(--noorix-accent-blue);   }
+.nx-card--stripe-red    { border-inline-start-color: var(--noorix-accent-rose);   }
+.nx-card--stripe-amber  { border-inline-start-color: var(--noorix-accent-amber);  }
+.nx-card--stripe-violet { border-inline-start-color: var(--noorix-accent-violet); }
+
+.nx-card-exec__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nx-card-exec__icon { font-size: 20px; flex-shrink: 0; }
+.nx-card-exec__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--noorix-text);
+}
+.nx-card-exec__subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--noorix-text-muted);
+}
+.nx-card-exec__value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-numbers);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.nx-card-exec__footer {
+  padding-top: 10px;
+  border-top: 1px solid var(--noorix-border);
+  font-size: 12px;
+  color: var(--noorix-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ─ Stat ─ */
+.nx-card--stat {
+  background: var(--noorix-bg-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 12px;
+  box-shadow: var(--noorix-shadow-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.nx-card-stat__stripe {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 4px;
+}
+
+.nx-card--stat-blue   .nx-card-stat__stripe { background: var(--noorix-accent-blue);  }
+.nx-card--stat-green  .nx-card-stat__stripe { background: var(--noorix-accent-green); }
+.nx-card--stat-red    .nx-card-stat__stripe { background: var(--noorix-accent-rose);  }
+.nx-card--stat-amber  .nx-card-stat__stripe { background: var(--noorix-accent-amber); }
+.nx-card--stat-violet .nx-card-stat__stripe { background: var(--noorix-accent-violet);}
+.nx-card--stat-gray   .nx-card-stat__stripe { background: var(--noorix-text-muted);   }
+
+.nx-card-stat__body {
+  padding: 14px 16px 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nx-card-stat__icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.nx-card-stat__content { flex: 1; min-width: 0; }
+
+.nx-card-stat__label {
+  margin: 0 0 2px;
+  font-size: 12px;
+  color: var(--noorix-text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nx-card-stat__value {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-numbers);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.nx-card-stat__delta {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+}
+.nx-card-stat__delta--up   { color: var(--noorix-accent-green); }
+.nx-card-stat__delta--down { color: var(--noorix-accent-rose); }
+
+
+/* ═══════════════════════════════════════════════════════════
+   5. Badge — شارات الحالة
+   ═══════════════════════════════════════════════════════════ */
+.nx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--noorix-font-primary);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.nx-badge--sm {
+  padding: 1px 7px;
+  font-size: 10px;
+}
+
+.nx-badge__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   6. Modal — النوافذ المنبثقة
+   ═══════════════════════════════════════════════════════════ */
+.nx-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(10, 22, 40, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nx-modal {
+  background: var(--noorix-bg-modal, #fff);
+  border: 1px solid var(--noorix-border);
+  border-radius: 16px;
+  box-shadow: var(--noorix-modal-shadow, 0 8px 48px rgba(10,31,68,0.22));
+  width: 100%;
+  max-height: min(90vh, 800px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: nx-modal-in 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes nx-modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* — Header ── */
+.nx-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--noorix-border);
+  flex-shrink: 0;
+}
+
+.nx-modal__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--noorix-text);
+  line-height: 1.3;
+}
+
+.nx-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--noorix-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms, color 150ms;
+  padding: 0;
+}
+.nx-modal__close:hover {
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text);
+}
+
+/* — Body ── */
+.nx-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--noorix-border) transparent;
+}
+
+/* — Footer ── */
+.nx-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--noorix-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* — Responsive ── */
+@media (max-width: 640px) {
+  .nx-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .nx-modal {
+    border-radius: 20px 20px 0 0;
+    max-height: min(92vh, 700px);
+    width: 100%;
+    animation: nx-modal-in-mobile 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes nx-modal-in-mobile {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .nx-modal__footer {
+    padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   7. Divider — الفاصل
+   ═══════════════════════════════════════════════════════════ */
+.nx-divider {
+  border: none;
+  border-top: 1px solid var(--noorix-border);
+  margin: 16px 0;
+  width: 100%;
+}
+
+.nx-divider--vertical {
+  display: inline-block;
+  width: 1px;
+  min-height: 1em;
+  background: var(--noorix-border);
+  border: none;
+  margin: 0 8px;
+  vertical-align: middle;
+}
+
+.nx-divider--labeled {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+  border: none;
+}
+.nx-divider__line {
+  flex: 1;
+  height: 1px;
+  background: var(--noorix-border);
+}
+.nx-divider__label {
+  font-size: 12px;
+  color: var(--noorix-text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   8. FormRow — تخطيط النماذج
+   ═══════════════════════════════════════════════════════════ */
+.nx-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.nx-form-row--cols-1 { grid-template-columns: 1fr; }
+.nx-form-row--cols-2 { grid-template-columns: repeat(2, 1fr); }
+.nx-form-row--cols-3 { grid-template-columns: repeat(3, 1fr); }
+.nx-form-row--cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.nx-form-row--gap-sm { gap: 8px; }
+.nx-form-row--gap-md { gap: 14px; }
+.nx-form-row--gap-lg { gap: 20px; }
+
+@media (max-width: 640px) {
+  .nx-form-row,
+  .nx-form-row--cols-2,
+  .nx-form-row--cols-3,
+  .nx-form-row--cols-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   9. Table — الجداول (SmartTable)
+   ═══════════════════════════════════════════════════════════ */
+
+/* — الإطار الخارجي ─ */
+.nx-table-frame {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* — رأس الجدول (العنوان + البحث) ─ */
+.nx-table-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--noorix-border);
+  flex-shrink: 0;
+}
+
+.nx-table-header__title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--noorix-text);
+  flex-shrink: 0;
+}
+
+.nx-table-header__badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* — حقل البحث داخل الجدول ─ */
+.nx-table-search {
+  margin-inline-start: auto;
+  min-width: 120px;
+  width: 100%;
+  max-width: 220px;
+  flex: 0 1 auto;
+}
+
+/* — رسالة الخطأ ─ */
+.nx-table-error {
+  margin: 12px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 10px;
+  color: var(--noorix-accent-red, #dc2626);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* — Skeleton Loading ─ */
+.nx-table-skeleton {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nx-table-skeleton__bar {
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--noorix-bg-muted) 25%,
+    var(--noorix-border-muted, var(--noorix-border)) 50%,
+    var(--noorix-bg-muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* — Wrapper تمرير أفقي ─ */
+.nx-table-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-width: 0;
+}
+
+/* — الجدول الفعلي ─ */
+.nx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--noorix-font-primary);
+}
+
+/* — رأس الجدول ─ */
+.nx-table thead tr {
+  background: var(--noorix-table-header-bg, #f8f9fb);
+}
+
+.nx-table thead th {
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--noorix-text);
+  border-bottom: 2px solid var(--noorix-border);
+  border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border));
+  text-align: start;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.nx-table thead th:first-child { border-inline-start: none; }
+.nx-table thead th:last-child  { border-inline-end: none; }
+
+/* — عمود قابل للترتيب ─ */
+.nx-table th.nx-table__th--sortable { cursor: pointer; }
+.nx-table th.nx-table__th--sortable:hover { background: var(--noorix-bg-muted); }
+
+.nx-table__sort-icon {
+  margin-inline-start: 4px;
+  font-size: 11px;
+  opacity: 0.5;
+  transition: opacity 120ms;
+}
+.nx-table th.nx-table__th--sorted .nx-table__sort-icon { opacity: 1; }
+
+/* — خلايا الجسم ─ */
+.nx-table tbody tr {
+  border-bottom: 1px solid var(--noorix-border);
+  transition: background 80ms;
+}
+
+.nx-table tbody tr:nth-child(even) {
+  background: var(--noorix-table-row-even, var(--noorix-bg-page));
+}
+
+.nx-table tbody tr:hover {
+  background: var(--noorix-bg-muted);
+}
+
+.nx-table tbody td {
+  padding: 7px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--noorix-text);
+  border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border));
+  vertical-align: middle;
+}
+
+.nx-table tbody td:first-child { border-inline-start: none; }
+.nx-table tbody td:last-child  { border-inline-end: none; }
+
+/* — الصف الملغي ─ */
+.nx-table tr.nx-table__row--cancelled td {
+  text-decoration: line-through;
+  color: var(--noorix-text-muted);
+  opacity: 0.7;
+}
+
+/* — حالة فارغة ─ */
+.nx-table tbody .nx-table__empty td {
+  padding: 36px 16px;
+  text-align: center;
+  color: var(--noorix-text-muted);
+  font-size: 14px;
+  border: none;
+}
+
+/* — تذييل الجدول (الإجماليات) ─ */
+.nx-table tfoot td {
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--noorix-text);
+  background: var(--noorix-table-header-bg);
+  border-top: 2px solid var(--noorix-border);
+  border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border));
+}
+.nx-table tfoot td:first-child { border-inline-start: none; }
+
+/* — أعمدة خاصة ─ */
+/* مالية: محاذاة يمين دائماً */
+.nx-table .nx-col--numeric {
+  text-align: right !important;
+  font-family: var(--noorix-font-numbers);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* نصية: تقطع مع ellipsis */
+.nx-table .nx-col--truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+/* انكماش تلقائي */
+.nx-table .nx-col--shrink {
+  white-space: nowrap;
+  width: 1%;
+}
+
+/* — عمود الإجراءات: sticky ─ */
+.nx-table .nx-col--actions {
+  white-space: nowrap;
+  width: 1%;
+  padding-inline: 6px;
+}
+
+.nx-table .nx-col--actions.nx-col--sticky {
+  position: sticky;
+  inset-inline-end: 0;
+  z-index: 2;
+  background: var(--noorix-bg-surface);
+  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.06);
+}
+
+.nx-table tbody tr:nth-child(even) .nx-col--actions.nx-col--sticky {
+  background: var(--noorix-table-row-even, var(--noorix-bg-page));
+}
+
+.nx-table tbody tr:hover .nx-col--actions.nx-col--sticky {
+  background: var(--noorix-bg-muted);
+}
+
+/* أزرار الإجراءات في صف أفقي */
+.nx-table .nx-col--actions > div,
+.nx-actions-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* — ترقيم الصفحات ─ */
+.nx-table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-top: 1px solid var(--noorix-border);
+  flex-shrink: 0;
+}
+
+.nx-table-pagination__label {
+  font-size: 12px;
+  color: var(--noorix-text-muted);
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+/* — رقم الصف ─ */
+.nx-table .nx-col--rownum {
+  text-align: center;
+  color: var(--noorix-text-muted);
+  font-size: 12px;
+  width: 36px;
+  min-width: 36px;
+}
+
+/* — بطاقات الجوال ─ */
+.nx-table-mobile-cards {
+  display: flex;
+  flex-direction: column;
+}
+
+.nx-table-mobile-card {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--noorix-border);
+}
+
+.nx-table-mobile-card:last-child {
+  border-bottom: none;
+}
+
+/* — استجابة للجوال ─ */
+@media (max-width: 640px) {
+  .nx-table-search {
+    max-width: 100%;
+    margin-inline-start: 0;
+  }
+
+  .nx-table-header {
+    gap: 8px;
+  }
+
+  .nx-table thead th,
+  .nx-table tbody td {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+
+  .nx-table-pagination {
+    padding: 8px 12px;
+    gap: 4px;
+  }
+}
