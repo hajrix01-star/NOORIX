@@ -49,16 +49,60 @@ function validateItemMath(
   };
 }
 
+/**
+ * يتحقق من توافق مجموع الأصناف مع إجمالي الفاتورة.
+ *
+ * منطق الفواتير الضريبية السعودية:
+ *   أسعار الأصناف = بدون ضريبة (subtotal)
+ *   subtotal + VAT = grand total (totalAmount)
+ *
+ * ترتيب المقارنة:
+ *   1. itemsSum ≈ subtotalAmount          (إذا استُخرج المجموع قبل الضريبة)
+ *   2. itemsSum ≈ totalAmount - vatAmount  (إذا لم يكن subtotalAmount متوفراً)
+ *   3. itemsSum ≈ totalAmount              (فواتير بدون ضريبة منفصلة)
+ */
 function validateInvoiceTotals(
   itemsTotal: number,
-  invoiceTotal?: number,
-): { valid: boolean; warning?: string } {
-  if (!invoiceTotal || itemsTotal === 0) return { valid: true };
-  const tolerance = invoiceTotal * 0.05; // 5%
-  if (Math.abs(itemsTotal - invoiceTotal) <= tolerance) return { valid: true };
+  totalAmount?: number,
+  vatAmount?: number,
+  subtotalAmount?: number,
+): { valid: boolean; warning?: string; vatAdjusted: boolean } {
+  if (!totalAmount || itemsTotal === 0) return { valid: true, vatAdjusted: false };
+
+  const T = 0.05; // هامش 5%
+
+  // 1. قارن بـ subtotalAmount (المجموع قبل الضريبة) إن وُجد
+  if (subtotalAmount && subtotalAmount > 0) {
+    const tol = subtotalAmount * T;
+    if (Math.abs(itemsTotal - subtotalAmount) <= tol) return { valid: true, vatAdjusted: true };
+    return {
+      valid: false,
+      vatAdjusted: true,
+      warning: `مجموع الأصناف ${itemsTotal.toFixed(2)} ≠ المجموع قبل الضريبة ${subtotalAmount.toFixed(2)}`,
+    };
+  }
+
+  // 2. اطرح الضريبة من الإجمالي وقارن
+  if (vatAmount && vatAmount > 0) {
+    const expectedSubtotal = totalAmount - vatAmount;
+    const tol = Math.max(expectedSubtotal, itemsTotal) * T;
+    if (Math.abs(itemsTotal - expectedSubtotal) <= tol) return { valid: true, vatAdjusted: true };
+    // تحقق أيضاً من الإجمالي الكلي (بعض الفواتير تضم الضريبة في السطور)
+    if (Math.abs(itemsTotal - totalAmount) <= totalAmount * T) return { valid: true, vatAdjusted: false };
+    return {
+      valid: false,
+      vatAdjusted: true,
+      warning: `مجموع الأصناف ${itemsTotal.toFixed(2)} ≠ المجموع قبل الضريبة المحسوب (${totalAmount} - ${vatAmount} = ${expectedSubtotal.toFixed(2)})`,
+    };
+  }
+
+  // 3. لا ضريبة منفصلة — قارن بالإجمالي مباشرة
+  const tol = totalAmount * T;
+  if (Math.abs(itemsTotal - totalAmount) <= tol) return { valid: true, vatAdjusted: false };
   return {
     valid: false,
-    warning: `مجموع الأصناف ${itemsTotal.toFixed(2)} لا يتطابق مع إجمالي الفاتورة ${invoiceTotal}`,
+    vatAdjusted: false,
+    warning: `مجموع الأصناف ${itemsTotal.toFixed(2)} لا يتطابق مع إجمالي الفاتورة ${totalAmount}`,
   };
 }
 
@@ -189,37 +233,40 @@ interface GeminiExtractedInvoice {
   vatNumber?: { value?: string; confidence?: number };
   invoiceNumber?: { value?: string; confidence?: number };
   invoiceDate?: { value?: string; confidence?: number };
-  totalAmount?: { value?: number; confidence?: number };
+  subtotalAmount?: { value?: number; confidence?: number }; // المجموع قبل الضريبة
+  totalAmount?: { value?: number; confidence?: number };    // الإجمالي شامل الضريبة
   vatAmount?: { value?: number; confidence?: number };
   items?: GeminiExtractedItem[];
 }
 
-const OCR_EXTRACTION_PROMPT = `You are an expert invoice data extraction system. Extract ALL data from this invoice image and return ONLY a raw JSON object.
+const OCR_EXTRACTION_PROMPT = `You are an expert invoice data extraction system specializing in Arabic/Saudi tax invoices. Extract ALL data and return ONLY a raw JSON object.
 
-OUTPUT FORMAT (return exactly this structure, no markdown, no explanation):
-{"supplier":{"name":"seller company name","confidence":0.95},"vatNumber":{"value":"tax number or null","confidence":0.9},"invoiceNumber":{"value":"invoice number or null","confidence":0.95},"invoiceDate":{"value":"YYYY-MM-DD or null","confidence":0.95},"totalAmount":{"value":1500.00,"confidence":0.98},"vatAmount":{"value":195.65,"confidence":0.98},"items":[{"name":"full item name exactly as printed","quantity":5,"unitPrice":60.00,"totalPrice":300.00,"confidence":0.90}]}
+OUTPUT FORMAT (no markdown, no explanation — start with { end with }):
+{"supplier":{"name":"seller name","confidence":0.95},"vatNumber":{"value":"tax registration number","confidence":0.9},"invoiceNumber":{"value":"invoice number","confidence":0.95},"invoiceDate":{"value":"YYYY-MM-DD","confidence":0.95},"subtotalAmount":{"value":515.85,"confidence":0.98},"vatAmount":{"value":77.30,"confidence":0.98},"totalAmount":{"value":593.22,"confidence":0.98},"items":[{"name":"item name as printed","quantity":5,"unitPrice":60.00,"totalPrice":300.00,"confidence":0.90}]}
 
-CRITICAL MATH RULE — MUST FOLLOW:
-- For every item: totalPrice MUST equal quantity × unitPrice (within 1%)
-- If you see a conflict between these 3 values, use totalPrice as the truth (it is printed as a subtotal on the invoice)
-- Then recalculate: if totalPrice=42 and unitPrice=14, then quantity=3 (not whatever else you see)
-- NEVER return mathematically inconsistent values
+SAUDI VAT INVOICE STRUCTURE — CRITICAL:
+Saudi tax invoices have THREE separate totals at the bottom:
+  1. subtotalAmount (المجموع قبل الضريبة / Taxable Amount) — sum of all line items BEFORE VAT
+  2. vatAmount (ضريبة القيمة المضافة / VAT 15%) — the tax amount
+  3. totalAmount (الإجمالي شامل الضريبة / Total with VAT) — subtotalAmount + vatAmount
+ALWAYS extract all three. Item prices are EXCLUDING VAT.
+Verify: subtotalAmount + vatAmount ≈ totalAmount
 
-QUANTITY NOTATION RULES:
-- "12x1-L" or "12x1L" means quantity=12 items, each 1 liter in size — set quantity=12
-- "6x500ml" means quantity=6, size=500ml
-- Pack/carton counts like "24PCS" mean quantity=24
-- Arabic fractions: "نصف" = 0.5, "ربع" = 0.25 (rare — verify against totalPrice)
+MATH RULES FOR LINE ITEMS:
+- Every item: totalPrice = quantity × unitPrice (within 1%)
+- If conflict: totalPrice printed on invoice is truth → recalculate the other value
+- "12x1-L" or "12x1L" = quantity:12, size:1L — NOT quantity:0.5
+- "6x500ml" = quantity:6, size:500ml
+- Carton/pack quantities like "24PCS" = quantity:24
 
 GENERAL RULES:
-- Return ONLY the JSON, starting with { and ending with }
-- confidence is 0.0 to 1.0
-- Use null for any field you cannot find or read clearly
-- Keep item names exactly as they appear (Arabic, English, or mixed)
-- Date format must be YYYY-MM-DD
-- Amounts must be numbers only (no currency text, no commas)
-- Extract ALL line items from the invoice, do not skip any
-- After extracting, mentally verify: sum of all item totalPrices ≈ invoice totalAmount`;
+- Return ONLY valid JSON starting with {
+- confidence 0.0–1.0 per field
+- null for unreadable fields
+- Keep item names exactly as printed (Arabic, English, or mixed)
+- Date: YYYY-MM-DD format
+- Numbers only (no currency symbols, no commas)
+- Extract ALL line items — do not skip any`;
 
 
 
@@ -518,11 +565,13 @@ export class OcrInvoicesService {
       }),
     );
 
-    // تحقق من مجموع الأصناف مقارنةً بإجمالي الفاتورة
+    // تحقق من مجموع الأصناف مع مراعاة الضريبة
     const itemsSum = enrichedWithWarnings.reduce((s, i) => s + (i.totalPrice || 0), 0);
     const invoiceTotalValidation = validateInvoiceTotals(
       itemsSum,
       extracted.totalAmount?.value,
+      extracted.vatAmount?.value,
+      extracted.subtotalAmount?.value,
     );
 
     return {
@@ -531,10 +580,12 @@ export class OcrInvoicesService {
       vatNumber: extracted.vatNumber,
       invoiceNumber: extracted.invoiceNumber,
       invoiceDate: extracted.invoiceDate,
+      subtotalAmount: extracted.subtotalAmount,
       totalAmount: extracted.totalAmount,
       vatAmount: extracted.vatAmount,
       items: enrichedWithWarnings,
       invoiceTotalWarning: invoiceTotalValidation.valid ? undefined : invoiceTotalValidation.warning,
+      vatAdjusted: invoiceTotalValidation.vatAdjusted, // للـ frontend: يعلمه أن المقارنة أخذت الضريبة بعين الاعتبار
     };
   }
 
@@ -748,12 +799,13 @@ export class OcrInvoicesService {
       data: {
         tenantId,
         supplierId,
-        invoiceNumber: invoiceData.invoiceNumber || null,
-        imageUrl: invoiceData.imageUrl || null,
-        rawExtraction: invoiceData.rawExtraction ? (invoiceData.rawExtraction as object) : undefined,
-        notes: invoiceData.notes || null,
-        totalAmount: totalAmount ? totalAmount : null,
-        vatAmount: vatAmount ? vatAmount : null,
+        invoiceNumber:  invoiceData.invoiceNumber  || null,
+        imageUrl:       invoiceData.imageUrl        || null,
+        rawExtraction:  invoiceData.rawExtraction ? (invoiceData.rawExtraction as object) : undefined,
+        notes:          invoiceData.notes           || null,
+        subtotalAmount: (invoiceData as { subtotalAmount?: number }).subtotalAmount || null,
+        totalAmount:    totalAmount ? totalAmount   : null,
+        vatAmount:      vatAmount   ? vatAmount     : null,
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         status: 'confirmed',
         lines: {

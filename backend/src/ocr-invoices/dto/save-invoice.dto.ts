@@ -66,6 +66,10 @@ export class SaveInvoiceDto {
 
   @IsOptional()
   @IsNumber()
+  subtotalAmount?: number;
+
+  @IsOptional()
+  @IsNumber()
   totalAmount?: number;
 
   @IsOptional()

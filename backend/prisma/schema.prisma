@@ -1076,8 +1076,9 @@ model OcrInvoice {
   supplierId    String?   @map("supplier_id")
   invoiceNumber String?   @map("invoice_number")
   invoiceDate   DateTime? @map("invoice_date")
-  totalAmount   Decimal?  @map("total_amount")  @db.Decimal(14, 2)
-  vatAmount     Decimal?  @map("vat_amount")    @db.Decimal(14, 2)
+  subtotalAmount Decimal?  @map("subtotal_amount") @db.Decimal(14, 2)
+  totalAmount    Decimal?  @map("total_amount")    @db.Decimal(14, 2)
+  vatAmount      Decimal?  @map("vat_amount")      @db.Decimal(14, 2)
   imageUrl      String?   @map("image_url")
   rawExtraction Json?     @map("raw_extraction")
   status        String    @default("pending")   // pending | confirmed | rejected

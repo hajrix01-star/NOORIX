@@ -31,7 +31,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
   // الأصناف الفعلية = التعديل إن وجد أو الأصل
   const activeItems = editItems ?? extracted?.items ?? [];
 
-  // عدد التحذيرات الفعلية
+  // عدد التحذيرات الفعلية (تحذيرات الرياضيات وتحذيرات السعر فقط — لا الإجمالي)
   const warningCount = useMemo(() => {
     let n = 0;
     if (extracted?.invoiceTotalWarning) n++;
@@ -41,6 +41,9 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
     });
     return n;
   }, [extracted?.invoiceTotalWarning, activeItems]);
+
+  // هل المقارنة أخذت الضريبة بعين الاعتبار؟
+  const vatAdjusted = extracted?.vatAdjusted;
 
   // تحديث صنف واحد (تعديل إنلاين)
   const updateItem = (index, field, value) => {
@@ -144,15 +147,15 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
       }));
 
       const payload = {
-        supplierId:    extracted.supplierMatch?.id || null,
-        // إذا لم يكن هناك مطابقة، أرسل الاسم المستخرج لإنشاء المورد تلقائياً
-        supplierName:  !extracted.supplierMatch?.id ? (extracted.supplier?.name || null) : null,
-        invoiceNumber: extracted.invoiceNumber?.value || null,
-        invoiceDate:   extracted.invoiceDate?.value || null,
-        totalAmount:   extracted.totalAmount?.value || null,
-        vatAmount:     extracted.vatAmount?.value || null,
-        imageUrl:      preview || null,
-        rawExtraction: extracted,
+        supplierId:     extracted.supplierMatch?.id || null,
+        supplierName:   !extracted.supplierMatch?.id ? (extracted.supplier?.name || null) : null,
+        invoiceNumber:  extracted.invoiceNumber?.value || null,
+        invoiceDate:    extracted.invoiceDate?.value || null,
+        subtotalAmount: extracted.subtotalAmount?.value || null,
+        totalAmount:    extracted.totalAmount?.value || null,
+        vatAmount:      extracted.vatAmount?.value || null,
+        imageUrl:       preview || null,
+        rawExtraction:  extracted,
         lines,
       };
 
@@ -264,9 +267,34 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                   <FieldRow label={t('ocrVatNumber')} value={extracted.vatNumber?.value} confidence={extracted.vatNumber?.confidence} />
                   <FieldRow label={t('ocrInvoiceNumber')} value={extracted.invoiceNumber?.value} confidence={extracted.invoiceNumber?.confidence} />
                   <FieldRow label={t('ocrInvoiceDate')} value={extracted.invoiceDate?.value} confidence={extracted.invoiceDate?.confidence} />
-                  <FieldRow label={t('ocrTotalAmount')} value={extracted.totalAmount?.value ? `${extracted.totalAmount.value} ريال` : null} confidence={extracted.totalAmount?.confidence} />
-                  <FieldRow label={t('ocrVatAmount')} value={extracted.vatAmount?.value ? `${extracted.vatAmount.value} ريال` : null} confidence={extracted.vatAmount?.confidence} />
                 </div>
+
+                {/* ملخص المبالغ — subtotal + VAT + total */}
+                {(extracted.subtotalAmount?.value || extracted.vatAmount?.value || extracted.totalAmount?.value) && (
+                  <div style={{
+                    marginTop: 12, borderRadius: 10, overflow: 'hidden',
+                    border: '1px solid var(--noorix-border)',
+                  }}>
+                    {extracted.subtotalAmount?.value && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
+                        <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>المجموع قبل الضريبة</span>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>{extracted.subtotalAmount.value.toLocaleString('ar-SA')} ريال</span>
+                      </div>
+                    )}
+                    {extracted.vatAmount?.value && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
+                        <span style={{ fontSize: 13, color: '#d97706' }}>ضريبة القيمة المضافة (15%)</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>{extracted.vatAmount.value.toLocaleString('ar-SA')} ريال</span>
+                      </div>
+                    )}
+                    {extracted.totalAmount?.value && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(22,163,74,0.06)' }}>
+                        <span style={{ fontSize: 14, fontWeight: 700 }}>الإجمالي شامل الضريبة</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#16a34a' }}>{extracted.totalAmount.value.toLocaleString('ar-SA')} ريال</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* شريط التحذيرات */}
