@@ -1983,3 +1983,144 @@
 
 /* ── Inline Block LTR (للأرقام في النص) ─────────── */
 .nx-inline-ltr { display: inline-block; direction: ltr; }
+
+/* ═══════════════════════════════════════════════════════════
+   KPI Card — كرت المؤشر الرئيسي (نظيف احترافي)
+   ═══════════════════════════════════════════════════════════ */
+.nx-kpi-card {
+  position: relative;
+  background: var(--noorix-bg-surface, #fff);
+  border: 1px solid var(--noorix-border, #dde3ec);
+  border-radius: 16px;
+  padding: 20px 22px 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  box-shadow: 0 1px 3px rgba(10,31,68,0.04), 0 4px 14px rgba(10,31,68,0.06);
+  transition: box-shadow 200ms, transform 200ms;
+}
+.nx-kpi-card:hover {
+  box-shadow: 0 2px 8px rgba(10,31,68,0.06), 0 8px 28px rgba(10,31,68,0.1);
+  transform: translateY(-1px);
+}
+
+/* الخط الجانبي المُلوَّن — يسار في RTL، يمين في LTR */
+.nx-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  inset-inline-end: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  background: var(--kpi-accent, #2563eb);
+}
+
+/* أيقونة الكرت (مربع ملون) */
+.nx-kpi-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--kpi-accent-bg, rgba(37,99,235,0.08));
+  color: var(--kpi-accent, #2563eb);
+  flex-shrink: 0;
+  margin-bottom: 14px;
+}
+
+/* عنوان الكرت */
+.nx-kpi-card__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--noorix-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+/* القيمة الرئيسية (الرقم الكبير) */
+.nx-kpi-card__value {
+  font-size: 26px;
+  font-weight: 900;
+  font-family: var(--noorix-font-numbers);
+  color: var(--noorix-text);
+  direction: ltr;
+  text-align: start;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+/* باج النسبة */
+.nx-kpi-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--kpi-accent-bg, rgba(37,99,235,0.08));
+  color: var(--kpi-accent, #2563eb);
+  width: fit-content;
+}
+
+/* الفاصل الأفقي الخفيف */
+.nx-kpi-card__divider {
+  height: 1px;
+  background: var(--noorix-border);
+  margin: 12px 0;
+  opacity: 0.5;
+}
+
+/* وصف إضافي أسفل الكرت */
+.nx-kpi-card__sub {
+  font-size: 11px;
+  color: var(--noorix-text-muted);
+  margin-top: 8px;
+}
+
+/* ── ألوان محددة مسبقاً ── */
+.nx-kpi-card--sales {
+  --kpi-accent:    #16a34a;
+  --kpi-accent-bg: rgba(22,163,74,0.08);
+}
+.nx-kpi-card--purchases {
+  --kpi-accent:    #dc2626;
+  --kpi-accent-bg: rgba(220,38,38,0.08);
+}
+.nx-kpi-card--expenses {
+  --kpi-accent:    #ea580c;
+  --kpi-accent-bg: rgba(234,88,12,0.08);
+}
+.nx-kpi-card--profit {
+  --kpi-accent:    #2563eb;
+  --kpi-accent-bg: rgba(37,99,235,0.08);
+}
+.nx-kpi-card--loss {
+  --kpi-accent:    #dc2626;
+  --kpi-accent-bg: rgba(220,38,38,0.08);
+}
+.nx-kpi-card--neutral {
+  --kpi-accent:    #6366f1;
+  --kpi-accent-bg: rgba(99,102,241,0.08);
+}
+
+/* شبكة كروت KPI */
+.nx-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+@media (max-width: 640px) {
+  .nx-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .nx-kpi-card { padding: 16px 14px 14px; }
+  .nx-kpi-card__value { font-size: 20px; }
+}
+@media (max-width: 380px) {
+  .nx-kpi-grid { grid-template-columns: 1fr; }
+}

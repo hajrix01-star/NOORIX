@@ -941,14 +941,14 @@ a { color: inherit; text-decoration: none; }
 
 /* ========== بطاقات ========== */
 .noorix-surface-card {
-  border-radius: 14px;
+  border-radius: 16px;
   background-color: var(--noorix-bg-surface);
   border: 1px solid var(--noorix-border);
-  box-shadow: var(--noorix-shadow);
-  transition: box-shadow var(--noorix-transition);
+  box-shadow: 0 1px 3px rgba(10,31,68,0.04), 0 4px 16px rgba(10,31,68,0.06);
+  transition: box-shadow var(--noorix-transition), transform var(--noorix-transition);
 }
 @media (max-width: 640px) {
-  .noorix-surface-card { border-radius: 12px; }
+  .noorix-surface-card { border-radius: 14px; }
 }
 
 /* ========== أشكال الكروت الاحترافية (1–10) — تطبيق حسب data-card-style ========== */
