@@ -51,6 +51,30 @@ export class OcrInvoicesController {
     return this.svc.confirmInvoice(user.tenantId!, id, body.status);
   }
 
+  @Post('invoices/bulk-delete')
+  @RequirePermission('OCR_WRITE')
+  async bulkDeleteInvoices(@Body() body: { ids: string[] }, @CurrentUser() user: JwtUser) {
+    return this.svc.bulkDeleteInvoices(user.tenantId!, body.ids);
+  }
+
+  @Post('suppliers/bulk-delete')
+  @RequirePermission('OCR_WRITE')
+  async bulkDeleteSuppliers(@Body() body: { ids: string[] }, @CurrentUser() user: JwtUser) {
+    return this.svc.bulkDeleteSuppliers(user.tenantId!, body.ids);
+  }
+
+  @Post('items/bulk-delete')
+  @RequirePermission('OCR_WRITE')
+  async bulkDeleteItems(@Body() body: { ids: string[] }, @CurrentUser() user: JwtUser) {
+    return this.svc.bulkDeleteItems(user.tenantId!, body.ids);
+  }
+
+  @Post('price-history/bulk-delete')
+  @RequirePermission('OCR_WRITE')
+  async bulkDeletePriceHistory(@Body() body: { itemIds: string[] }, @CurrentUser() user: JwtUser) {
+    return this.svc.bulkDeletePriceHistory(user.tenantId!, body.itemIds);
+  }
+
   // ─── Suppliers ────────────────────────────────────────────────────────────
 
   @Get('suppliers')

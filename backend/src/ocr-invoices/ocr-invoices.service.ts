@@ -1052,17 +1052,58 @@ export class OcrInvoicesService {
       include: { lines: true },
     });
 
-    // ── 4. حفظ تاريخ الأسعار لكل صنف له مورد وسعر (مع الحجم للتمييز) ──
+    // ── 4. حفظ تاريخ الأسعار لكل صنف له مورد وسعر ──────────────────────
+    // يُطبِّع الأسعار إلى أساس "خالص الضريبة" قبل الحفظ لضمان مقارنة عادلة.
+    //
+    // الفواتير السعودية تختلف: بعضها يسجّل سعر الوحدة بدون ضريبة وبعضها بضريبة.
+    // الحل: احسب مجموع أسعار السطور وقارنه بالمجموع قبل الضريبة (subtotal) وبعده (total):
+    //   – إذا كان يتوافق مع total → الأسعار شاملة الضريبة → قسِّم على (1 + معدل الضريبة)
+    //   – إذا كان يتوافق مع subtotal → الأسعار خالصة الضريبة → لا تعديل
     if (supplierId && invoiceDate) {
+      // احسب مجموع (سعر الوحدة × الكمية) من السطور
+      const lineSum = processedLines.reduce((s, l) => {
+        const up = Number(l.unitPrice) || 0;
+        const qty = Number(l.quantity)  || 1;
+        return s + up * qty;
+      }, 0);
+
+      const invoiceExt = invoiceData as { subtotalAmount?: number };
+      const subTotal   = invoiceExt.subtotalAmount ? Number(invoiceExt.subtotalAmount) : null;
+      const grandTotal = totalAmount ? Number(totalAmount) : null;
+      const vatAmt     = vatAmount   ? Number(vatAmount)   : null;
+
+      // معدل الضريبة الضمني
+      const impliedVatRate: number = (() => {
+        if (vatAmt && subTotal && subTotal > 0) return vatAmt / subTotal;
+        if (vatAmt && grandTotal && grandTotal > vatAmt) return vatAmt / (grandTotal - vatAmt);
+        return 0.15; // الافتراضي للمملكة
+      })();
+
+      // هل أسعار السطور شاملة الضريبة؟
+      let normFactor = 1.0;
+      if (vatAmt && vatAmt > 0 && lineSum > 0) {
+        if (subTotal && grandTotal) {
+          const diffFromSubtotal = Math.abs(lineSum - subTotal) / subTotal;
+          const diffFromTotal    = Math.abs(lineSum - grandTotal) / grandTotal;
+          if (diffFromTotal < diffFromSubtotal && diffFromTotal < 0.06) {
+            normFactor = 1 / (1 + impliedVatRate);
+          }
+        } else if (grandTotal) {
+          const diffFromTotal = Math.abs(lineSum - grandTotal) / grandTotal;
+          if (diffFromTotal < 0.06) normFactor = 1 / (1 + impliedVatRate);
+        }
+      }
+
       for (const line of processedLines) {
         if (line.itemId && line.unitPrice) {
+          const normalizedPrice = Math.round(Number(line.unitPrice) * normFactor * 1000) / 1000;
           await this.prisma.ocrPriceHistory.create({
             data: {
               tenantId,
               itemId:      line.itemId,
               supplierId,
-              price:       line.unitPrice,
-              size:        (line as { size?: string }).size || null,
+              price:       normalizedPrice,
+              size:        (line as { size?: string }).size     || null,
               sizeUnit:    (line as { sizeUnit?: string }).sizeUnit || null,
               invoiceDate: new Date(invoiceDate),
               invoiceId:   invoice.id,
@@ -1080,6 +1121,38 @@ export class OcrInvoicesService {
       where: { id, tenantId },
       data: { status },
     });
+  }
+
+  async bulkDeleteInvoices(tenantId: string, ids: string[]) {
+    if (!ids?.length) return { count: 0 };
+    const result = await this.prisma.ocrInvoice.deleteMany({
+      where: { id: { in: ids }, tenantId },
+    });
+    return { count: result.count };
+  }
+
+  async bulkDeleteSuppliers(tenantId: string, ids: string[]) {
+    if (!ids?.length) return { count: 0 };
+    const result = await this.prisma.ocrSupplier.deleteMany({
+      where: { id: { in: ids }, tenantId },
+    });
+    return { count: result.count };
+  }
+
+  async bulkDeleteItems(tenantId: string, ids: string[]) {
+    if (!ids?.length) return { count: 0 };
+    const result = await this.prisma.ocrItem.deleteMany({
+      where: { id: { in: ids }, tenantId },
+    });
+    return { count: result.count };
+  }
+
+  async bulkDeletePriceHistory(tenantId: string, itemIds: string[]) {
+    if (!itemIds?.length) return { count: 0 };
+    const result = await this.prisma.ocrPriceHistory.deleteMany({
+      where: { itemId: { in: itemIds }, tenantId },
+    });
+    return { count: result.count };
   }
 
   // ─── Price Alerts ─────────────────────────────────────────────────────────
@@ -1127,7 +1200,14 @@ export class OcrInvoicesService {
       const lowestEntry = entries.find((e) => Number(e.price) === lowestPrice)!;
       const avgPrice = allPrices.reduce((a, b) => a + b, 0) / allPrices.length;
 
-      if (latestPrice > lowestPrice * 1.05) {
+      // تجاهل التنبيهات التي تعكس فارق الضريبة فقط (≈ 15%)
+      // مثال: 189.75 vs 165 → 189.75/165 = 1.15 → فارق الضريبة وليس ارتفاع سعر حقيقي
+      const VAT_RATE = 0.15;
+      const isVatArtifact =
+        Math.abs(latestPrice / lowestPrice - (1 + VAT_RATE)) / (1 + VAT_RATE) < 0.02 ||
+        Math.abs(lowestPrice / latestPrice - (1 + VAT_RATE)) / (1 + VAT_RATE) < 0.02;
+
+      if (latestPrice > lowestPrice * 1.05 && !isVatArtifact) {
         alerts.push({
           itemId: latest.itemId,
           itemName: latest.item.nameAr,

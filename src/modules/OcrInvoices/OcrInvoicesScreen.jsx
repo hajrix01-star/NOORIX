@@ -132,6 +132,7 @@ export default function OcrInvoicesScreen() {
             <InvoiceListTab
               invoices={invoicesData || []}
               loading={invoicesLoading}
+              onRefresh={refetchInvoices}
             />
           )}
           {activeTab === 'suppliers' && (
@@ -153,6 +154,7 @@ export default function OcrInvoicesScreen() {
               alerts={alertsData || []}
               loading={alertsLoading}
               invoices={invoicesData || []}
+              onRefresh={refetchAlerts}
             />
           )}
         </div>

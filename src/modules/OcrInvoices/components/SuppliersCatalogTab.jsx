@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
   createOcrSupplier, updateOcrSupplier, deleteOcrSupplier, addSupplierAlias,
+  bulkDeleteOcrSuppliers,
 } from '../services/ocrApi';
 
 function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
@@ -31,14 +32,29 @@ function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
 
 export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh }) {
   const { t, language } = useTranslation();
-  const [search, setSearch] = useState('');
-  const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [viewing, setViewing] = useState(null);
+  const [search, setSearch]     = useState('');
+  const [adding, setAdding]     = useState(false);
+  const [editing, setEditing]   = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [viewing, setViewing]   = useState(null);
   const [aliasInput, setAliasInput] = useState('');
-  const [aliasLang, setAliasLang] = useState('ar');
+  const [aliasLang, setAliasLang]   = useState('ar');
+  const [selected, setSelected] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
   const dir = language === 'ar' ? 'rtl' : 'ltr';
+
+  const toggleSelect = (id) => setSelected((prev) => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
+  });
+
+  const handleBulkDelete = async () => {
+    if (!selected.size || !window.confirm(`حذف ${selected.size} مورد؟`)) return;
+    setDeleting(true);
+    await bulkDeleteOcrSuppliers([...selected]);
+    setSelected(new Set());
+    setDeleting(false);
+    onRefresh();
+  };
 
   const filtered = suppliers.filter((s) => {
     const q = search.toLowerCase();
@@ -83,6 +99,12 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
           style={{ flex: 1, minWidth: 180, padding: '10px 14px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', fontSize: 14 }}
         />
         <button onClick={() => setAdding(true)} className="noorix-btn noorix-btn--primary">+ {t('ocrAddSupplier')}</button>
+        {selected.size > 0 && (
+          <button onClick={handleBulkDelete} disabled={deleting}
+            style={{ padding: '10px 18px', borderRadius: 10, background: '#dc2626', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, fontFamily: 'inherit' }}>
+            {deleting ? '⏳' : '🗑️'} حذف ({selected.size})
+          </button>
+        )}
       </div>
 
       {adding && (
@@ -108,8 +130,10 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
                   <SupplierForm initial={s} onSave={handleUpdate} onCancel={() => setEditing(null)} loading={saving} />
                 </div>
               ) : (
-                <div className="noorix-surface-card" style={{ padding: '14px 18px' }}>
+                <div className="noorix-surface-card" style={{ padding: '14px 18px', border: selected.has(s.id) ? '1px solid #3b82f6' : undefined, background: selected.has(s.id) ? 'rgba(59,130,246,0.05)' : undefined }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggleSelect(s.id)}
+                      style={{ width: 16, height: 16, flexShrink: 0, accentColor: '#3b82f6', cursor: 'pointer' }} />
                     <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setViewing(s)}>
                       <div style={{ fontWeight: 700, fontSize: 15 }}>{s.nameAr}</div>
                       {s.nameEn && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{s.nameEn}</div>}

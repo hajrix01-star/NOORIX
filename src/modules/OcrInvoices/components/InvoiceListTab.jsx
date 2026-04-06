@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { bulkDeleteOcrInvoices } from '../services/ocrApi';
 
 const STATUS_STYLES = {
   pending:   { bg: 'rgba(245,158,11,0.12)', color: '#d97706', label: { ar: 'بانتظار المراجعة', en: 'Pending' } },
@@ -76,11 +77,31 @@ function InvoiceImageViewer({ src }) {
   );
 }
 
-export default function InvoiceListTab({ invoices = [], loading }) {
+export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
   const { t, language } = useTranslation();
-  const [search, setSearch]   = useState('');
-  const [viewing, setViewing] = useState(null);
+  const [search, setSearch]     = useState('');
+  const [viewing, setViewing]   = useState(null);
+  const [selected, setSelected] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
   const dir = language === 'ar' ? 'rtl' : 'ltr';
+
+  const toggleSelect = (id, e) => {
+    e.stopPropagation();
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selected.size || !window.confirm(`حذف ${selected.size} فاتورة؟`)) return;
+    setDeleting(true);
+    await bulkDeleteOcrInvoices([...selected]);
+    setSelected(new Set());
+    setDeleting(false);
+    onRefresh?.();
+  };
 
   const filtered = invoices.filter((inv) => {
     const q = search.toLowerCase();
@@ -102,19 +123,32 @@ export default function InvoiceListTab({ invoices = [], loading }) {
   return (
     <div dir={dir} style={{ minHeight: 0 }}>
 
-      {/* شريط البحث */}
-      <div style={{ marginBottom: 16 }}>
+      {/* شريط البحث + الحذف الجماعي */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('ocrSearch')}
           style={{
-            width: '100%', padding: '10px 14px', borderRadius: 10,
+            flex: 1, minWidth: 180, padding: '10px 14px', borderRadius: 10,
             border: '1px solid var(--noorix-border)',
             background: 'var(--noorix-bg-surface)',
             color: 'var(--noorix-text)', fontSize: 14, boxSizing: 'border-box',
           }}
         />
+        {selected.size > 0 && (
+          <button
+            onClick={handleBulkDelete}
+            disabled={deleting}
+            style={{
+              padding: '10px 18px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
+              background: '#dc2626', color: '#fff', border: 'none', fontWeight: 700, fontSize: 13,
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            {deleting ? '⏳' : '🗑️'} حذف ({selected.size})
+          </button>
+        )}
       </div>
 
       {/* قائمة الفواتير */}
@@ -127,6 +161,7 @@ export default function InvoiceListTab({ invoices = [], loading }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map((inv) => {
             const statusInfo = STATUS_STYLES[inv.status] || STATUS_STYLES.pending;
+            const isSelected = selected.has(inv.id);
             return (
               <div
                 key={inv.id}
@@ -134,8 +169,8 @@ export default function InvoiceListTab({ invoices = [], loading }) {
                 style={{
                   padding: '12px 16px',
                   borderRadius: 12,
-                  border: '1px solid var(--noorix-border)',
-                  background: 'var(--noorix-bg-surface)',
+                  border: `1px solid ${isSelected ? '#3b82f6' : 'var(--noorix-border)'}`,
+                  background: isSelected ? 'rgba(59,130,246,0.06)' : 'var(--noorix-bg-surface)',
                   cursor: 'pointer',
                   transition: 'box-shadow 0.15s, border-color 0.15s',
                   display: 'flex',
@@ -143,9 +178,17 @@ export default function InvoiceListTab({ invoices = [], loading }) {
                   gap: 12,
                   flexWrap: 'wrap',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = 'var(--noorix-accent-blue)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--noorix-border)'; }}
+                onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = 'var(--noorix-accent-blue)'; }}}
+                onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--noorix-border)'; }}}
               >
+                {/* Checkbox */}
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onClick={(e) => toggleSelect(inv.id, e)}
+                  onChange={() => {}}
+                  style={{ width: 16, height: 16, flexShrink: 0, accentColor: '#3b82f6', cursor: 'pointer' }}
+                />
                 {/* أيقونة — صورة مصغرة */}
                 <div style={{
                   width: 44, height: 44, borderRadius: 10, flexShrink: 0,

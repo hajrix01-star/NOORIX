@@ -80,6 +80,22 @@ export async function mergeOcrItems(keepId, mergeId) {
   return apiPost(`/api/v1/ocr/items/${keepId}/merge/${mergeId}`, {});
 }
 
+export async function bulkDeleteOcrInvoices(ids) {
+  return apiPost('/api/v1/ocr/invoices/bulk-delete', { ids });
+}
+
+export async function bulkDeleteOcrSuppliers(ids) {
+  return apiPost('/api/v1/ocr/suppliers/bulk-delete', { ids });
+}
+
+export async function bulkDeleteOcrItems(ids) {
+  return apiPost('/api/v1/ocr/items/bulk-delete', { ids });
+}
+
+export async function bulkDeletePriceHistory(itemIds) {
+  return apiPost('/api/v1/ocr/price-history/bulk-delete', { itemIds });
+}
+
 // ─── Price Alerts ─────────────────────────────────────────────────────────
 
 export async function getPriceAlerts() {

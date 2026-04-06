@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
   createOcrItem, updateOcrItem, deleteOcrItem, getItemPriceHistory, addItemAlias,
-  findDuplicateItems, mergeOcrItems,
+  findDuplicateItems, mergeOcrItems, bulkDeleteOcrItems,
 } from '../services/ocrApi';
 
 function ItemForm({ initial = {}, onSave, onCancel, loading }) {
@@ -47,6 +47,23 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
   const [dupGroups, setDupGroups] = useState(null);
   const [dupLoading, setDupLoading] = useState(false);
   const [merging, setMerging] = useState(null);
+
+  // Bulk select
+  const [selected, setSelected] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
+
+  const toggleSelect = (id) => setSelected((prev) => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
+  });
+
+  const handleBulkDelete = async () => {
+    if (!selected.size || !window.confirm(`حذف ${selected.size} صنف؟`)) return;
+    setDeleting(true);
+    await bulkDeleteOcrItems([...selected]);
+    setSelected(new Set());
+    setDeleting(false);
+    onRefresh();
+  };
 
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
@@ -128,6 +145,12 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
         >
           {dupLoading ? '⏳' : '🔍'} كشف التكرار
         </button>
+        {selected.size > 0 && (
+          <button onClick={handleBulkDelete} disabled={deleting}
+            style={{ padding: '10px 18px', borderRadius: 10, background: '#dc2626', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, fontFamily: 'inherit' }}>
+            {deleting ? '⏳' : '🗑️'} حذف ({selected.size})
+          </button>
+        )}
       </div>
 
       {/* نتائج الأصناف المكررة */}
@@ -205,8 +228,15 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                   <ItemForm initial={item} onSave={handleUpdate} onCancel={() => setEditing(null)} loading={saving} />
                 </div>
               ) : (
-                <div className="noorix-surface-card" style={{ padding: 16, cursor: 'pointer' }} onClick={() => handleViewItem(item)}>
+                <div
+                  className="noorix-surface-card"
+                  style={{ padding: 16, cursor: 'pointer', border: selected.has(item.id) ? '1px solid #3b82f6' : undefined, background: selected.has(item.id) ? 'rgba(59,130,246,0.05)' : undefined }}
+                  onClick={() => handleViewItem(item)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <input type="checkbox" checked={selected.has(item.id)}
+                      onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
+                      onChange={() => {}}
+                      style={{ width: 15, height: 15, flexShrink: 0, accentColor: '#3b82f6', cursor: 'pointer', marginInlineEnd: 8, marginTop: 2 }} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 15 }}>{item.nameAr}</div>
                       {item.nameEn && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{item.nameEn}</div>}
