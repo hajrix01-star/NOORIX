@@ -1,0 +1,167 @@
+---
+description: Enforce using Noorix UI component library (src/ui) for all new features and edits
+globs: src/**/*.{jsx,tsx,js,ts}
+alwaysApply: true
+---
+
+# Noorix UI Components — إلزامي لكل الشاشات الجديدة والتعديلات
+
+كل ميزة جديدة أو تعديل على ملف موجود **يجب أن يستخدم** المكوّنات من `src/ui/`.
+
+## الاستيراد
+
+```jsx
+import { Button, Input, Card, Badge, Modal, Spinner, SmartTable, Divider, FormRow } from '../../ui';
+```
+
+---
+
+## القواعد الإلزامية
+
+### ❌ ممنوع — ✅ البديل الصحيح
+
+**الأزرار:**
+```jsx
+// ❌
+<button className="noorix-btn-primary" onClick={fn}>حفظ</button>
+<button className="noorix-btn-nav" disabled={loading}>إلغاء</button>
+
+// ✅
+<Button variant="primary" onClick={fn}>حفظ</Button>
+<Button disabled={loading}>إلغاء</Button>
+```
+
+**حقول الإدخال:**
+```jsx
+// ❌
+<input style={{ padding:'9px 12px', borderRadius:8, border:'1px solid var(--noorix-border)' }} />
+<select style={{...inputStyle}}>...</select>
+const inputStyle = { padding: '8px 12px', borderRadius: 8 }; // لا تنشئ هذا
+
+// ✅
+<Input label="الاسم" value={v} onChange={fn} />
+<Input type="select" label="الحالة"><option>...</option></Input>
+```
+
+**البطاقات:**
+```jsx
+// ❌
+<div className="noorix-surface-card" style={{ padding:20, borderRadius:14 }}>
+
+// ✅
+<Card>...</Card>
+<Card padding="lg" variant="exec" stripe="green" title="الإيرادات" value="50,000 ﷼" />
+```
+
+**شارات الحالة:**
+```jsx
+// ❌
+<span style={{ padding:'2px 8px', borderRadius:999, background:'rgba(22,163,74,0.1)', color:'#15803d' }}>
+  نشط
+</span>
+
+// ✅
+<Badge color="green">نشط</Badge>
+// أو باستخدام map:
+const STATUS_MAP = { active:{color:'green',label:'نشط'}, inactive:{color:'gray',label:'غير نشط'} };
+<Badge {...Badge.fromStatus(row.status, STATUS_MAP)} />
+```
+
+**النوافذ المنبثقة:**
+```jsx
+// ❌
+<div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:9999 }}>
+  <div className="noorix-surface-card" style={{ maxWidth:560 }}>
+
+// ✅
+<Modal open={open} onClose={onClose} title="تعديل الموظف" size="md">
+  ...محتوى النموذج...
+</Modal>
+```
+
+**التحميل:**
+```jsx
+// ❌
+<div style={{ width:24, height:24, borderRadius:'50%', border:'2px solid...', animation:'...' }} />
+
+// ✅
+<Spinner />
+<Spinner.Page label="جاري التحميل..." />
+```
+
+**الجداول:**
+```jsx
+// ❌ — لا تبني جداول HTML يدوياً في الشاشات
+
+// ✅
+<SmartTable
+  columns={[
+    { key:'name', label:'الاسم', sortable:true },
+    { key:'amount', label:'المبلغ', numeric:true },
+    { key:'status', label:'الحالة', render:(v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} /> },
+    { key:'actions', label:'', render:(_, row) => <Button size="sm" variant="danger">حذف</Button> },
+  ]}
+  data={rows}
+  total={total}
+  page={page}
+  pageSize={50}
+  onPageChange={setPage}
+  isLoading={isLoading}
+/>
+```
+
+**تخطيط النماذج:**
+```jsx
+// ❌
+<div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+
+// ✅
+<FormRow>
+  <Input label="الاسم الأول" />
+  <Input label="الاسم الأخير" />
+</FormRow>
+```
+
+---
+
+## CSS Variables — لا تُكسر
+
+المتغيرات موجودة في `src/index.css`. **لا تكتب ألواناً صلبة (hardcoded):**
+
+```jsx
+// ❌
+style={{ color: '#1a2332', background: '#ffffff', border: '1px solid #dde3ec' }}
+
+// ✅ — إذا احتجت ضرورياً لـ inline style
+style={{ color: 'var(--noorix-text)', background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}
+```
+
+---
+
+## متى يُسمح بـ inline style؟
+
+فقط لقيم **ديناميكية** لا يمكن تعبيرها بـ class ثابت:
+```jsx
+// ✅ مقبول — قيمة حسابية ديناميكية
+style={{ width: `${progress}%` }}
+style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+style={{ height: rowHeight * count }}
+```
+
+---
+
+## مرجع سريع
+
+| الحاجة | المكوّن |
+|--------|---------|
+| زر | `<Button variant="primary\|danger\|success\|ghost\|warning">` |
+| حقل نص/رقم/تاريخ | `<Input type="text\|number\|date">` |
+| قائمة منسدلة | `<Input type="select">` |
+| textarea | `<Input multiline>` |
+| بطاقة | `<Card>` / `<Card variant="exec">` / `<Card variant="stat">` |
+| شارة حالة | `<Badge color="green\|red\|amber\|blue\|gray">` |
+| نافذة | `<Modal open onClose title>` |
+| تحميل | `<Spinner>` / `<Spinner.Page>` |
+| جدول | `<SmartTable columns data ...>` |
+| فاصل | `<Divider>` / `<Divider label="أو">` |
+| صف نموذج | `<FormRow cols={2}>` |
