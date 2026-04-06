@@ -13,6 +13,7 @@ import { useEmployees } from '../../../hooks/useEmployees';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { hrFmt } from '../utils/hrFmt';
 import { parseWorkHours } from '../utils/employeeSalaryMath';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -35,7 +36,7 @@ function getEligibilityFactor(reason, serviceYears) {
 }
 
 export default function EOSCalcTab() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { activeCompanyId, companies } = useApp();
   const companyId = activeCompanyId ?? '';
   const company = companies?.find((c) => c.id === companyId);
@@ -260,7 +261,7 @@ export default function EOSCalcTab() {
         >
           <option value="">—</option>
           {employees.map((e) => (
-            <option key={e.id} value={e.id}>{e.name || e.nameAr || e.id}</option>
+            <option key={e.id} value={e.id}>{employeeDisplayName(e, lang, e.id)}</option>
           ))}
         </select>
       </div>

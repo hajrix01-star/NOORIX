@@ -12,6 +12,7 @@ import { hrFmt } from '../utils/hrFmt';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { parseOvertimeWorkDaysPerMonth, totalSalary } from '../utils/employeeSalaryMath';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -49,7 +50,7 @@ function ceilAmount(value) {
 }
 
 export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
   const isEditMode = !!runId;
@@ -239,7 +240,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       if (leaveDays > 0) notesParts.push(`خصم إجازة بسبب ${hrFmt(leaveDays)} يوم: ${hrFmt(leaveDeduction)}`);
       return {
         employeeId: emp.id,
-        employeeName: emp.name || emp.nameAr || '—',
+        employeeName: employeeDisplayName(emp, lang),
         grossSalary: gross,
         allowancesAdd: 0,
         deductions,
@@ -260,7 +261,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     setNotes(editingRun.notes || '');
     const loadedItems = (editingRun.items || []).map((row) => {
       const employeeId = row.employeeId || row.employee?.id || '';
-      const employeeName = row.employee?.name || row.employee?.nameAr || row.employeeName || '—';
+      const employeeName = employeeDisplayName(row.employee || { name: row.employeeName }, lang);
       const advanceDates = extractAdvanceDates(row.notes);
       const advancesDeduct = Number(row.advancesDeduct ?? 0);
       return {
@@ -277,7 +278,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       };
     });
     setItems(loadedItems);
-  }, [defaultMonth, editingRun]);
+  }, [defaultMonth, editingRun, lang]);
 
   React.useEffect(() => {
     if (isEditMode) return;
@@ -342,7 +343,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       if (leaveDays > 0) notesParts.push(`خصم إجازة بسبب ${hrFmt(leaveDays)} يوم: ${hrFmt(leaveDeduction)}`);
       setItems((prev) => [...prev, {
         employeeId: emp.id,
-        employeeName: emp.name || emp.nameAr || '—',
+        employeeName: employeeDisplayName(emp, lang),
         grossSalary: gross,
         allowancesAdd: 0,
         deductions: leaveDeduction,
@@ -530,7 +531,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
                             aria-label={t('employeeName')}
                           />
-                          <span style={{ fontWeight: included ? 600 : 400 }}>{emp.name || emp.nameAr || '—'}</span>
+                          <span style={{ fontWeight: included ? 600 : 400 }}>{employeeDisplayName(emp, lang)}</span>
                         </label>
                       </td>
                       {included ? (

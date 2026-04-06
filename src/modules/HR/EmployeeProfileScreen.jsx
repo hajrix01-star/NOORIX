@@ -31,6 +31,7 @@ import {
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
 import Toast from '../../components/Toast';
+import { employeeDisplayName } from '../../utils/employeeDisplayName';
 
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
@@ -38,7 +39,7 @@ export default function EmployeeProfileScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { activeCompanyId, companies, userPermissions } = useApp();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
   const activeCompany = companies?.find((c) => c.id === companyId);
@@ -188,7 +189,7 @@ export default function EmployeeProfileScreen() {
 
   async function handlePermanentDeleteFromProfile() {
     if (!employee?.id || !companyId) return;
-    if (!window.confirm(t('deleteEmployeePermanentConfirm', employee.name || ''))) return;
+    if (!window.confirm(t('deleteEmployeePermanentConfirm', employeeDisplayName(employee, lang, '') || ''))) return;
     if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
     const res = await deleteEmployee(employee.id, companyId);
     if (!res?.success) {
@@ -325,7 +326,7 @@ export default function EmployeeProfileScreen() {
 
       {/* معلومات أساسية */}
       <div className="noorix-surface-card" style={{ padding: 24 }}>
-        <h1 style={{ fontSize: 22, margin: '0 0 16px' }}>{employee.name || employee.nameAr || '—'}</h1>
+        <h1 style={{ fontSize: 22, margin: '0 0 16px' }}>{employeeDisplayName(employee, lang)}</h1>
         <p style={{ margin: 0, color: 'var(--noorix-text-muted)' }}>{employee.jobTitle || '—'}</p>
         <p style={{ margin: '8px 0 0', fontSize: 13 }}>الرقم الوظيفي: {employee.employeeSerial || '—'}</p>
         <p style={{ margin: '4px 0 0', fontSize: 13 }}>تاريخ التعيين: {formatSaudiDate(employee.joinDate)}</p>

@@ -23,13 +23,14 @@ import {
   parseOvertimeWorkDaysPerMonth,
   mergeOvertimeWorkDaysIntoSchedule,
 } from '../utils/employeeSalaryMath';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 function toDecimal(value) {
   return new Decimal(value || 0);
 }
 
 export default function SalaryCalcTab() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { activeCompanyId, companies } = useApp();
   const companyId = activeCompanyId ?? '';
   const company = companies?.find((c) => c.id === companyId);
@@ -169,6 +170,8 @@ export default function SalaryCalcTab() {
 
   function handlePrint() {
     const reportDate = new Date().toISOString().slice(0, 10);
+    const nameArPrint = emp ? employeeDisplayName(emp, 'ar') : '—';
+    const nameEnPrint = emp ? employeeDisplayName(emp, 'en') : '—';
     const allowanceRowsHtml = employeeAllowanceRows.length
       ? employeeAllowanceRows
           .map((row) => `<tr><td>${row.label}</td><td class="num">${hrFmt(row.amount)}</td></tr>`)
@@ -206,7 +209,7 @@ export default function SalaryCalcTab() {
           <div class="section">
             <div class="bi">
               <div class="box">
-                <div class="row"><strong>الموظف</strong><span>${emp?.name || '—'}</span></div>
+                <div class="row"><strong>الموظف</strong><span>${nameArPrint}</span></div>
                 <div class="row"><strong>ساعات العمل اليومية</strong><span class="num">${hrFmt(hours)}</span></div>
                 <div class="row"><strong>أيام العمل بالشهر</strong><span class="num">${hrFmt(workDays)}</span></div>
                 <div class="row"><strong>أيام الإجازة غير المدفوعة</strong><span class="num">${hrFmt(vacDays)}</span></div>
@@ -225,7 +228,7 @@ export default function SalaryCalcTab() {
               </div>
               <div class="sep"></div>
               <div class="box en">
-                <div class="row"><strong>Employee</strong><span>${emp?.name || '—'}</span></div>
+                <div class="row"><strong>Employee</strong><span>${nameEnPrint}</span></div>
                 <div class="row"><strong>Hours per day</strong><span class="num">${hrFmt(hours)}</span></div>
                 <div class="row"><strong>Work days per month</strong><span class="num">${hrFmt(workDays)}</span></div>
                 <div class="row"><strong>Unpaid leave days</strong><span class="num">${hrFmt(vacDays)}</span></div>
@@ -290,7 +293,7 @@ export default function SalaryCalcTab() {
           <option value="">— {t('salaryCalcSelectOrEnter') || 'اختر أو أدخل يدوياً'} —</option>
           {employees.map((e) => (
             <option key={e.id} value={e.id}>
-              {e.name || e.nameAr || e.id} — {hrFmt(computeTargetFromCurrentEmployee(e, new Decimal(allowanceTotals.get(e.id) || 0), parseWorkHours(e.workHours), parseOvertimeWorkDaysPerMonth(e)).toNumber())} ر.س
+              {employeeDisplayName(e, lang, e.id)} — {hrFmt(computeTargetFromCurrentEmployee(e, new Decimal(allowanceTotals.get(e.id) || 0), parseWorkHours(e.workHours), parseOvertimeWorkDaysPerMonth(e)).toNumber())} ر.س
               {e.workHours ? ` (${parseWorkHours(e.workHours)} ${t('salaryCalcHour')})` : ''}
             </option>
           ))}

@@ -9,6 +9,7 @@ import { getPayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import SmartTable from '../../../components/common/SmartTable';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 const STATUS_MAP = {
   draft: { bg: 'rgba(100,116,139,0.1)', color: '#64748b', labelKey: 'payrollDraft' },
@@ -16,7 +17,7 @@ const STATUS_MAP = {
 };
 
 export function PayrollRunDetailModal({ runId, companyId, companyName, companyLogo, onClose }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   const { data: run, isLoading } = useQuery({
     queryKey: ['payroll-run', runId, companyId],
@@ -47,7 +48,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   const handlePrint = () => {
     const monthLabel = formatSaudiDate(run.payrollMonth);
     const rowsHtml = items.map((row, idx) => {
-      const employeeName = row.employee?.name || row.employee?.nameAr || '—';
+      const employeeName = employeeDisplayName(row.employee || { name: row.employeeName }, lang);
       const advanceDates = String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—';
       const before = Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0);
       const deductionsAll = Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0);
@@ -140,7 +141,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   };
 
   const columns = [
-    { key: 'employeeName', label: t('employeeName'), width: '18%', minWidth: 150, render: (_, row) => row.employee?.name || row.employee?.nameAr || '—' },
+    { key: 'employeeName', label: t('employeeName'), width: '18%', minWidth: 150, render: (_, row) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
     { key: 'advanceDates', label: t('payrollAdvanceDates'), width: '16%', minWidth: 120, render: (_, row) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
     { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: '9%', minWidth: 84, render: (v) => hrFmt(v) },
     { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: '11%', minWidth: 96, render: (_, row) => hrFmt(Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0)) },

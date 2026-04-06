@@ -7,6 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getEmployees } from '../../../services/api';
 import { createLeave } from '../../../services/api';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 const TYPE_MAP = {
   annual: 'leaveAnnual',
@@ -118,7 +119,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
             >
               <option value="">—</option>
               {activeEmployees.map((emp) => (
-                <option key={emp.id} value={emp.id}>{emp.name || emp.nameAr || '—'}</option>
+                <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
               ))}
             </select>
           </div>

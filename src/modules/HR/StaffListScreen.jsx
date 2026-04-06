@@ -30,6 +30,7 @@ import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
 import { overtimePay, totalSalary } from './utils/employeeSalaryMath';
+import { employeeDisplayName } from '../../utils/employeeDisplayName';
 
 const PAGE_SIZE = 50;
 
@@ -48,7 +49,7 @@ const Badge = memo(function Badge({ map, value }) {
 export default function StaffListScreen({ embedded }) {
   const navigate = useNavigate();
   const { activeCompanyId, companies, userPermissions } = useApp();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [showForm, setShowForm] = useState(false);
@@ -160,7 +161,7 @@ export default function StaffListScreen({ embedded }) {
 
   const handlePermanentDelete = useCallback(async (row) => {
     if (!companyId || !row?.id) return;
-    if (!window.confirm(t('deleteEmployeePermanentConfirm', row.name || ''))) return;
+    if (!window.confirm(t('deleteEmployeePermanentConfirm', employeeDisplayName(row, lang, '')))) return;
     if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
     const res = await deleteEmployee(row.id, companyId);
     if (!res?.success) {
@@ -172,13 +173,13 @@ export default function StaffListScreen({ embedded }) {
     queryClient.invalidateQueries({ queryKey: ['employee', row.id, companyId] });
     invalidateOnFinancialMutation(queryClient);
     setToast({ visible: true, message: t('employeeDeletedPermanent'), type: 'success' });
-  }, [companyId, t, queryClient]);
+  }, [companyId, t, queryClient, lang]);
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
       render: (v) => <span className="noorix-cell-ellipsis" style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, display: 'inline-block', maxWidth: '100%' }} title={v || ''}>{v || '—'}</span> },
     { key: 'name', label: t('employeeName'), sortable: true, minWidth: 170,
-      render: (v) => <span style={{ fontWeight: 600, fontSize: 13 }}>{v || '—'}</span> },
+      render: (_, row) => <span style={{ fontWeight: 600, fontSize: 13 }}>{employeeDisplayName(row, lang)}</span> },
     { key: 'jobTitle', label: t('jobTitle'), sortable: true, minWidth: 150,
       render: (v) => <span style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{v || '—'}</span> },
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125, minWidth: 120,
@@ -248,7 +249,7 @@ export default function StaffListScreen({ embedded }) {
           onPermanentDelete={canDeleteEmployee ? handlePermanentDelete : undefined}
         />
       ) },
-  ], [t, statusStyles, viewMode, navigate, update, canDeleteEmployee, handlePermanentDelete]);
+  ], [t, lang, statusStyles, viewMode, navigate, update, canDeleteEmployee, handlePermanentDelete]);
 
   async function handleExportExcel() {
     if (!companyId) return;
@@ -266,7 +267,7 @@ export default function StaffListScreen({ embedded }) {
         const ts = totalSalary(e, extra);
         return {
           employeeSerial: e.employeeSerial,
-          name: e.name,
+          name: employeeDisplayName(e, lang),
           jobTitle: e.jobTitle,
           joinDate: formatSaudiDate(e.joinDate),
           totalSalary: hrFmt(ts),
@@ -381,7 +382,7 @@ export default function StaffListScreen({ embedded }) {
           <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>{row.employeeSerial || '—'}</span>
           <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: statusS.bg, color: statusS.color }}>{statusS.label}</span>
         </div>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3 }}>{row.name || '—'}</div>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3 }}>{employeeDisplayName(row, lang)}</div>
         {row.jobTitle && <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{row.jobTitle}</div>}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
           <div>
@@ -410,7 +411,7 @@ export default function StaffListScreen({ embedded }) {
         </div>
       </div>
     );
-  }, [statusStyles, t, navigate, canDeleteEmployee, handlePermanentDelete]);
+  }, [statusStyles, t, lang, navigate, canDeleteEmployee, handlePermanentDelete]);
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>

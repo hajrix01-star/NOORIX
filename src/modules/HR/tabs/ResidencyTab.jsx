@@ -14,6 +14,7 @@ import SmartTable from '../../../components/common/SmartTable';
 import { ResidencyFormModal } from '../components/ResidencyFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 const PAGE_SIZE = 50;
 const EXPIRY_DAYS = 90;
@@ -27,7 +28,7 @@ function isExpiringSoon(expiryDate) {
 }
 
 export default function ResidencyTab() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
   const [showAdd, setShowAdd] = useState(false);
@@ -42,10 +43,7 @@ export default function ResidencyTab() {
       if (!res?.success) return [];
       const d = res.data;
       const arr = Array.isArray(d) ? d : (d?.items ?? []);
-      return arr.map((r) => ({
-        ...r,
-        employeeName: r.employee?.name || r.employeeName || '—',
-      }));
+      return arr;
     },
     enabled: !!companyId,
   });
@@ -60,7 +58,10 @@ export default function ResidencyTab() {
     onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
   });
 
-  const items = data ?? [];
+  const items = useMemo(() => (data ?? []).map((r) => ({
+    ...r,
+    employeeName: employeeDisplayName(r.employee || { name: r.employeeName }, lang),
+  })), [data, lang]);
   const expiringCount = items.filter((r) => isExpiringSoon(r.expiryDate)).length;
 
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
@@ -117,7 +118,7 @@ export default function ResidencyTab() {
   ], [t, deleteMutation]);
 
   const exportData = allFilteredData.map((r) => ({
-    employeeName: r.employee?.name || r.employeeName || '—',
+    employeeName: r.employeeName || '—',
     iqamaNumber: r.iqamaNumber || '—',
     issueDate: formatSaudiDate(r.issueDate),
     expiryDate: formatSaudiDate(r.expiryDate),

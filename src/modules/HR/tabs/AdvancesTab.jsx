@@ -17,11 +17,12 @@ import SmartTable from '../../../components/common/SmartTable';
 import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 const PAGE_SIZE = 50;
 
 export default function AdvancesTab() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
   const queryClient = useQueryClient();
@@ -35,7 +36,7 @@ export default function AdvancesTab() {
 
   const { createAdvance } = useEmployees(companyId, { includeTerminated: false });
 
-  const { data, isLoading } = useQuery({
+  const { data: rawAdvanceRows, isLoading } = useQuery({
     queryKey: ['invoices', companyId, 'advance'],
     queryFn: async () => {
       const res = await getInvoices(companyId, null, null, 1, 500);
@@ -43,7 +44,6 @@ export default function AdvancesTab() {
       const items = res.data?.items ?? [];
       return items.filter((inv) => inv.kind === 'advance').map((i) => ({
         ...i,
-        employeeName: i.employee?.name || i.employeeName || '—',
         settledAmountNum: Number(i.settledAmount ?? 0),
         totalAmountNum: Number(i.totalAmount ?? 0),
         remainingAmount: Math.max(0, Number(i.totalAmount ?? 0) - Number(i.settledAmount ?? 0)),
@@ -60,7 +60,10 @@ export default function AdvancesTab() {
     enabled: !!companyId,
   });
 
-  const items = data ?? [];
+  const items = useMemo(() => (rawAdvanceRows ?? []).map((row) => ({
+    ...row,
+    employeeName: employeeDisplayName(row.employee || { name: row.employeeName }, lang),
+  })), [rawAdvanceRows, lang]);
   const employeeOptions = useMemo(
     () => [...new Set(items.map((r) => r.employeeName).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
     [items],
@@ -209,7 +212,7 @@ export default function AdvancesTab() {
   );
 
   const exportData = allFilteredData.map((r) => ({
-    employeeName: r.employee?.name || r.employeeName || '—',
+    employeeName: r.employeeName || '—',
     amount: hrFmt(r.totalAmount),
     transactionDate: formatSaudiDate(r.transactionDate),
     settledAmount: hrFmt(r.settledAmountNum || 0),

@@ -9,6 +9,7 @@ import { useVaults } from '../../../hooks/useVaults';
 import { getEmployees } from '../../../services/api';
 import { createResidency, updateResidency, createInvoice } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'statusActive' },
@@ -17,7 +18,7 @@ const STATUS_OPTIONS = [
 ];
 
 export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
   const isEdit = !!residency;
@@ -88,7 +89,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
             return;
           }
           const emp = activeEmployees.find((e) => e.id === employeeId);
-          const empName = emp?.name || emp?.nameAr || '';
+          const empName = emp ? employeeDisplayName(emp, 'ar', '') : '';
           const serviceLabel = residencyServiceType === 'renewal' ? (t('opResidencyRenewal') || 'تجديد إقامة') : (t('residencyNew') || 'إقامة جديدة');
           const notes = `${serviceLabel} موظف ${empName}`.trim() || `إقامة - ${iqamaNumber}`;
           const amt = parseFloat(invoiceAmount);
@@ -136,7 +137,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
             >
               <option value="">—</option>
               {activeEmployees.map((emp) => (
-                <option key={emp.id} value={emp.id}>{emp.name || emp.nameAr || '—'}</option>
+                <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
               ))}
             </select>
           </div>

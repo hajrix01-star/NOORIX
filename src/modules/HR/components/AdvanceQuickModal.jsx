@@ -9,9 +9,10 @@ import { useQuery } from '@tanstack/react-query';
 import { getEmployees } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { paymentVaults = [] } = useVaults({ companyId });
   const vaults = paymentVaults;
   const [employee, setEmployee] = useState(initialEmployee);
@@ -45,7 +46,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
     const amt = roundMoney2(amount);
     const empId = initialEmployee ? initialEmployee.id : employeeId;
     const selectedEmp = initialEmployee ?? activeEmployees.find((em) => em.id === empId);
-    const empName = selectedEmp?.name || selectedEmp?.nameAr || '';
+    const empName = selectedEmp ? employeeDisplayName(selectedEmp, 'ar', '') : '';
     if (!amt || amt <= 0 || !vaultId || !empId) return;
     try {
       await createAdvance.mutateAsync({
@@ -64,7 +65,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
   };
 
   const title = initialEmployee
-    ? t('advanceForEmployee', initialEmployee?.name || initialEmployee?.nameAr || '')
+    ? t('advanceForEmployee', employeeDisplayName(initialEmployee, lang, ''))
     : (t('payAdvance') || 'صرف سلفة');
 
   return (
@@ -83,7 +84,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
               >
                 <option value="">—</option>
                 {activeEmployees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>{emp.name || emp.nameAr || '—'}</option>
+                  <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
                 ))}
               </select>
             </div>

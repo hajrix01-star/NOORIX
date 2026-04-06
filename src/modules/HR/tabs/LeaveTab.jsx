@@ -13,6 +13,7 @@ import SmartTable from '../../../components/common/SmartTable';
 import { LeaveFormModal } from '../components/LeaveFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
+import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
 const PAGE_SIZE = 50;
 
@@ -30,7 +31,7 @@ const STATUS_MAP = {
 };
 
 export default function LeaveTab() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
   const [year, setYear] = useState(new Date().getFullYear());
@@ -45,10 +46,7 @@ export default function LeaveTab() {
       if (!res?.success) return [];
       const d = res.data;
       const arr = Array.isArray(d) ? d : (d?.items ?? []);
-      return arr.map((l) => ({
-        ...l,
-        employeeName: l.employee?.name || l.employeeName || '—',
-      }));
+      return arr;
     },
     enabled: !!companyId,
   });
@@ -62,7 +60,10 @@ export default function LeaveTab() {
     onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
   });
 
-  const items = data ?? [];
+  const items = useMemo(() => (data ?? []).map((l) => ({
+    ...l,
+    employeeName: employeeDisplayName(l.employee || { name: l.employeeName }, lang),
+  })), [data, lang]);
   const statusStyles = useMemo(() => ({
     pending: { bg: STATUS_MAP.pending.bg, color: STATUS_MAP.pending.color, label: t(STATUS_MAP.pending.labelKey) },
     approved: { bg: STATUS_MAP.approved.bg, color: STATUS_MAP.approved.color, label: t(STATUS_MAP.approved.labelKey) },
@@ -111,7 +112,7 @@ export default function LeaveTab() {
   ], [t, statusStyles, updateStatusMutation]);
 
   const exportData = allFilteredData.map((r) => ({
-    employeeName: r.employee?.name || r.employeeName || '—',
+    employeeName: r.employeeName || '—',
     leaveType: t(TYPE_MAP[r.leaveType] || 'leaveOther'),
     startDate: formatSaudiDate(r.startDate),
     endDate: formatSaudiDate(r.endDate),
