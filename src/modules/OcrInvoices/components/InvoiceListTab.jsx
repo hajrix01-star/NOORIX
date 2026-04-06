@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
+import { Input } from '../../../ui';
 
 /* ── ثوابت ──────────────────────────────────────────────────────────── */
 const STATUS = {
@@ -358,7 +359,8 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
 
         <div className="inv-search-wrap">
           <span className="inv-search-icon">⌕</span>
-          <input
+          <Input
+            type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={isAr ? 'بحث بالمورد أو رقم الفاتورة...' : 'Search supplier or invoice #...'}
@@ -368,12 +370,12 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
         </div>
 
         {/* ترتيب */}
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="inv-sort-select">
+        <Input type="select" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="inv-sort-select">
           <option value="date-desc">{isAr ? 'الأحدث أولاً' : 'Newest first'}</option>
           <option value="date-asc">{isAr ? 'الأقدم أولاً' : 'Oldest first'}</option>
           <option value="amount">{isAr ? 'أعلى مبلغ' : 'Highest amount'}</option>
           <option value="supplier">{isAr ? 'اسم المورد' : 'Supplier name'}</option>
-        </select>
+        </Input>
 
         {selected.size > 0 && (
           <button className="inv-delete-btn" onClick={handleBulkDelete} disabled={deleting}>

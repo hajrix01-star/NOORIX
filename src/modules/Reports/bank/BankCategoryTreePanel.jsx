@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Modal } from '../../../ui';
+import { Button, Modal, Input } from '../../../ui';
 import {
   bankStatementTreeCategoriesList,
   bankStatementTreeCategoryCreate,
@@ -19,7 +19,6 @@ import {
 } from '../../../services/api';
 import { TRANSACTION_TYPES, TRANSACTION_SIDES, getTransactionTypeInfo, getTransactionSideInfo } from './bankRuleConstants';
 
-const inputStyle = { width: '100%', marginTop: 4, padding: '8px 10px', fontSize: 13, borderRadius: 8, border: '1px solid var(--noorix-border)' };
 const labelMuted = { fontSize: 12, color: 'var(--noorix-text-muted)' };
 
 function normParentKeywords(v) {
@@ -169,36 +168,24 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
         <h3 style={{ marginTop: 0 }}>{category ? t('bankTreeEditCategory') : t('bankTreeAddCategory')}</h3>
         <div style={{ display: 'grid', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 10 }}>
-            <label>
-              <span style={labelMuted}>{t('bankTreeCategoryName')} *</span>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
-            </label>
-            <label>
-              <span style={labelMuted}>{t('bankTreeSortOrder')}</span>
-              <input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} style={inputStyle} min={1} />
-            </label>
+            <Input type="text" label={`${t('bankTreeCategoryName')} *`} value={name} onChange={(e) => setName(e.target.value)} />
+            <Input type="number" label={t('bankTreeSortOrder')} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} min={1} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <label>
-              <span style={labelMuted}>{t('bankTreeTransactionType')}</span>
-              <select value={transactionType} onChange={(e) => setTransactionType(e.target.value)} style={inputStyle}>
-                {TRANSACTION_TYPES.map((x) => (
-                  <option key={x.value} value={x.value}>
-                    {x.icon} {t(x.labelKey)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span style={labelMuted}>{t('bankTreeTransactionSide')}</span>
-              <select value={transactionSide} onChange={(e) => setTransactionSide(e.target.value)} style={inputStyle}>
-                {TRANSACTION_SIDES.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.icon} {t(s.labelKey)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Input type="select" label={t('bankTreeTransactionType')} value={transactionType} onChange={(e) => setTransactionType(e.target.value)}>
+              {TRANSACTION_TYPES.map((x) => (
+                <option key={x.value} value={x.value}>
+                  {x.icon} {t(x.labelKey)}
+                </option>
+              ))}
+            </Input>
+            <Input type="select" label={t('bankTreeTransactionSide')} value={transactionSide} onChange={(e) => setTransactionSide(e.target.value)}>
+              {TRANSACTION_SIDES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.icon} {t(s.labelKey)}
+                </option>
+              ))}
+            </Input>
           </div>
 
           <div style={{ padding: 12, borderRadius: 10, border: '1px solid rgba(217,119,6,0.35)', background: 'rgba(254,243,199,0.35)' }}>
@@ -215,7 +202,9 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
               ))}
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              <input type="text" value={newParentKeyword} onChange={(e) => setNewParentKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addParentKw())} placeholder="…" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
+              <div style={{ flex: 1 }}>
+                <Input type="text" value={newParentKeyword} onChange={(e) => setNewParentKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addParentKw())} placeholder="…" />
+              </div>
               <Button onClick={addParentKw}>+</Button>
             </div>
           </div>
@@ -245,13 +234,14 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                 }}
               >
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                  <input
-                    type="text"
-                    value={cl.name}
-                    onChange={(e) => setClassifications((p) => p.map((c, i) => (i === idx ? { ...c, name: e.target.value } : c)))}
-                    placeholder={t('bankTreeSubNamePlaceholder')}
-                    style={{ ...inputStyle, marginTop: 0, flex: 1 }}
-                  />
+                  <div style={{ flex: 1 }}>
+                    <Input
+                      type="text"
+                      value={cl.name}
+                      onChange={(e) => setClassifications((p) => p.map((c, i) => (i === idx ? { ...c, name: e.target.value } : c)))}
+                      placeholder={t('bankTreeSubNamePlaceholder')}
+                    />
+                  </div>
                   {classifications.length > 1 ? (
                     <Button
                       variant="danger"
@@ -287,14 +277,15 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                 </div>
                 {activeClassIdx === idx ? (
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <input
-                      type="text"
-                      value={newKeyword}
-                      onChange={(e) => setNewKeyword(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addKw(idx))}
-                      style={{ ...inputStyle, marginTop: 0, flex: 1 }}
-                      placeholder={t('bankTreeAddKeywordPlaceholder')}
-                    />
+                    <div style={{ flex: 1 }}>
+                      <Input
+                        type="text"
+                        value={newKeyword}
+                        onChange={(e) => setNewKeyword(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addKw(idx))}
+                        placeholder={t('bankTreeAddKeywordPlaceholder')}
+                      />
+                    </div>
                     <Button variant="primary" onClick={() => addKw(idx)} disabled={!newKeyword.trim()}>+</Button>
                   </div>
                 ) : null}
@@ -781,10 +772,10 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
             {t('bankRulesImportSourceFile')}
           </label>
           {importSource === 'company' && otherCompanies.length > 0 ? (
-            <select
+            <Input
+              type="select"
               value={importSourceCompanyId}
               onChange={(e) => setImportSourceCompanyId(e.target.value)}
-              style={{ ...inputStyle, marginTop: 0 }}
             >
               <option value="">{t('bankRulesSelectCompany')}</option>
               {otherCompanies.map((c) => (
@@ -792,7 +783,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
                   {c.nameAr || c.nameEn || c.name || c.id}
                 </option>
               ))}
-            </select>
+            </Input>
           ) : null}
           {importSource === 'file' ? (
             <div>

@@ -616,7 +616,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
           onChange={(e) => setContractEnd(e.target.value)}
         />
         {contractEnd && (
-          <button type="button" style={{ fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setContractEnd('')}>✕ إزالة</button>
+          <Button type="button" variant="ghost" onClick={() => setContractEnd('')} style={{ fontSize: 11, color: 'var(--noorix-accent-red)' }}>✕ إزالة</Button>
         )}
       </div>
       <div ref={printRef}>
@@ -755,28 +755,25 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
             <div style={{ fontWeight: 700, marginBottom: 8 }}>حاسبة نهاية الخدمة (تفصيل قبل الطباعة) / EOS Calculator (before print)</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>تاريخ نهاية الخدمة</label>
-                <input type="date" value={eosEndDate} onChange={(e) => setEosEndDate(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)' }} />
+                <Input type="date" label="تاريخ نهاية الخدمة" value={eosEndDate} onChange={(e) => setEosEndDate(e.target.value)} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>سبب الانتهاء</label>
-                <select value={eosReason} onChange={(e) => setEosReason(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}>
+                <Input type="select" label="سبب الانتهاء" value={eosReason} onChange={(e) => setEosReason(e.target.value)}>
                   <option value="employer">{t('eosCalcReasonEmployer')}</option>
                   <option value="resignation">{t('eosCalcReasonResignation')}</option>
                   <option value="article81">{t('eosCalcReasonArticle81')}</option>
                   <option value="article80">{t('eosCalcReasonArticle80')}</option>
-                </select>
+                </Input>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>الأجر المعتمد لنهاية الخدمة</label>
-                <input
+                <Input
                   type="number"
+                  label="الأجر المعتمد لنهاية الخدمة"
                   min="0"
                   step="0.01"
                   value={eosSalary}
                   onChange={(e) => setEosSalary(e.target.value)}
                   onBlur={() => setEosSalary(new Decimal(eosSalary || 0).toDecimalPlaces(2).toString())}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
                 />
               </div>
             </div>

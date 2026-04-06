@@ -201,26 +201,13 @@ export default function TaxReportTab() {
   const balanceCarried = getRowValue('balance_carried');
   const netPayable = netVat + priorAdj + balanceCarried;
 
-  const inputStyle = {
-    width: '100%',
-    maxWidth: 120,
-    padding: '6px 10px',
-    borderRadius: 6,
-    border: '1px solid var(--noorix-border)',
-    background: 'var(--noorix-bg-surface)',
-    fontSize: 14,
-    fontFamily: 'var(--noorix-font-numbers)',
-    textAlign: 'right',
-  };
-
   const renderEditableCell = (key, field) => (
-    <input
+    <Input
       type="text"
       inputMode="decimal"
       value={getRowValue(key, field) || ''}
       onChange={(e) => updateRow(key, field, e.target.value)}
       placeholder="0"
-      style={inputStyle}
     />
   );
 
@@ -361,13 +348,13 @@ export default function TaxReportTab() {
                 <tr>
                   <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)' }}>{lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td>
                   <td colSpan={3} style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center' }}>
-                    <input type="text" inputMode="decimal" value={priorAdj || ''} onChange={(e) => updateRow('prior_adjustments', null, e.target.value)} placeholder="0" style={{ ...inputStyle, margin: 0 }} />
+                    <Input type="text" inputMode="decimal" value={priorAdj || ''} onChange={(e) => updateRow('prior_adjustments', null, e.target.value)} placeholder="0" />
                   </td>
                 </tr>
                 <tr>
                   <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)' }}>{lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td>
                   <td colSpan={3} style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center' }}>
-                    <input type="text" inputMode="decimal" value={balanceCarried || ''} onChange={(e) => updateRow('balance_carried', null, e.target.value)} placeholder="0" style={{ ...inputStyle, margin: 0 }} />
+                    <Input type="text" inputMode="decimal" value={balanceCarried || ''} onChange={(e) => updateRow('balance_carried', null, e.target.value)} placeholder="0" />
                   </td>
                 </tr>
                 <tr style={{ background: 'rgba(37,99,235,0.08)', borderTop: '2px solid var(--noorix-accent-blue)' }}>

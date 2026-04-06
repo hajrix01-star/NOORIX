@@ -4,7 +4,7 @@
  */
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button } from '../../ui';
+import { Button, Input } from '../../ui';
 import { useApp } from '../../context/AppContext';
 import { useOwnerReports } from '../../hooks/useOwnerReports';
 import { EN_MONTHS } from '../Reports/reportHelpers';
@@ -189,25 +189,25 @@ export default function OwnerDashboardScreen() {
           <p className="nx-page-desc">{t('ownerDashboardDesc')}</p>
         </div>
         <div className="nx-toolbar">
-          <select
+          <Input
+            type="select"
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', fontSize: 13 }}
           >
             {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
               <option key={y} value={y}>{y}</option>
             ))}
-          </select>
-          <select
+          </Input>
+          <Input
+            type="select"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', fontSize: 13, minWidth: 90 }}
           >
             <option value="">{t('allMonths')}</option>
             {EN_MONTHS.map((m, i) => (
               <option key={i} value={i + 1}>{m}</option>
             ))}
-          </select>
+          </Input>
           <Button variant="primary" onClick={handleExportExcel} size="sm">Excel</Button>
           <Button onClick={handleExportPdf} size="sm">PDF</Button>
         </div>

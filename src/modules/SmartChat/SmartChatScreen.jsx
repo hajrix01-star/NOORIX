@@ -538,9 +538,9 @@ export default function SmartChatScreen() {
         <Modal open={true} onClose={() => setFaqOpen(false)} title={isAr ? 'أسئلة جاهزة' : 'Suggested questions'} size="md">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {visibleFaqQuestions.map((q, i) => (
-              <button key={i} type="button" className="noorix-btn-nav" style={{ textAlign: isAr ? 'right' : 'left', padding: '14px 16px', fontSize: 15, width: '100%', background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)', borderRadius: 8, cursor: 'pointer', color: 'var(--noorix-text)' }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
+              <Button key={i} style={{ textAlign: isAr ? 'right' : 'left', width: '100%', justifyContent: 'flex-start', padding: '14px 16px', fontSize: 15 }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
                 {isAr ? q.ar : q.en}
-              </button>
+              </Button>
             ))}
           </div>
         </Modal>

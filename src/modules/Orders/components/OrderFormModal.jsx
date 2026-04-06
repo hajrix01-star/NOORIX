@@ -282,14 +282,14 @@ export function OrderFormModal({
               <div>
                 <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{productVariants.length > 0 ? t('ordersProductVariants') : t('ordersProductSize')}</label>
                 {productVariants.length > 0 ? (
-                  <select
+                  <Input
+                    type="select"
                     value={addRow.variantKey}
                     onChange={(e) => {
                       const key = e.target.value;
                       const v = productVariants.find((x) => x._key === key);
                       if (v) setAddRow((r) => ({ ...r, variantKey: key, size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', unitPrice: v.lastPrice ? String(v.lastPrice) : '' }));
                     }}
-                    style={cellInputStyle}
                   >
                     <option value="">—</option>
                     {productVariants.map((v) => (
@@ -297,27 +297,27 @@ export function OrderFormModal({
                         {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'} — {fmt(v.lastPrice ?? 0, 2)} ﷼
                       </option>
                     ))}
-                  </select>
+                  </Input>
                 ) : (
-                  <select
+                  <Input
+                    type="select"
                     value={addRow.size}
                     onChange={(e) => setAddRow((r) => ({ ...r, size: e.target.value }))}
-                    style={cellInputStyle}
                   >
                     <option value="">—</option>
                     {(productsById.get(addRow.productId)?.sizes || '').split(/[,،]/).map((x) => x.trim()).filter(Boolean).map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
-                  </select>
+                  </Input>
                 )}
               </div>
               <div>
                 <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('quantity')}</label>
-                <input type="number" min="0" step="0.01" value={addRow.quantity} onChange={(e) => setAddRow((r) => ({ ...r, quantity: e.target.value }))} placeholder="0" style={cellInputStyle} />
+                <Input type="number" min="0" step="0.01" value={addRow.quantity} onChange={(e) => setAddRow((r) => ({ ...r, quantity: e.target.value }))} placeholder="0" />
               </div>
               <div>
                 <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('unitPrice')}</label>
-                <input type="number" min="0" step="0.01" value={addRow.unitPrice} onChange={(e) => setAddRow((r) => ({ ...r, unitPrice: e.target.value }))} placeholder="0" style={cellInputStyle} />
+                <Input type="number" min="0" step="0.01" value={addRow.unitPrice} onChange={(e) => setAddRow((r) => ({ ...r, unitPrice: e.target.value }))} placeholder="0" />
               </div>
               <Button variant="primary" onClick={addItemFromRow}>+ {t('add')}</Button>
             </div>
@@ -367,7 +367,8 @@ export function OrderFormModal({
                         </td>
                         <td style={{ padding: '8px 10px' }}>
                           {variantsArr.length > 0 ? (
-                            <select
+                            <Input
+                              type="select"
                               value={`${it.size || ''}|${it.packaging || ''}|${it.unit || ''}`}
                               onChange={(e) => {
                                 const v = variantsArr.find((x) => `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}` === e.target.value);
@@ -379,30 +380,29 @@ export function OrderFormModal({
                                   });
                                 }
                               }}
-                              style={cellInputStyle}
                             >
                               {variantsArr.map((v) => (
                                 <option key={`${v.size}|${v.packaging}|${v.unit}`} value={`${v.size || ''}|${v.packaging || ''}|${v.unit || ''}`}>
                                   {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'}
                                 </option>
                               ))}
-                            </select>
+                            </Input>
                           ) : sizesArr.length > 0 ? (
-                            <select value={it.size} onChange={(e) => updateItem(idx, 'size', e.target.value)} style={cellInputStyle}>
+                            <Input type="select" value={it.size} onChange={(e) => updateItem(idx, 'size', e.target.value)}>
                               <option value="">—</option>
                               {sizesArr.map((s) => (
                                 <option key={s} value={s}>{s}</option>
                               ))}
-                            </select>
+                            </Input>
                           ) : (
                             <span className="nx-cell-muted">{variantLabel}</span>
                           )}
                         </td>
                         <td style={{ padding: '8px 10px' }}>
-                          <input type="number" min="0" step="0.01" value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} style={{ ...cellInputStyle, width: 70 }} />
+                          <Input type="number" min="0" step="0.01" value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} style={{ width: 70 }} />
                         </td>
                         <td style={{ padding: '8px 10px' }}>
-                          <input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} style={{ ...cellInputStyle, width: 80 }} />
+                          <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} style={{ width: 80 }} />
                         </td>
                         <td className="nx-cell-num" style={{ padding: '8px 10px', fontWeight: 600 }}>{fmt(enrichedItems[idx]?.amount ?? 0, 2)}</td>
                         <td style={{ padding: '8px 4px' }}>

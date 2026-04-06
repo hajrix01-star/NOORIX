@@ -525,36 +525,36 @@ export function ItemsManageTab({ companyId }) {
                         <tr key={idx} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
                           <td style={{ padding: '6px 8px' }}>
                             <div style={{ display: 'flex', gap: 4 }}>
-                              <select value={v.size} onChange={(e) => updateNewProductVariant(idx, 'size', e.target.value)} style={{ ...cellInputStyle, flex: 1 }}>
+                              <Input type="select" value={v.size} onChange={(e) => updateNewProductVariant(idx, 'size', e.target.value)} style={{ flex: 1 }}>
                                 <option value="">—</option>
                                 {sizesOptions.map((s) => (
                                   <option key={s.ar} value={s.ar}>{s.ar}</option>
                                 ))}
-                              </select>
+                              </Input>
                               <Button size="sm" onClick={() => setAddSizeModal(true)} title={t('add')}>+</Button>
                             </div>
                           </td>
                           <td style={{ padding: '6px 8px' }}>
                             <div style={{ display: 'flex', gap: 4 }}>
-                              <select value={v.packaging} onChange={(e) => updateNewProductVariant(idx, 'packaging', e.target.value)} style={{ ...cellInputStyle, flex: 1 }}>
+                              <Input type="select" value={v.packaging} onChange={(e) => updateNewProductVariant(idx, 'packaging', e.target.value)} style={{ flex: 1 }}>
                                 <option value="">—</option>
                                 {packagingOptions.map((s) => (
                                   <option key={s.ar} value={s.ar}>{s.ar}</option>
                                 ))}
-                              </select>
+                              </Input>
                               <Button size="sm" onClick={() => setAddPackagingModal(true)} title={t('add')}>+</Button>
                             </div>
                           </td>
                           <td style={{ padding: '6px 8px' }}>
-                            <select value={v.unit} onChange={(e) => updateNewProductVariant(idx, 'unit', e.target.value)} style={cellInputStyle}>
+                            <Input type="select" value={v.unit} onChange={(e) => updateNewProductVariant(idx, 'unit', e.target.value)}>
                               <option value="piece">{t('ordersUnitPiece')}</option>
                               <option value="kg">{t('ordersUnitKg')}</option>
                               <option value="box">{t('ordersUnitBox')}</option>
                               <option value="dozen">{t('ordersUnitDozen')}</option>
-                            </select>
+                            </Input>
                           </td>
                           <td style={{ padding: '6px 8px' }}>
-                            <input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateNewProductVariant(idx, 'lastPrice', e.target.value)} placeholder="0" style={{ ...cellInputStyle, width: 80 }} />
+                            <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateNewProductVariant(idx, 'lastPrice', e.target.value)} placeholder="0" style={{ width: 80 }} />
                           </td>
                           <td style={{ padding: '6px 4px' }}>
                             <Button size="sm" variant="danger" onClick={() => removeNewProductVariant(idx)}>✕</Button>
@@ -609,20 +609,20 @@ export function ItemsManageTab({ companyId }) {
                             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                               <div style={{ minWidth: 140 }}>
                                 <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('productNameAr')}</label>
-                                <input type="text" value={editingProduct.nameAr} onChange={(e) => setEditingProduct((x) => ({ ...x, nameAr: e.target.value }))} style={cellInputStyle} />
+                                <Input type="text" value={editingProduct.nameAr} onChange={(e) => setEditingProduct((x) => ({ ...x, nameAr: e.target.value }))} />
                               </div>
                               <div style={{ minWidth: 140 }}>
                                 <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('productNameEn')}</label>
-                                <input type="text" value={editingProduct.nameEn || ''} onChange={(e) => setEditingProduct((x) => ({ ...x, nameEn: e.target.value }))} style={cellInputStyle} />
+                                <Input type="text" value={editingProduct.nameEn || ''} onChange={(e) => setEditingProduct((x) => ({ ...x, nameEn: e.target.value }))} />
                               </div>
                               <div style={{ minWidth: 120 }}>
                                 <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('category')}</label>
-                                <select value={editingProduct.categoryId || ''} onChange={(e) => setEditingProduct((x) => ({ ...x, categoryId: e.target.value }))} style={cellInputStyle}>
+                                <Input type="select" value={editingProduct.categoryId || ''} onChange={(e) => setEditingProduct((x) => ({ ...x, categoryId: e.target.value }))}>
                                   <option value="">—</option>
                                   {categories.map((c) => (
                                     <option key={c.id} value={c.id}>{c.nameAr || c.nameEn}</option>
                                   ))}
-                                </select>
+                                </Input>
                               </div>
                             </div>
                             <div>
@@ -645,31 +645,31 @@ export function ItemsManageTab({ companyId }) {
                                     {(editingProduct.variants || []).map((v, idx) => (
                                       <tr key={idx}>
                                         <td style={{ padding: '4px 6px' }}>
-                                          <select value={v.size} onChange={(e) => updateEditingVariant(idx, 'size', e.target.value)} style={{ ...cellInputStyle, fontSize: 11 }}>
+                                          <Input type="select" value={v.size} onChange={(e) => updateEditingVariant(idx, 'size', e.target.value)}>
                                             <option value="">—</option>
                                             {sizesOptions.map((s) => (
                                               <option key={s.ar} value={s.ar}>{s.ar}</option>
                                             ))}
-                                          </select>
+                                          </Input>
                                         </td>
                                         <td style={{ padding: '4px 6px' }}>
-                                          <select value={v.packaging} onChange={(e) => updateEditingVariant(idx, 'packaging', e.target.value)} style={{ ...cellInputStyle, fontSize: 11 }}>
+                                          <Input type="select" value={v.packaging} onChange={(e) => updateEditingVariant(idx, 'packaging', e.target.value)}>
                                             <option value="">—</option>
                                             {packagingOptions.map((s) => (
                                               <option key={s.ar} value={s.ar}>{s.ar}</option>
                                             ))}
-                                          </select>
+                                          </Input>
                                         </td>
                                         <td style={{ padding: '4px 6px' }}>
-                                          <select value={v.unit} onChange={(e) => updateEditingVariant(idx, 'unit', e.target.value)} style={{ ...cellInputStyle, fontSize: 11 }}>
+                                          <Input type="select" value={v.unit} onChange={(e) => updateEditingVariant(idx, 'unit', e.target.value)}>
                                             <option value="piece">{t('ordersUnitPiece')}</option>
                                             <option value="kg">{t('ordersUnitKg')}</option>
                                             <option value="box">{t('ordersUnitBox')}</option>
                                             <option value="dozen">{t('ordersUnitDozen')}</option>
-                                          </select>
+                                          </Input>
                                         </td>
                                         <td style={{ padding: '4px 6px' }}>
-                                          <input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateEditingVariant(idx, 'lastPrice', e.target.value)} style={{ ...cellInputStyle, fontSize: 11, width: 70 }} />
+                                          <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateEditingVariant(idx, 'lastPrice', e.target.value)} style={{ width: 70 }} />
                                         </td>
                                         <td style={{ padding: '4px' }}>
                                           <Button size="sm" variant="danger" onClick={() => removeEditingVariant(idx)}>✕</Button>
@@ -778,10 +778,10 @@ export function ItemsManageTab({ companyId }) {
                     {editingCategory?.id === c.id ? (
                       <>
                         <td style={{ padding: '8px 12px' }}>
-                          <input type="text" value={editingCategory.nameAr} onChange={(e) => setEditingCategory((x) => ({ ...x, nameAr: e.target.value }))} placeholder={t('categoryNameAr')} style={cellInputStyle} />
+                          <Input type="text" value={editingCategory.nameAr} onChange={(e) => setEditingCategory((x) => ({ ...x, nameAr: e.target.value }))} placeholder={t('categoryNameAr')} />
                         </td>
                         <td style={{ padding: '8px 12px' }}>
-                          <input type="text" value={editingCategory.nameEn || ''} onChange={(e) => setEditingCategory((x) => ({ ...x, nameEn: e.target.value }))} placeholder={t('categoryNameEn')} style={cellInputStyle} />
+                          <Input type="text" value={editingCategory.nameEn || ''} onChange={(e) => setEditingCategory((x) => ({ ...x, nameEn: e.target.value }))} placeholder={t('categoryNameEn')} />
                         </td>
                         <td style={{ padding: '8px 12px', textAlign: 'center' }}>
                           <div className="nx-toolbar" style={{ justifyContent: 'center' }}>

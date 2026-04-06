@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button } from '../../../ui';
+import { Button, Input } from '../../../ui';
 import { bulkDeletePriceHistory } from '../services/ocrApi';
 
 const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -202,17 +202,17 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
 
         <div className="inv-search-wrap">
           <span className="inv-search-icon">⌕</span>
-          <input value={search} onChange={(e) => setSearch(e.target.value)}
+          <Input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder={isAr ? 'بحث بالصنف أو المورد...' : 'Search item or supplier...'}
             className="inv-search-input" />
           {search && <button className="inv-search-clear" onClick={() => setSearch('')}>✕</button>}
         </div>
 
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="inv-sort-select">
+        <Input type="select" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="inv-sort-select">
           <option value="pct">{isAr ? 'أعلى نسبة' : 'Highest %'}</option>
           <option value="savings">{isAr ? 'أكبر توفير' : 'Highest savings'}</option>
           <option value="name">{isAr ? 'الاسم' : 'Name'}</option>
-        </select>
+        </Input>
 
         {selected.size > 0 && (
           <>

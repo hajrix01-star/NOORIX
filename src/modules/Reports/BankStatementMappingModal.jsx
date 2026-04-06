@@ -9,7 +9,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementConfirmMapping, bankStatementGet, bankStatementSuggestHeaderMetadata } from '../../services/api';
-import { Button, Modal } from '../../ui';
+import { Button, Modal, Input } from '../../ui';
 import {
   autoDetectRows,
   autoDetectColumns,
@@ -280,34 +280,32 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
             ) : null}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
-            <label>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>{t('bankMapCustomerLabel')}</span>
-              <input
-                type="text"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder={t('bankMapCustomerPlaceholder')}
-                style={{ width: '100%', marginTop: 4, padding: '8px 10px', fontSize: 13 }}
-              />
-            </label>
-            <label>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>{t('bankMapBankLabel')}</span>
-              <input
-                type="text"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-                placeholder={t('bankMapBankPlaceholder')}
-                style={{ width: '100%', marginTop: 4, padding: '8px 10px', fontSize: 13 }}
-              />
-            </label>
-            <label>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>{t('bankMapPeriodFrom')}</span>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: '100%', marginTop: 4 }} />
-            </label>
-            <label>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>{t('bankMapPeriodTo')}</span>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ width: '100%', marginTop: 4 }} />
-            </label>
+            <Input
+              type="text"
+              label={t('bankMapCustomerLabel')}
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder={t('bankMapCustomerPlaceholder')}
+            />
+            <Input
+              type="text"
+              label={t('bankMapBankLabel')}
+              value={bankName}
+              onChange={(e) => setBankName(e.target.value)}
+              placeholder={t('bankMapBankPlaceholder')}
+            />
+            <Input
+              type="date"
+              label={t('bankMapPeriodFrom')}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+            <Input
+              type="date"
+              label={t('bankMapPeriodTo')}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
           </div>
         </div>
 
@@ -344,10 +342,10 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
                   </span>
                   {columnMapping[col.key] >= 0 ? <span style={{ color: '#16a34a' }}>✓</span> : null}
                 </label>
-                <select
+                <Input
+                  type="select"
                   value={columnMapping[col.key] >= 0 ? columnMapping[col.key] : ''}
                   onChange={(e) => setCol(col.key, e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', fontSize: 13 }}
                 >
                   <option value="">{t('bankMapSelectColumn')}</option>
                   {Array.from({ length: colCount }, (_, i) => (
@@ -355,7 +353,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
                       {headers[i]?.label?.slice(0, 55) || i + 1}
                     </option>
                   ))}
-                </select>
+                </Input>
               </div>
             ))}
           </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button } from '../../../ui';
+import { Button, Input } from '../../../ui';
 import {
   createOcrItem, updateOcrItem, deleteOcrItem, getItemPriceHistory, addItemAlias,
   findDuplicateItems, mergeOcrItems, bulkDeleteOcrItems,
@@ -18,10 +18,10 @@ function ItemForm({ initial = {}, onSave, onCancel, loading }) {
   };
   return (
     <div style={{ display: 'grid', gap: 12 }}>
-      <input placeholder={`${t('ocrItemNameAr')} *`} value={form.nameAr} onChange={f('nameAr')} style={inputStyle} />
-      <input placeholder={t('ocrItemNameEn')} value={form.nameEn} onChange={f('nameEn')} style={inputStyle} />
-      <input placeholder={t('ocrItemCategory')} value={form.category} onChange={f('category')} style={inputStyle} />
-      <input placeholder={t('ocrItemUnit')} value={form.unitType} onChange={f('unitType')} style={inputStyle} />
+      <Input placeholder={`${t('ocrItemNameAr')} *`} value={form.nameAr} onChange={f('nameAr')} />
+      <Input placeholder={t('ocrItemNameEn')} value={form.nameEn} onChange={f('nameEn')} />
+      <Input placeholder={t('ocrItemCategory')} value={form.category} onChange={f('category')} />
+      <Input placeholder={t('ocrItemUnit')} value={form.unitType} onChange={f('unitType')} />
       <div style={{ display: 'flex', gap: 8 }}>
         <Button onClick={() => onSave(form)} disabled={loading || !form.nameAr} variant="primary" style={{ flex: 1 }}>
           {loading ? '...' : t('ocrSave')}
@@ -152,7 +152,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
 
         <div className="inv-search-wrap">
           <span className="inv-search-icon">⌕</span>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('ocrSearch')} className="inv-search-input" />
+          <Input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('ocrSearch')} className="inv-search-input" />
           {search && <button className="inv-search-clear" onClick={() => setSearch('')}>✕</button>}
         </div>
 
@@ -284,11 +284,11 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                <input value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="inv-search-input" style={{ flex: 1 }} />
-                <select value={aliasLang} onChange={(e) => setAliasLang(e.target.value)} className="inv-sort-select">
+                <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} style={{ flex: 1 }} />
+                <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
                   <option value="ar">AR</option>
                   <option value="en">EN</option>
-                </select>
+                </Input>
                 <Button onClick={handleAddAlias} variant="primary">+</Button>
               </div>
 

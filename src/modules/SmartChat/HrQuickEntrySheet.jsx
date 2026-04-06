@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button, Modal } from '../../ui';
+import { Button, Modal, Input } from '../../ui';
 import { getEmployees, createLeave, createDeduction, createMovement, createCustomAllowance } from '../../services/api';
 import { createAdvance } from '../../services/financialApi';
 import { useVaults } from '../../hooks/useVaults';
@@ -222,12 +222,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
   const dataLoading = employeesLoading || (mode === 'advance' && vaultsLoading);
 
   const empSelect = (value, onChange, id) => (
-    <select id={id} value={value} onChange={(e) => onChange(e.target.value)} required style={inputBase} disabled={dataLoading}>
+    <Input id={id} type="select" value={value} onChange={(e) => onChange(e.target.value)} required disabled={dataLoading}>
       <option value="">{isAr ? '— اختر الموظف —' : '— Select employee —'}</option>
       {activeEmployees.map((emp) => (
         <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
       ))}
-    </select>
+    </Input>
   );
 
   const onSubmitAdvance = (e) => {
@@ -449,7 +449,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                 {empSelect(advEmp, setAdvEmp, 'adv-emp')}
               </Field>
               <Field id="adv-amt" label={t('advanceAmount')}>
-                <input
+                <Input
                   id="adv-amt"
                   type="number"
                   inputMode="decimal"
@@ -457,23 +457,22 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                   min="0"
                   value={advAmount}
                   onChange={(e) => setAdvAmount(e.target.value)}
-                  style={inputBase}
                   placeholder="0"
                 />
               </Field>
               <Field id="adv-vault" label={t('selectVault')}>
-                <select id="adv-vault" value={advVault} onChange={(e) => setAdvVault(e.target.value)} style={inputBase} required>
+                <Input id="adv-vault" type="select" value={advVault} onChange={(e) => setAdvVault(e.target.value)} required>
                   <option value="">{isAr ? '— اختر الخزينة —' : '— Select Vault —'}</option>
                   {vaults.map((v) => (
                     <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
                   ))}
-                </select>
+                </Input>
               </Field>
               <Field id="adv-date" label={t('transactionDate')}>
-                <input id="adv-date" type="date" value={advDate} onChange={(e) => setAdvDate(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" />
+                <Input id="adv-date" type="date" value={advDate} onChange={(e) => setAdvDate(e.target.value)} style={{ direction: 'ltr' }} lang="en" />
               </Field>
               <Field id="adv-notes" label={t('notes')}>
-                <input id="adv-notes" type="text" value={advNotes} onChange={(e) => setAdvNotes(e.target.value)} style={inputBase} placeholder={isAr ? 'سبب أو تفاصيل' : 'Reason or details'} />
+                <Input id="adv-notes" type="text" value={advNotes} onChange={(e) => setAdvNotes(e.target.value)} placeholder={isAr ? 'سبب أو تفاصيل' : 'Reason or details'} />
               </Field>
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
                 <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>
@@ -492,25 +491,25 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                 {empSelect(lvEmp, setLvEmp, 'lv-emp')}
               </Field>
               <Field id="lv-type" label={t('leaveType')}>
-                <select id="lv-type" value={lvType} onChange={(e) => setLvType(e.target.value)} style={inputBase}>
+                <Input id="lv-type" type="select" value={lvType} onChange={(e) => setLvType(e.target.value)}>
                   {Object.keys(TYPE_MAP).map((k) => (
                     <option key={k} value={k}>{t(TYPE_MAP[k])}</option>
                   ))}
-                </select>
+                </Input>
               </Field>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                 <Field id="lv-start" label={t('startDate')}>
-                  <input id="lv-start" type="date" value={lvStart} onChange={(e) => setLvStart(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" required />
+                  <Input id="lv-start" type="date" value={lvStart} onChange={(e) => setLvStart(e.target.value)} style={{ direction: 'ltr' }} lang="en" required />
                 </Field>
                 <Field id="lv-end" label={t('endDate')}>
-                  <input id="lv-end" type="date" value={lvEnd} onChange={(e) => setLvEnd(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" required />
+                  <Input id="lv-end" type="date" value={lvEnd} onChange={(e) => setLvEnd(e.target.value)} style={{ direction: 'ltr' }} lang="en" required />
                 </Field>
               </div>
               <Field id="lv-days" label={t('daysCount')}>
-                <input id="lv-days" type="number" inputMode="numeric" min="1" value={lvDays} onChange={(e) => setLvDays(e.target.value)} style={inputBase} placeholder="—" />
+                <Input id="lv-days" type="number" inputMode="numeric" min="1" value={lvDays} onChange={(e) => setLvDays(e.target.value)} placeholder="—" />
               </Field>
               <Field id="lv-notes" label={t('notes')}>
-                <input id="lv-notes" type="text" value={lvNotes} onChange={(e) => setLvNotes(e.target.value)} style={inputBase} />
+                <Input id="lv-notes" type="text" value={lvNotes} onChange={(e) => setLvNotes(e.target.value)} />
               </Field>
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
                 <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
@@ -525,20 +524,20 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                 {empSelect(ddEmp, setDdEmp, 'dd-emp')}
               </Field>
               <Field id="dd-type" label={isAr ? 'نوع الخصم' : 'Deduction type'}>
-                <select id="dd-type" value={ddType} onChange={(e) => setDdType(e.target.value)} style={inputBase}>
+                <Input id="dd-type" type="select" value={ddType} onChange={(e) => setDdType(e.target.value)}>
                   <option value="penalty">{isAr ? 'جزاء' : 'Penalty'}</option>
                   <option value="other">{isAr ? 'أخرى' : 'Other'}</option>
                   <option value="advance">{isAr ? 'مرتبط بسلفة' : 'Advance-related'}</option>
-                </select>
+                </Input>
               </Field>
               <Field id="dd-amt" label={isAr ? 'مبلغ الخصم' : 'Deduction amount'}>
-                <input id="dd-amt" type="number" inputMode="decimal" step="0.01" min="0" value={ddAmount} onChange={(e) => setDdAmount(e.target.value)} style={inputBase} />
+                <Input id="dd-amt" type="number" inputMode="decimal" step="0.01" min="0" value={ddAmount} onChange={(e) => setDdAmount(e.target.value)} />
               </Field>
               <Field id="dd-date" label={t('transactionDate')}>
-                <input id="dd-date" type="date" value={ddDate} onChange={(e) => setDdDate(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" />
+                <Input id="dd-date" type="date" value={ddDate} onChange={(e) => setDdDate(e.target.value)} style={{ direction: 'ltr' }} lang="en" />
               </Field>
               <Field id="dd-notes" label={t('notes')}>
-                <input id="dd-notes" type="text" value={ddNotes} onChange={(e) => setDdNotes(e.target.value)} style={inputBase} placeholder={isAr ? 'السبب' : 'Reason'} />
+                <Input id="dd-notes" type="text" value={ddNotes} onChange={(e) => setDdNotes(e.target.value)} placeholder={isAr ? 'السبب' : 'Reason'} />
               </Field>
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
                 <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
@@ -558,26 +557,26 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                 <form onSubmit={onSubmitMovement}>
                   <Field id="mv-emp" label={t('selectEmployee')}>{empSelect(mvEmp, setMvEmp, 'mv-emp')}</Field>
                   <Field id="mv-type" label={isAr ? t('movementTypeLabel') : 'Type'}>
-                    <select id="mv-type" value={mvType} onChange={(e) => setMvType(e.target.value)} style={inputBase}>
+                    <Input id="mv-type" type="select" value={mvType} onChange={(e) => setMvType(e.target.value)}>
                       <option value="raise">{isAr ? 'زيادة' : 'Raise'}</option>
                       <option value="promotion">{isAr ? 'ترقية' : 'Promotion'}</option>
                       <option value="other">{isAr ? 'أخرى' : 'Other'}</option>
-                    </select>
+                    </Input>
                   </Field>
                   <Field id="mv-amt" label={isAr ? 'مبلغ (اختياري)' : 'Amount (optional)'}>
-                    <input id="mv-amt" type="number" inputMode="decimal" step="0.01" min="0" value={mvAmount} onChange={(e) => setMvAmount(e.target.value)} style={inputBase} />
+                    <Input id="mv-amt" type="number" inputMode="decimal" step="0.01" min="0" value={mvAmount} onChange={(e) => setMvAmount(e.target.value)} />
                   </Field>
                   <Field id="mv-prev" label={isAr ? t('previousValue') : 'Previous'}>
-                    <input id="mv-prev" type="text" value={mvPrev} onChange={(e) => setMvPrev(e.target.value)} style={inputBase} />
+                    <Input id="mv-prev" type="text" value={mvPrev} onChange={(e) => setMvPrev(e.target.value)} />
                   </Field>
                   <Field id="mv-new" label={isAr ? t('newValue') : 'New value'}>
-                    <input id="mv-new" type="text" value={mvNew} onChange={(e) => setMvNew(e.target.value)} style={inputBase} placeholder={isAr ? 'مثال: 8000 → 9000' : 'e.g. 8000 → 9000'} />
+                    <Input id="mv-new" type="text" value={mvNew} onChange={(e) => setMvNew(e.target.value)} placeholder={isAr ? 'مثال: 8000 → 9000' : 'e.g. 8000 → 9000'} />
                   </Field>
                   <Field id="mv-eff" label={isAr ? t('effectiveDateLabel') : 'Effective date'}>
-                    <input id="mv-eff" type="date" value={mvEff} onChange={(e) => setMvEff(e.target.value)} style={{ ...inputBase, direction: 'ltr' }} lang="en" required />
+                    <Input id="mv-eff" type="date" value={mvEff} onChange={(e) => setMvEff(e.target.value)} style={{ direction: 'ltr' }} lang="en" required />
                   </Field>
                   <Field id="mv-notes" label={t('notes')}>
-                    <input id="mv-notes" type="text" value={mvNotes} onChange={(e) => setMvNotes(e.target.value)} style={inputBase} />
+                    <Input id="mv-notes" type="text" value={mvNotes} onChange={(e) => setMvNotes(e.target.value)} />
                   </Field>
                   <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
                     <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
@@ -588,10 +587,10 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                 <form onSubmit={onSubmitAllowance}>
                   <Field id="al-emp" label={t('selectEmployee')}>{empSelect(alEmp, setAlEmp, 'al-emp')}</Field>
                   <Field id="al-name" label={t('customAllowanceName')}>
-                    <input id="al-name" type="text" value={alName} onChange={(e) => setAlName(e.target.value)} style={inputBase} placeholder={isAr ? 'مثال: بدل طبيعة عمل' : 'e.g. Field allowance'} />
+                    <Input id="al-name" type="text" value={alName} onChange={(e) => setAlName(e.target.value)} placeholder={isAr ? 'مثال: بدل طبيعة عمل' : 'e.g. Field allowance'} />
                   </Field>
                   <Field id="al-amt" label={t('customAllowanceAmount')}>
-                    <input id="al-amt" type="number" inputMode="decimal" step="0.01" min="0" value={alAmount} onChange={(e) => setAlAmount(e.target.value)} style={inputBase} />
+                    <Input id="al-amt" type="number" inputMode="decimal" step="0.01" min="0" value={alAmount} onChange={(e) => setAlAmount(e.target.value)} />
                   </Field>
                   <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
                     <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
