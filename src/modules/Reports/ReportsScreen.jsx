@@ -225,10 +225,10 @@ export default function ReportsScreen() {
             <div style={{ maxWidth: 'min(100%, 1400px)', margin: '0 auto' }}>
               <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 {isMobile && (
-                  <div style={{ overflowX: 'auto', display: 'flex', gap: 6, padding: '10px 14px 8px', flexWrap: 'nowrap', borderBottom: '1px solid var(--noorix-border)' }}>
-                    <button type="button" onClick={() => setSelectedMonth('')} style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--noorix-border)', background: !selectedMonth ? 'var(--noorix-accent-blue)' : 'var(--noorix-bg-surface)', color: !selectedMonth ? '#fff' : 'var(--noorix-text-muted)', fontSize: 12, fontWeight: !selectedMonth ? 700 : 400, whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0 }}>{t('allMonths')}</button>
+                  <div className="nx-tab-bar" style={{ overflowX: 'auto', flexWrap: 'nowrap', borderBottom: '1px solid var(--noorix-border)' }}>
+                    <button type="button" className={`nx-tab-btn${!selectedMonth ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth('')}>{t('allMonths')}</button>
                     {(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN).map((name, index) => (
-                      <button key={index} type="button" onClick={() => setSelectedMonth(String(index + 1))} style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--noorix-border)', background: selectedMonthNumber === index + 1 ? 'var(--noorix-accent-blue)' : 'var(--noorix-bg-surface)', color: selectedMonthNumber === index + 1 ? '#fff' : 'var(--noorix-text-muted)', fontSize: 12, fontWeight: selectedMonthNumber === index + 1 ? 700 : 400, whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0 }}>{name}</button>
+                      <button key={index} type="button" className={`nx-tab-btn${selectedMonthNumber === index + 1 ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth(String(index + 1))}>{name}</button>
                     ))}
                   </div>
                 )}
