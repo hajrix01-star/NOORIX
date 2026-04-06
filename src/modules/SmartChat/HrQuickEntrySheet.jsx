@@ -420,7 +420,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
       onClick={onClose}
     >
       <div
-        className="noorix-surface-card"
+        className="noorix-surface-card noorix-light-sheet"
         style={{
           width: '100%',
           maxWidth: 480,

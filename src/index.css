@@ -117,6 +117,25 @@
   --noorix-shadow-lg: 0 8px 32px rgba(0,0,0,0.32);
 }
 
+/* ورقة/لوحة منبثقة بثيم فاتح ثابت — وضوح عند تشغيل التطبيق بالوضع الداكن */
+.noorix-light-sheet {
+  --noorix-bg-page: #f5f6f8;
+  --noorix-bg-surface: #ffffff;
+  --noorix-bg-muted: #f1f3f6;
+  --noorix-bg-modal: #ffffff;
+  --noorix-text: #1a2332;
+  --noorix-text-muted: #5a6a7e;
+  --noorix-text-muted-2: #8fa0b4;
+  --noorix-border: #dde3ec;
+  --noorix-border-muted: rgba(148, 163, 184, 0.22);
+  --noorix-border-subtle: #e8ecf2;
+  --btn-default-bg: #ffffff;
+  --btn-default-border: #c8d4e3;
+  --btn-default-text: #2c3e55;
+  --btn-default-hover: #eef2f8;
+  color: #1a2332;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    MODAL SYSTEM — نظام النوافذ الموحد
    ═══════════════════════════════════════════════════════════════ */

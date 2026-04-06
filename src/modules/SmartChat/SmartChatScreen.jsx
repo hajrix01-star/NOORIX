@@ -535,7 +535,7 @@ export default function SmartChatScreen() {
 
       {faqOpen && (
         <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 10050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setFaqOpen(false)}>
-          <div className="noorix-surface-card" style={{ maxWidth: 520, width: '100%', maxHeight: 'min(80vh, 560px)', overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 14, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
+          <div className="noorix-surface-card noorix-light-sheet" style={{ maxWidth: 520, width: '100%', maxHeight: 'min(80vh, 560px)', overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 14, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 700, fontSize: 16 }}>{isAr ? 'أسئلة جاهزة' : 'Suggested questions'}</span>
               <button type="button" className="noorix-btn-nav" onClick={() => setFaqOpen(false)}>{isAr ? 'إغلاق' : 'Close'}</button>
@@ -603,7 +603,7 @@ export default function SmartChatScreen() {
       {expenseMode === 'editLine' && activeCompanyId && (
         expenseEditLine === undefined ? (
           <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 10051, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setExpenseMode(null)}>
-            <div className="noorix-surface-card" style={{ maxWidth: 400, width: '100%', maxHeight: '80vh', overflow: 'auto', padding: 20, borderRadius: 14 }} onClick={(e) => e.stopPropagation()}>
+            <div className="noorix-surface-card noorix-light-sheet" style={{ maxWidth: 400, width: '100%', maxHeight: '80vh', overflow: 'auto', padding: 20, borderRadius: 14 }} onClick={(e) => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <strong>{t('chatEditFixedExpense')}</strong>
                 <button type="button" className="noorix-btn-nav" onClick={() => setExpenseMode(null)}>✕</button>
@@ -645,7 +645,7 @@ export default function SmartChatScreen() {
               />
               <div
                 ref={commandsPanelRef}
-                className="noorix-chat-commands-panel noorix-chat-commands-panel--portal"
+                className="noorix-chat-commands-panel noorix-chat-commands-panel--portal noorix-light-sheet"
                 role="dialog"
                 aria-modal="true"
                 aria-label={isAr ? 'أوامر المحادثة' : 'Chat commands'}
