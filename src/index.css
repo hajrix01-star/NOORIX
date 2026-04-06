@@ -2558,6 +2558,100 @@ input:focus, select:focus, textarea:focus {
   min-width: 160px;
 }
 
+/* —— إدخال دفعة مشتريات: تاريخ + خزنة بنفس الارتفاع والعرض —— */
+.batch-purchases-entry-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 14px 12px;
+  background: var(--noorix-bg-page);
+  border-bottom: 1px solid var(--noorix-border);
+}
+.batch-purchases-entry-toolbar__control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.batch-purchases-entry-toolbar__control .nx-input__field[type="date"],
+.batch-purchases-entry-toolbar__control .nx-input__field--select {
+  width: 168px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.batch-purchases-entry-toolbar__shortcuts {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.batch-purchases-shortcut-chip.nx-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 32px;
+}
+
+/* —— ملف الموظف: عرض محدود + شبكة عمودين —— */
+.employee-profile-layout {
+  width: 100%;
+  max-width: 1160px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.employee-profile-layout__wide {
+  grid-column: 1 / -1;
+}
+@media (max-width: 900px) {
+  .employee-profile-layout {
+    grid-template-columns: 1fr;
+  }
+  .employee-profile-layout__wide {
+    grid-column: auto;
+  }
+}
+.employee-profile-salary-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  align-items: center;
+  border-bottom: 1px solid var(--noorix-border);
+}
+.employee-profile-salary-row:last-child {
+  border-bottom: none;
+}
+.employee-profile-salary-row--total {
+  background: var(--noorix-bg-muted);
+}
+.employee-profile-salary-row__label {
+  font-weight: 500;
+}
+.employee-profile-salary-row__label--strong {
+  font-weight: 700;
+}
+.employee-profile-salary-row__amount {
+  font-family: var(--noorix-font-numbers);
+  text-align: end;
+  font-weight: 600;
+}
+.employee-profile-salary-row__amount--total {
+  font-weight: 800;
+}
+.employee-profile-header-bar {
+  max-width: 1160px;
+  margin-inline: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* استجابة الجوال */
 @media (max-width: 640px) {
   .noorix-date-filter-bar { gap: 6px; padding: 8px 10px; flex-wrap: wrap; align-items: center; }

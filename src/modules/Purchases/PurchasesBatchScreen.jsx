@@ -439,21 +439,22 @@ export default function PurchasesBatchScreen() {
       {activeTab === 'entry' && hasCompany && (
         <div className="noorix-surface-card nx-rounded-lg" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           {/* شريط الأدوات */}
-          <div className="nx-flex-center nx-gap-12 nx-border-b nx-flex-wrap" style={{ padding: '14px 12px', background: 'var(--noorix-bg-page)' }}>
-            <div className="nx-flex-center nx-gap-8 nx-flex-shrink-0">
-              <label className="nx-text-sm nx-font-700 nx-text-muted nx-nowrap">{t('transactionDateLabel')}</label>
+          <div className="batch-purchases-entry-toolbar nx-border-b nx-bg-page">
+            <div className="batch-purchases-entry-toolbar__control">
+              <label className="nx-text-sm nx-font-700 nx-text-muted nx-nowrap" htmlFor="batch-purchase-date">{t('transactionDateLabel')}</label>
               <Input
+                id="batch-purchase-date"
                 type="date"
                 value={batchDate}
                 onChange={(e) => setBatchDate(e.target.value)}
-                className="nx-rounded nx-text-base nx-bg-surface nx-text-primary nx-border-all"
-                style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}
+                className="nx-font-numbers"
               />
             </div>
-            <div className="nx-flex-col nx-flex-shrink-0" style={{ gap: 2, minWidth: 0, maxWidth: 280 }}>
+            <div className="batch-purchases-entry-toolbar__control">
+              <label className="nx-text-sm nx-font-700 nx-text-muted nx-nowrap" htmlFor="batch-purchase-vault">{t('batchPurchasesPayVault')}</label>
               <Input
+                id="batch-purchase-vault"
                 type="select"
-                label={t('batchPurchasesPayVault')}
                 value={batchVaultId}
                 onChange={(e) => setBatchVaultId(e.target.value)}
               >
@@ -462,20 +463,18 @@ export default function PurchasesBatchScreen() {
                   <option key={v.id} value={v.id}>{vaultDisplayName(v, language)}</option>
                 ))}
               </Input>
-              <span className="nx-text-muted" style={{ fontSize: 10, lineHeight: 1.35, maxWidth: 260 }}>
-                {t('batchPurchasesPayVaultHint')}
-              </span>
             </div>
-            <div className="nx-flex-center nx-gap-8 nx-flex-wrap" style={{ flex: '1 1 auto', minWidth: 0 }}>
+            <div className="batch-purchases-entry-toolbar__shortcuts">
               <span className="nx-text-sm nx-font-700 nx-text-muted nx-nowrap">{t('shortcuts')}</span>
               {bookmarkedSuppliers.length > 0 ? (
                 bookmarkedSuppliers.map((s) => (
                   <Button
                     key={s.id}
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => addBookmarked(s.id)}
-                    className="nx-rounded nx-text-sm nx-font-600 nx-bg-surface nx-text-primary nx-cursor-pointer nx-border-all nx-nowrap"
-                    style={{ padding: '6px 12px' }}
+                    className="batch-purchases-shortcut-chip nx-border-all nx-nowrap"
                   >
                     {(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}
                   </Button>

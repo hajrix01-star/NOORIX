@@ -309,8 +309,8 @@ export default function EmployeeProfileScreen() {
     <div className="nx-screen nx-p-24">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="nx-page-header">
-        <Button onClick={() => navigate('/hr')}>← {t ? 'العودة' : 'Back'}</Button>
+      <div className="nx-page-header employee-profile-header-bar">
+        <Button onClick={() => navigate('/hr')}>{t('employeeProfileBack')}</Button>
         <div className="nx-toolbar">
           <Button onClick={() => setDocModal('salary')}>{t('salaryCertificate') || 'تعريف راتب'}</Button>
           <Button onClick={() => setDocModal('contract')}>{t('documentContract') || 'عقد'}</Button>
@@ -326,12 +326,13 @@ export default function EmployeeProfileScreen() {
         </div>
       </div>
 
+      <div className="employee-profile-layout">
       {/* معلومات أساسية */}
       <div className="noorix-surface-card nx-p-24">
         <h1 className="nx-page-title nx-mb-16">{employeeDisplayName(employee, lang)}</h1>
         <p className="nx-cell-muted nx-m-0">{employee.jobTitle || '—'}</p>
-        <p style={{ margin: '8px 0 0', fontSize: 13 }}>الرقم الوظيفي: {employee.employeeSerial || '—'}</p>
-        <p style={{ margin: '4px 0 0', fontSize: 13 }}>تاريخ التعيين: {formatSaudiDate(employee.joinDate)}</p>
+        <p className="nx-text-base nx-mt-8 nx-mb-0">{t('employeeSerial')}: {employee.employeeSerial || '—'}</p>
+        <p className="nx-text-base nx-mt-4 nx-mb-0">{t('joinDate')}: {formatSaudiDate(employee.joinDate)}</p>
         <div className="nx-mt-10">
           <Badge {...Badge.fromStatus(employee.status, EMP_STATUS_MAP)} />
         </div>
@@ -339,22 +340,15 @@ export default function EmployeeProfileScreen() {
 
       {/* تفاصيل الراتب */}
       <div className="noorix-surface-card nx-p-24">
-        <h2 className="nx-text-2xl nx-font-700 nx-text-primary" style={{ margin: '0 0 16px' }}>{t('totalSalary')}</h2>
+        <h2 className="nx-text-2xl nx-font-700 nx-text-primary nx-mb-16">{t('totalSalary')}</h2>
         <div className="nx-border-all nx-rounded-lg nx-overflow-hidden">
           {salaryRows.map((row, idx) => (
             <div
               key={`${row.label}-${idx}`}
-              className="nx-grid nx-gap-12"
-              style={{
-                gridTemplateColumns: '1.2fr 1fr',
-                padding: '12px 14px',
-                borderBottom: idx === salaryRows.length - 1 ? 'none' : '1px solid var(--noorix-border)',
-                background: row.total ? 'var(--noorix-bg-muted)' : 'transparent',
-                alignItems: 'center',
-              }}
+              className={`employee-profile-salary-row${row.total ? ' employee-profile-salary-row--total' : ''}`}
             >
-              <div style={{ fontWeight: row.total || row.strong ? 700 : 500 }}>{row.label}</div>
-              <div style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', fontWeight: row.total ? 800 : 600 }}>
+              <div className={row.total || row.strong ? 'employee-profile-salary-row__label employee-profile-salary-row__label--strong' : 'employee-profile-salary-row__label'}>{row.label}</div>
+              <div className={row.total ? 'employee-profile-salary-row__amount employee-profile-salary-row__amount--total' : 'employee-profile-salary-row__amount'}>
                 {hrFmt(row.amount)}
               </div>
             </div>
@@ -363,7 +357,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* السجل المالي */}
-      <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden">
+      <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden employee-profile-layout__wide">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('financialRecord') || 'السجل المالي'}</span>
           <span className="nx-pill nx-pill--blue nx-pill--sm">{financialRecords.length}</span>
@@ -499,6 +493,7 @@ export default function EmployeeProfileScreen() {
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}
         />
+      </div>
       </div>
 
       {docModal === 'salary' && (

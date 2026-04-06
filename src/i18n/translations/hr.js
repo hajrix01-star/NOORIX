@@ -2,6 +2,7 @@
  * ترجمات الموارد البشرية
  */
 export default {
+  employeeProfileBack: { ar: '← العودة', en: '← Back' },
   staffTitle: { ar: 'شؤون الموظفين', en: 'Staff & HR' },
   staffDesc: { ar: 'إدارة الموظفين والرواتب والسلفيات.', en: 'Manage employees, payroll and advances.' },
   addEmployee: { ar: '+ إضافة موظف', en: '+ Add employee' },
