@@ -1,7 +1,7 @@
 /**
  * StaffListScreen — قائمة الموظفين (احترافي كامل)
  */
-import React, { useState, useMemo, memo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -22,6 +22,7 @@ import {
   getEmployeesPaged,
   getEmployeesBulk,
 } from '../../services/api';
+import { Badge, Button, Modal, Input } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import { HRActionsCell } from './components/HRActionsCell';
 import Toast from '../../components/Toast';
@@ -33,18 +34,6 @@ import { overtimePay, totalSalary } from './utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 
 const PAGE_SIZE = 50;
-
-const Badge = memo(function Badge({ map, value }) {
-  const s = map[value] || { bg: 'rgba(100,116,139,0.08)', color: '#64748b', label: value };
-  return (
-    <span style={{
-      padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-      background: s.bg, color: s.color, whiteSpace: 'nowrap',
-    }}>
-      {s.label}
-    </span>
-  );
-});
 
 export default function StaffListScreen({ embedded }) {
   const navigate = useNavigate();
@@ -116,11 +105,11 @@ export default function StaffListScreen({ embedded }) {
   const listTotal = pagedResult?.total ?? 0;
   const pagedItems = pagedResult?.items ?? [];
 
-  const statusStyles = useMemo(() => ({
-    active:     { bg: 'rgba(22,163,74,0.1)',  color: '#16a34a', label: t('statusActive') },
-    on_leave:   { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', label: t('statusOnLeave') },
-    terminated: { bg: 'rgba(239,68,68,0.1)',  color: '#ef4444', label: t('statusTerminated') },
-    archived:   { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: t('statusArchived') },
+  const STATUS_MAP = useMemo(() => ({
+    active:     { color: 'green', label: t('statusActive')     },
+    on_leave:   { color: 'amber', label: t('statusOnLeave')    },
+    terminated: { color: 'red',   label: t('statusTerminated') },
+    archived:   { color: 'gray',  label: t('statusArchived')   },
   }), [t]);
 
   const allowanceTotals = useMemo(() => {
@@ -177,29 +166,30 @@ export default function StaffListScreen({ embedded }) {
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
-      render: (v) => <span className="noorix-cell-ellipsis" style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, display: 'inline-block', maxWidth: '100%' }} title={v || ''}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis" style={{ fontSize: 13 }} title={v || ''}>{v || '—'}</span> },
     { key: 'name', label: t('employeeName'), sortable: true, minWidth: 170,
-      render: (_, row) => <span style={{ fontWeight: 600, fontSize: 13 }}>{employeeDisplayName(row, lang)}</span> },
+      render: (_, row) => <span className="nx-cell-bold" style={{ fontSize: 13 }}>{employeeDisplayName(row, lang)}</span> },
     { key: 'jobTitle', label: t('jobTitle'), sortable: true, minWidth: 150,
-      render: (v) => <span style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125, minWidth: 120,
-      render: (v) => <span style={{ fontSize: 12, whiteSpace: 'nowrap', color: 'var(--noorix-text-muted)' }}>{formatSaudiDate(v)}</span> },
+      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140, minWidth: 130,
-      render: (_, row) => <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 13 }}>{hrFmt(row.totalSalary)}</span> },
-    { key: 'status', label: t('status'), width: 120, minWidth: 110, render: (v) => <Badge map={statusStyles} value={v} /> },
+      render: (_, row) => <span className="nx-cell-num" style={{ fontSize: 13 }}>{hrFmt(row.totalSalary)}</span> },
+    { key: 'status', label: t('status'), width: 120, minWidth: 110,
+      render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     ...(viewMode === 'terminated' || viewMode === 'archived'
       ? [
           {
             key: 'terminationReason',
             label: t('terminationReason'),
             minWidth: 190,
-            render: (v) => <span style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{v || '—'}</span>,
+            render: (v) => <span className="nx-cell-muted">{v || '—'}</span>,
           },
           {
             key: 'terminationClause',
             label: t('terminationClause'),
             minWidth: 130,
-            render: (v) => <span style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{v || '—'}</span>,
+            render: (v) => <span className="nx-cell-muted">{v || '—'}</span>,
           },
         ]
       : []),
@@ -249,7 +239,7 @@ export default function StaffListScreen({ embedded }) {
           onPermanentDelete={canDeleteEmployee ? handlePermanentDelete : undefined}
         />
       ) },
-  ], [t, lang, statusStyles, viewMode, navigate, update, canDeleteEmployee, handlePermanentDelete]);
+  ], [t, lang, STATUS_MAP, viewMode, navigate, update, canDeleteEmployee, handlePermanentDelete]);
 
   async function handleExportExcel() {
     if (!companyId) return;
@@ -374,58 +364,50 @@ export default function StaffListScreen({ embedded }) {
     }
   }
 
-  const renderMobileCard = useCallback((row) => {
-    const statusS = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
-    return (
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-          <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontSize: 12, color: 'var(--noorix-text-muted)' }}>{row.employeeSerial || '—'}</span>
-          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: statusS.bg, color: statusS.color }}>{statusS.label}</span>
+  const renderMobileCard = useCallback((row) => (
+    <div>
+      <div className="nx-mc__header" style={{ marginBottom: 4 }}>
+        <span className="nx-cell-num nx-cell-muted-sm">{row.employeeSerial || '—'}</span>
+        <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
+      </div>
+      <div className="nx-mc__name">{employeeDisplayName(row, lang)}</div>
+      {row.jobTitle && <div className="nx-mc__subtitle">{row.jobTitle}</div>}
+      <div className="nx-mc__grid nx-mc__grid--2">
+        <div>
+          <div className="nx-mc__stat-label">{t('joinDate')}</div>
+          <div className="nx-mc__stat-value" style={{ fontSize: 13 }}>{formatSaudiDate(row.joinDate)}</div>
         </div>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3 }}>{employeeDisplayName(row, lang)}</div>
-        {row.jobTitle && <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{row.jobTitle}</div>}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('joinDate')}</div>
-            <div style={{ fontSize: 13, fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.joinDate)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('totalSalary')}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.totalSalary)} ﷼</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <HRActionsCell
-            row={row}
-            onView={() => navigate(`/hr/employee/${row.id}`)}
-            onEdit={() => setEditingEmployee(row)}
-            onAdvance={row.status === 'active' ? () => setAdvanceEmployee(row) : undefined}
-            onTerminate={row.status !== 'terminated' && row.status !== 'archived'
-              ? () => {
-                  setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
-                  setTerminatingEmployee(row);
-                }
-              : undefined}
-            onPermanentDelete={canDeleteEmployee ? handlePermanentDelete : undefined}
-          />
+        <div>
+          <div className="nx-mc__stat-label">{t('totalSalary')}</div>
+          <div className="nx-mc__stat-value">{hrFmt(row.totalSalary)} ﷼</div>
         </div>
       </div>
-    );
-  }, [statusStyles, t, lang, navigate, canDeleteEmployee, handlePermanentDelete]);
+      <div className="nx-mc__actions">
+        <HRActionsCell
+          row={row}
+          onView={() => navigate(`/hr/employee/${row.id}`)}
+          onEdit={() => setEditingEmployee(row)}
+          onAdvance={row.status === 'active' ? () => setAdvanceEmployee(row) : undefined}
+          onTerminate={row.status !== 'terminated' && row.status !== 'archived'
+            ? () => { setTerminationForm({ reason: '', clause: '', date: getSaudiToday() }); setTerminatingEmployee(row); }
+            : undefined}
+          onPermanentDelete={canDeleteEmployee ? handlePermanentDelete : undefined}
+        />
+      </div>
+    </div>
+  ), [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete]);
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div className="nx-screen">
       {!embedded && (
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('staffTitle')}</h1>
-          <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-            {t('staffDesc')}
-          </p>
+          <h1 className="nx-page-title">{t('staffTitle')}</h1>
+          <p className="nx-page-desc">{t('staffDesc')}</p>
         </div>
       )}
 
       {!companyId && (
-        <div className="noorix-surface-card" style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+        <div className="noorix-surface-card nx-empty-state">
           {t('pleaseSelectCompany')}
         </div>
       )}
@@ -451,35 +433,22 @@ export default function StaffListScreen({ embedded }) {
             }}
           />
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>
-              <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('active')} style={{ fontSize: 13 }}>
-                {t('activeEmployeesList')}
-              </button>
-              <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('terminated')} style={{ fontSize: 13 }}>
-                {t('terminatedEmployeesList')}
-              </button>
-              <button type="button" className="noorix-btn-nav" onClick={() => setViewMode('archived')} style={{ fontSize: 13 }}>
-                {t('archivedEmployeesList')}
-              </button>
-              <button
-                type="button"
-                className="noorix-btn-nav"
+          <div className="nx-page-header" style={{ marginBottom: 8 }}>
+            <div className="nx-toolbar" style={{ flex: '1 1 auto', minWidth: 0 }}>
+              <Button size="sm" onClick={() => setViewMode('active')}>{t('activeEmployeesList')}</Button>
+              <Button size="sm" onClick={() => setViewMode('terminated')}>{t('terminatedEmployeesList')}</Button>
+              <Button size="sm" onClick={() => setViewMode('archived')}>{t('archivedEmployeesList')}</Button>
+              <Button
+                size="sm"
+                icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
                 onClick={() => setShowImportExport(true)}
-                style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 استيراد / تصدير
-              </button>
+              </Button>
             </div>
-            <button
-              type="button"
-              className="noorix-btn-nav noorix-btn-primary"
-              onClick={() => { setEditingEmployee(null); setShowForm(true); }}
-              style={{ flexShrink: 0 }}
-            >
+            <Button variant="primary" onClick={() => { setEditingEmployee(null); setShowForm(true); }}>
               {t('addEmployee')}
-            </button>
+            </Button>
           </div>
 
           <SmartTable
@@ -497,7 +466,7 @@ export default function StaffListScreen({ embedded }) {
             isError={!!employeesError}
             errorMessage={employeesError?.message || 'فشل تحميل الموظفين'}
             title={t('employeesList')}
-            badge={<span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{listTotal}</span>}
+            badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
             searchValue={searchInput}
             onSearchChange={setSearchInput}
             sortKey={sortKey}
@@ -541,99 +510,77 @@ export default function StaffListScreen({ embedded }) {
           onClose={() => setAdvanceEmployee(null)}
         />
       )}
-      {terminatingEmployee && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0,0,0,0.4)', padding: 20,
-          }}
-          onClick={(e) => e.target === e.currentTarget && setTerminatingEmployee(null)}
-        >
-          <div className="noorix-surface-card" style={{ width: '100%', maxWidth: 560, borderRadius: 14, padding: 20 }}>
-            <h4 style={{ margin: '0 0 14px' }}>{t('terminateEmployee')}</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('terminationReason')}</label>
-                <select
-                  value={terminationForm.reason}
-                  onChange={(e) => setTerminationForm((p) => ({ ...p, reason: e.target.value }))}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}
-                >
-                  <option value="">{t('terminationReasonPlaceholder')}</option>
-                  {terminationReasonOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--noorix-text-muted)' }}>
-                  {t('terminationReasonExamples')}
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('terminationClause')}</label>
-                <select
-                  value={terminationForm.clause}
-                  onChange={(e) => setTerminationForm((p) => ({ ...p, clause: e.target.value }))}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}
-                >
-                  <option value="">{t('terminationClausePlaceholder')}</option>
-                  <option value={t('terminationClauseArt80')}>{t('terminationClauseArt80')}</option>
-                  <option value={t('terminationClauseArt77')}>{t('terminationClauseArt77')}</option>
-                  <option value={t('terminationClauseArt74')}>{t('terminationClauseArt74')}</option>
-                  <option value={t('terminationClauseArt81')}>{t('terminationClauseArt81')}</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('terminationDate')}</label>
-                <input
-                  type="date"
-                  value={terminationForm.date}
-                  onChange={(e) => setTerminationForm((p) => ({ ...p, date: e.target.value }))}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}
-                />
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
-              <button type="button" className="noorix-btn-nav" onClick={() => setTerminatingEmployee(null)}>{t('cancel')}</button>
-              <button
-                type="button"
-                className="noorix-btn-nav noorix-btn-danger"
-                onClick={() => {
-                  if (!terminationForm.reason?.trim()) {
-                    setToast({ visible: true, message: t('terminationReasonPlaceholder'), type: 'error' });
-                    return;
-                  }
-                  const parsed = parseEmployeeNotesMeta(terminatingEmployee.notes);
-                  const meta = {
-                    ...(parsed.meta || {}),
-                    terminationReason: terminationForm.reason?.trim() || '',
-                    terminationClause: terminationForm.clause?.trim() || '',
-                    terminationDate: terminationForm.date || getSaudiToday(),
-                  };
-                  update.mutate(
-                    {
-                      id: terminatingEmployee.id,
-                      body: {
-                        status: 'terminated',
-                        notes: composeEmployeeNotes(parsed.notesText, meta),
-                      },
-                    },
-                    {
-                      onSuccess: () => {
-                        setToast({ visible: true, message: t('employeeTerminated'), type: 'success' });
-                        setTerminatingEmployee(null);
-                      },
-                      onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
-                    },
-                  );
-                }}
-              >
-                {t('terminateEmployee')}
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={!!terminatingEmployee}
+        onClose={() => setTerminatingEmployee(null)}
+        title={t('terminateEmployee')}
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setTerminatingEmployee(null)}>{t('cancel')}</Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                if (!terminationForm.reason?.trim()) {
+                  setToast({ visible: true, message: t('terminationReasonPlaceholder'), type: 'error' });
+                  return;
+                }
+                const parsed = parseEmployeeNotesMeta(terminatingEmployee.notes);
+                const meta = {
+                  ...(parsed.meta || {}),
+                  terminationReason: terminationForm.reason?.trim() || '',
+                  terminationClause: terminationForm.clause?.trim() || '',
+                  terminationDate: terminationForm.date || getSaudiToday(),
+                };
+                update.mutate(
+                  { id: terminatingEmployee.id, body: { status: 'terminated', notes: composeEmployeeNotes(parsed.notesText, meta) } },
+                  {
+                    onSuccess: () => { setToast({ visible: true, message: t('employeeTerminated'), type: 'success' }); setTerminatingEmployee(null); },
+                    onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+                  },
+                );
+              }}
+            >
+              {t('terminateEmployee')}
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+          <Input
+            type="select"
+            label={t('terminationReason')}
+            hint={t('terminationReasonExamples')}
+            value={terminationForm.reason}
+            onChange={(e) => setTerminationForm((p) => ({ ...p, reason: e.target.value }))}
+          >
+            <option value="">{t('terminationReasonPlaceholder')}</option>
+            {terminationReasonOptions.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </Input>
+
+          <Input
+            type="select"
+            label={t('terminationClause')}
+            value={terminationForm.clause}
+            onChange={(e) => setTerminationForm((p) => ({ ...p, clause: e.target.value }))}
+          >
+            <option value="">{t('terminationClausePlaceholder')}</option>
+            <option value={t('terminationClauseArt80')}>{t('terminationClauseArt80')}</option>
+            <option value={t('terminationClauseArt77')}>{t('terminationClauseArt77')}</option>
+            <option value={t('terminationClauseArt74')}>{t('terminationClauseArt74')}</option>
+            <option value={t('terminationClauseArt81')}>{t('terminationClauseArt81')}</option>
+          </Input>
+
+          <Input
+            type="date"
+            label={t('terminationDate')}
+            value={terminationForm.date}
+            onChange={(e) => setTerminationForm((p) => ({ ...p, date: e.target.value }))}
+          />
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

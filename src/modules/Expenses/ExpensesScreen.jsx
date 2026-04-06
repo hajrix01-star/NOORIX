@@ -15,6 +15,7 @@ import { useCategories } from '../../hooks/useCategories';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
+import { Button } from '../../ui';
 import Toast from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
@@ -84,35 +85,25 @@ export default function ExpensesScreen() {
   };
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="nx-screen">
       <div>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--noorix-text)' }}>
-          {t('fixedAndVariableExpenses')}
-        </h1>
+        <h1 className="nx-page-title">{t('fixedAndVariableExpenses')}</h1>
       </div>
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="noorix-tab-bar" style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)' }}>
+        <div className="nx-tab-bar">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              className="noorix-btn-nav"
+              className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                margin: 0, borderRadius: 0, border: 'none',
-                borderBottom: activeTab === tab.id ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
-                background: activeTab === tab.id ? 'rgba(37,99,235,0.07)' : 'transparent',
-                color: activeTab === tab.id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-                fontWeight: activeTab === tab.id ? 700 : 500,
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
             >
               {tab.icon} {t(tab.labelKey)}
             </button>
           ))}
         </div>
-        <div style={{ padding: 20 }}>
+        <div className="nx-tab-content">
 
       {activeTab === 'lines' && (
         <ExpenseLineList
@@ -195,22 +186,9 @@ function ExpenseFormTab({ companyId, onSaved }) {
   const [showForm, setShowForm] = useState(false);
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => setShowForm(true)}
-        style={{
-          padding: '12px 24px',
-          borderRadius: 8,
-          border: '2px solid var(--noorix-accent-blue)',
-          background: 'rgba(37,99,235,0.1)',
-          color: 'var(--noorix-accent-blue)',
-          fontWeight: 600,
-          cursor: 'pointer',
-          fontSize: 14,
-        }}
-      >
+      <Button variant="primary" onClick={() => setShowForm(true)}>
         + تسجيل مصروف جديد
-      </button>
+      </Button>
       {showForm && (
         <ExpenseFormModal
           companyId={companyId}

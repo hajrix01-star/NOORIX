@@ -76,12 +76,12 @@ export default function SettingsScreen() {
   const activeLabel = TABS.find((t) => t.id === activeTab)?.label || '';
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="nx-screen">
 
       {/* ── عنوان الصفحة ── */}
       <div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>الإعدادات</h1>
-        <p style={{ marginTop: 4, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
+        <h1 className="nx-page-title">الإعدادات</h1>
+        <p className="nx-page-desc">
           إدارة الشركات، المستخدمين، الأدوار والصلاحيات، وربط الذكاء الاصطناعي.
         </p>
       </div>

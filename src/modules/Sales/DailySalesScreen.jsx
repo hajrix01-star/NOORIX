@@ -3,7 +3,7 @@
  * يعتمد على: useSales, useVaults (hooks) + SmartTable + utils/saudiDate, utils/format
  * يدعم: تصدير Excel، PDF، طباعة احترافية (اسم الشركة + شعار)
  */
-import React, { useState, useMemo, memo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
@@ -16,6 +16,7 @@ import { formatSaudiDate, getSaudiToday } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
+import { Badge, Button } from '../../ui';
 import Toast from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
@@ -33,16 +34,6 @@ function addCalendarDaysYmd(ymd, delta) {
   const dt = new Date(Date.UTC(y, m - 1, d + delta));
   return dt.toISOString().slice(0, 10);
 }
-
-/* ── شارة الحالة ──────────────────────────────────────────────── */
-const Badge = memo(function Badge({ map, value }) {
-  const s = map[value] || { bg: 'rgba(100,116,139,0.08)', color: '#64748b', label: value };
-  return (
-    <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
-      {s.label}
-    </span>
-  );
-});
 
 /* ══ الشاشة الرئيسية ══════════════════════════════════════════ */
 export default function DailySalesScreen() {
@@ -239,10 +230,10 @@ export default function DailySalesScreen() {
 
   const hasCompany = !!companyId;
 
-  // ── بيانات الجدول (مثل جدول الفواتير) ──
-  const statusStyles = useMemo(() => ({
-    active:    { bg: 'rgba(22,163,74,0.1)',  color: '#16a34a', label: t('statusActive') },
-    cancelled: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', label: t('statusCancelled') },
+  // ── بيانات الجدول ──
+  const STATUS_MAP = useMemo(() => ({
+    active:    { color: 'green', label: t('statusActive')    },
+    cancelled: { color: 'red',   label: t('statusCancelled') },
   }), [t]);
 
   const tableData = useMemo(() => pagedSummaries.map((s) => {
@@ -277,18 +268,19 @@ export default function DailySalesScreen() {
 
   const columns = useMemo(() => [
     { key: 'summaryNumber', label: t('summaryNumber'), sortable: true, width: '10%',
-      render: (v) => <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', whiteSpace: 'nowrap' }}>{v}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-accent">{v}</span> },
     { key: 'transactionDate', label: t('transactionDate'), sortable: true, width: '10%',
-      render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{formatSaudiDate(v)}</span> },
+      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'channelsText', label: t('salesChannels'), sortable: false, width: '35%',
-      render: (v) => <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0 }} title={v || ''}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
     { key: 'customerCount', label: t('customers'), numeric: true, sortable: true, width: '7%',
-      render: (v) => <span style={{ color: '#2563eb', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--blue">{v ?? 0}</span> },
     { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '10%',
-      render: (v) => <span style={{ fontWeight: 700, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v, 2)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--green nx-cell-bold">{fmt(v, 2)}</span> },
     { key: 'avgPerCustomer', label: t('avgPerOrder'), numeric: true, sortable: false, width: '7%',
-      render: (v) => <span style={{ color: '#7c3aed', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v, 2)}</span> },
-    { key: 'status', label: t('statusLabel'), width: '8%', render: (v) => <Badge map={statusStyles} value={v} /> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--violet">{fmt(v, 2)}</span> },
+    { key: 'status', label: t('statusLabel'), width: '8%',
+      render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     { key: 'actions', label: t('actions'), align: 'center', width: '8%',
       render: (_, row) => (
         <SalesActionsCell
@@ -300,20 +292,20 @@ export default function DailySalesScreen() {
         />
       ),
     },
-  ], [userRole, t, statusStyles]);
+  ], [userRole, t, STATUS_MAP]);
 
   const footerCells = (
     <>
       <td />
-      <td colSpan={3} style={{ padding: '10px 12px', fontSize: 13, fontWeight: 700, color: 'var(--noorix-text)', textAlign: 'right' }}>
+      <td colSpan={3} className="nx-tfoot-label">
         {t('totalSummaries', activeOnly.length)}
         {listTotal > PAGE_SIZE ? (
-          <span style={{ fontWeight: 500, fontSize: 11, color: 'var(--noorix-text-muted)', marginRight: 6 }}> (إجمالي الصفحة الحالية)</span>
+          <span className="nx-cell-muted-sm" style={{ marginInlineEnd: 6 }}> (إجمالي الصفحة الحالية)</span>
         ) : null}
       </td>
-      <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14, fontWeight: 700, color: '#2563eb', textAlign: 'right' }}>{totalCustomers.toLocaleString('en')}</td>
-      <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14, fontWeight: 800, color: '#16a34a', textAlign: 'right' }}>{fmt(totalAmountSum.toNumber(), 2)}</td>
-      <td style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14, fontWeight: 700, color: '#7c3aed', textAlign: 'right' }}>{totalCustomers > 0 ? fmt(totalAmountSum.toNumber() / totalCustomers, 2) : '0.00'}</td>
+      <td className="nx-tfoot-num nx-cell-num--blue">{totalCustomers.toLocaleString('en')}</td>
+      <td className="nx-tfoot-num nx-cell-num--green">{fmt(totalAmountSum.toNumber(), 2)}</td>
+      <td className="nx-tfoot-num nx-cell-num--violet">{totalCustomers > 0 ? fmt(totalAmountSum.toNumber() / totalCustomers, 2) : '0.00'}</td>
       <td colSpan={2} />
     </>
   );
@@ -442,47 +434,42 @@ export default function DailySalesScreen() {
     }
   }
 
-  const renderMobileCard = useCallback((row) => {
-    const statusS = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
-    return (
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-          <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14 }}>
-            #{row.summaryNumber}
-          </span>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{formatSaudiDate(row.transactionDate)}</span>
-            <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: statusS.bg, color: statusS.color }}>{statusS.label}</span>
-          </div>
-        </div>
-        {row.channelsText && (
-          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 8, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-            {row.channelsText}
-          </div>
-        )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('total')}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmount, 2)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('customers')}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', fontFamily: 'var(--noorix-font-numbers)' }}>{row.customerCount ?? 0}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('avgPerOrder')}</div>
-            <div style={{ fontSize: 13, color: '#7c3aed', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.avgPerCustomer, 2)}</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
+  const renderMobileCard = useCallback((row) => (
+    <div>
+      <div className="nx-mc__header">
+        <span className="nx-cell-num nx-cell-accent" style={{ fontSize: 14 }}>
+          #{row.summaryNumber}
+        </span>
+        <div className="nx-mc__meta">
+          <span className="nx-cell-muted-sm">{formatSaudiDate(row.transactionDate)}</span>
+          <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
       </div>
-    );
-  }, [statusStyles, userRole, t]);
+      {row.channelsText && (
+        <div className="nx-mc__channels">{row.channelsText}</div>
+      )}
+      <div className="nx-mc__grid nx-mc__grid--3">
+        <div>
+          <div className="nx-mc__stat-label">{t('total')}</div>
+          <div className="nx-mc__stat-value nx-cell-num--green">{fmt(row.totalAmount, 2)}</div>
+        </div>
+        <div>
+          <div className="nx-mc__stat-label">{t('customers')}</div>
+          <div className="nx-mc__stat-value nx-cell-num--blue">{row.customerCount ?? 0}</div>
+        </div>
+        <div>
+          <div className="nx-mc__stat-label">{t('avgPerOrder')}</div>
+          <div className="nx-mc__stat-value nx-cell-num--violet" style={{ fontSize: 13 }}>{fmt(row.avgPerCustomer, 2)}</div>
+        </div>
+      </div>
+      <div className="nx-mc__actions">
+        <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
+      </div>
+    </div>
+  ), [STATUS_MAP, userRole, t]);
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       {editingSummary && (
@@ -535,60 +522,44 @@ export default function DailySalesScreen() {
       {/* هيدر + شريط إجراءات (ثابت على الجوال بجانب الاستيراد) */}
       <div className="noorix-daily-sales-header">
         <div className="noorix-daily-sales-header__titles">
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('salesDailySummary')}</h1>
+          <h1 className="nx-page-title">{t('salesDailySummary')}</h1>
         </div>
         <div className="noorix-daily-sales-header__toolbar noorix-print-hide">
           {salesFullHistory && (
-            <button type="button" className="noorix-btn-nav"
-              onClick={() => setShowImportExport(true)} disabled={!hasCompany}
-              style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <Button
+              icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+              onClick={() => setShowImportExport(true)}
+              disabled={!hasCompany}
+            >
               استيراد / تصدير
-            </button>
+            </Button>
           )}
-          <button type="button" className="noorix-btn-nav noorix-btn-primary"
-            onClick={() => setShowEntryModal(true)} disabled={!hasCompany}
-            style={{ flexShrink: 0 }}>
+          <Button variant="primary" onClick={() => setShowEntryModal(true)} disabled={!hasCompany}>
             {t('addDailySummary')}
-          </button>
+          </Button>
         </div>
       </div>
 
       {hasCompany && salesChannelsHasError && (
-        <div
-          className="noorix-surface-card"
-          style={{
-            padding: 14,
-            border: '1px solid rgba(239,68,68,0.2)',
-            background: 'rgba(239,68,68,0.06)',
-            color: '#b91c1c',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 12,
-            flexWrap: 'wrap',
-          }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 600 }}>
-            {salesChannelsError?.message || t('salesChannelsLoadFailed')}
-          </div>
-          <button type="button" className="noorix-btn-nav" onClick={() => refetchSalesChannels()}>
+        <div className="nx-error-banner">
+          {salesChannelsError?.message || t('salesChannelsLoadFailed')}
+          <Button size="sm" onClick={refetchSalesChannels}>
             {t('retryLoadSalesChannels')}
-          </button>
+          </Button>
         </div>
       )}
 
       {salesFullHistory && <DateFilterBar filter={dateFilter} />}
 
       {!hasCompany && (
-        <div className="noorix-surface-card" style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+        <div className="noorix-surface-card nx-empty-state">
           {t('pleaseSelectCompany')}
         </div>
       )}
 
       {/* ── الملخصات السابقة — جدول احترافي ── */}
       {hasCompany && !salesViewSummariesList && (
-        <div className="noorix-surface-card" style={{ padding: 16, fontSize: 14, color: 'var(--noorix-text-muted)' }}>
+        <div className="noorix-surface-card nx-empty-state">
           {t('salesSummariesHiddenByRole')}
         </div>
       )}
@@ -611,13 +582,13 @@ export default function DailySalesScreen() {
             innerPadding={16}
             badge={
             <>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>— {dateFilter.label}</span>
-              <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 999, background: 'rgba(37,99,235,0.1)', color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap' }}>{t('summaryCount', displayedTotal)}</span>
+              <span className="nx-cell-muted-sm">— {dateFilter.label}</span>
+              <span className="nx-pill nx-pill--blue">{t('summaryCount', displayedTotal)}</span>
               {salesFullHistory && (
                 <span className="noorix-print-hide" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <button type="button" className="noorix-btn-nav" onClick={() => handleExportExcel()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>{exportBusy ? '…' : t('exportExcel')}</button>
-                  <button type="button" className="noorix-btn-nav" onClick={() => handleExportPdf()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>{exportBusy ? '…' : t('exportPdf')}</button>
-                  <button type="button" className="noorix-btn-nav" onClick={() => handlePrint()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>{exportBusy ? '…' : t('print')}</button>
+                  <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportExcel')}</Button>
+                  <Button size="sm" onClick={handleExportPdf} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportPdf')}</Button>
+                  <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('print')}</Button>
                 </span>
               )}
             </>

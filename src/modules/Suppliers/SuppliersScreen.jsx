@@ -8,6 +8,11 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { SuppliersTab } from './components/SuppliersTab';
 import { CategoriesTab } from './components/CategoriesTab';
 
+const TABS = [
+  { id: 'suppliers',  labelKey: 'suppliersTab'  },
+  { id: 'categories', labelKey: 'categoriesTab' },
+];
+
 export default function SuppliersScreen() {
   const { activeCompanyId } = useApp();
   const { t } = useTranslation();
@@ -15,37 +20,28 @@ export default function SuppliersScreen() {
   const [activeTab, setActiveTab] = useState('suppliers');
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div className="nx-screen">
       <div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('suppliersAndCategoriesTitle')}</h1>
+        <h1 className="nx-page-title">{t('suppliersAndCategoriesTitle')}</h1>
       </div>
 
       {!companyId && (
-        <div className="noorix-surface-card" style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+        <div className="noorix-surface-card nx-empty-state">
           {t('pleaseSelectCompany')}
         </div>
       )}
 
       {companyId && (
         <>
-          {/* تبويبات */}
-          <div className="noorix-tab-bar" style={{ display: 'flex', borderBottom: '2px solid var(--noorix-border)', gap: 0 }}>
-            {[{ id: 'suppliers', label: t('suppliersTab') }, { id: 'categories', label: t('categoriesTab') }].map((tab) => (
+          <div className="nx-tab-bar">
+            {TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
-                className="noorix-btn-nav"
+                className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
-                style={{
-                  borderRadius: 0, border: 'none', margin: 0,
-                  borderBottom: activeTab === tab.id ? '2px solid var(--noorix-accent-green)' : '2px solid transparent',
-                  background: activeTab === tab.id ? 'rgba(22,163,74,0.07)' : 'transparent',
-                  color: activeTab === tab.id ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)',
-                  fontWeight: activeTab === tab.id ? 700 : 500,
-                  padding: '10px 20px', fontSize: 13,
-                }}
               >
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             ))}
           </div>
