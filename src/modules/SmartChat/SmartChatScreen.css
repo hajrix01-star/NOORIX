@@ -279,6 +279,50 @@ body.noorix-page-smart-chat .app-main__content {
   border-inline-end: none;
 }
 
+/* لوحة الأوامر المركزية: ثيم فاتح إلزامي (يتجاوز html.dark وأي ترتيب تحميل CSS) */
+.noorix-chat-commands-panel.noorix-light-sheet {
+  color-scheme: light;
+  --noorix-bg-surface: #ffffff;
+  --noorix-bg-muted: #f1f3f6;
+  --noorix-text: #1a2332;
+  --noorix-text-muted: #5a6a7e;
+  --noorix-border: #dde3ec;
+  --noorix-border-subtle: #e8ecf2;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border: 1px solid #dde3ec !important;
+  color: #1a2332;
+}
+
+html.dark .noorix-chat-commands-panel.noorix-light-sheet {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.noorix-chat-commands-panel.noorix-light-sheet .noorix-chat-commands-group {
+  border-bottom-color: #dde3ec !important;
+}
+
+.noorix-chat-commands-panel.noorix-light-sheet .noorix-chat-commands-group-label {
+  color: #5a6a7e !important;
+  background: #f1f3f6 !important;
+  border-bottom-color: #dde3ec !important;
+}
+
+.noorix-chat-commands-panel.noorix-light-sheet .noorix-chat-commands-item {
+  color: #1a2332 !important;
+  border-bottom-color: #e8ecf2 !important;
+  border-inline-end-color: #e8ecf2 !important;
+}
+
+.noorix-chat-commands-panel.noorix-light-sheet .noorix-chat-commands-item:hover {
+  background: #f1f3f6 !important;
+}
+
+.noorix-chat-commands-panel.noorix-light-sheet .noorix-chat-commands-item:active {
+  background: rgba(37, 99, 235, 0.1) !important;
+}
+
 /* ─── بطاقة المحادثة: تملأ المساحة المتبقية ─── */
 .noorix-smart-chat-card {
   flex: 1;

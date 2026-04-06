@@ -119,6 +119,7 @@
 
 /* ورقة/لوحة منبثقة بثيم فاتح ثابت — وضوح عند تشغيل التطبيق بالوضع الداكن */
 .noorix-light-sheet {
+  color-scheme: light;
   --noorix-bg-page: #f5f6f8;
   --noorix-bg-surface: #ffffff;
   --noorix-bg-muted: #f1f3f6;
@@ -206,6 +207,21 @@
   background: var(--noorix-bg-modal) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* تجاوز أنماط البطاقة (data-card-style) والثيم الداكن — نوافذ المحادثة الذكية */
+[role="dialog"] .noorix-surface-card.noorix-light-sheet,
+[aria-modal="true"] .noorix-surface-card.noorix-light-sheet,
+.noorix-modal-overlay .noorix-surface-card.noorix-light-sheet,
+.noorix-modal-backdrop .noorix-surface-card.noorix-light-sheet,
+.modal-overlay .noorix-surface-card.noorix-light-sheet {
+  color-scheme: light;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #1a2332 !important;
+  border-color: #dde3ec !important;
+  box-shadow: 0 8px 32px rgba(10, 31, 68, 0.12) !important;
 }
 
 /* ── .modal-overlay القديم — يرث من النظام الجديد ── */
