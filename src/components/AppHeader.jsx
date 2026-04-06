@@ -5,8 +5,22 @@ import React from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import UserMenu from './UserMenu';
 
-export default function AppHeader({ toggleSidebar, toggleTheme, toggleLanguage, theme, language, serverDown, onRetryConnection, isAuthenticated, user, onLogout, companyName }) {
-  const { t } = useTranslation();
+export default function AppHeader({
+  toggleSidebar, toggleTheme, toggleLanguage,
+  theme, language, serverDown, onRetryConnection,
+  isAuthenticated, user, onLogout,
+  activeCompany,
+}) {
+  const { t, lang } = useTranslation();
+
+  const coName = activeCompany
+    ? (lang === 'en'
+        ? (activeCompany.nameEn || activeCompany.nameAr || '')
+        : (activeCompany.nameAr || activeCompany.nameEn || ''))
+    : '';
+  const coLogo = activeCompany?.logoUrl || '';
+  const coInitial = coName?.[0] || '';
+
   return (
     <>
       {serverDown && (
@@ -38,8 +52,26 @@ export default function AppHeader({ toggleSidebar, toggleTheme, toggleLanguage, 
           <span className="noorix-topbar__logo">Noorix</span>
         </div>
         <div className="noorix-topbar__center">
-          {companyName && (
-            <span className="noorix-topbar__company">{companyName}</span>
+          {coName && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {coLogo ? (
+                <img
+                  src={coLogo}
+                  alt={coName}
+                  style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
+                />
+              ) : coInitial ? (
+                <div style={{
+                  width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+                  background: 'linear-gradient(135deg, rgba(37,99,235,0.8) 0%, rgba(16,163,74,0.6) 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 800, color: '#fff',
+                }}>
+                  {coInitial}
+                </div>
+              ) : null}
+              <span className="noorix-topbar__company">{coName}</span>
+            </div>
           )}
         </div>
         <div className="noorix-topbar-actions">

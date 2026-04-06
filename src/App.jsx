@@ -313,7 +313,7 @@ export default function App() {
             isAuthenticated={isAuthenticated}
             user={user}
             onLogout={handleLogout}
-            companyName={companies?.find((c) => c.id === activeCompany)?.nameAr || companies?.find((c) => c.id === activeCompany)?.name || ''}
+            activeCompany={companies?.find((c) => c.id === activeCompany) || null}
           />
         <main className="app-main__content">
           <React.Suspense fallback={<LoadingFallback />}>

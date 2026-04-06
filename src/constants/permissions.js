@@ -111,7 +111,7 @@ export const ROUTE_PERMISSION = {
   '/treasury':      PERMISSIONS.VIEW_VAULTS,
   '/expenses':      PERMISSIONS.VIEW_EXPENSES,
   '/orders':        PERMISSIONS.VIEW_ORDERS,
-  '/hr':            [PERMISSIONS.VIEW_EMPLOYEES, PERMISSIONS.EMPLOYEES_READ],
+  '/hr':            PERMISSIONS.VIEW_EMPLOYEES,
   '/reports':       PERMISSIONS.VIEW_REPORTS,
   '/settings':      PERMISSIONS.MANAGE_SETTINGS,
   '/theme-preview': PERMISSIONS.VIEW_DASHBOARD,

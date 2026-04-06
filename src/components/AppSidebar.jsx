@@ -2,11 +2,12 @@
  * AppSidebar — القائمة الجانبية الرئيسية
  */
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
-import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor } from '../utils/appBranding';
+import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
 import {
   IconCrown,
   IconGrid,
@@ -23,6 +24,8 @@ import {
   IconSettings,
 } from './SidebarIcons';
 
+// VIEW_EMPLOYEES يتحكم في ظهور صفحة الموارد البشرية في القائمة
+// EMPLOYEES_READ يتحكم في قراءة بيانات الموظفين (للمحادثة الذكية وغيرها) بدون ظهور الصفحة
 const SIDEBAR_LINKS = [
   { to: '/owner', labelKey: 'ownerDashboard', icon: IconCrown, permission: 'VIEW_OWNER' },
   { to: '/', end: true, labelKey: 'dashboard', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
@@ -34,7 +37,7 @@ const SIDEBAR_LINKS = [
   { to: '/treasury', labelKey: 'vaults', icon: IconDollar, permission: 'VIEW_VAULTS' },
   { to: '/expenses', labelKey: 'fixedAndVariableExpenses', icon: IconWallet, permission: 'VIEW_EXPENSES' },
   { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_ORDERS' },
-  { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: 'EMPLOYEES_READ' },
+  { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: 'VIEW_EMPLOYEES' },
   {
     to: '/reports',
     labelKey: 'reports',
@@ -52,7 +55,7 @@ const SIDEBAR_LINKS = [
 ];
 
 export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCompany, companies, userRole, userPermissions, showCompanySwitcher }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const navLinkClass = ({ isActive }) =>
@@ -65,8 +68,7 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
     if (isReportsExpanded) setReportsOpen(true);
   }, [isReportsExpanded]);
 
-  // ── قراءة البراندينج وإعادة الرسم عند تغييره أو تغيير اللغة ───────────────
-  const { lang } = useTranslation();
+  // ── البراندينج ─────────────────────────────────────────────────────────────
   const [brandName,    setBrandName]    = useState(() => getBrandName(lang));
   const [brandLogo,    setBrandLogo]    = useState(getBrandLogo);
   const [brandTagline, setBrandTagline] = useState(() => getBrandTagline(lang));
@@ -86,6 +88,30 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
     return () => window.removeEventListener('noorix:branding-changed', refresh);
   }, [lang]);
 
+  // ── تبديل الشركة مع تأكيد ──────────────────────────────────────────────────
+  const [pendingCompany, setPendingCompany] = useState(null);
+  const pendingCo = pendingCompany ? companies.find((c) => c.id === pendingCompany) : null;
+  const pendingName = pendingCo
+    ? (lang === 'en' ? pendingCo.nameEn || pendingCo.nameAr : pendingCo.nameAr || pendingCo.nameEn) || '—'
+    : '';
+
+  const handleCompanySelect = (e) => {
+    const newId = e.target.value;
+    if (newId && newId !== activeCompany) {
+      setPendingCompany(newId);
+    }
+  };
+
+  const confirmSwitch = () => {
+    if (pendingCompany) {
+      setActiveCompany(pendingCompany);
+      setPendingCompany(null);
+      onClose();
+    }
+  };
+
+  const cancelSwitch = () => setPendingCompany(null);
+
   const handleReportsParentClick = () => {
     if (reportsOpen) {
       setReportsOpen(false);
@@ -95,6 +121,12 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
       onClose();
     }
   };
+
+  const activeCo = companies.find((c) => c.id === activeCompany) || companies[0];
+  const coName = lang === 'en'
+    ? (activeCo?.nameEn || activeCo?.nameAr || '—')
+    : (activeCo?.nameAr || activeCo?.nameEn || '—');
+  const initial = coName[0] || '?';
 
   return (
     <>
@@ -135,59 +167,54 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
             )}
           </div>
           <div style={{ width: '100%', marginTop: 8 }}>
-            {(() => {
-              const activeCo = companies.find((c) => c.id === activeCompany) || companies[0];
-              const coName = activeCo?.nameAr || activeCo?.nameEn || '—';
-              const initial = (activeCo?.nameAr || activeCo?.nameEn || '?')[0];
-              return (
-                <div style={{ position: 'relative' }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 12px', borderRadius: 10,
-                    background: 'rgba(255,255,255,0.07)',
-                    border: '1px solid rgba(255,255,255,0.10)',
-                    minHeight: 44,
-                  }}>
-                    <div style={{
-                      width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                      background: activeCo?.logoUrl ? 'transparent' : 'linear-gradient(135deg, rgba(37,99,235,0.9) 0%, rgba(16,163,74,0.7) 100%)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 800, fontSize: 13, color: '#fff', letterSpacing: '-0.02em',
-                      overflow: 'hidden',
-                    }}>
-                      {activeCo?.logoUrl
-                        ? <img src={activeCo.logoUrl} alt={coName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : initial
-                      }
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{t('activeCompany')}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{coName}</div>
-                    </div>
-                    {showCompanySwitcher && (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" width="14" height="14" style={{ flexShrink: 0 }}>
-                        <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </div>
-                  {showCompanySwitcher && (
-                    <select
-                      id="company-switcher"
-                      value={activeCompany}
-                      onChange={(e) => setActiveCompany(e.target.value)}
-                      style={{
-                        position: 'absolute', inset: 0, opacity: 0,
-                        width: '100%', height: '100%', cursor: 'pointer',
-                      }}
-                    >
-                      {companies.map((c) => (
-                        <option key={c.id} value={c.id}>{c.nameAr || c.nameEn || c.id}</option>
-                      ))}
-                    </select>
-                  )}
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 12px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                minHeight: 44,
+              }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                  background: activeCo?.logoUrl ? 'transparent' : 'linear-gradient(135deg, rgba(37,99,235,0.9) 0%, rgba(16,163,74,0.7) 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 800, fontSize: 13, color: '#fff', letterSpacing: '-0.02em',
+                  overflow: 'hidden',
+                }}>
+                  {activeCo?.logoUrl
+                    ? <img src={activeCo.logoUrl} alt={coName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : initial
+                  }
                 </div>
-              );
-            })()}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{t('activeCompany')}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{coName}</div>
+                </div>
+                {showCompanySwitcher && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" width="14" height="14" style={{ flexShrink: 0 }}>
+                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              {showCompanySwitcher && (
+                <select
+                  id="company-switcher"
+                  value={activeCompany}
+                  onChange={handleCompanySelect}
+                  style={{
+                    position: 'absolute', inset: 0, opacity: 0,
+                    width: '100%', height: '100%', cursor: 'pointer',
+                  }}
+                >
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {lang === 'en' ? (c.nameEn || c.nameAr) : (c.nameAr || c.nameEn) || c.id}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
         </div>
 
@@ -254,6 +281,62 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
         <div className="app-sidebar__footer">{brandName} • {brandTagline}</div>
       </aside>
       {isOpen ? <div className="app-sidebar-backdrop" onClick={onClose} /> : null}
+
+      {/* نافذة تأكيد تبديل الشركة */}
+      {pendingCompany && createPortal(
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(10,20,50,0.65)', backdropFilter: 'blur(6px)',
+        }}>
+          <div style={{
+            background: 'var(--noorix-bg-surface, #fff)',
+            border: '1px solid var(--noorix-border, #e5e7eb)',
+            borderRadius: 16,
+            padding: '28px 32px',
+            maxWidth: 380, width: '90%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔄</div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: 'var(--noorix-text, #111)' }}>
+              {t('switchCompanyConfirmTitle')}
+            </div>
+            <div style={{ fontSize: 14, color: 'var(--noorix-text-muted, #6b7280)', marginBottom: 24, lineHeight: 1.6 }}>
+              {t('switchCompanyConfirmBody')} <strong style={{ color: 'var(--noorix-text, #111)' }}>{pendingName}</strong>؟
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={cancelSwitch}
+                style={{
+                  flex: 1, padding: '10px 16px', borderRadius: 10, cursor: 'pointer',
+                  background: 'var(--noorix-bg-muted, #f3f4f6)',
+                  border: '1px solid var(--noorix-border, #e5e7eb)',
+                  color: 'var(--noorix-text-muted, #6b7280)', fontWeight: 600, fontSize: 14,
+                  fontFamily: 'inherit',
+                }}
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={confirmSwitch}
+                style={{
+                  flex: 1, padding: '10px 16px', borderRadius: 10, cursor: 'pointer',
+                  background: 'var(--noorix-accent, #2563eb)',
+                  border: 'none',
+                  color: '#fff', fontWeight: 700, fontSize: 14,
+                  fontFamily: 'inherit',
+                }}
+              >
+                {t('switchCompanyConfirmBtn')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </>
   );
 }
