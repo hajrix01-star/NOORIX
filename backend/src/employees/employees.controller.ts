@@ -5,6 +5,7 @@ import { AuthGuard }          from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard }         from '../auth/guards/roles.guard';
 import { RequirePermission }  from '../auth/decorators/require-permission.decorator';
+import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { EmployeesService }   from './employees.service';
 import { CreateEmployeeDto }  from './dto/create-employee.dto';
@@ -22,7 +23,7 @@ export class EmployeesController {
   constructor(private readonly svc: EmployeesService) {}
 
   @Get()
-  @RequirePermission('EMPLOYEES_READ')
+  @RequireAnyPermission('EMPLOYEES_READ', 'HR_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS', 'CHAT_PRESET_INCREASES')
   findAll(
     @Query('companyId')          companyId: string,
     @Query('includeTerminated')  inc?: string,
@@ -48,7 +49,7 @@ export class EmployeesController {
   }
 
   @Get(':id')
-  @RequirePermission('EMPLOYEES_READ')
+  @RequireAnyPermission('EMPLOYEES_READ', 'HR_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS', 'CHAT_PRESET_INCREASES')
   findOne(
     @Param('id')        id: string,
     @Query('companyId') companyId: string,

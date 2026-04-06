@@ -4,6 +4,7 @@ import { ZodError }           from 'zod';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard }         from '../auth/guards/roles.guard';
 import { RequirePermission }  from '../auth/decorators/require-permission.decorator';
+import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { createSupplierSchema } from './dto/create-supplier.dto';
 import { updateSupplierSchema } from './dto/update-supplier.dto';
 import { preferQueryCompanyId } from '../common/utils/company-request';
@@ -15,7 +16,7 @@ export class SuppliersController {
   constructor(private readonly suppliersService: SuppliersService) {}
 
   @Get()
-  @RequirePermission('SUPPLIERS_READ')
+  @RequireAnyPermission('SUPPLIERS_READ', 'VIEW_INVOICES', 'INVOICES_READ', 'OCR_READ', 'OCR_WRITE')
   async findAll(
     @Query('companyId')      queryCompanyId:  string,
     @Headers('x-company-id') headerCompanyId: string,
