@@ -528,9 +528,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
       {/* Tabs */}
       <div className="nx-tab-bar" style={{ marginBottom: 16 }}>
-        <button type="button" className={`nx-tab-btn${activeTab === 'import' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('import')}>استيراد</button>
+        <Button type="button" className={`nx-tab-btn${activeTab === 'import' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('import')}>استيراد</Button>
         {exportFetcher && (
-          <button type="button" className={`nx-tab-btn${activeTab === 'export' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('export')}>تصدير</button>
+          <Button type="button" className={`nx-tab-btn${activeTab === 'export' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('export')}>تصدير</Button>
         )}
       </div>
 

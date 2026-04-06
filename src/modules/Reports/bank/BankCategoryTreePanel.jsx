@@ -195,9 +195,9 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
               {parentKeywords.map((kw, idx) => (
                 <span key={idx} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
                   {kw}
-                  <button type="button" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} style={{ marginInlineStart: 6, border: 'none', background: 'none', cursor: 'pointer', color: '#b91c1c' }}>
+                  <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} style={{ marginInlineStart: 6, color: '#b91c1c', padding: '0 4px', minHeight: 'auto' }}>
                     ×
-                  </button>
+                  </Button>
                 </span>
               ))}
             </div>
@@ -260,18 +260,19 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                   {(cl.keywords || []).map((kw, kwIdx) => (
                     <span key={kwIdx} style={{ fontSize: 11, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
                       {kw}
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           setClassifications((p) =>
                             p.map((c, i) => (i === idx ? { ...c, keywords: c.keywords.filter((_, ki) => ki !== kwIdx) } : c)),
                           );
                         }}
-                        style={{ marginInlineStart: 4, border: 'none', background: 'none', cursor: 'pointer' }}
+                        style={{ marginInlineStart: 4, padding: '0 4px', minHeight: 'auto' }}
                       >
                         ×
-                      </button>
+                      </Button>
                     </span>
                   ))}
                 </div>
@@ -377,7 +378,7 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
           ) : null}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
+          <label className="nx-checkbox">
             <input type="checkbox" checked={active} onChange={() => onToggle()} />
             {t('bankTreeActive')}
           </label>

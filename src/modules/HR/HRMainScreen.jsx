@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
+import { Button } from '../../ui';
 import { getEmployees, getResidencies } from '../../services/api';
 import StaffListScreen from './StaffListScreen';
 import PayrollTab from './tabs/PayrollTab';
@@ -104,27 +105,15 @@ export default function HRMainScreen() {
       }}>
         <div style={{ display: 'flex', gap: 2, width: 'max-content', minWidth: '100%' }}>
           {TABS.map((tab) => (
-            <button
+            <Button
               key={tab.id}
               type="button"
+              className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '9px 16px',
-                borderRadius: 9,
-                border: 'none',
-                background: activeTab === tab.id ? 'var(--noorix-accent-green)' : 'transparent',
-                color: activeTab === tab.id ? '#fff' : 'var(--noorix-text-muted)',
-                fontWeight: activeTab === tab.id ? 700 : 500,
-                fontSize: 13,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                transition: 'background 150ms, color 150ms',
-                fontFamily: 'var(--noorix-font-primary)',
-              }}
+              style={activeTab === tab.id ? { background: 'var(--noorix-accent-green)', color: '#fff' } : undefined}
             >
               {t(tab.labelKey)}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

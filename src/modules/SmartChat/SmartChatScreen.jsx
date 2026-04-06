@@ -407,18 +407,17 @@ export default function SmartChatScreen() {
             >
               {filteredGroups.length > 0 ? (
                 <div ref={commandsWrapRef} className="noorix-smart-chat-quick-cell">
-                  <button type="button" className="noorix-chat-gradient-btn" onClick={() => setCommandsOpen((o) => !o)} aria-expanded={commandsOpen}>
+                  <Button className="noorix-chat-gradient-btn" onClick={() => setCommandsOpen((o) => !o)} aria-expanded={commandsOpen}>
                     <span className="noorix-chat-gradient-icon" aria-hidden>
                     </span>
                     <span className="truncate">{t('chatCommands')}</span>
                     <span className="noorix-chat-chev">{commandsOpen ? '▲' : '▼'}</span>
-                  </button>
+                  </Button>
                 </div>
               ) : null}
               {showFaq ? (
                 <div className="noorix-smart-chat-quick-cell">
-                  <button
-                    type="button"
+                  <Button
                     className="noorix-chat-gradient-btn"
                     onClick={() => setFaqOpen(true)}
                     disabled={loading}
@@ -426,7 +425,7 @@ export default function SmartChatScreen() {
                     <span className="noorix-chat-gradient-icon" aria-hidden>
                     </span>
                     <span className="truncate">{isAr ? 'أسئلة جاهزة' : 'Suggested'}</span>
-                  </button>
+                  </Button>
                 </div>
               ) : null}
             </div>
@@ -457,9 +456,9 @@ export default function SmartChatScreen() {
       <div className="noorix-smart-chat-card">
         <div className="noorix-smart-chat-messages" ref={messagesScrollRef} data-chat-scroll>
           {olderHiddenCount > 0 && (
-            <button type="button" className="noorix-smart-chat-load-more" onClick={handleLoadMoreMessages}>
+            <Button className="noorix-smart-chat-load-more" onClick={handleLoadMoreMessages}>
               {t('chatLoadMoreCount', String(olderHiddenCount))}
-            </button>
+            </Button>
           )}
           {displayedMessages.length === 0 && (
             dateFilter ? (
@@ -520,7 +519,7 @@ export default function SmartChatScreen() {
             disabled={loading || !activeCompanyId}
             aria-label={t('chatInputPlaceholder')}
           />
-          <button
+          <Button
             type="button"
             className="noorix-chat-send-btn"
             onClick={() => handleSend()}
@@ -529,7 +528,7 @@ export default function SmartChatScreen() {
             aria-label={isAr ? 'إرسال' : 'Send'}
           >
             {loading ? <span className="noorix-chat-spinner" aria-hidden /> : <SendIcon />}
-          </button>
+          </Button>
         </div>
       </div>
       )}
@@ -600,9 +599,9 @@ export default function SmartChatScreen() {
           <Modal open={true} onClose={() => setExpenseMode(null)} title={t('chatEditFixedExpense')} size="sm">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {expenseLines.filter((l) => l.isActive !== false).map((line) => (
-                <button key={line.id} type="button" style={{ textAlign: isAr ? 'right' : 'left', padding: '12px 14px', width: '100%', background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)', borderRadius: 8, cursor: 'pointer', color: 'var(--noorix-text)' }} onClick={() => setExpenseEditLine(line)}>
+                <Button key={line.id} style={{ textAlign: isAr ? 'right' : 'left', width: '100%', justifyContent: 'flex-start', padding: '12px 14px' }} onClick={() => setExpenseEditLine(line)}>
                   {line.nameAr || line.nameEn || line.name || '—'}
-                </button>
+                </Button>
               ))}
             </div>
           </Modal>
@@ -649,15 +648,14 @@ export default function SmartChatScreen() {
                       className={`noorix-chat-commands-grid${g.items.length === 1 ? ' noorix-chat-commands-grid--single' : ''}`}
                     >
                       {g.items.map((it) => (
-                        <button
+                        <Button
                           key={it.key}
-                          type="button"
                           className="noorix-chat-commands-item"
                           onClick={() => handleCommand(it.key)}
                         >
                           <span aria-hidden>{it.icon}</span>
                           <span>{isAr ? it.labelAr : it.labelEn}</span>
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </div>

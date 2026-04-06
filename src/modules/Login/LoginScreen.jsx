@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getText } from '../../i18n/translations';
 import { login as apiLogin } from '../../services/api';
 import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor, getLoginDomain } from '../../utils/appBranding';
+import { Button } from '../../ui';
 
 function getLang() {
   return (typeof document !== 'undefined' && document.documentElement?.lang === 'en') ? 'en' : 'ar';
@@ -187,22 +188,18 @@ export default function LoginScreen() {
                     onFocus={(e) => { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)'; }}
                     onBlur={(e)  => { e.target.style.borderColor = 'var(--noorix-border)'; e.target.style.boxShadow = 'none'; }}
                   />
-                  <button
+                  <Button
                     type="button"
+                    className="login-password-toggle"
                     onClick={() => setShowPassword((v) => !v)}
                     style={{
                       position: 'absolute', [inlineEnd]: 10, top: '50%',
                       transform: 'translateY(-50%)',
                       height: 30, minWidth: 58, padding: '0 8px', fontSize: 12, fontWeight: 700,
-                      border: '1px solid rgba(37,99,235,0.16)',
-                      borderRadius: 8,
-                      background: 'rgba(37,99,235,0.07)',
-                      color: 'var(--noorix-accent-blue)',
-                      cursor: 'pointer',
                     }}
                   >
                     {showPassword ? t('hidePassword') : t('showPassword')}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -220,24 +217,15 @@ export default function LoginScreen() {
               )}
 
               {/* زر الدخول */}
-              <button
+              <Button
                 type="submit"
+                variant="primary"
+                fullWidth
                 disabled={loading}
-                style={{
-                  width: '100%', minHeight: 52,
-                  background: loading
-                    ? 'rgba(37,99,235,0.6)'
-                    : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                  color: '#fff', border: 'none',
-                  borderRadius: 12, fontSize: 16, fontWeight: 800,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 8px 24px rgba(37,99,235,0.28)',
-                  transition: 'opacity 150ms',
-                  fontFamily: 'var(--noorix-font-primary)',
-                }}
+                loading={loading}
               >
                 {loading ? t('verifying') : t('login')}
-              </button>
+              </Button>
             </form>
           </div>
         </div>

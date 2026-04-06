@@ -36,22 +36,14 @@ export default function ExpenseLineList({
   const columns = useMemo(() => [
     { key: 'nameAr', label: 'اسم البند', sortable: true,
       render: (v, row) => (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          className="expense-line-name-btn"
           onClick={() => onLineClick(row)}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: 0,
-            cursor: 'pointer',
-            color: 'var(--noorix-accent-blue)',
-            fontWeight: 600,
-            textAlign: 'inherit',
-            fontSize: 'inherit',
-          }}
+          style={{ padding: 0, color: 'var(--noorix-accent-blue)', fontWeight: 600, textAlign: 'inherit', fontSize: 'inherit' }}
         >
           {v || row.nameEn || '—'}
-        </button>
+        </Button>
       ) },
     { key: 'kind', label: 'النوع', sortable: true,
       render: (v) => <Badge {...Badge.fromStatus(v, KIND_STATUS_MAP)} size="sm" /> },
@@ -95,13 +87,14 @@ export default function ExpenseLineList({
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            className="expense-line-name-btn"
             onClick={() => onLineClick(row)}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--noorix-accent-blue)', fontWeight: 700, fontSize: 14, textAlign: 'start' }}
+            style={{ padding: 0, color: 'var(--noorix-accent-blue)', fontWeight: 700, fontSize: 14, textAlign: 'start' }}
           >
             {row.nameAr || row.nameEn || '—'}
-          </button>
+          </Button>
           <Badge {...Badge.fromStatus(row.kind, KIND_STATUS_MAP)} size="sm" />
         </div>
         <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>

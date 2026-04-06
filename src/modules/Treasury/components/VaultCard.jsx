@@ -3,7 +3,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS } from '../constants/treasuryConstants';
-import { Badge } from '../../../ui';
+import { Badge, Button } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
 export function parseVaultType(type) {
@@ -78,22 +78,22 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod
       style={{ position: 'relative', zIndex: 10 }}
       onClick={(e) => e.stopPropagation()}
     >
-      <button
+      <Button
         type="button"
+        className="vault-card-menu-btn"
         onClick={(e) => { e.stopPropagation(); setOpen((p) => !p); }}
         onTouchStart={(e) => e.stopPropagation()}
         style={{
-          width: 36, height: 36, borderRadius: 10, border: '1px solid var(--noorix-border)',
+          width: 36, height: 36, borderRadius: 10,
           background: open ? 'var(--noorix-bg-muted)' : 'transparent',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--noorix-text-muted)', transition: 'background 120ms', flexShrink: 0,
+          flexShrink: 0,
         }}
         title={t('actions')}
       >
         <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
           <circle cx="4" cy="10" r="1.8"/><circle cx="10" cy="10" r="1.8"/><circle cx="16" cy="10" r="1.8"/>
         </svg>
-      </button>
+      </Button>
 
       {open && (
         <div style={{
@@ -112,19 +112,19 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod
           zIndex: 100,
         }}>
           {items.map(({ label, action, color }) => (
-            <button
-              key={label} type="button" onClick={action}
+            <Button
+              key={label}
+              variant="ghost"
+              className="vault-card-action-item"
+              onClick={action}
               style={{
                 display: 'block', width: '100%',
                 textAlign: isRtl ? 'right' : 'left',
-                padding: '10px 16px', background: 'none', border: 'none',
-                cursor: 'pointer', fontSize: 13, color, fontFamily: 'inherit', whiteSpace: 'nowrap',
+                padding: '10px 16px', fontSize: 13, color, whiteSpace: 'nowrap',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--noorix-bg-muted)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
             >
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       )}

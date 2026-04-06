@@ -247,23 +247,25 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
                 {filtered.map((r) => (
                   <tr key={r.productId} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
                     <td style={{ padding: '10px 12px' }}>
-                      <button
+                      <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--noorix-accent-blue)', textDecoration: 'underline', fontSize: 13, fontWeight: 600 }}
                       >
                         {r.productNameAr || r.productNameEn || '—'}
-                      </button>
+                      </Button>
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       {r.categoryId ? (
-                        <button
+                        <Button
+                          variant="ghost"
                           type="button"
                           onClick={() => setHistoryModal({ category: { id: r.categoryId, nameAr: r.categoryNameAr, nameEn: r.categoryNameEn } })}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--noorix-accent-blue)', textDecoration: 'underline', fontSize: 13 }}
                         >
                           {r.categoryNameAr || r.categoryNameEn || '—'}
-                        </button>
+                        </Button>
                       ) : (
                         <span className="nx-cell-muted">—</span>
                       )}

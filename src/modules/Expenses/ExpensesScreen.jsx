@@ -93,14 +93,14 @@ export default function ExpensesScreen() {
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="nx-tab-bar">
           {TABS.map((tab) => (
-            <button
+            <Button
               key={tab.id}
               type="button"
               className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.icon} {t(tab.labelKey)}
-            </button>
+            </Button>
           ))}
         </div>
         <div className="nx-tab-content">

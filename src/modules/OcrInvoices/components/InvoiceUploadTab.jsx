@@ -208,8 +208,8 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
           <div style={{ padding: 16, flex: '1 1 280px', minWidth: 0, borderRadius: 12, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <span style={{ fontWeight: 600, fontSize: 14 }}>{isAr ? 'صورة الفاتورة' : 'Invoice Image'}</span>
-              <button className="modal-close-btn" style={{ width: 28, height: 28 }}
-                onClick={() => { setPreview(null); setBase64(null); setExtracted(null); setError(null); setEditItems(null); }}>✕</button>
+              <Button className="modal-close-btn" style={{ width: 28, height: 28 }}
+                onClick={() => { setPreview(null); setBase64(null); setExtracted(null); setError(null); setEditItems(null); }}>✕</Button>
             </div>
             <img src={preview} alt="invoice" style={{ width: '100%', borderRadius: 8, maxHeight: 500, objectFit: 'contain' }} />
             <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -447,18 +447,14 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
             {item.mathWarning.message}
           </div>
           {(item.mathWarning.suggestedQuantity !== undefined || item.mathWarning.suggestedUnitPrice !== undefined) && (
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => onApplySuggestion(index)}
-              style={{
-                padding: '3px 10px', borderRadius: 6, cursor: 'pointer',
-                background: '#f59e0b', border: 'none',
-                color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
+              style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
             >
               تصحيح تلقائي
-            </button>
+            </Button>
           )}
         </div>
       )}

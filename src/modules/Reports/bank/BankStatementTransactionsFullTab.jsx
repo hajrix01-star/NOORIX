@@ -52,7 +52,7 @@ export default function BankStatementTransactionsFullTab({
   }, [categories]);
 
   const SortBtn = ({ label, sortKey }) => (
-    <button
+    <Button
       type="button"
       style={{
         background: 'transparent',
@@ -73,7 +73,7 @@ export default function BankStatementTransactionsFullTab({
       <span style={{ fontSize: 10, opacity: sortConfig.key === sortKey ? 1 : 0.35 }}>
         {sortConfig.key === sortKey ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}
       </span>
-    </button>
+    </Button>
   );
 
   const allSelected =

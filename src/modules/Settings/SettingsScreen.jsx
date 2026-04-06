@@ -8,7 +8,7 @@ import { useQuery }        from '@tanstack/react-query';
 import { getCompanies }    from '../../services/api';
 import { useApp }          from '../../context/AppContext';
 import { useTranslation }  from '../../i18n/useTranslation';
-import { Input }           from '../../ui';
+import { Input, Button }   from '../../ui';
 import { hasPermission }   from '../../constants/permissions';
 import CompaniesTab        from './components/CompaniesTab';
 import UsersTab            from './components/UsersTab';
@@ -111,7 +111,7 @@ export default function SettingsScreen() {
         {!isMobile && (
           <div className="noorix-settings-tabstrip" role="tablist">
             {TABS.map((tab) => (
-              <button
+              <Button
                 key={tab.id}
                 ref={activeTab === tab.id ? activeTabRef : null}
                 type="button"
@@ -122,7 +122,7 @@ export default function SettingsScreen() {
                 data-active={activeTab === tab.id ? 'true' : 'false'}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
         )}

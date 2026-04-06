@@ -6,7 +6,7 @@ import React, { memo, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { calcReverseVat } from '../../../utils/format';
-import { Input } from '../../../ui';
+import { Input, Button } from '../../../ui';
 
 const inputBase = {
   width: '100%', padding: '8px 10px', borderRadius: 6,
@@ -94,18 +94,18 @@ export const BatchRow = memo(function BatchRow({
             />
           </div>
           {row.supplierId && (
-            <button
+            <Button
               type="button"
               onClick={() => onBookmark(row.supplierId)}
               title={bookmarkedIds.includes(row.supplierId) ? t('removeFromShortcuts') : t('addToShortcuts')}
               style={{
-                width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6, border: '1px solid var(--noorix-border)',
+                width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6,
                 background: bookmarkedIds.includes(row.supplierId) ? 'rgba(245,158,11,0.15)' : 'var(--noorix-bg-page)',
-                cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                fontSize: 14, flexShrink: 0,
               }}
             >
               {bookmarkedIds.includes(row.supplierId) ? '★' : '☆'}
-            </button>
+            </Button>
           )}
         </div>
       </td>
@@ -177,18 +177,18 @@ export const BatchRow = memo(function BatchRow({
 
       {/* زر الضريبة */}
       <td style={{ ...cp, textAlign: 'center' }}>
-        <button
+        <Button
           type="button"
           onClick={() => onUpdate(index, 'isTaxable', row.isTaxable !== false ? false : true)}
           style={{
-            width: '100%', padding: '6px 2px', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            width: '100%', padding: '6px 2px', borderRadius: 5, fontSize: 11, fontWeight: 700,
             border: `1px solid ${row.isTaxable === false ? '#94a3b8' : '#d97706'}`,
             background: row.isTaxable === false ? 'var(--noorix-bg-page)' : 'rgba(217,119,6,0.08)',
             color: row.isTaxable === false ? '#64748b' : '#d97706',
           }}
         >
           {row.isTaxable === false ? '0%' : '15%'}
-        </button>
+        </Button>
       </td>
 
       {/* الملاحظات */}
@@ -204,18 +204,18 @@ export const BatchRow = memo(function BatchRow({
 
       {/* حذف */}
       <td style={{ ...cp, textAlign: 'center' }}>
-        <button
+        <Button
           type="button"
+          variant="danger"
           onClick={() => onRemove(index)}
           style={{
-            width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6, border: '1px solid #fecaca',
-            background: 'rgba(239,68,68,0.06)', color: '#dc2626', cursor: 'pointer', fontSize: 15,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
+            width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6,
+            fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
           }}
           title={t('delete')}
         >
           ×
-        </button>
+        </Button>
       </td>
     </tr>
   );

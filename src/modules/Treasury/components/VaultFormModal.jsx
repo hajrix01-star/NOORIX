@@ -83,29 +83,30 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           <label style={{ display: 'block', marginBottom: 5, fontSize: 13, fontWeight: 600 }}>{t('vaultType')}</label>
           <div className="vault-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {VAULT_TYPES.map((vt) => (
-              <button key={vt.value} type="button" onClick={() => set('type', vt.value)} style={{
-                padding: '10px 6px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                border: `2px solid ${form.type === vt.value ? TYPE_COLORS[vt.value] : 'var(--noorix-border)'}`,
-                background: form.type === vt.value ? TYPE_BG[vt.value] : 'transparent',
-                color: form.type === vt.value ? TYPE_COLORS[vt.value] : 'var(--noorix-text-muted)',
-                transition: 'all 150ms',
-              }}>
-                <div style={{ fontSize: 16, marginBottom: 4, fontWeight: 800 }}>{vt.icon}</div>
-                <div>{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].trim()}</div>
-              </button>
+              <Button
+                key={vt.value}
+                className="nx-vault-type-btn"
+                onClick={() => set('type', vt.value)}
+                style={form.type === vt.value ? {
+                  border: `2px solid ${TYPE_COLORS[vt.value]}`,
+                  background: TYPE_BG[vt.value],
+                  color: TYPE_COLORS[vt.value],
+                } : undefined}
+              >
+                <span style={{ fontSize: 16, fontWeight: 800 }}>{vt.icon}</span>
+                <span>{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].trim()}</span>
+              </Button>
             ))}
 
             {/* نوع مخصص */}
-            <button type="button" onClick={() => set('type', 'custom')} style={{
-              padding: '10px 6px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-              border: `2px solid ${isCustom ? '#64748b' : 'var(--noorix-border)'}`,
-              background: isCustom ? 'rgba(100,116,139,0.1)' : 'transparent',
-              color: isCustom ? '#475569' : 'var(--noorix-text-muted)',
-              transition: 'all 150ms',
-            }}>
-              <div style={{ fontSize: 18, marginBottom: 4, fontWeight: 800 }}>{form.customEmoji || 'خ'}</div>
-              <div>{t('vaultTypeCustom') || 'مخصص'}</div>
-            </button>
+            <Button
+              className="nx-vault-type-btn"
+              onClick={() => set('type', 'custom')}
+              style={isCustom ? { border: '2px solid #64748b', background: 'rgba(100,116,139,0.1)', color: '#475569' } : undefined}
+            >
+              <span style={{ fontSize: 18, fontWeight: 800 }}>{form.customEmoji || 'خ'}</span>
+              <span>{t('vaultTypeCustom') || 'مخصص'}</span>
+            </Button>
           </div>
 
           {/* منتقي رمز مخصص */}
@@ -116,20 +117,13 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {ICON_CHARS.map((ch) => (
-                  <button
-                    key={ch} type="button"
+                  <Button
+                    key={ch}
+                    className={`nx-vault-icon-btn${form.customEmoji === ch ? ' nx-vault-icon-btn--active' : ''}`}
                     onClick={() => set('customEmoji', ch)}
-                    style={{
-                      width: 38, height: 38, borderRadius: 8, border: 'none', cursor: 'pointer',
-                      fontSize: 15, fontWeight: 800,
-                      background: form.customEmoji === ch ? '#2563eb18' : 'transparent',
-                      outline: form.customEmoji === ch ? '2px solid #2563eb' : '1px solid var(--noorix-border)',
-                      color: form.customEmoji === ch ? '#2563eb' : 'var(--noorix-text)',
-                      transition: 'all 100ms', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}
                   >
                     {ch}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

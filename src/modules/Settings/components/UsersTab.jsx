@@ -105,7 +105,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
               <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('companies')}</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {activeCompanies.map((c) => (
-                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                    <label key={c.id} className="nx-checkbox">
                       <input type="checkbox" checked={form.companyIds.includes(c.id)} onChange={(e) => setForm((p) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id) => id !== c.id) }))} />
                       {c.nameAr}
                     </label>
@@ -137,7 +137,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
               </Input>
               <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('companies')}</label>
                 {activeCompanies.map((c) => (
-                  <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: 4 }}>
+                  <label key={c.id} className="nx-checkbox" style={{ marginBottom: 4 }}>
                     <input type="checkbox" checked={editing.companyIds.includes(c.id)} onChange={(e) => setEditing((p) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id) => id !== c.id) }))} />
                     {c.nameAr}
                   </label>

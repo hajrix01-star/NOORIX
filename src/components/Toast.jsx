@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Button } from '../ui';
 
 const TYPE_STYLES = {
   success: {
@@ -82,29 +83,13 @@ export default function Toast({ message, type = 'success', visible, onDismiss })
 
       <span style={{ flex: 1, lineHeight: 1.5 }}>{message}</span>
 
-      <button
-        type="button"
+      <Button
+        className="nx-shell-icon-btn"
         onClick={() => onDismiss?.()}
         aria-label="إغلاق"
-        style={{
-          flexShrink: 0,
-          background: 'rgba(255,255,255,0.18)',
-          border: 'none',
-          borderRadius: 6,
-          color: '#fff',
-          cursor: 'pointer',
-          fontSize: 14,
-          fontWeight: 700,
-          lineHeight: 1,
-          padding: '3px 7px',
-          marginTop: 1,
-          transition: 'background 0.15s',
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.3)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; }}
       >
         ✕
-      </button>
+      </Button>
     </div>
   );
 }

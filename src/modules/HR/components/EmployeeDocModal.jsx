@@ -746,7 +746,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
       <div ref={printRef}>
         <DocumentFrame compact companyName={companyName} companyLogo={companyLogo} arabicTitle="مخالصة وتسوية نهائية" englishTitle="Final Settlement & Clearance">
           <div style={{ padding: '12px 22px', borderBottom: '1px solid var(--noorix-border)', background: '#f8fafc' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+            <label className="nx-checkbox">
               <input type="checkbox" checked={includeEos} onChange={(e) => setIncludeEos(e.target.checked)} />
               {includeEos ? t('includeEosInSettlement') : t('excludeEosInSettlement')}
             </label>

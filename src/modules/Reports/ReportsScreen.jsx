@@ -226,9 +226,9 @@ export default function ReportsScreen() {
               <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 {isMobile && (
                   <div className="nx-tab-bar" style={{ overflowX: 'auto', flexWrap: 'nowrap', borderBottom: '1px solid var(--noorix-border)' }}>
-                    <button type="button" className={`nx-tab-btn${!selectedMonth ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth('')}>{t('allMonths')}</button>
+                    <Button type="button" className={`nx-tab-btn${!selectedMonth ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth('')}>{t('allMonths')}</Button>
                     {(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN).map((name, index) => (
-                      <button key={index} type="button" className={`nx-tab-btn${selectedMonthNumber === index + 1 ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth(String(index + 1))}>{name}</button>
+                      <Button key={index} type="button" className={`nx-tab-btn${selectedMonthNumber === index + 1 ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth(String(index + 1))}>{name}</Button>
                     ))}
                   </div>
                 )}
@@ -274,8 +274,7 @@ export default function ReportsScreen() {
                         >
                           <td style={{ padding: isMobile ? '5px 8px' : '6px 12px', borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: rowTone.stickyBg, fontSize: isMobile ? 11 : 13, fontFamily: 'var(--noorix-font-primary)', lineHeight: 1.35, width: isMobile ? 120 : 200, minWidth: isMobile ? 120 : 200, maxWidth: isMobile ? 120 : 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {canCollapse ? (
-                              <button
-                                type="button"
+                              <Button
                                 onClick={() => toggleGroup(collapseKey)}
                                 style={{
                                   display: 'flex',
@@ -298,10 +297,9 @@ export default function ReportsScreen() {
                               >
                                 <span style={{ fontSize: 13, width: 14, flexShrink: 0, textAlign: 'center', fontFamily: 'var(--noorix-font-primary)' }}>{isCollapsed ? '▸' : '▾'}</span>
                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayLabel(row, lang)}</span>
-                              </button>
+                              </Button>
                             ) : (
-                              <button
-                                type="button"
+                              <Button
                                 onClick={() => canOpenItem && setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: true })}
                                 style={{
                                   display: 'flex',
@@ -324,27 +322,25 @@ export default function ReportsScreen() {
                               >
                                 {row.rowType === 'item' && <span style={{ width: 10, flexShrink: 0, color: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-primary)' }}>•</span>}
                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayLabel(row, lang)}</span>
-                              </button>
+                              </Button>
                             )}
                           </td>
 
                           {selectedMonthNumber && (
                             <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: `${row.groupKey === 'purchases' ? 'rgba(239,68,68,0.07)' : row.groupKey === 'expenses' ? 'rgba(220,38,38,0.07)' : 'rgba(37,99,235,0.04)'}`, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(getContextAmount(row, selectedMonthNumber) || 0) >= 0 ? '#2563eb' : '#dc2626') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit') }}>
-                              <button
-                                type="button"
+                              <Button
                                 onClick={() => setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: row.rowType === 'item' })}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'block', width: '100%', padding: 0 }}
                               >
                                 <div>{amountText(getContextAmount(row, selectedMonthNumber))}</div>
                                 <div style={{ fontSize: 11, marginTop: 1, color: PERCENT_COLOR }}>{percentText(getContextPercent(row, selectedMonthNumber))}</div>
-                              </button>
+                              </Button>
                             </td>
                           )}
 
                           {!isMobile && (row.months ?? []).map((value, index) => (
                             <td key={`${row.groupKey}-${index}`} style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: selectedMonthNumber === index + 1 ? 'rgba(37,99,235,0.06)' : undefined }}>
-                              <button
-                                type="button"
+                              <Button
                                 onClick={() => setDetailState({ month: index + 1, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: row.rowType === 'item' })}
                                 style={{
                                   background: 'none',
@@ -360,7 +356,7 @@ export default function ReportsScreen() {
                               >
                                 <div>{amountText(value)}</div>
                                 <div style={{ fontSize: 11, marginTop: 1, color: PERCENT_COLOR }}>{percentText(row.percentOfSalesMonths?.[index])}</div>
-                              </button>
+                              </Button>
                             </td>
                           ))}
 

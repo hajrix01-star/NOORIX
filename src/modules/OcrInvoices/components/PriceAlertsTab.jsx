@@ -25,14 +25,8 @@ function MiniImageViewer({ src }) {
           onClick={() => setZoomed((z) => !z)} />
       </div>
       <div style={{ display: 'flex', gap: 4, padding: '5px 8px', borderTop: '1px solid var(--noorix-border)' }}>
-        <button onClick={() => setRotation((r) => (r + 90) % 360)}
-          style={{ flex: 1, padding: '4px', borderRadius: 5, border: '1px solid var(--noorix-border)', background: 'transparent', cursor: 'pointer', fontSize: 11, fontFamily: 'inherit', color: 'var(--noorix-text-muted)' }}>
-          ↺
-        </button>
-        <button onClick={() => setZoomed((z) => !z)}
-          style={{ flex: 1, padding: '4px', borderRadius: 5, border: '1px solid var(--noorix-border)', background: 'transparent', cursor: 'pointer', fontSize: 11, fontFamily: 'inherit', color: 'var(--noorix-text-muted)' }}>
-          {zoomed ? '−' : '+'}
-        </button>
+        <Button className="lb-btn" onClick={() => setRotation((r) => (r + 90) % 360)}>↺</Button>
+        <Button className="lb-btn" onClick={() => setZoomed((z) => !z)}>{zoomed ? '−' : '+'}</Button>
       </div>
     </div>
   );
@@ -50,7 +44,7 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
               {isAr ? 'مقارنة الفاتورتين' : 'Invoice Comparison'} — +{alert.priceIncreasePercent}%
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>✕</button>
+          <Button className="modal-close-btn" onClick={onClose}>✕</Button>
         </div>
 
         <div className="modal-body">
@@ -205,7 +199,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
           <Input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder={isAr ? 'بحث بالصنف أو المورد...' : 'Search item or supplier...'}
             className="inv-search-input" />
-          {search && <button className="inv-search-clear" onClick={() => setSearch('')}>✕</button>}
+          {search && <Button className="inv-search-clear" onClick={() => setSearch('')}>✕</Button>}
         </div>
 
         <Input type="select" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="inv-sort-select">
@@ -219,9 +213,9 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
             <Button size="sm" onClick={dismissSelected}>
               {isAr ? `إخفاء (${selected.size})` : `Dismiss (${selected.size})`}
             </Button>
-            <button className="inv-delete-btn" onClick={handleBulkDeleteHistory} disabled={deleting}>
+            <Button className="inv-delete-btn" onClick={handleBulkDeleteHistory} disabled={deleting}>
               {isAr ? `حذف السجل (${selected.size})` : `Delete (${selected.size})`}
-            </button>
+            </Button>
           </>
         )}
       </div>

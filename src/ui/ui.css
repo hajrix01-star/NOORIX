@@ -1333,3 +1333,160 @@
   gap: 8px;
   align-items: center;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   14. Vault Type Selector — شبكة اختيار نوع الخزينة
+   ═══════════════════════════════════════════════════════════ */
+.nx-vault-type-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 2px solid var(--noorix-border);
+  background: transparent;
+  color: var(--noorix-text-muted);
+  cursor: pointer;
+  transition: border-color 150ms, background 150ms, color 150ms;
+  min-height: unset;
+  height: auto;
+  width: 100%;
+}
+
+.nx-vault-type-btn:hover:not(:disabled) {
+  border-color: var(--noorix-accent-blue);
+  color: var(--noorix-accent-blue);
+}
+
+.nx-vault-type-btn .nx-btn__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nx-vault-icon-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--noorix-border);
+  background: var(--noorix-bg-muted);
+}
+
+.nx-vault-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 800;
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  transition: all 120ms;
+  min-height: unset;
+  padding: 0;
+}
+
+.nx-vault-icon-btn:hover:not(:disabled) {
+  background: rgba(37,99,235,0.08);
+  border-color: var(--noorix-accent-blue);
+}
+
+.nx-vault-icon-btn--active {
+  background: rgba(37,99,235,0.15) !important;
+  border-color: var(--noorix-accent-blue) !important;
+  color: var(--noorix-accent-blue) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   15. Checkbox & File — عناصر النماذج الأصلية
+   ═══════════════════════════════════════════════════════════ */
+.nx-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--noorix-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.nx-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--noorix-accent-blue);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nx-file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px dashed var(--noorix-border);
+  background: var(--noorix-bg-muted);
+  font-size: 13px;
+  color: var(--noorix-text-muted);
+  cursor: pointer;
+  transition: border-color 150ms, background 150ms;
+}
+
+.nx-file-label:hover {
+  border-color: var(--noorix-accent-blue);
+  background: rgba(37,99,235,0.05);
+  color: var(--noorix-accent-blue);
+}
+
+.nx-file-label input[type="file"] {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   16. Gradient Header Close — زر إغلاق داخل هيدر ملوّن
+   ═══════════════════════════════════════════════════════════ */
+.nx-gradient-close-btn {
+  background: rgba(255,255,255,0.18) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 14px;
+  transition: background 150ms;
+}
+
+.nx-gradient-close-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.30) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   17. Layout Shell Buttons — أزرار القشرة (Sidebar/Header/Toast)
+   ═══════════════════════════════════════════════════════════ */
+.nx-shell-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--noorix-text-muted);
+  transition: background 120ms, color 120ms;
+  min-height: unset;
+}
+
+.nx-shell-icon-btn:hover:not(:disabled) {
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text);
+}

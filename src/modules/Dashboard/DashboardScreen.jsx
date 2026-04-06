@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Input } from '../../ui';
+import { Input, Button } from '../../ui';
 import DashboardOverviewTab from './components/DashboardOverviewTab';
 import DashboardCalendarTab from './components/DashboardCalendarTab';
 import DashboardSpecialDaysTab from './components/DashboardSpecialDaysTab';
@@ -86,14 +86,14 @@ export default function DashboardScreen() {
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="nx-tab-bar">
           {DASHBOARD_TABS.map((tab) => (
-            <button
+            <Button
               key={tab.id}
               type="button"
               className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
               {t(tab.labelKey)}
-            </button>
+            </Button>
           ))}
         </div>
 

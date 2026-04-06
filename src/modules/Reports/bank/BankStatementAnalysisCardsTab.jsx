@@ -593,9 +593,10 @@ export default function BankStatementAnalysisCardsTab({
                   pieDisplayData.map((item, i) => {
                     const dot = pieSliceFill(pieMode, i, item);
                     return (
-                      <button
+                      <Button
                         key={item.name}
-                        type="button"
+                        variant="ghost"
+                        className="bank-pie-legend-row"
                         onClick={() => setPieDrilldownCategory(item.name)}
                         style={{
                           display: 'flex',
@@ -603,10 +604,6 @@ export default function BankStatementAnalysisCardsTab({
                           alignItems: 'stretch',
                           gap: 4,
                           fontSize: 13,
-                          cursor: 'pointer',
-                          background: 'var(--noorix-surface)',
-                          border: '1px solid var(--noorix-border)',
-                          borderRadius: 10,
                           padding: '8px 10px',
                           textAlign: 'right',
                           width: '100%',
@@ -648,7 +645,7 @@ export default function BankStatementAnalysisCardsTab({
                             </span>
                           </div>
                         ) : null}
-                      </button>
+                      </Button>
                     );
                   })
                 )}
@@ -1012,28 +1009,25 @@ export default function BankStatementAnalysisCardsTab({
               }}
             >
               {availableToAdd.map((c) => (
-                <button
+                <Button
                   key={c.id}
-                  type="button"
+                  variant="ghost"
+                  className="bank-add-card-item"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 10,
                     width: '100%',
                     padding: '10px 14px',
-                    background: 'transparent',
-                    border: 'none',
                     borderBottom: '1px solid var(--noorix-border)',
-                    cursor: 'pointer',
                     fontSize: 13,
                     textAlign: 'right',
-                    color: 'var(--noorix-text)',
                   }}
                   onClick={() => { addCard(c.id); setAddOpen(false); }}
                 >
                   <span>{c.icon}</span>
                   <span>{t(c.nameKey)}</span>
-                </button>
+                </Button>
               ))}
             </div>
           )}

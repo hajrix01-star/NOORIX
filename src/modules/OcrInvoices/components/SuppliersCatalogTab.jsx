@@ -115,15 +115,15 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         <div className="inv-search-wrap">
           <span className="inv-search-icon">⌕</span>
           <Input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('ocrSearch')} className="inv-search-input" />
-          {search && <button className="inv-search-clear" onClick={() => setSearch('')}>✕</button>}
+          {search && <Button className="inv-search-clear" onClick={() => setSearch('')}>✕</Button>}
         </div>
 
         <Button onClick={() => setAdding(true)} variant="primary" size="sm">+ {t('ocrAddSupplier')}</Button>
 
         {selected.size > 0 && (
-          <button className="inv-delete-btn" onClick={handleBulkDelete} disabled={deleting}>
+          <Button className="inv-delete-btn" onClick={handleBulkDelete} disabled={deleting}>
             {isAr ? `حذف (${selected.size})` : `Delete (${selected.size})`}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -176,7 +176,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
                 <div className="modal-title">{viewing.nameAr}</div>
                 <div className="modal-sub">{t('ocrAliases')}</div>
               </div>
-              <button className="modal-close-btn" onClick={() => setViewing(null)}>✕</button>
+              <Button className="modal-close-btn" onClick={() => setViewing(null)}>✕</Button>
             </div>
             <div className="modal-body">
               {(viewing.aliases || []).length === 0 && (

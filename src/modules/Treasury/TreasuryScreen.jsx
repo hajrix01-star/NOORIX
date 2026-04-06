@@ -154,7 +154,7 @@ export default function TreasuryScreen() {
           )}
         </div>
         <div className="nx-toolbar">
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--noorix-text-muted)', cursor: 'pointer' }}>
+          <label className="nx-checkbox" style={{ color: 'var(--noorix-text-muted)' }}>
             <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
             {t('showArchived')}
           </label>

@@ -123,7 +123,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
           {showAddForm ? 'إلغاء الإضافة' : 'إضافة شركة'}
         </Button>
         {!isEmpty && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--noorix-text-muted)', cursor: 'pointer' }}>
+          <label className="nx-checkbox" style={{ color: 'var(--noorix-text-muted)' }}>
             <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
             عرض المؤرشفة
           </label>

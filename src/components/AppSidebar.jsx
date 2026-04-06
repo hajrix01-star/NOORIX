@@ -145,26 +145,14 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
               <span className="app-sidebar__title-sub">{brandTagline}</span>
             </div>
             {isOpen && (
-              <button
-                type="button"
-                className="app-sidebar__close-btn"
+              <Button
+                className="nx-shell-icon-btn app-sidebar__close-btn"
                 onClick={onClose}
                 aria-label={t('close')}
-                style={{
-                  marginInlineStart: 'auto',
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 8,
-                  color: 'rgba(255,255,255,0.7)',
-                  cursor: 'pointer',
-                  fontSize: 16,
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  padding: '5px 10px',
-                }}
+                style={{ marginInlineStart: 'auto' }}
               >
                 ✕
-              </button>
+              </Button>
             )}
           </div>
           <div style={{ width: '100%', marginTop: 8 }}>
@@ -224,8 +212,8 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
             {visibleLinks.map((link) =>
               link.children ? (
                 <li key={link.to} className="app-nav-item app-nav-item--has-children">
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
                     className={`app-nav-link${location.pathname.startsWith(link.to) ? ' app-nav-link--active' : ''}`}
                     onClick={handleReportsParentClick}
                   >
@@ -234,7 +222,7 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                       <span>{t(link.labelKey)}</span>
                       <span style={{ marginInlineStart: 'auto', fontSize: 10, opacity: 0.8 }}>{reportsOpen ? '▾' : '▸'}</span>
                     </span>
-                  </button>
+                  </Button>
                   {reportsOpen && (
                     <ul className="app-nav-list app-nav-list--nested">
                       {link.children.map((child) => (

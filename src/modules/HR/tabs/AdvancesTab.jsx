@@ -492,7 +492,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
         ) : (
           <>
             <Input type="date" label={t('advanceSettlementDate')} value={settleDate} onChange={(e) => setSettleDate(e.target.value)} />
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label className="nx-checkbox">
               <input type="checkbox" checked={applyToSalary} onChange={(e) => setApplyToSalary(e.target.checked)} />
               {t('applyToSalaryDeduction')}
             </label>

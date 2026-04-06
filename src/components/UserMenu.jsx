@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import ChangePasswordModal from './ChangePasswordModal';
 import Toast from './Toast';
+import { Button } from '../ui';
 
 const ROLE_KEYS = {
   owner: 'roleOwner',
@@ -144,13 +145,13 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
       {showAppearance && (
         <>
           <div style={S.dropdownBody}>
-            <button type="button" style={S.menuItemAction} onClick={toggleTheme}>
+            <Button variant="ghost" className="user-menu-item" style={S.menuItemAction} onClick={toggleTheme}>
               <span style={{ ...S.menuItemIcon, fontSize: 14, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{theme === 'light' ? '◑' : '○'}</span>
               <span style={{ flex: 1, textAlign: 'inherit' }}>
                 {theme === 'light' ? t('darkMode') : t('lightMode')}
               </span>
-            </button>
-            <button type="button" style={S.menuItemAction} onClick={toggleLanguage}>
+            </Button>
+            <Button variant="ghost" className="user-menu-item" style={S.menuItemAction} onClick={toggleLanguage}>
               <span style={{ ...S.menuItemIcon, fontSize: 11, fontWeight: 800, color: 'var(--noorix-text-muted)' }}>{language === 'ar' ? 'EN' : 'ع'}</span>
               <span style={{ flex: 1, textAlign: 'inherit', fontWeight: 600, fontSize: 12 }}>
                 {language === 'ar' ? 'English' : 'العربية'}
@@ -164,39 +165,41 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
               }}>
                 {language === 'ar' ? 'EN' : 'AR'}
               </span>
-            </button>
+            </Button>
           </div>
           <div style={S.divider} />
         </>
       )}
 
       <div style={S.dropdownBody}>
-        <button type="button" style={S.menuItem} disabled>
+        <Button variant="ghost" className="user-menu-item" style={S.menuItem} disabled>
           <span style={{ ...S.menuItemIcon, fontSize: 14, color: 'var(--noorix-text-muted)' }}>○</span>
           {t('profile')}
           <span style={S.menuItemBadge}>{t('comingSoon')}</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="ghost"
+          className="user-menu-item"
           style={{ ...S.menuItem, cursor: 'pointer', color: 'var(--noorix-text)' }}
           onClick={() => { setOpen(false); setShowChangePassword(true); }}
         >
           <span style={{ ...S.menuItemIcon, fontSize: 13, color: 'var(--noorix-text-muted)' }}>⚿</span>
           {t('changePassword')}
-        </button>
+        </Button>
       </div>
 
       <div style={S.divider} />
 
       <div style={{ padding: '5px 6px' }}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          className="user-menu-item"
           onClick={() => { setOpen(false); onLogout(); }}
           style={S.logoutBtn}
         >
           <span style={{ ...S.menuItemIcon, fontSize: 13, color: 'var(--noorix-text-muted)' }}>→</span>
           {t('logout')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -204,15 +207,14 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
   return (
     <div style={{ position: 'relative', direction: 'ltr', minWidth: 0 }} className="user-menu-wrapper">
       {/* زر الأفاتار */}
-      <button
+      <Button
         ref={btnRef}
-        type="button"
         onClick={() => setOpen((v) => !v)}
         style={S.trigger}
         title={displayName}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="user-menu-trigger"
+        className="user-menu-trigger nx-shell-icon-btn"
       >
         <div style={{ ...S.avatar, borderColor: roleColor }}>{initials}</div>
         <div style={S.triggerInfo} className="user-menu-trigger-info">
@@ -222,7 +224,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
           </span>
         </div>
         <span style={{ ...S.chevron, transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
-      </button>
+      </Button>
 
       {/* backdrop شفاف للجوال لإغلاق القائمة بالضغط خارجها */}
       {open && isMobile && createPortal(

@@ -224,7 +224,7 @@ export default function BankStatementAnalysisScreen() {
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="noorix-bank-tab-row" role="tablist">
           {TABS.map((tab) => (
-            <button
+            <Button
               key={tab.id}
               type="button"
               role="tab"
@@ -233,7 +233,7 @@ export default function BankStatementAnalysisScreen() {
               onClick={() => setActiveTab(tab.id)}
             >
               {t(tab.labelKey)}
-            </button>
+            </Button>
           ))}
         </div>
 

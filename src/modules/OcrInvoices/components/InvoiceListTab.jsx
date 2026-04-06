@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
-import { Input } from '../../../ui';
+import { Input, Button } from '../../../ui';
 
 /* ── ثوابت ──────────────────────────────────────────────────────────── */
 const STATUS = {
@@ -71,11 +71,11 @@ function ImageLightbox({ src, onClose }) {
         <div className="lb-topbar">
           <div className="lb-scale-label">{scaleLabel}</div>
           <div className="lb-controls">
-            <button className="lb-btn" onClick={zoomOut}  title="تصغير (-)">−</button>
-            <button className="lb-btn" onClick={zoomIn}   title="تكبير (+)">+</button>
-            <button className="lb-btn" onClick={rotate}   title="تدوير (R)">↺</button>
-            <button className="lb-btn" onClick={reset}    title="إعادة تعيين (0)">⊙</button>
-            <button className="lb-btn lb-btn--close" onClick={onClose} title="إغلاق (Esc)">✕</button>
+            <Button className="lb-btn" onClick={zoomOut}  title="تصغير (-)">−</Button>
+            <Button className="lb-btn" onClick={zoomIn}   title="تكبير (+)">+</Button>
+            <Button className="lb-btn" onClick={rotate}   title="تدوير (R)">↺</Button>
+            <Button className="lb-btn" onClick={reset}    title="إعادة تعيين (0)">⊙</Button>
+            <Button className="lb-btn lb-btn--close" onClick={onClose} title="إغلاق (Esc)">✕</Button>
           </div>
         </div>
 
@@ -110,10 +110,10 @@ function ImageLightbox({ src, onClose }) {
           </div>
           <div className="lb-zoom-strip">
             {[0.5, 1, 1.5, 2, 3, 4].map((z) => (
-              <button key={z} className={`lb-zoom-dot${scale === z ? ' lb-zoom-dot--active' : ''}`}
+              <Button key={z} className={`lb-zoom-dot${scale === z ? ' lb-zoom-dot--active' : ''}`}
                 onClick={(e) => { e.stopPropagation(); setScale(z); if (z === 1) setPan({x:0,y:0}); }}>
                 {z === 1 ? '1×' : `${z}×`}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -148,7 +148,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
             <span className={`status-badge ${statusInfo.bgCls}`}>
               {isAr ? statusInfo.ar : statusInfo.en}
             </span>
-            <button className="modal-close-btn" onClick={onClose}>✕</button>
+            <Button className="modal-close-btn" onClick={onClose}>✕</Button>
           </div>
         </div>
 
@@ -366,7 +366,7 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
             placeholder={isAr ? 'بحث بالمورد أو رقم الفاتورة...' : 'Search supplier or invoice #...'}
             className="inv-search-input"
           />
-          {search && <button className="inv-search-clear" onClick={() => setSearch('')}>✕</button>}
+          {search && <Button className="inv-search-clear" onClick={() => setSearch('')}>✕</Button>}
         </div>
 
         {/* ترتيب */}
@@ -378,9 +378,9 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
         </Input>
 
         {selected.size > 0 && (
-          <button className="inv-delete-btn" onClick={handleBulkDelete} disabled={deleting}>
+          <Button className="inv-delete-btn" variant="danger" onClick={handleBulkDelete} disabled={deleting}>
             {isAr ? `حذف (${selected.size})` : `Delete (${selected.size})`}
-          </button>
+          </Button>
         )}
       </div>
 

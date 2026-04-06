@@ -412,7 +412,7 @@ export default function PurchasesBatchScreen() {
       {hasCompany && (
         <div className="noorix-tab-bar" style={{ display: 'flex', gap: 4, borderBottom: '2px solid var(--noorix-border)', paddingBottom: 0 }}>
           {getTabs(t).map((tab) => (
-            <button
+            <Button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
@@ -424,7 +424,7 @@ export default function PurchasesBatchScreen() {
               }}
             >
               {tab.icon} {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -477,7 +477,7 @@ export default function PurchasesBatchScreen() {
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('shortcuts')}</span>
               {bookmarkedSuppliers.length > 0 ? (
                 bookmarkedSuppliers.map((s) => (
-                  <button
+                  <Button
                     key={s.id}
                     type="button"
                     onClick={() => addBookmarked(s.id)}
@@ -488,7 +488,7 @@ export default function PurchasesBatchScreen() {
                     }}
                   >
                     {(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}
-                  </button>
+                  </Button>
                 ))
               ) : (
                 <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('selectSupplierBookmark')}</span>

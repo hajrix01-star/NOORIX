@@ -192,13 +192,14 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
               {result.errors.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
           )}
-          <button
+          <Button
+            variant="ghost"
             type="button"
             onClick={() => setResult(null)}
             style={{ marginTop: 8, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--noorix-text-muted)' }}
           >
             إخفاء
-          </button>
+          </Button>
         </div>
       )}
     </div>

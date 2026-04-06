@@ -4,6 +4,7 @@
 import React from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import UserMenu from './UserMenu';
+import { Button } from '../ui';
 
 export default function AppHeader({
   toggleSidebar, toggleTheme, toggleLanguage,
@@ -30,25 +31,20 @@ export default function AppHeader({
           padding: '8px 16px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
         }}>
           <span>{t('serverDown')}</span>
-          <button
-            type="button"
-            onClick={onRetryConnection}
-            style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 6, color: '#fff', padding: '6px 14px', cursor: 'pointer', fontSize: 13, minHeight: 36, fontFamily: 'inherit' }}
-          >
+          <Button variant="ghost" size="sm" onClick={onRetryConnection}>
             {t('retry')}
-          </button>
+          </Button>
         </div>
       )}
       <header className="noorix-topbar">
         <div className="noorix-topbar__left">
-          <button
-            type="button"
-            className="app-main__menu-button"
+          <Button
+            className="nx-shell-icon-btn app-main__menu-button"
             onClick={toggleSidebar}
             aria-label={t('sidebarMenu')}
           >
             ☰
-          </button>
+          </Button>
           <span className="noorix-topbar__logo">Noorix</span>
         </div>
         <div className="noorix-topbar__center">

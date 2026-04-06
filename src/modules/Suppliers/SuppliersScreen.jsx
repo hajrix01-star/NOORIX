@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
+import { Button } from '../../ui';
 import { SuppliersTab } from './components/SuppliersTab';
 import { CategoriesTab } from './components/CategoriesTab';
 
@@ -35,14 +36,14 @@ export default function SuppliersScreen() {
         <>
           <div className="nx-tab-bar">
             {TABS.map((tab) => (
-              <button
+              <Button
                 key={tab.id}
                 type="button"
                 className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
               >
                 {t(tab.labelKey)}
-              </button>
+              </Button>
             ))}
           </div>
 

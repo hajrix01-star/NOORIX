@@ -114,7 +114,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       {!externalDateFilter && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 12 }}>
           <DateFilterBar filter={dateFilter} />
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+          <label className="nx-checkbox">
             <input type="checkbox" checked={showAllDates} onChange={(e) => setShowAllDates(e.target.checked)} />
             عرض الكل (بدون فلتر تاريخ)
           </label>

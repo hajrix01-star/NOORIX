@@ -10,7 +10,7 @@
  *   <Button variant="danger" icon="🗑">حذف</Button>
  *   <Button variant="ghost" size="sm">إلغاء</Button>
  */
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 /** خريطة الـ class لكل variant */
 const VARIANT_CLASS = {
@@ -42,7 +42,7 @@ const SIZE_CLASS = {
  * @param {string} [props.className] - classes إضافية
  * @param {React.ReactNode} props.children
  */
-export default function Button({
+const Button = forwardRef(function Button({
   variant  = 'default',
   size     = 'md',
   loading  = false,
@@ -54,7 +54,7 @@ export default function Button({
   className = '',
   children,
   ...rest
-}) {
+}, ref) {
   const classes = [
     'nx-btn',
     VARIANT_CLASS[variant] ?? VARIANT_CLASS.default,
@@ -66,6 +66,7 @@ export default function Button({
 
   return (
     <button
+      ref={ref}
       type={type}
       className={classes}
       disabled={disabled || loading}
@@ -84,4 +85,6 @@ export default function Button({
       )}
     </button>
   );
-}
+});
+
+export default Button;

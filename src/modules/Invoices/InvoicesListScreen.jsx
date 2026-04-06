@@ -48,9 +48,9 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
           <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, marginBottom: 3 }}>{t('invoicesTitle')}</div>
           <h3 style={{ margin: 0, color: '#fff', fontSize: 17, fontWeight: 700 }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
         </div>
-        <button type="button" onClick={onClose} style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', padding: '6px 14px', fontWeight: 600, fontSize: 13 }}>
+        <Button className="nx-gradient-close-btn" onClick={onClose}>
           {t('close')}
-        </button>
+        </Button>
       </div>
       {/* حقول التفاصيل */}
       <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>

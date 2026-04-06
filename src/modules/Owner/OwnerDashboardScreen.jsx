@@ -222,9 +222,9 @@ export default function OwnerDashboardScreen() {
           {companyList.map((c, i) => {
             const isVisible = allSelected ? true : selectedCompanyIds.has(c.id);
             return (
-              <button
+              <Button
                 key={c.id}
-                type="button"
+                className="owner-company-card"
                 onClick={() => toggleCompany(c.id)}
                 title={isVisible ? (lang === 'ar' ? 'إخفاء' : 'Hide') : (lang === 'ar' ? 'عرض' : 'Show')}
                 style={{
@@ -237,7 +237,6 @@ export default function OwnerDashboardScreen() {
                   background: isVisible ? `${COLORS[i % COLORS.length]}18` : 'var(--noorix-bg-muted)',
                   color: isVisible ? COLORS[i % COLORS.length] : 'var(--noorix-text-muted)',
                   fontSize: 12,
-                  cursor: 'pointer',
                 }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -245,7 +244,7 @@ export default function OwnerDashboardScreen() {
                   <circle cx="12" cy="12" r="3" fill={isVisible ? 'currentColor' : 'none'} />
                 </svg>
                 <span>{lang === 'ar' ? c.nameAr || c.nameEn : c.nameEn || c.nameAr}</span>
-              </button>
+              </Button>
             );
           })}
         </div>
