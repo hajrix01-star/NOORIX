@@ -43,6 +43,70 @@ function translateAllowanceToEnglish(nameAr = '') {
   return 'Custom Allowance';
 }
 
+function isMostlyArabicScript(text) {
+  if (!text || typeof text !== 'string') return false;
+  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+}
+
+/** عمود إنجليزي: إن كان المسمى عربياً فقط نعرض — حتى لا يتكرر العربي في العمود الإنجليزي */
+function displayJobTitleEn(employee) {
+  const jt = String(employee?.jobTitle || '').trim();
+  if (!jt) return '—';
+  return isMostlyArabicScript(jt) ? '—' : jt;
+}
+
+const DOC_GRID = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr) 1px minmax(0, 1fr)',
+  columnGap: 10,
+  direction: 'ltr',
+  alignItems: 'stretch',
+};
+
+const DOC_SEP = { background: '#cbd5e1', borderRadius: 999, width: 1, minWidth: 1, alignSelf: 'stretch' };
+
+const DOC_TABLE_BASE = {
+  width: '100%',
+  borderCollapse: 'collapse',
+  fontSize: 11,
+  tableLayout: 'fixed',
+};
+
+const DOC_TH = {
+  background: '#f1f5f9',
+  border: '1px solid #dbe1e8',
+  padding: '5px 6px',
+  fontWeight: 700,
+  fontSize: 10,
+  textAlign: 'center',
+  color: '#334155',
+};
+
+const DOC_TD = {
+  border: '1px solid #e2e8f0',
+  padding: '5px 7px',
+  fontSize: 11,
+  verticalAlign: 'top',
+  wordBreak: 'break-word',
+};
+
+const DOC_BOX = {
+  padding: '8px 10px',
+  border: '1px solid var(--noorix-border)',
+  borderRadius: 8,
+  background: '#fff',
+};
+
+const DOC_H3 = {
+  margin: '0 0 6px',
+  fontSize: 12,
+  fontWeight: 800,
+  textAlign: 'center',
+  color: '#0f172a',
+};
+
+const SETTLE_SECTION = { padding: '10px 14px', borderBottom: '1px solid var(--noorix-border)' };
+
 function calculateServiceDays(joinDate, endDate) {
   const start = new Date(joinDate);
   const end = new Date(endDate);
@@ -108,26 +172,28 @@ function buildPrintableHtml(title, html) {
       <title>${title}</title>
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>
-        body{font-family:'Cairo',Arial,sans-serif;padding:24px;background:#fff;color:#111;max-width:960px;margin:0 auto;line-height:1.6}
-        .doc{border:1px solid #d6dbe3;border-radius:14px;overflow:hidden}
-        .header{padding:18px 22px;border-bottom:2px solid #0f172a;background:#f8fafc}
-        .title{font-size:22px;font-weight:800;text-align:center;margin:0}
-        .subtitle{font-size:13px;text-align:center;color:#475569;margin-top:6px}
-        .section{padding:18px 22px;border-bottom:1px solid #e5e7eb}
+        @page{size:A4;margin:10mm}
+        body{font-family:'Cairo',Arial,sans-serif;padding:12px;background:#fff;color:#111;max-width:190mm;margin:0 auto;line-height:1.45;font-size:11px}
+        .doc{border:1px solid #d6dbe3;border-radius:10px;overflow:hidden}
+        .header{padding:12px 14px;border-bottom:2px solid #0f172a;background:#f8fafc}
+        .title{font-size:18px;font-weight:800;text-align:center;margin:0}
+        .subtitle{font-size:11px;text-align:center;color:#475569;margin-top:4px}
+        .section{padding:10px 14px;border-bottom:1px solid #e5e7eb}
         .section:last-child{border-bottom:none}
-        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-        .bilingual{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
-        .box{padding:14px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
-        .box h3{margin:0 0 10px;font-size:15px}
-        .box p,.box li{margin:0 0 8px;line-height:1.7;font-size:13px}
-        table{width:100%;border-collapse:collapse}
-        th,td{padding:10px 12px;border:1px solid #dbe1e8;font-size:13px}
-        th{background:#f8fafc}
-        .num{text-align:left;font-family:'Cairo',Arial,sans-serif}
-        .footer{padding:18px 22px}
-        .signatures{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:20px}
-        .sig{padding-top:36px;border-top:1px solid #cbd5e1;font-size:13px}
-        @media print{body{padding:0}.doc{border:none;border-radius:0}}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .bilingual{display:grid;grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);column-gap:10px;direction:ltr;align-items:stretch}
+        .hr-bilingual-sep{background:#cbd5e1;border-radius:999px;width:1px;min-width:1px}
+        .box{padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff}
+        .box h3{margin:0 0 6px;font-size:12px;text-align:center;font-weight:800}
+        .box p,.box li{margin:0 0 6px;line-height:1.5;font-size:10.5px}
+        table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10.5px}
+        th,td{padding:4px 6px;border:1px solid #dbe1e8}
+        th{background:#f1f5f9;font-weight:700;text-align:center;color:#334155}
+        .num{font-family:'Cairo',Arial,sans-serif}
+        .footer{padding:10px 14px}
+        .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+        .sig{padding-top:24px;border-top:1px solid #cbd5e1;font-size:10px}
+        @media print{body{padding:0;max-width:none}.doc{border:none;border-radius:0}}
       </style>
     </head>
     <body>${html}</body>
@@ -191,20 +257,25 @@ function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }) {
   );
 }
 
-function DocumentFrame({ companyName, companyLogo, arabicTitle, englishTitle, children }) {
+function DocumentFrame({ companyName, companyLogo, arabicTitle, englishTitle, children, compact }) {
+  const pad = compact ? '10px 14px' : '18px 22px';
+  const logoH = compact ? 40 : 56;
+  const nameFs = compact ? 15 : 20;
+  const titleFs = compact ? 14 : 20;
+  const subFs = compact ? 11 : 12;
   return (
-    <div className="doc" style={{ border: '1px solid var(--noorix-border)', borderRadius: 14, overflow: 'hidden', background: '#fff' }}>
-      <div style={{ padding: '18px 22px', borderBottom: '2px solid #0f172a', background: '#f8fafc' }}>
+    <div className="doc" style={{ border: '1px solid var(--noorix-border)', borderRadius: compact ? 10 : 14, overflow: 'hidden', background: '#fff', maxWidth: compact ? '190mm' : undefined, margin: compact ? '0 auto' : undefined }}>
+      <div style={{ padding: pad, borderBottom: '2px solid #0f172a', background: '#f8fafc' }}>
         {companyLogo ? (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-            <img src={companyLogo} alt="company-logo" style={{ maxHeight: 56, objectFit: 'contain' }} />
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: compact ? 4 : 8 }}>
+            <img src={companyLogo} alt="company-logo" style={{ maxHeight: logoH, objectFit: 'contain' }} />
           </div>
         ) : null}
-        <div style={{ textAlign: 'center', fontSize: 20, fontWeight: 800 }}>{companyName || 'الشركة'}</div>
-        <div style={{ textAlign: 'center', marginTop: 6, color: '#475569' }}>{companyName || 'Company'}</div>
-        <div style={{ textAlign: 'center', marginTop: 14, fontWeight: 800 }}>{arabicTitle}</div>
-        <div style={{ textAlign: 'center', color: '#475569', marginTop: 4 }}>{englishTitle}</div>
-        <div style={{ textAlign: 'center', marginTop: 4, color: '#64748b', fontSize: 12 }}>
+        <div style={{ textAlign: 'center', fontSize: nameFs, fontWeight: 800 }}>{companyName || 'الشركة'}</div>
+        <div style={{ textAlign: 'center', marginTop: compact ? 2 : 6, color: '#475569', fontSize: compact ? 11 : undefined }}>{companyName || 'Company'}</div>
+        <div style={{ textAlign: 'center', marginTop: compact ? 8 : 14, fontWeight: 800, fontSize: titleFs }}>{arabicTitle}</div>
+        <div style={{ textAlign: 'center', color: '#475569', marginTop: 2, fontSize: subFs }}>{englishTitle}</div>
+        <div style={{ textAlign: 'center', marginTop: 2, color: '#64748b', fontSize: compact ? 10 : 12 }}>
           التاريخ / Date: {formatSaudiDate(new Date())}
         </div>
       </div>
@@ -214,47 +285,81 @@ function DocumentFrame({ companyName, companyLogo, arabicTitle, englishTitle, ch
 }
 
 function EmployeeInfoTable({ employee, workHoursValue, contractEnd }) {
+  const wh = workHoursValue || employee?.workHours || '8';
   const baseRows = [
-    ['اسم الموظف', 'Employee Name', employee?.name || employee?.nameAr || '—'],
-    ['المسمى الوظيفي', 'Job Title', employee?.jobTitle || '—'],
-    ['رقم الإقامة', 'Iqama Number', employee?.iqamaNumber || '—'],
-    ['تاريخ التعيين', 'Join Date', formatSaudiDate(employee?.joinDate) || '—'],
-    ['ساعات العمل', 'Working Hours', workHoursValue || employee?.workHours || '8'],
+    {
+      arLabel: 'اسم الموظف',
+      enLabel: 'Employee Name',
+      arVal: employee?.name || employee?.nameAr || '—',
+      enVal: employee?.nameEn || '—',
+    },
+    {
+      arLabel: 'المسمى الوظيفي',
+      enLabel: 'Job Title',
+      arVal: employee?.jobTitle || '—',
+      enVal: displayJobTitleEn(employee),
+    },
+    {
+      arLabel: 'رقم الإقامة',
+      enLabel: 'Iqama Number',
+      arVal: employee?.iqamaNumber || '—',
+      enVal: employee?.iqamaNumber || '—',
+    },
+    {
+      arLabel: 'تاريخ التعيين',
+      enLabel: 'Join Date',
+      arVal: formatSaudiDate(employee?.joinDate) || '—',
+      enVal: formatSaudiDate(employee?.joinDate) || '—',
+    },
+    {
+      arLabel: 'ساعات العمل',
+      enLabel: 'Working Hours',
+      arVal: wh,
+      enVal: wh,
+    },
   ];
   const infoRows = contractEnd
-    ? [...baseRows, ['تاريخ انتهاء العقد', 'Contract End Date', formatSaudiDate(contractEnd) || contractEnd]]
+    ? [
+        ...baseRows,
+        {
+          arLabel: 'تاريخ انتهاء العقد',
+          enLabel: 'Contract End Date',
+          arVal: formatSaudiDate(contractEnd) || contractEnd,
+          enVal: formatSaudiDate(contractEnd) || contractEnd,
+        },
+      ]
     : baseRows;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 12, alignItems: 'stretch' }}>
-      <table>
+    <div className="bilingual" style={DOC_GRID}>
+      <table style={{ ...DOC_TABLE_BASE, direction: 'ltr' }}>
         <thead>
           <tr>
-            <th>العنصر</th>
-            <th>البيان</th>
+            <th style={{ ...DOC_TH, width: '38%' }}>Item</th>
+            <th style={{ ...DOC_TH, width: '62%' }}>Value</th>
           </tr>
         </thead>
         <tbody>
-          {infoRows.map(([ar, _en, value]) => (
-            <tr key={ar}>
-              <td>{ar}</td>
-              <td className="num">{value}</td>
+          {infoRows.map((row) => (
+            <tr key={row.enLabel}>
+              <td style={{ ...DOC_TD, textAlign: 'left', direction: 'ltr' }}>{row.enLabel}</td>
+              <td style={{ ...DOC_TD, textAlign: 'left', direction: 'ltr' }}>{row.enVal}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div style={{ background: '#cbd5e1', borderRadius: 999 }} />
-      <table style={{ direction: 'ltr' }}>
+      <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
+      <table style={{ ...DOC_TABLE_BASE, direction: 'rtl' }}>
         <thead>
           <tr>
-            <th style={{ textAlign: 'left' }}>Item</th>
-            <th style={{ textAlign: 'left' }}>Value</th>
+            <th style={{ ...DOC_TH, width: '38%' }}>العنصر</th>
+            <th style={{ ...DOC_TH, width: '62%' }}>البيان</th>
           </tr>
         </thead>
         <tbody>
-          {infoRows.map(([_ar, en, value]) => (
-            <tr key={en}>
-              <td style={{ textAlign: 'left' }}>{en}</td>
-              <td className="num" style={{ textAlign: 'right' }}>{value}</td>
+          {infoRows.map((row) => (
+            <tr key={row.arLabel}>
+              <td style={{ ...DOC_TD, textAlign: 'right' }}>{row.arLabel}</td>
+              <td style={{ ...DOC_TD, textAlign: 'right' }}>{row.arVal}</td>
             </tr>
           ))}
         </tbody>
@@ -265,45 +370,45 @@ function EmployeeInfoTable({ employee, workHoursValue, contractEnd }) {
 
 function SalaryBreakdownTable({ rows, total }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 12, alignItems: 'stretch' }}>
-      <table>
+    <div className="bilingual" style={DOC_GRID}>
+      <table style={{ ...DOC_TABLE_BASE, direction: 'ltr' }}>
         <thead>
           <tr>
-            <th>المكون</th>
-            <th>المبلغ</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, idx) => (
-            <tr key={`ar-${row.ar}-${idx}`}>
-              <td>{row.ar}</td>
-              <td className="num">{hrFmt(row.amount)}</td>
-            </tr>
-          ))}
-          <tr>
-            <td style={{ fontWeight: 800 }}>إجمالي الراتب</td>
-            <td className="num" style={{ fontWeight: 800 }}>{hrFmt(total)}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div style={{ background: '#cbd5e1', borderRadius: 999 }} />
-      <table style={{ direction: 'ltr' }}>
-        <thead>
-          <tr>
-            <th style={{ textAlign: 'left' }}>Component</th>
-            <th style={{ textAlign: 'left' }}>Amount</th>
+            <th style={{ ...DOC_TH, width: '58%' }}>Component</th>
+            <th style={{ ...DOC_TH, width: '42%' }}>Amount</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row, idx) => (
             <tr key={`en-${row.en}-${idx}`}>
-              <td style={{ textAlign: 'left' }}>{row.en}</td>
-              <td className="num" style={{ textAlign: 'right' }}>{hrFmt(row.amount)}</td>
+              <td style={{ ...DOC_TD, textAlign: 'left' }}>{row.en}</td>
+              <td style={{ ...DOC_TD, textAlign: 'right', direction: 'ltr', fontVariantNumeric: 'tabular-nums' }}>{hrFmt(row.amount)}</td>
             </tr>
           ))}
           <tr>
-            <td style={{ fontWeight: 800, textAlign: 'left' }}>Total Compensation</td>
-            <td className="num" style={{ fontWeight: 800, textAlign: 'right' }}>{hrFmt(total)}</td>
+            <td style={{ ...DOC_TD, textAlign: 'left', fontWeight: 800 }}>Total Compensation</td>
+            <td style={{ ...DOC_TD, textAlign: 'right', direction: 'ltr', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{hrFmt(total)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
+      <table style={{ ...DOC_TABLE_BASE, direction: 'rtl' }}>
+        <thead>
+          <tr>
+            <th style={{ ...DOC_TH, width: '58%' }}>المكون</th>
+            <th style={{ ...DOC_TH, width: '42%' }}>المبلغ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, idx) => (
+            <tr key={`ar-${row.ar}-${idx}`}>
+              <td style={{ ...DOC_TD, textAlign: 'right' }}>{row.ar}</td>
+              <td style={{ ...DOC_TD, textAlign: 'center', direction: 'ltr', fontVariantNumeric: 'tabular-nums' }}>{hrFmt(row.amount)}</td>
+            </tr>
+          ))}
+          <tr>
+            <td style={{ ...DOC_TD, textAlign: 'right', fontWeight: 800 }}>إجمالي الراتب</td>
+            <td style={{ ...DOC_TD, textAlign: 'center', direction: 'ltr', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{hrFmt(total)}</td>
           </tr>
         </tbody>
       </table>
@@ -416,22 +521,22 @@ export function SalaryCertificateModal({ employee, customAllowances = [], compan
     <ModalShell title={t('salaryCertificate') || 'شهادة تعريف راتب'} onClose={onClose} onPrint={handlePrint} onSave={handleSaveToDocuments} saving={saving} t={t}>
       <div ref={printRef}>
         <DocumentFrame companyName={companyName} companyLogo={companyLogo} arabicTitle="شهادة تعريف راتب" englishTitle="Employment & Salary Certificate">
-          <div className="section" style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
-            <div className="bilingual" style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 18, alignItems: 'stretch' }}>
-              <div style={{ padding: 14, border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-                <h3 style={{ margin: '0 0 10px' }}>إفادة</h3>
-                <p style={{ lineHeight: 1.8, margin: 0 }}>
+          <div className="section" style={{ padding: '10px 14px', borderBottom: '1px solid var(--noorix-border)' }}>
+            <div className="bilingual" style={DOC_GRID}>
+              <div style={{ ...DOC_BOX, direction: 'ltr', textAlign: 'left' }}>
+                <h3 style={DOC_H3}>Certification</h3>
+                <p style={{ lineHeight: 1.5, margin: 0, fontSize: 11 }}>
+                  This is to certify that <strong>{employee?.nameEn || employee?.name || employee?.nameAr || '—'}</strong> is employed by the company as
+                  <strong> {displayJobTitleEn(employee)}</strong> since <strong>{formatSaudiDate(employee?.joinDate)}</strong> and remains employed as of the issue date of this certificate.
+                </p>
+              </div>
+              <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
+              <div style={{ ...DOC_BOX, direction: 'rtl', textAlign: 'right' }}>
+                <h3 style={DOC_H3}>إفادة</h3>
+                <p style={{ lineHeight: 1.5, margin: 0, fontSize: 11 }}>
                   تشهد الشركة بأن الموظف/ة <strong>{employee?.name || employee?.nameAr || '—'}</strong> يعمل/تعمل لدينا بوظيفة
                   <strong> {employee?.jobTitle || '—'}</strong> منذ تاريخ <strong>{formatSaudiDate(employee?.joinDate)}</strong>
                   ، وما زال/تزال على رأس العمل حتى تاريخ إصدار هذه الشهادة.
-                </p>
-              </div>
-              <div style={{ background: '#cbd5e1', borderRadius: 999 }} />
-              <div style={{ padding: 14, border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-                <h3 style={{ margin: '0 0 10px' }}>Certification</h3>
-                <p style={{ lineHeight: 1.8, margin: 0 }}>
-                  This is to certify that <strong>{employee?.name || employee?.nameAr || '—'}</strong> is employed by the company as
-                  <strong> {employee?.jobTitle || '—'}</strong> since <strong>{formatSaudiDate(employee?.joinDate)}</strong> and remains employed as of the issue date of this certificate.
                 </p>
               </div>
             </div>
@@ -520,27 +625,27 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
           <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
             <SalaryBreakdownTable rows={rows} total={total} />
           </div>
-          <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 18, alignItems: 'stretch' }}>
-              <div style={{ padding: 14, border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-                <h3 style={{ margin: '0 0 10px' }}>بنود أساسية</h3>
-                <ol style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.9 }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--noorix-border)' }}>
+            <div className="bilingual" style={DOC_GRID}>
+              <div style={{ ...DOC_BOX, direction: 'ltr', textAlign: 'left' }}>
+                <h3 style={DOC_H3}>Key Terms</h3>
+                <ol style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.45, fontSize: 10.5 }}>
+                  <li>The employee is appointed as {displayJobTitleEn(employee)}.</li>
+                  <li>The work location shall be as assigned by the company according to operational needs.</li>
+                  <li>Regular working hours are 8 hours per day. Any hours above that are treated as overtime, subject to employee approval and Saudi Labor Law.</li>
+                  <li>The employee shall receive the fixed compensation listed in the salary breakdown attached to this contract.</li>
+                  <li>This contract is governed by the applicable labor laws of the Kingdom of Saudi Arabia.</li>
+                </ol>
+              </div>
+              <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
+              <div style={{ ...DOC_BOX, direction: 'rtl', textAlign: 'right' }}>
+                <h3 style={DOC_H3}>بنود أساسية</h3>
+                <ol style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.45, fontSize: 10.5 }}>
                   <li>تم تعيين الموظف في وظيفة {employee?.jobTitle || '—'}.</li>
                   <li>يكون مكان العمل حسب متطلبات الشركة وتعليماتها التنظيمية.</li>
                   <li>ساعات العمل الأساسية 8 ساعات يومياً، وأي ساعات إضافية فوق ذلك تعد أوفر تايم وتحسب وفق نظام العمل السعودي وبعد موافقة الموظف.</li>
                   <li>يتقاضى الموظف التعويضات الثابتة الموضحة في كشف الراتب الملحق بهذا العقد.</li>
                   <li>تطبق على هذا العقد أنظمة العمل المعمول بها في المملكة العربية السعودية.</li>
-                </ol>
-              </div>
-              <div style={{ background: '#cbd5e1', borderRadius: 999 }} />
-              <div style={{ padding: 14, border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-                <h3 style={{ margin: '0 0 10px' }}>Key Terms</h3>
-                <ol style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.9 }}>
-                  <li>The employee is appointed as {employee?.jobTitle || '—'}.</li>
-                  <li>The work location shall be as assigned by the company according to operational needs.</li>
-                  <li>Regular working hours are 8 hours per day. Any hours above that are treated as overtime, subject to employee approval and Saudi Labor Law.</li>
-                  <li>The employee shall receive the fixed compensation listed in the salary breakdown attached to this contract.</li>
-                  <li>This contract is governed by the applicable labor laws of the Kingdom of Saudi Arabia.</li>
                 </ol>
               </div>
             </div>
@@ -575,7 +680,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
   useEffect(() => {
     setEosEndDate(termination.terminationDate || new Date().toISOString().slice(0, 10));
     setEosReason(termination.reasonCode || 'employer');
-    setEosSalary(String(lastMonthlyComp || 0));
+    setEosSalary(new Decimal(lastMonthlyComp || 0).toDecimalPlaces(2).toString());
   }, [termination.terminationDate, termination.reasonCode, lastMonthlyComp]);
   const eos = useMemo(() => {
     const endDate = eosEndDate || termination.terminationDate || new Date().toISOString().slice(0, 10);
@@ -637,7 +742,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
   return (
     <ModalShell title={t('finalSettlement') || 'مخالصة نهائية'} onClose={onClose} onPrint={handlePrint} onSave={handleSaveToDocuments} saving={saving} t={t}>
       <div ref={printRef}>
-        <DocumentFrame companyName={companyName} companyLogo={companyLogo} arabicTitle="مخالصة وتسوية نهائية" englishTitle="Final Settlement & Clearance">
+        <DocumentFrame compact companyName={companyName} companyLogo={companyLogo} arabicTitle="مخالصة وتسوية نهائية" englishTitle="Final Settlement & Clearance">
           <div style={{ padding: '12px 22px', borderBottom: '1px solid var(--noorix-border)', background: '#f8fafc' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
               <input type="checkbox" checked={includeEos} onChange={(e) => setIncludeEos(e.target.checked)} />
@@ -662,86 +767,94 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>الأجر المعتمد لنهاية الخدمة</label>
-                <input type="number" min="0" step="0.01" value={eosSalary} onChange={(e) => setEosSalary(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)' }} />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={eosSalary}
+                  onChange={(e) => setEosSalary(e.target.value)}
+                  onBlur={() => setEosSalary(new Decimal(eosSalary || 0).toDecimalPlaces(2).toString())}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
+                />
               </div>
             </div>
           </div>
-          <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
+          <div style={SETTLE_SECTION}>
             <EmployeeInfoTable employee={employee} />
           </div>
-          <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
+          <div style={SETTLE_SECTION}>
             <SalaryBreakdownTable rows={rows} total={lastMonthlyComp} />
           </div>
-          <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 18, alignItems: 'stretch' }}>
-              <div style={{ padding: 14, border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-                <h3 style={{ margin: '0 0 10px' }}>حسبة المستحقات النهائية</h3>
-                <div style={{ lineHeight: 1.9, fontSize: 13 }}>
-                  <div><strong>مدة الخدمة (يوم):</strong> {eos.serviceDays}</div>
-                  <div><strong>مدة الخدمة (سنة):</strong> {hrFmt(eos.serviceYears)}</div>
-                  <div><strong>ساعات العمل اليومية:</strong> {hrFmt(parseWorkHours(employee?.workHours))}</div>
-                  <div><strong>ساعات الأوفرتايم اليومية:</strong> {hrFmt(overtimeHoursPerDay)}</div>
-                  <div><strong>الأجر المعتمد للحسبة:</strong> {hrFmt(eos.wageForEos)}</div>
-                  <div><strong>مكافأة نهاية الخدمة الكاملة:</strong> {hrFmt(eos.fullAward)}</div>
-                  <div><strong>نسبة الاستحقاق:</strong> {hrFmt(eos.factorPct)}%</div>
-                  <div><strong>قيمة نهاية الخدمة حسب النظام:</strong> {hrFmt(eos.eosAmount)}</div>
-                  <div><strong>القيمة المضافة في المخالصة:</strong> {hrFmt(eos.appliedEosAmount)}</div>
-                  <div><strong>إجمالي التسوية (راتب + نهاية خدمة):</strong> {hrFmt(eos.finalTotal)}</div>
+          <div style={SETTLE_SECTION}>
+            <div className="bilingual" style={DOC_GRID}>
+              <div style={{ ...DOC_BOX, direction: 'ltr', textAlign: 'left' }}>
+                <h3 style={DOC_H3}>Final Entitlements Calculation</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '2px 10px', fontSize: 10.5, lineHeight: 1.3 }}>
+                  <span>Service period (days)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{eos.serviceDays}</span>
+                  <span>Service period (years)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.serviceYears)}</span>
+                  <span>Work hours/day</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(parseWorkHours(employee?.workHours))}</span>
+                  <span>Overtime hours/day</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(overtimeHoursPerDay)}</span>
+                  <span>Wage used for EOS</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.wageForEos)}</span>
+                  <span>Full EOS award</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.fullAward)}</span>
+                  <span>Eligibility factor</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.factorPct)}%</span>
+                  <span>EOS amount by law</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.eosAmount)}</span>
+                  <span>Amount in settlement</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.appliedEosAmount)}</span>
+                  <span style={{ fontWeight: 800 }}>Total (salary + EOS)</span><span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.finalTotal)}</span>
                 </div>
               </div>
-              <div style={{ background: '#cbd5e1', borderRadius: 999 }} />
-              <div style={{ padding: 14, border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-                <h3 style={{ margin: '0 0 10px' }}>Final Entitlements Calculation</h3>
-                <div style={{ lineHeight: 1.9, fontSize: 13 }}>
-                  <div><strong>Service period (days):</strong> {eos.serviceDays}</div>
-                  <div><strong>Service period (years):</strong> {hrFmt(eos.serviceYears)}</div>
-                  <div><strong>Work hours/day:</strong> {hrFmt(parseWorkHours(employee?.workHours))}</div>
-                  <div><strong>Overtime hours/day:</strong> {hrFmt(overtimeHoursPerDay)}</div>
-                  <div><strong>Wage used for EOS:</strong> {hrFmt(eos.wageForEos)}</div>
-                  <div><strong>Full EOS award:</strong> {hrFmt(eos.fullAward)}</div>
-                  <div><strong>Eligibility factor:</strong> {hrFmt(eos.factorPct)}%</div>
-                  <div><strong>EOS amount by law:</strong> {hrFmt(eos.eosAmount)}</div>
-                  <div><strong>Amount included in settlement:</strong> {hrFmt(eos.appliedEosAmount)}</div>
-                  <div><strong>Total settlement (salary + EOS):</strong> {hrFmt(eos.finalTotal)}</div>
+              <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
+              <div style={{ ...DOC_BOX, direction: 'rtl', textAlign: 'right' }}>
+                <h3 style={DOC_H3}>حسبة المستحقات النهائية</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '2px 10px', fontSize: 10.5, lineHeight: 1.3 }}>
+                  <span>مدة الخدمة (يوم)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{eos.serviceDays}</span>
+                  <span>مدة الخدمة (سنة)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.serviceYears)}</span>
+                  <span>ساعات العمل اليومية</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(parseWorkHours(employee?.workHours))}</span>
+                  <span>ساعات الأوفرتايم اليومية</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(overtimeHoursPerDay)}</span>
+                  <span>الأجر المعتمد للحسبة</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.wageForEos)}</span>
+                  <span>مكافأة نهاية الخدمة الكاملة</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.fullAward)}</span>
+                  <span>نسبة الاستحقاق</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.factorPct)}%</span>
+                  <span>قيمة نهاية الخدمة حسب النظام</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.eosAmount)}</span>
+                  <span>القيمة المضافة في المخالصة</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.appliedEosAmount)}</span>
+                  <span style={{ fontWeight: 800 }}>إجمالي التسوية (راتب + نهاية خدمة)</span><span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.finalTotal)}</span>
                 </div>
               </div>
             </div>
           </div>
-          <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 18, alignItems: 'stretch' }}>
-              <div style={{ padding: 14, border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-                <h3 style={{ margin: '0 0 10px' }}>إقرار الموظف</h3>
-                <p style={{ lineHeight: 1.8, margin: 0 }}>
+          <div style={SETTLE_SECTION}>
+            <div className="bilingual" style={DOC_GRID}>
+              <div style={{ ...DOC_BOX, direction: 'ltr', textAlign: 'left' }}>
+                <h3 style={DOC_H3}>Employee Declaration</h3>
+                <p style={{ lineHeight: 1.45, margin: 0, fontSize: 10.5 }}>
+                  I, <strong>{employee?.nameEn || employee?.name || employee?.nameAr || '—'}</strong>, acknowledge receipt of my final dues as per the approved settlement,
+                  and confirm that all company property and records in my possession have been returned unless otherwise recorded by the company.
+                </p>
+                <p style={{ lineHeight: 1.45, marginTop: 8, fontSize: 10.5 }}>
+                  <strong>Termination:</strong> {termination.en}
+                  <br />
+                  <strong>{termination.clauseEn}</strong>
+                </p>
+              </div>
+              <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
+              <div style={{ ...DOC_BOX, direction: 'rtl', textAlign: 'right' }}>
+                <h3 style={DOC_H3}>إقرار الموظف</h3>
+                <p style={{ lineHeight: 1.45, margin: 0, fontSize: 10.5 }}>
                   أقر أنا <strong>{employee?.name || employee?.nameAr || '—'}</strong> بأنني استلمت مستحقاتي النهائية وفق التسوية المعتمدة،
                   وأنني قمت بتسليم ما بعهدتي من ممتلكات أو مستندات تخص الشركة، ما لم يثبت خلاف ذلك في سجل العهد أو المخالصة الداخلية.
                 </p>
-                <p style={{ lineHeight: 1.8, marginTop: 10 }}>
+                <p style={{ lineHeight: 1.45, marginTop: 8, fontSize: 10.5 }}>
                   <strong>بيان إنهاء الخدمة:</strong> {termination.ar}
                   <br />
                   <strong>{termination.clauseAr}</strong>
                 </p>
               </div>
-              <div style={{ background: '#cbd5e1', borderRadius: 999 }} />
-              <div style={{ padding: 14, border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-                <h3 style={{ margin: '0 0 10px' }}>Employee Declaration</h3>
-                <p style={{ lineHeight: 1.8, margin: 0 }}>
-                  I, <strong>{employee?.name || employee?.nameAr || '—'}</strong>, acknowledge receipt of my final dues as per the approved settlement,
-                  and confirm that all company property and records in my possession have been returned unless otherwise recorded by the company.
-                </p>
-                <p style={{ lineHeight: 1.8, marginTop: 10 }}>
-                  <strong>Termination Statement:</strong> {termination.en}
-                  <br />
-                  <strong>{termination.clauseEn}</strong>
-                </p>
-              </div>
             </div>
           </div>
-          <div style={{ padding: '18px 22px' }}>
-            <div style={{ color: '#64748b', fontSize: 12 }}>تاريخ الإصدار / Issue Date: {formatSaudiDate(new Date())}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, marginTop: 22 }}>
-              <div style={{ paddingTop: 32, borderTop: '1px solid #cbd5e1' }}>الموارد البشرية / HR</div>
-              <div style={{ paddingTop: 32, borderTop: '1px solid #cbd5e1' }}>الموظف / Employee</div>
-              <div style={{ paddingTop: 32, borderTop: '1px solid #cbd5e1' }}>اعتماد الشركة / Company Approval</div>
+          <div style={{ padding: '10px 14px' }}>
+            <div style={{ color: '#64748b', fontSize: 10, textAlign: 'center' }}>تاريخ الإصدار / Issue Date: {formatSaudiDate(new Date())}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 12, direction: 'ltr' }}>
+              <div style={{ paddingTop: 20, borderTop: '1px solid #cbd5e1', fontSize: 10, textAlign: 'center' }}>HR / الموارد البشرية</div>
+              <div style={{ paddingTop: 20, borderTop: '1px solid #cbd5e1', fontSize: 10, textAlign: 'center' }}>Employee / الموظف</div>
+              <div style={{ paddingTop: 20, borderTop: '1px solid #cbd5e1', fontSize: 10, textAlign: 'center' }}>Company Approval / اعتماد الشركة</div>
             </div>
           </div>
         </DocumentFrame>
