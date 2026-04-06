@@ -186,7 +186,7 @@ body.noorix-page-smart-chat .app-main__content {
 .noorix-chat-commands-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 10040;
+  z-index: var(--nx-z-modal, 2001);
   background: rgba(10, 22, 40, 0.5);
   -webkit-tap-highlight-color: transparent;
 }
@@ -203,7 +203,7 @@ body.noorix-page-smart-chat .app-main__content {
   max-height: min(72vh, 540px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  z-index: 10041;
+  z-index: calc(var(--nx-z-modal, 2001) + 1);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   border-radius: 16px;
 }

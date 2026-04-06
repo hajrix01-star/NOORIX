@@ -154,6 +154,7 @@ export default function BankStatementAnalysisScreen() {
           onClose={() => setDeleteConfirmId(null)}
           title={t('confirmDelete')}
           size="sm"
+          variant="danger"
           footer={
             <>
               <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>{t('cancel')}</Button>

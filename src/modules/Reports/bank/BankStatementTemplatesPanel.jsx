@@ -181,6 +181,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
         onClose={() => setDeleteId(null)}
         title={t('bankTemplatesDeleteTitle')}
         size="sm"
+        variant="danger"
         footer={
           <>
             <Button variant="ghost" onClick={() => setDeleteId(null)}>{t('cancel')}</Button>

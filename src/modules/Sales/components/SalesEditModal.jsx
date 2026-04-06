@@ -106,7 +106,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       open={true}
       onClose={onClose}
       title={`تعديل ملخص المبيعات — ${summary.summaryNumber}`}
-      size="md"
+      size="xl"
       footer={
         <>
           <Button

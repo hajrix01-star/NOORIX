@@ -166,7 +166,7 @@ export const StaffFormModal = memo(function StaffFormModal({
       open={true}
       onClose={onClose}
       title={isEdit ? t('editEmployee') : t('addEmployee')}
-      size="md"
+      size="lg"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>

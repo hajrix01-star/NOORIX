@@ -142,7 +142,7 @@ export function SalesEntryModal({
       open={true}
       onClose={onClose}
       title={t('dailySummaryInput')}
-      size="md"
+      size="xl"
       footer={
         <>
           <Button

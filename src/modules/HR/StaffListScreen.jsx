@@ -515,6 +515,7 @@ export default function StaffListScreen({ embedded }) {
         onClose={() => setTerminatingEmployee(null)}
         title={t('terminateEmployee')}
         size="md"
+        variant="danger"
         footer={
           <>
             <Button variant="ghost" onClick={() => setTerminatingEmployee(null)}>{t('cancel')}</Button>

@@ -122,7 +122,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
       open={true}
       onClose={onClose}
       title={isEdit ? t('editResidency') : t('addResidency')}
-      size="sm"
+      size="md"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>

@@ -7,6 +7,39 @@
  */
 
 /* ═══════════════════════════════════════════════════════════
+   0. Z-Index System — نظام الطبقات الموحّد
+   ═══════════════════════════════════════════════════════════
+   قاموس الطبقات (يُطبَّق على كامل النظام):
+
+   --nx-z-base        0    (المحتوى العادي)
+   --nx-z-raised      2    (بطاقات مرتفعة)
+   --nx-z-sticky     50    (رؤوس جداول ثابتة)
+   --nx-z-header    100    (AppHeader)
+   --nx-z-sidebar   200    (AppSidebar)
+   --nx-z-dropdown  500    (قوائم منسدلة داخل المحتوى)
+   --nx-z-toast    1000    (إشعارات Toast)
+   --nx-z-backdrop 2000    (خلفية الموديل المعتمة)
+   --nx-z-modal    2001    (لوحة الموديل نفسها)
+   --nx-z-menu     2500    (قوائم الإجراءات portaled)
+   --nx-z-lightbox 3000    (عارض الصور الكامل)
+   --nx-z-top      9999    (طوارئ فقط)
+*/
+:root {
+  --nx-z-base:     0;
+  --nx-z-raised:   2;
+  --nx-z-sticky:   50;
+  --nx-z-header:   100;
+  --nx-z-sidebar:  200;
+  --nx-z-dropdown: 500;
+  --nx-z-toast:    1000;
+  --nx-z-backdrop: 2000;
+  --nx-z-modal:    2001;
+  --nx-z-menu:     2500;
+  --nx-z-lightbox: 3000;
+  --nx-z-top:      9999;
+}
+
+/* ═══════════════════════════════════════════════════════════
    1. Spinner — نوع التحميل
    ═══════════════════════════════════════════════════════════ */
 @keyframes nx-spin {
@@ -571,53 +604,87 @@
 /* ═══════════════════════════════════════════════════════════
    6. Modal — النوافذ المنبثقة
    ═══════════════════════════════════════════════════════════ */
+/* ── Backdrop (خلفية معتمة تعزل الصفحة) ── */
 .nx-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 9000;
-  background: rgba(10, 22, 40, 0.5);
+  z-index: var(--nx-z-backdrop);  /* 2000 — فوق الـ sidebar والـ header */
+
+  /* تعتيم إجباري + تضبيب يعزل الصفحة بصرياً */
+  background: rgba(8, 16, 32, 0.6);
+  backdrop-filter: blur(6px) saturate(0.8);
+  -webkit-backdrop-filter: blur(6px) saturate(0.8);
+
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
   -webkit-tap-highlight-color: transparent;
+
+  /* دخول ناعم للـ backdrop */
+  animation: nx-backdrop-in 0.18s ease;
+}
+@keyframes nx-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
+/* ── Modal Panel (اللوحة) ── */
 .nx-modal {
-  background: var(--noorix-bg-modal, #fff);
+  position: relative;
+  z-index: var(--nx-z-modal);  /* 2001 — فوق الـ backdrop مباشرة */
+
+  background: var(--noorix-bg-modal, var(--noorix-bg-surface));
   border: 1px solid var(--noorix-border);
-  border-radius: 16px;
-  box-shadow: var(--noorix-modal-shadow, 0 8px 48px rgba(10,31,68,0.22));
+  border-radius: 18px;
+
+  /* ظل عميق يُبرز اللوحة بوضوح */
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.06) inset,
+    0 4px 24px rgba(8,16,32,0.12),
+    0 16px 64px rgba(8,16,32,0.22);
+
   width: 100%;
-  max-height: min(90vh, 800px);
+  max-height: min(92vh, 860px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: nx-modal-in 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
+  animation: nx-modal-in 0.22s cubic-bezier(0.34, 1.1, 0.64, 1);
+}
 @keyframes nx-modal-in {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 
-/* — Header ── */
+/* ── أحجام الموديل (CSS Classes — لا inline maxWidth) ── */
+.nx-modal--sm   { max-width: clamp(300px, 95vw, 400px); }
+.nx-modal--md   { max-width: clamp(360px, 95vw, 560px); }
+.nx-modal--lg   { max-width: clamp(420px, 95vw, 720px); }
+.nx-modal--xl   { max-width: clamp(480px, 95vw, 920px); }
+.nx-modal--2xl  { max-width: clamp(560px, 95vw, 1100px); }
+.nx-modal--full { max-width: min(95vw, 1200px); }
+
+/* ── Header ── */
 .nx-modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 20px;
+  padding: 18px 22px;
   border-bottom: 1px solid var(--noorix-border);
   flex-shrink: 0;
+  background: var(--noorix-bg-surface);
 }
 
 .nx-modal__title {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--noorix-text);
-  line-height: 1.3;
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
 }
 
 .nx-modal__close {
@@ -632,54 +699,78 @@
   color: var(--noorix-text-muted);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 150ms, color 150ms;
+  transition: background 150ms, color 150ms, transform 150ms;
   padding: 0;
 }
 .nx-modal__close:hover {
   background: var(--noorix-bg-muted);
   color: var(--noorix-text);
+  transform: scale(1.1);
 }
+.nx-modal__close:active { transform: scale(0.95); }
 
-/* — Body ── */
+/* ── Body ── */
 .nx-modal__body {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 22px;
   min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--noorix-border) transparent;
 }
+.nx-modal__body::-webkit-scrollbar { width: 6px; }
+.nx-modal__body::-webkit-scrollbar-track { background: transparent; }
+.nx-modal__body::-webkit-scrollbar-thumb { background: var(--noorix-border); border-radius: 3px; }
 
-/* — Footer ── */
+/* ── Footer ── */
 .nx-modal__footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  padding: 14px 20px;
+  padding: 14px 22px;
   border-top: 1px solid var(--noorix-border);
   flex-shrink: 0;
   flex-wrap: wrap;
+  background: var(--noorix-bg-surface);
 }
 
-/* — Responsive ── */
+/* ── Danger variant (نوافذ الحذف والتحذير) ── */
+.nx-modal--danger .nx-modal__header {
+  background: rgba(220, 38, 38, 0.04);
+  border-bottom-color: rgba(220, 38, 38, 0.15);
+}
+.nx-modal--danger .nx-modal__title { color: #dc2626; }
+
+/* ── Flush variant (محتوى يملأ بدون padding) ── */
+.nx-modal--flush .nx-modal__body { padding: 0; }
+
+/* ── Responsive — جوال ── */
 @media (max-width: 640px) {
   .nx-modal-backdrop {
     align-items: flex-end;
     padding: 0;
+    /* إلغاء تأثير الـ blur على الجوال لأداء أفضل */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(8, 16, 32, 0.65);
   }
   .nx-modal {
-    border-radius: 20px 20px 0 0;
-    max-height: min(92vh, 700px);
-    width: 100%;
-    animation: nx-modal-in-mobile 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 22px 22px 0 0;
+    max-height: min(93vh, 760px);
+    width: 100% !important;
+    max-width: 100% !important;
+    animation: nx-modal-in-mobile 0.28s cubic-bezier(0.34, 1.1, 0.64, 1);
   }
   @keyframes nx-modal-in-mobile {
-    from { opacity: 0; transform: translateY(40px); }
+    from { opacity: 0; transform: translateY(48px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+  .nx-modal__header { padding: 16px 18px; }
+  .nx-modal__body   { padding: 18px; }
   .nx-modal__footer {
-    padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+    padding: 12px 18px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -1533,7 +1624,7 @@
 
 .nx-actions-menu {
   position: fixed;
-  z-index: 9999;
+  z-index: var(--nx-z-menu);  /* 2500 — فوق الموديل لتظهر القوائم داخله */
   min-width: 150px;
   width: 176px;
   max-height: 220px;

@@ -169,7 +169,7 @@
   background: transparent !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  z-index: 2000;
+  z-index: var(--nx-z-backdrop, 2000);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,7 +231,7 @@
   background: transparent !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  z-index: 2000;
+  z-index: var(--nx-z-backdrop, 2000);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,7 +317,7 @@ a { color: inherit; text-decoration: none; }
   background: var(--noorix-sidebar-bg);
   display: flex;
   flex-direction: column;
-  z-index: 50;
+  z-index: var(--nx-z-sidebar, 200);
   overflow: hidden;
 }
 [dir='rtl'] .app-sidebar {
@@ -1489,8 +1489,8 @@ input:focus, select:focus, textarea:focus {
     width: 78vw;
     max-width: 300px;
     min-height: auto;
-    /* يجب أن يكون أعلى من أي sticky/fixed في المحتوى (z-index: 50 افتراضي) */
-    z-index: 300;
+    /* فوق المحتوى الثابت (sticky) لكن أسفل الـ modal */
+    z-index: var(--nx-z-sidebar, 200);
   }
   [dir='rtl'] .app-sidebar {
     right: 0;
@@ -1506,13 +1506,13 @@ input:focus, select:focus, textarea:focus {
   }
   .app-sidebar--open { transform: translateX(0) !important; }
 
-  /* backdrop يجب أن يغطي كل عناصر المحتوى الثابتة (sticky z-index: 50) */
+  /* backdrop يغطي المحتوى أسفل الـ sidebar */
   .app-sidebar-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(10,31,68,0.55);
     backdrop-filter: blur(4px);
-    z-index: 299;
+    z-index: calc(var(--nx-z-sidebar, 200) - 1);
   }
 
   .noorix-topbar {
@@ -3149,7 +3149,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   position: fixed;
   inset: 0;
   background: transparent !important;
-  z-index: 9000;
+  z-index: var(--nx-z-backdrop, 2000);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3295,7 +3295,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.88);
-  z-index: 99999;
+  z-index: var(--nx-z-lightbox, 3000);
   display: flex;
   align-items: center;
   justify-content: center;

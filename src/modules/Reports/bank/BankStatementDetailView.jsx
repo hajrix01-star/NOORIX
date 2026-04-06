@@ -245,6 +245,7 @@ export default function BankStatementDetailView({
         open={!!vm.cardToDelete}
         onClose={() => vm.setCardToDelete(null)}
         size="sm"
+        variant="danger"
         footer={
           <>
             <Button variant="ghost" onClick={() => vm.setCardToDelete(null)}>{t('cancel')}</Button>
