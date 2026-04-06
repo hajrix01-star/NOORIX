@@ -26,10 +26,10 @@ import ExpenseBatchTable from './components/ExpenseBatchTable';
 import PaymentHistoryTab from './components/PaymentHistoryTab';
 
 const TABS = [
-  { id: 'lines', labelKey: 'expenseLinesTab', icon: '📋' },
-  { id: 'entry', labelKey: 'expenseEntryTab', icon: '📝' },
-  { id: 'batch', labelKey: 'expenseBatchTab', icon: '📦' },
-  { id: 'payments', labelKey: 'paymentHistoryTab', icon: '💰' },
+  { id: 'lines', labelKey: 'expenseLinesTab' },
+  { id: 'entry', labelKey: 'expenseEntryTab' },
+  { id: 'batch', labelKey: 'expenseBatchTab' },
+  { id: 'payments', labelKey: 'paymentHistoryTab' },
 ];
 
 export default function ExpensesScreen() {

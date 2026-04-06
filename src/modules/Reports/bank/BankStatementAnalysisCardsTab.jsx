@@ -354,7 +354,7 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'cash_flow') {
       if (dailyData.length < 2) return null;
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCashFlow')} icon="📈" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCashFlow')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div style={{ width: '100%', height: 260 }}>
             <ResponsiveContainer>
               <AreaChart data={dailyData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -395,7 +395,7 @@ export default function BankStatementAnalysisCardsTab({
     /* ── التنبيهات: أكبر السحوبات ── */
     if (cardId === 'alerts') {
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardAlerts')} icon="⚠️" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardAlerts')} icon="⚠" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {alerts.length === 0 ? (
             <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>لا توجد سحوبات.</p>
           ) : (
@@ -446,7 +446,7 @@ export default function BankStatementAnalysisCardsTab({
     /* ── لمحة نقاط البيع ── */
     if (cardId === 'pos_hint') {
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosHint')} icon="💳" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosHint')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 100, textAlign: 'center', padding: '12px 16px', background: 'var(--noorix-bg-muted)', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
               <div style={{ fontSize: 28, fontWeight: 800, color: '#2563eb' }}>{posCount}</div>
@@ -479,7 +479,7 @@ export default function BankStatementAnalysisCardsTab({
             : pieGrandTotals.totalCredit;
 
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="🥧" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, alignItems: 'center' }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{t('bankPieViewMode')}</span>
             {(['combined', 'debit', 'credit']).map((m) => (
@@ -741,7 +741,7 @@ export default function BankStatementAnalysisCardsTab({
       };
 
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryBar')} icon="📊" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryBar')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {renderBarBlock(barRowsDebit, 'أعلى الفئات — السحوبات', '#dc2626', barDebitAxisW)}
           {renderBarBlock(barRowsCredit, 'أعلى الفئات — الإيداعات', '#16a34a', barCreditAxisW)}
           <div
@@ -771,7 +771,7 @@ export default function BankStatementAnalysisCardsTab({
     /* ── جدول الفئات ── */
     if (cardId === 'category_table') {
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryTable')} icon="📋" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryTable')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div style={{ overflow: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 540 }}>
               <thead>
@@ -849,7 +849,7 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'deposits_table') {
       const totalDep = depositsByCategory.reduce((s, r) => s + r.total, 0);
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardDepositsTable')} icon="💰" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardDepositsTable')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {depositsByCategory.length === 0 ? (
             <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>لا توجد إيداعات.</p>
           ) : (
@@ -915,7 +915,7 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'pos_terminals') {
       const totalPOS = posTerminals.reduce((s, t) => s + t.total, 0);
       return (
-        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosTerminals')} icon="🏪" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
+        <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosTerminals')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {posTerminals.length === 0 ? (
             <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>
               لم يتم الكشف عن أجهزة نقاط بيع في هذا الكشف.
@@ -1097,7 +1097,7 @@ export default function BankStatementAnalysisCardsTab({
 
       {!activeCards.length && (
         <div style={{ textAlign: 'center', padding: 48, color: 'var(--noorix-text-muted)' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>📊</div>
+          <div style={{ fontSize: 40, marginBottom: 16 }}></div>
           <p style={{ fontSize: 15, fontWeight: 600 }}>{t('bankNoCardsPickAbove')}</p>
         </div>
       )}

@@ -159,7 +159,7 @@ const SmartTable = memo(function SmartTable({
           padding: 16, margin: 12, background: 'rgba(239,68,68,0.08)',
           borderRadius: 10, color: '#ef4444', fontSize: 14,
         }}>
-          ⚠️ {errMsg}
+          ⚠ {errMsg}
         </div>
       )}
 

@@ -29,7 +29,7 @@ export default {
   selectSupplierPlaceholder: { ar: '— اختر المورد —', en: '— Select supplier —' },
   searchArEn: { ar: 'ابحث بالعربي أو الإنجليزي...', en: 'Search in Arabic or English...' },
   clearSelection: { ar: '✕ إلغاء الاختيار', en: '✕ Clear selection' },
-  shortcutsLabel: { ar: '⭐ الاختصارات', en: '⭐ Shortcuts' },
+  shortcutsLabel: { ar: '★ الاختصارات', en: '★ Shortcuts' },
   allSuppliers: { ar: 'جميع الموردين', en: 'All suppliers' },
   noResults: { ar: 'لا نتائج', en: 'No results' },
   batchLabel: { ar: 'دفعة {0}', en: 'Batch {0}' },

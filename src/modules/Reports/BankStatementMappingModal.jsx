@@ -275,7 +275,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
               </span>
             ) : null}
             <span style={{ marginInlineStart: 'auto', fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
-              📄 {totalDataRows} {t('bankMapOperationsCount')}
+              {totalDataRows} {t('bankMapOperationsCount')}
             </span>
             <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
               {t('bankMapHeaderRowBadge', String(headerRow + 1))}

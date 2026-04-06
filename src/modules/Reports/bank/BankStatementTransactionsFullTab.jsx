@@ -106,7 +106,7 @@ export default function BankStatementTransactionsFullTab({
               color: 'var(--noorix-text-muted)',
             }}
           >
-            🔍
+            
           </span>
           <input
             type="search"

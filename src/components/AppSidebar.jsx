@@ -298,7 +298,7 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
             boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🔄</div>
+            <div style={{ fontSize: 36, marginBottom: 12 }}></div>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: 'var(--noorix-text, #111)' }}>
               {t('switchCompanyConfirmTitle')}
             </div>

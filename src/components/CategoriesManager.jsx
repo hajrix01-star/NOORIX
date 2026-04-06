@@ -19,7 +19,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
-  const [form, setForm] = useState({ nameAr: '', nameEn: '', type: 'purchase', icon: '📁', parentId: '' });
+  const [form, setForm] = useState({ nameAr: '', nameEn: '', type: 'purchase', icon: '', parentId: '' });
 
   const { categories, isLoading, create, update, remove } = useCategories(companyId);
   const roots = useMemo(() => categories.filter((c) => !c.parentId), [categories]);
@@ -51,14 +51,14 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   }), [t]);
 
   function resetForm() {
-    setForm({ nameAr: '', nameEn: '', type: 'purchase', icon: '📁', parentId: '' });
+    setForm({ nameAr: '', nameEn: '', type: 'purchase', icon: '', parentId: '' });
     setEditing(null);
     setShowForm(false);
   }
 
   function openEdit(cat) {
     setEditing(cat);
-    setForm({ nameAr: cat.nameAr || '', nameEn: cat.nameEn || '', type: cat.type || 'purchase', icon: cat.icon || '📁', parentId: cat.parentId || '' });
+    setForm({ nameAr: cat.nameAr || '', nameEn: cat.nameEn || '', type: cat.type || 'purchase', icon: cat.icon || '', parentId: cat.parentId || '' });
     setShowForm(true);
   }
 
@@ -125,7 +125,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
               <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('nameAr')} *</label><input type="text" value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', fontSize: 13 }} /></div>
               <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('nameEnCol')}</label><input type="text" value={form.nameEn} onChange={(e) => setForm((p) => ({ ...p, nameEn: e.target.value }))} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', fontSize: 13 }} /></div>
               <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('type')}</label><select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', fontSize: 13 }}><option value="purchase">{t('categoryTypes')}</option><option value="expense">{t('categoryTypeExpense')}</option><option value="sale">{t('categoryTypeSale')}</option></select></div>
-              <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('icon')}</label><input type="text" value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))} placeholder="📁" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', fontSize: 13 }} /></div>
+              <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('icon')}</label><input type="text" value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))} placeholder="" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', fontSize: 13 }} /></div>
               <div style={{ gridColumn: '1 / -1' }}><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('parentCategory')}</label><select value={form.parentId} onChange={(e) => handleParentChange(e.target.value)} style={{ width: '100%', maxWidth: 320, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', fontSize: 13 }}><option value="">— تصنيف رئيسي —</option>{roots.filter((c) => c.id !== editing?.id).map((c) => <option key={c.id} value={c.id}>{c.icon || ''} {c.nameAr}</option>)}</select></div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}><button type="submit" className="noorix-btn-primary" disabled={create.isPending || update.isPending}>{create.isPending || update.isPending ? t('saving') : t('save')}</button><button type="button" className="noorix-btn-nav" onClick={resetForm}>{t('cancel')}</button></div>

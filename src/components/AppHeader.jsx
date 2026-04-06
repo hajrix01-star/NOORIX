@@ -29,7 +29,7 @@ export default function AppHeader({
           background: '#991b1b', color: '#fff', fontSize: 13, fontWeight: 600,
           padding: '8px 16px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
         }}>
-          <span>⚠️ {t('serverDown')}</span>
+          <span>{t('serverDown')}</span>
           <button
             type="button"
             onClick={onRetryConnection}

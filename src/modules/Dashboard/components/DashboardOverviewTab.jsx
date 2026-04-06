@@ -214,7 +214,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
         {chartData.length === 0 || chartData.every((p) => p.amount === 0) ? (
           <div style={{ minHeight: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--noorix-text-muted)', gap: 8 }}>
-            <div style={{ fontSize: 32, opacity: 0.3 }}>📊</div>
+            <div style={{ fontSize: 32, opacity: 0.3 }}></div>
             <div style={{ fontSize: 13 }}>{t('noDataInPeriod')}</div>
           </div>
         ) : (

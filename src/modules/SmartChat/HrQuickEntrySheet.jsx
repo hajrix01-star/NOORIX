@@ -16,10 +16,10 @@ import { fmt } from '../../utils/format';
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
 const MODE_META = {
-  advance:   { icon: '💳', labelAr: 'صرف سلفة',      labelEn: 'Pay advance' },
-  leave:     { icon: '📅', labelAr: 'تسجيل إجازة',   labelEn: 'Add leave' },
-  deduction: { icon: '📉', labelAr: 'تسجيل خصم',    labelEn: 'Record deduction' },
-  increase:  { icon: '📈', labelAr: 'زيادة أو بدلة', labelEn: 'Raise or allowance' },
+  advance:   { icon: '', labelAr: 'صرف سلفة',      labelEn: 'Pay advance' },
+  leave:     { icon: '', labelAr: 'تسجيل إجازة',   labelEn: 'Add leave' },
+  deduction: { icon: '', labelAr: 'تسجيل خصم',    labelEn: 'Record deduction' },
+  increase:  { icon: '', labelAr: 'زيادة أو بدلة', labelEn: 'Raise or allowance' },
 };
 
 function invalidateHrQueries(qc, companyId) {

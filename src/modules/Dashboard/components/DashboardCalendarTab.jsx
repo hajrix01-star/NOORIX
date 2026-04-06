@@ -318,7 +318,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
               {isSelectionMode ? '✓ ' + t('dashboardSelectDaysModeOff') : '☑ ' + t('dashboardSelectDaysMode')}
             </button>
             <button type="button" className="noorix-btn-nav" onClick={() => setShowTargetsPanel(!showTargetsPanel)} style={{ padding: '6px 10px', fontSize: 11 }}>⚙ {t('dashboardSetTarget')}</button>
-            <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handlePrintCalendar} style={{ padding: '6px 10px', fontSize: 11 }}>🖨 {t('print')}</button>
+            <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handlePrintCalendar} style={{ padding: '6px 10px', fontSize: 11 }}>{t('print')}</button>
           </div>
         </div>
 
@@ -426,7 +426,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text)' }}>{day}</span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? '#166534' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
                     {achieved && <span style={{ fontSize: 8, color: '#16a34a' }}>✓</span>}
-                    {hasNote && <span style={{ fontSize: 8, color: 'var(--noorix-accent-blue)' }}>📝</span>}
+                    {hasNote && <span style={{ fontSize: 8, color: 'var(--noorix-accent-blue)', width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-blue)', display: 'inline-block' }} />}
                     {special && specialColor && (
                       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: specialColor, borderRadius: '0 0 6px 6px' }} />
                     )}

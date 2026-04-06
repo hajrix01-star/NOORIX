@@ -158,7 +158,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
               background: isDragging ? 'rgba(37,99,235,0.05)' : 'var(--noorix-bg-muted)',
             }}
           >
-            <div style={{ fontSize: 36, marginBottom: 8 }}>📄</div>
+            <div style={{ fontSize: 36, marginBottom: 8 }}></div>
             <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--noorix-text)' }}>
               {t('bankStatementDragDrop')}
             </div>
@@ -179,7 +179,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
                 borderRadius: 8,
               }}
             >
-              <span style={{ fontSize: 24 }}>📄</span>
+              <span style={{ fontSize: 24 }}></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--noorix-text)' }}>{file.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>

@@ -207,8 +207,8 @@ export default function OwnerDashboardScreen() {
               <option key={i} value={i + 1}>{m}</option>
             ))}
           </select>
-          <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handleExportExcel} style={{ padding: '8px 12px', fontSize: 12 }}>📥 Excel</button>
-          <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} style={{ padding: '8px 12px', fontSize: 12 }}>📄 PDF</button>
+          <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handleExportExcel} style={{ padding: '8px 12px', fontSize: 12 }}>Excel</button>
+          <button type="button" className="noorix-btn-nav" onClick={handleExportPdf} style={{ padding: '8px 12px', fontSize: 12 }}>PDF</button>
         </div>
       </div>
 

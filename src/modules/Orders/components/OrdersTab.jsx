@@ -381,7 +381,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                     <td className="noorix-print-hide" style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'nowrap' }}>
                         <button type="button" className="noorix-btn-nav" onClick={() => handleView(o)} title={t('ordersViewOrder')} style={{ padding: '5px 10px', fontSize: 11 }}>{t('view')}</button>
-                        <button type="button" className="noorix-btn-nav" onClick={() => handleWhatsApp(o)} title={t('sendWhatsApp')} style={{ padding: '5px 8px', fontSize: 11 }}>📱</button>
+                        <button type="button" className="noorix-btn-nav" onClick={() => handleWhatsApp(o)} title={t('sendWhatsApp')} style={{ padding: '5px 8px', fontSize: 11 }}>{t('sendWhatsApp')}</button>
                         <button type="button" className="noorix-btn-nav" onClick={() => handleEdit(o)} title={t('edit')} style={{ padding: '5px 10px', fontSize: 11 }}>{t('edit')}</button>
                         <button type="button" className="noorix-btn-nav" onClick={() => handleDelete(o)} title={t('delete')} style={{ padding: '5px 10px', fontSize: 11, color: '#dc2626' }}>{t('delete')}</button>
                       </div>
@@ -502,10 +502,10 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
 
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--noorix-border)' }}>
                 <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={() => handlePrintOrder(viewingOrder)} style={{ padding: '10px 20px', fontSize: 14 }}>
-                  🖨 {t('ordersPrintOrder')}
+                  {t('ordersPrintOrder')}
                 </button>
                 <button type="button" className="noorix-btn-nav" onClick={() => handleExportSingleOrder(viewingOrder)} style={{ padding: '10px 20px', fontSize: 14 }}>
-                  📥 {t('exportExcel')}
+                  {t('exportExcel')}
                 </button>
               </div>
             </div>

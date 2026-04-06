@@ -124,9 +124,9 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           <option value="fixed_expense">ثابت فقط</option>
           <option value="expense">متغير فقط</option>
         </select>
-        <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!activeItems.length}>🖨 طباعة</button>
-        <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>📥 Excel</button>
-        <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', filename: 'payment-history.pdf' })} disabled={!activeItems.length}>📄 PDF</button>
+        <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!activeItems.length}>طباعة</button>
+        <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>Excel</button>
+        <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', filename: 'payment-history.pdf' })} disabled={!activeItems.length}>PDF</button>
       </div>
       <div style={{ marginTop: 8 }}>
         <SmartTable

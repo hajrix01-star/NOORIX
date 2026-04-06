@@ -586,9 +586,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
         {/* Tabs */}
         <div className="import-export-modal__tabs" style={S.tabs}>
-          <button type="button" style={S.tab(activeTab === 'import')} onClick={() => setActiveTab('import')}>⬆ استيراد</button>
+          <button type="button" style={S.tab(activeTab === 'import')} onClick={() => setActiveTab('import')}>استيراد</button>
           {exportFetcher && (
-            <button type="button" style={S.tab(activeTab === 'export')} onClick={() => setActiveTab('export')}>⬇ تصدير</button>
+            <button type="button" style={S.tab(activeTab === 'export')} onClick={() => setActiveTab('export')}>تصدير</button>
           )}
         </div>
 
@@ -612,7 +612,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 )}
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button type="button" style={S.btnPrimary} onClick={handleExport} disabled={exporting}>
-                    {exporting ? '⏳ جارٍ التصدير…' : '⬇ تنزيل Excel'}
+                    {exporting ? 'جارٍ التصدير…' : 'تنزيل Excel'}
                   </button>
                 </div>
               </div>
@@ -635,7 +635,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                   {entityType === 'employees' && ' للقبول في الفحص: الاسم بالعربية أو الإنجليزية (أحدهما كافٍ). باقي الأعمدة اختيارية؛ التاريخ والراتب والبدلات تُستبدل بقيم افتراضية إن وُجدت فارغة.'}
                 </p>
                 <button type="button" style={S.btnSecondary} onClick={handleDownloadTemplate} disabled={lookupsLoading}>
-                  {lookupsLoading ? '⏳ تحميل…' : '⬇ تحميل قالب Excel'}
+                  {lookupsLoading ? 'تحميل…' : 'تحميل قالب Excel'}
                 </button>
               </div>
               )}
@@ -651,7 +651,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                     onDragLeave={() => setDragging(false)}
                     onDrop={handleDrop}
                   >
-                    <div style={{ fontSize: 36, marginBottom: 8 }}>📂</div>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}></div>
                     <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
                       {phase === 'parsing' ? 'جارٍ قراءة الملف…' : 'اسحب ملف Excel هنا أو انقر للاختيار'}
                     </div>
@@ -715,7 +715,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                         </button>
                       )}
                       <button type="button" style={{ ...S.btnGhost, alignSelf: 'flex-start' }} onClick={handleDownloadValidationErrors}>
-                        ⬇ تحميل تقرير الفحص
+                        تحميل تقرير الفحص
                       </button>
                     </div>
                   )}
@@ -726,7 +726,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                     </div>
                   ) : (
                     <button type="button" style={{ ...S.btnPrimary, alignSelf: 'flex-start' }} onClick={handleImport}>
-                      ⬆ استيراد {validCount} صف{errorCount > 0 ? ` (سيتم تخطي ${errorCount} صف به أخطاء)` : ''}
+                      استيراد {validCount} صف{errorCount > 0 ? ` (سيتم تخطي ${errorCount} صف به أخطاء)` : ''}
                     </button>
                   )}
                 </div>
@@ -778,7 +778,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                         <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>… و {(progress.warnings || []).length - 20} تحذير آخر</span>
                       )}
                       <button type="button" style={{ ...S.btnGhost, alignSelf: 'flex-start' }} onClick={handleDownloadWarningsReport}>
-                        ⬇ تحميل تقرير التحذيرات
+                        تحميل تقرير التحذيرات
                       </button>
                     </div>
                   )}
@@ -795,7 +795,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                         <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>… و {progress.errors.length - 20} خطأ آخر</span>
                       )}
                       <button type="button" style={{ ...S.btnGhost, alignSelf: 'flex-start' }} onClick={handleDownloadErrorReport}>
-                        ⬇ تحميل تقرير الأخطاء
+                        تحميل تقرير الأخطاء
                       </button>
                     </div>
                   )}

@@ -74,7 +74,7 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
             <select value={form.supplierCategoryId} onChange={(e) => set('supplierCategoryId', e.target.value)} style={IS}>
               <option value="">{t('noCategory')}</option>
               {filteredCategories.map((c) => {
-                const icon = c.icon || c.account?.icon || '📁';
+                const icon = c.icon || c.account?.icon || '';
                 const code = c.account?.code ? ` [${c.account.code}]` : '';
                 return (
                   <option key={c.id} value={c.id}>

@@ -115,8 +115,8 @@ export default function ExpenseLineList({
           </span>
         </div>
         <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {row.categoryName && row.categoryName !== '—' && <span>📁 {row.categoryName}</span>}
-          {row.supplierName && row.supplierName !== '—' && <span>🏢 {row.supplierName}</span>}
+          {row.categoryName && row.categoryName !== '—' && <span>{row.categoryName}</span>}
+          {row.supplierName && row.supplierName !== '—' && <span>{row.supplierName}</span>}
           {row.serviceNumber && <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>#{row.serviceNumber}</span>}
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -190,9 +190,9 @@ export default function ExpenseLineList({
           {t('refresh') || 'تحديث'}
         </button>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>🖨 {t('print') || 'طباعة'}</button>
-          <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>📥 Excel</button>
-          <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'بنود المصاريف', filename: 'expense-lines.pdf' })} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>📄 PDF</button>
+          <button type="button" className="noorix-btn-nav" onClick={handlePrint} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>{t('print') || 'طباعة'}</button>
+          <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>Excel</button>
+          <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: exportData, title: 'بنود المصاريف', filename: 'expense-lines.pdf' })} disabled={!tableData.length} style={{ fontSize: 13, padding: '8px 14px', minHeight: 36 }}>PDF</button>
         </div>
       </div>
 

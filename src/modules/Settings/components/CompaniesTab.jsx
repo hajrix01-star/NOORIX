@@ -114,7 +114,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
 
       {isEmpty && !isLoading && !showAddForm && (
         <div className="noorix-surface-card" style={{ padding: 32, textAlign: 'center', border: '2px dashed var(--noorix-border)', borderRadius: 12 }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🏢</div>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>—</div>
           <h3 style={{ margin: '0 0 8px', fontSize: 18 }}>لا توجد شركات</h3>
           <p style={{ margin: 0, fontSize: 14, color: 'var(--noorix-text-muted)' }}>اضغط "إضافة شركة" لإنشاء شركتك الأولى.</p>
         </div>
@@ -177,7 +177,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
                   {c.logoUrl ? (
                     <img src={c.logoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'cover' }} />
                   ) : (
-                    <span style={{ fontSize: 18 }}>🏢</span>
+                    <span style={{ fontSize: 18, color: 'var(--noorix-text-muted)' }}>—</span>
                   )}
                 </div>
                 <span className="noorix-exec-card__title">{c.nameAr}</span>
@@ -235,7 +235,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
                 {editModal.logoUrl ? (
                   <img src={editModal.logoUrl} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--noorix-border)' }} />
                 ) : (
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--noorix-bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🏢</div>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--noorix-bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: 'var(--noorix-text-muted)' }}>—</div>
                 )}
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>تعديل الشركة</div>
@@ -273,19 +273,19 @@ export default function CompaniesTab({ onCompanyCreated }) {
 
                 {/* شعار الشركة */}
                 <div style={{ padding: 14, borderRadius: 12, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
-                  <label style={{ ...labelStyle, display: 'block', marginBottom: 10 }}>🖼 شعار الشركة (يُستخدم في الفواتير والتقارير والشريط الجانبي)</label>
+                  <label style={{ ...labelStyle, display: 'block', marginBottom: 10 }}>شعار الشركة (يُستخدم في الفواتير والتقارير والشريط الجانبي)</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <div style={{ width: 56, height: 56, borderRadius: 12, background: 'var(--noorix-bg-surface)', border: '2px dashed var(--noorix-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                       {editModal.logoUrl ? (
                         <img src={editModal.logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <span style={{ fontSize: 24 }}>🏢</span>
+                        <span style={{ fontSize: 24, color: 'var(--noorix-text-muted)' }}>—</span>
                       )}
                     </div>
                     <div style={{ flex: 1, display: 'grid', gap: 8 }}>
                       <input type="url" value={editModal.logoUrl} onChange={(e) => setEditModal((p) => ({ ...p, logoUrl: e.target.value }))} placeholder="https://رابط-الصورة.com/logo.png" style={{ ...inputStyle, fontSize: 12 }} />
                       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--noorix-text-muted)', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
-                        📁 رفع صورة من الجهاز
+                        رفع صورة من الجهاز
                         <input type="file" accept="image/*" onChange={(e) => handleLogoFile(e, true)} style={{ display: 'none' }} />
                       </label>
                     </div>

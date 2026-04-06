@@ -205,7 +205,7 @@ export default function AppBrandingTab() {
           }}>
             {logoUrl
               ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <span style={{ fontSize: 28 }}>🖼</span>
+              : <span style={{ fontSize: 28, color: 'var(--noorix-text-muted)' }}>—</span>
             }
           </div>
           <div style={{ flex: 1, display: 'grid', gap: 8 }}>
@@ -228,7 +228,7 @@ export default function AppBrandingTab() {
                 display: 'flex', alignItems: 'center', gap: 8,
               }}
             >
-              📁 رفع صورة من الجهاز
+              رفع صورة من الجهاز
             </button>
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
             {logoUrl && (

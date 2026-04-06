@@ -136,7 +136,7 @@ export default function DateFilterBar({ filter }) {
 
       {/* شارة النطاق المحدد */}
       <div className="ndfb-badge">
-        <span className="ndfb-badge__icon">📅</span>
+        <span className="ndfb-badge__icon">◷</span>
         <span className="ndfb-badge__label">{label}</span>
       </div>
 

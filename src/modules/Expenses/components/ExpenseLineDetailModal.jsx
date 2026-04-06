@@ -149,9 +149,9 @@ export default function ExpenseLineDetailModal({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>سجل المدفوعات</h3>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="noorix-btn-nav" onClick={handlePrintPayments} disabled={!payments.length}>🖨 طباعة</button>
-              <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(paymentExportData, `payments-${line?.nameAr || 'line'}.xlsx`)} disabled={!payments.length}>📥 Excel</button>
-              <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: paymentExportData, title: `سجل مدفوعات - ${line?.nameAr || line?.nameEn || ''}`, filename: `payments-${line?.nameAr || 'line'}.pdf` })} disabled={!payments.length}>📄 PDF</button>
+              <button type="button" className="noorix-btn-nav" onClick={handlePrintPayments} disabled={!payments.length}>طباعة</button>
+              <button type="button" className="noorix-btn-nav" onClick={() => exportToExcel(paymentExportData, `payments-${line?.nameAr || 'line'}.xlsx`)} disabled={!payments.length}>Excel</button>
+              <button type="button" className="noorix-btn-nav" onClick={() => exportTableToPdf({ data: paymentExportData, title: `سجل مدفوعات - ${line?.nameAr || line?.nameEn || ''}`, filename: `payments-${line?.nameAr || 'line'}.pdf` })} disabled={!payments.length}>PDF</button>
             </div>
           </div>
           {dateFilter?.startDate && (

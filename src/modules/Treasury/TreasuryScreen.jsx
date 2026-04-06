@@ -188,7 +188,7 @@ export default function TreasuryScreen() {
               background: 'var(--noorix-bg-surface)', overflow: 'hidden',
             }}>
               <div style={{ gridColumn: '1 / -1', padding: '8px 20px', fontSize: 11, color: 'var(--noorix-text-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
-                📅 {dateFilter?.label || t('allMonths')}
+                {dateFilter?.label || t('allMonths')}
               </div>
               {[
                 { label: t('totalBalance'), value: totalBalance, color: totalBalance < 0 ? '#dc2626' : 'var(--noorix-text)', sign: totalBalance < 0 ? '−' : '' },

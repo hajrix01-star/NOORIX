@@ -138,24 +138,24 @@ const CMD_GROUPS = [
     id: 'employees',
     labelAr: 'إدارة الموظفين',
     labelEn: 'Employee management',
-    icon: '👥',
+    icon: '',
     items: [
-      { key: 'addEmployee', labelAr: 'إضافة موظف', labelEn: 'Add employee', icon: '➕', canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.EMPLOYEES_WRITE) },
-      { key: 'advance',   labelAr: 'صرف سلفة',      labelEn: 'Pay advance',        icon: '💳', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_ADVANCES)   || c(PERMISSIONS.HR_WRITE) || c(PERMISSIONS.EMPLOYEES_WRITE) },
-      { key: 'increase',  labelAr: 'زيادة / بدلة',  labelEn: 'Raise / Allowance',  icon: '📈', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_INCREASES)  || c(PERMISSIONS.HR_WRITE) },
-      { key: 'leave',     labelAr: 'تسجيل إجازة',   labelEn: 'Record leave',       icon: '📅', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_LEAVES)     || c(PERMISSIONS.HR_WRITE) },
-      { key: 'deduction', labelAr: 'تسجيل خصم',     labelEn: 'Record deduction',   icon: '📉', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_DEDUCTIONS) || c(PERMISSIONS.HR_WRITE) },
+      { key: 'addEmployee', labelAr: 'إضافة موظف', labelEn: 'Add employee', icon: '', canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.EMPLOYEES_WRITE) },
+      { key: 'advance',   labelAr: 'صرف سلفة',      labelEn: 'Pay advance',        icon: '', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_ADVANCES)   || c(PERMISSIONS.HR_WRITE) || c(PERMISSIONS.EMPLOYEES_WRITE) },
+      { key: 'increase',  labelAr: 'زيادة / بدلة',  labelEn: 'Raise / Allowance',  icon: '', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_INCREASES)  || c(PERMISSIONS.HR_WRITE) },
+      { key: 'leave',     labelAr: 'تسجيل إجازة',   labelEn: 'Record leave',       icon: '', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_LEAVES)     || c(PERMISSIONS.HR_WRITE) },
+      { key: 'deduction', labelAr: 'تسجيل خصم',     labelEn: 'Record deduction',   icon: '', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_DEDUCTIONS) || c(PERMISSIONS.HR_WRITE) },
     ],
   },
   {
     id: 'expenses',
     labelAr: 'المصاريف الثابتة',
     labelEn: 'Fixed expenses',
-    icon: '📋',
+    icon: '',
     items: [
-      { key: 'addExpenseLine', labelAr: 'إضافة مصاريف ثابتة', labelEn: 'Add fixed expenses', icon: '📄', canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
-      { key: 'payExpense', labelAr: 'سداد مصاريف ثابتة', labelEn: 'Payment of fixed expenses', icon: '💵', canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
-      { key: 'editExpenseLine', labelAr: 'تعديل مصاريف ثابتة', labelEn: 'Edit fixed expenses', icon: '✏️', canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
+      { key: 'addExpenseLine', labelAr: 'إضافة مصاريف ثابتة', labelEn: 'Add fixed expenses', icon: '', canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
+      { key: 'payExpense', labelAr: 'سداد مصاريف ثابتة', labelEn: 'Payment of fixed expenses', icon: '', canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
+      { key: 'editExpenseLine', labelAr: 'تعديل مصاريف ثابتة', labelEn: 'Edit fixed expenses', icon: '', canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
     ],
   },
 ];
@@ -408,7 +408,6 @@ export default function SmartChatScreen() {
                 <div ref={commandsWrapRef} className="noorix-smart-chat-quick-cell">
                   <button type="button" className="noorix-chat-gradient-btn" onClick={() => setCommandsOpen((o) => !o)} aria-expanded={commandsOpen}>
                     <span className="noorix-chat-gradient-icon" aria-hidden>
-                      ⚡
                     </span>
                     <span className="truncate">{t('chatCommands')}</span>
                     <span className="noorix-chat-chev">{commandsOpen ? '▲' : '▼'}</span>
@@ -424,7 +423,6 @@ export default function SmartChatScreen() {
                     disabled={loading}
                   >
                     <span className="noorix-chat-gradient-icon" aria-hidden>
-                      💬
                     </span>
                     <span className="truncate">{isAr ? 'أسئلة جاهزة' : 'Suggested'}</span>
                   </button>
@@ -469,7 +467,7 @@ export default function SmartChatScreen() {
               </div>
             ) : (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16, color: 'var(--noorix-text-muted)', textAlign: 'center', padding: 32 }}>
-                <div style={{ fontSize: 48, opacity: 0.25 }}>💬</div>
+                <div style={{ fontSize: 48, opacity: 0.25 }}></div>
                 <div style={{ fontSize: 15, maxWidth: 360, lineHeight: 1.7, opacity: 0.7 }}>
                   {isAr
                     ? 'استخدم «الأوامر» لإدخال البيانات، أو «أسئلة جاهزة» للاستفسار، أو اكتب سؤالك مباشرة.'

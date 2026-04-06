@@ -161,8 +161,8 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
           <h3 style={{ margin: 0, fontSize: 18 }}>{vault ? vaultDisplayName(vault, lang) : t('vaults')} — {t('transactions')}{periodLabel ? ` (${periodLabel})` : ''}</h3>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>📥 Excel</button>
-            <button type="button" className="noorix-btn-nav" onClick={handlePrintPdf} disabled={!items.length}>📄 PDF</button>
+            <button type="button" className="noorix-btn-nav" onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>Excel</button>
+            <button type="button" className="noorix-btn-nav" onClick={handlePrintPdf} disabled={!items.length}>PDF</button>
             <button type="button" className="noorix-btn-nav" onClick={onClose}>{t('close')}</button>
           </div>
         </div>

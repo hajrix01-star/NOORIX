@@ -201,7 +201,7 @@ export function OrderFormModal({
           onClick={(e) => e.stopPropagation()}
         >
           <div style={{ textAlign: 'center', padding: '24px 20px' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+            <div style={{ fontSize: 48, marginBottom: 12 }}></div>
             <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>{t('orderSaved')}</h3>
             <p style={{ margin: '0 0 16px', fontSize: 14, color: 'var(--noorix-text-muted)' }}>
               {t('orderNumber')}: <strong style={{ color: 'var(--noorix-accent-blue)' }}>{savedOrder.orderNumber}</strong>
@@ -214,7 +214,7 @@ export function OrderFormModal({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
               <button type="button" className="noorix-btn-nav noorix-btn-success" style={{ padding: '12px 28px', fontSize: 15, width: '100%', maxWidth: 280 }} onClick={() => onWhatsApp?.(savedOrder)}>
-                📱 {t('sendWhatsApp')} — {t('order')}
+                {t('sendWhatsApp')} — {t('order')}
               </button>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button type="button" className="noorix-btn-nav" onClick={() => { resetForm(); }}>{t('ordersAddNewOrder')}</button>

@@ -164,7 +164,7 @@ export default function BankStatementDetailView({
               });
             }}
           >
-            {vm.reclassifyMutation.isPending ? '⟳ ' + t('loading') : '🔄 ' + t('bankReclassify')}
+            {vm.reclassifyMutation.isPending ? '⟳ ' + t('loading') : t('bankReclassify')}
           </button>
           <button
             type="button"
@@ -179,7 +179,7 @@ export default function BankStatementDetailView({
               })
             }
           >
-            📥 {t('bankExportExcel')}
+            {t('bankExportExcel')}
           </button>
           <button
             type="button"
@@ -193,7 +193,7 @@ export default function BankStatementDetailView({
               })
             }
           >
-            🖨️ {t('bankPrint')}
+            {t('bankPrint')}
           </button>
           {onDelete ? (
             <button
@@ -202,7 +202,7 @@ export default function BankStatementDetailView({
               style={{ borderColor: '#dc2626', color: '#dc2626' }}
               onClick={onDelete}
             >
-              🗑️ {t('delete')}
+              {t('delete')}
             </button>
           ) : null}
         </div>
@@ -227,10 +227,10 @@ export default function BankStatementDetailView({
             background: 'var(--noorix-bg-muted)',
           }}
         >
-          {tabBtn('analysis', '📊 ' + t('bankTabAnalysis'))}
-          {tabBtn('transactions', '📋 ' + t('bankTabTransactions'), stmt.transactions?.length)}
-          {tabBtn('reconciliation', '✅ ' + t('bankTabReconciliation'))}
-          {tabBtn('sales', '📈 ' + t('bankTabSalesCompare'))}
+          {tabBtn('analysis', t('bankTabAnalysis'))}
+          {tabBtn('transactions', t('bankTabTransactions'), stmt.transactions?.length)}
+          {tabBtn('reconciliation', t('bankTabReconciliation'))}
+          {tabBtn('sales', t('bankTabSalesCompare'))}
         </div>
         <div style={{ padding: 20 }}>
           {vm.activeTab === 'analysis' && (

@@ -7,7 +7,7 @@ import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS } from '../constants/treasury
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
 export function parseVaultType(type) {
   if (typeof type === 'string' && type.startsWith('custom:')) {
-    const emoji = type.slice(7) || '🗂️';
+    const emoji = type.slice(7) || 'خ';
     return { isCustom: true, emoji };
   }
   return { isCustom: false, emoji: null };

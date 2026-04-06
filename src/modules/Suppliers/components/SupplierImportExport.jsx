@@ -160,7 +160,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
       }}>
         {/* تنزيل النموذج */}
         <button type="button" style={{ ...btnBase }} onClick={handleDownloadTemplate}>
-          📄 تنزيل النموذج
+          تنزيل النموذج
         </button>
 
         {/* استيراد */}
@@ -170,7 +170,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
           onClick={() => fileRef.current?.click()}
           disabled={importing}
         >
-          {importing ? '⏳ جاري الاستيراد...' : '📥 استيراد CSV'}
+          {importing ? 'جاري الاستيراد...' : 'استيراد CSV'}
         </button>
         <input
           ref={fileRef} type="file" accept=".csv,text/csv"
@@ -184,7 +184,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
           onClick={handleExport}
           disabled={!suppliers.length}
         >
-          📤 تصدير ({suppliers.length})
+          تصدير ({suppliers.length})
         </button>
       </div>
 
@@ -198,7 +198,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
         }}>
           <div style={{ fontWeight: 700, marginBottom: result.errors.length ? 6 : 0 }}>
             {result.failed === 0
-              ? `✅ تم استيراد ${result.success} مورد بنجاح`
+              ? `تم استيراد ${result.success} مورد بنجاح`
               : `تم استيراد ${result.success} بنجاح — فشل ${result.failed}`}
           </div>
           {result.errors.length > 0 && (

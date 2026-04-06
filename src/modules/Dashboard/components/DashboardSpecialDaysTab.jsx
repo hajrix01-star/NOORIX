@@ -84,7 +84,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   return (
     <div style={{ maxWidth: 560 }}>
       <div style={{ marginBottom: 20 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>📅 {t('dashboardSpecialDays')} — {monthLabel} {year}</h3>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{t('dashboardSpecialDays')} — {monthLabel} {year}</h3>
         <p style={{ marginTop: 6, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('dashboardSpecialDaysDesc')}</p>
       </div>
 

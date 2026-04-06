@@ -10,9 +10,9 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { splitTaxFromTotal } from '../../../utils/math-engine';
 
 const CHANNEL_COLORS = {
-  cash: { bg: 'rgba(22,163,74,0.08)', border: '#16a34a', icon: '💵' },
-  bank: { bg: 'rgba(37,99,235,0.08)', border: '#2563eb', icon: '🏦' },
-  app:  { bg: 'rgba(124,58,237,0.08)', border: '#7c3aed', icon: '📱' },
+  cash: { bg: 'rgba(22,163,74,0.08)', border: '#16a34a', icon: '' },
+  bank: { bg: 'rgba(37,99,235,0.08)', border: '#2563eb', icon: '' },
+  app:  { bg: 'rgba(124,58,237,0.08)', border: '#7c3aed', icon: '' },
 };
 
 const inputStyle = {
@@ -149,7 +149,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         </div>
 
         <div style={{ marginBottom: 18 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>🛒 قنوات البيع</label>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>قنوات البيع</label>
           {salesChannelsLoading ? (
             <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
               جاري تحميل قنوات البيع...
@@ -203,7 +203,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 18 }}>
           <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)', textAlign: 'center' }}>
-            <div style={{ fontSize: 11, color: '#16a34a' }}>💰 الإجمالي</div>
+            <div style={{ fontSize: 11, color: '#16a34a' }}>الإجمالي</div>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)} ﷼</div>
           </div>
           {vatEnabled && totalAmount.gt(0) && (
@@ -219,11 +219,11 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
             </>
           )}
           <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.3)', textAlign: 'center' }}>
-            <div style={{ fontSize: 11, color: '#2563eb' }}>👥 العملاء</div>
+            <div style={{ fontSize: 11, color: '#2563eb' }}>العملاء</div>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#2563eb' }}>{customerCount || 0}</div>
           </div>
           <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)', textAlign: 'center' }}>
-            <div style={{ fontSize: 11, color: '#7c3aed' }}>📊 معدل الطلب</div>
+            <div style={{ fontSize: 11, color: '#7c3aed' }}>معدل الطلب</div>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} ﷼</div>
           </div>
         </div>
@@ -236,7 +236,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
             onClick={handleSave}
             style={{ flex: 1 }}
           >
-            {saving ? 'جاري الحفظ...' : '💾 حفظ التعديلات'}
+            {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
           </button>
           <button type="button" className="noorix-btn-nav" onClick={onClose}>إلغاء</button>
         </div>

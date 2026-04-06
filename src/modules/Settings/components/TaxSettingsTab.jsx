@@ -61,7 +61,7 @@ export default function TaxSettingsTab() {
   if (!activeCompanyId) {
     return (
       <div style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>🏢</div>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>—</div>
         <p style={{ margin: 0, fontSize: 14 }}>يجب اختيار شركة أولاً من القائمة العلوية.</p>
       </div>
     );

@@ -302,7 +302,7 @@ export default function BankStatementAnalysisScreen() {
                     border: '1px dashed var(--noorix-border)',
                   }}
                 >
-                  <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}>📄</div>
+                  <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}></div>
                   <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{t('bankStatementEmptyTitle')}</div>
                   <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 16 }}>{t('bankStatementEmptyDesc')}</div>
                   <button type="button" className="noorix-btn noorix-btn--primary noorix-bank-cta" onClick={() => setShowUpload(true)}>

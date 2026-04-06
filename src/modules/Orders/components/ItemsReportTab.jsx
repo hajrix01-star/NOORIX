@@ -191,8 +191,8 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
             <input type="number" min={1} max={50} value={filterCount} onChange={(e) => setFilterCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 5)))} style={{ width: 60, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', fontSize: 13 }} />
           )}
           <button type="button" className="noorix-btn-nav noorix-print-hide" onClick={() => window.print()} disabled={filtered.length === 0}>{t('print')}</button>
-          <button type="button" className="noorix-btn-nav noorix-print-hide" onClick={handleExportExcel} disabled={filtered.length === 0}>📥 Excel</button>
-          <button type="button" className="noorix-btn-nav noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>📄 PDF</button>
+          <button type="button" className="noorix-btn-nav noorix-print-hide" onClick={handleExportExcel} disabled={filtered.length === 0}>Excel</button>
+          <button type="button" className="noorix-btn-nav noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>PDF</button>
         </div>
       </div>
 

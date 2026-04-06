@@ -93,7 +93,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
 
       {!isLoading && !list.length ? (
         <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--noorix-text-muted)' }}>
-          <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.4 }}>📊</div>
+          <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.4 }}></div>
           <p style={{ margin: 0, fontWeight: 600 }}>{t('bankTemplatesEmptyTitle')}</p>
           <p style={{ margin: '8px 0 0', fontSize: 13 }}>{t('bankTemplatesEmptySubtitle')}</p>
         </div>

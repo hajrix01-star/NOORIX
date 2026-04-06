@@ -19,14 +19,14 @@ import {
 const CARDS_STORAGE = 'noorix_bank_analysis_cards_v1';
 
 export const AVAILABLE_ANALYSIS_CARDS = [
-  { id: 'cash_flow', nameKey: 'bankCardCashFlow', icon: '📈' },
-  { id: 'alerts', nameKey: 'bankCardAlerts', icon: '⚠️' },
-  { id: 'pos_hint', nameKey: 'bankCardPosHint', icon: '💳' },
-  { id: 'category_pie', nameKey: 'bankCardCategoryPie', icon: '🥧' },
-  { id: 'category_bar', nameKey: 'bankCardCategoryBar', icon: '📊' },
-  { id: 'category_table', nameKey: 'bankCardCategoryTable', icon: '📋' },
-  { id: 'deposits_table', nameKey: 'bankCardDepositsTable', icon: '💰' },
-  { id: 'pos_terminals', nameKey: 'bankCardPosTerminals', icon: '🏪' },
+  { id: 'cash_flow', nameKey: 'bankCardCashFlow', icon: '' },
+  { id: 'alerts', nameKey: 'bankCardAlerts', icon: '⚠' },
+  { id: 'pos_hint', nameKey: 'bankCardPosHint', icon: '' },
+  { id: 'category_pie', nameKey: 'bankCardCategoryPie', icon: '' },
+  { id: 'category_bar', nameKey: 'bankCardCategoryBar', icon: '' },
+  { id: 'category_table', nameKey: 'bankCardCategoryTable', icon: '' },
+  { id: 'deposits_table', nameKey: 'bankCardDepositsTable', icon: '' },
+  { id: 'pos_terminals', nameKey: 'bankCardPosTerminals', icon: '' },
 ];
 
 export const DEFAULT_ACTIVE_CARDS = ['cash_flow', 'alerts', 'category_pie', 'category_bar', 'category_table'];

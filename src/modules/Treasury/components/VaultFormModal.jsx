@@ -3,14 +3,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS, TYPE_BG } from '../constants/treasuryConstants';
 import { parseVaultType } from './VaultCard';
 
-/* ── إيموجيات الأعمال والمال ──────────────────────────────── */
-const EMOJI_LIST = [
-  '💰','💵','💴','💶','💷','🪙','💎','💳','🏅','🥇',
-  '📊','📈','📉','🏢','🏦','🏪','🏬','💼','🗂️','📁',
-  '📦','🛒','✈️','🏠','🚗','⭐','🔑','🔒','🏆','🎯',
-  '🌍','🌐','⚙️','🔥','💡','🎲','🌟','❤️','🟦','🟩',
-  '🟨','🟥','🟧','🟪','🟫','⚫','⚪','🔵','🔴','🟤',
-];
+const ICON_CHARS = ['ن','ب','ح','خ','م','ص','ر','ك','ع','و','س','ت','ا','A','B','C','D','E','F','G','H','$','%','#','@','&'];
 
 const EMPTY = {
   nameAr: '', nameEn: '', type: 'cash', isSalesChannel: false, showAsPaymentMethod: true, paymentMethod: '', notes: '',
@@ -31,7 +24,7 @@ function initForm(initial) {
     nameAr:         initial.nameAr         || '',
     nameEn:         initial.nameEn         || '',
     type:           isCustom ? 'custom' : (initial.type || 'cash'),
-    customEmoji:    isCustom ? emoji : '💰',
+    customEmoji:    isCustom ? emoji : 'خ',
     isSalesChannel: initial.isSalesChannel ?? false,
     showAsPaymentMethod: initial.showAsPaymentMethod !== false,
     paymentMethod:  initial.paymentMethod  || '',
@@ -56,7 +49,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
     e.preventDefault();
     const saved = { ...form };
     if (saved.type === 'custom') {
-      saved.type = `custom:${saved.customEmoji || '💰'}`;
+      saved.type = `custom:${saved.customEmoji || 'خ'}`;
     }
     delete saved.customEmoji;
     onSave(saved);
@@ -103,7 +96,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                   color: form.type === vt.value ? TYPE_COLORS[vt.value] : 'var(--noorix-text-muted)',
                   transition: 'all 150ms',
                 }}>
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>{vt.icon}</div>
+                  <div style={{ fontSize: 16, marginBottom: 4, fontWeight: 800 }}>{vt.icon}</div>
                   <div>{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].trim()}</div>
                 </button>
               ))}
@@ -116,30 +109,32 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                 color: isCustom ? '#475569' : 'var(--noorix-text-muted)',
                 transition: 'all 150ms',
               }}>
-                <div style={{ fontSize: 20, marginBottom: 4 }}>{form.customEmoji || '🗂️'}</div>
+                <div style={{ fontSize: 18, marginBottom: 4, fontWeight: 800 }}>{form.customEmoji || 'خ'}</div>
                 <div>{t('vaultTypeCustom') || 'مخصص'}</div>
               </button>
             </div>
 
-            {/* منتقي الإيموجي */}
+            {/* منتقي رمز مخصص */}
             {isCustom && (
               <div style={{ marginTop: 10, padding: 14, borderRadius: 12, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--noorix-text-muted)' }}>
-                  {t('selectEmojiForType') || 'اختر أيقونة للنوع'}
+                  اختر رمز الخزينة
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                  {EMOJI_LIST.map((emoji) => (
+                  {ICON_CHARS.map((ch) => (
                     <button
-                      key={emoji} type="button"
-                      onClick={() => set('customEmoji', emoji)}
+                      key={ch} type="button"
+                      onClick={() => set('customEmoji', ch)}
                       style={{
                         width: 38, height: 38, borderRadius: 8, border: 'none', cursor: 'pointer',
-                        fontSize: 20, background: form.customEmoji === emoji ? '#2563eb18' : 'transparent',
-                        outline: form.customEmoji === emoji ? '2px solid #2563eb' : '1px solid transparent',
+                        fontSize: 15, fontWeight: 800,
+                        background: form.customEmoji === ch ? '#2563eb18' : 'transparent',
+                        outline: form.customEmoji === ch ? '2px solid #2563eb' : '1px solid var(--noorix-border)',
+                        color: form.customEmoji === ch ? '#2563eb' : 'var(--noorix-text)',
                         transition: 'all 100ms', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}
                     >
-                      {emoji}
+                      {ch}
                     </button>
                   ))}
                 </div>

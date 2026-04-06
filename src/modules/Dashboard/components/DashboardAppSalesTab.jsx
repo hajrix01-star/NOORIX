@@ -105,7 +105,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         }}
       >
-        <div style={{ fontSize: 40, opacity: 0.25, marginBottom: 12 }}>📱</div>
+        <div style={{ fontSize: 40, opacity: 0.25, marginBottom: 12 }}></div>
         <div style={{ fontSize: 14 }}>{t('noDataInPeriod')}</div>
       </div>
     );

@@ -464,13 +464,13 @@ export function ItemsManageTab({ companyId }) {
                   <OrdersImportHelpTrigger t={t} variant="products" />
                   <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} style={{ display: 'none' }} />
                   <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
-                    {presetBusy ? t('saving') : `📋 ${t('ordersPresetCatalogButton')}`}
+                    {presetBusy ? t('saving') : t('ordersPresetCatalogButton')}
                   </button>
                   <button type="button" className="noorix-btn-nav" onClick={handleDownloadProductsImportTemplate}>
-                    📄 {t('ordersDownloadImportTemplate')}
+                    {t('ordersDownloadImportTemplate')}
                   </button>
-                  <button type="button" className="noorix-btn-nav" onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>📥 {t('import')}</button>
-                  <button type="button" className="noorix-btn-nav" onClick={handleExportProducts} disabled={products.length === 0}>📤 {t('exportExcel')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>{t('import')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={handleExportProducts} disabled={products.length === 0}>{t('exportExcel')}</button>
                 </div>
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--noorix-text-muted)', maxWidth: 560, textAlign: 'right', lineHeight: 1.45 }}>
                   {t('ordersPresetCatalogHint')}
@@ -716,10 +716,10 @@ export function ItemsManageTab({ companyId }) {
                   <OrdersImportHelpTrigger t={t} variant="categories" />
                   <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} style={{ display: 'none' }} />
                   <button type="button" className="noorix-btn-nav" onClick={handleDownloadCategoriesImportTemplate}>
-                    📄 {t('ordersDownloadImportTemplate')}
+                    {t('ordersDownloadImportTemplate')}
                   </button>
-                  <button type="button" className="noorix-btn-nav" onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>📥 {t('import')}</button>
-                  <button type="button" className="noorix-btn-nav" onClick={handleExportCategories} disabled={categories.length === 0}>📤 {t('exportExcel')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>{t('import')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={handleExportCategories} disabled={categories.length === 0}>{t('exportExcel')}</button>
                 </div>
               </div>
             </div>

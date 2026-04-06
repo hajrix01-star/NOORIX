@@ -145,13 +145,13 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
         <>
           <div style={S.dropdownBody}>
             <button type="button" style={S.menuItemAction} onClick={toggleTheme}>
-              <span style={S.menuItemIcon}>{theme === 'light' ? '🌙' : '☀️'}</span>
+              <span style={{ ...S.menuItemIcon, fontSize: 14, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{theme === 'light' ? '◑' : '○'}</span>
               <span style={{ flex: 1, textAlign: 'inherit' }}>
                 {theme === 'light' ? t('darkMode') : t('lightMode')}
               </span>
             </button>
             <button type="button" style={S.menuItemAction} onClick={toggleLanguage}>
-              <span style={S.menuItemIcon}>{language === 'ar' ? '🇺🇸' : '🇸🇦'}</span>
+              <span style={{ ...S.menuItemIcon, fontSize: 11, fontWeight: 800, color: 'var(--noorix-text-muted)' }}>{language === 'ar' ? 'EN' : 'ع'}</span>
               <span style={{ flex: 1, textAlign: 'inherit', fontWeight: 600, fontSize: 12 }}>
                 {language === 'ar' ? 'English' : 'العربية'}
               </span>
@@ -172,7 +172,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
 
       <div style={S.dropdownBody}>
         <button type="button" style={S.menuItem} disabled>
-          <span style={S.menuItemIcon}>👤</span>
+          <span style={{ ...S.menuItemIcon, fontSize: 14, color: 'var(--noorix-text-muted)' }}>○</span>
           {t('profile')}
           <span style={S.menuItemBadge}>{t('comingSoon')}</span>
         </button>
@@ -181,7 +181,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
           style={{ ...S.menuItem, cursor: 'pointer', color: 'var(--noorix-text)' }}
           onClick={() => { setOpen(false); setShowChangePassword(true); }}
         >
-          <span style={S.menuItemIcon}>🔑</span>
+          <span style={{ ...S.menuItemIcon, fontSize: 13, color: 'var(--noorix-text-muted)' }}>⚿</span>
           {t('changePassword')}
         </button>
       </div>
@@ -194,7 +194,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
           onClick={() => { setOpen(false); onLogout(); }}
           style={S.logoutBtn}
         >
-          <span style={S.menuItemIcon}>🚪</span>
+          <span style={{ ...S.menuItemIcon, fontSize: 13, color: 'var(--noorix-text-muted)' }}>→</span>
           {t('logout')}
         </button>
       </div>

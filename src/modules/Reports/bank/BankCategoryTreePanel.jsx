@@ -687,7 +687,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
 
       {!isLoading && sortedCategories.length === 0 && inactiveCategories.length === 0 ? (
         <div className="noorix-surface-card" style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🌳</div>
+          <div style={{ fontSize: 40, marginBottom: 12 }}></div>
           <div style={{ fontWeight: 600, marginBottom: 6 }}>{t('bankTreeEmptyTitle')}</div>
           <div style={{ fontSize: 13, marginBottom: 8 }}>{t('bankTreeEmptyDesc')}</div>
           <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 16, maxWidth: 420, marginInline: 'auto' }}>

@@ -84,7 +84,7 @@ export const SupplierTable = memo(function SupplierTable({
   if (suppliers.length === 0) {
     return (
       <div style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 14 }}>
-        <div style={{ fontSize: 32, marginBottom: 8 }}>🏪</div>
+        <div style={{ fontSize: 32, marginBottom: 8, color: 'var(--noorix-text-muted)' }}>—</div>
         <p style={{ margin: 0, fontSize: 13 }}>{t('noSuppliers')}</p>
       </div>
     );
@@ -105,7 +105,7 @@ export const SupplierTable = memo(function SupplierTable({
         onClick={() => onBulkDelete?.()}
         style={{ padding: '7px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: 'var(--noorix-accent-red)', color: '#fff' }}
       >
-        🗑 حذف المحددين
+        حذف المحددين
       </button>
       <button
         type="button"
@@ -160,8 +160,8 @@ export const SupplierTable = memo(function SupplierTable({
                     </div>
                     {(s.phone || s.taxNumber) && (
                       <div style={{ display: 'flex', gap: 12, marginBottom: 6, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-                        {s.phone && <span>📞 {s.phone}</span>}
-                        {s.taxNumber && <span style={{ fontFamily: 'monospace' }}>🔢 {s.taxNumber}</span>}
+                        {s.phone && <span>{s.phone}</span>}
+                        {s.taxNumber && <span style={{ fontFamily: 'monospace' }}>{s.taxNumber}</span>}
                       </div>
                     )}
                     {cat && (

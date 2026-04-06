@@ -56,8 +56,8 @@ const EMPTY_ROW = () => ({
 /* ── تبويبات الشاشة ─────────────────────────────────────────────── */
 function getTabs(t) {
   return [
-    { id: 'entry',  label: t('tabNewBatch'), icon: '📝' },
-    { id: 'history', label: t('tabSavedBatches'), icon: '📋' },
+    { id: 'entry',  label: t('tabNewBatch'), icon: '' },
+    { id: 'history', label: t('tabSavedBatches'), icon: '' },
   ];
 }
 
@@ -233,7 +233,7 @@ export default function PurchasesBatchScreen() {
               onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
               disabled={batchActionLoading === row.batchId}
               style={{ padding: '4px 10px', fontSize: 11, whiteSpace: 'nowrap' }} title={t('print')}>
-              🖨 {batchActionLoading === row.batchId ? '…' : t('print')}
+              {batchActionLoading === row.batchId ? '…' : t('print')}
             </button>
             <button type="button" className="noorix-btn-nav"
               onClick={() => openBatchWithInvoices(row, setEditingBatch)}
@@ -284,7 +284,7 @@ export default function PurchasesBatchScreen() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34 }} onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId}>🖨 {t('print')}</button>
+          <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34 }} onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId}>{t('print')}</button>
           <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34 }} onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId}>✎ {t('edit')}</button>
           {canCancel && <button type="button" className="noorix-btn-nav" style={{ padding: '6px 12px', fontSize: 12, minHeight: 34, borderColor: '#fecaca', background: 'rgba(239,68,68,0.06)', color: '#dc2626' }} onClick={() => handleCancelBatch(row)} disabled={batchActionLoading === row.batchId}>× {t('cancel')}</button>}
         </div>

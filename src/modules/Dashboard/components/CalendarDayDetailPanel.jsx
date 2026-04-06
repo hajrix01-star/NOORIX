@@ -51,7 +51,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{formatSaudiDate(dateStr)}</h4>
         {onPrint && (
-          <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={onPrint} style={{ padding: '6px 10px', fontSize: 11 }}>🖨 {t('print')}</button>
+          <button type="button" className="noorix-btn-nav noorix-btn-primary" onClick={onPrint} style={{ padding: '6px 10px', fontSize: 11 }}>{t('print')}</button>
         )}
       </div>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

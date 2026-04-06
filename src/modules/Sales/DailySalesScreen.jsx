@@ -194,16 +194,16 @@ export default function DailySalesScreen() {
     const avg = cc > 0 ? (total / cc) : 0;
     const channels = (s.channels || []).map((ch) => `  • ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount, 2)} ﷼`).join('\n');
     return [
-      `📊 *ملخص المبيعات اليومي*`,
-      `📋 الرقم: ${s.summaryNumber}`,
-      `📅 التاريخ: ${formatSaudiDate(s.transactionDate)}`,
+      `*ملخص المبيعات اليومي*`,
+      `الرقم: ${s.summaryNumber}`,
+      `التاريخ: ${formatSaudiDate(s.transactionDate)}`,
       ``,
-      `👥 عدد العملاء: ${cc}`,
-      `💰 إجمالي المبيعات: ${fmt(total, 2)} ﷼`,
-      `📊 معدل الطلب لكل عميل: ${fmt(avg, 2)} ﷼`,
-      Number(s.cashOnHand) > 0 ? `🏦 المبلغ الموجود بالصندوق: ${fmt(s.cashOnHand, 2)} ﷼` : '',
-      ``, `🛒 *تفاصيل القنوات:*`, channels,
-      s.notes ? `\n📝 ملاحظات: ${s.notes}` : '',
+      `عدد العملاء: ${cc}`,
+      `إجمالي المبيعات: ${fmt(total, 2)} ﷼`,
+      `معدل الطلب لكل عميل: ${fmt(avg, 2)} ﷼`,
+      Number(s.cashOnHand) > 0 ? `المبلغ الموجود بالصندوق: ${fmt(s.cashOnHand, 2)} ﷼` : '',
+      ``, `*تفاصيل القنوات:*`, channels,
+      s.notes ? `\nملاحظات: ${s.notes}` : '',
       ``, `— Noorix ERP`,
     ].filter(Boolean).join('\n');
   }
@@ -615,9 +615,9 @@ export default function DailySalesScreen() {
               <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 999, background: 'rgba(37,99,235,0.1)', color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap' }}>{t('summaryCount', displayedTotal)}</span>
               {salesFullHistory && (
                 <span className="noorix-print-hide" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <button type="button" className="noorix-btn-nav" onClick={() => handleExportExcel()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>📊 {exportBusy ? '…' : t('exportExcel')}</button>
-                  <button type="button" className="noorix-btn-nav" onClick={() => handleExportPdf()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>📄 {exportBusy ? '…' : t('exportPdf')}</button>
-                  <button type="button" className="noorix-btn-nav" onClick={() => handlePrint()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>🖨 {exportBusy ? '…' : t('print')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={() => handleExportExcel()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>{exportBusy ? '…' : t('exportExcel')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={() => handleExportPdf()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>{exportBusy ? '…' : t('exportPdf')}</button>
+                  <button type="button" className="noorix-btn-nav" onClick={() => handlePrint()} disabled={displayedTotal === 0 || exportBusy} style={{ fontSize: 12, padding: '4px 10px' }}>{exportBusy ? '…' : t('print')}</button>
                 </span>
               )}
             </>
