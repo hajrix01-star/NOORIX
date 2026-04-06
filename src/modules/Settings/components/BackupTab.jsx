@@ -337,8 +337,8 @@ export default function BackupTab({ activeCompanies = [] }) {
             {t('backupCompanySection')}
           </h3>
           <div className="backup-run-row">
-            <select
-              className="noorix-bank-filter"
+            <Input
+              type="select"
               value={companyId}
               onChange={(e) => setCompanyId(e.target.value)}
               disabled={!activeCompanies.length}
@@ -349,7 +349,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   {c.nameAr || c.nameEn || c.id}
                 </option>
               ))}
-            </select>
+            </Input>
             <Button
               type="button"
               variant="primary"

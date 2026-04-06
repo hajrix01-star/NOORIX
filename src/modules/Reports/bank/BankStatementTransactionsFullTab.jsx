@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getTxKey } from './bankAnalysisUtils';
 import { FALLBACK_CATEGORIES } from './bankAnalysisUtils';
-import { Button } from '../../../ui';
+import { Button, Input } from '../../../ui';
 
 export default function BankStatementTransactionsFullTab({
   statement,
@@ -127,39 +127,27 @@ export default function BankStatementTransactionsFullTab({
         </div>
 
         {/* فلتر الفئة */}
-        <select
+        <Input
+          type="select"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            borderRadius: 8,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg)',
-            fontSize: 13,
-          }}
         >
           <option value="all">{t('bankFilterAllCategories')}</option>
           {categoryNames.map((n) => (
             <option key={n} value={n}>{n}</option>
           ))}
-        </select>
+        </Input>
 
         {/* فلتر النوع */}
-        <select
+        <Input
+          type="select"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            borderRadius: 8,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg)',
-            fontSize: 13,
-          }}
         >
           <option value="all">{t('bankTypeAll')}</option>
           <option value="debit">{t('bankTypeWithdrawals')}</option>
           <option value="credit">{t('bankTypeDeposits')}</option>
-        </select>
+        </Input>
 
         {/* إحصاء */}
         <div
@@ -329,22 +317,16 @@ export default function BankStatementTransactionsFullTab({
                     <td style={{ padding: '8px 10px' }}>
                       {editingTxId === tx.id ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <select
+                          <Input
+                            type="select"
                             value={editingCategory}
                             onChange={(e) => setEditingCategory(e.target.value)}
-                            style={{
-                              fontSize: 11,
-                              maxWidth: 170,
-                              padding: '4px 6px',
-                              borderRadius: 6,
-                              border: '1px solid var(--noorix-border)',
-                            }}
                           >
                             <option value="">{t('uncategorized')}</option>
                             {allCategoryOptions.map((c) => (
                               <option key={c.id} value={c.id}>{c.label}</option>
                             ))}
-                          </select>
+                          </Input>
                           <div style={{ display: 'flex', gap: 4 }}>
                             <Button
                               variant="primary"

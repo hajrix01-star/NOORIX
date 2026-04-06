@@ -4,7 +4,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { fmt } from '../../../utils/format';
 import { getTxKey, FALLBACK_CATEGORIES } from './bankAnalysisUtils';
-import { Button, Modal } from '../../../ui';
+import { Button, Modal, Input } from '../../../ui';
 
 export default function BankStatementPieDrilldownModal({
   open,
@@ -109,10 +109,10 @@ export default function BankStatementPieDrilldownModal({
                     <td style={{ padding: '10px 14px' }}>
                       {editingTxId === tx.id ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          <select
+                          <Input
+                            type="select"
                             value={editingCategoryId}
                             onChange={(e) => setEditingCategoryId(e.target.value)}
-                            style={{ fontSize: 11, padding: 6, borderRadius: 8, border: '1px solid var(--noorix-border)', maxWidth: '100%' }}
                           >
                             <option value="">{uncategorizedLabel}</option>
                             {allCategoryOptions.map((c) => (
@@ -120,7 +120,7 @@ export default function BankStatementPieDrilldownModal({
                                 {c.label}
                               </option>
                             ))}
-                          </select>
+                          </Input>
                           <div style={{ display: 'flex', gap: 6 }}>
                             <Button
                               variant="primary"

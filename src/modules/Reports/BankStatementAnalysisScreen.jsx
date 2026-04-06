@@ -15,7 +15,7 @@ import {
 import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import Toast from '../../components/Toast';
-import { Button, Badge, Modal } from '../../ui';
+import { Button, Badge, Modal, Input } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
 import BankStatementDetailView from './bank/BankStatementDetailView';
@@ -294,10 +294,10 @@ export default function BankStatementAnalysisScreen() {
               {!listLoading && statements.length > 0 && (
                 <>
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
-                    <select
+                    <Input
+                      type="select"
                       value={filterMonth}
                       onChange={(e) => setFilterMonth(e.target.value)}
-                      className="noorix-bank-filter"
                     >
                       <option value="">{t('allMonths')}</option>
                       {months.map((m) => {
@@ -309,12 +309,11 @@ export default function BankStatementAnalysisScreen() {
                           </option>
                         );
                       })}
-                    </select>
-                    <select
+                    </Input>
+                    <Input
+                      type="select"
                       value={filterBank}
                       onChange={(e) => setFilterBank(e.target.value)}
-                      className="noorix-bank-filter"
-                      style={{ minWidth: 170 }}
                     >
                       <option value="">{t('bankStatementAllBanks')}</option>
                       {banks.map((b) => (
@@ -322,7 +321,7 @@ export default function BankStatementAnalysisScreen() {
                           {b}
                         </option>
                       ))}
-                    </select>
+                    </Input>
                   </div>
 
                   <div style={{ display: 'grid', gap: 10 }}>

@@ -8,6 +8,7 @@ import { useQuery }        from '@tanstack/react-query';
 import { getCompanies }    from '../../services/api';
 import { useApp }          from '../../context/AppContext';
 import { useTranslation }  from '../../i18n/useTranslation';
+import { Input }           from '../../ui';
 import { hasPermission }   from '../../constants/permissions';
 import CompaniesTab        from './components/CompaniesTab';
 import UsersTab            from './components/UsersTab';
@@ -92,7 +93,8 @@ export default function SettingsScreen() {
         {isMobile && (
           <div className="noorix-settings-mobile-nav">
             <div className="noorix-settings-mobile-nav__label">{activeLabel}</div>
-            <select
+            <Input
+              type="select"
               value={activeTab}
               onChange={(e) => setActiveTab(e.target.value)}
               className="noorix-settings-mobile-nav__select"
@@ -100,7 +102,7 @@ export default function SettingsScreen() {
               {TABS.map((tab) => (
                 <option key={tab.id} value={tab.id}>{tab.label}</option>
               ))}
-            </select>
+            </Input>
             <span className="noorix-settings-mobile-nav__chevron">▾</span>
           </div>
         )}

@@ -6,7 +6,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { Button, Modal } from '../../../ui';
+import { Button, Modal, Input } from '../../../ui';
 
 const inputBase = {
   width: '100%', padding: '6px 8px', borderRadius: 6, fontSize: 12,
@@ -142,14 +142,14 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                   {inv.status === 'cancelled' ? (
                     <span className="nx-cell-muted-sm">{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</span>
                   ) : (
-                    <select
+                    <Input
+                      type="select"
                       value={inv.kind || 'purchase'}
                       onChange={(e) => updateInv(i, 'kind', e.target.value)}
-                      style={inputBase}
                     >
                       <option value="purchase">{t('purchaseType')}</option>
                       <option value="expense">{t('expenseType')}</option>
-                    </select>
+                    </Input>
                   )}
                 </td>
                 <td style={{ padding: 6 }}>

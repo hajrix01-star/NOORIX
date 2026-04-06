@@ -13,7 +13,7 @@ import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDateISO } from '../../utils/saudiDate';
 import { updateInvoice, getInvoices, deleteInvoice } from '../../services/api';
-import { Badge, Button, Modal } from '../../ui';
+import { Badge, Button, Modal, Input } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable         from '../../components/common/SmartTable';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
@@ -479,34 +479,32 @@ export default function InvoicesListScreen() {
             <span className="noorix-exec-filters__icon" title={t('filterByType')} aria-hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="4 2 20 2 14 10 14 22 10 22 10 10 4 2"/></svg>
             </span>
-            <label className="noorix-exec-filters__label">
-              <select
-                value={filterKind}
-                onChange={(e) => { setFilterKind(e.target.value); setUrlExtra((p) => ({ ...p, kind: '' })); setPage(1); }}
-                className="noorix-exec-filters__select"
-              >
-                <option value="">{t('filterAllTypes')}</option>
-                <option value="purchase">{t('categoryTypes')}</option>
-                <option value="expense">{t('categoryTypeExpense')}</option>
-                <option value="fixed_expense">{t('fixedExpenseType')}</option>
-                <option value="hr_expense">{t('invoiceKindHrExpense')}</option>
-                <option value="salary">{t('totalSalary')}</option>
-                <option value="advance">{t('quickAdvance')}</option>
-                <option value="sale">{t('categoryTypeSale')}</option>
-              </select>
-            </label>
-            <label className="noorix-exec-filters__label">
-              <select
-                value={filterSupplierId}
-                onChange={(e) => { setFilterSupplierId(e.target.value); setPage(1); }}
-                className="noorix-exec-filters__select"
-              >
-                <option value="">{t('allSuppliers')}</option>
-                {(suppliers || []).map((s) => (
-                  <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id}</option>
-                ))}
-              </select>
-            </label>
+            <Input
+              type="select"
+              value={filterKind}
+              onChange={(e) => { setFilterKind(e.target.value); setUrlExtra((p) => ({ ...p, kind: '' })); setPage(1); }}
+              className="noorix-exec-filters__select"
+            >
+              <option value="">{t('filterAllTypes')}</option>
+              <option value="purchase">{t('categoryTypes')}</option>
+              <option value="expense">{t('categoryTypeExpense')}</option>
+              <option value="fixed_expense">{t('fixedExpenseType')}</option>
+              <option value="hr_expense">{t('invoiceKindHrExpense')}</option>
+              <option value="salary">{t('totalSalary')}</option>
+              <option value="advance">{t('quickAdvance')}</option>
+              <option value="sale">{t('categoryTypeSale')}</option>
+            </Input>
+            <Input
+              type="select"
+              value={filterSupplierId}
+              onChange={(e) => { setFilterSupplierId(e.target.value); setPage(1); }}
+              className="noorix-exec-filters__select"
+            >
+              <option value="">{t('allSuppliers')}</option>
+              {(suppliers || []).map((s) => (
+                <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id}</option>
+              ))}
+            </Input>
           </div>
           {/* ── عرض الفاتورة (قراءة فقط) ── */}
         {viewingInvoice && (

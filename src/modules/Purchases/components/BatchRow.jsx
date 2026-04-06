@@ -6,6 +6,7 @@ import React, { memo, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { calcReverseVat } from '../../../utils/format';
+import { Input } from '../../../ui';
 
 const inputBase = {
   width: '100%', padding: '8px 10px', borderRadius: 6,
@@ -149,29 +150,29 @@ export const BatchRow = memo(function BatchRow({
 
       {/* النوع */}
       <td style={cp}>
-        <select
+        <Input
+          type="select"
           value={row.kind}
           onChange={(e) => { onUpdate(index, 'kind', e.target.value); onUpdate(index, { categoryId: '', debitAccountId: '' }); }}
-          style={{ ...inputSm, width: '100%' }}
         >
           <option value="purchase">{t('purchaseType')}</option>
           <option value="expense">{t('expenseType')}</option>
           <option value="fixed_expense">{t('fixedExpenseType') || 'مصروف ثابت'}</option>
-        </select>
+        </Input>
       </td>
 
       {/* الفئة */}
       <td style={cp}>
-        <select
+        <Input
+          type="select"
           value={row.categoryId || ''}
           onChange={(e) => { const cat = categoryOptions.find((c) => c.id === e.target.value); handleCategoryChange(cat || null); }}
-          style={{ ...inputSm, width: '100%' }}
         >
           <option value="">{t('categoryPlaceholder')}</option>
           {categoryOptions.map((c) => (
             <option key={c.id} value={c.id}>{(c.icon || '')} {c.nameAr}</option>
           ))}
-        </select>
+        </Input>
       </td>
 
       {/* زر الضريبة */}

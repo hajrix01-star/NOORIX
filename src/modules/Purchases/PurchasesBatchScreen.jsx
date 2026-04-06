@@ -4,7 +4,7 @@
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Decimal from 'decimal.js';
-import { Button, Badge } from '../../ui';
+import { Button, Badge, Input } from '../../ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
@@ -458,24 +458,17 @@ export default function PurchasesBatchScreen() {
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0, minWidth: 0, maxWidth: 280 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }} htmlFor="batch-purchase-vault">
-                {t('batchPurchasesPayVault')}
-              </label>
-              <select
-                id="batch-purchase-vault"
+              <Input
+                type="select"
+                label={t('batchPurchasesPayVault')}
                 value={batchVaultId}
                 onChange={(e) => setBatchVaultId(e.target.value)}
-                style={{
-                  padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)',
-                  fontSize: 13, background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)',
-                  maxWidth: '100%',
-                }}
               >
                 <option value="">{t('batchPurchasesVaultPlaceholder')}</option>
                 {activeVaults.map((v) => (
                   <option key={v.id} value={v.id}>{vaultDisplayName(v, language)}</option>
                 ))}
-              </select>
+              </Input>
               <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)', lineHeight: 1.35, maxWidth: 260 }}>
                 {t('batchPurchasesPayVaultHint')}
               </span>
