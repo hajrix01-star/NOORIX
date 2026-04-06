@@ -72,6 +72,14 @@ export async function addItemAlias(id, alias, language = 'ar') {
   return apiPost(`/api/v1/ocr/items/${id}/aliases`, { alias, language });
 }
 
+export async function findDuplicateItems() {
+  return apiGet('/api/v1/ocr/items/duplicates');
+}
+
+export async function mergeOcrItems(keepId, mergeId) {
+  return apiPost(`/api/v1/ocr/items/${keepId}/merge/${mergeId}`, {});
+}
+
 // ─── Price Alerts ─────────────────────────────────────────────────────────
 
 export async function getPriceAlerts() {

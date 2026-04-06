@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
   createOcrItem, updateOcrItem, deleteOcrItem, getItemPriceHistory, addItemAlias,
+  findDuplicateItems, mergeOcrItems,
 } from '../services/ocrApi';
 
 function ItemForm({ initial = {}, onSave, onCancel, loading }) {
@@ -40,6 +42,12 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [aliasInput, setAliasInput] = useState('');
   const [aliasLang, setAliasLang] = useState('ar');
+
+  // Deduplication state
+  const [dupGroups, setDupGroups] = useState(null);
+  const [dupLoading, setDupLoading] = useState(false);
+  const [merging, setMerging] = useState(null);
+
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   const filtered = items.filter((item) => {
@@ -82,6 +90,25 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
     onRefresh();
   };
 
+  const handleFindDuplicates = async () => {
+    setDupLoading(true);
+    const res = await findDuplicateItems();
+    setDupGroups(res.success ? (res.data || []) : []);
+    setDupLoading(false);
+  };
+
+  const handleMerge = async (keepId, mergeId) => {
+    if (!window.confirm('هل تريد دمج هذين الصنفين؟ سيتم الاحتفاظ بالصنف الأول وحذف الثاني.')) return;
+    setMerging(`${keepId}-${mergeId}`);
+    const res = await mergeOcrItems(keepId, mergeId);
+    setMerging(null);
+    if (res.success) {
+      onRefresh();
+      // تحديث مجموعات التكرار
+      handleFindDuplicates();
+    }
+  };
+
   const lowestPrice = priceHistory.length > 0 ? Math.min(...priceHistory.map((h) => Number(h.price))) : null;
 
   return (
@@ -93,7 +120,67 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
           style={{ flex: 1, minWidth: 180, padding: '10px 14px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', fontSize: 14 }}
         />
         <button onClick={() => setAdding(true)} className="noorix-btn noorix-btn--primary">+ {t('ocrAddItem')}</button>
+        <button
+          onClick={handleFindDuplicates}
+          disabled={dupLoading}
+          className="noorix-btn"
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.4)', color: '#d97706' }}
+        >
+          {dupLoading ? '⏳' : '🔍'} كشف التكرار
+        </button>
       </div>
+
+      {/* نتائج الأصناف المكررة */}
+      {dupGroups !== null && (
+        <div className="noorix-surface-card" style={{ padding: 16, marginBottom: 16, border: '1px solid rgba(245,158,11,0.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>
+              {dupGroups.length === 0
+                ? '✅ لا توجد أصناف مكررة — الكتالوج نظيف'
+                : `⚠️ ${dupGroups.length} مجموعة أصناف مكررة محتملة`}
+            </div>
+            <button onClick={() => setDupGroups(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--noorix-text-muted)' }}>✕</button>
+          </div>
+          {dupGroups.map((group, gi) => (
+            <div key={gi} style={{ marginBottom: 14, borderRadius: 10, border: '1px solid rgba(245,158,11,0.25)', overflow: 'hidden' }}>
+              <div style={{ background: 'rgba(245,158,11,0.08)', padding: '8px 14px', fontSize: 12, color: '#d97706', fontWeight: 700 }}>
+                تشابه {Math.round(group.score * 100)}% — اختر الصنف الأساسي الذي تريد الاحتفاظ به
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0 }}>
+                {group.items.map((item, ii) => (
+                  <div key={item.id} style={{
+                    flex: '1 1 200px', padding: '12px 14px',
+                    borderBottom: '1px solid var(--noorix-border)',
+                    borderInlineEnd: ii < group.items.length - 1 ? '1px solid var(--noorix-border)' : 'none',
+                    background: 'var(--noorix-bg-surface)',
+                  }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{item.nameAr}</div>
+                    {item.nameEn && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 4 }}>{item.nameEn}</div>}
+                    <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>
+                      {item._count?.priceHistory || 0} سعر • {item._count?.lines || 0} سطر
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {group.items.filter((o) => o.id !== item.id).map((other) => (
+                        <button
+                          key={other.id}
+                          onClick={() => handleMerge(item.id, other.id)}
+                          disabled={!!merging}
+                          style={{
+                            fontSize: 11, padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
+                            background: '#16a34a', color: '#fff', border: 'none', fontFamily: 'inherit',
+                          }}
+                        >
+                          {merging === `${item.id}-${other.id}` ? '⏳' : '✅ احتفظ بهذا — ادمج الآخر'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {adding && (
         <div className="noorix-surface-card" style={{ padding: 20, marginBottom: 16 }}>

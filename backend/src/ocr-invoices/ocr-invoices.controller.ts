@@ -137,6 +137,22 @@ export class OcrInvoicesController {
     return this.svc.addItemAlias(user.tenantId!, id, body.alias, body.language);
   }
 
+  @Get('items/duplicates')
+  @RequirePermission('OCR_READ')
+  async findDuplicateItems(@CurrentUser() user: JwtUser) {
+    return this.svc.findDuplicateItems(user.tenantId!);
+  }
+
+  @Post('items/:keepId/merge/:mergeId')
+  @RequirePermission('OCR_WRITE')
+  async mergeItems(
+    @Param('keepId') keepId: string,
+    @Param('mergeId') mergeId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.svc.mergeItems(user.tenantId!, keepId, mergeId);
+  }
+
   // ─── Price Alerts ─────────────────────────────────────────────────────────
 
   @Get('price-alerts')

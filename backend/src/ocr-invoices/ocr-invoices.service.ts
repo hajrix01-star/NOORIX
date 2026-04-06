@@ -2,7 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getGeminiApiKey, getGeminiModel } from '../config/gemini.config';
 import { normalize } from './ocr-normalize.util';
-import { findBestMatch, classifyConfidence } from './ocr-match.util';
+import { findBestMatch, classifyConfidence, combinedSimilarity, deepSimilarity } from './ocr-match.util';
 import { ExtractInvoiceDto } from './dto/extract-invoice.dto';
 import { CreateOcrSupplierDto } from './dto/create-ocr-supplier.dto';
 import { CreateOcrItemDto } from './dto/create-ocr-item.dto';
@@ -109,14 +109,24 @@ function validateInvoiceTotals(
 // ─── Name & Size Parsing Utilities ───────────────────────────────────────────
 
 const SIZE_UNITS = ['kg', 'g', 'gr', 'gm', 'ml', 'l', 'ltr', 'liter', 'pcs', 'pc', 'كجم', 'كيلو', 'جرام', 'مل', 'لتر', 'حبة', 'علبة', 'كيس'];
-const SIZE_REGEX = new RegExp(
-  `(\\d+(?:[.,]\\d+)?)\\s*(${SIZE_UNITS.join('|')})\\.?(?:\\s|$|x|×)`,
+const UNITS_PATTERN = SIZE_UNITS.join('|');
+
+// يتعرف على أنماط الحجم المختلفة:
+//   "4x2.5-kg"  "4x2.5 kg"  "2.5-kg"  "2.5 kg"  "500ml"  "700g"
+//   "4x1-L"     "6x500ml"
+const PACK_SIZE_REGEX = new RegExp(
+  `\\(?(\\d+)\\s*[xX×]\\s*(\\d+(?:[.,]\\d+)?)\\s*-?\\s*(${UNITS_PATTERN})\\s*-?[A-Z]?\\)?`,
   'gi',
 );
+const SIMPLE_SIZE_REGEX = new RegExp(
+  `\\(?(\\d+(?:[.,]\\d+)?)\\s*-?\\s*(${UNITS_PATTERN})\\.?\\)?(?=\\s|$|[,)x×])`,
+  'gi',
+);
+
 const ARABIC_RANGE = /[\u0600-\u06FF]/;
 const LATIN_RANGE  = /[A-Za-z]/;
 
-/** يقسّم الاسم المختلط إلى جزء عربي وجزء إنجليزي */
+/** يقسّم الاسم المختلط إلى جزء عربي وجزء إنجليزي (يحذف الأرقام والرموز) */
 function splitBilingualName(name: string): { nameAr: string | null; nameEn: string | null } {
   if (!name) return { nameAr: null, nameEn: null };
   const hasAr = ARABIC_RANGE.test(name);
@@ -125,31 +135,123 @@ function splitBilingualName(name: string): { nameAr: string | null; nameEn: stri
   if (hasAr && !hasEn)  return { nameAr: name, nameEn: null };
   if (!hasAr && hasEn)  return { nameAr: null, nameEn: name };
 
-  // اسم مختلط — استخرج كل كلمة بحسب لغتها
+  // اسم مختلط — استخرج كل كلمة بحسب لغتها (تجاهل tokens الأرقام/الرموز)
   const arTokens: string[] = [];
   const enTokens: string[] = [];
   name.split(/\s+/).forEach((token) => {
-    if (ARABIC_RANGE.test(token)) arTokens.push(token);
-    else if (LATIN_RANGE.test(token)) enTokens.push(token);
-    else { arTokens.push(token); enTokens.push(token); }
+    const cleanToken = token.replace(/[()[\]{}_\-.,]/g, '');
+    if (!cleanToken) return;
+    if (ARABIC_RANGE.test(cleanToken)) arTokens.push(cleanToken);
+    else if (LATIN_RANGE.test(cleanToken)) enTokens.push(cleanToken);
+    // tokens بدون حروف (أرقام فقط) تُهمل
   });
   return {
-    nameAr: arTokens.length  ? arTokens.join(' ') : null,
-    nameEn: enTokens.length  ? enTokens.join(' ') : null,
+    nameAr: arTokens.length ? arTokens.join(' ') : null,
+    nameEn: enTokens.length ? enTokens.join(' ') : null,
   };
 }
 
-/** يستخرج الحجم ووحدته من اسم الصنف ويُرجع الاسم مُنظَّفاً */
+/**
+ * يستخرج الحجم ووحدته من اسم الصنف ويُرجع الاسم مُنظَّفاً.
+ * يتعامل مع:
+ *   "4x2.5-kg"  →  size=2.5, sizeUnit=kg  (حجم العبوة الواحدة)
+ *   "6x500ml"   →  size=500, sizeUnit=ml
+ *   "2.5-kg"    →  size=2.5, sizeUnit=kg
+ *   "700g"      →  size=700, sizeUnit=g
+ */
 function extractSizeFromName(name: string): { cleanName: string; size: string | null; sizeUnit: string | null } {
   if (!name) return { cleanName: name, size: null, sizeUnit: null };
-  SIZE_REGEX.lastIndex = 0;
-  const match = SIZE_REGEX.exec(name);
-  if (!match) return { cleanName: name.trim(), size: null, sizeUnit: null };
-  const size = match[1].replace(',', '.');
-  const sizeUnit = match[2].toLowerCase();
-  const cleanName = name.replace(match[0], ' ').replace(/\s{2,}/g, ' ').trim();
-  return { cleanName, size, sizeUnit };
+
+  let cleanName = name;
+  let size: string | null = null;
+  let sizeUnit: string | null = null;
+
+  // أولاً: نمط الكراتين/الطرود NxM-UNIT (e.g. "4x2.5-kg", "6x500ml")
+  PACK_SIZE_REGEX.lastIndex = 0;
+  const packMatch = PACK_SIZE_REGEX.exec(name);
+  if (packMatch) {
+    size = packMatch[2].replace(',', '.');
+    sizeUnit = packMatch[3].toLowerCase();
+    cleanName = name.replace(packMatch[0], ' ').replace(/\s{2,}/g, ' ').trim();
+    return { cleanName, size, sizeUnit };
+  }
+
+  // ثانياً: نمط بسيط M-UNIT أو M UNIT (e.g. "2.5-kg", "500ml", "700 g")
+  SIMPLE_SIZE_REGEX.lastIndex = 0;
+  const simpleMatch = SIMPLE_SIZE_REGEX.exec(name);
+  if (simpleMatch) {
+    size = simpleMatch[1].replace(',', '.');
+    sizeUnit = simpleMatch[2].toLowerCase();
+    cleanName = name.replace(simpleMatch[0], ' ').replace(/\s{2,}/g, ' ').trim();
+    return { cleanName, size, sizeUnit };
+  }
+
+  return { cleanName: name.trim(), size: null, sizeUnit: null };
 }
+
+/**
+ * يُطبّع اسم صنف للمقارنة الذكية — يُزيل الحجم ويستخرج الاسمين العربي والإنجليزي.
+ * يُستخدم لتسوية أسماء DB القديمة التي قد تحتوي على اسم مختلط فوضوي.
+ */
+function normalizeItemForSearch(rawName: string): { ar: string; en: string; combined: string } {
+  const { cleanName } = extractSizeFromName(rawName);
+  const { nameAr, nameEn } = splitBilingualName(cleanName);
+  const ar = nameAr?.trim() ?? '';
+  const en = nameEn?.trim() ?? '';
+  const combined = [ar, en].filter(Boolean).join(' ');
+  return { ar, en, combined };
+}
+
+/**
+ * بحث ذكي في قائمة أصناف — يقارن الاسم المستخرج مع:
+ *   1. الاسم العربي المُستخرج من DB (بعد تنظيف الجزء الإنجليزي)
+ *   2. الاسم الإنجليزي المُستخرج من DB
+ *   3. الاسم الكامل في DB
+ *   4. الأسماء البديلة (aliases)
+ * يأخذ أعلى نسبة تشابه.
+ */
+function findBestItemMatch(
+  query: string,
+  candidates: Array<{ id: string; nameAr: string; nameEn?: string | null; hasSizes: boolean; aliases: { alias: string }[] }>,
+): { item: typeof candidates[0]; score: number } | null {
+  if (!query || candidates.length === 0) return null;
+
+  const { ar: qAr, en: qEn, combined: qCombined } = normalizeItemForSearch(query);
+  const searchTerms = [query, qAr, qEn, qCombined].filter(Boolean);
+
+  let best: { item: typeof candidates[0]; score: number } | null = null;
+
+  for (const candidate of candidates) {
+    const { ar: cAr, en: cEn, combined: cCombined } = normalizeItemForSearch(candidate.nameAr);
+    const candidateNames = [
+      candidate.nameAr,
+      cAr, cEn, cCombined,
+      candidate.nameEn,
+      ...candidate.aliases.map((a) => a.alias),
+    ].filter((n): n is string => !!n);
+
+    let maxScore = 0;
+    for (const sq of searchTerms) {
+      if (!sq) continue;
+      for (const cn of candidateNames) {
+        if (!cn) continue;
+        // تجاهل مقارنات أقل من 2 حروف
+        if (sq.length < 2 || cn.length < 2) continue;
+        const s = Math.max(
+          combinedSimilarity(sq, cn),
+          deepSimilarity(sq, cn),
+        );
+        if (s > maxScore) maxScore = s;
+      }
+    }
+
+    if (maxScore === 1) return { item: candidate, score: 1 };
+    if (!best || maxScore > best.score) best = { item: candidate, score: maxScore };
+  }
+
+  return best;
+}
+
 
 // ─── Gemini Model Fallback Chain ─────────────────────────────────────────────
 // إذا لم يكن النموذج المُعيّن متاحاً، يجرب النظام النماذج بالترتيب تلقائياً
@@ -475,27 +577,19 @@ export class OcrInvoicesService {
         // استخدم nameAr أو nameEn أو الاسم المُنظَّف للمطابقة
         const matchName = nameAr || nameEn || cleanName;
 
-        const result = findBestMatch(
-          matchName,
-          items,
-          (i) => i.nameAr,
-          (i) => [
-            ...(i.nameEn ? [i.nameEn] : []),
-            ...i.aliases.map((a) => a.alias),
-          ],
-        );
+        // البحث الذكي يقارن ضد الاسم العربي والإنجليزي المستخرجَين من أسماء DB أيضاً
+        const bestResult = findBestItemMatch(matchName, items);
 
         let itemMatch: { id: string; nameAr: string; nameEn?: string | null; score: number; status: string; hasSizes: boolean } | null = null;
-        if (result) {
-          const status = classifyConfidence(result.score);
+        if (bestResult) {
+          const status = classifyConfidence(bestResult.score);
           if (status !== 'new') {
-            const matched = result.item as { id: string; nameAr: string; nameEn?: string | null; hasSizes: boolean };
             itemMatch = {
-              id: matched.id,
-              nameAr: matched.nameAr,
-              nameEn: matched.nameEn,
-              hasSizes: matched.hasSizes,
-              score: result.score,
+              id: bestResult.item.id,
+              nameAr: bestResult.item.nameAr,
+              nameEn: bestResult.item.nameEn,
+              hasSizes: bestResult.item.hasSizes,
+              score: bestResult.score,
               status: status === 'auto' ? 'auto' : 'review',
             };
           }
@@ -725,6 +819,84 @@ export class OcrInvoicesService {
     return this.prisma.ocrItem.delete({ where: { id, tenantId } });
   }
 
+  /**
+   * يبحث عن أصناف مكررة (تشابه ≥ 0.78 بعد التطبيع الذكي).
+   * يُرجع مجموعات الأصناف المتشابهة مع درجة التشابه.
+   */
+  async findDuplicateItems(tenantId: string) {
+    if (!tenantId) return [];
+    const items = await this.prisma.ocrItem.findMany({
+      where: { tenantId },
+      include: { aliases: true, _count: { select: { priceHistory: true, lines: true } } },
+    });
+
+    const groups: Array<{
+      items: typeof items;
+      score: number;
+    }> = [];
+
+    const visited = new Set<string>();
+
+    for (let i = 0; i < items.length; i++) {
+      if (visited.has(items[i].id)) continue;
+      const group = [items[i]];
+      const { ar: iAr, en: iEn } = normalizeItemForSearch(items[i].nameAr);
+      const iSearch = iAr || iEn || items[i].nameAr;
+
+      for (let j = i + 1; j < items.length; j++) {
+        if (visited.has(items[j].id)) continue;
+        const matchJ = findBestItemMatch(iSearch, [items[j]]);
+        if (matchJ && matchJ.score >= 0.78) {
+          group.push(items[j]);
+          visited.add(items[j].id);
+        }
+      }
+
+      if (group.length > 1) {
+        // أعلى score بين أي زوج
+        const score = findBestItemMatch(iSearch, group.slice(1))?.score ?? 0;
+        groups.push({ items: group, score });
+        group.forEach((g) => visited.add(g.id));
+      }
+    }
+
+    return groups.sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * يدمج صنفَين — يُبقي على الـ canonical (الأساسي) وينقل كل البيانات من المكرر إليه ثم يحذف المكرر.
+   */
+  async mergeItems(tenantId: string, keepId: string, mergeId: string) {
+    if (keepId === mergeId) throw new Error('Cannot merge item with itself');
+
+    const [keep, dup] = await Promise.all([
+      this.prisma.ocrItem.findUnique({ where: { id: keepId, tenantId } }),
+      this.prisma.ocrItem.findUnique({ where: { id: mergeId, tenantId } }),
+    ]);
+    if (!keep || !dup) throw new Error('Item not found');
+
+    await this.prisma.$transaction([
+      // نقل سطور الفواتير
+      this.prisma.ocrInvoiceLine.updateMany({ where: { itemId: mergeId }, data: { itemId: keepId } }),
+      // نقل تاريخ الأسعار
+      this.prisma.ocrPriceHistory.updateMany({ where: { itemId: mergeId }, data: { itemId: keepId } }),
+      // نقل الأسماء البديلة (aliases) — بإضافة اسم المكرر كـ alias
+      this.prisma.ocrItemAlias.createMany({
+        data: [
+          { itemId: keepId, alias: dup.nameAr, language: 'ar', addedBy: 'merge' },
+          ...(dup.nameEn ? [{ itemId: keepId, alias: dup.nameEn, language: 'en', addedBy: 'merge' }] : []),
+        ],
+        skipDuplicates: true,
+      }),
+      // تحديث hasSizes إذا كان المكرر له أحجام
+      ...(dup.hasSizes ? [this.prisma.ocrItem.update({ where: { id: keepId }, data: { hasSizes: true } })] : []),
+      // حذف الصنف المكرر
+      this.prisma.ocrItem.delete({ where: { id: mergeId } }),
+    ]);
+
+    return { merged: mergeId, into: keepId };
+  }
+
   async getItemPriceHistory(tenantId: string, itemId: string) {
     return this.prisma.ocrPriceHistory.findMany({
       where: { tenantId, itemId },
@@ -769,21 +941,74 @@ export class OcrInvoicesService {
     }
 
     // ── 2. إنشاء الأصناف تلقائياً لكل سطر ليس له itemId ─────────────────
+    // جلب جميع الأصناف مرة واحدة للمطابقة الذكية (بدلاً من استعلام لكل سطر)
+    const allCatalogItems = await this.prisma.ocrItem.findMany({
+      where: { tenantId },
+      include: { aliases: true },
+    });
+
     const processedLines = await Promise.all(
       lines.map(async (line) => {
         let itemId = line.itemId || null;
         if (!itemId && line.rawName?.trim()) {
-          const existing = await this.prisma.ocrItem.findFirst({
-            where: { tenantId, nameAr: line.rawName.trim() },
-          });
-          if (existing) {
-            itemId = existing.id;
+          // استخدم الاسم النظيف من الـ frontend إن وُجد، أو استخرجه من rawName
+          const lineExt = line as {
+            nameAr?: string; nameEn?: string;
+            size?: string;   sizeUnit?: string;
+          };
+          const nameAr   = lineExt.nameAr?.trim()   || null;
+          const nameEn   = lineExt.nameEn?.trim()   || null;
+          const lineSize = lineExt.size              || null;
+
+          // إذا لم تأتِ أسماء نظيفة — استخرجها من rawName
+          let searchName: string;
+          if (nameAr || nameEn) {
+            searchName = nameAr || nameEn!;
           } else {
+            const extracted = normalizeItemForSearch(line.rawName.trim());
+            searchName = extracted.ar || extracted.en || line.rawName.trim();
+          }
+
+          // مطابقة ذكية ضد كتالوج الأصناف
+          const matchResult = findBestItemMatch(searchName, allCatalogItems);
+
+          if (matchResult && matchResult.score >= 0.78) {
+            // صنف موجود بتشابه كافٍ — لا نُنشئ مكرراً
+            itemId = matchResult.item.id;
+            if (lineSize) {
+              await this.prisma.ocrItem.update({
+                where: { id: itemId },
+                data: { hasSizes: true },
+              }).catch(() => {});
+            }
+            this.logger.log(
+              `Smart-matched item "${searchName}" → "${matchResult.item.nameAr}" (score: ${matchResult.score.toFixed(2)})`,
+            );
+          } else {
+            // صنف جديد — نُخزّن الاسم النظيف (لا rawName الفوضوي)
+            const cleanAr = nameAr || (normalizeItemForSearch(line.rawName.trim()).ar) || line.rawName.trim();
+            const cleanEn = nameEn || (normalizeItemForSearch(line.rawName.trim()).en) || null;
+
             const newItem = await this.prisma.ocrItem.create({
-              data: { tenantId, nameAr: line.rawName.trim() },
+              data: {
+                tenantId,
+                nameAr:   cleanAr,
+                nameEn:   cleanEn,
+                hasSizes: !!lineSize,
+              },
             });
             itemId = newItem.id;
-            this.logger.log(`Auto-created OCR item: ${line.rawName} (${newItem.id})`);
+
+            // أضف rawName كـ alias للمساعدة في المطابقات المستقبلية
+            const rawTrimmed = line.rawName.trim();
+            if (rawTrimmed !== cleanAr) {
+              await this.prisma.ocrItemAlias.create({
+                data: { itemId, alias: rawTrimmed, language: 'ar', addedBy: 'ocr-auto' },
+              }).catch(() => {});
+            }
+            // أضف العبوة الكاملة (مثل "4x2.5-kg") alias أيضاً إن اختلفت
+            allCatalogItems.push({ ...newItem, nameEn: cleanEn, hasSizes: !!lineSize, aliases: [] });
+            this.logger.log(`Auto-created OCR item: "${cleanAr}" (${newItem.id})`);
           }
         }
         return {
