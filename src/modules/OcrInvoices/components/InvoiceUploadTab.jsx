@@ -443,7 +443,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         }}>
           <div style={{ fontSize: 12, color: '#92400e' }}>
-            ⚠️ {item.mathWarning.message}
+            {item.mathWarning.message}
           </div>
           {(item.mathWarning.suggestedQuantity !== undefined || item.mathWarning.suggestedUnitPrice !== undefined) && (
             <button
@@ -469,7 +469,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
           background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
           fontSize: 12, color: '#1e40af',
         }}>
-          📊 السعر المعتاد في آخر 90 يوم: <strong>{item.priceWarning.avg} ريال</strong> — انحراف {item.priceWarning.deviation}%
+          السعر المعتاد في آخر 90 يوم: <strong>{item.priceWarning.avg} ريال</strong> — انحراف {item.priceWarning.deviation}%
         </div>
       )}
     </div>

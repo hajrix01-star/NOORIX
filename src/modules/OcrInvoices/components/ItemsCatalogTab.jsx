@@ -23,7 +23,7 @@ function ItemForm({ initial = {}, onSave, onCancel, loading }) {
       <input placeholder={t('ocrItemUnit')} value={form.unitType} onChange={f('unitType')} style={inputStyle} />
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={() => onSave(form)} disabled={loading || !form.nameAr} className="noorix-btn noorix-btn--primary" style={{ flex: 1 }}>
-          {loading ? '⏳' : t('ocrSave')}
+          {loading ? '...' : t('ocrSave')}
         </button>
         <button onClick={onCancel} className="noorix-btn" style={{ flex: 1 }}>{t('ocrCancel')}</button>
       </div>
@@ -217,7 +217,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
 
       {filtered.length === 0 ? (
         <div className="ocr-empty">
-          <div className="ocr-empty-icon">📋</div>
+          <div className="ocr-empty-icon">—</div>
           <div className="ocr-empty-text">{t('ocrNoItems')}</div>
         </div>
       ) : (

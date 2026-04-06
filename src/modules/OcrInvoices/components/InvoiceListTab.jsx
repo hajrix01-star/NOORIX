@@ -237,7 +237,7 @@ function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLight
         {invoice.imageUrl ? (
           <img src={invoice.imageUrl} alt="" className="inv-card-img" />
         ) : (
-          <div className="inv-card-no-img">🧾</div>
+          <div className="inv-card-no-img">—</div>
         )}
         {invoice.imageUrl && (
           <div className="inv-card-img-hover" onClick={(e) => { e.stopPropagation(); onLightbox(invoice.imageUrl); }}>
@@ -385,7 +385,7 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
       {/* ── الشبكة ───────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <div className="ocr-empty">
-          <div className="ocr-empty-icon">📭</div>
+          <div className="ocr-empty-icon">—</div>
           <div className="ocr-empty-text">{isAr ? 'لا توجد فواتير محفوظة بعد' : 'No invoices saved yet'}</div>
           <div className="ocr-empty-sub">{isAr ? 'ارفع فاتورة من تبويب "رفع فاتورة"' : 'Upload an invoice to get started'}</div>
         </div>
