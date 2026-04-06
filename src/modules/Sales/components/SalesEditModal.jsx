@@ -108,14 +108,17 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.5)', padding: 20,
+        background: 'var(--noorix-modal-overlay-bg)', padding: 20,
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
       }}
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
       <div
-        className="noorix-surface-card"
+        className="noorix-modal-card"
         style={{
           maxWidth: 560, width: '100%', maxHeight: '90vh', overflow: 'auto',
           padding: 24, borderRadius: 16, boxShadow: '0 12px 40px rgba(0,0,0,0.2)',

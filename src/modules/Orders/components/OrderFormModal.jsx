@@ -183,18 +183,21 @@ export function OrderFormModal({
   if (savedOrder) {
     return (
       <div
+        role="dialog"
+        aria-modal="true"
         className="noorix-modal-overlay order-form-modal-overlay"
         style={{
           position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'rgba(0,0,0,0.4)', display: 'flex',
+          background: 'var(--noorix-modal-overlay-bg)', display: 'flex',
           alignItems: mobileLayout ? 'flex-end' : 'center', justifyContent: 'center', padding: mobileLayout ? 0 : 20,
+          backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
         }}
         onClick={(e) => e.target === e.currentTarget && (resetForm(), onClose?.())}
       >
         <div
-          className="noorix-order-form-modal noorix-order-form-modal--success"
+          className="noorix-order-form-modal noorix-order-form-modal--success noorix-modal-card"
           style={{
-            background: 'var(--noorix-bg-surface)', borderRadius: mobileLayout ? '16px 16px 0 0' : 16,
+            borderRadius: mobileLayout ? '16px 16px 0 0' : 16,
             width: '100%', maxWidth: 480, maxHeight: mobileLayout ? '90vh' : '90vh',
             overflow: 'auto', boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
           }}
@@ -454,18 +457,21 @@ export function OrderFormModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       className="noorix-modal-overlay order-form-modal-overlay"
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.4)', display: 'flex',
+        background: 'var(--noorix-modal-overlay-bg)', display: 'flex',
         alignItems: mobileLayout ? 'flex-end' : 'center', justifyContent: 'center', padding: mobileLayout ? 0 : 20,
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
       }}
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
       <div
-        className="noorix-order-form-modal"
+        className="noorix-order-form-modal noorix-modal-card"
         style={{
-          background: 'var(--noorix-bg-surface)', borderRadius: mobileLayout ? '16px 16px 0 0' : 16,
+          borderRadius: mobileLayout ? '16px 16px 0 0' : 16,
           width: '100%', maxWidth: 620, maxHeight: mobileLayout ? '95vh' : '90vh',
           display: 'flex', flexDirection: 'column', boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
         }}

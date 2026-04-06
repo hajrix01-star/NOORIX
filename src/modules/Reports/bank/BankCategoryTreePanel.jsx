@@ -158,11 +158,13 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       className="noorix-modal-backdrop"
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
+      style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="noorix-surface-card" style={{ width: 'min(640px, 96vw)', maxHeight: '88vh', overflow: 'auto', padding: 20 }} onClick={(e) => e.stopPropagation()}>
+      <div className="noorix-surface-card noorix-modal-card" style={{ width: 'min(640px, 96vw)', maxHeight: '88vh', overflow: 'auto', padding: 20 }} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>{category ? t('bankTreeEditCategory') : t('bankTreeAddCategory')}</h3>
         <div style={{ display: 'grid', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 10 }}>
@@ -760,11 +762,13 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
 
       {showMigrate ? (
         <div
+          role="dialog"
+          aria-modal="true"
           className="noorix-modal-backdrop"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
+          style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
           onClick={(e) => e.target === e.currentTarget && !migrating && setShowMigrate(false)}
         >
-          <div className="noorix-surface-card" style={{ padding: 22, maxWidth: 480, width: '100%' }} onClick={(e) => e.stopPropagation()}>
+          <div className="noorix-surface-card noorix-modal-card" style={{ padding: 22, maxWidth: 480, width: '100%' }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginTop: 0 }}>{t('bankTreeMigrateTitle')}</h3>
             <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeMigrateBody', String(activeFlat.length), String(groupedForMigrate.length))}</p>
             <div style={{ maxHeight: 200, overflow: 'auto', marginTop: 12, display: 'grid', gap: 8 }}>
@@ -789,11 +793,13 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
 
       {showImportModal ? (
         <div
+          role="dialog"
+          aria-modal="true"
           className="noorix-modal-backdrop"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
+          style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
           onClick={(e) => e.target === e.currentTarget && !importBusy && setShowImportModal(false)}
         >
-          <div className="noorix-surface-card" style={{ padding: 22, maxWidth: 440, width: '100%' }} onClick={(e) => e.stopPropagation()}>
+          <div className="noorix-surface-card noorix-modal-card" style={{ padding: 22, maxWidth: 440, width: '100%' }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginTop: 0 }}>{t('bankRulesImport')}</h3>
             <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
               {otherCompanies.length > 0 ? (

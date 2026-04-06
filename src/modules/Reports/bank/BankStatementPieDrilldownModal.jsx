@@ -61,7 +61,9 @@ export default function BankStatementPieDrilldownModal({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.55)',
+        background: 'var(--noorix-modal-overlay-bg)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
         zIndex: 10060,
         display: 'flex',
         alignItems: 'center',
@@ -71,6 +73,7 @@ export default function BankStatementPieDrilldownModal({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
+        className="noorix-modal-card"
         style={{
           width: 'min(960px, 100%)',
           maxHeight: 'min(88vh, 760px)',
@@ -79,7 +82,6 @@ export default function BankStatementPieDrilldownModal({
           overflow: 'hidden',
           borderRadius: 18,
           boxShadow: '0 32px 64px rgba(0,0,0,0.28)',
-          background: 'var(--noorix-bg-surface)',
           border: '1px solid var(--noorix-border)',
         }}
         onClick={(e) => e.stopPropagation()}

@@ -212,16 +212,16 @@ export default function CompaniesTab({ onCompanyCreated }) {
         <div
           role="dialog"
           aria-modal="true"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16 }}
+          style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16, backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
           onClick={() => !updateMutation.isPending && !deleteMutation.isPending && setEditModal(null)}
         >
           <div
+            className="noorix-modal-card"
             style={{
               width: 'min(540px, 100%)',
               maxHeight: '92dvh',
               display: 'flex',
               flexDirection: 'column',
-              background: 'var(--noorix-bg-surface)',
               border: '1px solid var(--noorix-border)',
               borderRadius: 18,
               boxShadow: '0 32px 64px rgba(0,0,0,0.28)',

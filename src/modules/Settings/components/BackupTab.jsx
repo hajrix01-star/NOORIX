@@ -613,11 +613,15 @@ export default function BackupTab({ activeCompanies = [] }) {
 
       {importModal && createPortal(
         <div
+          role="dialog"
+          aria-modal="true"
           className="noorix-modal-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.45)',
+            background: 'var(--noorix-modal-overlay-bg)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
             zIndex: 9000,
             display: 'flex',
             alignItems: 'center',
@@ -627,7 +631,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           onClick={(e) => e.target === e.currentTarget && !importMut.isPending && setImportModal(null)}
         >
           <div
-            className="noorix-surface-card"
+            className="noorix-surface-card noorix-modal-card"
             style={{ width: 'min(100%, 28rem)', maxWidth: '100%', padding: 18, boxSizing: 'border-box' }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -721,11 +725,15 @@ export default function BackupTab({ activeCompanies = [] }) {
 
       {reportModal && createPortal(
         <div
+          role="dialog"
+          aria-modal="true"
           className="noorix-modal-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.45)',
+            background: 'var(--noorix-modal-overlay-bg)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
             zIndex: 9000,
             display: 'flex',
             alignItems: 'center',
@@ -735,7 +743,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           onClick={(e) => e.target === e.currentTarget && setReportModal(null)}
         >
           <div
-            className="noorix-surface-card"
+            className="noorix-surface-card noorix-modal-card"
             style={{
               width: 'min(100%, 36rem)',
               maxWidth: '100%',
@@ -848,11 +856,15 @@ export default function BackupTab({ activeCompanies = [] }) {
 
       {importReportModal && createPortal(
         <div
+          role="dialog"
+          aria-modal="true"
           className="noorix-modal-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.45)',
+            background: 'var(--noorix-modal-overlay-bg)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
             zIndex: 9000,
             display: 'flex',
             alignItems: 'center',
@@ -862,7 +874,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           onClick={(e) => e.target === e.currentTarget && setImportReportModal(null)}
         >
           <div
-            className="noorix-surface-card"
+            className="noorix-surface-card noorix-modal-card"
             style={{
               width: 'min(100%, 36rem)',
               maxWidth: '100%',

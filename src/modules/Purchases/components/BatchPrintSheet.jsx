@@ -26,17 +26,20 @@ export function BatchPrintSheet({ batch, onClose }) {
 
   const content = (
     <div
+      role="dialog"
+      aria-modal="true"
       className="batch-print-overlay"
       style={{
-        position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.4)',
+        position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--noorix-modal-overlay-bg)',
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
       }}
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
       <div
-        className="batch-print-dialog"
+        className="batch-print-dialog noorix-modal-card"
         style={{
-          background: 'var(--noorix-bg-surface)', borderRadius: 12, maxWidth: 700, width: '100%',
+          borderRadius: 12, maxWidth: 700, width: '100%',
           maxHeight: '90vh', overflow: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
         }}
         onClick={(e) => e.stopPropagation()}

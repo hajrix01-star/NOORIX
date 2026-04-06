@@ -61,12 +61,14 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      role="dialog"
+      aria-modal="true"
+      style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
+        className="noorix-modal-card"
         style={{
-          background: 'var(--noorix-bg-surface)',
           borderRadius: 14,
           maxWidth: 560,
           width: '100%',

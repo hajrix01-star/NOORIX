@@ -511,9 +511,9 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
 
       {/* نافذة إضافة أيام خاصة من التحديد */}
       {showAddSpecialModal && selectedDatesSorted.length > 0 && (
-        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 24 }}
           onClick={() => setShowAddSpecialModal(false)}>
-          <div style={{ background: 'var(--noorix-bg-surface)', borderRadius: 12, padding: 20, maxWidth: 400, width: '100%', border: '1px solid var(--noorix-border)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }} onClick={(e) => e.stopPropagation()}>
+          <div className="noorix-modal-card" style={{ borderRadius: 12, padding: 20, maxWidth: 400, width: '100%', border: '1px solid var(--noorix-border)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }} onClick={(e) => e.stopPropagation()}>
             <h4 style={{ margin: '0 0 12px', fontSize: 16 }}>{t('dashboardAddAsSpecialDays')}</h4>
             <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
               {selectedDatesSorted[0]} — {selectedDatesSorted[selectedDatesSorted.length - 1]} ({selectedDatesSorted.length} {lang === 'ar' ? 'أيام' : 'days'})

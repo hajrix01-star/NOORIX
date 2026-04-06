@@ -168,10 +168,13 @@ export const StaffFormModal = memo(function StaffFormModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
+        position: 'fixed', inset: 0, zIndex: 2000,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)', padding: 20,
+        background: 'var(--noorix-modal-overlay-bg)', padding: 20,
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >

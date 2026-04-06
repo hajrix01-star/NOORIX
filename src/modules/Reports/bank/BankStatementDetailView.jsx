@@ -306,7 +306,7 @@ export default function BankStatementDetailView({
       </div>
 
       {vm.cardToDelete ? (
-        <div className="noorix-modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div role="dialog" aria-modal="true" className="noorix-modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
           <div className="noorix-surface-card" style={{ padding: 20, maxWidth: 400, width: '90%' }}>
             <p style={{ marginTop: 0 }}>{t('bankConfirmRemoveCard')}</p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>

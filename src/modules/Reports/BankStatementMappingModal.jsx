@@ -225,17 +225,21 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       className="noorix-modal-backdrop"
       onClick={(e) => e.target === e.currentTarget && onClose()}
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.45)',
+        background: 'var(--noorix-modal-overlay-bg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
+        zIndex: 2000,
         padding: 12,
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
       }}
     >
       <div

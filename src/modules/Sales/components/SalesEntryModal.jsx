@@ -103,18 +103,21 @@ export function SalesEntryModal({
   if (savedSummary) {
     return (
       <div
+        role="dialog"
+        aria-modal="true"
         className="noorix-modal-overlay sales-entry-modal-overlay"
         style={{
           position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'rgba(0,0,0,0.4)', display: 'flex',
+          background: 'var(--noorix-modal-overlay-bg)', display: 'flex',
           alignItems: 'center', justifyContent: 'center', padding: 20,
+          backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
         }}
         onClick={(e) => e.target === e.currentTarget && (resetForm(), onClose?.())}
       >
         <div
-          className="noorix-sales-entry-modal noorix-sales-entry-modal--success"
+          className="noorix-sales-entry-modal noorix-sales-entry-modal--success noorix-modal-card"
           style={{
-            background: 'var(--noorix-bg-surface)', borderRadius: 16,
+            borderRadius: 16,
             width: '100%', maxWidth: 480, maxHeight: '90vh',
             overflow: 'auto', boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
           }}
@@ -153,18 +156,21 @@ export function SalesEntryModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       className="noorix-modal-overlay sales-entry-modal-overlay"
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.4)', display: 'flex',
+        background: 'var(--noorix-modal-overlay-bg)', display: 'flex',
         alignItems: 'center', justifyContent: 'center', padding: 20,
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
       }}
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
       <div
-        className="noorix-sales-entry-modal"
+        className="noorix-sales-entry-modal noorix-modal-card"
         style={{
-          background: 'var(--noorix-bg-surface)', borderRadius: 16,
+          borderRadius: 16,
           width: '100%', maxWidth: 560, maxHeight: '85vh',
           display: 'flex', flexDirection: 'column', boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
         }}

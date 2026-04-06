@@ -99,21 +99,25 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.5)',
+        background: 'var(--noorix-modal-overlay-bg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
+        zIndex: 2000,
         padding: 24,
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
+        className="noorix-modal-card"
         style={{
-          background: 'var(--noorix-bg-surface)',
           borderRadius: 12,
           maxWidth: 480,
           width: '100%',

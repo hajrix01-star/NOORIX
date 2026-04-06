@@ -117,28 +117,90 @@
   --noorix-shadow-lg: 0 8px 32px rgba(0,0,0,0.32);
 }
 
-/* ========== Modals — خط Cairo موحد ========== */
-.modal-overlay,
-[role="dialog"] {
+/* ═══════════════════════════════════════════════════════════════
+   MODAL SYSTEM — نظام النوافذ الموحد
+   ═══════════════════════════════════════════════════════════════ */
+
+/* متغيرات النوافذ */
+:root {
+  --noorix-bg-modal:        #ffffff;
+  --noorix-modal-overlay-bg: rgba(10,31,68,0.48);
+  --noorix-modal-shadow:    0 8px 32px rgba(10,31,68,0.18), 0 2px 8px rgba(10,31,68,0.1);
+  --noorix-modal-radius:    16px;
+}
+.dark {
+  --noorix-bg-modal:        #1c2d47;
+  --noorix-modal-overlay-bg: rgba(0,0,0,0.6);
+  --noorix-modal-shadow:    0 8px 40px rgba(0,0,0,0.5);
+}
+
+/* ── خط موحد لجميع النوافذ ── */
+.modal-overlay, .noorix-modal-overlay, .noorix-modal-backdrop,
+[role="dialog"], [aria-modal="true"] {
   font-family: var(--noorix-font-primary) !important;
 }
 
-/* ========== نوافذ — خلفية أبيض لؤلؤي ثابتة بغض النظر عن نمط الكروت ========== */
-/* نضمن أن محتوى النوافذ دائماً معتم وناصع — يلغي تأثير الزجاج (card-style 3) وغيره */
-:root {
-  --noorix-bg-modal: #fafcff;   /* أبيض لؤلؤي — فاتح */
+/* ── overlay الموحد ── */
+.noorix-modal-overlay,
+.noorix-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--noorix-modal-overlay-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
 }
-.dark {
-  --noorix-bg-modal: #1a2740;   /* داكن ملائم — لا يظهر شفافاً */
+
+/* ── بطاقة النافذة الموحدة ── */
+.noorix-modal-card {
+  background: var(--noorix-bg-modal);
+  border-radius: var(--noorix-modal-radius);
+  border: 1px solid var(--noorix-border);
+  box-shadow: var(--noorix-modal-shadow);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  position: relative;
 }
-/* أي noorix-surface-card داخل modal overlay يأخذ خلفية المودال الصلبة دائماً */
+
+/* ── ضمان خلفية بيضاء لـ noorix-surface-card داخل أي نافذة ── */
 [role="dialog"] .noorix-surface-card,
 [aria-modal="true"] .noorix-surface-card,
 .noorix-modal-overlay .noorix-surface-card,
+.noorix-modal-backdrop .noorix-surface-card,
 .modal-overlay .noorix-surface-card {
   background: var(--noorix-bg-modal) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* ── .modal-overlay القديم — يرث من النظام الجديد ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--noorix-modal-overlay-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-box {
+  background: var(--noorix-bg-modal);
+  border-radius: var(--noorix-modal-radius);
+  border: 1px solid var(--noorix-border);
+  box-shadow: var(--noorix-modal-shadow);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 /* لكن نافذة التحرير/العرض نفسها (الـ overlay) تبقى شفافة */
 

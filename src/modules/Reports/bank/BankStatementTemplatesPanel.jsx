@@ -183,11 +183,13 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
 
       {deleteId ? (
         <div
+          role="dialog"
+          aria-modal="true"
           className="noorix-modal-backdrop"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
+          style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
           onClick={(e) => e.target === e.currentTarget && setDeleteId(null)}
         >
-          <div className="noorix-surface-card" style={{ padding: 22, maxWidth: 420, width: '100%' }} onClick={(e) => e.stopPropagation()}>
+          <div className="noorix-surface-card noorix-modal-card" style={{ padding: 22, maxWidth: 420, width: '100%' }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginTop: 0 }}>{t('bankTemplatesDeleteTitle')}</h3>
             <p style={{ fontSize: 14, color: 'var(--noorix-text-muted)' }}>{t('bankTemplatesDeleteBody')}</p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>

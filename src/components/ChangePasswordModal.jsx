@@ -85,21 +85,25 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 10000,
-        background: 'rgba(0,0,0,0.4)',
+        background: 'var(--noorix-modal-overlay-bg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
       }}
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
       <div
+        className="noorix-modal-card"
         style={{
-          background: 'var(--noorix-bg-surface)',
           borderRadius: 14,
           maxWidth: 400,
           width: '100%',

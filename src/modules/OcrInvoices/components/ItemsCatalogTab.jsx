@@ -255,7 +255,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
 
       {/* Item detail modal */}
       {viewing && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setViewing(null)}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setViewing(null)}>
           <div className="modal-box" dir={dir} style={{ maxWidth: 520 }}>
             <div className="modal-head">
               <div>
