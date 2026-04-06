@@ -183,7 +183,7 @@ export function SalesEntryModal({
               return (
                 <div key={v.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--noorix-text-muted)' }}>{vaultDisplayName(v, lang)}</label>
-                  <input
+                  <Input
                     type="number"
                     min="0"
                     step="0.01"

@@ -90,7 +90,7 @@ export default function TaxSettingsTab() {
           {/* مفتاح التفعيل */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
             <label style={{ ...labelStyle, margin: 0, fontWeight: 600 }}>تفعيل ضريبة القيمة المضافة للمبيعات</label>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}>
+            <label className="nx-checkbox" style={{ margin: 0 }}>
               <input
                 type="checkbox"
                 checked={vatEnabled}

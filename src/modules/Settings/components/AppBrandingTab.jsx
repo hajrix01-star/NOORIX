@@ -10,17 +10,6 @@ import {
   saveBranding,
 } from '../../../utils/appBranding';
 
-const inputStyle = {
-  width: '100%',
-  padding: '10px 14px',
-  borderRadius: 10,
-  border: '1px solid var(--noorix-border)',
-  background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)',
-  fontSize: 14,
-  boxSizing: 'border-box',
-};
-
 const sectionTitle = {
   fontSize: 13,
   fontWeight: 700,
@@ -219,12 +208,12 @@ export default function AppBrandingTab() {
             border: '1px solid var(--noorix-border)', borderRadius: '10px 0 0 10px',
             fontSize: 13, color: 'var(--noorix-text-muted)', flexShrink: 0, direction: 'ltr',
           }}>@</span>
-          <input
+          <Input
             type="text"
             value={loginDomain}
             onChange={(e) => setLoginDomain(e.target.value.replace(/^@/, '').replace(/\s/g, ''))}
             placeholder="noorix.sa"
-            style={{ ...inputStyle, borderRadius: '0 10px 10px 0', borderLeft: 'none', direction: 'ltr', textAlign: 'left' }}
+            style={{ borderRadius: '0 10px 10px 0', borderLeft: 'none', direction: 'ltr', textAlign: 'left' }}
             maxLength={60}
           />
         </div>
@@ -237,17 +226,17 @@ export default function AppBrandingTab() {
       <div>
         <div style={sectionTitle}>لون هوية التطبيق</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <input
+          <Input
             type="color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
             style={{ width: 48, height: 42, padding: 3, borderRadius: 10, border: '1px solid var(--noorix-border)', cursor: 'pointer', background: 'var(--noorix-bg-surface)', flexShrink: 0 }}
           />
-          <input
+          <Input
             type="text"
             value={color}
             onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
-            style={{ ...inputStyle, width: 100, minWidth: 0, fontFamily: 'monospace', fontSize: 13 }}
+            style={{ width: 100, minWidth: 0, fontFamily: 'monospace', fontSize: 13 }}
             placeholder="#0a1f44"
             maxLength={7}
           />

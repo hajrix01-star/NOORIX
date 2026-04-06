@@ -8,7 +8,7 @@ import { useApp } from '../../../context/AppContext';
 import { getInvoiceDayCloseReport } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDateISO } from '../../../utils/saudiDate';
-import { Button, Modal } from '../../../ui';
+import { Button, Modal, Input } from '../../../ui';
 
 function saudiTodayYmd() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -189,7 +189,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
               <h2 id="day-close-title" style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{t('dayCloseTitle')}</h2>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                 <span style={{ color: 'var(--noorix-text-muted)' }}>{t('date')}</span>
-                <input
+                <Input
                   type="date"
                   value={dateStr}
                   onChange={(e) => setDateStr(e.target.value)}

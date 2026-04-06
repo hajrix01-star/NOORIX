@@ -446,7 +446,7 @@ export default function PurchasesBatchScreen() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('transactionDateLabel')}</label>
-              <input
+              <Input
                 type="date"
                 value={batchDate}
                 onChange={(e) => setBatchDate(e.target.value)}

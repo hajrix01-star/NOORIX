@@ -105,7 +105,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     <div dir={dir}>
       {/* Toolbar */}
       <div className="inv-toolbar" style={{ marginBottom: 16 }}>
-        <label className="inv-select-all-wrap">
+        <label className="nx-checkbox inv-select-all-wrap">
           <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(filtered.map(s => s.id)))} className="inv-toolbar-checkbox" />
           <span className="inv-select-all-label">
             {selected.size > 0 ? (isAr ? `${selected.size} محدد` : `${selected.size} selected`) : (isAr ? 'تحديد الكل' : 'Select all')}

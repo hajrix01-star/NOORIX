@@ -165,7 +165,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
                       )}
                     </div>
                   </div>
-                  <input
+                  <Input
                     type="number"
                     min="0"
                     step="0.01"

@@ -381,7 +381,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             <p className="backup-meta-line" style={{ margin: 0 }}>
               {t('backupSystemIntro')}
             </p>
-            <label className="backup-check-row">
+            <label className="nx-checkbox backup-check-row">
               <input
                 type="checkbox"
                 checked={sysForm.enabled}
@@ -392,7 +392,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             <div className="backup-form-grid">
               <div className="backup-field">
                 <label htmlFor="backup-h">{t('backupSystemHour')}</label>
-                <input
+                <Input
                   id="backup-h"
                   type="number"
                   min={0}
@@ -406,7 +406,7 @@ export default function BackupTab({ activeCompanies = [] }) {
               </div>
               <div className="backup-field">
                 <label htmlFor="backup-m">{t('backupSystemMinute')}</label>
-                <input
+                <Input
                   id="backup-m"
                   type="number"
                   min={0}
@@ -420,7 +420,7 @@ export default function BackupTab({ activeCompanies = [] }) {
               </div>
               <div className="backup-field">
                 <label htmlFor="backup-ret">{t('backupSystemRetention')}</label>
-                <input
+                <Input
                   id="backup-ret"
                   type="number"
                   min={1}
@@ -645,13 +645,10 @@ export default function BackupTab({ activeCompanies = [] }) {
         />
 
         <label
+          className="nx-checkbox"
           style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 8,
             fontSize: 13,
             margin: '12px 0 16px',
-            cursor: 'pointer',
             color: 'var(--noorix-text)',
             lineHeight: 1.5,
           }}

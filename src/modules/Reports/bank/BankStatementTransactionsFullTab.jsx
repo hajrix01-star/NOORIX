@@ -109,7 +109,7 @@ export default function BankStatementTransactionsFullTab({
           >
             
           </span>
-          <input
+          <Input
             type="search"
             placeholder={t('bankSearchTransactions')}
             value={searchTerm}
@@ -198,7 +198,7 @@ export default function BankStatementTransactionsFullTab({
         <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--noorix-text-muted)' }}>
           {t('bankStatementAddCategory')}:
         </span>
-        <input
+        <Input
           value={newCategoryName}
           onChange={(e) => setNewCategoryName(e.target.value)}
           placeholder={t('bankStatementCategoryName')}
@@ -226,12 +226,14 @@ export default function BankStatementTransactionsFullTab({
               }}
             >
               <th style={{ width: 36, padding: '10px 10px' }}>
-                <input
-                  type="checkbox"
-                  aria-label={t('bankSelectAll')}
-                  checked={allSelected}
-                  onChange={toggleAllFiltered}
-                />
+                <label className="nx-checkbox">
+                  <input
+                    type="checkbox"
+                    aria-label={t('bankSelectAll')}
+                    checked={allSelected}
+                    onChange={toggleAllFiltered}
+                  />
+                </label>
               </th>
               <th style={{ padding: '10px 10px', textAlign: 'right' }}>
                 <SortBtn label={t('bankStatementDate')} sortKey="txDate" />
@@ -286,11 +288,13 @@ export default function BankStatementTransactionsFullTab({
                   >
                     {/* Checkbox */}
                     <td style={{ padding: '8px 10px' }}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleTxSelection(tx)}
-                      />
+                      <label className="nx-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleTxSelection(tx)}
+                        />
+                      </label>
                     </td>
 
                     {/* التاريخ */}
@@ -406,7 +410,7 @@ export default function BankStatementTransactionsFullTab({
                     <td style={{ padding: '8px 10px' }}>
                       {editingNoteId === tx.id ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <input
+                          <Input
                             value={editingNote}
                             onChange={(e) => setEditingNote(e.target.value)}
                             style={{

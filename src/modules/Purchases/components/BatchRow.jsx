@@ -112,7 +112,7 @@ export const BatchRow = memo(function BatchRow({
 
       {/* رقم الفاتورة */}
       <td style={cp}>
-        <input
+        <Input
           value={row.invoiceNumber}
           onChange={(e) => onUpdate(index, 'invoiceNumber', e.target.value)}
           placeholder={t('invoiceNumberPlaceholder')}
@@ -122,7 +122,7 @@ export const BatchRow = memo(function BatchRow({
 
       {/* الإجمالي شامل الضريبة */}
       <td style={cp}>
-        <input
+        <Input
           type="number" min="0" step="0.1"
           value={row.totalInclusive}
           onChange={(e) => onUpdate(index, 'totalInclusive', e.target.value)}
@@ -139,7 +139,7 @@ export const BatchRow = memo(function BatchRow({
 
       {/* تاريخ الفاتورة */}
       <td style={cp}>
-        <input
+        <Input
           type="date"
           dir="ltr"
           value={row.invoiceDate}
@@ -193,7 +193,7 @@ export const BatchRow = memo(function BatchRow({
 
       {/* الملاحظات */}
       <td style={cp}>
-        <input
+        <Input
           value={row.notes || ''}
           onChange={(e) => onUpdate(index, 'notes', e.target.value)}
           placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? 'اسم الخدمة*' : '...'}

@@ -144,7 +144,10 @@ export default function CompaniesTab({ onCompanyCreated }) {
             <div>
               <label style={labelStyle}>شعار الشركة</label>
               <Input type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." />
-              <input type="file" accept="image/*" onChange={handleLogoFile} style={{ marginTop: 6, fontSize: 13 }} />
+              <label className="nx-file-label" style={{ marginTop: 6 }}>
+                رفع صورة من الجهاز
+                <input type="file" accept="image/*" onChange={handleLogoFile} style={{ display: 'none' }} />
+              </label>
             </div>
             <div className="nx-toolbar">
               <Button type="submit" variant="success" disabled={addMutation.isPending || !nameAr.trim()}>
@@ -256,7 +259,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
                   </div>
                   <div style={{ flex: 1, display: 'grid', gap: 8 }}>
                     <Input type="url" value={editModal.logoUrl} onChange={(e) => setEditModal((p) => ({ ...p, logoUrl: e.target.value }))} placeholder="https://رابط-الصورة.com/logo.png" />
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--noorix-text-muted)', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
+                    <label className="nx-file-label">
                       رفع صورة من الجهاز
                       <input type="file" accept="image/*" onChange={(e) => handleLogoFile(e, true)} style={{ display: 'none' }} />
                     </label>

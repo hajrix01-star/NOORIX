@@ -11,19 +11,21 @@ import { Button, Input, Modal } from '../../../ui';
 
 function Cb({ checked, indeterminate, onChange, disabled }) {
   return (
-    <input
-      type="checkbox"
-      checked={checked}
-      ref={(el) => { if (el) el.indeterminate = !!indeterminate; }}
-      onChange={onChange}
-      disabled={disabled}
-      style={{
-        width: 15, height: 15,
-        accentColor: 'var(--noorix-accent)',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        flexShrink: 0,
-      }}
-    />
+    <label className="nx-checkbox">
+      <input
+        type="checkbox"
+        checked={checked}
+        ref={(el) => { if (el) el.indeterminate = !!indeterminate; }}
+        onChange={onChange}
+        disabled={disabled}
+        style={{
+          width: 15, height: 15,
+          accentColor: 'var(--noorix-accent)',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          flexShrink: 0,
+        }}
+      />
+    </label>
   );
 }
 

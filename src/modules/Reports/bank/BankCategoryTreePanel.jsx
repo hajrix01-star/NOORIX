@@ -758,14 +758,14 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
       >
         <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
           {otherCompanies.length > 0 ? (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+            <label className="nx-checkbox">
               <input type="radio" name="impSrc" checked={importSource === 'company'} onChange={() => setImportSource('company')} />
               {t('bankRulesImportSourceCompany')}
             </label>
           ) : (
             <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', margin: 0 }}>{t('bankRulesNoOtherCompanies')}</p>
           )}
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+          <label className="nx-checkbox">
             <input type="radio" name="impSrc" checked={importSource === 'file'} onChange={() => setImportSource('file')} />
             {t('bankRulesImportSourceFile')}
           </label>
@@ -785,23 +785,22 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
           ) : null}
           {importSource === 'file' ? (
             <div>
-              <input
-                type="file"
-                accept="application/json,.json"
-                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                style={{ fontSize: 13, maxWidth: '100%' }}
-              />
-              {importFile ? (
-                <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>{importFile.name}</div>
-              ) : null}
+              <label className="nx-file-label" style={{ display: 'inline-flex', maxWidth: '100%' }}>
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                />
+                {importFile ? importFile.name : (t('bankRulesChooseFile') || 'اختر ملف JSON')}
+              </label>
             </div>
           ) : null}
           <div style={{ borderTop: '1px solid var(--noorix-border)', paddingTop: 10, display: 'grid', gap: 8 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+            <label className="nx-checkbox">
               <input type="radio" name="impMode" checked={importMode === 'merge'} onChange={() => setImportMode('merge')} />
               {t('bankRulesImportModeMerge')}
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+            <label className="nx-checkbox">
               <input type="radio" name="impMode" checked={importMode === 'replace'} onChange={() => setImportMode('replace')} />
               {t('bankRulesImportModeReplace')}
             </label>

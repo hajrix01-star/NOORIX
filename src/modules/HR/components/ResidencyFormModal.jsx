@@ -173,15 +173,14 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
 
         {!isEdit && (
           <>
-            <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label className="nx-checkbox" style={{ marginBottom: 12, fontSize: 13 }}>
               <input
                 type="checkbox"
-                id="createInvoiceResidency"
                 checked={createInvoiceForResidency}
                 onChange={(e) => setCreateInvoiceForResidency(e.target.checked)}
               />
-              <label htmlFor="createInvoiceResidency" style={{ fontSize: 13, cursor: 'pointer' }}>{t('residencyIssueInvoice') || 'إصدار فاتورة إقامة'}</label>
-            </div>
+              {t('residencyIssueInvoice') || 'إصدار فاتورة إقامة'}
+            </label>
             {createInvoiceForResidency && (
               <>
                 <Input

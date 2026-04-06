@@ -8,13 +8,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { fmt } from '../../utils/format';
-
-const inputStyle = {
-  width: '100%', padding: '12px 14px', borderRadius: 8,
-  border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)', fontSize: 16, fontFamily: 'inherit', boxSizing: 'border-box',
-  minHeight: 44,
-};
+import { Input } from '../../ui';
 
 /** تطبيع النص للبحث (إزالة التشكيل، توحيد المسافات) */
 function normalizeForSearch(text) {
@@ -154,7 +148,7 @@ export function ProductSearchInput({
 
   return (
     <div ref={containerRef} style={{ position: 'relative', ...style }}>
-      <input
+      <Input
         ref={inputRef}
         type="text"
         value={open ? query : displayValue}
@@ -170,7 +164,7 @@ export function ProductSearchInput({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         autoComplete="off"
-        style={{ ...inputStyle, ...inputPadding }}
+        style={inputPadding}
       />
       {open &&
         dropdownRect &&

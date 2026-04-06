@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button } from '../../../ui';
+import { Button, Input } from '../../../ui';
 import { extractInvoice, saveOcrInvoice } from '../services/ocrApi';
 
 const CONFIDENCE_COLOR = (c) => {
@@ -349,7 +349,7 @@ function FieldRow({ label, value, confidence, match }) {
 // ── حقل رقمي قابل للتعديل ────────────────────────────────────────────────────
 function EditableNumber({ value, onChange, warn }) {
   return (
-    <input
+    <Input
       type="number"
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}

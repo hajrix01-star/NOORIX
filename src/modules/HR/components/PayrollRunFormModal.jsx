@@ -13,7 +13,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { parseOvertimeWorkDaysPerMonth, totalSalary } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Modal } from '../../../ui';
+import { Button, Modal, Input } from '../../../ui';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -462,7 +462,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)', gap: 16 }}>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('payrollMonth')}</label>
-              <input
+              <Input
                 type="month"
                 className="prfm-modal-field"
                 value={payrollMonth ? payrollMonth.slice(0, 7) : ''}
@@ -476,7 +476,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('notes')}</label>
-              <input
+              <Input
                 type="text"
                 className="prfm-modal-field"
                 value={notes}
@@ -525,7 +525,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 return (
                   <tr key={emp.id}>
                     <td>
-                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', lineHeight: 1.45 }}>
+                      <label className="nx-checkbox" style={{ lineHeight: 1.45 }}>
                         <input
                           type="checkbox"
                           checked={included}
@@ -543,7 +543,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                         </td>
                         <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>{hrFmt(items[idx].grossSalary)}</td>
                         <td>
-                          <input
+                          <Input
                             type="number"
                             inputMode="decimal"
                             step={1}
@@ -556,7 +556,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                           />
                         </td>
                         <td>
-                          <input
+                          <Input
                             type="number"
                             inputMode="decimal"
                             step={1}
@@ -569,7 +569,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                           />
                         </td>
                         <td>
-                          <input
+                          <Input
                             type="number"
                             inputMode="decimal"
                             step={1}
@@ -583,7 +583,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                           />
                         </td>
                         <td style={{ textAlign: 'center' }}>
-                          <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', padding: '6px 4px' }}>
+                          <label className="nx-checkbox" style={{ justifyContent: 'center', padding: '6px 4px' }}>
                             <input
                               type="checkbox"
                               checked={!!items[idx].deferAdvances}

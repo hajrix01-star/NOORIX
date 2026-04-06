@@ -183,7 +183,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
 
       {/* Toolbar */}
       <div className="inv-toolbar">
-        <label className="inv-select-all-wrap">
+        <label className="nx-checkbox inv-select-all-wrap">
           <input type="checkbox" checked={allChecked}
             onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(visibleAlerts.map(a => a.itemId)))}
             className="inv-toolbar-checkbox" />

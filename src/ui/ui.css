@@ -1430,7 +1430,8 @@
   user-select: none;
 }
 
-.nx-checkbox input[type="checkbox"] {
+.nx-checkbox input[type="checkbox"],
+.nx-checkbox input[type="radio"] {
   width: 16px;
   height: 16px;
   accent-color: var(--noorix-accent-blue);

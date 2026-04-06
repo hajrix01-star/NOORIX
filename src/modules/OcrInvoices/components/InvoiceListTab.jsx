@@ -244,7 +244,7 @@ function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLight
           </div>
         )}
         {/* checkbox */}
-        <label className="inv-card-checkbox-wrap" onClick={(e) => e.stopPropagation()}>
+        <label className="nx-checkbox inv-card-checkbox-wrap" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox" checked={isSelected}
             onChange={() => onSelect(invoice.id)}
@@ -341,7 +341,7 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
       {/* ── شريط الأدوات ─────────────────────────────────────────────── */}
       <div className="inv-toolbar">
         {/* Select all */}
-        <label className="inv-select-all-wrap">
+        <label className="nx-checkbox inv-select-all-wrap">
           <input
             type="checkbox"
             checked={allChecked}

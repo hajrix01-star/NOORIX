@@ -111,7 +111,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                   {inv.status === 'cancelled' ? (
                     <span className="nx-cell-muted">{inv.supplierInvoiceNumber || inv.invoiceNumber}</span>
                   ) : (
-                    <input
+                    <Input
                       value={inv.supplierInvoiceNumber ?? inv.invoiceNumber ?? ''}
                       onChange={(e) => updateInv(i, 'supplierInvoiceNumber', e.target.value)}
                       style={inputBase}
@@ -122,7 +122,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                   {inv.status === 'cancelled' ? (
                     <span className="nx-cell-num">{fmt(inv.totalAmount)}</span>
                   ) : (
-                    <input
+                    <Input
                       type="number"
                       min="0"
                       step="0.1"

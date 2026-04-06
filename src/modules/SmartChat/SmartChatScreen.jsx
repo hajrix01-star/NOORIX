@@ -3,7 +3,6 @@
  * نسق مرجعي: أوامر مجمّعة، إدخال، نوافذ مركزية، تخزين محلي مع فلتر.
  */
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -18,7 +17,7 @@ import ExpenseFormModal from '../Expenses/components/ExpenseFormModal';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { loadChat, saveChat, filterByDate } from './chatStorage';
 import './SmartChatScreen.css';
-import { Button, Modal } from '../../ui';
+import { Button, Modal, Input } from '../../ui';
 
 function SendIcon() {
   return (
@@ -434,7 +433,7 @@ export default function SmartChatScreen() {
           <header className="noorix-smart-chat-header" dir={isAr ? 'rtl' : 'ltr'}>
             <h1 className="noorix-smart-chat-title">{t('smartChat')}</h1>
             <div className="noorix-smart-chat-header-actions">
-              <input
+              <Input
                 type="date"
                 className="noorix-smart-chat-date-input"
                 value={dateFilter}
@@ -508,7 +507,7 @@ export default function SmartChatScreen() {
         </div>
 
         <div className="noorix-chat-input-bar">
-          <input
+          <Input
             ref={inputRef}
             type="text"
             className="noorix-chat-input-field"
@@ -622,49 +621,36 @@ export default function SmartChatScreen() {
         )
       )}
 
-      {activeCompanyId && commandsOpen && filteredGroups.length > 0
-        ? createPortal(
-            <>
+      <Modal
+        open={!!(activeCompanyId && commandsOpen && filteredGroups.length > 0)}
+        onClose={() => setCommandsOpen(false)}
+        title={isAr ? 'أوامر المحادثة' : 'Chat commands'}
+        size="lg"
+      >
+        <div className="noorix-chat-commands-panel-content" dir={isAr ? 'rtl' : 'ltr'}>
+          {filteredGroups.map((g) => (
+            <div key={g.id} className="noorix-chat-commands-group">
+              <div className="noorix-chat-commands-group-label">
+                {g.icon} {isAr ? g.labelAr : g.labelEn}
+              </div>
               <div
-                className="noorix-chat-commands-backdrop"
-                role="presentation"
-                aria-hidden
-                onClick={() => setCommandsOpen(false)}
-              />
-              <div
-                ref={commandsPanelRef}
-                className="noorix-chat-commands-panel noorix-chat-commands-panel--portal noorix-light-sheet"
-                role="dialog"
-                aria-modal="true"
-                aria-label={isAr ? 'أوامر المحادثة' : 'Chat commands'}
-                dir={isAr ? 'rtl' : 'ltr'}
+                className={`noorix-chat-commands-grid${g.items.length === 1 ? ' noorix-chat-commands-grid--single' : ''}`}
               >
-                {filteredGroups.map((g) => (
-                  <div key={g.id} className="noorix-chat-commands-group">
-                    <div className="noorix-chat-commands-group-label">
-                      {g.icon} {isAr ? g.labelAr : g.labelEn}
-                    </div>
-                    <div
-                      className={`noorix-chat-commands-grid${g.items.length === 1 ? ' noorix-chat-commands-grid--single' : ''}`}
-                    >
-                      {g.items.map((it) => (
-                        <Button
-                          key={it.key}
-                          className="noorix-chat-commands-item"
-                          onClick={() => handleCommand(it.key)}
-                        >
-                          <span aria-hidden>{it.icon}</span>
-                          <span>{isAr ? it.labelAr : it.labelEn}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
+                {g.items.map((it) => (
+                  <Button
+                    key={it.key}
+                    className="noorix-chat-commands-item"
+                    onClick={() => handleCommand(it.key)}
+                  >
+                    <span aria-hidden>{it.icon}</span>
+                    <span>{isAr ? it.labelAr : it.labelEn}</span>
+                  </Button>
                 ))}
               </div>
-            </>,
-            document.body,
-          )
-        : null}
+            </div>
+          ))}
+        </div>
+      </Modal>
 
       {toast.visible && (
         <ToastBanner message={toast.message} type={toast.type} isAr={isAr} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />

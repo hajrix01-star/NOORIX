@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getText } from '../../i18n/translations';
 import { login as apiLogin } from '../../services/api';
 import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor, getLoginDomain } from '../../utils/appBranding';
-import { Button } from '../../ui';
+import { Button, Input } from '../../ui';
 
 function getLang() {
   return (typeof document !== 'undefined' && document.documentElement?.lang === 'en') ? 'en' : 'ar';
@@ -137,7 +137,7 @@ export default function LoginScreen() {
                     </span>
                   )}
                 </div>
-                <input
+                <Input
                   type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -165,7 +165,7 @@ export default function LoginScreen() {
                   {t('password')}
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <input
+                  <Input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

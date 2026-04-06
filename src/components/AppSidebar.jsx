@@ -8,7 +8,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
-import { Button } from '../ui';
+import { Button, Modal } from '../ui';
 import {
   IconCrown,
   IconGrid,
@@ -332,40 +332,23 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
       {isOpen ? <div className="app-sidebar-backdrop" onClick={onClose} /> : null}
 
       {/* نافذة تأكيد تبديل الشركة */}
-      {pendingCompany && createPortal(
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(10,20,50,0.65)', backdropFilter: 'blur(6px)',
-        }}>
-          <div style={{
-            background: 'var(--noorix-bg-surface, #fff)',
-            border: '1px solid var(--noorix-border, #e5e7eb)',
-            borderRadius: 16,
-            padding: '28px 32px',
-            maxWidth: 380, width: '90%',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
-            textAlign: 'center',
-          }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}></div>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: 'var(--noorix-text, #111)' }}>
-              {t('switchCompanyConfirmTitle')}
-            </div>
-            <div style={{ fontSize: 14, color: 'var(--noorix-text-muted, #6b7280)', marginBottom: 24, lineHeight: 1.6 }}>
-              {t('switchCompanyConfirmBody')} <strong style={{ color: 'var(--noorix-text, #111)' }}>{pendingName}</strong>؟
-            </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <Button onClick={cancelSwitch} style={{ flex: 1 }}>
-                {t('cancel')}
-              </Button>
-              <Button variant="primary" onClick={confirmSwitch} style={{ flex: 1 }}>
-                {t('switchCompanyConfirmBtn')}
-              </Button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      <Modal
+        open={!!pendingCompany}
+        onClose={cancelSwitch}
+        size="sm"
+        title={t('switchCompanyConfirmTitle')}
+        footer={
+          <>
+            <Button variant="ghost" onClick={cancelSwitch}>{t('cancel')}</Button>
+            <Button variant="primary" onClick={confirmSwitch}>{t('switchCompanyConfirmBtn')}</Button>
+          </>
+        }
+      >
+        <div style={{ textAlign: 'center', fontSize: 36, marginBottom: 8 }}></div>
+        <p style={{ margin: 0, fontSize: 14, color: 'var(--noorix-text)', lineHeight: 1.6 }}>
+          {t('switchCompanyConfirmBody')} <strong>{pendingName}</strong>؟
+        </p>
+      </Modal>
     </>
   );
 }
