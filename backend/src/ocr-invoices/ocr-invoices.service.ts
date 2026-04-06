@@ -883,8 +883,12 @@ export class OcrInvoicesService {
       category: string | null;
       latestPrice: number;
       latestSupplier: string;
+      latestInvoiceId: string | null;
+      latestInvoiceDate: Date;
       lowestPrice: number;
       lowestSupplier: string;
+      lowestInvoiceId: string | null;
+      lowestInvoiceDate: Date;
       averagePrice: number;
       priceIncreasePercent: number;
     }> = [];
@@ -905,8 +909,12 @@ export class OcrInvoicesService {
           category: latest.item.category,
           latestPrice,
           latestSupplier: latest.supplier.nameAr,
+          latestInvoiceId: latest.invoiceId ?? null,
+          latestInvoiceDate: latest.invoiceDate,
           lowestPrice,
           lowestSupplier: lowestEntry.supplier.nameAr,
+          lowestInvoiceId: lowestEntry.invoiceId ?? null,
+          lowestInvoiceDate: lowestEntry.invoiceDate,
           averagePrice: Math.round(avgPrice * 100) / 100,
           priceIncreasePercent: Math.round(((latestPrice - lowestPrice) / lowestPrice) * 100),
         });

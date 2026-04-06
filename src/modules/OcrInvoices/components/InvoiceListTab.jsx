@@ -8,10 +8,13 @@ const STATUS_STYLES = {
   rejected:  { bg: 'rgba(220,38,38,0.12)',  color: '#dc2626', label: { ar: 'مرفوضة', en: 'Rejected' } },
 };
 
-/* ── عارض صورة الفاتورة (تكبير وتدوير) ──────────────────────────── */
+const fmtNum  = (n) => Number(n).toLocaleString('en-US');
+const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+/* ── عارض صورة الفاتورة — تكبير داخل النافذة ─────────────────────── */
 function InvoiceImageViewer({ src }) {
   const [rotation, setRotation] = useState(0);
-  const [fullscreen, setFullscreen] = useState(false);
+  const [zoomed,   setZoomed]   = useState(false);
 
   if (!src) return null;
 
@@ -20,106 +23,54 @@ function InvoiceImageViewer({ src }) {
   return (
     <div style={{ marginBottom: 20 }}>
       {/* الصورة المصغرة */}
-      <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', background: '#f9fafb' }}>
-        <img
-          src={src}
-          alt="invoice"
-          style={{
-            width: '100%',
-            maxHeight: 260,
-            objectFit: 'contain',
-            display: 'block',
-            transform: `rotate(${rotation}deg)`,
-            transition: 'transform 0.3s ease',
-          }}
-        />
-        {/* أزرار التحكم */}
-        <div style={{
-          position: 'absolute', bottom: 10, insetInlineEnd: 10,
-          display: 'flex', gap: 6,
-        }}>
-          <button
-            type="button"
-            onClick={rotate}
-            title="تدوير"
-            style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: 'rgba(0,0,0,0.55)', border: 'none',
-              color: '#fff', cursor: 'pointer', fontSize: 16,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            🔄
-          </button>
-          <button
-            type="button"
-            onClick={() => setFullscreen(true)}
-            title="تكبير"
-            style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: 'rgba(0,0,0,0.55)', border: 'none',
-              color: '#fff', cursor: 'pointer', fontSize: 16,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            🔍
-          </button>
-        </div>
-      </div>
-
-      {/* وضع ملء الشاشة */}
-      {fullscreen && createPortal(
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 99999,
-            background: 'rgba(0,0,0,0.92)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexDirection: 'column', gap: 16,
-            padding: 20,
-          }}
-          onClick={() => setFullscreen(false)}
-        >
+      {!zoomed && (
+        <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', background: '#f9fafb' }}>
           <img
             src={src}
-            alt="invoice fullscreen"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: '95vw',
-              maxHeight: '85vh',
-              objectFit: 'contain',
-              transform: `rotate(${rotation}deg)`,
-              transition: 'transform 0.3s ease',
-              borderRadius: 8,
-            }}
+            alt="invoice"
+            style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block',
+              transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease' }}
           />
-          <div style={{ display: 'flex', gap: 10 }} onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={rotate}
-              style={{
-                padding: '8px 20px', borderRadius: 10,
-                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-                color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
-              }}
-            >
-              🔄 تدوير
+          <div style={{ position: 'absolute', bottom: 10, insetInlineEnd: 10, display: 'flex', gap: 6 }}>
+            <button type="button" onClick={rotate} title="تدوير"
+              style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(0,0,0,0.55)', border: 'none',
+                color: '#fff', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+              🔄
             </button>
-            <button
-              type="button"
-              onClick={() => setFullscreen(false)}
-              style={{
-                padding: '8px 20px', borderRadius: 10,
-                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-                color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
-              }}
-            >
-              ✕ إغلاق
+            <button type="button" onClick={() => setZoomed(true)} title="تكبير"
+              style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(0,0,0,0.55)', border: 'none',
+                color: '#fff', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+              🔍
             </button>
           </div>
-        </div>,
-        document.body,
+        </div>
+      )}
+
+      {/* عرض مكبّر داخل النافذة — بدون فتح صفحة جديدة */}
+      {zoomed && (
+        <div style={{ borderRadius: 12, background: '#111', padding: 12, position: 'relative' }}>
+          <div style={{ overflowY: 'auto', maxHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img
+              src={src}
+              alt="invoice zoomed"
+              style={{ maxWidth: '100%', objectFit: 'contain',
+                transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease',
+                cursor: 'zoom-in', touchAction: 'pinch-zoom' }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 10, justifyContent: 'center' }}>
+            <button type="button" onClick={rotate}
+              style={{ padding: '7px 18px', borderRadius: 8, background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+              🔄 تدوير
+            </button>
+            <button type="button" onClick={() => setZoomed(false)}
+              style={{ padding: '7px 18px', borderRadius: 8, background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+              ✕ تصغير
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -181,7 +132,7 @@ export default function InvoiceListTab({ invoices = [], loading }) {
                 key={inv.id}
                 onClick={() => setViewing(inv)}
                 style={{
-                  padding: '14px 18px',
+                  padding: '12px 16px',
                   borderRadius: 12,
                   border: '1px solid var(--noorix-border)',
                   background: 'var(--noorix-bg-surface)',
@@ -195,9 +146,9 @@ export default function InvoiceListTab({ invoices = [], loading }) {
                 onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = 'var(--noorix-accent-blue)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--noorix-border)'; }}
               >
-                {/* أيقونة — صورة مصغرة للفاتورة إن وُجدت */}
+                {/* أيقونة — صورة مصغرة */}
                 <div style={{
-                  width: 42, height: 42, borderRadius: 10, flexShrink: 0,
+                  width: 44, height: 44, borderRadius: 10, flexShrink: 0,
                   background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 20, overflow: 'hidden',
                 }}>
@@ -209,29 +160,27 @@ export default function InvoiceListTab({ invoices = [], loading }) {
 
                 {/* معلومات رئيسية */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--noorix-text)', marginBottom: 3 }}>
-                    {inv.supplier?.nameAr || 'مورد غير محدد'}
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--noorix-text)', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {language === 'en' ? (inv.supplier?.nameEn || inv.supplier?.nameAr || 'Unknown') : (inv.supplier?.nameAr || 'مورد غير محدد')}
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {inv.invoiceNumber && <span># {inv.invoiceNumber}</span>}
-                    {inv.invoiceDate && (
-                      <span>{new Date(inv.invoiceDate).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}</span>
-                    )}
-                    <span>{inv.lines?.length || 0} صنف</span>
+                    {inv.invoiceDate && <span>📅 {fmtDate(inv.invoiceDate)}</span>}
+                    {inv.createdAt   && <span>⬆️ {fmtDate(inv.createdAt)}</span>}
+                    <span>{inv.lines?.length || 0} {language === 'en' ? 'items' : 'صنف'}</span>
                   </div>
                 </div>
 
                 {/* المبلغ والحالة */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                   {inv.totalAmount && (
-                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--noorix-text)' }}>
-                      {Number(inv.totalAmount).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} ريال
+                    <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--noorix-text)' }}>
+                      {fmtNum(inv.totalAmount)} {language === 'en' ? 'SAR' : 'ريال'}
                     </div>
                   )}
                   <span style={{
-                    padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-                    background: statusInfo.bg, color: statusInfo.color,
-                    whiteSpace: 'nowrap',
+                    padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+                    background: statusInfo.bg, color: statusInfo.color, whiteSpace: 'nowrap',
                   }}>
                     {language === 'ar' ? statusInfo.label.ar : statusInfo.label.en}
                   </span>
@@ -262,7 +211,7 @@ export default function InvoiceListTab({ invoices = [], loading }) {
               borderRadius: 16,
               maxWidth: 640,
               width: '100%',
-              maxHeight: '90vh',
+              maxHeight: '92vh',
               overflowY: 'auto',
               boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
               border: '1px solid #e5e7eb',
@@ -271,14 +220,16 @@ export default function InvoiceListTab({ invoices = [], loading }) {
             {/* رأس النافذة */}
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '20px 24px 16px',
+              padding: '16px 20px',
               borderBottom: '1px solid var(--noorix-border)',
               position: 'sticky', top: 0, background: '#ffffff', zIndex: 1,
             }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>تفاصيل الفاتورة</h3>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>
+                  {language === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details'}
+                </h3>
                 <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 2 }}>
-                  {viewing.supplier?.nameAr || 'مورد غير محدد'}
+                  {language === 'en' ? (viewing.supplier?.nameEn || viewing.supplier?.nameAr) : (viewing.supplier?.nameAr || 'مورد غير محدد')}
                 </div>
               </div>
               <button
@@ -292,31 +243,28 @@ export default function InvoiceListTab({ invoices = [], loading }) {
               >✕</button>
             </div>
 
-            <div style={{ padding: '20px 24px' }}>
+            <div style={{ padding: '16px 20px' }}>
 
               {/* ── صورة الفاتورة ── */}
-              {viewing.imageUrl && (
-                <InvoiceImageViewer src={viewing.imageUrl} />
-              )}
+              {viewing.imageUrl && <InvoiceImageViewer src={viewing.imageUrl} />}
 
               {/* معلومات الفاتورة */}
               <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px',
-                marginBottom: 20, padding: 16,
-                background: '#f9fafb',
-                borderRadius: 12, border: '1px solid #e5e7eb',
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px 16px',
+                marginBottom: 16, padding: 14,
+                background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb',
               }}>
                 {[
-                  { label: 'المورد',        value: viewing.supplier?.nameAr || '—' },
-                  { label: 'رقم الفاتورة', value: viewing.invoiceNumber || '—' },
-                  { label: 'التاريخ',       value: viewing.invoiceDate ? new Date(viewing.invoiceDate).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US') : '—' },
-                  { label: 'الإجمالي',      value: viewing.totalAmount ? `${Number(viewing.totalAmount).toLocaleString('ar-SA')} ريال` : '—' },
-                  { label: 'ضريبة القيمة', value: viewing.vatAmount ? `${Number(viewing.vatAmount).toLocaleString('ar-SA')} ريال` : '—' },
-                  { label: 'عدد الأصناف',  value: `${viewing.lines?.length || 0} صنف` },
+                  { label: language === 'ar' ? 'المورد'         : 'Supplier',      value: (language === 'en' ? viewing.supplier?.nameEn : null) || viewing.supplier?.nameAr || '—' },
+                  { label: language === 'ar' ? 'رقم الفاتورة'   : 'Invoice #',     value: viewing.invoiceNumber || '—' },
+                  { label: language === 'ar' ? 'تاريخ الفاتورة' : 'Invoice Date',  value: viewing.invoiceDate ? fmtDate(viewing.invoiceDate) : '—' },
+                  { label: language === 'ar' ? 'تاريخ الرفع'    : 'Upload Date',   value: viewing.createdAt   ? fmtDate(viewing.createdAt)   : '—' },
+                  { label: language === 'ar' ? 'الإجمالي'       : 'Total',         value: viewing.totalAmount ? `${fmtNum(viewing.totalAmount)} ${language === 'en' ? 'SAR' : 'ريال'}` : '—' },
+                  { label: language === 'ar' ? 'ضريبة القيمة'   : 'VAT',           value: viewing.vatAmount   ? `${fmtNum(viewing.vatAmount)} ${language === 'en' ? 'SAR' : 'ريال'}`   : '—' },
                 ].map(({ label, value }) => (
                   <div key={label}>
                     <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{label}</div>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{value}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{value}</div>
                   </div>
                 ))}
               </div>
@@ -325,44 +273,29 @@ export default function InvoiceListTab({ invoices = [], loading }) {
               {viewing.lines?.length > 0 && (
                 <>
                   <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>
-                    📦 الأصناف ({viewing.lines.length})
+                    📦 {language === 'ar' ? `الأصناف (${viewing.lines.length})` : `Items (${viewing.lines.length})`}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {viewing.lines.map((line, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          padding: '10px 14px', borderRadius: 10,
-                          background: '#f9fafb',
-                          border: '1px solid #e5e7eb',
-                        }}
-                      >
+                      <div key={i} style={{ padding: '10px 14px', borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                          <span style={{ fontWeight: 600, fontSize: 14 }}>
+                          <span style={{ fontWeight: 600, fontSize: 13 }}>
                             {line.nameAr || line.item?.nameAr || line.rawName}
                             {line.nameEn ? ` / ${line.nameEn}` : ''}
                           </span>
                           {line.size && (
-                            <span style={{
-                              fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                              background: 'rgba(99,102,241,0.1)', color: '#6366f1',
-                            }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}>
                               {line.size}{line.sizeUnit || ''}
                             </span>
                           )}
                         </div>
                         {line.rawName !== (line.nameAr || line.item?.nameAr) && (
-                          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>
-                            OCR: {line.rawName}
-                          </div>
+                          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>OCR: {line.rawName}</div>
                         )}
-                        <div style={{
-                          display: 'flex', gap: 16, fontSize: 12,
-                          color: '#6b7280', flexWrap: 'wrap',
-                        }}>
-                          {line.quantity  && <span>الكمية: <strong>{line.quantity}</strong></span>}
-                          {line.unitPrice && <span>السعر: <strong>{Number(line.unitPrice).toLocaleString('ar-SA')}</strong></span>}
-                          {line.totalPrice && <span>الإجمالي: <strong>{Number(line.totalPrice).toLocaleString('ar-SA')}</strong></span>}
+                        <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#6b7280', flexWrap: 'wrap' }}>
+                          {line.quantity  != null && <span>{language === 'ar' ? 'الكمية'  : 'Qty'}:   <strong>{line.quantity}</strong></span>}
+                          {line.unitPrice != null && <span>{language === 'ar' ? 'السعر'   : 'Price'}: <strong>{fmtNum(line.unitPrice)}</strong></span>}
+                          {line.totalPrice != null && <span>{language === 'ar' ? 'الإجمالي' : 'Total'}: <strong>{fmtNum(line.totalPrice)}</strong></span>}
                         </div>
                       </div>
                     ))}

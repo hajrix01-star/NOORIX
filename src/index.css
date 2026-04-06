@@ -2704,6 +2704,23 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
 }
 
+/* ========== OCR — استجابة الجوال ========== */
+.ocr-tab-content { padding: 20px 18px; }
+
+@media (max-width: 640px) {
+  .ocr-tab-content { padding: 14px 12px; }
+
+  /* زر التبويبات في OCR — تصغير على الجوال */
+  .ocr-tab-content ~ div,
+  .ocr-tabs-bar button { padding: 12px 14px !important; font-size: 13px !important; }
+
+  /* محاذاة الأصناف في نافذة الرفع */
+  .ocr-items-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+}
+
 /* ========== تحسين padding الجوال لعموم النوافذ ========== */
 @media (max-width: 480px) {
   /* تقليص padding الـ overlay للنوافذ المتمركزة */

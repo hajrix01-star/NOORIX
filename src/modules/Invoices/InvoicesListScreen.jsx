@@ -27,7 +27,7 @@ const PAGE_SIZE = 50;
 /* ══ نافذة عرض الفاتورة (قراءة فقط) ══════════════════════════════════════════ */
 function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
   if (!invoice) return null;
-  const fmtDate = (d) => d ? new Date(d).toLocaleDateString(lang === 'en' ? 'en-SA' : 'ar-SA', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
   const supplierName = (lang === 'en' ? invoice.supplier?.nameEn || invoice.supplier?.nameAr : invoice.supplier?.nameAr || invoice.supplier?.nameEn) || '—';
   const fields = [
     { label: t('invoiceNumber'),   value: invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—' },

@@ -120,7 +120,7 @@ export default function OcrInvoicesScreen() {
           })}
         </div>
 
-        <div style={{ padding: '24px 20px' }}>
+        <div className="ocr-tab-content">
           {activeTab === 'upload' && (
             <InvoiceUploadTab
               suppliers={suppliersData || []}
@@ -152,6 +152,7 @@ export default function OcrInvoicesScreen() {
             <PriceAlertsTab
               alerts={alertsData || []}
               loading={alertsLoading}
+              invoices={invoicesData || []}
             />
           )}
         </div>

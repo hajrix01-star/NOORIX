@@ -211,8 +211,8 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
       {/* معاينة الصورة */}
       {preview && (
-        <div style={{ display: 'grid', gridTemplateColumns: extracted ? '1fr 1fr' : '1fr', gap: 20, alignItems: 'start' }}>
-          <div className="noorix-surface-card" style={{ padding: 16 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'start' }}>
+          <div className="noorix-surface-card" style={{ padding: 16, flex: '1 1 280px', minWidth: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <span style={{ fontWeight: 700, fontSize: 15 }}>صورة الفاتورة</span>
               <button
@@ -257,7 +257,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
           {/* نتيجة الاستخراج */}
           {extracted && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: '1 1 280px', minWidth: 0 }}>
 
               {/* معلومات الفاتورة */}
               <div className="noorix-surface-card" style={{ padding: 16 }}>
@@ -278,19 +278,19 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                     {extracted.subtotalAmount?.value && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
                         <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>المجموع قبل الضريبة</span>
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>{extracted.subtotalAmount.value.toLocaleString('ar-SA')} ريال</span>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>{extracted.subtotalAmount.value.toLocaleString('en-US')} ريال</span>
                       </div>
                     )}
                     {extracted.vatAmount?.value && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
                         <span style={{ fontSize: 13, color: '#d97706' }}>ضريبة القيمة المضافة (15%)</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>{extracted.vatAmount.value.toLocaleString('ar-SA')} ريال</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>{extracted.vatAmount.value.toLocaleString('en-US')} ريال</span>
                       </div>
                     )}
                     {extracted.totalAmount?.value && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(22,163,74,0.06)' }}>
                         <span style={{ fontSize: 14, fontWeight: 700 }}>الإجمالي شامل الضريبة</span>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: '#16a34a' }}>{extracted.totalAmount.value.toLocaleString('ar-SA')} ريال</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#16a34a' }}>{extracted.totalAmount.value.toLocaleString('en-US')} ريال</span>
                       </div>
                     )}
                   </div>

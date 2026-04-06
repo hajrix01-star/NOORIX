@@ -165,7 +165,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                 <h3 style={{ margin: 0 }}>{viewing.nameAr}</h3>
                 {lowestPrice && (
                   <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 700, marginTop: 4 }}>
-                    ✅ {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('ar-SA')} ريال
+                    ✅ {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} ريال
                   </div>
                 )}
               </div>
@@ -215,11 +215,11 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{h.supplier?.nameAr || '—'}</div>
                       <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-                        {new Date(h.invoiceDate).toLocaleDateString('ar-SA')}
+                        {new Date(h.invoiceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </div>
                     </div>
                     <div style={{ fontWeight: 800, fontSize: 16, color: Number(h.price) === lowestPrice ? '#16a34a' : 'var(--noorix-text)' }}>
-                      {Number(h.price).toLocaleString('ar-SA')} ريال
+                      {Number(h.price).toLocaleString('en-US')} ريال
                       {Number(h.price) === lowestPrice && <span style={{ fontSize: 10, marginRight: 4 }}>✅</span>}
                     </div>
                   </div>
