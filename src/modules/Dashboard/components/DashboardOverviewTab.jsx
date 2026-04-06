@@ -191,7 +191,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
               {/* عنوان */}
               <div className="nx-kpi-card__label">{card.label}</div>
               {/* القيمة */}
-              <div className="nx-kpi-card__value">{moneyText(rawVal)} ﷼</div>
+              <div className="nx-kpi-card__value">{moneyText(rawVal)}</div>
               {/* نسبة مئوية */}
               {pct != null && (
                 <span className="nx-kpi-card__badge">

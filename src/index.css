@@ -2394,10 +2394,10 @@ input:focus, select:focus, textarea:focus {
   min-width: 0;
   width: auto;
 }
-/* select السنة */
-.ndfb-year-select .nx-input__field { width: 90px; }
+/* select السنة — className يُطبَّق مباشرة على عنصر الـ select */
+.nx-input__field.ndfb-year-select  { width: 90px; }
 /* select الشهر */
-.ndfb-month-select .nx-input__field { width: 110px; }
+.nx-input__field.ndfb-month-select { width: 110px; }
 /* date input */
 .ndfb-fields .nx-input__field[type="date"] { width: 150px; }
 .ndfb-fields input[type="date"],
@@ -2456,8 +2456,8 @@ input:focus, select:focus, textarea:focus {
   .ndfb-mode-btn { padding: 5px 10px; font-size: 13px; min-height: 40px; }
   /* الجوال: السنة والشهر يبقيان في سطر واحد */
   .ndfb-fields { flex-wrap: nowrap; }
-  .ndfb-year-select .nx-input__field  { width: 82px !important; }
-  .ndfb-month-select .nx-input__field { width: 100px !important; }
+  .nx-input__field.ndfb-year-select  { width: 82px !important; }
+  .nx-input__field.ndfb-month-select { width: 100px !important; }
   .ndfb-fields .nx-input__field[type="date"] { width: 140px !important; }
   .ndfb-reset-btn { margin-right: 0; min-width: 40px; min-height: 40px; }
   .ndfb-badge { flex-shrink: 0; }

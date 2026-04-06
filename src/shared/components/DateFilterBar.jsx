@@ -125,11 +125,13 @@ export default function DateFilterBar({ filter }) {
         )}
       </div>
 
-      {/* شارة النطاق المحدد */}
-      <div className="ndfb-badge">
-        <span className="ndfb-badge__icon">◷</span>
-        <span className="ndfb-badge__label">{label}</span>
-      </div>
+      {/* شارة النطاق — تظهر فقط في وضع اليوم أو النطاق */}
+      {mode !== 'month' && (
+        <div className="ndfb-badge">
+          <span className="ndfb-badge__icon">◷</span>
+          <span className="ndfb-badge__label">{label}</span>
+        </div>
+      )}
 
       {/* زر إعادة التعيين */}
       <Button className="ndfb-reset-btn" onClick={reset} title={t('dateFilterReset')}>

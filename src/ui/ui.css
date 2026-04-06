@@ -320,7 +320,6 @@
   background-position: right 12px center;
   padding-right: 36px;
   padding-left: 12px;
-  padding-left: 36px;
 }
 [dir='rtl'] .nx-input__field--select {
   /* RTL: السهم على اليسار (نهاية المحور البصري في العربية) */
