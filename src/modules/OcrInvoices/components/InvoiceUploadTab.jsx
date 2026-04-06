@@ -105,6 +105,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
         invoiceDate:   extracted.invoiceDate?.value || null,
         totalAmount:   extracted.totalAmount?.value || null,
         vatAmount:     extracted.vatAmount?.value || null,
+        imageUrl:      preview || null,
         rawExtraction: extracted,
         lines,
       };

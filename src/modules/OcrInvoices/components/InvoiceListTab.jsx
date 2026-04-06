@@ -8,6 +8,123 @@ const STATUS_STYLES = {
   rejected:  { bg: 'rgba(220,38,38,0.12)',  color: '#dc2626', label: { ar: 'مرفوضة', en: 'Rejected' } },
 };
 
+/* ── عارض صورة الفاتورة (تكبير وتدوير) ──────────────────────────── */
+function InvoiceImageViewer({ src }) {
+  const [rotation, setRotation] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  if (!src) return null;
+
+  const rotate = () => setRotation((r) => (r + 90) % 360);
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      {/* الصورة المصغرة */}
+      <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', background: '#f9fafb' }}>
+        <img
+          src={src}
+          alt="invoice"
+          style={{
+            width: '100%',
+            maxHeight: 260,
+            objectFit: 'contain',
+            display: 'block',
+            transform: `rotate(${rotation}deg)`,
+            transition: 'transform 0.3s ease',
+          }}
+        />
+        {/* أزرار التحكم */}
+        <div style={{
+          position: 'absolute', bottom: 10, insetInlineEnd: 10,
+          display: 'flex', gap: 6,
+        }}>
+          <button
+            type="button"
+            onClick={rotate}
+            title="تدوير"
+            style={{
+              width: 36, height: 36, borderRadius: 8,
+              background: 'rgba(0,0,0,0.55)', border: 'none',
+              color: '#fff', cursor: 'pointer', fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            🔄
+          </button>
+          <button
+            type="button"
+            onClick={() => setFullscreen(true)}
+            title="تكبير"
+            style={{
+              width: 36, height: 36, borderRadius: 8,
+              background: 'rgba(0,0,0,0.55)', border: 'none',
+              color: '#fff', cursor: 'pointer', fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            🔍
+          </button>
+        </div>
+      </div>
+
+      {/* وضع ملء الشاشة */}
+      {fullscreen && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 99999,
+            background: 'rgba(0,0,0,0.92)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexDirection: 'column', gap: 16,
+            padding: 20,
+          }}
+          onClick={() => setFullscreen(false)}
+        >
+          <img
+            src={src}
+            alt="invoice fullscreen"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '95vw',
+              maxHeight: '85vh',
+              objectFit: 'contain',
+              transform: `rotate(${rotation}deg)`,
+              transition: 'transform 0.3s ease',
+              borderRadius: 8,
+            }}
+          />
+          <div style={{ display: 'flex', gap: 10 }} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={rotate}
+              style={{
+                padding: '8px 20px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
+              }}
+            >
+              🔄 تدوير
+            </button>
+            <button
+              type="button"
+              onClick={() => setFullscreen(false)}
+              style={{
+                padding: '8px 20px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
+              }}
+            >
+              ✕ إغلاق
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </div>
+  );
+}
+
 export default function InvoiceListTab({ invoices = [], loading }) {
   const { t, language } = useTranslation();
   const [search, setSearch]   = useState('');
@@ -78,12 +195,17 @@ export default function InvoiceListTab({ invoices = [], loading }) {
                 onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = 'var(--noorix-accent-blue)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--noorix-border)'; }}
               >
-                {/* أيقونة */}
+                {/* أيقونة — صورة مصغرة للفاتورة إن وُجدت */}
                 <div style={{
                   width: 42, height: 42, borderRadius: 10, flexShrink: 0,
                   background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 20,
-                }}>📄</div>
+                  fontSize: 20, overflow: 'hidden',
+                }}>
+                  {inv.imageUrl
+                    ? <img src={inv.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : '📄'
+                  }
+                </div>
 
                 {/* معلومات رئيسية */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -120,7 +242,7 @@ export default function InvoiceListTab({ invoices = [], loading }) {
         </div>
       )}
 
-      {/* Modal تفاصيل الفاتورة — مع createPortal لتجنب مشاكل الـ overflow */}
+      {/* Modal تفاصيل الفاتورة */}
       {viewing && createPortal(
         <div
           style={{
@@ -140,7 +262,7 @@ export default function InvoiceListTab({ invoices = [], loading }) {
               borderRadius: 16,
               maxWidth: 640,
               width: '100%',
-              maxHeight: '88vh',
+              maxHeight: '90vh',
               overflowY: 'auto',
               boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
               border: '1px solid #e5e7eb',
@@ -171,6 +293,12 @@ export default function InvoiceListTab({ invoices = [], loading }) {
             </div>
 
             <div style={{ padding: '20px 24px' }}>
+
+              {/* ── صورة الفاتورة ── */}
+              {viewing.imageUrl && (
+                <InvoiceImageViewer src={viewing.imageUrl} />
+              )}
+
               {/* معلومات الفاتورة */}
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px',
