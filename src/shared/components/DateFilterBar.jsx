@@ -53,11 +53,13 @@ export default function DateFilterBar({ filter }) {
 
   return (
     <div className="noorix-date-filter-bar" dir="rtl">
-      {/* مجموعة أزرار الوضع */}
+      {/* مجموعة أزرار الوضع — raw لتفادي حدود/زوايا nx-btn فوق بعضها */}
       <div className="ndfb-mode-group">
         {MODES.map((m) => (
           <Button
             key={m.id}
+            variant="raw"
+            type="button"
             className={`ndfb-mode-btn${mode === m.id ? ' ndfb-mode-btn--active' : ''}`}
             onClick={() => setMode(m.id)}
           >
@@ -66,33 +68,35 @@ export default function DateFilterBar({ filter }) {
         ))}
       </div>
 
-      {/* حقول الفلتر */}
-      <div className="ndfb-fields">
-        {mode === 'month' && (
-          <div className="ndfb-fields-inner">
-            <Input
-              type="select"
-              className="ndfb-year-select"
-              value={selYear}
-              onChange={(e) => setSelYear(Number(e.target.value))}
-            >
-              {years.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </Input>
-            <Input
-              type="select"
-              className="ndfb-month-select"
-              value={selMonth}
-              onChange={(e) => setSelMonth(Number(e.target.value))}
-            >
-              {MONTH_NAMES_EN.map((name, i) => (
-                <option key={i + 1} value={i + 1}>{name}</option>
-              ))}
-            </Input>
-          </div>
-        )}
+      {/* وضع الشهر: السنة+الشهر كعنصرَي flex مباشرَين (بدون غلاف يتمدد) + dir=ltr لأسهم select الإنجليزية */}
+      {mode === 'month' && (
+        <span className="ndfb-date-selects" dir="ltr">
+          <Input
+            type="select"
+            className="ndfb-year-select"
+            value={selYear}
+            onChange={(e) => setSelYear(Number(e.target.value))}
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </Input>
+          <Input
+            type="select"
+            className="ndfb-month-select"
+            value={selMonth}
+            onChange={(e) => setSelMonth(Number(e.target.value))}
+          >
+            {MONTH_NAMES_EN.map((name, i) => (
+              <option key={i + 1} value={i + 1}>{name}</option>
+            ))}
+          </Input>
+        </span>
+      )}
 
+      {/* حقول الفلتر — يوم / نطاق فقط */}
+      {(mode === 'day' || mode === 'range') && (
+      <div className="ndfb-fields">
         {mode === 'day' && (
           <Input
             type="date"
@@ -104,16 +108,16 @@ export default function DateFilterBar({ filter }) {
 
         {mode === 'range' && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('dateFilterFrom')}</span>
+            <div className="nx-flex nx-flex-center nx-gap-6">
+              <span className="nx-text-xs nx-text-muted nx-nowrap">{t('dateFilterFrom')}</span>
               <Input
                 type="date"
                 value={rangeStart}
                 onChange={(e) => setRangeStart(e.target.value)}
               />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{t('dateFilterTo')}</span>
+            <div className="nx-flex nx-flex-center nx-gap-6">
+              <span className="nx-text-xs nx-text-muted nx-nowrap">{t('dateFilterTo')}</span>
               <Input
                 type="date"
                 value={rangeEnd}
@@ -124,6 +128,7 @@ export default function DateFilterBar({ filter }) {
           </>
         )}
       </div>
+      )}
 
       {/* شارة النطاق — تظهر فقط في وضع اليوم أو النطاق */}
       {mode !== 'month' && (
@@ -134,7 +139,7 @@ export default function DateFilterBar({ filter }) {
       )}
 
       {/* زر إعادة التعيين */}
-      <Button className="ndfb-reset-btn" onClick={reset} title={t('dateFilterReset')}>
+      <Button type="button" variant="raw" className="ndfb-reset-btn" onClick={reset} title={t('dateFilterReset')}>
         ↺
       </Button>
     </div>

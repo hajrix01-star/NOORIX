@@ -2360,7 +2360,7 @@ input:focus, select:focus, textarea:focus {
 
 /* ========== DateFilterBar ========== */
 .noorix-date-filter-bar {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
@@ -2372,6 +2372,8 @@ input:focus, select:focus, textarea:focus {
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
+  width: max-content;
+  box-sizing: border-box;
 }
 
 /* مجموعة أزرار الوضع */
@@ -2384,7 +2386,7 @@ input:focus, select:focus, textarea:focus {
 }
 .ndfb-mode-btn {
   padding: 6px 14px;
-  border: none;
+  border: none !important;
   background: transparent;
   color: var(--noorix-text-muted);
   font-size: 13px;
@@ -2393,6 +2395,10 @@ input:focus, select:focus, textarea:focus {
   cursor: pointer;
   transition: background 130ms, color 130ms;
   white-space: nowrap;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  min-height: 34px;
 }
 .ndfb-mode-btn:hover { background: var(--noorix-bg-muted); color: var(--noorix-text); }
 .ndfb-mode-btn--active {
@@ -2416,17 +2422,23 @@ input:focus, select:focus, textarea:focus {
   flex: 0 0 auto;
   min-width: 0;
 }
-/* تجميع السنة+الشهر ككتلة واحدة — لا يفصلهما تمدد الـ flex */
-.ndfb-fields-inner {
+/* السنة + الشهر — LTR داخل الشريط العربي لتفادي تداخل السهم والنص */
+.ndfb-date-selects {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: nowrap;
   flex-shrink: 0;
 }
+.ndfb-date-selects .nx-input {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  width: auto;
+  max-width: none;
+  margin: 0;
+}
 /* إلغاء width:100% الافتراضي على المكوّن داخل الشريط */
-.ndfb-fields .nx-input,
-.ndfb-fields-inner .nx-input {
+.ndfb-fields .nx-input {
   flex: 0 0 auto;
   flex-shrink: 0;
   width: auto;
@@ -2438,9 +2450,14 @@ input:focus, select:focus, textarea:focus {
   width: auto;
 }
 /* select السنة — className يُطبَّق مباشرة على عنصر الـ select */
-.nx-input__field.ndfb-year-select  { width: 90px; }
-/* select الشهر */
-.nx-input__field.ndfb-month-select { width: 110px; }
+.nx-input__field.ndfb-year-select  { width: 88px; min-width: 76px; box-sizing: border-box; }
+/* select الشهر — عرض كافٍ لأسماء الأشهر الإنجليزية + السهم */
+.nx-input__field.ndfb-month-select {
+  width: 128px;
+  min-width: 118px;
+  max-width: 150px;
+  box-sizing: border-box;
+}
 /* date input */
 .ndfb-fields .nx-input__field[type="date"] { width: 150px; }
 .ndfb-fields input[type="date"],
@@ -2491,9 +2508,15 @@ input:focus, select:focus, textarea:focus {
   color: var(--noorix-accent-blue);
 }
 
-/* صف فيه DateFilterBar + أزرار — محاذاة عمودية متسقة */
+/* صف فيه DateFilterBar + أزرار — لا يوسّع الفلتر بـ space-between */
 .nx-page-header.nx-page-header--filter-row {
   align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+.nx-page-header.nx-page-header--filter-row > .nx-toolbar {
+  margin-inline-start: auto;
+  flex-shrink: 0;
 }
 
 /* تبويبات شاشة الطلبات (بدون أنماط مضمّنة) */
@@ -2542,8 +2565,8 @@ input:focus, select:focus, textarea:focus {
   .ndfb-mode-btn { padding: 5px 10px; font-size: 13px; min-height: 40px; }
   /* الجوال: السنة والشهر يبقيان في سطر واحد */
   .ndfb-fields { flex-wrap: nowrap; }
-  .nx-input__field.ndfb-year-select  { width: 82px !important; }
-  .nx-input__field.ndfb-month-select { width: 100px !important; }
+  .nx-input__field.ndfb-year-select  { width: 80px !important; min-width: 72px !important; }
+  .nx-input__field.ndfb-month-select { width: 118px !important; min-width: 112px !important; max-width: none !important; }
   .ndfb-fields .nx-input__field[type="date"] { width: 140px !important; }
   .ndfb-reset-btn { min-width: 40px; min-height: 40px; }
   .ndfb-badge { flex-shrink: 0; }
