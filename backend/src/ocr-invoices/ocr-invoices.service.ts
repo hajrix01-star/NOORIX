@@ -8,6 +8,60 @@ import { CreateOcrSupplierDto } from './dto/create-ocr-supplier.dto';
 import { CreateOcrItemDto } from './dto/create-ocr-item.dto';
 import { SaveInvoiceDto } from './dto/save-invoice.dto';
 
+// ─── Math Validation ─────────────────────────────────────────────────────────
+
+interface MathValidationResult {
+  valid: boolean;
+  warning?: string;
+  suggestedQuantity?: number;
+  suggestedUnitPrice?: number;
+}
+
+function validateItemMath(
+  quantity?: number,
+  unitPrice?: number,
+  totalPrice?: number,
+): MathValidationResult {
+  if (!quantity || !unitPrice || !totalPrice) return { valid: true };
+
+  const computed = quantity * unitPrice;
+  const tolerance = Math.max(computed, totalPrice) * 0.03; // 3% هامش
+
+  if (Math.abs(computed - totalPrice) <= tolerance) return { valid: true };
+
+  // totalPrice هو المرجع الأوثق — احسب البديل
+  const inferredQty = totalPrice / unitPrice;
+  const inferredPrice = totalPrice / quantity;
+
+  // إذا كانت الكمية المستنتجة عدداً صحيحاً (أو قريباً منه) → اقترح تصحيحها
+  if (inferredQty > 0 && Math.abs(inferredQty - Math.round(inferredQty)) < 0.05) {
+    return {
+      valid: false,
+      warning: `${quantity} × ${unitPrice} = ${computed.toFixed(2)} ≠ ${totalPrice} — الكمية المحتملة: ${Math.round(inferredQty)}`,
+      suggestedQuantity: Math.round(inferredQty),
+    };
+  }
+
+  return {
+    valid: false,
+    warning: `${quantity} × ${unitPrice} = ${computed.toFixed(2)} ≠ ${totalPrice} — السعر المحتمل: ${inferredPrice.toFixed(2)}`,
+    suggestedUnitPrice: Math.round(inferredPrice * 100) / 100,
+  };
+}
+
+function validateInvoiceTotals(
+  itemsTotal: number,
+  invoiceTotal?: number,
+): { valid: boolean; warning?: string } {
+  if (!invoiceTotal || itemsTotal === 0) return { valid: true };
+  const tolerance = invoiceTotal * 0.05; // 5%
+  if (Math.abs(itemsTotal - invoiceTotal) <= tolerance) return { valid: true };
+  return {
+    valid: false,
+    warning: `مجموع الأصناف ${itemsTotal.toFixed(2)} لا يتطابق مع إجمالي الفاتورة ${invoiceTotal}`,
+  };
+}
+
 // ─── Name & Size Parsing Utilities ───────────────────────────────────────────
 
 const SIZE_UNITS = ['kg', 'g', 'gr', 'gm', 'ml', 'l', 'ltr', 'liter', 'pcs', 'pc', 'كجم', 'كيلو', 'جرام', 'مل', 'لتر', 'حبة', 'علبة', 'كيس'];
@@ -140,18 +194,32 @@ interface GeminiExtractedInvoice {
   items?: GeminiExtractedItem[];
 }
 
-const OCR_EXTRACTION_PROMPT = `Extract all data from this invoice image and return ONLY a raw JSON object. No markdown, no explanation, no text before or after the JSON.
+const OCR_EXTRACTION_PROMPT = `You are an expert invoice data extraction system. Extract ALL data from this invoice image and return ONLY a raw JSON object.
 
-{"supplier":{"name":"supplier or seller company name","confidence":0.95},"vatNumber":{"value":"15-digit tax number or null","confidence":0.9},"invoiceNumber":{"value":"invoice number or null","confidence":0.95},"invoiceDate":{"value":"YYYY-MM-DD or null","confidence":0.95},"totalAmount":{"value":1500.00,"confidence":0.98},"vatAmount":{"value":195.65,"confidence":0.98},"items":[{"name":"full item name exactly as printed","quantity":5,"unitPrice":60.00,"totalPrice":300.00,"confidence":0.90}]}
+OUTPUT FORMAT (return exactly this structure, no markdown, no explanation):
+{"supplier":{"name":"seller company name","confidence":0.95},"vatNumber":{"value":"tax number or null","confidence":0.9},"invoiceNumber":{"value":"invoice number or null","confidence":0.95},"invoiceDate":{"value":"YYYY-MM-DD or null","confidence":0.95},"totalAmount":{"value":1500.00,"confidence":0.98},"vatAmount":{"value":195.65,"confidence":0.98},"items":[{"name":"full item name exactly as printed","quantity":5,"unitPrice":60.00,"totalPrice":300.00,"confidence":0.90}]}
 
-Important rules:
+CRITICAL MATH RULE — MUST FOLLOW:
+- For every item: totalPrice MUST equal quantity × unitPrice (within 1%)
+- If you see a conflict between these 3 values, use totalPrice as the truth (it is printed as a subtotal on the invoice)
+- Then recalculate: if totalPrice=42 and unitPrice=14, then quantity=3 (not whatever else you see)
+- NEVER return mathematically inconsistent values
+
+QUANTITY NOTATION RULES:
+- "12x1-L" or "12x1L" means quantity=12 items, each 1 liter in size — set quantity=12
+- "6x500ml" means quantity=6, size=500ml
+- Pack/carton counts like "24PCS" mean quantity=24
+- Arabic fractions: "نصف" = 0.5, "ربع" = 0.25 (rare — verify against totalPrice)
+
+GENERAL RULES:
 - Return ONLY the JSON, starting with { and ending with }
 - confidence is 0.0 to 1.0
-- Use null for any field you cannot find
+- Use null for any field you cannot find or read clearly
 - Keep item names exactly as they appear (Arabic, English, or mixed)
 - Date format must be YYYY-MM-DD
-- Amounts must be numbers only (no currency text)
-- Extract ALL items from the invoice, do not skip any`;
+- Amounts must be numbers only (no currency text, no commas)
+- Extract ALL line items from the invoice, do not skip any
+- After extracting, mentally verify: sum of all item totalPrices ≈ invoice totalAmount`;
 
 
 
@@ -401,6 +469,62 @@ export class OcrInvoicesService {
       }),
     );
 
+    // ── التحقق الرياضي + Price Intelligence ──────────────────────────────────
+
+    // سعر التاريخ — جلب آخر 90 يوم لكل صنف متطابق
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    const enrichedWithWarnings = await Promise.all(
+      matchedItems.map(async (item) => {
+        // 1. تحقق رياضي
+        const mathResult = validateItemMath(item.quantity, item.unitPrice, item.totalPrice);
+
+        // 2. Price Intelligence — فقط للأصناف المطابقة والمسعّرة
+        let priceWarning: { avg: number; deviation: number; lastPrice: number } | null = null;
+        if (item.itemMatch?.id && item.unitPrice && item.unitPrice > 0) {
+          const history = await this.prisma.ocrPriceHistory.findMany({
+            where: {
+              tenantId,
+              itemId: item.itemMatch.id,
+              invoiceDate: { gte: ninetyDaysAgo },
+            },
+            orderBy: { invoiceDate: 'desc' },
+            take: 10,
+          });
+
+          if (history.length >= 2) {
+            const avg = history.reduce((s, h) => s + Number(h.price), 0) / history.length;
+            const deviation = Math.abs(item.unitPrice - avg) / avg;
+            if (deviation > 0.25) { // >25% انحراف
+              priceWarning = {
+                avg: Math.round(avg * 100) / 100,
+                deviation: Math.round(deviation * 100),
+                lastPrice: Number(history[0].price),
+              };
+            }
+          }
+        }
+
+        return {
+          ...item,
+          mathWarning: mathResult.valid ? undefined : {
+            message: mathResult.warning,
+            suggestedQuantity: mathResult.suggestedQuantity,
+            suggestedUnitPrice: mathResult.suggestedUnitPrice,
+          },
+          priceWarning: priceWarning ?? undefined,
+        };
+      }),
+    );
+
+    // تحقق من مجموع الأصناف مقارنةً بإجمالي الفاتورة
+    const itemsSum = enrichedWithWarnings.reduce((s, i) => s + (i.totalPrice || 0), 0);
+    const invoiceTotalValidation = validateInvoiceTotals(
+      itemsSum,
+      extracted.totalAmount?.value,
+    );
+
     return {
       supplier: extracted.supplier,
       supplierMatch,
@@ -409,7 +533,8 @@ export class OcrInvoicesService {
       invoiceDate: extracted.invoiceDate,
       totalAmount: extracted.totalAmount,
       vatAmount: extracted.vatAmount,
-      items: matchedItems,
+      items: enrichedWithWarnings,
+      invoiceTotalWarning: invoiceTotalValidation.valid ? undefined : invoiceTotalValidation.warning,
     };
   }
 

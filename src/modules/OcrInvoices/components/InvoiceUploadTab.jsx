@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { extractInvoice, saveOcrInvoice } from '../services/ocrApi';
 
@@ -20,12 +20,57 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
   const [preview, setPreview]     = useState(null);
   const [imageBase64, setBase64]  = useState(null);
   const [mimeType, setMimeType]   = useState('image/jpeg');
-  const [extracted, setExtracted] = useState(null);
-  const [loading, setLoading]     = useState(false);
-  const [saving, setSaving]       = useState(false);
-  const [error, setError]         = useState(null);
-  const [success, setSuccess]     = useState(false);
+  const [extracted, setExtracted]   = useState(null);
+  const [editItems, setEditItems]   = useState(null); // نسخة قابلة للتعديل من الأصناف
+  const [loading, setLoading]       = useState(false);
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState(null);
+  const [success, setSuccess]       = useState(false);
   const fileRef = useRef();
+
+  // الأصناف الفعلية = التعديل إن وجد أو الأصل
+  const activeItems = editItems ?? extracted?.items ?? [];
+
+  // عدد التحذيرات الفعلية
+  const warningCount = useMemo(() => {
+    let n = 0;
+    if (extracted?.invoiceTotalWarning) n++;
+    activeItems.forEach((item) => {
+      if (item.mathWarning) n++;
+      if (item.priceWarning) n++;
+    });
+    return n;
+  }, [extracted?.invoiceTotalWarning, activeItems]);
+
+  // تحديث صنف واحد (تعديل إنلاين)
+  const updateItem = (index, field, value) => {
+    const num = parseFloat(value);
+    const updated = [...activeItems];
+    updated[index] = { ...updated[index], [field]: isNaN(num) ? value : num };
+
+    // إعادة حساب الإجمالي تلقائياً إذا تغيرت الكمية أو السعر
+    const item = updated[index];
+    if ((field === 'quantity' || field === 'unitPrice') && item.quantity > 0 && item.unitPrice > 0) {
+      updated[index] = { ...updated[index], totalPrice: Math.round(item.quantity * item.unitPrice * 100) / 100, mathWarning: undefined };
+    }
+    if (field === 'totalPrice') {
+      updated[index] = { ...updated[index], mathWarning: undefined };
+    }
+    setEditItems(updated);
+  };
+
+  // تطبيق الاقتراح التلقائي
+  const applyMathSuggestion = (index) => {
+    const item = activeItems[index];
+    if (!item.mathWarning) return;
+    const updated = [...activeItems];
+    if (item.mathWarning.suggestedQuantity !== undefined) {
+      updated[index] = { ...updated[index], quantity: item.mathWarning.suggestedQuantity, mathWarning: undefined };
+    } else if (item.mathWarning.suggestedUnitPrice !== undefined) {
+      updated[index] = { ...updated[index], unitPrice: item.mathWarning.suggestedUnitPrice, mathWarning: undefined };
+    }
+    setEditItems(updated);
+  };
 
   const readFile = useCallback((file) => {
     if (!file || !file.type.startsWith('image/')) return;
@@ -64,6 +109,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
           setError(`${t('ocrExtractFailed')} — تعذّر قراءة الفاتورة.\nModel: ${model}\n${detail}${rawSnippet}`);
         } else {
           setExtracted(res.data);
+          setEditItems(null); // إعادة تعيين التعديلات عند إعادة الاستخراج
           if (res.data?.enrichError) {
             console.warn('OCR enrichment warning:', res.data.enrichError);
           }
@@ -83,7 +129,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
     setSaving(true);
     setError(null);
     try {
-      const lines = (extracted.items || []).map((item) => ({
+      const lines = activeItems.map((item) => ({
         rawName:     item.name || '',
         nameAr:      item.nameAr || null,
         nameEn:      item.nameEn || null,
@@ -118,6 +164,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
           setPreview(null);
           setBase64(null);
           setExtracted(null);
+          setEditItems(null);
           setSuccess(false);
         }, 2000);
       } else {
@@ -222,13 +269,45 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                 </div>
               </div>
 
-              {/* الأصناف */}
-              {extracted.items?.length > 0 && (
+              {/* شريط التحذيرات */}
+              {warningCount > 0 && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: 10,
+                  background: 'rgba(245,158,11,0.12)',
+                  border: '1px solid rgba(245,158,11,0.35)',
+                  display: 'flex', alignItems: 'center', gap: 8, fontSize: 13,
+                }}>
+                  <span style={{ fontSize: 18 }}>⚠️</span>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#92400e' }}>
+                      {warningCount} تحذير — راجع الأرقام قبل الحفظ
+                    </div>
+                    {extracted.invoiceTotalWarning && (
+                      <div style={{ fontSize: 12, color: '#78350f', marginTop: 2 }}>
+                        {extracted.invoiceTotalWarning}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* الأصناف مع تعديل إنلاين */}
+              {activeItems.length > 0 && (
                 <div className="noorix-surface-card" style={{ padding: 16 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>📦 {t('ocrItems')} ({extracted.items.length})</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
+                    📦 {t('ocrItems')} ({activeItems.length})
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {extracted.items.map((item, i) => (
-                      <ItemRow key={i} item={item} language={language} t={t} />
+                    {activeItems.map((item, i) => (
+                      <ItemRow
+                        key={i}
+                        item={item}
+                        index={i}
+                        language={language}
+                        t={t}
+                        onUpdate={updateItem}
+                        onApplySuggestion={applyMathSuggestion}
+                      />
                     ))}
                   </div>
                 </div>
@@ -274,11 +353,31 @@ function FieldRow({ label, value, confidence, match }) {
   );
 }
 
-function ItemRow({ item, language, t }) {
+// ── حقل رقمي قابل للتعديل ────────────────────────────────────────────────────
+function EditableNumber({ value, onChange, warn }) {
+  return (
+    <input
+      type="number"
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      step="any"
+      style={{
+        width: 72, padding: '3px 6px', borderRadius: 6, fontSize: 13, fontWeight: 700,
+        border: `1px solid ${warn ? '#f59e0b' : 'var(--noorix-border)'}`,
+        background: warn ? 'rgba(245,158,11,0.08)' : 'var(--noorix-bg-surface)',
+        color: 'var(--noorix-text)', outline: 'none', fontFamily: 'inherit',
+        textAlign: 'center',
+      }}
+    />
+  );
+}
+
+function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
   const match = item.itemMatch;
   const statusInfo = match ? STATUS_BADGE[match.status] : STATUS_BADGE.new;
+  const hasMathWarn = !!item.mathWarning;
+  const hasPriceWarn = !!item.priceWarning;
 
-  // بناء عرض الاسم: عربي + إنجليزي + حجم
   const displayName = [item.nameAr, item.nameEn].filter(Boolean).join(' / ') || item.name || '—';
   const sizeLabel = item.size ? `${item.size}${item.sizeUnit || ''}` : null;
 
@@ -286,15 +385,13 @@ function ItemRow({ item, language, t }) {
     <div style={{
       padding: '10px 12px',
       borderRadius: 10,
-      background: 'var(--noorix-bg-surface)',
-      border: '1px solid var(--noorix-border)',
+      background: hasMathWarn ? 'rgba(245,158,11,0.06)' : 'var(--noorix-bg-surface)',
+      border: `1px solid ${hasMathWarn ? 'rgba(245,158,11,0.4)' : 'var(--noorix-border)'}`,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+      {/* رأس الصنف */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
         <div style={{ flex: 1 }}>
-          {/* الاسم الأساسي */}
           <div style={{ fontWeight: 600, fontSize: 14 }}>{displayName}</div>
-
-          {/* الحجم */}
           {sizeLabel && (
             <span style={{
               display: 'inline-block', marginTop: 3,
@@ -305,19 +402,13 @@ function ItemRow({ item, language, t }) {
               📏 {sizeLabel}
             </span>
           )}
-
-          {/* الاسم الكامل كما في الفاتورة (إذا كان مختلفاً) */}
           {item.name && item.name !== displayName && (
-            <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 2 }}>
-              OCR: {item.name}
-            </div>
+            <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 2 }}>OCR: {item.name}</div>
           )}
-
-          {/* المطابقة في الكتالوج */}
           {match && (
             <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 2 }}>
               ↳ {match.nameAr}{match.nameEn ? ` / ${match.nameEn}` : ''}
-              {match.hasSizes && <span style={{ marginRight: 4, color: '#6366f1' }}>• متعدد الأحجام</span>}
+              {match.hasSizes && <span style={{ marginInlineStart: 4, color: '#6366f1' }}>• متعدد الأحجام</span>}
             </div>
           )}
         </div>
@@ -328,16 +419,67 @@ function ItemRow({ item, language, t }) {
           {language === 'ar' ? statusInfo.label.ar : statusInfo.label.en}
         </span>
       </div>
-      <div style={{ display: 'flex', gap: 16, marginTop: 6, fontSize: 12, color: 'var(--noorix-text-muted)', flexWrap: 'wrap' }}>
-        {item.quantity  && <span>الكمية: <strong>{item.quantity}</strong></span>}
-        {item.unitPrice && <span>السعر: <strong>{item.unitPrice}</strong></span>}
-        {item.totalPrice && <span>الإجمالي: <strong>{item.totalPrice}</strong></span>}
+
+      {/* حقول الكمية والسعر والإجمالي — قابلة للتعديل */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>الكمية</span>
+          <EditableNumber value={item.quantity} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'quantity', v)} />
+        </div>
+        <span style={{ color: 'var(--noorix-text-muted)', fontSize: 13, alignSelf: 'flex-end', marginBottom: 4 }}>×</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>السعر</span>
+          <EditableNumber value={item.unitPrice} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'unitPrice', v)} />
+        </div>
+        <span style={{ color: 'var(--noorix-text-muted)', fontSize: 13, alignSelf: 'flex-end', marginBottom: 4 }}>=</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>الإجمالي</span>
+          <EditableNumber value={item.totalPrice} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'totalPrice', v)} />
+        </div>
         {item.confidence != null && (
-          <span style={{ color: CONFIDENCE_COLOR(item.confidence) }}>
-            دقة: {Math.round(item.confidence * 100)}%
+          <span style={{ fontSize: 11, color: CONFIDENCE_COLOR(item.confidence), alignSelf: 'flex-end', marginBottom: 4 }}>
+            {Math.round(item.confidence * 100)}%
           </span>
         )}
       </div>
+
+      {/* تحذير رياضي */}
+      {hasMathWarn && (
+        <div style={{
+          marginTop: 8, padding: '6px 10px', borderRadius: 8,
+          background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+        }}>
+          <div style={{ fontSize: 12, color: '#92400e' }}>
+            ⚠️ {item.mathWarning.message}
+          </div>
+          {(item.mathWarning.suggestedQuantity !== undefined || item.mathWarning.suggestedUnitPrice !== undefined) && (
+            <button
+              type="button"
+              onClick={() => onApplySuggestion(index)}
+              style={{
+                padding: '3px 10px', borderRadius: 6, cursor: 'pointer',
+                background: '#f59e0b', border: 'none',
+                color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              تصحيح تلقائي
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* تحذير السعر */}
+      {hasPriceWarn && (
+        <div style={{
+          marginTop: 6, padding: '6px 10px', borderRadius: 8,
+          background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
+          fontSize: 12, color: '#1e40af',
+        }}>
+          📊 السعر المعتاد في آخر 90 يوم: <strong>{item.priceWarning.avg} ريال</strong> — انحراف {item.priceWarning.deviation}%
+        </div>
+      )}
     </div>
   );
 }
