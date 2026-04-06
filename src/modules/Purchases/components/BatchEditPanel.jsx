@@ -68,7 +68,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
       title={`${t('batchLabel', batchId)} — ${t('batchSummary', items.length, fmt(total))}`}
       size="xl"
       footer={
-        <Button variant="success" disabled={saving} onClick={handleSave}>
+        <Button variant="primary" disabled={saving} onClick={handleSave}>
           {saving ? t('saving') : t('saveChanges')}
         </Button>
       }

@@ -150,7 +150,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
               </label>
             </div>
             <div className="nx-toolbar">
-              <Button type="submit" variant="success" disabled={addMutation.isPending || !nameAr.trim()}>
+              <Button type="submit" variant="primary" disabled={addMutation.isPending || !nameAr.trim()}>
                 {addMutation.isPending ? 'جاري الإضافة...' : 'حفظ الشركة'}
               </Button>
               <Button type="button" onClick={() => setShowAddForm(false)}>إلغاء</Button>
@@ -219,7 +219,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
               <Button variant="warning" onClick={() => updateMutation.mutate({ id: editModal.id, body: { isArchived: true } })} disabled={updateMutation.isPending}>أرشفة</Button>
             )}
             <Button onClick={() => setEditModal(null)}>إلغاء</Button>
-            <Button type="submit" form="edit-company-form" variant="success" disabled={updateMutation.isPending || !editModal?.nameAr?.trim()} style={{ minWidth: 120 }}>
+            <Button type="submit" form="edit-company-form" variant="primary" disabled={updateMutation.isPending || !editModal?.nameAr?.trim()} style={{ minWidth: 120 }}>
               {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
             </Button>
           </div>

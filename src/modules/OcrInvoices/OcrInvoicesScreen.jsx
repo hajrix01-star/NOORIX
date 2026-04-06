@@ -52,7 +52,7 @@ export default function OcrInvoicesScreen() {
   const itemsCount    = itemsData?.length     || 0;
 
   return (
-    <div className="ocr-screen" dir={dir}>
+    <div className="nx-screen ocr-screen" dir={dir}>
 
       {/* ── Header ── */}
       <div className="ocr-header">

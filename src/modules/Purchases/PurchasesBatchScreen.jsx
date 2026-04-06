@@ -551,7 +551,7 @@ export default function PurchasesBatchScreen() {
             {/* أزرار الإجراءات */}
             <div className="nx-toolbar nx-mt-20">
               <Button
-                variant="success"
+                variant="primary"
                 disabled={saveMutation.isPending || summary.count === 0 || !batchVaultId || activeVaults.length === 0}
                 onClick={() => saveMutation.mutate()}
                 style={{ flex: '1 1 200px', minWidth: 0 }}

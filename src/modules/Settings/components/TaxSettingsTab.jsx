@@ -126,7 +126,7 @@ export default function TaxSettingsTab() {
           {hasChanges && (
             <Button
               type="button"
-              variant="success"
+              variant="primary"
               onClick={handleSave}
               disabled={updateMutation.isPending}
               style={{ alignSelf: 'flex-start' }}

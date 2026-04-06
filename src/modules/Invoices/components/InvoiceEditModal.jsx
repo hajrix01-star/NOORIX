@@ -98,7 +98,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
           <Button variant="ghost" onClick={onClose}>
             {t('cancel')}
           </Button>
-          <Button variant="success" disabled={saving} onClick={handleSave}>
+          <Button variant="primary" disabled={saving} onClick={handleSave}>
             {saving ? t('saving') : t('saveChanges')}
           </Button>
         </>

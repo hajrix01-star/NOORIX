@@ -72,6 +72,7 @@ export default function DateFilterBar({ filter }) {
           <>
             <Input
               type="select"
+              className="ndfb-year-select"
               value={selYear}
               onChange={(e) => setSelYear(Number(e.target.value))}
             >
@@ -81,6 +82,7 @@ export default function DateFilterBar({ filter }) {
             </Input>
             <Input
               type="select"
+              className="ndfb-month-select"
               value={selMonth}
               onChange={(e) => setSelMonth(Number(e.target.value))}
             >

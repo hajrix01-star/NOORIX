@@ -170,7 +170,7 @@ export const StaffFormModal = memo(function StaffFormModal({
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="success" onClick={handleSubmit} disabled={isSaving || !form.name.trim()}>
+          <Button variant="primary" onClick={handleSubmit} disabled={isSaving || !form.name.trim()}>
             {isSaving ? t('saving') : t('saveChanges')}
           </Button>
         </>

@@ -34,9 +34,10 @@ const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
 const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvoicesScreen'));
 
-const THEME_KEY = 'noorix-theme';
-const LANG_KEY = 'noorix-lang';
-const CARD_STYLE_KEY = 'noorix-card-style';
+const THEME_KEY          = 'noorix-theme';
+const LANG_KEY           = 'noorix-lang';
+const CARD_STYLE_KEY     = 'noorix-card-style';
+const ACTIVE_COMPANY_KEY = 'noorix-active-company';
 function getInitialTheme() {
   if (typeof window === 'undefined') return 'light';
   return (localStorage.getItem(THEME_KEY) || 'light');
@@ -140,16 +141,35 @@ export default function App() {
   const showCompanySwitcher = companiesList.length > 1;
 
   const [_companySwitchPending, startCompanyTransition] = useTransition();
-  const [activeCompany, _setActiveCompany] = useState(() => singleCompanyId || (companiesList[0]?.id ?? ''));
+  const [activeCompany, _setActiveCompany] = useState(() => {
+    // استعادة الشركة المختارة من localStorage عند تحديث الصفحة
+    try {
+      const saved = localStorage.getItem(ACTIVE_COMPANY_KEY);
+      if (saved) return saved;
+    } catch (_) {}
+    return singleCompanyId || (companiesList[0]?.id ?? '');
+  });
   const setActiveCompany = useCallback((id) => {
-    startCompanyTransition(() => _setActiveCompany(id));
+    startCompanyTransition(() => {
+      _setActiveCompany(id);
+      try { localStorage.setItem(ACTIVE_COMPANY_KEY, id); } catch (_) {}
+    });
   }, [startCompanyTransition]);
   useEffect(() => {
-    if (singleCompanyId) setActiveCompany(singleCompanyId);
-    else if (companiesList.length && !companiesList.some((c) => c.id === activeCompany)) {
-      setActiveCompany(companiesList[0].id);
+    if (singleCompanyId) {
+      setActiveCompany(singleCompanyId);
+    } else if (companiesList.length > 0) {
+      // إذا الشركة المحفوظة موجودة في القائمة → ابقَ عليها
+      const savedId = (() => { try { return localStorage.getItem(ACTIVE_COMPANY_KEY); } catch { return null; } })();
+      if (savedId && companiesList.some((c) => c.id === savedId)) {
+        // الشركة المحفوظة صالحة — لا حاجة للتغيير
+        if (activeCompany !== savedId) _setActiveCompany(savedId);
+      } else if (!companiesList.some((c) => c.id === activeCompany)) {
+        // الشركة الحالية غير موجودة في القائمة → اختر الأولى
+        setActiveCompany(companiesList[0].id);
+      }
     }
-  }, [singleCompanyId, companiesFromApi, companiesList, activeCompany]);
+  }, [singleCompanyId, companiesFromApi, companiesList]);
 
   const [language, setLanguage] = useState(getInitialLanguage); // 'ar' | 'en'
   const [theme, setTheme] = useState(getInitialTheme); // 'light' | 'dark'

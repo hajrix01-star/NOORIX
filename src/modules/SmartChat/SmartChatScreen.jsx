@@ -623,7 +623,7 @@ export default function SmartChatScreen() {
         open={!!(activeCompanyId && commandsOpen && filteredGroups.length > 0)}
         onClose={() => setCommandsOpen(false)}
         title={isAr ? 'أوامر المحادثة' : 'Chat commands'}
-        size="lg"
+        size="md"
       >
         <div className="noorix-chat-commands-panel-content" dir={isAr ? 'rtl' : 'ltr'}>
           {filteredGroups.map((g) => (

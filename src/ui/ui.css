@@ -316,13 +316,17 @@
   -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6a7e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: left 12px center;
+  /* LTR: السهم على اليمين (الجانب الصحيح) */
+  background-position: right 12px center;
+  padding-right: 36px;
+  padding-left: 12px;
   padding-left: 36px;
 }
 [dir='rtl'] .nx-input__field--select {
-  background-position: right 12px center;
-  padding-left: 12px;
-  padding-right: 36px;
+  /* RTL: السهم على اليسار (نهاية المحور البصري في العربية) */
+  background-position: left 12px center;
+  padding-right: 12px;
+  padding-left: 36px;
 }
 
 /* — Textarea ── */

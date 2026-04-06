@@ -483,7 +483,8 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: clamp(12px, 2vw, 18px) clamp(12px, 2.5vw, 24px) clamp(16px, 3vw, 24px);
+  /* padding-top = 16px ثابت لجميع الأقسام على نفس المستوى */
+  padding: 16px clamp(12px, 2.5vw, 24px) clamp(16px, 3vw, 24px);
   gap: 14px;
   min-height: 100vh;
   min-width: 0;
@@ -560,6 +561,8 @@ a { color: inherit; text-decoration: none; }
   position: sticky;
   top: 0;
   z-index: var(--nx-z-header, 100);
+  /* حدّد التأثير البصري للفصل بين الهيدر والمحتوى */
+  border-bottom-width: 1px;
 }
 
 /* ── يسار: زر الهامبرجر + شعار ── */
@@ -2375,13 +2378,28 @@ input:focus, select:focus, textarea:focus {
   border-left: 1px solid var(--noorix-border);
 }
 
-/* حقول الفلتر */
+/* حقول الفلتر — السنة والشهر في سطر واحد دائماً */
 .ndfb-fields {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;  /* لا تكسير — يبقى كل شيء في سطر */
 }
+/* أحجام محددة للـ select بحيث تتناسب مع الخط وليست أكبر منه */
+.ndfb-fields .nx-input {
+  flex-shrink: 0;
+  margin: 0;
+}
+.ndfb-fields .nx-input__field--select {
+  min-width: 0;
+  width: auto;
+}
+/* select السنة */
+.ndfb-year-select .nx-input__field { width: 90px; }
+/* select الشهر */
+.ndfb-month-select .nx-input__field { width: 110px; }
+/* date input */
+.ndfb-fields .nx-input__field[type="date"] { width: 150px; }
 .ndfb-fields input[type="date"],
 .ndfb-fields select {
   transition: border-color 130ms;
@@ -2433,13 +2451,16 @@ input:focus, select:focus, textarea:focus {
 
 /* استجابة الجوال */
 @media (max-width: 640px) {
-  .noorix-date-filter-bar { gap: 6px; padding: 8px 10px; flex-direction: column; align-items: stretch; }
-  .ndfb-mode-group { align-self: stretch; }
-  .ndfb-mode-btn { padding: 5px 10px; font-size: 13px; min-height: 44px; flex: 1; text-align: center; }
-  .ndfb-fields { flex-direction: column; align-items: stretch; }
-  .ndfb-fields input[type="date"], .ndfb-fields select { width: 100%; min-width: 0; }
-  .ndfb-reset-btn { margin-right: 0; min-width: 44px; min-height: 44px; align-self: flex-start; }
-  .ndfb-badge { align-self: flex-start; }
+  .noorix-date-filter-bar { gap: 6px; padding: 8px 10px; flex-wrap: wrap; align-items: center; }
+  .ndfb-mode-group { flex-shrink: 0; }
+  .ndfb-mode-btn { padding: 5px 10px; font-size: 13px; min-height: 40px; }
+  /* الجوال: السنة والشهر يبقيان في سطر واحد */
+  .ndfb-fields { flex-wrap: nowrap; }
+  .ndfb-year-select .nx-input__field  { width: 82px !important; }
+  .ndfb-month-select .nx-input__field { width: 100px !important; }
+  .ndfb-fields .nx-input__field[type="date"] { width: 140px !important; }
+  .ndfb-reset-btn { margin-right: 0; min-width: 40px; min-height: 40px; }
+  .ndfb-badge { flex-shrink: 0; }
 
   /* Summary Bar — stack on mobile */
   .noorix-summary-bar--4,

@@ -400,7 +400,7 @@ export default function SalaryCalcTab() {
 
       {emp && (
         <Button
-          variant="success"
+          variant="primary"
           onClick={handleUpdateSalary}
           disabled={updateMutation.isPending || basic.lte(0) || inverseWarning}
           className="nx-w-full nx-p-12 nx-font-700"

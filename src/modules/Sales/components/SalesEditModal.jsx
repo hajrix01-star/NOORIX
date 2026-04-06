@@ -110,7 +110,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       footer={
         <>
           <Button
-            variant="success"
+            variant="primary"
             disabled={saving || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || mergedSalesChannels.length === 0}
             onClick={handleSave}
             className="nx-flex-1"

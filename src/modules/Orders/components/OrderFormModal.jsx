@@ -212,7 +212,7 @@ export function OrderFormModal({
       size="lg"
       footer={
         <Button
-          variant="success"
+          variant="primary"
           fullWidth
           disabled={(isEdit ? updateOrder?.isPending : createOrder.isPending) || totalAmount.lte(0) || products.length === 0}
           loading={isEdit ? updateOrder?.isPending : createOrder.isPending}

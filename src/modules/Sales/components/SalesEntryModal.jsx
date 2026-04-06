@@ -146,7 +146,7 @@ export function SalesEntryModal({
       footer={
         <>
           <Button
-            variant="success"
+            variant="primary"
             disabled={createSummary.isPending || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || salesChannels.length === 0 || !customerCount || parseInt(customerCount, 10) <= 0}
             onClick={handleSave}
             className="nx-flex-1"

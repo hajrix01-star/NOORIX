@@ -220,7 +220,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         )}
 
         <div className="nx-toolbar nx-mt-4">
-          <Button type="submit" variant="success" disabled={isSaving || !form.nameAr.trim()} fullWidth>
+          <Button type="submit" variant="primary" disabled={isSaving || !form.nameAr.trim()} fullWidth>
             {isSaving ? t('saving') : isEdit ? t('saveChanges') : t('addVaultBtn')}
           </Button>
           <Button type="button" onClick={onClose} disabled={isSaving}>
