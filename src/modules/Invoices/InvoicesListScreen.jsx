@@ -2,7 +2,7 @@
  * InvoicesListScreen — قائمة الفواتير
  * يعتمد على: useInvoices | SmartTable | DateFilterBar | format | saudiDate
  */
-import React, { memo, useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
@@ -13,6 +13,7 @@ import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDateISO } from '../../utils/saudiDate';
 import { updateInvoice, getInvoices, deleteInvoice } from '../../services/api';
+import { Badge, Button, Modal } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable         from '../../components/common/SmartTable';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
@@ -40,58 +41,35 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
     { label: t('total'),           value: invoice.totalAmount != null ? `${fmt(invoice.totalAmount, 2)} ﷼` : '—', highlight: '#2563eb', bold: true },
   ].filter(Boolean);
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-      onClick={onClose}
-    >
-      <div
-        className="noorix-surface-card"
-        style={{ width: '100%', maxWidth: 500, borderRadius: 14, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.22)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* هيدر */}
-        <div style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, marginBottom: 3 }}>{t('invoicesTitle')}</div>
-            <h3 style={{ margin: 0, color: '#fff', fontSize: 17, fontWeight: 700 }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
-          </div>
-          <button type="button" onClick={onClose} style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', padding: '6px 14px', fontWeight: 600, fontSize: 13 }}>
-            {t('close')}
-          </button>
+    <Modal open={!!invoice} onClose={onClose} size="sm" hideClose className="nx-modal--flush">
+      {/* هيدر بـ gradient */}
+      <div style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, marginBottom: 3 }}>{t('invoicesTitle')}</div>
+          <h3 style={{ margin: 0, color: '#fff', fontSize: 17, fontWeight: 700 }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
         </div>
-        {/* تفاصيل */}
-        <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {fields.map(({ label, value, highlight, bold }) => (
-            <div key={label} style={{ padding: '10px 12px', borderRadius: 10, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
-              <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 14, fontWeight: bold ? 700 : 600, color: highlight || 'var(--noorix-text)', fontFamily: 'var(--noorix-font-numbers)' }}>{value}</div>
-            </div>
-          ))}
-          {invoice.notes && (
-            <div style={{ gridColumn: '1 / -1', padding: '10px 12px', borderRadius: 10, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
-              <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{t('notes')}</div>
-              <div style={{ fontSize: 13, color: 'var(--noorix-text)' }}>{invoice.notes}</div>
-            </div>
-          )}
-        </div>
+        <button type="button" onClick={onClose} style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', padding: '6px 14px', fontWeight: 600, fontSize: 13 }}>
+          {t('close')}
+        </button>
       </div>
-    </div>
+      {/* حقول التفاصيل */}
+      <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {fields.map(({ label, value, highlight, bold }) => (
+          <div key={label} style={{ padding: '10px 12px', borderRadius: 10, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 14, fontWeight: bold ? 700 : 600, color: highlight || 'var(--noorix-text)', fontFamily: 'var(--noorix-font-numbers)' }}>{value}</div>
+          </div>
+        ))}
+        {invoice.notes && (
+          <div style={{ gridColumn: '1 / -1', padding: '10px 12px', borderRadius: 10, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
+            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{t('notes')}</div>
+            <div style={{ fontSize: 13, color: 'var(--noorix-text)' }}>{invoice.notes}</div>
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
-
-const Badge = memo(function Badge({ map, value }) {
-  const s = map[value] || { bg: 'rgba(100,116,139,0.08)', color: '#64748b', label: value };
-  return (
-    <span style={{
-      padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-      background: s.bg, color: s.color, whiteSpace: 'nowrap',
-    }}>
-      {s.label}
-    </span>
-  );
-});
 
 export default function InvoicesListScreen() {
   const { activeCompanyId, userRole } = useApp();
@@ -168,59 +146,42 @@ export default function InvoicesListScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- نقرأ فقط دوال فلتر التاريخ المستقرة
   }, [searchParams]);
 
-  const statusStyles = useMemo(() => ({
-    active:    { bg: 'rgba(22,163,74,0.1)',  color: '#16a34a', label: t('statusActive') },
-    cancelled: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', label: t('statusCancelled') },
+  const STATUS_MAP = useMemo(() => ({
+    active:    { color: 'green', label: t('statusActive')    },
+    cancelled: { color: 'red',   label: t('statusCancelled') },
   }), [t]);
-  const kindStyles = useMemo(() => ({
-    purchase:     { bg: 'transparent', color: '#2563eb', label: t('categoryTypes') },
-    expense:      { bg: 'transparent', color: '#d97706', label: t('categoryTypeExpense') },
-    fixed_expense: { bg: 'transparent', color: '#64748b', label: t('fixedExpenseType') || 'مصروف ثابت' },
-    hr_expense:   { bg: 'transparent', color: '#7c3aed', label: t('invoiceKindHrExpense') || 'إقامة/HR' },
-    salary:       { bg: 'transparent', color: '#22c55e', label: t('totalSalary') || 'راتب' },
-    advance:      { bg: 'transparent', color: '#f59e0b', label: t('quickAdvance') || 'سلفية' },
-    sale:         { bg: 'transparent', color: '#16a34a', label: t('categoryTypeSale') },
+
+  const KIND_MAP = useMemo(() => ({
+    purchase:      { color: 'blue',   label: t('categoryTypes')                        },
+    expense:       { color: 'amber',  label: t('categoryTypeExpense')                  },
+    fixed_expense: { color: 'gray',   label: t('fixedExpenseType') || 'مصروف ثابت'    },
+    hr_expense:    { color: 'violet', label: t('invoiceKindHrExpense') || 'إقامة/HR'  },
+    salary:        { color: 'green',  label: t('totalSalary') || 'راتب'               },
+    advance:       { color: 'amber',  label: t('quickAdvance') || 'سلفية'             },
+    sale:          { color: 'sky',    label: t('categoryTypeSale')                     },
   }), [t]);
 
   const columns = useMemo(() => [
     { key: 'invoiceNumber', label: t('documentNumber'), shrink: true, width: '15%',
-      render: (v) => (
-        <span
-          style={{
-            fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0, maxWidth: '100%',
-          }}
-          title={v || ''}
-        >
-          {v || '—'}
-        </span>
-      ) },
+      render: (v) => <span className="nx-cell-num nx-cell-accent nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
     { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), shrink: true, width: '13%',
-      render: (v) => (
-        <span
-          style={{
-            fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text-muted)',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0, maxWidth: '100%',
-          }}
-          title={v || ''}
-        >
-          {v || '—'}
-        </span>
-      ) },
+      render: (v) => <span className="nx-cell-num nx-cell-muted nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
     { key: 'supplierName',  label: t('supplier'), width: '14%',
-      render: (v) => <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0, maxWidth: '100%' }} title={v || ''}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
     { key: 'notesOrEmployee', label: t('invoiceNotesColumn') || 'ملاحظة', width: '16%',
-      render: (_, row) => <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0, maxWidth: '100%' }} title={row.notes || ''}>{row.notes || '—'}</span> },
-    { key: 'kind',          label: t('type'), shrink: true, width: '8%', render: (v) => <Badge map={kindStyles} value={v} /> },
+      render: (_, row) => <span className="nx-cell-ellipsis" title={row.notes || ''}>{row.notes || '—'}</span> },
+    { key: 'kind',          label: t('type'), shrink: true, width: '8%',
+      render: (v) => <Badge {...Badge.fromStatus(v, KIND_MAP)} size="sm" /> },
     { key: 'netAmount',     label: t('net'),    numeric: true, shrink: true, width: '5%',
-      render: (v) => <span style={{ color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v, 2)}</span> },
-    { key: 'taxAmount',     label: t('tax'),   numeric: true, shrink: true, width: '5%',
-      render: (v) => <span style={{ color: '#d97706', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v, 2)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v, 2)}</span> },
+    { key: 'taxAmount',     label: t('tax'),    numeric: true, shrink: true, width: '5%',
+      render: (v) => <span className="nx-cell-num nx-cell-num--amber">{fmt(v, 2)}</span> },
     { key: 'totalAmount',   label: t('total'),  numeric: true, shrink: true, width: '7%',
-      render: (v) => <span style={{ fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v, 2)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-bold">{fmt(v, 2)}</span> },
     { key: 'transactionDate', label: t('date'), sortable: true, shrink: true, width: '6%',
-      render: (v) => <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', whiteSpace: 'nowrap' }}>{formatSaudiDateISO(v)}</span> },
-    { key: 'status',        label: t('statusLabel'), shrink: true, width: '6%', render: (v) => <Badge map={statusStyles} value={v} /> },
+      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span> },
+    { key: 'status',        label: t('statusLabel'), shrink: true, width: '6%',
+      render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     { key: 'actions', label: t('actions'), align: 'center', width: '5%', shrink: true,
       render: (_, row) => (
         <InvoiceActionsCell
@@ -243,7 +204,7 @@ export default function InvoicesListScreen() {
         />
       ),
     },
-  ], [userRole, companyId, queryClient, t, statusStyles, kindStyles]);
+  ], [userRole, companyId, queryClient, t, STATUS_MAP, KIND_MAP]);
 
   const { suppliers } = useSuppliers(companyId);
 
@@ -294,82 +255,78 @@ export default function InvoicesListScreen() {
 
   const footerCells = (
     <>
-      <td colSpan={6} style={{ padding: '6px 10px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+      <td colSpan={6} className="nx-tfoot-label" style={{ fontSize: 12 }}>
         {t('totalInvoices', serverAll.count)} {total > PAGE_SIZE && <span style={{ opacity: 0.65, fontSize: 11 }}>({t('allPages')})</span>}
       </td>
-      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, color: '#16a34a', textAlign: 'right' }}>{fmt(Number(serverAll.net), 2)}</td>
-      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, color: '#d97706', textAlign: 'right' }}>{fmt(Number(serverAll.tax), 2)}</td>
-      <td style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 13, color: '#7c3aed', fontWeight: 900, textAlign: 'right' }}>{fmt(Number(serverAll.total), 2)}</td>
+      <td className="nx-tfoot-num nx-cell-num--green">{fmt(Number(serverAll.net), 2)}</td>
+      <td className="nx-tfoot-num nx-cell-num--amber">{fmt(Number(serverAll.tax), 2)}</td>
+      <td className="nx-tfoot-num nx-cell-num--violet">{fmt(Number(serverAll.total), 2)}</td>
       <td colSpan={3} />
     </>
   );
 
-  const renderMobileCard = useCallback((row) => {
-    const kindS   = kindStyles[row.kind]   || { color: '#64748b', label: row.kind };
-    const statusS = statusStyles[row.status] || { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: row.status };
-    return (
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-          <span style={{ fontWeight: 700, color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14 }}>
-            {row.invoiceNumber || '—'}
-          </span>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{formatSaudiDateISO(row.transactionDate)}</span>
-            <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: statusS.bg, color: statusS.color }}>{statusS.label}</span>
-          </div>
-        </div>
-        <div style={{ fontSize: 13, marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ color: kindS.color, fontWeight: 600, fontSize: 12 }}>{kindS.label}</span>
-          {row.supplierName && <span style={{ color: 'var(--noorix-text-muted)' }}>— {row.supplierName}</span>}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('total')}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmount, 2)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('net')}</div>
-            <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.netAmount, 2)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('tax')}</div>
-            <div style={{ fontSize: 13, color: '#d97706', fontWeight: 600, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.taxAmount, 2)}</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <InvoiceActionsCell
-            row={row}
-            userRole={userRole}
-            companyId={companyId}
-            onPrint={() => window.print()}
-            onEdit={(r) => setEditingInvoice(r)}
-            onDelete={async (r) => {
-              if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
-              const res = await deleteInvoice(r.id, companyId);
-              if (res.success) {
-                queryClient.invalidateQueries({ queryKey: ['invoices'] });
-                queryClient.invalidateQueries({ queryKey: ['vaults'] });
-                queryClient.invalidateQueries({ queryKey: ['ledger'] });
-                setToast({ visible: true, message: t('invoiceDeleted'), type: 'success' });
-              } else setToast({ visible: true, message: res.error || t('deleteFailed'), type: 'error' });
-            }}
-          />
+  const renderMobileCard = useCallback((row) => (
+    <div>
+      <div className="nx-mc__header">
+        <span className="nx-cell-num nx-cell-accent" style={{ fontSize: 14 }}>
+          {row.invoiceNumber || '—'}
+        </span>
+        <div className="nx-mc__meta">
+          <span className="nx-cell-muted-sm">{formatSaudiDateISO(row.transactionDate)}</span>
+          <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
       </div>
-    );
-  }, [kindStyles, statusStyles, userRole, companyId, queryClient, t]);
+      <div style={{ fontSize: 13, marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
+        {row.supplierName && <span className="nx-cell-muted">{row.supplierName}</span>}
+      </div>
+      <div className="nx-mc__grid nx-mc__grid--3">
+        <div>
+          <div className="nx-mc__stat-label">{t('total')}</div>
+          <div className="nx-mc__stat-value">{fmt(row.totalAmount, 2)}</div>
+        </div>
+        <div>
+          <div className="nx-mc__stat-label">{t('net')}</div>
+          <div className="nx-mc__stat-value nx-cell-num--green" style={{ fontSize: 13 }}>{fmt(row.netAmount, 2)}</div>
+        </div>
+        <div>
+          <div className="nx-mc__stat-label">{t('tax')}</div>
+          <div className="nx-mc__stat-value nx-cell-num--amber" style={{ fontSize: 13 }}>{fmt(row.taxAmount, 2)}</div>
+        </div>
+      </div>
+      <div className="nx-mc__actions">
+        <InvoiceActionsCell
+          row={row}
+          userRole={userRole}
+          companyId={companyId}
+          onPrint={() => window.print()}
+          onEdit={(r) => setEditingInvoice(r)}
+          onDelete={async (r) => {
+            if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
+            const res = await deleteInvoice(r.id, companyId);
+            if (res.success) {
+              queryClient.invalidateQueries({ queryKey: ['invoices'] });
+              queryClient.invalidateQueries({ queryKey: ['vaults'] });
+              queryClient.invalidateQueries({ queryKey: ['ledger'] });
+              setToast({ visible: true, message: t('invoiceDeleted'), type: 'success' });
+            } else setToast({ visible: true, message: res.error || t('deleteFailed'), type: 'error' });
+          }}
+        />
+      </div>
+    </div>
+  ), [KIND_MAP, STATUS_MAP, userRole, companyId, queryClient, t]);
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
       <div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('invoicesTitle')}</h1>
+        <h1 className="nx-page-title">{t('invoicesTitle')}</h1>
       </div>
 
       <DateFilterBar filter={dateFilter} />
 
       {!companyId && (
-        <div className="noorix-surface-card" style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+        <div className="noorix-surface-card nx-empty-state">
           {t('pleaseSelectCompany')}
         </div>
       )}
@@ -489,65 +446,36 @@ export default function InvoicesListScreen() {
           {(urlExtra.categoryId || urlExtra.expenseLineId || urlExtra.kind) && (
             <div
               className="noorix-surface-card"
-              style={{
-                padding: '10px 14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                flexWrap: 'wrap',
-                fontSize: 12,
-                border: '1px dashed rgba(37,99,235,0.35)',
-                background: 'rgba(37,99,235,0.04)',
-              }}
+              style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', fontSize: 12, border: '1px dashed rgba(37,99,235,0.35)', background: 'rgba(37,99,235,0.04)' }}
             >
-              <span style={{ color: 'var(--noorix-text-muted)' }}>{t('invoicesDrillBanner')}</span>
-              <button
-                type="button"
-                className="noorix-btn-nav"
-                onClick={() => { setUrlExtra({ kind: '', categoryId: '', expenseLineId: '' }); setPage(1); }}
-              >
+              <span className="nx-cell-muted">{t('invoicesDrillBanner')}</span>
+              <Button size="sm" onClick={() => { setUrlExtra({ kind: '', categoryId: '', expenseLineId: '' }); setPage(1); }}>
                 {t('clearDrillFilters')}
-              </button>
+              </Button>
             </div>
           )}
           <div className="noorix-exec-filters">
-            <button
-              type="button"
-              className="noorix-btn-nav"
+            <Button
+              size="sm"
+              icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>}
               onClick={() => setDayCloseOpen(true)}
-              style={{ fontSize: 12, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               {t('dayCloseOpenBtn')}
-            </button>
-            <button
-              type="button"
-              className="noorix-btn-nav"
+            </Button>
+            <Button
+              size="sm"
+              icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
               onClick={() => setShowImportExport(true)}
-              style={{ fontSize: 12, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               استيراد / تصدير
-            </button>
-            <button
-              type="button"
-              className="noorix-btn-nav"
+            </Button>
+            <Button
+              size="sm"
               onClick={() => setShowCancelled((v) => !v)}
-              style={{
-                fontSize: 12,
-                padding: '6px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                flexShrink: 0,
-                color: showCancelled ? '#dc2626' : 'var(--noorix-text)',
-                borderColor: showCancelled ? 'rgba(220,38,38,0.25)' : undefined,
-                background: showCancelled ? 'rgba(220,38,38,0.06)' : undefined,
-              }}
+              style={showCancelled ? { color: '#dc2626', borderColor: 'rgba(220,38,38,0.25)', background: 'rgba(220,38,38,0.06)' } : undefined}
             >
               {showCancelled ? t('hideCancelledInvoices') : t('showCancelledInvoices')}
-            </button>
+            </Button>
             <span className="noorix-exec-filters__icon" title={t('filterByType')} aria-hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="4 2 20 2 14 10 14 22 10 22 10 10 4 2"/></svg>
             </span>
@@ -604,8 +532,8 @@ export default function InvoicesListScreen() {
           title={t('invoicesTitle')}
           badge={
             <>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>— {dateFilter.label}</span>
-              <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{t('invoiceCount', displayedTotal)}</span>
+              <span className="nx-cell-muted-sm">— {dateFilter.label}</span>
+              <span className="nx-pill nx-pill--blue nx-pill--sm">{t('invoiceCount', displayedTotal)}</span>
             </>
           }
           searchValue={searchText}

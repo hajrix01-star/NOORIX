@@ -21,6 +21,7 @@ import {
 } from '../../services/api';
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { hrFmt } from './utils/hrFmt';
+import { Badge, Button } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import {
   parseWorkHours,
@@ -246,14 +247,34 @@ export default function EmployeeProfileScreen() {
   if (isLoading) return <div style={{ padding: 24 }}>{t('loading')}</div>;
   if (error || !employee) {
     return (
-      <div style={{ padding: 24 }}>
-        <p style={{ color: 'var(--noorix-text-muted)' }}>{t('noEmployees')}</p>
-        <button type="button" className="noorix-btn-nav" onClick={() => navigate('/hr')}>
-          العودة للقائمة
-        </button>
+      <div style={{ padding: 24, display: 'grid', gap: 12 }}>
+        <p className="nx-cell-muted">{t('noEmployees')}</p>
+        <div><Button onClick={() => navigate('/hr')}>← العودة للقائمة</Button></div>
       </div>
     );
   }
+
+  const EMP_STATUS_MAP = {
+    active:     { color: 'green',  label: t('statusActive')     },
+    terminated: { color: 'red',    label: t('statusTerminated') },
+    archived:   { color: 'gray',   label: t('statusArchived')   },
+    on_leave:   { color: 'amber',  label: t('statusOnLeave')    },
+  };
+  const LEAVE_STATUS_MAP = {
+    pending:  { color: 'amber', label: t('statusPending')   },
+    approved: { color: 'green', label: t('statusApproved')  },
+    rejected: { color: 'red',   label: t('statusRejected')  },
+  };
+  const ADVANCE_STATUS_MAP = {
+    settled:   { color: 'green', label: t('advanceSettled')      },
+    cancelled: { color: 'gray',  label: t('cancelled')           },
+    active:    { color: 'amber', label: t('advanceOutstanding')  },
+  };
+  const RESIDENCY_STATUS_MAP = {
+    expired: { color: 'red',   label: t('statusExpired') },
+    renewed: { color: 'green', label: t('statusRenewed') },
+    active:  { color: 'blue',  label: t('statusActive')  },
+  };
 
   const overtimeTotal = overtimePay(employee, customAllowanceTotal);
   const total = totalSalary(employee, customAllowanceTotal);
@@ -285,81 +306,40 @@ export default function EmployeeProfileScreen() {
   })();
 
   return (
-    <div style={{ padding: 24, display: 'grid', gap: 20 }}>
+    <div className="nx-screen" style={{ padding: 24 }}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <button type="button" className="noorix-btn-nav" onClick={() => navigate('/hr')}>
-          ← العودة
-        </button>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" className="noorix-btn-nav" onClick={() => setDocModal('salary')}>
-            {t('salaryCertificate') || 'تعريف راتب'}
-          </button>
-          <button type="button" className="noorix-btn-nav" onClick={() => setDocModal('contract')}>
-            {t('documentContract') || 'عقد'}
-          </button>
-          <button type="button" className="noorix-btn-nav" onClick={() => setDocModal('settlement')}>
-            {t('finalSettlement') || 'مخالصة'}
-          </button>
+      <div className="nx-page-header">
+        <Button onClick={() => navigate('/hr')}>← {t ? 'العودة' : 'Back'}</Button>
+        <div className="nx-toolbar">
+          <Button onClick={() => setDocModal('salary')}>{t('salaryCertificate') || 'تعريف راتب'}</Button>
+          <Button onClick={() => setDocModal('contract')}>{t('documentContract') || 'عقد'}</Button>
+          <Button onClick={() => setDocModal('settlement')}>{t('finalSettlement') || 'مخالصة'}</Button>
           {employee.status === 'active' && (
-            <button
-              type="button"
-              className="noorix-btn-nav noorix-btn-primary"
-              onClick={() => setShowAdvance(true)}
-            >
-              {t('payAdvance')}
-            </button>
+            <Button variant="primary" onClick={() => setShowAdvance(true)}>{t('payAdvance')}</Button>
           )}
           {canDeleteEmployee && (
-            <button
-              type="button"
-              className="noorix-btn-nav"
-              style={{ color: '#b91c1c', borderColor: '#fecaca' }}
-              onClick={handlePermanentDeleteFromProfile}
-            >
+            <Button variant="danger" onClick={handlePermanentDeleteFromProfile}>
               {t('deleteEmployeePermanent')}
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {/* معلومات أساسية */}
       <div className="noorix-surface-card" style={{ padding: 24 }}>
-        <h1 style={{ fontSize: 22, margin: '0 0 16px' }}>{employeeDisplayName(employee, lang)}</h1>
-        <p style={{ margin: 0, color: 'var(--noorix-text-muted)' }}>{employee.jobTitle || '—'}</p>
+        <h1 className="nx-page-title" style={{ marginBottom: 16 }}>{employeeDisplayName(employee, lang)}</h1>
+        <p className="nx-cell-muted" style={{ margin: 0 }}>{employee.jobTitle || '—'}</p>
         <p style={{ margin: '8px 0 0', fontSize: 13 }}>الرقم الوظيفي: {employee.employeeSerial || '—'}</p>
         <p style={{ margin: '4px 0 0', fontSize: 13 }}>تاريخ التعيين: {formatSaudiDate(employee.joinDate)}</p>
-        <span style={{
-          marginTop: 8, display: 'inline-block', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700,
-          background: employee.status === 'active'
-            ? 'rgba(22,163,74,0.1)'
-            : employee.status === 'terminated'
-              ? 'rgba(239,68,68,0.1)'
-              : employee.status === 'archived'
-                ? 'rgba(100,116,139,0.1)'
-                : 'rgba(245,158,11,0.1)',
-          color: employee.status === 'active'
-            ? '#16a34a'
-            : employee.status === 'terminated'
-              ? '#ef4444'
-              : employee.status === 'archived'
-                ? '#64748b'
-                : '#f59e0b',
-        }}>
-          {employee.status === 'active'
-            ? t('statusActive')
-            : employee.status === 'terminated'
-              ? t('statusTerminated')
-              : employee.status === 'archived'
-                ? t('statusArchived')
-                : t('statusOnLeave')}
-        </span>
+        <div style={{ marginTop: 10 }}>
+          <Badge {...Badge.fromStatus(employee.status, EMP_STATUS_MAP)} />
+        </div>
       </div>
 
       {/* تفاصيل الراتب */}
       <div className="noorix-surface-card" style={{ padding: 24 }}>
-        <h2 style={{ fontSize: 18, margin: '0 0 16px' }}>{t('totalSalary')}</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 16px', color: 'var(--noorix-text)' }}>{t('totalSalary')}</h2>
         <div style={{ border: '1px solid var(--noorix-border)', borderRadius: 12, overflow: 'hidden' }}>
           {salaryRows.map((row, idx) => (
             <div
@@ -385,9 +365,9 @@ export default function EmployeeProfileScreen() {
 
       {/* السجل المالي */}
       <div className="noorix-surface-card noorix-table-frame" style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>{t('financialRecord') || 'السجل المالي'}</span>
-          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{financialRecords.length}</span>
+        <div className="nx-section-header">
+          <span className="nx-section-header__title">{t('financialRecord') || 'السجل المالي'}</span>
+          <span className="nx-pill nx-pill--blue nx-pill--sm">{financialRecords.length}</span>
         </div>
         <SmartTable
           compact
@@ -395,13 +375,13 @@ export default function EmployeeProfileScreen() {
           rowNumberWidth="1%"
           innerPadding={8}
           columns={[
-            { key: 'date', label: t('transactionDate'), width: '12%', render: (v) => formatSaudiDate(v) },
-            { key: 'typeLabel', label: t('status') || 'النوع', width: '18%', render: (v) => v },
-            { key: 'amount', label: t('advanceAmount') || 'المبلغ', numeric: true, width: '15%', render: (v) => (
-              <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: v >= 0 ? 'inherit' : '#dc2626' }}>{hrFmt(v)}</span>
+            { key: 'date',      label: t('transactionDate'),            width: '12%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'typeLabel', label: t('status') || 'النوع',         width: '18%', render: (v) => v },
+            { key: 'amount',    label: t('advanceAmount') || 'المبلغ', numeric: true, width: '15%', render: (v) => (
+              <span className={`nx-cell-num${v < 0 ? ' nx-cell-num--red' : ''}`}>{hrFmt(v)}</span>
             ) },
-            { key: 'notes', label: t('invoiceNotesColumn'), width: '54%', render: (v) => (
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: '100%' }} title={v || ''}>{v || '—'}</span>
+            { key: 'notes',     label: t('invoiceNotesColumn'),        width: '54%', render: (v) => (
+              <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span>
             ) },
           ]}
           data={financialRecords}
@@ -414,9 +394,9 @@ export default function EmployeeProfileScreen() {
 
       {/* الإجازات */}
       <div className="noorix-surface-card noorix-table-frame" style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>{t('hrTabLeave')}</span>
-          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{leaves.length}</span>
+        <div className="nx-section-header">
+          <span className="nx-section-header__title">{t('hrTabLeave')}</span>
+          <span className="nx-pill nx-pill--blue nx-pill--sm">{leaves.length}</span>
         </div>
         <SmartTable
           compact
@@ -425,18 +405,10 @@ export default function EmployeeProfileScreen() {
           innerPadding={8}
           columns={[
             { key: 'leaveType', label: t('leaveType'), width: '18%', render: (v) => t(TYPE_MAP[v] || 'leaveOther') },
-            { key: 'startDate', label: t('startDate'), width: '18%', render: (v) => formatSaudiDate(v) },
-            { key: 'endDate', label: t('endDate'), width: '18%', render: (v) => formatSaudiDate(v) },
-            { key: 'daysCount', label: t('daysCount'), numeric: true, width: '12%', render: (v) => v ?? '—' },
-            { key: 'status', label: t('status'), width: '18%', render: (v) => (
-              <span style={{
-                padding: '2px 6px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                background: v === 'approved' ? 'rgba(22,163,74,0.1)' : v === 'rejected' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
-                color: v === 'approved' ? '#16a34a' : v === 'rejected' ? '#ef4444' : '#f59e0b',
-              }}>
-                {v === 'pending' ? t('statusPending') : v === 'approved' ? t('statusApproved') : t('statusRejected')}
-              </span>
-            ) },
+            { key: 'startDate', label: t('startDate'), width: '18%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'endDate',   label: t('endDate'),   width: '18%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'daysCount', label: t('daysCount'), numeric: true, width: '12%', render: (v) => <span className="nx-cell-num">{v ?? '—'}</span> },
+            { key: 'status',    label: t('status'),    width: '18%', render: (v) => <Badge {...Badge.fromStatus(v, LEAVE_STATUS_MAP)} size="sm" /> },
           ]}
           data={leaves}
           total={leaves.length}
@@ -448,9 +420,9 @@ export default function EmployeeProfileScreen() {
 
       {/* السلفيات */}
       <div className="noorix-surface-card noorix-table-frame" style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>{t('advancesList')}</span>
-          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{advances.length}</span>
+        <div className="nx-section-header">
+          <span className="nx-section-header__title">{t('advancesList')}</span>
+          <span className="nx-pill nx-pill--blue nx-pill--sm">{advances.length}</span>
         </div>
         <SmartTable
           compact
@@ -458,17 +430,9 @@ export default function EmployeeProfileScreen() {
           rowNumberWidth="1%"
           innerPadding={8}
           columns={[
-            { key: 'totalAmount', label: t('advanceAmount'), numeric: true, width: '25%', render: (v) => hrFmt(v) },
-            { key: 'transactionDate', label: t('transactionDate'), width: '25%', render: (v) => formatSaudiDate(v) },
-            { key: 'status', label: t('status'), width: '25%', render: (v) => (
-              <span style={{
-                padding: '2px 6px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                background: v === 'settled' ? 'rgba(22,163,74,0.1)' : v === 'cancelled' ? 'rgba(100,116,139,0.1)' : 'rgba(245,158,11,0.1)',
-                color: v === 'settled' ? '#16a34a' : v === 'cancelled' ? '#64748b' : '#f59e0b',
-              }}>
-                {v === 'settled' ? t('advanceSettled') : v === 'cancelled' ? t('cancelled') : t('advanceOutstanding')}
-              </span>
-            ) },
+            { key: 'totalAmount',     label: t('advanceAmount'),    numeric: true, width: '25%', render: (v) => <span className="nx-cell-num nx-cell-bold">{hrFmt(v)}</span> },
+            { key: 'transactionDate', label: t('transactionDate'),                width: '25%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'status',          label: t('status'),                         width: '25%', render: (v) => <Badge {...Badge.fromStatus(v, ADVANCE_STATUS_MAP)} size="sm" /> },
           ]}
           data={advances}
           total={advances.length}
@@ -480,9 +444,9 @@ export default function EmployeeProfileScreen() {
 
       {/* الإقامات */}
       <div className="noorix-surface-card noorix-table-frame" style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>{t('hrTabResidency')}</span>
-          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{residencies.length}</span>
+        <div className="nx-section-header">
+          <span className="nx-section-header__title">{t('hrTabResidency')}</span>
+          <span className="nx-pill nx-pill--blue nx-pill--sm">{residencies.length}</span>
         </div>
         <SmartTable
           compact
@@ -490,18 +454,10 @@ export default function EmployeeProfileScreen() {
           rowNumberWidth="1%"
           innerPadding={8}
           columns={[
-            { key: 'iqamaNumber', label: t('iqamaNumber'), width: '25%', render: (v) => <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{v || '—'}</span> },
-            { key: 'issueDate', label: t('startDate'), width: '25%', render: (v) => formatSaudiDate(v) },
-            { key: 'expiryDate', label: t('expiryDate'), width: '25%', render: (v) => formatSaudiDate(v) },
-            { key: 'status', label: t('status'), width: '24%', render: (v) => (
-              <span style={{
-                padding: '2px 6px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                background: v === 'expired' ? 'rgba(239,68,68,0.1)' : v === 'renewed' ? 'rgba(22,163,74,0.1)' : 'rgba(37,99,235,0.1)',
-                color: v === 'expired' ? '#ef4444' : v === 'renewed' ? '#16a34a' : '#2563eb',
-              }}>
-                {v === 'expired' ? t('statusExpired') : v === 'renewed' ? t('statusRenewed') : t('statusActive')}
-              </span>
-            ) },
+            { key: 'iqamaNumber', label: t('iqamaNumber'), width: '25%', render: (v) => <span className="nx-cell-num">{v || '—'}</span> },
+            { key: 'issueDate',   label: t('startDate'),   width: '25%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'expiryDate',  label: t('expiryDate'),  width: '25%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'status',      label: t('status'),       width: '24%', render: (v) => <Badge {...Badge.fromStatus(v, RESIDENCY_STATUS_MAP)} size="sm" /> },
           ]}
           data={residencies}
           total={residencies.length}
@@ -513,14 +469,14 @@ export default function EmployeeProfileScreen() {
 
       {/* المستندات */}
       <div className="noorix-surface-card noorix-table-frame" style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--noorix-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>{t('addDocument')}</span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="nx-section-header">
+          <span className="nx-section-header__title">{t('addDocument')}</span>
+          <div className="nx-section-header__actions">
             <input ref={docFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={handleUploadDoc} />
-            <button type="button" className="noorix-btn-nav" disabled={uploading} onClick={() => docFileRef.current?.click()}>
+            <Button size="sm" disabled={uploading} loading={uploading} onClick={() => docFileRef.current?.click()}>
               {uploading ? t('saving') : t('uploadFile')}
-            </button>
-            <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontWeight: 700 }}>{documents.length}</span>
+            </Button>
+            <span className="nx-pill nx-pill--blue nx-pill--sm">{documents.length}</span>
           </div>
         </div>
         <SmartTable
@@ -530,14 +486,12 @@ export default function EmployeeProfileScreen() {
           innerPadding={8}
           columns={[
             { key: 'fileName', label: t('documentType') || 'المستند', width: '75%', render: (v, row) => (
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: '100%' }} title={row.fileName || row.documentType || ''}>
+              <span className="nx-cell-ellipsis" title={row.fileName || row.documentType || ''}>
                 {row.fileName || row.documentType || 'مستند'}
               </span>
             ) },
             { key: 'actions', label: t('actions'), width: '24%', align: 'center', render: (_, row) => (
-              <button type="button" className="noorix-btn-nav" style={{ padding: '4px 10px' }} onClick={() => handleDownloadDoc(row.id)}>
-                {t('download')}
-              </button>
+              <Button size="sm" onClick={() => handleDownloadDoc(row.id)}>{t('download')}</Button>
             ) },
           ]}
           data={documents}
