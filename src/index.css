@@ -536,13 +536,16 @@ a { color: inherit; text-decoration: none; }
 .app-main__title   { font-size: var(--noorix-text-h1); font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-main__subtitle { font-size: var(--noorix-text-th); color: var(--noorix-text-muted-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ========== التوب‌بار — ERP-style: عناصر مصطفة، شركة في المنتصف ========== */
+/* ═══════════════════════════════════════════════════════════
+   Topbar — شريط الهيدر العلوي الاحترافي
+   ═══════════════════════════════════════════════════════════ */
 .noorix-topbar {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 16px;
-  padding: 10px 24px;
+  gap: 12px;
+  padding: 0 20px;
+  height: 52px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -550,74 +553,332 @@ a { color: inherit; text-decoration: none; }
   background: var(--noorix-topbar-bg);
   color: var(--noorix-topbar-text);
   border-bottom: 1px solid var(--noorix-topbar-border);
-  box-shadow: 0 1px 0 var(--noorix-topbar-border), 0 2px 12px rgba(0,0,0,0.04);
-  margin-bottom: 14px;
+  box-shadow: 0 1px 0 var(--noorix-topbar-border);
+  margin-bottom: 0;
   flex-shrink: 0;
   overflow: hidden;
+  position: sticky;
+  top: 0;
+  z-index: var(--nx-z-header, 100);
 }
+
+/* ── يسار: زر الهامبرجر + شعار ── */
 .noorix-topbar__left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
   justify-self: start;
-  overflow: hidden;
 }
+.noorix-topbar__logo {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--noorix-topbar-text);
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+/* ── مركز: اسم الشركة ── */
 .noorix-topbar__center {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   min-width: 0;
   overflow: hidden;
 }
-.noorix-topbar__logo {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--noorix-topbar-text);
+.noorix-topbar__co-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.noorix-topbar__co-initial {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
   flex-shrink: 0;
 }
 .noorix-topbar__company {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--noorix-topbar-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
-  text-align: center;
+  max-width: clamp(100px, 28vw, 260px);
+  opacity: 0.9;
 }
 
+/* ── يمين: أزرار الإجراءات + UserMenu ── */
 .noorix-topbar-actions {
   direction: ltr;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
   justify-self: end;
 }
 
 .noorix-topbar-btn {
-  height: 34px;
-  padding: 0 12px;
-  border-radius: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 7px;
   border: 1px solid var(--noorix-border);
   background: transparent;
   color: var(--noorix-text);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-family: var(--noorix-font-primary);
   font-weight: 500;
-  transition: background var(--noorix-transition), border-color var(--noorix-transition), box-shadow var(--noorix-transition);
+  transition: background var(--noorix-transition);
   white-space: nowrap;
   flex-shrink: 0;
 }
 .noorix-topbar-btn:hover {
   background: var(--noorix-bg-muted);
-  border-color: var(--noorix-border-strong);
-  box-shadow: var(--noorix-shadow-sm);
 }
-.noorix-topbar .user-menu-trigger:hover {
+
+/* ════════════════════════════════════════
+   UserMenu — قائمة المستخدم
+   ════════════════════════════════════════ */
+
+/* wrapper */
+.um-wrapper {
+  position: relative;
+}
+
+/* زر الأفاتار المضغوط */
+.um-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 150ms, border-color 150ms;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.um-trigger:hover {
   background: var(--noorix-bg-muted);
+  border-color: var(--noorix-border);
+}
+.um-trigger:focus-visible {
+  outline: 2px solid var(--noorix-accent-blue);
+  outline-offset: 2px;
+}
+
+/* دائرة الأفاتار */
+.um-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: border-color 150ms;
+}
+.um-trigger:hover .um-avatar {
+  border-color: var(--role-color, #2563eb);
+}
+
+/* سهم الشيفرون */
+.um-chevron {
+  color: var(--noorix-text-muted);
+  transition: transform 200ms cubic-bezier(0.4,0,0.2,1);
+  flex-shrink: 0;
+}
+.um-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* ── القائمة المنسدلة ── */
+.um-dropdown {
+  background: var(--noorix-bg-modal, #fff);
+  border: 1px solid var(--noorix-border);
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(10,31,68,0.1), 0 16px 48px rgba(10,31,68,0.16);
+  overflow: hidden;
+  overflow-y: auto;
+  animation: fadeSlideDown 0.15s cubic-bezier(0.34,1.1,0.64,1);
+}
+
+/* رأس القائمة */
+.um-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 10px;
+}
+.um-avatar-lg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+.um-header-info {
+  flex: 1;
+  min-width: 0;
+}
+.um-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--noorix-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.um-email {
+  font-size: 11px;
+  color: var(--noorix-text-muted);
+  margin-bottom: 4px;
+  direction: ltr;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.um-role-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid;
+  line-height: 1.4;
+}
+
+/* فاصل */
+.um-divider {
+  height: 1px;
+  background: var(--noorix-border);
+  margin: 0;
+  opacity: 0.6;
+}
+
+/* قسم عناصر */
+.um-section {
+  padding: 5px 6px;
+  display: grid;
+  gap: 1px;
+}
+.um-section--last { padding-bottom: 7px; }
+
+/* عنصر القائمة */
+.um-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--noorix-text);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: inherit;
+  width: 100%;
+  cursor: pointer;
+  transition: background 140ms;
+  min-height: 38px;
+  touch-action: manipulation;
+}
+.um-item:hover { background: var(--noorix-bg-muted); }
+.um-item:active { background: var(--noorix-border); }
+
+.um-item--disabled {
+  cursor: not-allowed;
+  color: var(--noorix-text-muted);
+  opacity: 0.65;
+}
+.um-item--disabled:hover { background: transparent; }
+
+.um-item--danger {
+  color: #ef4444;
+}
+.um-item--danger:hover { background: rgba(239,68,68,0.08); }
+
+.um-item-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--noorix-text-muted);
+}
+.um-lang-icon {
+  font-size: 10px;
+  font-weight: 800;
+}
+.um-item-label {
+  flex: 1;
+  text-align: inherit;
+}
+.um-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text-muted);
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+.um-lang-chip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text-muted);
+}
+.um-lang-chip--active {
+  background: rgba(37,99,235,0.1);
+  color: #2563eb;
+}
+.dark .um-lang-chip--active {
+  background: rgba(37,99,235,0.2);
+  color: #60a5fa;
+}
+
+/* backdrop جوال */
+.um-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--nx-z-menu, 2500) - 1);
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ========== زر كشف الحساب (CTA) — تحليل البنك ========== */
@@ -1522,13 +1783,12 @@ input:focus, select:focus, textarea:focus {
 
   .noorix-topbar {
     grid-template-columns: auto 1fr auto;
-    padding: 6px 10px;
-    margin-bottom: 10px;
+    padding: 0 12px;
+    height: 46px;
     gap: 6px;
-    min-height: 42px;
   }
-  .noorix-topbar__logo { font-size: 14px; }
-  .noorix-topbar__company { font-size: 13px; max-width: min(42vw, 140px); }
+  .noorix-topbar__logo { font-size: 13px; }
+  .noorix-topbar__company { font-size: 13px; max-width: min(36vw, 130px); }
   .noorix-topbar-btn {
     min-height: 36px;
     min-width: 36px;
@@ -2203,7 +2463,7 @@ input:focus, select:focus, textarea:focus {
   .noorix-exec-card-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
-  .noorix-topbar { padding: 8px 10px; gap: 6px; }
+  .noorix-topbar { padding: 0 10px; height: 44px; gap: 4px; }
   .app-main__title { font-size: max(18px, 1.3rem); }
   .app-main__subtitle { font-size: max(12px, 0.9rem); }
   .noorix-date-filter-bar { padding: 8px max(10px, env(safe-area-inset-right, 0px)) 8px max(10px, env(safe-area-inset-left, 0px)); }

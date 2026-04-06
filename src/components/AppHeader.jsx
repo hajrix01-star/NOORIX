@@ -1,5 +1,6 @@
 /**
  * AppHeader — شريط الهيدر العلوي
+ * تصميم احترافي: logo | company name | user avatar
  */
 import React from 'react';
 import { useTranslation } from '../i18n/useTranslation';
@@ -19,57 +20,69 @@ export default function AppHeader({
         ? (activeCompany.nameEn || activeCompany.nameAr || '')
         : (activeCompany.nameAr || activeCompany.nameEn || ''))
     : '';
-  const coLogo = activeCompany?.logoUrl || '';
+  const coLogo    = activeCompany?.logoUrl || '';
   const coInitial = coName?.[0] || '';
 
   return (
     <>
+      {/* شريط تحذير انقطاع الاتصال */}
       {serverDown && (
-        <div role="alert" className="nx-text-base nx-font-600 nx-text-center nx-flex-center nx-gap-10 nx-py-8 nx-px-16" style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-          background: '#991b1b', color: '#fff',
-          justifyContent: 'center',
-        }}>
+        <div
+          role="alert"
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0,
+            zIndex: 'var(--nx-z-top, 9999)',
+            background: '#991b1b', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 10, padding: '6px 16px',
+            fontSize: 13, fontWeight: 600,
+          }}
+        >
           <span>{t('serverDown')}</span>
           <Button variant="ghost" size="sm" onClick={onRetryConnection}>
             {t('retry')}
           </Button>
         </div>
       )}
+
       <header className="noorix-topbar">
+        {/* ── يسار: هامبرجر + شعار ── */}
         <div className="noorix-topbar__left">
           <Button
             className="nx-shell-icon-btn app-main__menu-button"
             onClick={toggleSidebar}
             aria-label={t('sidebarMenu')}
           >
-            ☰
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect x="1" y="2.5" width="14" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="1" y="12" width="14" height="1.5" rx="0.75" fill="currentColor"/>
+            </svg>
           </Button>
           <span className="noorix-topbar__logo">Noorix</span>
         </div>
+
+        {/* ── مركز: اسم الشركة ── */}
         <div className="noorix-topbar__center">
           {coName && (
-            <div className="nx-flex-center nx-gap-8">
+            <>
               {coLogo ? (
                 <img
                   src={coLogo}
                   alt={coName}
-                  style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
+                  className="noorix-topbar__co-logo"
                 />
               ) : coInitial ? (
-                <div className="nx-text-sm nx-font-800" style={{
-                  width: 26, height: 26, borderRadius: 6, flexShrink: 0,
-                  background: 'linear-gradient(135deg, rgba(37,99,235,0.8) 0%, rgba(16,163,74,0.6) 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff',
-                }}>
+                <span className="noorix-topbar__co-initial">
                   {coInitial}
-                </div>
+                </span>
               ) : null}
               <span className="noorix-topbar__company">{coName}</span>
-            </div>
+            </>
           )}
         </div>
+
+        {/* ── يمين: زر المستخدم ── */}
         <div className="noorix-topbar-actions">
           {isAuthenticated && user && (
             <UserMenu
