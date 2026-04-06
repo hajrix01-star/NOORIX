@@ -153,6 +153,17 @@
   color: var(--noorix-text);
 }
 
+/* raw — بدون تنسيق ذاتي، يأخذ شكله من className الخارجي فقط */
+.nx-btn--raw {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.nx-btn--raw:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* — Sizes ── */
 .nx-btn--sm {
   min-height: 30px;

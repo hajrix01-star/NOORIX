@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input } from '../../../ui';
+import { Button, Input, Modal } from '../../../ui';
 import {
   createOcrSupplier, updateOcrSupplier, deleteOcrSupplier, addSupplierAlias,
   bulkDeleteOcrSuppliers,
@@ -168,39 +168,37 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       )}
 
       {/* Alias modal */}
-      {viewing && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setViewing(null)}>
-          <div className="modal-box" dir={dir} style={{ maxWidth: 440 }}>
-            <div className="modal-head">
-              <div>
-                <div className="modal-title">{viewing.nameAr}</div>
-                <div className="modal-sub">{t('ocrAliases')}</div>
-              </div>
-              <Button className="modal-close-btn" onClick={() => setViewing(null)}>✕</Button>
+      <Modal open={!!viewing} onClose={() => setViewing(null)} size="sm" hideClose>
+        <div dir={dir}>
+          <div className="modal-head">
+            <div>
+              <div className="modal-title">{viewing?.nameAr}</div>
+              <div className="modal-sub">{t('ocrAliases')}</div>
             </div>
-            <div className="modal-body">
-              {(viewing.aliases || []).length === 0 && (
-                <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{isAr ? 'لا توجد أسماء بديلة بعد' : 'No aliases yet'}</div>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {(viewing.aliases || []).map((a) => (
-                  <div key={a.id} style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--noorix-bg-muted)', fontSize: 13 }}>
-                    {a.alias} <span style={{ color: 'var(--noorix-text-muted)', fontSize: 11 }}>({a.language})</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} style={{ flex: 1 }} />
-                <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
-                  <option value="ar">AR</option>
-                  <option value="en">EN</option>
-                </Input>
-                <Button onClick={handleAddAlias} variant="primary">+</Button>
-              </div>
+            <Button className="modal-close-btn" onClick={() => setViewing(null)}>✕</Button>
+          </div>
+          <div className="modal-body">
+            {(viewing?.aliases || []).length === 0 && (
+              <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{isAr ? 'لا توجد أسماء بديلة بعد' : 'No aliases yet'}</div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {(viewing?.aliases || []).map((a) => (
+                <div key={a.id} style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--noorix-bg-muted)', fontSize: 13 }}>
+                  {a.alias} <span style={{ color: 'var(--noorix-text-muted)', fontSize: 11 }}>({a.language})</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} style={{ flex: 1 }} />
+              <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
+                <option value="ar">AR</option>
+                <option value="en">EN</option>
+              </Input>
+              <Button onClick={handleAddAlias} variant="primary">+</Button>
             </div>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

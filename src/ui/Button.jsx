@@ -20,6 +20,7 @@ const VARIANT_CLASS = {
   danger:  'nx-btn--danger',
   warning: 'nx-btn--warning',
   ghost:   'nx-btn--ghost',
+  raw:     'nx-btn--raw',
 };
 
 /** خريطة الـ class لكل size */

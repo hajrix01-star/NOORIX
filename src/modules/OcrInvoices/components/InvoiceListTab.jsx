@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
-import { Input, Button } from '../../../ui';
+import { Input, Button, Modal } from '../../../ui';
 
 /* ── ثوابت ──────────────────────────────────────────────────────────── */
 const STATUS = {
@@ -134,10 +134,9 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
     ? (invoice.supplier?.nameAr || '—')
     : (invoice.supplier?.nameEn || invoice.supplier?.nameAr || '—');
 
-  return createPortal(
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" dir={dir}>
-
+  return (
+    <Modal open={true} onClose={onClose} size="lg" hideClose>
+      <div dir={dir}>
         {/* رأس */}
         <div className="modal-head">
           <div>
@@ -213,8 +212,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
           )}
         </div>
       </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 }
 

@@ -24,6 +24,7 @@
  */
 import React, { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import Button from './Button';
 
 const SIZE_WIDTH = {
   sm:   400,
@@ -93,8 +94,8 @@ export default function Modal({
           <div className="nx-modal__header">
             {title && <h2 className="nx-modal__title">{title}</h2>}
             {!hideClose && (
-              <button
-                type="button"
+              <Button
+                variant="raw"
                 className="nx-modal__close"
                 onClick={onClose}
                 aria-label="إغلاق"
@@ -102,7 +103,7 @@ export default function Modal({
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-              </button>
+              </Button>
             )}
           </div>
         )}

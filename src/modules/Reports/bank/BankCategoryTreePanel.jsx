@@ -153,153 +153,150 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
     setNewKeyword('');
   };
 
-  if (!open) return null;
   const pending = createMut.isPending || updateMut.isPending;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="noorix-modal-backdrop"
-      style={{ position: 'fixed', inset: 0, background: 'var(--noorix-modal-overlay-bg)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="lg"
+      title={category ? t('bankTreeEditCategory') : t('bankTreeAddCategory')}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+          <Button variant="primary" onClick={handleSave} disabled={pending}>{pending ? t('loading') : t('save')}</Button>
+        </>
+      }
     >
-      <div className="noorix-surface-card noorix-modal-card" style={{ width: 'min(640px, 96vw)', maxHeight: '88vh', overflow: 'auto', padding: 20 }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ marginTop: 0 }}>{category ? t('bankTreeEditCategory') : t('bankTreeAddCategory')}</h3>
-        <div style={{ display: 'grid', gap: 14 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 10 }}>
-            <Input type="text" label={`${t('bankTreeCategoryName')} *`} value={name} onChange={(e) => setName(e.target.value)} />
-            <Input type="number" label={t('bankTreeSortOrder')} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} min={1} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Input type="select" label={t('bankTreeTransactionType')} value={transactionType} onChange={(e) => setTransactionType(e.target.value)}>
-              {TRANSACTION_TYPES.map((x) => (
-                <option key={x.value} value={x.value}>
-                  {x.icon} {t(x.labelKey)}
-                </option>
-              ))}
-            </Input>
-            <Input type="select" label={t('bankTreeTransactionSide')} value={transactionSide} onChange={(e) => setTransactionSide(e.target.value)}>
-              {TRANSACTION_SIDES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.icon} {t(s.labelKey)}
-                </option>
-              ))}
-            </Input>
-          </div>
+      <div style={{ display: 'grid', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 10 }}>
+          <Input type="text" label={`${t('bankTreeCategoryName')} *`} value={name} onChange={(e) => setName(e.target.value)} />
+          <Input type="number" label={t('bankTreeSortOrder')} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} min={1} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <Input type="select" label={t('bankTreeTransactionType')} value={transactionType} onChange={(e) => setTransactionType(e.target.value)}>
+            {TRANSACTION_TYPES.map((x) => (
+              <option key={x.value} value={x.value}>
+                {x.icon} {t(x.labelKey)}
+              </option>
+            ))}
+          </Input>
+          <Input type="select" label={t('bankTreeTransactionSide')} value={transactionSide} onChange={(e) => setTransactionSide(e.target.value)}>
+            {TRANSACTION_SIDES.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.icon} {t(s.labelKey)}
+              </option>
+            ))}
+          </Input>
+        </div>
 
-          <div style={{ padding: 12, borderRadius: 10, border: '1px solid rgba(217,119,6,0.35)', background: 'rgba(254,243,199,0.35)' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('bankTreeParentKeywords')}</div>
-            <p style={{ fontSize: 11, color: 'var(--noorix-text-muted)', margin: '0 0 8px' }}>{t('bankTreeParentKeywordsHint')}</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-              {parentKeywords.map((kw, idx) => (
-                <span key={idx} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
-                  {kw}
-                  <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} style={{ marginInlineStart: 6, color: '#b91c1c', padding: '0 4px', minHeight: 'auto' }}>
-                    ×
+        <div style={{ padding: 12, borderRadius: 10, border: '1px solid rgba(217,119,6,0.35)', background: 'rgba(254,243,199,0.35)' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('bankTreeParentKeywords')}</div>
+          <p style={{ fontSize: 11, color: 'var(--noorix-text-muted)', margin: '0 0 8px' }}>{t('bankTreeParentKeywordsHint')}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {parentKeywords.map((kw, idx) => (
+              <span key={idx} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
+                {kw}
+                <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} style={{ marginInlineStart: 6, color: '#b91c1c', padding: '0 4px', minHeight: 'auto' }}>
+                  ×
+                </Button>
+              </span>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ flex: 1 }}>
+              <Input type="text" value={newParentKeyword} onChange={(e) => setNewParentKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addParentKw())} placeholder="…" />
+            </div>
+            <Button onClick={addParentKw}>+</Button>
+          </div>
+        </div>
+
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontWeight: 600 }}>{t('bankTreeSubClassifications')}</span>
+            <Button
+              onClick={() => {
+                setClassifications((p) => [...p, { ...EMPTY }]);
+                setActiveClassIdx(classifications.length);
+              }}
+            >
+              + {t('bankTreeAddSub')}
+            </Button>
+          </div>
+          {classifications.map((cl, idx) => (
+            <div
+              key={idx}
+              onClick={() => setActiveClassIdx(idx)}
+              style={{
+                padding: 12,
+                marginBottom: 8,
+                borderRadius: 10,
+                border: activeClassIdx === idx ? '2px solid rgba(37,99,235,0.45)' : '1px solid var(--noorix-border)',
+                background: activeClassIdx === idx ? 'rgba(37,99,235,0.06)' : 'var(--noorix-bg-muted)',
+              }}
+            >
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <Input
+                    type="text"
+                    value={cl.name}
+                    onChange={(e) => setClassifications((p) => p.map((c, i) => (i === idx ? { ...c, name: e.target.value } : c)))}
+                    placeholder={t('bankTreeSubNamePlaceholder')}
+                  />
+                </div>
+                {classifications.length > 1 ? (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setClassifications((p) => p.filter((_, i) => i !== idx));
+                      setActiveClassIdx(0);
+                    }}
+                  >
+                    {t('delete')}
                   </Button>
-                </span>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <div style={{ flex: 1 }}>
-                <Input type="text" value={newParentKeyword} onChange={(e) => setNewParentKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addParentKw())} placeholder="…" />
+                ) : null}
               </div>
-              <Button onClick={addParentKw}>+</Button>
-            </div>
-          </div>
-
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontWeight: 600 }}>{t('bankTreeSubClassifications')}</span>
-              <Button
-                onClick={() => {
-                  setClassifications((p) => [...p, { ...EMPTY }]);
-                  setActiveClassIdx(classifications.length);
-                }}
-              >
-                + {t('bankTreeAddSub')}
-              </Button>
-            </div>
-            {classifications.map((cl, idx) => (
-              <div
-                key={idx}
-                onClick={() => setActiveClassIdx(idx)}
-                style={{
-                  padding: 12,
-                  marginBottom: 8,
-                  borderRadius: 10,
-                  border: activeClassIdx === idx ? '2px solid rgba(37,99,235,0.45)' : '1px solid var(--noorix-border)',
-                  background: activeClassIdx === idx ? 'rgba(37,99,235,0.06)' : 'var(--noorix-bg-muted)',
-                }}
-              >
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    <Input
-                      type="text"
-                      value={cl.name}
-                      onChange={(e) => setClassifications((p) => p.map((c, i) => (i === idx ? { ...c, name: e.target.value } : c)))}
-                      placeholder={t('bankTreeSubNamePlaceholder')}
-                    />
-                  </div>
-                  {classifications.length > 1 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                {(cl.keywords || []).map((kw, kwIdx) => (
+                  <span key={kwIdx} style={{ fontSize: 11, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
+                    {kw}
                     <Button
-                      variant="danger"
+                      variant="ghost"
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setClassifications((p) => p.filter((_, i) => i !== idx));
-                        setActiveClassIdx(0);
+                        setClassifications((p) =>
+                          p.map((c, i) => (i === idx ? { ...c, keywords: c.keywords.filter((_, ki) => ki !== kwIdx) } : c)),
+                        );
                       }}
+                      style={{ marginInlineStart: 4, padding: '0 4px', minHeight: 'auto' }}
                     >
-                      {t('delete')}
+                      ×
                     </Button>
-                  ) : null}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                  {(cl.keywords || []).map((kw, kwIdx) => (
-                    <span key={kwIdx} style={{ fontSize: 11, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
-                      {kw}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setClassifications((p) =>
-                            p.map((c, i) => (i === idx ? { ...c, keywords: c.keywords.filter((_, ki) => ki !== kwIdx) } : c)),
-                          );
-                        }}
-                        style={{ marginInlineStart: 4, padding: '0 4px', minHeight: 'auto' }}
-                      >
-                        ×
-                      </Button>
-                    </span>
-                  ))}
-                </div>
-                {activeClassIdx === idx ? (
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <div style={{ flex: 1 }}>
-                      <Input
-                        type="text"
-                        value={newKeyword}
-                        onChange={(e) => setNewKeyword(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addKw(idx))}
-                        placeholder={t('bankTreeAddKeywordPlaceholder')}
-                      />
-                    </div>
-                    <Button variant="primary" onClick={() => addKw(idx)} disabled={!newKeyword.trim()}>+</Button>
-                  </div>
-                ) : null}
+                  </span>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
-          <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" onClick={handleSave} disabled={pending}>{pending ? t('loading') : t('save')}</Button>
+              {activeClassIdx === idx ? (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ flex: 1 }}>
+                    <Input
+                      type="text"
+                      value={newKeyword}
+                      onChange={(e) => setNewKeyword(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addKw(idx))}
+                      placeholder={t('bankTreeAddKeywordPlaceholder')}
+                    />
+                  </div>
+                  <Button variant="primary" onClick={() => addKw(idx)} disabled={!newKeyword.trim()}>+</Button>
+                </div>
+              ) : null}
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

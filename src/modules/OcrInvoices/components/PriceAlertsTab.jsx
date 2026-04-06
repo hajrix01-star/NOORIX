@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input } from '../../../ui';
+import { Button, Input, Modal } from '../../../ui';
 import { bulkDeletePriceHistory } from '../services/ocrApi';
 
 const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -34,9 +33,9 @@ function MiniImageViewer({ src }) {
 
 function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
   const saving = (alert.latestPrice - alert.lowestPrice).toFixed(2);
-  return createPortal(
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" dir={isAr ? 'rtl' : 'ltr'} style={{ maxWidth: 800 }}>
+  return (
+    <Modal open={true} onClose={onClose} size="xl" hideClose>
+      <div dir={isAr ? 'rtl' : 'ltr'}>
         <div className="modal-head">
           <div>
             <div className="modal-title">{alert.itemName}</div>
@@ -94,8 +93,7 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
           </div>
         </div>
       </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 }
 

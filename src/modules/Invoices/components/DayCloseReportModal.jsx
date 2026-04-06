@@ -2,14 +2,13 @@
  * تقرير نهاية اليوم — جداول موحّدة + طباعة نظيفة (بدون قوالب التطبيق)
  */
 import React, { useMemo, useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getInvoiceDayCloseReport } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDateISO } from '../../../utils/saudiDate';
-import { Button } from '../../../ui';
+import { Button, Modal } from '../../../ui';
 
 function saudiTodayYmd() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -74,29 +73,8 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
   const reportDateLabel = formatSaudiDateISO(`${dateStr}T12:00:00.000Z`);
 
-  const modal = (
-    <div
-      className="day-close-overlay"
-      dir="rtl"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 10050,
-        background: 'rgba(15, 23, 42, 0.78)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        padding: '24px 12px',
-        overflow: 'auto',
-        isolation: 'isolate',
-      }}
-      role="dialog"
-      aria-modal
-      aria-labelledby="day-close-title"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
+  return (
+    <Modal open={isOpen} onClose={onClose} size="xl" closeOnBackdrop={false} hideClose className="day-close-modal">
       <style>{`
         .day-close-report { --dc-border: #94a3b8; --dc-head: #0f172a; --dc-muted: #64748b; }
         .day-close-report .dc-section-title {
@@ -146,11 +124,10 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
         @media print {
           @page { size: A4; margin: 12mm; }
-          /* إظهار التقرير فقط — إخفاء بقية التطبيق (قائمة، صفحة الفواتير، إلخ) */
           body * { visibility: hidden !important; }
-          .day-close-overlay,
-          .day-close-overlay * { visibility: visible !important; }
-          .day-close-overlay {
+          .nx-modal-backdrop,
+          .nx-modal-backdrop * { visibility: visible !important; }
+          .nx-modal-backdrop {
             position: absolute !important; left: 0 !important; top: 0 !important; right: 0 !important;
             width: 100% !important; height: auto !important; min-height: 0 !important;
             margin: 0 !important; padding: 0 !important; background: #fff !important;
@@ -191,20 +168,11 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
       <div
         className="day-close-print-root"
+        dir="rtl"
         style={{
-          maxWidth: 960,
           width: '100%',
-          marginBottom: 32,
-          padding: 16,
           position: 'relative',
-          zIndex: 1,
-          background: 'var(--noorix-bg-surface, #ffffff)',
-          color: 'var(--noorix-text, #0f172a)',
-          border: '1px solid var(--noorix-border, #e2e8f0)',
-          borderRadius: 12,
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
         }}
-        onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="day-close-report">
           {/* ترويسة مطبوعة فقط */}
@@ -548,8 +516,6 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
-
-  return typeof document !== 'undefined' ? createPortal(modal, document.body) : null;
 }

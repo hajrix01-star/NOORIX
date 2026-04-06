@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input } from '../../../ui';
+import { Button, Input, Modal } from '../../../ui';
 import {
   createOcrItem, updateOcrItem, deleteOcrItem, getItemPriceHistory, addItemAlias,
   findDuplicateItems, mergeOcrItems, bulkDeleteOcrItems,
@@ -255,79 +254,77 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
       )}
 
       {/* Item detail modal */}
-      {viewing && (
-        <div role="dialog" aria-modal="true" className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setViewing(null)}>
-          <div className="modal-box" dir={dir} style={{ maxWidth: 520 }}>
-            <div className="modal-head">
-              <div>
-                <div className="modal-title">{viewing.nameAr}</div>
-                {lowestPrice != null && (
-                  <div className="modal-sub" style={{ color: '#15803d', fontWeight: 600 }}>
-                    {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
-                  </div>
-                )}
-              </div>
-              <Button className="modal-close-btn" onClick={() => setViewing(null)}>✕</Button>
+      <Modal open={!!viewing} onClose={() => setViewing(null)} size="md" hideClose>
+        <div dir={dir}>
+          <div className="modal-head">
+            <div>
+              <div className="modal-title">{viewing?.nameAr}</div>
+              {lowestPrice != null && (
+                <div className="modal-sub" style={{ color: '#15803d', fontWeight: 600 }}>
+                  {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
+                </div>
+              )}
+            </div>
+            <Button className="modal-close-btn" onClick={() => setViewing(null)}>✕</Button>
+          </div>
+
+          <div className="modal-body">
+            {/* Aliases */}
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>{t('ocrAliases')}</div>
+            {(viewing?.aliases || []).length === 0 && (
+              <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{isAr ? 'لا توجد مرادفات بعد' : 'No aliases yet'}</div>
+            )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
+              {(viewing?.aliases || []).map((a) => (
+                <span key={a.id} style={{ padding: '3px 10px', borderRadius: 6, background: 'var(--noorix-bg-muted)', fontSize: 12 }}>
+                  {a.alias} <span style={{ color: 'var(--noorix-text-muted)', fontSize: 10 }}>({a.language})</span>
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} style={{ flex: 1 }} />
+              <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
+                <option value="ar">AR</option>
+                <option value="en">EN</option>
+              </Input>
+              <Button onClick={handleAddAlias} variant="primary">+</Button>
             </div>
 
-            <div className="modal-body">
-              {/* Aliases */}
-              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>{t('ocrAliases')}</div>
-              {(viewing.aliases || []).length === 0 && (
-                <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{isAr ? 'لا توجد مرادفات بعد' : 'No aliases yet'}</div>
-              )}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
-                {(viewing.aliases || []).map((a) => (
-                  <span key={a.id} style={{ padding: '3px 10px', borderRadius: 6, background: 'var(--noorix-bg-muted)', fontSize: 12 }}>
-                    {a.alias} <span style={{ color: 'var(--noorix-text-muted)', fontSize: 10 }}>({a.language})</span>
-                  </span>
-                ))}
+            {/* Price history */}
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>{t('ocrPriceHistory')}</div>
+            {historyLoading ? (
+              <div className="ocr-loading" style={{ padding: 30 }}>
+                <div className="ocr-spinner" />
               </div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} style={{ flex: 1 }} />
-                <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
-                  <option value="ar">AR</option>
-                  <option value="en">EN</option>
-                </Input>
-                <Button onClick={handleAddAlias} variant="primary">+</Button>
-              </div>
-
-              {/* Price history */}
-              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>{t('ocrPriceHistory')}</div>
-              {historyLoading ? (
-                <div className="ocr-loading" style={{ padding: 30 }}>
-                  <div className="ocr-spinner" />
-                </div>
-              ) : priceHistory.length === 0 ? (
-                <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{isAr ? 'لا يوجد تاريخ أسعار بعد' : 'No price history yet'}</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {priceHistory.map((h) => {
-                    const isLowest = Number(h.price) === lowestPrice;
-                    return (
-                      <div key={h.id} style={{
-                        padding: '10px 14px', borderRadius: 8,
-                        background: isLowest ? 'rgba(22,163,74,0.06)' : 'var(--noorix-bg-muted)',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{h.supplier?.nameAr || '—'}</div>
-                          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-                            {new Date(h.invoiceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                          </div>
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 15, color: isLowest ? '#15803d' : 'var(--noorix-text)' }}>
-                          {Number(h.price).toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
+            ) : priceHistory.length === 0 ? (
+              <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{isAr ? 'لا يوجد تاريخ أسعار بعد' : 'No price history yet'}</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {priceHistory.map((h) => {
+                  const isLowest = Number(h.price) === lowestPrice;
+                  return (
+                    <div key={h.id} style={{
+                      padding: '10px 14px', borderRadius: 8,
+                      background: isLowest ? 'rgba(22,163,74,0.06)' : 'var(--noorix-bg-muted)',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{h.supplier?.nameAr || '—'}</div>
+                        <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                          {new Date(h.invoiceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: isLowest ? '#15803d' : 'var(--noorix-text)' }}>
+                        {Number(h.price).toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
