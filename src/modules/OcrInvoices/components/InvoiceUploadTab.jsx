@@ -180,88 +180,61 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
     }
   };
 
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  const isAr = language === 'ar';
+  const dir = isAr ? 'rtl' : 'ltr';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} dir={dir}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} dir={dir}>
 
-      {/* منطقة الرفع */}
+      {/* Upload zone */}
       {!preview && (
         <div
+          className={`ocr-upload-zone${dragging ? ' ocr-upload-zone--active' : ''}`}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileRef.current?.click()}
-          style={{
-            border: `2px dashed ${dragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
-            borderRadius: 16,
-            padding: '60px 24px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            background: dragging ? 'rgba(59,130,246,0.06)' : 'var(--noorix-bg-surface)',
-            transition: 'all 0.2s',
-          }}
         >
-          <div style={{ fontSize: 48, marginBottom: 12 }}>📄</div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--noorix-text)' }}>{t('ocrDragDrop')}</div>
-          <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginTop: 6 }}>{t('ocrSupportedFormats')}</div>
+          <div className="ocr-upload-icon">↑</div>
+          <div className="ocr-upload-text">{t('ocrDragDrop')}</div>
+          <div className="ocr-upload-hint">{t('ocrSupportedFormats')}</div>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => readFile(e.target.files[0])} />
         </div>
       )}
 
-      {/* معاينة الصورة */}
       {preview && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'start' }}>
-          <div className="noorix-surface-card" style={{ padding: 16, flex: '1 1 280px', minWidth: 0 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, alignItems: 'start' }}>
+          <div style={{ padding: 16, flex: '1 1 280px', minWidth: 0, borderRadius: 12, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontWeight: 700, fontSize: 15 }}>صورة الفاتورة</span>
-              <button
-                onClick={() => { setPreview(null); setBase64(null); setExtracted(null); setError(null); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--noorix-text-muted)', fontSize: 18 }}
-              >✕</button>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>{isAr ? 'صورة الفاتورة' : 'Invoice Image'}</span>
+              <button className="modal-close-btn" style={{ width: 28, height: 28 }}
+                onClick={() => { setPreview(null); setBase64(null); setExtracted(null); setError(null); setEditItems(null); }}>✕</button>
             </div>
             <img src={preview} alt="invoice" style={{ width: '100%', borderRadius: 8, maxHeight: 500, objectFit: 'contain' }} />
             <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {!extracted && (
-                <button
-                  onClick={handleExtract}
-                  disabled={loading}
-                  className="noorix-btn noorix-btn--primary"
-                  style={{ flex: 1 }}
-                >
-                  {loading ? `⏳ ${t('ocrExtracting')}` : `🔍 ${t('ocrExtract')}`}
+                <button onClick={handleExtract} disabled={loading} className="noorix-btn noorix-btn--primary" style={{ flex: 1 }}>
+                  {loading ? t('ocrExtracting') : t('ocrExtract')}
                 </button>
               )}
               {extracted && (
                 <>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving || success}
-                    className="noorix-btn noorix-btn--primary"
-                    style={{ flex: 1 }}
-                  >
-                    {saving ? `⏳ ${t('ocrSaving')}` : success ? `✅ ${t('ocrSaved')}` : `💾 ${t('ocrSaveInvoice')}`}
+                  <button onClick={handleSave} disabled={saving || success} className="noorix-btn noorix-btn--primary" style={{ flex: 1 }}>
+                    {saving ? t('ocrSaving') : success ? t('ocrSaved') : t('ocrSaveInvoice')}
                   </button>
-                  <button
-                    onClick={handleExtract}
-                    disabled={loading}
-                    className="noorix-btn"
-                    style={{ flex: 1 }}
-                  >
-                    {loading ? t('ocrExtracting') : '🔄 إعادة استخراج'}
+                  <button onClick={handleExtract} disabled={loading} className="noorix-btn" style={{ flex: 1 }}>
+                    {loading ? t('ocrExtracting') : (isAr ? 'إعادة استخراج' : 'Re-extract')}
                   </button>
                 </>
               )}
             </div>
           </div>
 
-          {/* نتيجة الاستخراج */}
           {extracted && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: '1 1 280px', minWidth: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: '1 1 280px', minWidth: 0 }}>
 
-              {/* معلومات الفاتورة */}
-              <div className="noorix-surface-card" style={{ padding: 16 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>📋 معلومات الفاتورة</div>
+              <div style={{ padding: 16, borderRadius: 12, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
+                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>
                 <div style={{ display: 'grid', gap: 8 }}>
                   <FieldRow label={t('ocrSupplierField')} value={extracted.supplier?.name} confidence={extracted.supplier?.confidence} match={extracted.supplierMatch} />
                   <FieldRow label={t('ocrVatNumber')} value={extracted.vatNumber?.value} confidence={extracted.vatNumber?.confidence} />
@@ -269,61 +242,52 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                   <FieldRow label={t('ocrInvoiceDate')} value={extracted.invoiceDate?.value} confidence={extracted.invoiceDate?.confidence} />
                 </div>
 
-                {/* ملخص المبالغ — subtotal + VAT + total */}
                 {(extracted.subtotalAmount?.value || extracted.vatAmount?.value || extracted.totalAmount?.value) && (
-                  <div style={{
-                    marginTop: 12, borderRadius: 10, overflow: 'hidden',
-                    border: '1px solid var(--noorix-border)',
-                  }}>
+                  <div style={{ marginTop: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--noorix-border)' }}>
                     {extracted.subtotalAmount?.value && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
-                        <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>المجموع قبل الضريبة</span>
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>{extracted.subtotalAmount.value.toLocaleString('en-US')} ريال</span>
+                        <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{isAr ? 'المجموع قبل الضريبة' : 'Subtotal'}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>{extracted.subtotalAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
                     )}
                     {extracted.vatAmount?.value && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
-                        <span style={{ fontSize: 13, color: '#d97706' }}>ضريبة القيمة المضافة (15%)</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>{extracted.vatAmount.value.toLocaleString('en-US')} ريال</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)' }}>
+                        <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{isAr ? 'ضريبة القيمة المضافة' : 'VAT (15%)'}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#b45309' }}>{extracted.vatAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
                     )}
                     {extracted.totalAmount?.value && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(22,163,74,0.06)' }}>
-                        <span style={{ fontSize: 14, fontWeight: 700 }}>الإجمالي شامل الضريبة</span>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: '#16a34a' }}>{extracted.totalAmount.value.toLocaleString('en-US')} ريال</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--noorix-bg-muted)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>{isAr ? 'الإجمالي شامل الضريبة' : 'Total (inc. VAT)'}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>{extracted.totalAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* شريط التحذيرات */}
               {warningCount > 0 && (
                 <div style={{
-                  padding: '10px 14px', borderRadius: 10,
-                  background: 'rgba(245,158,11,0.12)',
-                  border: '1px solid rgba(245,158,11,0.35)',
+                  padding: '10px 14px', borderRadius: 8,
+                  background: 'rgba(245,158,11,0.08)',
+                  border: '1px solid rgba(245,158,11,0.25)',
                   display: 'flex', alignItems: 'center', gap: 8, fontSize: 13,
                 }}>
-                  <span style={{ fontSize: 18 }}>⚠️</span>
                   <div>
-                    <div style={{ fontWeight: 700, color: '#92400e' }}>
-                      {warningCount} تحذير — راجع الأرقام قبل الحفظ
+                    <div style={{ fontWeight: 600, color: '#92400e' }}>
+                      {warningCount} {isAr ? 'تحذير — راجع الأرقام قبل الحفظ' : 'warning(s) — review before saving'}
                     </div>
                     {extracted.invoiceTotalWarning && (
-                      <div style={{ fontSize: 12, color: '#78350f', marginTop: 2 }}>
-                        {extracted.invoiceTotalWarning}
-                      </div>
+                      <div style={{ fontSize: 12, color: '#78350f', marginTop: 2 }}>{extracted.invoiceTotalWarning}</div>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* الأصناف مع تعديل إنلاين */}
               {activeItems.length > 0 && (
-                <div className="noorix-surface-card" style={{ padding: 16 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
-                    📦 {t('ocrItems')} ({activeItems.length})
+                <div style={{ padding: 16, borderRadius: 12, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>
+                    {t('ocrItems')} ({activeItems.length})
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {activeItems.map((item, i) => (
@@ -346,8 +310,8 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
       )}
 
       {error && (
-        <div style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(220,38,38,0.1)', color: '#dc2626', fontSize: 14 }}>
-          ⚠️ {error}
+        <div style={{ padding: '12px 16px', borderRadius: 8, background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)', color: '#b91c1c', fontSize: 13 }}>
+          {error}
         </div>
       )}
     </div>
@@ -423,11 +387,11 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
           {sizeLabel && (
             <span style={{
               display: 'inline-block', marginTop: 3,
-              fontSize: 11, fontWeight: 700,
-              padding: '2px 8px', borderRadius: 20,
-              background: 'rgba(99,102,241,0.1)', color: '#6366f1',
+              fontSize: 11, fontWeight: 600,
+              padding: '2px 8px', borderRadius: 4,
+              background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)',
             }}>
-              📏 {sizeLabel}
+              {sizeLabel}
             </span>
           )}
           {item.name && item.name !== displayName && (

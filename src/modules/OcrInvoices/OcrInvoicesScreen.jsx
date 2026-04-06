@@ -53,37 +53,33 @@ export default function OcrInvoicesScreen() {
   return (
     <div className="ocr-screen" dir={dir}>
 
-      {/* ── Header ─────────────────────────────────────────────────────── */}
+      {/* ── Header ── */}
       <div className="ocr-header">
-        <div className="ocr-header-inner">
-          <div className="ocr-header-title">
-            <span className="ocr-header-icon">🧾</span>
-            <div>
-              <h1 className="ocr-h1">{isAr ? 'استخراج الفواتير الذكي' : 'Smart Invoice OCR'}</h1>
-              <div className="ocr-subtitle">
-                {isAr ? 'تحليل واستخراج بيانات الفواتير باستخدام الذكاء الاصطناعي' : 'AI-powered invoice data extraction & analysis'}
-              </div>
+        <div className="ocr-header-title">
+          <div className="ocr-header-icon">🧾</div>
+          <div>
+            <h1 className="ocr-h1">{isAr ? 'استخراج الفواتير الذكي' : 'Smart Invoice OCR'}</h1>
+            <div className="ocr-subtitle">
+              {isAr ? 'تحليل واستخراج بيانات الفواتير بالذكاء الاصطناعي' : 'AI-powered invoice data extraction'}
             </div>
           </div>
-          <span className="ocr-beta-badge">{isAr ? 'تجريبي' : 'Beta'}</span>
         </div>
+        <span className="ocr-beta-badge">{isAr ? 'تجريبي' : 'BETA'}</span>
+      </div>
 
-        {/* Stats strip */}
-        <div className="ocr-stats-strip">
-          {[
-            { icon: '📄', val: invoicesCount, label: isAr ? 'فاتورة' : 'Invoices', tab: 'invoices', color: '#3b82f6' },
-            { icon: '🏭', val: suppCount,     label: isAr ? 'مورد'   : 'Suppliers', tab: 'suppliers', color: '#8b5cf6' },
-            { icon: '📦', val: itemsCount,    label: isAr ? 'صنف'    : 'Items',     tab: 'items',    color: '#f59e0b' },
-            { icon: '⚠️', val: alertsCount,   label: isAr ? 'تنبيه' : 'Alerts',    tab: 'alerts',   color: '#dc2626' },
-          ].map(({ icon, val, label, tab, color }) => (
-            <button key={tab} className="ocr-stat-card" onClick={() => setActiveTab(tab)}
-              style={{ '--stat-color': color }}>
-              <span className="ocr-stat-icon">{icon}</span>
-              <span className="ocr-stat-num">{val}</span>
-              <span className="ocr-stat-label">{label}</span>
-            </button>
-          ))}
-        </div>
+      {/* ── Stats ── */}
+      <div className="ocr-stats-strip">
+        {[
+          { val: invoicesCount, label: isAr ? 'فاتورة' : 'Invoices', tab: 'invoices' },
+          { val: suppCount,     label: isAr ? 'مورد'   : 'Suppliers', tab: 'suppliers' },
+          { val: itemsCount,    label: isAr ? 'صنف'    : 'Items',     tab: 'items' },
+          { val: alertsCount,   label: isAr ? 'تنبيه' : 'Alerts',    tab: 'alerts' },
+        ].map(({ val, label, tab }) => (
+          <button key={tab} className="ocr-stat-card" onClick={() => setActiveTab(tab)}>
+            <span className="ocr-stat-num">{val}</span>
+            <span className="ocr-stat-label">{label}</span>
+          </button>
+        ))}
       </div>
 
       {/* ── Tabs ───────────────────────────────────────────────────────── */}

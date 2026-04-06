@@ -128,75 +128,78 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
 
   const lowestPrice = priceHistory.length > 0 ? Math.min(...priceHistory.map((h) => Number(h.price))) : null;
 
+  const isAr = language === 'ar';
+  const allChecked = filtered.length > 0 && filtered.every((i) => selected.has(i.id));
+
+  if (loading) return (
+    <div className="ocr-loading">
+      <div className="ocr-spinner" />
+      <span>{isAr ? 'جاري التحميل...' : 'Loading...'}</span>
+    </div>
+  );
+
   return (
     <div dir={dir}>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-        <input
-          value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder={t('ocrSearch')}
-          style={{ flex: 1, minWidth: 180, padding: '10px 14px', borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', fontSize: 14 }}
-        />
-        <button onClick={() => setAdding(true)} className="noorix-btn noorix-btn--primary">+ {t('ocrAddItem')}</button>
-        <button
-          onClick={handleFindDuplicates}
-          disabled={dupLoading}
-          className="noorix-btn"
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.4)', color: '#d97706' }}
-        >
-          {dupLoading ? '⏳' : '🔍'} كشف التكرار
+      {/* Toolbar */}
+      <div className="inv-toolbar" style={{ marginBottom: 16 }}>
+        <label className="inv-select-all-wrap">
+          <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(filtered.map(i => i.id)))} className="inv-toolbar-checkbox" />
+          <span className="inv-select-all-label">
+            {selected.size > 0 ? (isAr ? `${selected.size} محدد` : `${selected.size} selected`) : (isAr ? 'تحديد الكل' : 'Select all')}
+          </span>
+        </label>
+
+        <div className="inv-search-wrap">
+          <span className="inv-search-icon">⌕</span>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('ocrSearch')} className="inv-search-input" />
+          {search && <button className="inv-search-clear" onClick={() => setSearch('')}>✕</button>}
+        </div>
+
+        <button onClick={() => setAdding(true)} className="noorix-btn noorix-btn--primary" style={{ fontSize: 13 }}>+ {t('ocrAddItem')}</button>
+        <button onClick={handleFindDuplicates} disabled={dupLoading} className="noorix-btn" style={{ fontSize: 13 }}>
+          {isAr ? 'كشف التكرار' : 'Find Duplicates'}
         </button>
+
         {selected.size > 0 && (
-          <button onClick={handleBulkDelete} disabled={deleting}
-            style={{ padding: '10px 18px', borderRadius: 10, background: '#dc2626', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, fontFamily: 'inherit' }}>
-            {deleting ? '⏳' : '🗑️'} حذف ({selected.size})
+          <button className="inv-delete-btn" onClick={handleBulkDelete} disabled={deleting}>
+            {isAr ? `حذف (${selected.size})` : `Delete (${selected.size})`}
           </button>
         )}
       </div>
 
-      {/* نتائج الأصناف المكررة */}
+      {/* Duplicate groups */}
       {dupGroups !== null && (
-        <div className="noorix-surface-card" style={{ padding: 16, marginBottom: 16, border: '1px solid rgba(245,158,11,0.3)' }}>
+        <div style={{ padding: 16, marginBottom: 16, borderRadius: 12, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--noorix-text)' }}>
               {dupGroups.length === 0
-                ? '✅ لا توجد أصناف مكررة — الكتالوج نظيف'
-                : `⚠️ ${dupGroups.length} مجموعة أصناف مكررة محتملة`}
+                ? (isAr ? 'لا توجد أصناف مكررة — الكتالوج نظيف' : 'No duplicates found')
+                : (isAr ? `${dupGroups.length} مجموعة مكررة محتملة` : `${dupGroups.length} potential duplicate groups`)}
             </div>
-            <button onClick={() => setDupGroups(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--noorix-text-muted)' }}>✕</button>
+            <button className="modal-close-btn" onClick={() => setDupGroups(null)} style={{ width: 28, height: 28 }}>✕</button>
           </div>
           {dupGroups.map((group, gi) => (
-            <div key={gi} style={{ marginBottom: 14, borderRadius: 10, border: '1px solid rgba(245,158,11,0.25)', overflow: 'hidden' }}>
-              <div style={{ background: 'rgba(245,158,11,0.08)', padding: '8px 14px', fontSize: 12, color: '#d97706', fontWeight: 700 }}>
-                تشابه {Math.round(group.score * 100)}% — اختر الصنف الأساسي الذي تريد الاحتفاظ به
+            <div key={gi} style={{ marginBottom: 10, borderRadius: 10, border: '1px solid var(--noorix-border)', overflow: 'hidden' }}>
+              <div style={{ background: 'var(--noorix-bg-muted)', padding: '8px 14px', fontSize: 12, color: 'var(--noorix-text-muted)', fontWeight: 600 }}>
+                {isAr ? `تشابه ${Math.round(group.score * 100)}%` : `${Math.round(group.score * 100)}% match`}
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                 {group.items.map((item, ii) => (
                   <div key={item.id} style={{
                     flex: '1 1 200px', padding: '12px 14px',
-                    borderBottom: '1px solid var(--noorix-border)',
                     borderInlineEnd: ii < group.items.length - 1 ? '1px solid var(--noorix-border)' : 'none',
-                    background: 'var(--noorix-bg-surface)',
                   }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{item.nameAr}</div>
+                    <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{item.nameAr}</div>
                     {item.nameEn && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 4 }}>{item.nameEn}</div>}
                     <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>
-                      {item._count?.priceHistory || 0} سعر • {item._count?.lines || 0} سطر
+                      {item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'} · {item._count?.lines || 0} {isAr ? 'سطر' : 'lines'}
                     </div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {group.items.filter((o) => o.id !== item.id).map((other) => (
-                        <button
-                          key={other.id}
-                          onClick={() => handleMerge(item.id, other.id)}
-                          disabled={!!merging}
-                          style={{
-                            fontSize: 11, padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
-                            background: '#16a34a', color: '#fff', border: 'none', fontFamily: 'inherit',
-                          }}
-                        >
-                          {merging === `${item.id}-${other.id}` ? '⏳' : '✅ احتفظ بهذا — ادمج الآخر'}
-                        </button>
-                      ))}
-                    </div>
+                    {group.items.filter((o) => o.id !== item.id).map((other) => (
+                      <button key={other.id} onClick={() => handleMerge(item.id, other.id)} disabled={!!merging}
+                        className="noorix-btn noorix-btn--primary" style={{ fontSize: 11, padding: '4px 10px' }}>
+                        {merging === `${item.id}-${other.id}` ? '...' : (isAr ? 'احتفظ بهذا — ادمج الآخر' : 'Keep this — merge other')}
+                      </button>
+                    ))}
                   </div>
                 ))}
               </div>
@@ -206,61 +209,42 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
       )}
 
       {adding && (
-        <div className="noorix-surface-card" style={{ padding: 20, marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('ocrAddItem')}</div>
+        <div style={{ padding: 20, marginBottom: 16, borderRadius: 12, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
+          <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 14 }}>{t('ocrAddItem')}</div>
           <ItemForm onSave={handleCreate} onCancel={() => setAdding(false)} loading={saving} />
         </div>
       )}
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: 'var(--noorix-text-muted)' }}>⏳ جاري التحميل...</div>
-      ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: 'var(--noorix-text-muted)' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
-          <div>{t('ocrNoItems')}</div>
+      {filtered.length === 0 ? (
+        <div className="ocr-empty">
+          <div className="ocr-empty-icon">📋</div>
+          <div className="ocr-empty-text">{t('ocrNoItems')}</div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 12 }}>
+        <div className="ocr-catalog-list">
           {filtered.map((item) => (
             <div key={item.id}>
               {editing?.id === item.id ? (
-                <div className="noorix-surface-card" style={{ padding: 20 }}>
+                <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)' }}>
                   <ItemForm initial={item} onSave={handleUpdate} onCancel={() => setEditing(null)} loading={saving} />
                 </div>
               ) : (
-                <div
-                  className="noorix-surface-card"
-                  style={{ padding: 16, cursor: 'pointer', border: selected.has(item.id) ? '1px solid #3b82f6' : undefined, background: selected.has(item.id) ? 'rgba(59,130,246,0.05)' : undefined }}
-                  onClick={() => handleViewItem(item)}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <input type="checkbox" checked={selected.has(item.id)}
-                      onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
-                      onChange={() => {}}
-                      style={{ width: 15, height: 15, flexShrink: 0, accentColor: '#3b82f6', cursor: 'pointer', marginInlineEnd: 8, marginTop: 2 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15 }}>{item.nameAr}</div>
-                      {item.nameEn && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{item.nameEn}</div>}
-                      <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-                        {item.category && (
-                          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'rgba(59,130,246,0.1)', color: '#3b82f6', fontWeight: 600 }}>
-                            {item.category}
-                          </span>
-                        )}
-                        {item.unitType && (
-                          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', color: 'var(--noorix-text-muted)' }}>
-                            {item.unitType}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4, display: 'flex', gap: 8 }}>
-                        <span>📊 {item._count?.priceHistory || 0} سعر</span>
-                        {item.aliases?.length > 0 && <span>🔗 {item.aliases.length} مرادف</span>}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }} onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => setEditing(item)} className="noorix-btn" style={{ padding: '4px 10px', fontSize: 11 }}>{t('ocrEdit')}</button>
-                      <button onClick={() => handleDelete(item.id)} className="noorix-btn" style={{ padding: '4px 10px', fontSize: 11, color: '#dc2626' }}>{t('ocrDelete')}</button>
-                    </div>
+                <div className={`ocr-catalog-item${selected.has(item.id) ? ' ocr-catalog-item--selected' : ''}`} onClick={() => handleViewItem(item)}>
+                  <input type="checkbox" checked={selected.has(item.id)}
+                    onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
+                    onChange={() => {}} className="ocr-catalog-checkbox" />
+                  <div className="ocr-catalog-avatar">{(item.nameAr || item.nameEn || '?')[0]}</div>
+                  <div className="ocr-catalog-name" style={{ flex: 1 }}>
+                    <div className="ocr-catalog-name-primary">{isAr ? item.nameAr : (item.nameEn || item.nameAr)}</div>
+                    {item.nameEn && item.nameAr && <div className="ocr-catalog-name-secondary">{isAr ? item.nameEn : item.nameAr}</div>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                    {item.category && <span className="ocr-catalog-badge">{item.category}</span>}
+                    <span className="ocr-catalog-badge">{item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => setEditing(item)} className="noorix-btn" style={{ padding: '4px 10px', fontSize: 11 }}>{t('ocrEdit')}</button>
+                    <button onClick={() => handleDelete(item.id)} className="noorix-btn" style={{ padding: '4px 10px', fontSize: 11, color: '#b91c1c' }}>{t('ocrDelete')}</button>
                   </div>
                 </div>
               )}
@@ -269,80 +253,77 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
         </div>
       )}
 
-      {/* نافذة تاريخ الأسعار */}
+      {/* Item detail modal */}
       {viewing && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
-          role="dialog" aria-modal="true"
-          onClick={(e) => e.target === e.currentTarget && setViewing(null)}
-        >
-          <div className="noorix-surface-card" style={{ maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto', padding: 24 }} dir={dir}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setViewing(null)}>
+          <div className="modal-box" dir={dir} style={{ maxWidth: 520 }}>
+            <div className="modal-head">
               <div>
-                <h3 style={{ margin: 0 }}>{viewing.nameAr}</h3>
-                {lowestPrice && (
-                  <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 700, marginTop: 4 }}>
-                    ✅ {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} ريال
+                <div className="modal-title">{viewing.nameAr}</div>
+                {lowestPrice != null && (
+                  <div className="modal-sub" style={{ color: '#15803d', fontWeight: 600 }}>
+                    {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
                   </div>
                 )}
               </div>
-              <button onClick={() => setViewing(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
+              <button className="modal-close-btn" onClick={() => setViewing(null)}>✕</button>
             </div>
 
-            {/* الأسماء البديلة */}
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('ocrAliases')}</div>
-            {(viewing.aliases || []).length === 0 && (
-              <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13, marginBottom: 8 }}>لا توجد مرادفات بعد.</div>
-            )}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-              {(viewing.aliases || []).map((a) => (
-                <span key={a.id} style={{ padding: '3px 10px', borderRadius: 8, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', fontSize: 12 }}>
-                  {a.alias} <span style={{ color: 'var(--noorix-text-muted)', fontSize: 10 }}>({a.language})</span>
-                </span>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-              <input
-                value={aliasInput} onChange={(e) => setAliasInput(e.target.value)}
-                placeholder={t('ocrAddAlias')}
-                style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', fontSize: 13 }}
-              />
-              <select value={aliasLang} onChange={(e) => setAliasLang(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}>
-                <option value="ar">AR</option>
-                <option value="en">EN</option>
-              </select>
-              <button onClick={handleAddAlias} className="noorix-btn noorix-btn--primary">+</button>
-            </div>
-
-            {/* تاريخ الأسعار */}
-            <div style={{ fontWeight: 700, marginBottom: 10 }}>📈 {t('ocrPriceHistory')}</div>
-            {historyLoading ? (
-              <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>⏳ جاري التحميل...</div>
-            ) : priceHistory.length === 0 ? (
-              <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>لا يوجد تاريخ أسعار بعد.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {priceHistory.map((h, i) => (
-                  <div key={h.id} style={{
-                    padding: '10px 14px', borderRadius: 10,
-                    background: Number(h.price) === lowestPrice ? 'rgba(22,163,74,0.1)' : 'var(--noorix-bg-surface)',
-                    border: `1px solid ${Number(h.price) === lowestPrice ? '#16a34a' : 'var(--noorix-border)'}`,
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  }}>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{h.supplier?.nameAr || '—'}</div>
-                      <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-                        {new Date(h.invoiceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                      </div>
-                    </div>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: Number(h.price) === lowestPrice ? '#16a34a' : 'var(--noorix-text)' }}>
-                      {Number(h.price).toLocaleString('en-US')} ريال
-                      {Number(h.price) === lowestPrice && <span style={{ fontSize: 10, marginRight: 4 }}>✅</span>}
-                    </div>
-                  </div>
+            <div className="modal-body">
+              {/* Aliases */}
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>{t('ocrAliases')}</div>
+              {(viewing.aliases || []).length === 0 && (
+                <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{isAr ? 'لا توجد مرادفات بعد' : 'No aliases yet'}</div>
+              )}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
+                {(viewing.aliases || []).map((a) => (
+                  <span key={a.id} style={{ padding: '3px 10px', borderRadius: 6, background: 'var(--noorix-bg-muted)', fontSize: 12 }}>
+                    {a.alias} <span style={{ color: 'var(--noorix-text-muted)', fontSize: 10 }}>({a.language})</span>
+                  </span>
                 ))}
               </div>
-            )}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <input value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="inv-search-input" style={{ flex: 1 }} />
+                <select value={aliasLang} onChange={(e) => setAliasLang(e.target.value)} className="inv-sort-select">
+                  <option value="ar">AR</option>
+                  <option value="en">EN</option>
+                </select>
+                <button onClick={handleAddAlias} className="noorix-btn noorix-btn--primary">+</button>
+              </div>
+
+              {/* Price history */}
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>{t('ocrPriceHistory')}</div>
+              {historyLoading ? (
+                <div className="ocr-loading" style={{ padding: 30 }}>
+                  <div className="ocr-spinner" />
+                </div>
+              ) : priceHistory.length === 0 ? (
+                <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{isAr ? 'لا يوجد تاريخ أسعار بعد' : 'No price history yet'}</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {priceHistory.map((h) => {
+                    const isLowest = Number(h.price) === lowestPrice;
+                    return (
+                      <div key={h.id} style={{
+                        padding: '10px 14px', borderRadius: 8,
+                        background: isLowest ? 'rgba(22,163,74,0.06)' : 'var(--noorix-bg-muted)',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{h.supplier?.nameAr || '—'}</div>
+                          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                            {new Date(h.invoiceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </div>
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: isLowest ? '#15803d' : 'var(--noorix-text)' }}>
+                          {Number(h.price).toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

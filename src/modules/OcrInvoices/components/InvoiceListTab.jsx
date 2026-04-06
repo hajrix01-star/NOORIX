@@ -156,10 +156,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
           {invoice.imageUrl && (
             <div className="inv-img-wrap" onClick={() => onLightbox(invoice.imageUrl)}>
               <img src={invoice.imageUrl} alt="invoice" className="inv-img-thumb" />
-              <div className="inv-img-overlay">
-                <span className="inv-img-zoom-icon">🔍</span>
-                <span>{isAr ? 'انقر للتكبير' : 'Click to zoom'}</span>
-              </div>
+              <div className="inv-img-overlay">⊕</div>
             </div>
           )}
 
@@ -185,7 +182,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
           {invoice.lines?.length > 0 && (
             <div className="inv-lines">
               <div className="inv-lines-header">
-                📦 {isAr ? `الأصناف (${invoice.lines.length})` : `Items (${invoice.lines.length})`}
+                {isAr ? `الأصناف (${invoice.lines.length})` : `Items (${invoice.lines.length})`}
               </div>
               <div className="inv-lines-table">
                 <div className="inv-lines-thead">
@@ -242,10 +239,11 @@ function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLight
         ) : (
           <div className="inv-card-no-img">🧾</div>
         )}
-        {/* overlay عند hover */}
-        <div className="inv-card-img-hover" onClick={(e) => { e.stopPropagation(); onLightbox(invoice.imageUrl); }}>
-          <span className="inv-card-zoom-icon">🔍</span>
-        </div>
+        {invoice.imageUrl && (
+          <div className="inv-card-img-hover" onClick={(e) => { e.stopPropagation(); onLightbox(invoice.imageUrl); }}>
+            <span className="inv-card-zoom-icon">⊕</span>
+          </div>
+        )}
         {/* checkbox */}
         <label className="inv-card-checkbox-wrap" onClick={(e) => e.stopPropagation()}>
           <input
@@ -265,7 +263,7 @@ function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLight
         <div className="inv-card-supplier">{supplierName}</div>
         <div className="inv-card-meta">
           {invoice.invoiceNumber && <span># {invoice.invoiceNumber}</span>}
-          {invoice.invoiceDate   && <span>📅 {fmtDate(invoice.invoiceDate)}</span>}
+          {invoice.invoiceDate   && <span>{fmtDate(invoice.invoiceDate)}</span>}
         </div>
         <div className="inv-card-footer">
           <span className="inv-card-total">
@@ -358,9 +356,8 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
           </span>
         </label>
 
-        {/* بحث */}
         <div className="inv-search-wrap">
-          <span className="inv-search-icon">🔍</span>
+          <span className="inv-search-icon">⌕</span>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -378,10 +375,9 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
           <option value="supplier">{isAr ? 'اسم المورد' : 'Supplier name'}</option>
         </select>
 
-        {/* حذف */}
         {selected.size > 0 && (
           <button className="inv-delete-btn" onClick={handleBulkDelete} disabled={deleting}>
-            {deleting ? '⏳' : '🗑️'}&nbsp;{isAr ? `حذف (${selected.size})` : `Delete (${selected.size})`}
+            {isAr ? `حذف (${selected.size})` : `Delete (${selected.size})`}
           </button>
         )}
       </div>
