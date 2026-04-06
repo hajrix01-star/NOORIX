@@ -143,16 +143,21 @@
 
 /* متغيرات النوافذ */
 :root {
-  --noorix-bg-modal:        #ffffff;
-  /* بدون طبقة خلفية خلف النافذة — فقط البطاقة مرئية */
-  --noorix-modal-overlay-bg: transparent;
-  --noorix-modal-shadow:    0 8px 48px rgba(10,31,68,0.22), 0 2px 12px rgba(10,31,68,0.12);
-  --noorix-modal-radius:    16px;
+  /* أبيض لؤلؤي نقي — لا رمادي أبداً */
+  --noorix-bg-modal:          #ffffff;
+  --noorix-modal-header-bg:   #ffffff;
+  --noorix-modal-footer-bg:   #f8fafc;   /* رمادي بارد خفيف جداً لتمييز الـ footer */
+  --noorix-modal-shadow:
+    0 0 0 1px rgba(200,215,235,0.7),        /* حد خارجي ناعم */
+    0 4px 16px rgba(10,31,68,0.08),
+    0 20px 60px rgba(10,31,68,0.18);
+  --noorix-modal-radius:      18px;
 }
 .dark {
-  --noorix-bg-modal:        #1c2d47;
-  --noorix-modal-overlay-bg: transparent;
-  --noorix-modal-shadow:    0 8px 48px rgba(0,0,0,0.5);
+  --noorix-bg-modal:          #1e2d45;
+  --noorix-modal-header-bg:   #1e2d45;
+  --noorix-modal-footer-bg:   #192538;
+  --noorix-modal-shadow:      0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.5);
 }
 
 /* ── خط موحد لجميع النوافذ ── */

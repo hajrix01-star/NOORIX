@@ -610,10 +610,10 @@
   inset: 0;
   z-index: var(--nx-z-backdrop);  /* 2000 — فوق الـ sidebar والـ header */
 
-  /* تعتيم إجباري + تضبيب يعزل الصفحة بصرياً */
-  background: rgba(8, 16, 32, 0.6);
-  backdrop-filter: blur(6px) saturate(0.8);
-  -webkit-backdrop-filter: blur(6px) saturate(0.8);
+  /* تعتيم إجباري + تضبيب ناعم للعزل البصري */
+  background: rgba(8, 16, 32, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 
   display: flex;
   align-items: center;
@@ -621,28 +621,30 @@
   padding: 16px;
   -webkit-tap-highlight-color: transparent;
 
-  /* دخول ناعم للـ backdrop */
-  animation: nx-backdrop-in 0.18s ease;
+  animation: nx-backdrop-in 0.2s ease;
 }
 @keyframes nx-backdrop-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-/* ── Modal Panel (اللوحة) ── */
+/* ── Modal Panel — أبيض لؤلؤي نقي ── */
 .nx-modal {
   position: relative;
   z-index: var(--nx-z-modal);  /* 2001 — فوق الـ backdrop مباشرة */
 
-  background: var(--noorix-bg-modal, var(--noorix-bg-surface));
-  border: 1px solid var(--noorix-border);
-  border-radius: 18px;
+  /* أبيض لؤلؤي: خلفية نقية + ضوء داخلي خفيف على الحافة العليا */
+  background: var(--noorix-bg-modal, #ffffff);
+  border: 1px solid rgba(200, 215, 235, 0.8);
+  border-radius: var(--noorix-modal-radius, 18px);
 
-  /* ظل عميق يُبرز اللوحة بوضوح */
+  /* ظل متدرّج يرفع اللوحة بصرياً مع بريق ناعم */
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.06) inset,
-    0 4px 24px rgba(8,16,32,0.12),
-    0 16px 64px rgba(8,16,32,0.22);
+    var(--noorix-modal-shadow,
+      0 0 0 1px rgba(200,215,235,0.7),
+      0 4px 16px rgba(10,31,68,0.08),
+      0 20px 60px rgba(10,31,68,0.18)
+    );
 
   width: 100%;
   max-height: min(92vh, 860px);
@@ -665,16 +667,16 @@
 .nx-modal--2xl  { max-width: clamp(560px, 95vw, 1100px); }
 .nx-modal--full { max-width: min(95vw, 1200px); }
 
-/* ── Header ── */
+/* ── Header — أبيض نقي مع فاصل خفيف ── */
 .nx-modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 18px 22px;
-  border-bottom: 1px solid var(--noorix-border);
+  border-bottom: 1px solid rgba(200, 215, 235, 0.6);
   flex-shrink: 0;
-  background: var(--noorix-bg-surface);
+  background: var(--noorix-modal-header-bg, #ffffff);
 }
 
 .nx-modal__title {
@@ -709,38 +711,40 @@
 }
 .nx-modal__close:active { transform: scale(0.95); }
 
-/* ── Body ── */
+/* ── Body — أبيض نقي ── */
 .nx-modal__body {
   flex: 1;
   overflow-y: auto;
   padding: 22px;
   min-height: 0;
+  background: var(--noorix-bg-modal, #ffffff);
   scrollbar-width: thin;
   scrollbar-color: var(--noorix-border) transparent;
 }
 .nx-modal__body::-webkit-scrollbar { width: 6px; }
 .nx-modal__body::-webkit-scrollbar-track { background: transparent; }
-.nx-modal__body::-webkit-scrollbar-thumb { background: var(--noorix-border); border-radius: 3px; }
+.nx-modal__body::-webkit-scrollbar-thumb { background: rgba(180,200,225,0.5); border-radius: 3px; }
 
-/* ── Footer ── */
+/* ── Footer — خلفية أفتح قليلاً لتمييز منطقة الأزرار ── */
 .nx-modal__footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 22px;
-  border-top: 1px solid var(--noorix-border);
+  border-top: 1px solid rgba(200, 215, 235, 0.6);
   flex-shrink: 0;
   flex-wrap: wrap;
-  background: var(--noorix-bg-surface);
+  background: var(--noorix-modal-footer-bg, #f8fafc);
 }
 
 /* ── Danger variant (نوافذ الحذف والتحذير) ── */
 .nx-modal--danger .nx-modal__header {
-  background: rgba(220, 38, 38, 0.04);
-  border-bottom-color: rgba(220, 38, 38, 0.15);
+  background: rgba(220, 38, 38, 0.03);
+  border-bottom-color: rgba(220, 38, 38, 0.12);
 }
 .nx-modal--danger .nx-modal__title { color: #dc2626; }
+.nx-modal--danger .nx-modal__body  { background: #ffffff; }
 
 /* ── Flush variant (محتوى يملأ بدون padding) ── */
 .nx-modal--flush .nx-modal__body { padding: 0; }
