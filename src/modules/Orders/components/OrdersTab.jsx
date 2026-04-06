@@ -246,7 +246,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
       </div>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="noorix-print-hide nx-page-header">
+      <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
         <DateFilterBar filter={dateFilter} />
         <div className="nx-toolbar">
           <Button variant="primary" className="noorix-print-hide" onClick={() => { setEditingOrder(null); setShowModal(true); }}>

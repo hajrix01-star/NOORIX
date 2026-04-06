@@ -69,7 +69,7 @@ export default function DateFilterBar({ filter }) {
       {/* حقول الفلتر */}
       <div className="ndfb-fields">
         {mode === 'month' && (
-          <>
+          <div className="ndfb-fields-inner">
             <Input
               type="select"
               className="ndfb-year-select"
@@ -90,7 +90,7 @@ export default function DateFilterBar({ filter }) {
                 <option key={i + 1} value={i + 1}>{name}</option>
               ))}
             </Input>
-          </>
+          </div>
         )}
 
         {mode === 'day' && (

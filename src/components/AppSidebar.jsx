@@ -279,8 +279,8 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                     <span className="app-nav-link__label">
                       <link.icon />
                       <span>{t(link.labelKey)}</span>
-                      <span style={{ marginInlineStart: 'auto', fontSize: 10, opacity: 0.8 }}>{reportsOpen ? '▾' : '▸'}</span>
                     </span>
+                    <span className="app-nav-link__chevron" aria-hidden>{reportsOpen ? '▾' : '▸'}</span>
                   </Button>
                   {reportsOpen && (
                     <ul className="app-nav-list app-nav-list--nested">

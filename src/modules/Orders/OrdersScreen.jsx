@@ -64,20 +64,16 @@ export default function OrdersScreen() {
       {companyId && (
         <>
           {/* تبويبات */}
-          <div style={{ display: 'flex', borderBottom: '2px solid var(--noorix-border)', gap: 0, flexWrap: 'wrap' }}>
+          <div className="orders-screen-tab-strip" role="tablist">
             {tabs.map((tab) => (
               <Button
                 key={tab.id}
                 type="button"
+                variant="ghost"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className={`orders-screen-tab${activeTab === tab.id ? ' orders-screen-tab--active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
-                style={{
-                  borderRadius: 0, border: 'none', margin: 0,
-                  borderBottom: activeTab === tab.id ? '2px solid var(--noorix-accent-green)' : '2px solid transparent',
-                  background: activeTab === tab.id ? 'rgba(22,163,74,0.07)' : 'transparent',
-                  color: activeTab === tab.id ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)',
-                  fontWeight: activeTab === tab.id ? 700 : 500,
-                  padding: '10px 20px', fontSize: 13,
-                }}
               >
                 {tab.label}
               </Button>

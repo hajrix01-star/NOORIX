@@ -161,7 +161,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
     <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="noorix-print-hide nx-page-header">
+      <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
         <DateFilterBar filter={dateFilter} />
         <div className="nx-toolbar">
           <Input

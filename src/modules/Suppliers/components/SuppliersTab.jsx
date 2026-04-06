@@ -122,10 +122,12 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
       {/* ── شريط البحث + إضافة ── */}
       <div className="nx-page-header">
         <Input
+          type="search"
+          size="sm"
+          className="suppliers-tab-search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('searchByNameOrTax')}
-          style={{ maxWidth: 320, flex: '1 1 160px' }}
         />
         <Button
           variant={showForm ? 'default' : 'primary'}
