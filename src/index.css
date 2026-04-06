@@ -124,14 +124,14 @@
 /* متغيرات النوافذ */
 :root {
   --noorix-bg-modal:        #ffffff;
-  --noorix-modal-overlay-bg: rgba(10,31,68,0.48);
-  --noorix-modal-shadow:    0 8px 32px rgba(10,31,68,0.18), 0 2px 8px rgba(10,31,68,0.1);
+  --noorix-modal-overlay-bg: rgba(0,0,0,0.05);
+  --noorix-modal-shadow:    0 8px 48px rgba(10,31,68,0.22), 0 2px 12px rgba(10,31,68,0.12);
   --noorix-modal-radius:    16px;
 }
 .dark {
   --noorix-bg-modal:        #1c2d47;
-  --noorix-modal-overlay-bg: rgba(0,0,0,0.6);
-  --noorix-modal-shadow:    0 8px 40px rgba(0,0,0,0.5);
+  --noorix-modal-overlay-bg: rgba(0,0,0,0.12);
+  --noorix-modal-shadow:    0 8px 48px rgba(0,0,0,0.5);
 }
 
 /* ── خط موحد لجميع النوافذ ── */
@@ -146,8 +146,8 @@
   position: fixed;
   inset: 0;
   background: var(--noorix-modal-overlay-bg);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
   z-index: 2000;
   display: flex;
   align-items: center;
@@ -169,6 +169,13 @@
   position: relative;
 }
 
+/* ── ضمان overlay موحّد لجميع النوافذ (يشمل inline styles) ── */
+[aria-modal="true"]:not(.noorix-modal-card):not(.noorix-surface-card):not(.noorix-modal-card *) {
+  background: var(--noorix-modal-overlay-bg) !important;
+  backdrop-filter: blur(18px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.4) !important;
+}
+
 /* ── ضمان خلفية بيضاء لـ noorix-surface-card داخل أي نافذة ── */
 [role="dialog"] .noorix-surface-card,
 [aria-modal="true"] .noorix-surface-card,
@@ -185,8 +192,8 @@
   position: fixed;
   inset: 0;
   background: var(--noorix-modal-overlay-bg);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
   z-index: 2000;
   display: flex;
   align-items: center;

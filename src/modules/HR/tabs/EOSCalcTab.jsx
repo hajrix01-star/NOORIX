@@ -107,11 +107,11 @@ export default function EOSCalcTab() {
   function handlePrint() {
     const reportDate = new Date().toISOString().slice(0, 10);
     const allowanceRowsAr = allowanceRows.length
-      ? allowanceRows.map((r) => `<tr><td>${r.ar}</td><td class="num">${hrFmt(r.amount)}</td></tr>`).join('')
-      : '<tr><td>لا توجد بدلات</td><td class="num">0</td></tr>';
+      ? allowanceRows.map((r) => `<tr><td class="td-ar">${r.ar}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
+      : '<tr><td class="td-ar" style="color:#94a3b8">لا توجد بدلات</td><td class="td-num" style="color:#94a3b8">—</td></tr>';
     const allowanceRowsEn = allowanceRows.length
-      ? allowanceRows.map((r) => `<tr><td>${r.en}</td><td class="num">${hrFmt(r.amount)}</td></tr>`).join('')
-      : '<tr><td>No allowances</td><td class="num">0</td></tr>';
+      ? allowanceRows.map((r) => `<tr><td class="td-en">${r.en}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
+      : '<tr><td class="td-en" style="color:#94a3b8">No allowances</td><td class="td-num" style="color:#94a3b8">—</td></tr>';
     const html = `<!DOCTYPE html>
       <html dir="rtl">
       <head>
@@ -119,85 +119,120 @@ export default function EOSCalcTab() {
         <title>EOS Calculator</title>
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
         <style>
-          body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#111;padding:20px;line-height:1.6}
-          .doc{border:1px solid #dbe1e8;border-radius:12px;overflow:hidden}
-          .head{padding:14px 18px;border-bottom:1px solid #dbe1e8;background:#f8fafc;text-align:center}
-          .section{padding:14px 18px}
-          .bi{display:grid;grid-template-columns:1fr 1px 1fr;gap:12px;align-items:stretch}
-          .sep{background:#cbd5e1;border-radius:999px}
-          .box{border:1px solid #dbe1e8;border-radius:10px;padding:12px}
-          .row{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px}
-          .en{direction:ltr;text-align:left}
-          .num{font-family:'Cairo',Arial,sans-serif}
-          table{width:100%;border-collapse:collapse}
-          th,td{border:1px solid #dbe1e8;padding:8px;font-size:12px}
-          th{background:#f8fafc}
+          *{box-sizing:border-box;margin:0;padding:0}
+          body{font-family:'Cairo',Arial,sans-serif;background:#f8fafc;color:#111;padding:24px;line-height:1.6;font-size:13px}
+          .doc{background:#fff;border:1px solid #dbe1e8;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);max-width:900px;margin:0 auto}
+          /* ── رأس المستند ── */
+          .head{padding:20px 24px;border-bottom:2px solid #dbe1e8;background:#f8fafc;text-align:center}
+          .head-title{font-size:20px;font-weight:800;color:#0a1f44}
+          .head-sub{font-size:13px;font-weight:700;color:#374151;margin-top:6px}
+          .head-date{font-size:11px;color:#64748b;margin-top:4px}
+          /* ── التخطيط الثنائي ── */
+          .section{padding:16px 24px}
+          .bi{display:grid;grid-template-columns:1fr 1px 1fr;gap:0;align-items:stretch}
+          .sep{background:#e2e8f0;width:1px}
+          /* ── صناديق البيانات ── */
+          .box-ar{padding:0 16px 0 12px;direction:rtl;text-align:right}
+          .box-en{padding:0 12px 0 16px;direction:ltr;text-align:left}
+          .box-title{font-size:13px;font-weight:800;color:#0a1f44;padding:10px 0 8px;border-bottom:2px solid #dbe1e8;margin-bottom:10px;text-align:center}
+          /* ── صفوف البيانات ── */
+          .row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px dashed #e2e8f0;gap:8px;font-size:12px}
+          .row:last-child{border-bottom:none}
+          .row-label{color:#64748b;font-weight:600}
+          .row-val{font-weight:700;color:#1a2332;white-space:nowrap}
+          .row-highlight{background:#f0fdf4;border-radius:6px;padding:6px 8px;margin-top:4px;font-size:13px}
+          .row-highlight .row-label{color:#15803d;font-weight:700}
+          .row-highlight .row-val{color:#15803d;font-size:15px}
+          /* ── جداول البدلات ── */
+          .tbl-section{padding:16px 24px;border-top:1px solid #dbe1e8;background:#fafcff}
+          table{width:100%;border-collapse:collapse;font-size:12px}
+          thead th{background:#f1f5f9;padding:8px 12px;font-weight:700;color:#374151;border:1px solid #dbe1e8;text-align:center}
+          tbody td{padding:7px 12px;border:1px solid #dbe1e8;color:#1a2332}
+          tbody tr:nth-child(even) td{background:#f8fafc}
+          .td-ar{text-align:right;direction:rtl}
+          .td-en{text-align:left;direction:ltr}
+          .td-num{text-align:center;font-weight:600;font-family:'Cairo',Arial,sans-serif}
+          /* ── تذييل ── */
+          .foot{padding:12px 24px;border-top:1px solid #dbe1e8;background:#f8fafc;text-align:center;font-size:11px;color:#94a3b8}
+          @media print{body{padding:0;background:#fff}.doc{box-shadow:none;border:none}}
         </style>
       </head>
       <body>
         <div class="doc">
+          <!-- رأس المستند -->
           <div class="head">
-            <div style="font-weight:800;font-size:18px">${companyName}</div>
-            <div style="font-weight:700;margin-top:6px">تقرير حاسبة نهاية الخدمة / EOS Calculator Report</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">Date: ${reportDate}</div>
+            <div class="head-title">${companyName}</div>
+            <div class="head-sub">وثيقة تسوية نهاية الخدمة &nbsp;/&nbsp; End of Service Settlement</div>
+            <div class="head-date">تاريخ الإصدار / Issue Date: ${reportDate}</div>
           </div>
+
+          <!-- بيانات الموظف والحساب -->
           <div class="section">
             <div class="bi">
-              <div class="box">
-                <div class="row"><strong>الموظف</strong><span>${emp?.name || '—'}</span></div>
-                <div class="row"><strong>ساعات العمل اليومية</strong><span class="num">${hrFmt(parseWorkHours(emp?.workHours))}</span></div>
-                <div class="row"><strong>تاريخ التعيين</strong><span>${jd || '—'}</span></div>
-                <div class="row"><strong>تاريخ نهاية الخدمة</strong><span>${ed || '—'}</span></div>
-                <div class="row"><strong>آخر أجر فعلي</strong><span class="num">${hrFmt(sal.toNumber())}</span></div>
-                <div class="row"><strong>سبب الانتهاء</strong><span>${t(
-                  terminationReason === 'employer'
-                    ? 'eosCalcReasonEmployer'
-                    : terminationReason === 'resignation'
-                      ? 'eosCalcReasonResignation'
-                      : terminationReason === 'article81'
-                        ? 'eosCalcReasonArticle81'
-                        : 'eosCalcReasonArticle80',
-                )}</span></div>
-                <div class="row"><strong>مدة الخدمة بالأيام</strong><span class="num">${serviceDays}</span></div>
-                <div class="row"><strong>سنوات الخدمة</strong><span class="num">${serviceYears.toDecimalPlaces(2).toString()}</span></div>
-                <div class="row"><strong>المكافأة الكاملة</strong><span class="num">${hrFmt(fullAward.toNumber())}</span></div>
-                <div class="row"><strong>نسبة الاستحقاق</strong><span class="num">${eligibilityFactor.times(100).toDecimalPlaces(2).toString()}%</span></div>
-                <div class="row"><strong>نهاية الخدمة</strong><span class="num">${hrFmt(eosAmount.toNumber())}</span></div>
+              <!-- العربية — يمين -->
+              <div class="box-ar">
+                <div class="box-title">بيانات الموظف والاستحقاق</div>
+                <div class="row"><span class="row-label">الموظف</span><span class="row-val">${emp?.name || '—'}</span></div>
+                <div class="row"><span class="row-label">ساعات العمل / يوم</span><span class="row-val">${hrFmt(parseWorkHours(emp?.workHours))}</span></div>
+                <div class="row"><span class="row-label">تاريخ التعيين</span><span class="row-val">${jd || '—'}</span></div>
+                <div class="row"><span class="row-label">تاريخ نهاية الخدمة</span><span class="row-val">${ed || '—'}</span></div>
+                <div class="row"><span class="row-label">آخر أجر فعلي</span><span class="row-val">${hrFmt(sal.toNumber())} ﷼</span></div>
+                <div class="row"><span class="row-label">سبب الانتهاء</span><span class="row-val">${t(terminationReason === 'employer' ? 'eosCalcReasonEmployer' : terminationReason === 'resignation' ? 'eosCalcReasonResignation' : terminationReason === 'article81' ? 'eosCalcReasonArticle81' : 'eosCalcReasonArticle80')}</span></div>
+                <div class="row"><span class="row-label">مدة الخدمة بالأيام</span><span class="row-val">${serviceDays}</span></div>
+                <div class="row"><span class="row-label">سنوات الخدمة</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} سنة</span></div>
+                <div class="row"><span class="row-label">نصف شهر × ${firstFiveYears.toDecimalPlaces(2)} سنة</span><span class="row-val">${hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())} ﷼</span></div>
+                ${remainingYears.gt(0) ? `<div class="row"><span class="row-label">شهر كامل × ${remainingYears.toDecimalPlaces(2)} سنة</span><span class="row-val">${hrFmt(sal.times(remainingYears).toNumber())} ﷼</span></div>` : ''}
+                <div class="row"><span class="row-label">المكافأة الكاملة</span><span class="row-val">${hrFmt(fullAward.toNumber())} ﷼</span></div>
+                <div class="row"><span class="row-label">نسبة الاستحقاق</span><span class="row-val">${eligibilityFactor.times(100).toDecimalPlaces(0)}%</span></div>
+                <div class="row row-highlight"><span class="row-label">مكافأة نهاية الخدمة</span><span class="row-val">${hrFmt(eosAmount.toNumber())} ﷼</span></div>
               </div>
+
               <div class="sep"></div>
-              <div class="box en">
-                <div class="row"><strong>Employee</strong><span>${emp?.name || '—'}</span></div>
-                <div class="row"><strong>Work hours/day</strong><span class="num">${hrFmt(parseWorkHours(emp?.workHours))}</span></div>
-                <div class="row"><strong>Join date</strong><span>${jd || '—'}</span></div>
-                <div class="row"><strong>End of service date</strong><span>${ed || '—'}</span></div>
-                <div class="row"><strong>Last actual wage</strong><span class="num">${hrFmt(sal.toNumber())}</span></div>
-                <div class="row"><strong>Reason</strong><span>${terminationReason}</span></div>
-                <div class="row"><strong>Service days</strong><span class="num">${serviceDays}</span></div>
-                <div class="row"><strong>Service Years</strong><span class="num">${serviceYears.toDecimalPlaces(2).toString()}</span></div>
-                <div class="row"><strong>Full Award</strong><span class="num">${hrFmt(fullAward.toNumber())}</span></div>
-                <div class="row"><strong>Eligibility</strong><span class="num">${eligibilityFactor.times(100).toDecimalPlaces(2).toString()}%</span></div>
-                <div class="row"><strong>EOS Amount</strong><span class="num">${hrFmt(eosAmount.toNumber())}</span></div>
+
+              <!-- الإنجليزية — يسار -->
+              <div class="box-en">
+                <div class="box-title">Employee Data &amp; Entitlement</div>
+                <div class="row"><span class="row-label">Employee</span><span class="row-val">${emp?.nameEn || emp?.name || '—'}</span></div>
+                <div class="row"><span class="row-label">Work hours / day</span><span class="row-val">${hrFmt(parseWorkHours(emp?.workHours))}</span></div>
+                <div class="row"><span class="row-label">Join date</span><span class="row-val">${jd || '—'}</span></div>
+                <div class="row"><span class="row-label">End of service date</span><span class="row-val">${ed || '—'}</span></div>
+                <div class="row"><span class="row-label">Last actual wage</span><span class="row-val">SAR ${hrFmt(sal.toNumber())}</span></div>
+                <div class="row"><span class="row-label">Termination reason</span><span class="row-val">${terminationReason === 'employer' ? 'By Employer' : terminationReason === 'resignation' ? 'Resignation' : terminationReason === 'article81' ? 'Article 81' : 'Article 80'}</span></div>
+                <div class="row"><span class="row-label">Service days</span><span class="row-val">${serviceDays} days</span></div>
+                <div class="row"><span class="row-label">Service years</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} yr</span></div>
+                <div class="row"><span class="row-label">Half-month × ${firstFiveYears.toDecimalPlaces(2)} yr</span><span class="row-val">SAR ${hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())}</span></div>
+                ${remainingYears.gt(0) ? `<div class="row"><span class="row-label">Full month × ${remainingYears.toDecimalPlaces(2)} yr</span><span class="row-val">SAR ${hrFmt(sal.times(remainingYears).toNumber())}</span></div>` : ''}
+                <div class="row"><span class="row-label">Full award</span><span class="row-val">SAR ${hrFmt(fullAward.toNumber())}</span></div>
+                <div class="row"><span class="row-label">Eligibility factor</span><span class="row-val">${eligibilityFactor.times(100).toDecimalPlaces(0)}%</span></div>
+                <div class="row row-highlight"><span class="row-label">EOS Amount</span><span class="row-val">SAR ${hrFmt(eosAmount.toNumber())}</span></div>
               </div>
             </div>
           </div>
-          <div class="section">
+
+          <!-- جدول البدلات -->
+          <div class="tbl-section">
             <div class="bi">
-              <div class="box">
-                <div style="font-weight:700;margin-bottom:8px">تفاصيل البدلات الداخلة في الأجر الفعلي</div>
+              <div style="padding:0 16px 0 0">
+                <div style="font-weight:800;font-size:12px;color:#374151;margin-bottom:8px;text-align:center">تفاصيل البدلات المحتسبة في الأجر الفعلي</div>
                 <table>
-                  <thead><tr><th>البدل</th><th>القيمة</th></tr></thead>
+                  <thead><tr><th class="td-ar">البدل</th><th>القيمة (﷼)</th></tr></thead>
                   <tbody>${allowanceRowsAr}</tbody>
                 </table>
               </div>
               <div class="sep"></div>
-              <div class="box en">
-                <div style="font-weight:700;margin-bottom:8px">Allowances included in actual wage</div>
+              <div style="padding:0 0 0 16px">
+                <div style="font-weight:800;font-size:12px;color:#374151;margin-bottom:8px;text-align:center">Allowances Included in Actual Wage</div>
                 <table>
-                  <thead><tr><th>Allowance</th><th>Amount</th></tr></thead>
+                  <thead><tr><th class="td-en">Allowance</th><th>Amount (SAR)</th></tr></thead>
                   <tbody>${allowanceRowsEn}</tbody>
                 </table>
               </div>
             </div>
+          </div>
+
+          <!-- تذييل -->
+          <div class="foot">
+            ${companyName} &nbsp;·&nbsp; ${reportDate} &nbsp;·&nbsp; وثيقة آلية / Auto-generated Document
           </div>
         </div>
       </body>

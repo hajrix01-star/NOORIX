@@ -198,8 +198,17 @@ export const StaffFormModal = memo(function StaffFormModal({
         <form onSubmit={handleSubmit}>
           <div className="staff-form-names-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('employeeName')}</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('employeeName')} *</label>
               <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={t('employeeNamePlaceholder')} required style={IS} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Name (English)</label>
+              <input
+                value={form.nameEn}
+                onChange={(e) => set('nameEn', e.target.value)}
+                placeholder="Employee name in English"
+                style={{ ...IS, direction: 'ltr', textAlign: 'left' }}
+              />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('jobTitle')}</label>
