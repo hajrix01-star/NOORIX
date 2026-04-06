@@ -1,101 +1,329 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
 
-const STATUS_STYLES = {
-  pending:   { bg: 'rgba(245,158,11,0.12)', color: '#d97706', label: { ar: 'بانتظار المراجعة', en: 'Pending' } },
-  confirmed: { bg: 'rgba(22,163,74,0.12)',  color: '#16a34a', label: { ar: 'مؤكدة', en: 'Confirmed' } },
-  rejected:  { bg: 'rgba(220,38,38,0.12)',  color: '#dc2626', label: { ar: 'مرفوضة', en: 'Rejected' } },
+/* ── ثوابت ──────────────────────────────────────────────────────────── */
+const STATUS = {
+  pending:   { bgCls: 'status--pending',   ar: 'بانتظار المراجعة', en: 'Pending' },
+  confirmed: { bgCls: 'status--confirmed', ar: 'مؤكدة',            en: 'Confirmed' },
+  rejected:  { bgCls: 'status--rejected',  ar: 'مرفوضة',           en: 'Rejected' },
 };
 
-const fmtNum  = (n) => Number(n).toLocaleString('en-US');
-const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+const fmt    = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 
-/* ── عارض صورة الفاتورة — تكبير داخل النافذة ─────────────────────── */
-function InvoiceImageViewer({ src }) {
+/* ═══════════════════════════════════════════════════════════════════════
+   عارض الصورة الاحترافي — تكبير + تصغير متعدد + تدوير + سحب
+   ═══════════════════════════════════════════════════════════════════════ */
+function ImageLightbox({ src, onClose }) {
+  const [scale,    setScale]    = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [zoomed,   setZoomed]   = useState(false);
+  const [pan,      setPan]      = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart  = useRef(null);
+  const imgRef     = useRef(null);
 
-  if (!src) return null;
+  /* ── لوحة المفاتيح ── */
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape')   onClose();
+      if (e.key === '+'  || e.key === '=') zoomIn();
+      if (e.key === '-')        zoomOut();
+      if (e.key === 'r' || e.key === 'R') rotate();
+      if (e.key === '0')        reset();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
-  const rotate = () => setRotation((r) => (r + 90) % 360);
+  const zoomIn  = () => setScale((s) => Math.min(s + 0.25, 5));
+  const zoomOut = () => setScale((s) => { const n = Math.max(s - 0.25, 0.25); if (n === 1) setPan({ x:0, y:0 }); return n; });
+  const rotate  = () => setRotation((r) => (r + 90) % 360);
+  const reset   = () => { setScale(1); setRotation(0); setPan({ x:0, y:0 }); };
 
-  return (
-    <div style={{ marginBottom: 20 }}>
-      {/* الصورة المصغرة */}
-      {!zoomed && (
-        <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', background: '#f9fafb' }}>
+  /* ── عجلة الماوس ── */
+  const onWheel = useCallback((e) => {
+    e.preventDefault();
+    e.deltaY < 0 ? zoomIn() : zoomOut();
+  }, []);
+
+  /* ── سحب ── */
+  const onMouseDown = (e) => {
+    if (scale <= 1) return;
+    setDragging(true);
+    dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+  };
+  const onMouseMove = (e) => {
+    if (!dragging || !dragStart.current) return;
+    setPan({ x: e.clientX - dragStart.current.x, y: e.clientY - dragStart.current.y });
+  };
+  const onMouseUp = () => setDragging(false);
+
+  const scaleLabel = `${Math.round(scale * 100)}%`;
+
+  return createPortal(
+    <div className="lb-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="lb-box">
+
+        {/* ── شريط أعلى ── */}
+        <div className="lb-topbar">
+          <div className="lb-scale-label">{scaleLabel}</div>
+          <div className="lb-controls">
+            <button className="lb-btn" onClick={zoomOut}  title="تصغير (-)">−</button>
+            <button className="lb-btn" onClick={zoomIn}   title="تكبير (+)">+</button>
+            <button className="lb-btn" onClick={rotate}   title="تدوير (R)">↺</button>
+            <button className="lb-btn" onClick={reset}    title="إعادة تعيين (0)">⊙</button>
+            <button className="lb-btn lb-btn--close" onClick={onClose} title="إغلاق (Esc)">✕</button>
+          </div>
+        </div>
+
+        {/* ── منطقة الصورة ── */}
+        <div
+          className="lb-stage"
+          onWheel={onWheel}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
+          style={{ cursor: scale > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in' }}
+          onClick={() => { if (!dragging) zoomIn(); }}
+        >
           <img
+            ref={imgRef}
             src={src}
             alt="invoice"
-            style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block',
-              transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease' }}
+            className="lb-img"
+            draggable={false}
+            style={{
+              transform: `translate(${pan.x}px,${pan.y}px) rotate(${rotation}deg) scale(${scale})`,
+            }}
           />
-          <div style={{ position: 'absolute', bottom: 10, insetInlineEnd: 10, display: 'flex', gap: 6 }}>
-            <button type="button" onClick={rotate} title="تدوير"
-              style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(0,0,0,0.55)', border: 'none',
-                color: '#fff', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-              🔄
-            </button>
-            <button type="button" onClick={() => setZoomed(true)} title="تكبير"
-              style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(0,0,0,0.55)', border: 'none',
-                color: '#fff', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-              🔍
-            </button>
-          </div>
         </div>
-      )}
 
-      {/* عرض مكبّر داخل النافذة — بدون فتح صفحة جديدة */}
-      {zoomed && (
-        <div style={{ borderRadius: 12, background: '#111', padding: 12, position: 'relative' }}>
-          <div style={{ overflowY: 'auto', maxHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img
-              src={src}
-              alt="invoice zoomed"
-              style={{ maxWidth: '100%', objectFit: 'contain',
-                transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease',
-                cursor: 'zoom-in', touchAction: 'pinch-zoom' }}
-            />
+        {/* ── شريط تحت ── */}
+        <div className="lb-bottombar">
+          <div className="lb-hint">
+            {scale <= 1 ? 'انقر أو استخدم العجلة للتكبير · R للتدوير · Esc للإغلاق'
+                        : 'اسحب للتنقل · العجلة للتكبير/التصغير · 0 لإعادة التعيين'}
           </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 10, justifyContent: 'center' }}>
-            <button type="button" onClick={rotate}
-              style={{ padding: '7px 18px', borderRadius: 8, background: 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-              🔄 تدوير
-            </button>
-            <button type="button" onClick={() => setZoomed(false)}
-              style={{ padding: '7px 18px', borderRadius: 8, background: 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-              ✕ تصغير
-            </button>
+          <div className="lb-zoom-strip">
+            {[0.5, 1, 1.5, 2, 3, 4].map((z) => (
+              <button key={z} className={`lb-zoom-dot${scale === z ? ' lb-zoom-dot--active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); setScale(z); if (z === 1) setPan({x:0,y:0}); }}>
+                {z === 1 ? '1×' : `${z}×`}
+              </button>
+            ))}
           </div>
         </div>
-      )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   نافذة تفاصيل الفاتورة
+   ═══════════════════════════════════════════════════════════════════════ */
+function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
+  const isAr     = language === 'ar';
+  const dir      = isAr ? 'rtl' : 'ltr';
+  const statusInfo = STATUS[invoice.status] || STATUS.pending;
+  const supplierName = isAr
+    ? (invoice.supplier?.nameAr || '—')
+    : (invoice.supplier?.nameEn || invoice.supplier?.nameAr || '—');
+
+  return createPortal(
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" dir={dir}>
+
+        {/* رأس */}
+        <div className="modal-head">
+          <div>
+            <div className="modal-title">{isAr ? 'تفاصيل الفاتورة' : 'Invoice Details'}</div>
+            <div className="modal-sub">{supplierName}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span className={`status-badge ${statusInfo.bgCls}`}>
+              {isAr ? statusInfo.ar : statusInfo.en}
+            </span>
+            <button className="modal-close-btn" onClick={onClose}>✕</button>
+          </div>
+        </div>
+
+        <div className="modal-body">
+          {/* ── صورة الفاتورة ── */}
+          {invoice.imageUrl && (
+            <div className="inv-img-wrap" onClick={() => onLightbox(invoice.imageUrl)}>
+              <img src={invoice.imageUrl} alt="invoice" className="inv-img-thumb" />
+              <div className="inv-img-overlay">
+                <span className="inv-img-zoom-icon">🔍</span>
+                <span>{isAr ? 'انقر للتكبير' : 'Click to zoom'}</span>
+              </div>
+            </div>
+          )}
+
+          {/* ── بطاقات المعلومات ── */}
+          <div className="inv-meta-grid">
+            {[
+              { label: isAr ? 'المورد'         : 'Supplier',      value: supplierName },
+              { label: isAr ? 'رقم الفاتورة'   : 'Invoice #',     value: invoice.invoiceNumber || '—' },
+              { label: isAr ? 'تاريخ الفاتورة' : 'Invoice Date',  value: fmtDate(invoice.invoiceDate) },
+              { label: isAr ? 'تاريخ الرفع'    : 'Uploaded',      value: fmtDate(invoice.createdAt) },
+              { label: isAr ? 'المجموع قبل الضريبة' : 'Subtotal', value: invoice.subtotalAmount ? `${fmt(invoice.subtotalAmount)} ${isAr ? 'ريال' : 'SAR'}` : '—' },
+              { label: isAr ? 'الضريبة'        : 'VAT',           value: invoice.vatAmount    ? `${fmt(invoice.vatAmount)} ${isAr ? 'ريال' : 'SAR'}` : '—' },
+              { label: isAr ? 'الإجمالي شامل الضريبة' : 'Total',  value: invoice.totalAmount  ? `${fmt(invoice.totalAmount)} ${isAr ? 'ريال' : 'SAR'}` : '—', highlight: true },
+            ].map(({ label, value, highlight }) => (
+              <div key={label} className={`inv-meta-cell${highlight ? ' inv-meta-cell--hl' : ''}`}>
+                <div className="inv-meta-label">{label}</div>
+                <div className="inv-meta-value">{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── الأصناف ── */}
+          {invoice.lines?.length > 0 && (
+            <div className="inv-lines">
+              <div className="inv-lines-header">
+                📦 {isAr ? `الأصناف (${invoice.lines.length})` : `Items (${invoice.lines.length})`}
+              </div>
+              <div className="inv-lines-table">
+                <div className="inv-lines-thead">
+                  <span>{isAr ? 'الصنف' : 'Item'}</span>
+                  <span style={{ textAlign: 'center' }}>{isAr ? 'الكمية' : 'Qty'}</span>
+                  <span style={{ textAlign: 'center' }}>{isAr ? 'السعر' : 'Price'}</span>
+                  <span style={{ textAlign: 'center' }}>{isAr ? 'الإجمالي' : 'Total'}</span>
+                </div>
+                {invoice.lines.map((line, i) => (
+                  <div key={i} className="inv-lines-row">
+                    <div className="inv-line-name">
+                      {line.nameAr || line.item?.nameAr || line.rawName}
+                      {line.nameEn && line.nameEn !== (line.nameAr || '') && (
+                        <span className="inv-line-en"> / {line.nameEn || line.item?.nameEn}</span>
+                      )}
+                      {line.size && (
+                        <span className="inv-line-size">{line.size}{line.sizeUnit || ''}</span>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'center' }}>{line.quantity ?? '—'}</div>
+                    <div style={{ textAlign: 'center' }}>{line.unitPrice  != null ? fmt(line.unitPrice)  : '—'}</div>
+                    <div style={{ textAlign: 'center', fontWeight: 700 }}>{line.totalPrice != null ? fmt(line.totalPrice) : '—'}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   بطاقة الفاتورة
+   ═══════════════════════════════════════════════════════════════════════ */
+function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLightbox }) {
+  const isAr = language === 'ar';
+  const statusInfo = STATUS[invoice.status] || STATUS.pending;
+  const supplierName = isAr
+    ? (invoice.supplier?.nameAr || (isAr ? 'مورد غير محدد' : 'Unknown'))
+    : (invoice.supplier?.nameEn || invoice.supplier?.nameAr || 'Unknown');
+
+  return (
+    <div
+      className={`inv-card${isSelected ? ' inv-card--selected' : ''}`}
+      onClick={onClick}
+    >
+      {/* ── منطقة الصورة ── */}
+      <div className="inv-card-img-wrap">
+        {invoice.imageUrl ? (
+          <img src={invoice.imageUrl} alt="" className="inv-card-img" />
+        ) : (
+          <div className="inv-card-no-img">🧾</div>
+        )}
+        {/* overlay عند hover */}
+        <div className="inv-card-img-hover" onClick={(e) => { e.stopPropagation(); onLightbox(invoice.imageUrl); }}>
+          <span className="inv-card-zoom-icon">🔍</span>
+        </div>
+        {/* checkbox */}
+        <label className="inv-card-checkbox-wrap" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox" checked={isSelected}
+            onChange={() => onSelect(invoice.id)}
+            className="inv-card-checkbox"
+          />
+        </label>
+        {/* status badge */}
+        <span className={`inv-card-status ${statusInfo.bgCls}`}>
+          {isAr ? statusInfo.ar : statusInfo.en}
+        </span>
+      </div>
+
+      {/* ── معلومات ── */}
+      <div className="inv-card-body">
+        <div className="inv-card-supplier">{supplierName}</div>
+        <div className="inv-card-meta">
+          {invoice.invoiceNumber && <span># {invoice.invoiceNumber}</span>}
+          {invoice.invoiceDate   && <span>📅 {fmtDate(invoice.invoiceDate)}</span>}
+        </div>
+        <div className="inv-card-footer">
+          <span className="inv-card-total">
+            {invoice.totalAmount ? `${fmt(invoice.totalAmount)} ${isAr ? 'ريال' : 'SAR'}` : '—'}
+          </span>
+          <span className="inv-card-items">
+            {invoice.lines?.length || 0} {isAr ? 'صنف' : 'items'}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   التبويب الرئيسي
+   ═══════════════════════════════════════════════════════════════════════ */
 export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
-  const { t, language } = useTranslation();
-  const [search, setSearch]     = useState('');
-  const [viewing, setViewing]   = useState(null);
-  const [selected, setSelected] = useState(new Set());
-  const [deleting, setDeleting] = useState(false);
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  const { language } = useTranslation();
+  const isAr = language === 'ar';
+  const dir  = isAr ? 'rtl' : 'ltr';
 
-  const toggleSelect = (id, e) => {
-    e.stopPropagation();
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
+  const [search,    setSearch]    = useState('');
+  const [selected,  setSelected]  = useState(new Set());
+  const [viewing,   setViewing]   = useState(null);
+  const [lightbox,  setLightbox]  = useState(null);   // URL الصورة المكبرة
+  const [deleting,  setDeleting]  = useState(false);
+  const [sortBy,    setSortBy]    = useState('date-desc');
 
+  /* ── فلترة وترتيب ── */
+  const filtered = (() => {
+    const q = search.toLowerCase();
+    let list = invoices.filter((inv) =>
+      !q ||
+      inv.supplier?.nameAr?.toLowerCase().includes(q) ||
+      inv.supplier?.nameEn?.toLowerCase().includes(q) ||
+      inv.invoiceNumber?.toLowerCase().includes(q)
+    );
+    if (sortBy === 'date-desc') list = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    if (sortBy === 'date-asc')  list = [...list].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    if (sortBy === 'amount')    list = [...list].sort((a, b) => Number(b.totalAmount || 0) - Number(a.totalAmount || 0));
+    if (sortBy === 'supplier')  list = [...list].sort((a, b) => (a.supplier?.nameAr || '').localeCompare(b.supplier?.nameAr || '', 'ar'));
+    return list;
+  })();
+
+  /* ── تحديد ── */
+  const toggleSelect = (id) => setSelected((prev) => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
+  });
+  const selectAll  = () => setSelected(new Set(filtered.map((inv) => inv.id)));
+  const clearAll   = () => setSelected(new Set());
+  const allChecked = filtered.length > 0 && filtered.every((inv) => selected.has(inv.id));
+
+  /* ── حذف ── */
   const handleBulkDelete = async () => {
-    if (!selected.size || !window.confirm(`حذف ${selected.size} فاتورة؟`)) return;
+    if (!selected.size) return;
+    const count = selected.size;
+    if (!window.confirm(isAr ? `حذف ${count} فاتورة؟ لا يمكن التراجع.` : `Delete ${count} invoice(s)? This cannot be undone.`)) return;
     setDeleting(true);
     await bulkDeleteOcrInvoices([...selected]);
     setSelected(new Set());
@@ -103,253 +331,96 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
     onRefresh?.();
   };
 
-  const filtered = invoices.filter((inv) => {
-    const q = search.toLowerCase();
-    return (
-      !q ||
-      inv.supplier?.nameAr?.toLowerCase().includes(q) ||
-      inv.invoiceNumber?.toLowerCase().includes(q)
-    );
-  });
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: 60, color: 'var(--noorix-text-muted)' }}>
-        ⏳ جاري التحميل...
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="ocr-loading">
+      <div className="ocr-spinner" />
+      <span>{isAr ? 'جاري التحميل...' : 'Loading...'}</span>
+    </div>
+  );
 
   return (
-    <div dir={dir} style={{ minHeight: 0 }}>
+    <div dir={dir} className="inv-list-root">
 
-      {/* شريط البحث + الحذف الجماعي */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t('ocrSearch')}
-          style={{
-            flex: 1, minWidth: 180, padding: '10px 14px', borderRadius: 10,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-            color: 'var(--noorix-text)', fontSize: 14, boxSizing: 'border-box',
-          }}
-        />
+      {/* ── شريط الأدوات ─────────────────────────────────────────────── */}
+      <div className="inv-toolbar">
+        {/* Select all */}
+        <label className="inv-select-all-wrap">
+          <input
+            type="checkbox"
+            checked={allChecked}
+            onChange={allChecked ? clearAll : selectAll}
+            className="inv-toolbar-checkbox"
+          />
+          <span className="inv-select-all-label">
+            {selected.size > 0
+              ? (isAr ? `${selected.size} محدد` : `${selected.size} selected`)
+              : (isAr ? 'تحديد الكل' : 'Select all')}
+          </span>
+        </label>
+
+        {/* بحث */}
+        <div className="inv-search-wrap">
+          <span className="inv-search-icon">🔍</span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={isAr ? 'بحث بالمورد أو رقم الفاتورة...' : 'Search supplier or invoice #...'}
+            className="inv-search-input"
+          />
+          {search && <button className="inv-search-clear" onClick={() => setSearch('')}>✕</button>}
+        </div>
+
+        {/* ترتيب */}
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="inv-sort-select">
+          <option value="date-desc">{isAr ? 'الأحدث أولاً' : 'Newest first'}</option>
+          <option value="date-asc">{isAr ? 'الأقدم أولاً' : 'Oldest first'}</option>
+          <option value="amount">{isAr ? 'أعلى مبلغ' : 'Highest amount'}</option>
+          <option value="supplier">{isAr ? 'اسم المورد' : 'Supplier name'}</option>
+        </select>
+
+        {/* حذف */}
         {selected.size > 0 && (
-          <button
-            onClick={handleBulkDelete}
-            disabled={deleting}
-            style={{
-              padding: '10px 18px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
-              background: '#dc2626', color: '#fff', border: 'none', fontWeight: 700, fontSize: 13,
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}
-          >
-            {deleting ? '⏳' : '🗑️'} حذف ({selected.size})
+          <button className="inv-delete-btn" onClick={handleBulkDelete} disabled={deleting}>
+            {deleting ? '⏳' : '🗑️'}&nbsp;{isAr ? `حذف (${selected.size})` : `Delete (${selected.size})`}
           </button>
         )}
       </div>
 
-      {/* قائمة الفواتير */}
+      {/* ── الشبكة ───────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: 'var(--noorix-text-muted)' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
-          <div>{t('ocrNoInvoices')}</div>
+        <div className="ocr-empty">
+          <div className="ocr-empty-icon">📭</div>
+          <div className="ocr-empty-text">{isAr ? 'لا توجد فواتير محفوظة بعد' : 'No invoices saved yet'}</div>
+          <div className="ocr-empty-sub">{isAr ? 'ارفع فاتورة من تبويب "رفع فاتورة"' : 'Upload an invoice to get started'}</div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filtered.map((inv) => {
-            const statusInfo = STATUS_STYLES[inv.status] || STATUS_STYLES.pending;
-            const isSelected = selected.has(inv.id);
-            return (
-              <div
-                key={inv.id}
-                onClick={() => setViewing(inv)}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 12,
-                  border: `1px solid ${isSelected ? '#3b82f6' : 'var(--noorix-border)'}`,
-                  background: isSelected ? 'rgba(59,130,246,0.06)' : 'var(--noorix-bg-surface)',
-                  cursor: 'pointer',
-                  transition: 'box-shadow 0.15s, border-color 0.15s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  flexWrap: 'wrap',
-                }}
-                onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = 'var(--noorix-accent-blue)'; }}}
-                onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--noorix-border)'; }}}
-              >
-                {/* Checkbox */}
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onClick={(e) => toggleSelect(inv.id, e)}
-                  onChange={() => {}}
-                  style={{ width: 16, height: 16, flexShrink: 0, accentColor: '#3b82f6', cursor: 'pointer' }}
-                />
-                {/* أيقونة — صورة مصغرة */}
-                <div style={{
-                  width: 44, height: 44, borderRadius: 10, flexShrink: 0,
-                  background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 20, overflow: 'hidden',
-                }}>
-                  {inv.imageUrl
-                    ? <img src={inv.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : '📄'
-                  }
-                </div>
-
-                {/* معلومات رئيسية */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--noorix-text)', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {language === 'en' ? (inv.supplier?.nameEn || inv.supplier?.nameAr || 'Unknown') : (inv.supplier?.nameAr || 'مورد غير محدد')}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {inv.invoiceNumber && <span># {inv.invoiceNumber}</span>}
-                    {inv.invoiceDate && <span>📅 {fmtDate(inv.invoiceDate)}</span>}
-                    {inv.createdAt   && <span>⬆️ {fmtDate(inv.createdAt)}</span>}
-                    <span>{inv.lines?.length || 0} {language === 'en' ? 'items' : 'صنف'}</span>
-                  </div>
-                </div>
-
-                {/* المبلغ والحالة */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                  {inv.totalAmount && (
-                    <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--noorix-text)' }}>
-                      {fmtNum(inv.totalAmount)} {language === 'en' ? 'SAR' : 'ريال'}
-                    </div>
-                  )}
-                  <span style={{
-                    padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
-                    background: statusInfo.bg, color: statusInfo.color, whiteSpace: 'nowrap',
-                  }}>
-                    {language === 'ar' ? statusInfo.label.ar : statusInfo.label.en}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+        <div className="inv-grid">
+          {filtered.map((inv) => (
+            <InvoiceCard
+              key={inv.id}
+              invoice={inv}
+              language={language}
+              isSelected={selected.has(inv.id)}
+              onSelect={toggleSelect}
+              onClick={() => setViewing(inv)}
+              onLightbox={(src) => { if (src) setLightbox(src); }}
+            />
+          ))}
         </div>
       )}
 
-      {/* Modal تفاصيل الفاتورة */}
-      {viewing && createPortal(
-        <div
-          style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 9999,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 16,
-          }}
-          role="dialog" aria-modal="true"
-          onClick={(e) => e.target === e.currentTarget && setViewing(null)}
-        >
-          <div
-            dir={dir}
-            style={{
-              background: '#ffffff',
-              borderRadius: 16,
-              maxWidth: 640,
-              width: '100%',
-              maxHeight: '92vh',
-              overflowY: 'auto',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
-              border: '1px solid #e5e7eb',
-            }}
-          >
-            {/* رأس النافذة */}
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '16px 20px',
-              borderBottom: '1px solid var(--noorix-border)',
-              position: 'sticky', top: 0, background: '#ffffff', zIndex: 1,
-            }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>
-                  {language === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details'}
-                </h3>
-                <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 2 }}>
-                  {language === 'en' ? (viewing.supplier?.nameEn || viewing.supplier?.nameAr) : (viewing.supplier?.nameAr || 'مورد غير محدد')}
-                </div>
-              </div>
-              <button
-                onClick={() => setViewing(null)}
-                style={{
-                  background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)',
-                  borderRadius: 8, cursor: 'pointer', fontSize: 16,
-                  color: 'var(--noorix-text-muted)', width: 34, height: 34,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >✕</button>
-            </div>
-
-            <div style={{ padding: '16px 20px' }}>
-
-              {/* ── صورة الفاتورة ── */}
-              {viewing.imageUrl && <InvoiceImageViewer src={viewing.imageUrl} />}
-
-              {/* معلومات الفاتورة */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px 16px',
-                marginBottom: 16, padding: 14,
-                background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb',
-              }}>
-                {[
-                  { label: language === 'ar' ? 'المورد'         : 'Supplier',      value: (language === 'en' ? viewing.supplier?.nameEn : null) || viewing.supplier?.nameAr || '—' },
-                  { label: language === 'ar' ? 'رقم الفاتورة'   : 'Invoice #',     value: viewing.invoiceNumber || '—' },
-                  { label: language === 'ar' ? 'تاريخ الفاتورة' : 'Invoice Date',  value: viewing.invoiceDate ? fmtDate(viewing.invoiceDate) : '—' },
-                  { label: language === 'ar' ? 'تاريخ الرفع'    : 'Upload Date',   value: viewing.createdAt   ? fmtDate(viewing.createdAt)   : '—' },
-                  { label: language === 'ar' ? 'الإجمالي'       : 'Total',         value: viewing.totalAmount ? `${fmtNum(viewing.totalAmount)} ${language === 'en' ? 'SAR' : 'ريال'}` : '—' },
-                  { label: language === 'ar' ? 'ضريبة القيمة'   : 'VAT',           value: viewing.vatAmount   ? `${fmtNum(viewing.vatAmount)} ${language === 'en' ? 'SAR' : 'ريال'}`   : '—' },
-                ].map(({ label, value }) => (
-                  <div key={label}>
-                    <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{label}</div>
-                    <div style={{ fontWeight: 700, fontSize: 13 }}>{value}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* قائمة الأصناف */}
-              {viewing.lines?.length > 0 && (
-                <>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>
-                    📦 {language === 'ar' ? `الأصناف (${viewing.lines.length})` : `Items (${viewing.lines.length})`}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {viewing.lines.map((line, i) => (
-                      <div key={i} style={{ padding: '10px 14px', borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                          <span style={{ fontWeight: 600, fontSize: 13 }}>
-                            {line.nameAr || line.item?.nameAr || line.rawName}
-                            {line.nameEn ? ` / ${line.nameEn}` : ''}
-                          </span>
-                          {line.size && (
-                            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}>
-                              {line.size}{line.sizeUnit || ''}
-                            </span>
-                          )}
-                        </div>
-                        {line.rawName !== (line.nameAr || line.item?.nameAr) && (
-                          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>OCR: {line.rawName}</div>
-                        )}
-                        <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#6b7280', flexWrap: 'wrap' }}>
-                          {line.quantity  != null && <span>{language === 'ar' ? 'الكمية'  : 'Qty'}:   <strong>{line.quantity}</strong></span>}
-                          {line.unitPrice != null && <span>{language === 'ar' ? 'السعر'   : 'Price'}: <strong>{fmtNum(line.unitPrice)}</strong></span>}
-                          {line.totalPrice != null && <span>{language === 'ar' ? 'الإجمالي' : 'Total'}: <strong>{fmtNum(line.totalPrice)}</strong></span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>,
-        document.body,
+      {/* ── نافذة التفاصيل ── */}
+      {viewing && (
+        <InvoiceDetailModal
+          invoice={viewing}
+          language={language}
+          onClose={() => setViewing(null)}
+          onLightbox={(src) => { if (src) setLightbox(src); }}
+        />
       )}
+
+      {/* ── Lightbox ── */}
+      {lightbox && <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />}
     </div>
   );
 }

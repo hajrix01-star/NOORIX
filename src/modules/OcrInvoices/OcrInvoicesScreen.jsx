@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import InvoiceUploadTab    from './components/InvoiceUploadTab';
 import InvoiceListTab      from './components/InvoiceListTab';
@@ -11,151 +11,121 @@ import {
 } from './services/ocrApi';
 
 const TABS = [
-  { key: 'upload',    icon: '📤', labelKey: 'ocrUploadTab' },
-  { key: 'invoices',  icon: '📄', labelKey: 'ocrInvoicesTab' },
-  { key: 'suppliers', icon: '🏭', labelKey: 'ocrSuppliersTab' },
-  { key: 'items',     icon: '📦', labelKey: 'ocrItemsTab' },
-  { key: 'alerts',    icon: '⚠️', labelKey: 'ocrPriceAlertsTab' },
+  { key: 'upload',    icon: '📤', labelAr: 'رفع فاتورة',   labelEn: 'Upload' },
+  { key: 'invoices',  icon: '📄', labelAr: 'الفواتير',      labelEn: 'Invoices' },
+  { key: 'suppliers', icon: '🏭', labelAr: 'الموردون',      labelEn: 'Suppliers' },
+  { key: 'items',     icon: '📦', labelAr: 'الأصناف',       labelEn: 'Items' },
+  { key: 'alerts',    icon: '⚠️', labelAr: 'تنبيهات الأسعار', labelEn: 'Price Alerts' },
 ];
 
 export default function OcrInvoicesScreen() {
-  const { t, language } = useTranslation();
-  const queryClient = useQueryClient();
+  const { language } = useTranslation();
   const [activeTab, setActiveTab] = useState('upload');
   const dir = language === 'ar' ? 'rtl' : 'ltr';
+  const isAr = language === 'ar';
 
-  const { data: invoicesData, isLoading: invoicesLoading, refetch: refetchInvoices } = useQuery({
+  const { data: invoicesData,  isLoading: invoicesLoading,  refetch: refetchInvoices  } = useQuery({
     queryKey: ['ocr-invoices'],
-    queryFn: async () => {
-      const res = await getOcrInvoices();
-      return res.success ? (res.data || []) : [];
-    },
+    queryFn: async () => { const r = await getOcrInvoices();  return r.success ? (r.data || []) : []; },
   });
-
   const { data: suppliersData, isLoading: suppliersLoading, refetch: refetchSuppliers } = useQuery({
     queryKey: ['ocr-suppliers'],
-    queryFn: async () => {
-      const res = await getOcrSuppliers();
-      return res.success ? (res.data || []) : [];
-    },
+    queryFn: async () => { const r = await getOcrSuppliers(); return r.success ? (r.data || []) : []; },
   });
-
-  const { data: itemsData, isLoading: itemsLoading, refetch: refetchItems } = useQuery({
+  const { data: itemsData,     isLoading: itemsLoading,     refetch: refetchItems     } = useQuery({
     queryKey: ['ocr-items'],
-    queryFn: async () => {
-      const res = await getOcrItems();
-      return res.success ? (res.data || []) : [];
-    },
+    queryFn: async () => { const r = await getOcrItems();     return r.success ? (r.data || []) : []; },
   });
-
-  const { data: alertsData, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery({
+  const { data: alertsData,    isLoading: alertsLoading,    refetch: refetchAlerts    } = useQuery({
     queryKey: ['ocr-price-alerts'],
-    queryFn: async () => {
-      const res = await getPriceAlerts();
-      return res.success ? (res.data || []) : [];
-    },
+    queryFn: async () => { const r = await getPriceAlerts();  return r.success ? (r.data || []) : []; },
   });
 
   const handleSaved = useCallback(() => {
-    refetchInvoices();
-    refetchAlerts();
-    refetchSuppliers();
-    refetchItems();
+    refetchInvoices(); refetchAlerts(); refetchSuppliers(); refetchItems();
   }, [refetchInvoices, refetchAlerts, refetchSuppliers, refetchItems]);
 
-  const alertsCount = alertsData?.length || 0;
+  const alertsCount   = alertsData?.length   || 0;
+  const invoicesCount = invoicesData?.length  || 0;
+  const suppCount     = suppliersData?.length || 0;
+  const itemsCount    = itemsData?.length     || 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} dir={dir}>
+    <div className="ocr-screen" dir={dir}>
 
-      {/* Header */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>🔍 {t('ocrTitle')}</h1>
-          <span style={{
-            fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-            background: 'rgba(245,158,11,0.15)', color: '#d97706', border: '1px solid rgba(245,158,11,0.3)',
-          }}>
-            {t('ocrBeta')}
-          </span>
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="ocr-header">
+        <div className="ocr-header-inner">
+          <div className="ocr-header-title">
+            <span className="ocr-header-icon">🧾</span>
+            <div>
+              <h1 className="ocr-h1">{isAr ? 'استخراج الفواتير الذكي' : 'Smart Invoice OCR'}</h1>
+              <div className="ocr-subtitle">
+                {isAr ? 'تحليل واستخراج بيانات الفواتير باستخدام الذكاء الاصطناعي' : 'AI-powered invoice data extraction & analysis'}
+              </div>
+            </div>
+          </div>
+          <span className="ocr-beta-badge">{isAr ? 'تجريبي' : 'Beta'}</span>
+        </div>
+
+        {/* Stats strip */}
+        <div className="ocr-stats-strip">
+          {[
+            { icon: '📄', val: invoicesCount, label: isAr ? 'فاتورة' : 'Invoices', tab: 'invoices', color: '#3b82f6' },
+            { icon: '🏭', val: suppCount,     label: isAr ? 'مورد'   : 'Suppliers', tab: 'suppliers', color: '#8b5cf6' },
+            { icon: '📦', val: itemsCount,    label: isAr ? 'صنف'    : 'Items',     tab: 'items',    color: '#f59e0b' },
+            { icon: '⚠️', val: alertsCount,   label: isAr ? 'تنبيه' : 'Alerts',    tab: 'alerts',   color: '#dc2626' },
+          ].map(({ icon, val, label, tab, color }) => (
+            <button key={tab} className="ocr-stat-card" onClick={() => setActiveTab(tab)}
+              style={{ '--stat-color': color }}>
+              <span className="ocr-stat-icon">{icon}</span>
+              <span className="ocr-stat-num">{val}</span>
+              <span className="ocr-stat-label">{label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{
-          display: 'flex', borderBottom: '1px solid var(--noorix-border)',
-          overflowX: 'auto', WebkitOverflowScrolling: 'touch',
-        }}>
+      {/* ── Tabs ───────────────────────────────────────────────────────── */}
+      <div className="ocr-card">
+        {/* Tab bar */}
+        <div className="ocr-tabbar" role="tablist">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActiveTab(tab.key)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '14px 20px', border: 'none', cursor: 'pointer',
-                  fontWeight: isActive ? 700 : 500,
-                  fontSize: 14, whiteSpace: 'nowrap',
-                  background: 'transparent',
-                  color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-                  borderBottom: isActive ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
-                  transition: 'all 0.15s',
-                  position: 'relative',
-                }}
+                className={`ocr-tab-btn${isActive ? ' ocr-tab-btn--active' : ''}`}
               >
-                <span>{tab.icon}</span>
-                <span>{t(tab.labelKey)}</span>
+                <span className="ocr-tab-icon">{tab.icon}</span>
+                <span className="ocr-tab-label">{isAr ? tab.labelAr : tab.labelEn}</span>
                 {tab.key === 'alerts' && alertsCount > 0 && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 10,
-                    background: '#dc2626', color: '#fff', minWidth: 18, textAlign: 'center',
-                  }}>
-                    {alertsCount}
-                  </span>
+                  <span className="ocr-tab-badge">{alertsCount}</span>
                 )}
               </button>
             );
           })}
         </div>
 
-        <div className="ocr-tab-content">
+        {/* Tab content */}
+        <div className="ocr-tab-body">
           {activeTab === 'upload' && (
-            <InvoiceUploadTab
-              suppliers={suppliersData || []}
-              items={itemsData || []}
-              onSaved={handleSaved}
-            />
+            <InvoiceUploadTab suppliers={suppliersData || []} items={itemsData || []} onSaved={handleSaved} />
           )}
           {activeTab === 'invoices' && (
-            <InvoiceListTab
-              invoices={invoicesData || []}
-              loading={invoicesLoading}
-              onRefresh={refetchInvoices}
-            />
+            <InvoiceListTab invoices={invoicesData || []} loading={invoicesLoading} onRefresh={refetchInvoices} />
           )}
           {activeTab === 'suppliers' && (
-            <SuppliersCatalogTab
-              suppliers={suppliersData || []}
-              loading={suppliersLoading}
-              onRefresh={refetchSuppliers}
-            />
+            <SuppliersCatalogTab suppliers={suppliersData || []} loading={suppliersLoading} onRefresh={refetchSuppliers} />
           )}
           {activeTab === 'items' && (
-            <ItemsCatalogTab
-              items={itemsData || []}
-              loading={itemsLoading}
-              onRefresh={refetchItems}
-            />
+            <ItemsCatalogTab items={itemsData || []} loading={itemsLoading} onRefresh={refetchItems} />
           )}
           {activeTab === 'alerts' && (
-            <PriceAlertsTab
-              alerts={alertsData || []}
-              loading={alertsLoading}
-              invoices={invoicesData || []}
-              onRefresh={refetchAlerts}
-            />
+            <PriceAlertsTab alerts={alertsData || []} loading={alertsLoading} invoices={invoicesData || []} onRefresh={refetchAlerts} />
           )}
         </div>
       </div>
