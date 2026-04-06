@@ -257,19 +257,19 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
 
       <OrdersSummaryCard summary={summary} cashSalesTotal={cashSalesTotal} isLoading={summaryLoading} />
 
-      <div className="noorix-surface-card" style={{ overflow: 'auto' }}>
+      <div className="noorix-surface-card nx-overflow-auto">
         {ordersError ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#dc2626' }}>⚠ {ordersError?.message || t('loadingError')}</div>
+          <div className="nx-text-center nx-text-red" style={{ padding: 40 }}>⚠ {ordersError?.message || t('loadingError')}</div>
         ) : isLoading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>
+          <div className="nx-text-center nx-text-muted" style={{ padding: 40 }}>{t('loading')}</div>
         ) : orders.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('ordersNoOrdersInPeriod')}</div>
+          <div className="nx-text-center nx-text-muted" style={{ padding: 40 }}>{t('ordersNoOrdersInPeriod')}</div>
         ) : dateFilteredOrders.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('ordersNoOrdersInRange')}</div>
+          <div className="nx-text-center nx-text-muted" style={{ padding: 40 }}>{t('ordersNoOrdersInRange')}</div>
         ) : (
           <>
             <div className="noorix-print-hide nx-section-header">
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--noorix-text-muted)' }}>{t('ordersFilterByType')}:</span>
+              <span className="nx-text-base nx-font-600 nx-text-muted">{t('ordersFilterByType')}:</span>
               <div className="nx-toolbar">
                 {['all', 'external', 'internal'].map((v) => (
                   <Button
@@ -288,12 +288,12 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                   </Button>
                 ))}
               </div>
-              <span style={{ marginRight: 'auto', fontSize: 14, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>
+              <span className="nx-text-md nx-font-700 nx-font-numbers" style={{ marginRight: 'auto' }}>
                 {t('ordersFilteredTotal')}: {fmt(filteredTotal, 2)} ﷼
               </span>
             </div>
-            <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, tableLayout: 'auto' }}>
+            <div className="nx-overflow-x-auto">
+            <table className="nx-w-full" style={{ borderCollapse: 'collapse', fontSize: 13, tableLayout: 'auto' }}>
               <thead>
                 <tr style={{
                   background: 'linear-gradient(135deg, var(--noorix-accent-blue, #2563eb) 0%, #1d4ed8 100%)',
@@ -330,36 +330,36 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(37,99,235,0.05)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = rowBg; }}
                   >
-                    <td className="nx-cell-num nx-cell-num--blue" style={{ padding: '11px 14px', textAlign: 'center', borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                    <td className="nx-cell-num nx-cell-num--blue nx-text-center nx-nowrap" style={{ padding: '11px 14px', borderInlineEnd: '1px solid var(--noorix-border)' }}>
                       {o.orderNumber}
                     </td>
-                    <td style={{ padding: '11px 14px', textAlign: 'center', borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                    <td className="nx-text-center nx-nowrap" style={{ padding: '11px 14px', borderInlineEnd: '1px solid var(--noorix-border)' }}>
                       {formatSaudiDate(o.orderDate)}
                     </td>
-                    <td style={{ padding: '11px 14px', textAlign: 'center', borderInlineEnd: '1px solid var(--noorix-border)' }}>
+                    <td className="nx-text-center" style={{ padding: '11px 14px', borderInlineEnd: '1px solid var(--noorix-border)' }}>
                       <Badge color={isExt ? 'blue' : 'green'} size="sm">
                         {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
                       </Badge>
                     </td>
-                    <td className="nx-cell-num" style={{ padding: '11px 14px', textAlign: 'center', borderInlineEnd: '1px solid var(--noorix-border)' }}>
+                    <td className="nx-cell-num nx-text-center" style={{ padding: '11px 14px', borderInlineEnd: '1px solid var(--noorix-border)' }}>
                       {(o.items ?? []).length}
                     </td>
-                    <td style={{ padding: '11px 14px', textAlign: 'center', borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                    <td className="nx-text-center nx-nowrap" style={{ padding: '11px 14px', borderInlineEnd: '1px solid var(--noorix-border)' }}>
                       {pettyGiven != null ? (
                         <span className="nx-cell-num nx-cell-num--blue">{fmt(pettyGiven, 2)} ﷼</span>
                       ) : <span className="nx-cell-muted">—</span>}
                     </td>
-                    <td className="nx-cell-num" style={{ padding: '11px 14px', textAlign: 'center', fontWeight: 700, borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                    <td className="nx-cell-num nx-font-700 nx-text-center nx-nowrap" style={{ padding: '11px 14px', borderInlineEnd: '1px solid var(--noorix-border)' }}>
                       {fmt(o.totalAmount ?? 0, 2)} ﷼
                     </td>
-                    <td style={{ padding: '11px 14px', textAlign: 'center', borderInlineEnd: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>
+                    <td className="nx-text-center nx-nowrap" style={{ padding: '11px 14px', borderInlineEnd: '1px solid var(--noorix-border)' }}>
                       {cumRem != null ? (
                         <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
                           {cumRem >= 0 ? '' : '−'}{fmt(Math.abs(cumRem ?? 0), 2)} ﷼
                         </Badge>
                       ) : <span className="nx-cell-muted">—</span>}
                     </td>
-                    <td className="noorix-print-hide" style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    <td className="noorix-print-hide nx-text-center nx-nowrap" style={{ padding: '8px 10px' }}>
                       <div className="nx-toolbar" style={{ justifyContent: 'center' }}>
                         <Button size="sm" onClick={() => handleView(o)} title={t('ordersViewOrder')}>{t('view')}</Button>
                         <Button size="sm" onClick={() => handleWhatsApp(o)} title={t('sendWhatsApp')}>{t('sendWhatsApp')}</Button>
@@ -373,8 +373,8 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
               </tbody>
               <tfoot>
                 <tr style={{ background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-accent-blue, #2563eb)' }}>
-                  <td colSpan={5} style={{ padding: '11px 14px', fontWeight: 700, textAlign: 'center' }}>{t('ordersFilteredTotal')}</td>
-                  <td className="nx-cell-num nx-cell-num--blue" style={{ padding: '11px 14px', fontWeight: 800, textAlign: 'center', fontSize: 14 }}>{fmt(filteredTotal, 2)} ﷼</td>
+                  <td colSpan={5} className="nx-font-700 nx-text-center" style={{ padding: '11px 14px' }}>{t('ordersFilteredTotal')}</td>
+                  <td className="nx-cell-num nx-cell-num--blue nx-font-800 nx-text-center nx-text-md" style={{ padding: '11px 14px' }}>{fmt(filteredTotal, 2)} ﷼</td>
                   <td colSpan={2} className="noorix-print-hide" style={{ padding: '11px 14px' }} />
                 </tr>
               </tfoot>
@@ -415,57 +415,54 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
             </>
           }
         >
-          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 16 }}>{companyName}</div>
+          <div className="nx-text-sm nx-text-muted nx-mb-16">{companyName}</div>
 
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16, marginBottom: 24,
-            padding: 16, background: 'var(--noorix-bg-muted)', borderRadius: 10, border: '1px solid var(--noorix-border)',
-          }}>
+          <div className="nx-grid nx-gap-16 nx-p-16 nx-bg-muted nx-border-all" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', marginBottom: 24, borderRadius: 10 }}>
             <div>
-              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('orderDate')}</div>
-              <div style={{ fontSize: 15, fontWeight: 600, fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(viewingOrder.orderDate)}</div>
+              <div className="nx-text-xs nx-text-muted nx-mb-4 nx-uppercase">{t('orderDate')}</div>
+              <div className="nx-text-lg nx-font-600 nx-font-numbers">{formatSaudiDate(viewingOrder.orderDate)}</div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('orderType')}</div>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>
+              <div className="nx-text-xs nx-text-muted nx-mb-4 nx-uppercase">{t('orderType')}</div>
+              <div className="nx-text-lg nx-font-600">
                 {viewingOrder.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
               </div>
             </div>
             {viewingOrder.orderType === 'external' && viewingOrder.pettyCashAmount != null && (
               <div>
-                <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('ordersPettyCashGiven')}</div>
-                <div className="nx-cell-num nx-cell-num--blue" style={{ fontSize: 15, fontWeight: 600 }}>{fmt(viewingOrder.pettyCashAmount ?? 0, 2)} ﷼</div>
+                <div className="nx-text-xs nx-text-muted nx-mb-4 nx-uppercase">{t('ordersPettyCashGiven')}</div>
+                <div className="nx-cell-num nx-cell-num--blue nx-text-lg nx-font-600">{fmt(viewingOrder.pettyCashAmount ?? 0, 2)} ﷼</div>
               </div>
             )}
           </div>
 
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--noorix-text)' }}>{t('orderItems')}</div>
-          <div style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <div className="nx-text-xl nx-font-700 nx-mb-12">{t('orderItems')}</div>
+          <div className="nx-border-all nx-overflow-hidden" style={{ borderRadius: 10 }}>
+            <table className="nx-w-full" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ background: 'var(--noorix-bg-muted)', borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 700 }}>#</th>
-                  <th style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 700 }}>{t('product')}</th>
-                  <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 700 }}>{t('quantity')}</th>
-                  <th style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 700 }}>{t('unitPrice')}</th>
-                  <th style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 700 }}>{t('total')}</th>
+                <tr className="nx-bg-muted nx-border-b" style={{ borderBottomWidth: 2 }}>
+                  <th className="nx-text-end nx-font-700" style={{ padding: '12px 16px' }}>#</th>
+                  <th className="nx-text-end nx-font-700" style={{ padding: '12px 16px' }}>{t('product')}</th>
+                  <th className="nx-text-center nx-font-700" style={{ padding: '12px 16px' }}>{t('quantity')}</th>
+                  <th className="nx-text-end nx-font-700" style={{ padding: '12px 16px' }}>{t('unitPrice')}</th>
+                  <th className="nx-text-end nx-font-700" style={{ padding: '12px 16px' }}>{t('total')}</th>
                 </tr>
               </thead>
               <tbody>
                 {(viewingOrder.items ?? []).map((it, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
+                  <tr key={idx} className="nx-border-b">
                     <td className="nx-cell-muted" style={{ padding: '12px 16px' }}>{idx + 1}</td>
-                    <td style={{ padding: '12px 16px' }}>{it.product?.nameAr || it.product?.nameEn || '—'}{[it.size, it.packaging, it.unit].filter(Boolean).length > 0 ? <span className="nx-cell-muted" style={{ fontSize: 12 }}> ({[it.size, it.packaging, it.unit].filter(Boolean).join(' / ')})</span> : ''}</td>
-                    <td className="nx-cell-num" style={{ padding: '12px 16px', textAlign: 'center' }}>{it.quantity}</td>
+                    <td style={{ padding: '12px 16px' }}>{it.product?.nameAr || it.product?.nameEn || '—'}{[it.size, it.packaging, it.unit].filter(Boolean).length > 0 ? <span className="nx-cell-muted nx-text-sm"> ({[it.size, it.packaging, it.unit].filter(Boolean).join(' / ')})</span> : ''}</td>
+                    <td className="nx-cell-num nx-text-center" style={{ padding: '12px 16px' }}>{it.quantity}</td>
                     <td className="nx-cell-num" style={{ padding: '12px 16px' }}>{fmt(it.unitPrice ?? 0, 2)} ﷼</td>
-                    <td className="nx-cell-num" style={{ padding: '12px 16px', fontWeight: 600 }}>{fmt(it.amount ?? 0, 2)} ﷼</td>
+                    <td className="nx-cell-num nx-font-600" style={{ padding: '12px 16px' }}>{fmt(it.amount ?? 0, 2)} ﷼</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ background: 'var(--noorix-bg-muted)', borderTop: '2px solid var(--noorix-border)' }}>
-                  <td colSpan={4} style={{ padding: '14px 16px', fontWeight: 700, textAlign: 'right' }}>{t('total')}</td>
-                  <td className="nx-cell-num" style={{ padding: '14px 16px', fontWeight: 700, fontSize: 15 }}>{fmt(viewingOrder.totalAmount ?? 0, 2)} ﷼</td>
+                <tr className="nx-bg-muted" style={{ borderTop: '2px solid var(--noorix-border)' }}>
+                  <td colSpan={4} className="nx-font-700 nx-text-end" style={{ padding: '14px 16px' }}>{t('total')}</td>
+                  <td className="nx-cell-num nx-font-700 nx-text-lg" style={{ padding: '14px 16px' }}>{fmt(viewingOrder.totalAmount ?? 0, 2)} ﷼</td>
                 </tr>
               </tfoot>
             </table>

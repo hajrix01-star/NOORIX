@@ -82,7 +82,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
 
   const columns = [
     { key: 'invoiceNumber', label: 'رقم السند',
-      render: (_, row) => <span className="nx-cell-num" style={{ fontWeight: 600 }}>{row.invoiceNumber || '—'}</span> },
+      render: (_, row) => <span className="nx-cell-num nx-font-600">{row.invoiceNumber || '—'}</span> },
     { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد',
       render: (_, row) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '—'}</span> },
     { key: 'supplierName', label: 'المورد',
@@ -98,12 +98,12 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     { key: 'taxAmount', label: 'الضريبة', numeric: true,
       render: (v) => <span className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(v)}</span> },
     { key: 'totalAmount', label: 'الإجمالي', numeric: true,
-      render: (v) => <span className="nx-cell-num" style={{ fontWeight: 700 }}>{fmt(v)}</span> },
+      render: (v) => <span className="nx-cell-num nx-font-700">{fmt(v)}</span> },
   ];
 
   if (isError) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: '#dc2626', fontSize: 14 }}>
+      <div className="nx-text-center nx-text-md" style={{ padding: 32, color: '#dc2626' }}>
         ⚠ {error?.message || 'فشل تحميل سجل المدفوعات'}
       </div>
     );
@@ -112,7 +112,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   return (
     <div>
       {!externalDateFilter && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+        <div className="nx-flex-center nx-gap-12 nx-mb-12" style={{ flexWrap: 'wrap' }}>
           <DateFilterBar filter={dateFilter} />
           <label className="nx-checkbox">
             <input type="checkbox" checked={showAllDates} onChange={(e) => setShowAllDates(e.target.checked)} />
@@ -120,7 +120,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           </label>
         </div>
       )}
-      <div className="nx-toolbar" style={{ marginTop: 16, marginBottom: 12 }}>
+      <div className="nx-toolbar nx-mt-16 nx-mb-12">
         <Input
           type="select"
           value={filterKind}
@@ -134,7 +134,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
         <Button onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>Excel</Button>
         <Button onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', filename: 'payment-history.pdf' })} disabled={!activeItems.length}>PDF</Button>
       </div>
-      <div style={{ marginTop: 8 }}>
+      <div className="nx-mt-8">
         <SmartTable
           columns={columns}
           data={activeItems}
@@ -145,11 +145,11 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           keyExtractor={(row) => row.id}
           footer={
             activeItems.length > 0 ? (
-              <div style={{ padding: 16, background: 'var(--noorix-bg-page)', borderRadius: 8, marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                <span style={{ fontSize: 14, color: 'var(--noorix-text-muted)' }}>عدد السجلات: <strong>{activeItems.length}</strong></span>
-                <span style={{ fontSize: 14 }}>الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
-                <span style={{ fontSize: 14 }}>الضريبة: <strong className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(totalTax)}</strong></span>
-                <span className="nx-cell-num" style={{ fontSize: 16, fontWeight: 700 }}>الإجمالي: {fmt(totalAmount)} ر.س</span>
+              <div className="nx-flex-between nx-p-16 nx-rounded nx-mt-12 nx-gap-12" style={{ background: 'var(--noorix-bg-page)', flexWrap: 'wrap' }}>
+                <span className="nx-text-md nx-text-muted">عدد السجلات: <strong>{activeItems.length}</strong></span>
+                <span className="nx-text-md">الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
+                <span className="nx-text-md">الضريبة: <strong className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(totalTax)}</strong></span>
+                <span className="nx-cell-num nx-text-xl nx-font-700">الإجمالي: {fmt(totalAmount)} ر.س</span>
               </div>
             ) : null
           }

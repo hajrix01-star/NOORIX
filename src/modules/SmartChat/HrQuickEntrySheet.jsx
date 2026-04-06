@@ -34,8 +34,8 @@ function invalidateHrQueries(qc, companyId) {
 
 function Field({ id, label, children, error }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <label htmlFor={id} style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text)' }}>
+    <div className="nx-mb-16">
+      <label htmlFor={id} className="nx-text-base nx-font-600" style={{ display: 'block', marginBottom: 6 }}>
         {label}
       </label>
       {children}
@@ -402,12 +402,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
           }}
         >
           {confirmStep && pendingData && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--noorix-text-muted)' }}>{t('confirmSaveTitle')}</div>
+            <div className="nx-flex nx-flex-col nx-gap-20">
+              <div className="nx-text-md nx-font-600 nx-text-muted">{t('confirmSaveTitle')}</div>
               <div style={{ padding: 16, borderRadius: 12, background: 'var(--noorix-bg-muted)', fontSize: 15, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                 {isAr ? pendingData.report?.textAr : pendingData.report?.textEn}
               </div>
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div className="nx-flex nx-gap-12">
                 <Button onClick={() => setConfirmStep(false)} style={{ flex: 1, minHeight: 50 }}>
                   {isAr ? 'رجوع' : 'Back'}
                 </Button>
@@ -423,7 +423,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
             </div>
           )}
           {!confirmStep && dataLoading && (
-            <div style={{ textAlign: 'center', padding: 24, color: 'var(--noorix-text-muted)' }}>
+            <div className="nx-text-center nx-p-24 nx-text-muted">
               {isAr ? 'جاري التحميل...' : 'Loading...'}
             </div>
           )}
@@ -474,7 +474,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
               <Field id="adv-notes" label={t('notes')}>
                 <Input id="adv-notes" type="text" value={advNotes} onChange={(e) => setAdvNotes(e.target.value)} placeholder={isAr ? 'سبب أو تفاصيل' : 'Reason or details'} />
               </Field>
-              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+              <div className="nx-flex nx-gap-12 nx-mt-20">
                 <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>
                   {t('cancel')}
                 </Button>
@@ -497,7 +497,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                   ))}
                 </Input>
               </Field>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div className="nx-grid-2 nx-gap-12 nx-mb-16">
                 <Field id="lv-start" label={t('startDate')}>
                   <Input id="lv-start" type="date" value={lvStart} onChange={(e) => setLvStart(e.target.value)} style={{ direction: 'ltr' }} lang="en" required />
                 </Field>
@@ -511,7 +511,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
               <Field id="lv-notes" label={t('notes')}>
                 <Input id="lv-notes" type="text" value={lvNotes} onChange={(e) => setLvNotes(e.target.value)} />
               </Field>
-              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+              <div className="nx-flex nx-gap-12 nx-mt-20">
                 <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
                 <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : t('add')}</Button>
               </div>
@@ -539,7 +539,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
               <Field id="dd-notes" label={t('notes')}>
                 <Input id="dd-notes" type="text" value={ddNotes} onChange={(e) => setDdNotes(e.target.value)} placeholder={isAr ? 'السبب' : 'Reason'} />
               </Field>
-              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+              <div className="nx-flex nx-gap-12 nx-mt-20">
                 <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
                 <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : (isAr ? 'حفظ الخصم' : 'Save deduction')}</Button>
               </div>
@@ -548,7 +548,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
 
           {!confirmStep && !dataLoading && mode === 'increase' && (
             <div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <div className="nx-flex nx-gap-8" style={{ marginBottom: 20 }}>
                 {segmentBtn('movement', isAr ? t('chatMovementSection') : 'Promotion / raise')}
                 {segmentBtn('allowance', isAr ? t('chatAllowanceSection') : 'Allowance')}
               </div>
@@ -578,7 +578,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                   <Field id="mv-notes" label={t('notes')}>
                     <Input id="mv-notes" type="text" value={mvNotes} onChange={(e) => setMvNotes(e.target.value)} />
                   </Field>
-                  <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                  <div className="nx-flex nx-gap-12 nx-mt-20">
                     <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
                     <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ' : 'Save')}</Button>
                   </div>
@@ -592,7 +592,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                   <Field id="al-amt" label={t('customAllowanceAmount')}>
                     <Input id="al-amt" type="number" inputMode="decimal" step="0.01" min="0" value={alAmount} onChange={(e) => setAlAmount(e.target.value)} />
                   </Field>
-                  <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                  <div className="nx-flex nx-gap-12 nx-mt-20">
                     <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
                     <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ البدلة' : 'Save allowance')}</Button>
                   </div>

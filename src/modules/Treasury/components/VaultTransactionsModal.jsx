@@ -120,27 +120,27 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
 
   const columns = [
     { key: 'documentNumber', label: t('documentNumber'), render: (_, r) => <span className="nx-cell-num">{r.documentNumber || r.referenceId || '—'}</span> },
-    { key: 'transactionDate', label: t('date'), render: (v) => <span style={{ fontSize: 12 }}>{formatSaudiDate(v)}</span> },
-    { key: 'referenceType', label: t('type'), render: (v) => <span style={{ fontSize: 12 }}>{v || '—'}</span> },
+    { key: 'transactionDate', label: t('date'), render: (v) => <span className="nx-text-sm">{formatSaudiDate(v)}</span> },
+    { key: 'referenceType', label: t('type'), render: (v) => <span className="nx-text-sm">{v || '—'}</span> },
     { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a' }}>{fmt(v)}</span> : <span>—</span> },
     { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#dc2626' }}>{fmt(v)}</span> : <span>—</span> },
   ];
 
   const renderMobileCard = useCallback((row) => (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <span style={{ fontWeight: 700, fontSize: 13, fontFamily: 'var(--noorix-font-numbers)' }}>{row.documentNumber || row.referenceId || '—'}</span>
-        <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{formatSaudiDate(row.transactionDate)}</span>
+      <div className="nx-flex nx-flex-between nx-mb-4">
+        <span className="nx-font-700 nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.documentNumber || row.referenceId || '—'}</span>
+        <span className="nx-text-sm nx-text-muted">{formatSaudiDate(row.transactionDate)}</span>
       </div>
-      {row.referenceType && <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{row.referenceType}</div>}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px' }}>
+      {row.referenceType && <div className="nx-text-sm nx-text-muted nx-mb-8">{row.referenceType}</div>}
+      <div className="nx-grid-2 nx-gap-6 nx-rounded" style={{ background: 'var(--noorix-bg-page)', padding: '8px 10px' }}>
         <div>
           <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('debit')}</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{row.debit != null ? fmt(row.debit) : '—'}</div>
+          <div className="nx-text-md nx-font-700" style={{ color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{row.debit != null ? fmt(row.debit) : '—'}</div>
         </div>
         <div>
           <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('credit')}</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#dc2626', fontFamily: 'var(--noorix-font-numbers)' }}>{row.credit != null ? fmt(row.credit) : '—'}</div>
+          <div className="nx-text-md nx-font-700" style={{ color: '#dc2626', fontFamily: 'var(--noorix-font-numbers)' }}>{row.credit != null ? fmt(row.credit) : '—'}</div>
         </div>
       </div>
     </div>
@@ -148,9 +148,9 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
 
   const footerCells = items.length > 0 ? (
     <>
-      <td colSpan={4} style={{ padding: '10px 12px', fontWeight: 700, background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{t('total')}</td>
-      <td style={{ padding: '10px 12px', fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a', textAlign: 'right', background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalDebit, 2)}</td>
-      <td style={{ padding: '10px 12px', fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: '#dc2626', textAlign: 'right', background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalCredit, 2)}</td>
+      <td colSpan={4} className="nx-font-700" style={{ padding: '10px 12px', background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{t('total')}</td>
+      <td className="nx-font-700" style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a', textAlign: 'right', background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalDebit, 2)}</td>
+      <td className="nx-font-700" style={{ padding: '10px 12px', fontFamily: 'var(--noorix-font-numbers)', color: '#dc2626', textAlign: 'right', background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalCredit, 2)}</td>
     </>
   ) : null;
 
@@ -165,22 +165,13 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
       title={modalTitle}
       size="lg"
     >
-      <div className="nx-toolbar" style={{ marginBottom: 16 }}>
+      <div className="nx-toolbar nx-mb-16">
         <Button onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>Excel</Button>
         <Button onClick={handlePrintPdf} disabled={!items.length}>PDF</Button>
       </div>
 
       {isPaginatedTotal && (
-        <div style={{
-          fontSize: 12,
-          color: 'var(--noorix-text-muted)',
-          background: 'var(--noorix-bg-surface)',
-          border: '1px solid var(--noorix-border)',
-          borderRadius: 8,
-          padding: '7px 12px',
-          marginBottom: 12,
-          lineHeight: 1.5,
-        }}>
+        <div className="nx-text-sm nx-text-muted nx-bg-surface nx-border-all nx-rounded nx-mb-12" style={{ padding: '7px 12px', lineHeight: 1.5 }}>
           ℹ️ المجموع الظاهر في الأسفل يعكس إجمالي حركات الفترة بأكملها ({data?.total?.toLocaleString('en')} حركة)، وليس مجموع الصفحة الحالية فقط. للاطلاع على جميع الحركات استخدم تصدير Excel.
         </div>
       )}

@@ -366,12 +366,12 @@ export default function BankStatementAnalysisCardsTab({
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+          <div className="nx-flex" style={{ justifyContent: 'center', gap: 24, marginTop: 10 }}>
+            <div className="nx-flex-center nx-gap-6 nx-text-sm">
               <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
               <span>إيداعات</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+            <div className="nx-flex-center nx-gap-6 nx-text-sm">
               <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
               <span>سحوبات</span>
             </div>
@@ -385,10 +385,10 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardAlerts')} icon="⚠" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {alerts.length === 0 ? (
-            <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>لا توجد سحوبات.</p>
+            <p className="nx-text-muted nx-text-base">لا توجد سحوبات.</p>
           ) : (
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div style={{ overflow: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
+            <div className="nx-grid nx-gap-10">
+              <div className="nx-overflow-auto" style={{ borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
@@ -430,7 +430,7 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'pos_hint') {
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosHint')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <div className="nx-flex nx-gap-16" style={{ flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 100, textAlign: 'center', padding: '12px 16px', background: 'var(--noorix-bg-muted)', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
               <div style={{ fontSize: 28, fontWeight: 800, color: '#2563eb' }}>{posCount}</div>
               <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4 }}>عملية تشبه نقاط البيع</div>
@@ -463,8 +463,8 @@ export default function BankStatementAnalysisCardsTab({
 
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, alignItems: 'center' }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{t('bankPieViewMode')}</span>
+          <div className="nx-flex-center nx-gap-8" style={{ flexWrap: 'wrap', marginBottom: 14 }}>
+            <span className="nx-text-sm nx-font-700 nx-text-muted">{t('bankPieViewMode')}</span>
             {(['combined', 'debit', 'credit']).map((m) => (
               <Button
                 key={m}
@@ -476,7 +476,7 @@ export default function BankStatementAnalysisCardsTab({
               </Button>
             ))}
           </div>
-          <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
+          <p className="nx-text-sm nx-text-muted" style={{ margin: '0 0 14px', lineHeight: 1.5 }}>
             {t('bankPieLegendHint')}
           </p>
           <div
@@ -570,23 +570,16 @@ export default function BankStatementAnalysisCardsTab({
                 </div>
               )}
             </div>
-            <div style={{ flex: '1 1 240px', minWidth: 220, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 10 }}>
+            <div className="nx-flex-col" style={{ flex: '1 1 240px', minWidth: 220 }}>
+              <div className="nx-text-sm nx-font-700 nx-text-muted" style={{ marginBottom: 10 }}>
                 {t('bankPieCategoryKey')}
               </div>
               <div
-                style={{
-                  border: '1px solid var(--noorix-border)',
-                  borderRadius: 12,
-                  padding: 12,
-                  background: 'var(--noorix-bg-muted)',
-                  flex: 1,
-                  display: 'grid',
-                  gap: 8,
-                }}
+                className="nx-rounded-lg nx-p-12 nx-bg-muted nx-flex-1 nx-grid nx-gap-8"
+                style={{ border: '1px solid var(--noorix-border)' }}
               >
                 {pieDisplayData.length === 0 ? (
-                  <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', textAlign: 'center', padding: 12 }}>
+                  <span className="nx-text-sm nx-text-muted nx-text-center nx-p-12">
                     {t('bankNoCategoryData')}
                   </span>
                 ) : (
@@ -664,12 +657,10 @@ export default function BankStatementAnalysisCardsTab({
         if (!rows.length) return null;
         const h = Math.max(168, 52 + rows.length * 46);
         return (
-          <div style={{ marginBottom: 8 }}>
+          <div className="nx-mb-8">
             <div
+              className="nx-text-sm nx-font-700 nx-text-muted"
               style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: 'var(--noorix-text-muted)',
                 marginBottom: 10,
                 paddingBottom: 6,
                 borderBottom: '1px solid var(--noorix-border)',
@@ -716,8 +707,8 @@ export default function BankStatementAnalysisCardsTab({
           {renderBarBlock(barRowsDebit, 'أعلى الفئات — السحوبات', '#dc2626', barDebitAxisW)}
           {renderBarBlock(barRowsCredit, 'أعلى الفئات — الإيداعات', '#16a34a', barCreditAxisW)}
           <div
+            className="nx-flex"
             style={{
-              display: 'flex',
               justifyContent: 'center',
               gap: 28,
               marginTop: 16,
@@ -726,13 +717,13 @@ export default function BankStatementAnalysisCardsTab({
               flexWrap: 'wrap',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+            <div className="nx-flex-center nx-gap-8 nx-text-sm">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: '#dc2626', display: 'inline-block' }} />
-              <span style={{ fontWeight: 600 }}>سحوبات</span>
+              <span className="nx-font-600">سحوبات</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+            <div className="nx-flex-center nx-gap-8 nx-text-sm">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: '#16a34a', display: 'inline-block' }} />
-              <span style={{ fontWeight: 600 }}>إيداعات</span>
+              <span className="nx-font-600">إيداعات</span>
             </div>
           </div>
         </AnalysisCard>
@@ -743,7 +734,7 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'category_table') {
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryTable')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div style={{ overflow: 'auto' }}>
+          <div className="nx-overflow-auto">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 540 }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)' }}>
@@ -822,9 +813,9 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardDepositsTable')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {depositsByCategory.length === 0 ? (
-            <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>لا توجد إيداعات.</p>
+            <p className="nx-text-muted nx-text-base">لا توجد إيداعات.</p>
           ) : (
-            <div style={{ overflow: 'auto' }}>
+            <div className="nx-overflow-auto">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 400 }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)' }}>
@@ -888,11 +879,11 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosTerminals')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {posTerminals.length === 0 ? (
-            <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>
+            <p className="nx-text-muted nx-text-base">
               لم يتم الكشف عن أجهزة نقاط بيع في هذا الكشف.
             </p>
           ) : (
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div className="nx-grid nx-gap-12">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
                 <div style={{ padding: '12px 14px', background: 'var(--noorix-bg-muted)', borderRadius: 12, border: '1px solid var(--noorix-border)', textAlign: 'center' }}>
                   <div style={{ fontSize: 22, fontWeight: 800, color: '#16a34a' }}>{posTerminals.reduce((s, t) => s + t.count, 0)}</div>
@@ -903,7 +894,7 @@ export default function BankStatementAnalysisCardsTab({
                   <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4 }}>إجمالي المبيعات</div>
                 </div>
               </div>
-              <div style={{ overflow: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
+              <div className="nx-overflow-auto" style={{ borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
@@ -947,7 +938,7 @@ export default function BankStatementAnalysisCardsTab({
   };
 
   return (
-    <div style={{ display: 'grid', gap: 18 }}>
+    <div className="nx-grid" style={{ gap: 18 }}>
       {/* شريط التحكم — إضافة بطاقات */}
       <div
         style={{
@@ -1062,9 +1053,9 @@ export default function BankStatementAnalysisCardsTab({
       </div>
 
       {!activeCards.length && (
-        <div style={{ textAlign: 'center', padding: 48, color: 'var(--noorix-text-muted)' }}>
+        <div className="nx-text-center nx-text-muted" style={{ padding: 48 }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}></div>
-          <p style={{ fontSize: 15, fontWeight: 600 }}>{t('bankNoCardsPickAbove')}</p>
+          <p className="nx-text-lg nx-font-600">{t('bankNoCardsPickAbove')}</p>
         </div>
       )}
 

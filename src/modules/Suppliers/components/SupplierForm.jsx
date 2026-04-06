@@ -37,7 +37,7 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
 
   return (
     <Card>
-      <h4 style={{ margin: '0 0 16px', fontSize: 14 }}>{t('newSupplier')}</h4>
+      <h4 className="nx-text-md nx-mt-0 nx-mb-16">{t('newSupplier')}</h4>
       <form onSubmit={handleSubmit}>
         <FormRow cols={2}>
           <Input

@@ -113,7 +113,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
             variant="success"
             disabled={saving || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || mergedSalesChannels.length === 0}
             onClick={handleSave}
-            style={{ flex: 1 }}
+            className="nx-flex-1"
           >
             {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
           </Button>
@@ -122,44 +122,44 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       }
     >
       {error && (
-        <div style={{ padding: 10, marginBottom: 16, background: 'rgba(239,68,68,0.1)', border: '1px solid #dc2626', borderRadius: 8, color: '#dc2626', fontSize: 13 }}>
+        <div className="nx-rounded nx-text-base nx-mb-16 nx-p-10" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #dc2626', color: '#dc2626' }}>
           {error}
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 18 }}>
+      <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: 18 }}>
         <Input type="date" label="تاريخ العملية *" value={txDate} onChange={(e) => setTxDate(e.target.value)} />
         <Input type="number" min="0" label="عدد العملاء" value={customerCount} onChange={(e) => setCustomerCount(e.target.value)} placeholder="0" />
         <Input type="number" min="0" step="0.01" label="المبلغ الموجود بالصندوق" value={cashOnHand} onChange={(e) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
 
       <div style={{ marginBottom: 18 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>قنوات البيع</label>
+        <label className="nx-text-base nx-font-700 nx-mb-8" style={{ display: 'block' }}>قنوات البيع</label>
         {salesChannelsLoading ? (
-          <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
+          <div className="nx-p-16 nx-text-center nx-text-muted nx-text-base" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
             جاري تحميل قنوات البيع...
           </div>
         ) : salesChannelsError ? (
-          <div style={{ padding: 16, textAlign: 'center', color: '#b91c1c', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
+          <div className="nx-p-16 nx-text-center nx-text-base nx-font-600" style={{ color: '#b91c1c', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10 }}>
             {salesChannelsError}
           </div>
-        ) : mergedSalesChannels.length === 0 ? (
-          <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
+          ) : mergedSalesChannels.length === 0 ? (
+          <div className="nx-p-16 nx-text-center nx-text-muted nx-text-base" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
             لا توجد قنوات بيع مفعّلة.
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+          <div className="nx-grid nx-gap-8" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
             {mergedSalesChannels.map((v) => {
               const c = CHANNEL_COLORS[v.type] || CHANNEL_COLORS.cash;
               const amt = channelAmounts[v.id] ?? '';
               return (
                 <div key={v.id} style={{ padding: '10px 12px', borderRadius: 10, background: c.bg, border: `1px solid ${c.border}44` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <span style={{ fontSize: 16 }}>{c.icon}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 12 }}>{vaultDisplayName(v, lang)}</div>
+                  <div className="nx-flex-center nx-gap-6 nx-mb-6">
+                    <span className="nx-text-xl">{c.icon}</span>
+                    <div className="nx-flex-1" style={{ minWidth: 0 }}>
+                      <div className="nx-font-700 nx-text-sm">{vaultDisplayName(v, lang)}</div>
                       {v.isLegacyDisabled && (
-                        <div style={{ marginTop: 2, fontSize: 10, color: '#b45309', fontWeight: 700 }}>
+                        <div className="nx-font-700" style={{ marginTop: 2, fontSize: 10, color: '#b45309' }}>
                           قناة قديمة غير مفعلة حالياً
                         </div>
                       )}
@@ -185,29 +185,29 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         <Input multiline label="ملاحظات" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="أي ملاحظات..." style={{ resize: 'vertical' }} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 18 }}>
-        <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)', textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#16a34a' }}>الإجمالي</div>
+      <div className="nx-grid nx-gap-10" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', marginBottom: 18 }}>
+        <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)' }}>
+          <div className="nx-text-xs" style={{ color: '#16a34a' }}>الإجمالي</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)} ﷼</div>
         </div>
         {vatEnabled && totalAmount.gt(0) && (
           <>
-            <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)', textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: '#0ea5e9' }}>الصافي</div>
+            <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)' }}>
+              <div className="nx-text-xs" style={{ color: '#0ea5e9' }}>الصافي</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#0ea5e9', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)} ﷼</div>
             </div>
-            <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: '#f59e0b' }}>الضريبة</div>
+            <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              <div className="nx-text-xs" style={{ color: '#f59e0b' }}>الضريبة</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#f59e0b', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)} ﷼</div>
             </div>
           </>
         )}
-        <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.3)', textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#2563eb' }}>العملاء</div>
+        <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.3)' }}>
+          <div className="nx-text-xs" style={{ color: '#2563eb' }}>العملاء</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: '#2563eb' }}>{customerCount || 0}</div>
         </div>
-        <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)', textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#7c3aed' }}>معدل الطلب</div>
+        <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
+          <div className="nx-text-xs" style={{ color: '#7c3aed' }}>معدل الطلب</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} ﷼</div>
         </div>
       </div>

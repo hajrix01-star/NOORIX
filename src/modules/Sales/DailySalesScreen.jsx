@@ -437,7 +437,7 @@ export default function DailySalesScreen() {
   const renderMobileCard = useCallback((row) => (
     <div>
       <div className="nx-mc__header">
-        <span className="nx-cell-num nx-cell-accent" style={{ fontSize: 14 }}>
+        <span className="nx-cell-num nx-cell-accent nx-text-md">
           #{row.summaryNumber}
         </span>
         <div className="nx-mc__meta">
@@ -459,7 +459,7 @@ export default function DailySalesScreen() {
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('avgPerOrder')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--violet" style={{ fontSize: 13 }}>{fmt(row.avgPerCustomer, 2)}</div>
+          <div className="nx-mc__stat-value nx-cell-num--violet nx-text-base">{fmt(row.avgPerCustomer, 2)}</div>
         </div>
       </div>
       <div className="nx-mc__actions">
@@ -585,7 +585,7 @@ export default function DailySalesScreen() {
               <span className="nx-cell-muted-sm">— {dateFilter.label}</span>
               <span className="nx-pill nx-pill--blue">{t('summaryCount', displayedTotal)}</span>
               {salesFullHistory && (
-                <span className="noorix-print-hide" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <span className="noorix-print-hide nx-flex nx-gap-6" style={{ flexWrap: 'wrap' }}>
                   <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportExcel')}</Button>
                   <Button size="sm" onClick={handleExportPdf} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportPdf')}</Button>
                   <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('print')}</Button>

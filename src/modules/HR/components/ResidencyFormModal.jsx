@@ -155,7 +155,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
           placeholder="1234567890"
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="nx-grid-2 nx-gap-12">
           <Input
             type="date"
             label={t('startDate')}
@@ -173,7 +173,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
 
         {!isEdit && (
           <>
-            <label className="nx-checkbox" style={{ marginBottom: 12, fontSize: 13 }}>
+            <label className="nx-checkbox nx-mb-12 nx-text-base">
               <input
                 type="checkbox"
                 checked={createInvoiceForResidency}
@@ -192,7 +192,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
                   <option value="renewal">{t('opResidencyRenewal') || 'تجديد إقامة'}</option>
                   <option value="new">{t('residencyNew') || 'إقامة جديدة'}</option>
                 </Input>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="nx-grid-2 nx-gap-12">
                   <Input
                     type="number"
                     step="0.01"
@@ -241,7 +241,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
         />
 
         {error && (
-          <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
+          <div className="nx-mb-12 nx-rounded nx-text-base" style={{ padding: 10, background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
             {error}
           </div>
         )}

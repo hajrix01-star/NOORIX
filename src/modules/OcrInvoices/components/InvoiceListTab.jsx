@@ -143,7 +143,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
             <div className="modal-title">{isAr ? 'تفاصيل الفاتورة' : 'Invoice Details'}</div>
             <div className="modal-sub">{supplierName}</div>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div className="nx-flex-center nx-gap-8">
             <span className={`status-badge ${statusInfo.bgCls}`}>
               {isAr ? statusInfo.ar : statusInfo.en}
             </span>
@@ -187,9 +187,9 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
               <div className="inv-lines-table">
                 <div className="inv-lines-thead">
                   <span>{isAr ? 'الصنف' : 'Item'}</span>
-                  <span style={{ textAlign: 'center' }}>{isAr ? 'الكمية' : 'Qty'}</span>
-                  <span style={{ textAlign: 'center' }}>{isAr ? 'السعر' : 'Price'}</span>
-                  <span style={{ textAlign: 'center' }}>{isAr ? 'الإجمالي' : 'Total'}</span>
+                  <span className="nx-text-center">{isAr ? 'الكمية' : 'Qty'}</span>
+                  <span className="nx-text-center">{isAr ? 'السعر' : 'Price'}</span>
+                  <span className="nx-text-center">{isAr ? 'الإجمالي' : 'Total'}</span>
                 </div>
                 {invoice.lines.map((line, i) => (
                   <div key={i} className="inv-lines-row">
@@ -202,9 +202,9 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
                         <span className="inv-line-size">{line.size}{line.sizeUnit || ''}</span>
                       )}
                     </div>
-                    <div style={{ textAlign: 'center' }}>{line.quantity ?? '—'}</div>
-                    <div style={{ textAlign: 'center' }}>{line.unitPrice  != null ? fmt(line.unitPrice)  : '—'}</div>
-                    <div style={{ textAlign: 'center', fontWeight: 700 }}>{line.totalPrice != null ? fmt(line.totalPrice) : '—'}</div>
+                    <div className="nx-text-center">{line.quantity ?? '—'}</div>
+                    <div className="nx-text-center">{line.unitPrice  != null ? fmt(line.unitPrice)  : '—'}</div>
+                    <div className="nx-text-center nx-font-700">{line.totalPrice != null ? fmt(line.totalPrice) : '—'}</div>
                   </div>
                 ))}
               </div>

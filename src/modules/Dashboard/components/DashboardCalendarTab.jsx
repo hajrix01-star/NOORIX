@@ -281,7 +281,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
 
   if (!companyId) {
     return (
-      <div className="noorix-surface-card" style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+      <div className="noorix-surface-card nx-text-center nx-text-muted nx-p-24">
         {t('pleaseSelectCompany')}
       </div>
     );
@@ -305,8 +305,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           boxSizing: 'border-box',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: CARD_COLORS.sales.accent }}>
+        <div className="nx-flex-between nx-flex-wrap nx-gap-8 nx-mb-12">
+          <div className="nx-text-base nx-font-700" style={{ color: CARD_COLORS.sales.accent }}>
             {t('dashboardCalendar')} — {monthLabel} {year}
           </div>
           <div className="nx-toolbar">
@@ -322,10 +322,10 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         </div>
 
         {showTargetsPanel && (
-          <div style={{ padding: 12, marginBottom: 12, background: 'var(--noorix-bg-muted)', borderRadius: 8, fontSize: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('dashboardTargetOverall')}</div>
+          <div className="nx-p-12 nx-mb-12 nx-bg-muted nx-rounded nx-text-sm">
+            <div className="nx-font-700 nx-mb-8">{t('dashboardTargetOverall')}</div>
             {editingTarget ? (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+              <div className="nx-flex-center nx-gap-8" style={{ marginBottom: 10 }}>
                 <Input
                   type="number"
                   min="0"
@@ -339,16 +339,16 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                 <Button onClick={() => { setEditingTarget(false); setTargetInput(''); }}>{t('cancel')}</Button>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+              <div className="nx-flex-center nx-gap-8" style={{ marginBottom: 10 }}>
                 <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{targets.overall != null ? fmt(targets.overall, 2) : '—'} ﷼</span>
                 <Button onClick={() => { setTargetInput(targets.overall != null ? String(targets.overall) : ''); setEditingTarget(true); }}>{t('edit')}</Button>
               </div>
             )}
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>{t('dashboardTargetByDay')}</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} key={`targets-${targetsVersion}`}>
+            <div className="nx-font-700 nx-mb-6">{t('dashboardTargetByDay')}</div>
+            <div className="nx-flex-wrap nx-gap-8" key={`targets-${targetsVersion}`}>
               {DOW_KEYS.map((dow) => (
-                <div key={dow} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ minWidth: 50, fontSize: 11 }}>{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
+                <div key={dow} className="nx-flex-center nx-gap-4">
+                  <span className="nx-text-xs" style={{ minWidth: 50 }}>{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
                   <Input
                     type="number"
                     min="0"
@@ -369,13 +369,13 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         )}
 
         {isLoading ? (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('loading')}</div>
+          <div className="nx-text-center nx-text-muted nx-text-base" style={{ padding: 32 }}>{t('loading')}</div>
         ) : (
           <div className="noorix-calendar-grid-scroll">
             <div className="noorix-calendar-grid-scroll-inner">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+          <div className="nx-grid nx-gap-6" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
             {[0,1,2,3,4,5,6].map((d) => (
-              <div key={d} style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text-muted)', textAlign: 'center', padding: '6px 0' }}>{lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}</div>
+              <div key={d} className="nx-text-sm nx-font-700 nx-text-muted nx-text-center" style={{ padding: '6px 0' }}>{lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}</div>
             ))}
             {(() => {
               const firstDow = new Date(year, month - 1, 1).getDay();
@@ -430,7 +430,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     }}
                     title={`${dateStr}: ${fmt(amount, 2)} ﷼${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget, 2)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
                   >
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--noorix-text)' }}>{day}</span>
+                    <span className="nx-text-sm nx-font-700 nx-text-primary">{day}</span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? '#166534' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
                     {achieved && <span style={{ fontSize: 8, color: '#16a34a' }}>✓</span>}
                     {hasNote && <span style={{ fontSize: 8, color: 'var(--noorix-accent-blue)', width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-blue)', display: 'inline-block' }} />}
@@ -447,8 +447,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         )}
 
         {isSelectionMode && selectedDatesSorted.length > 0 && (
-          <div style={{ marginTop: 12, padding: 10, background: 'rgba(37,99,235,0.08)', borderRadius: 8, border: '1px solid rgba(37,99,235,0.2)' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6 }}>{t('dashboardSelectedDays')}: {selectedDatesSorted.length}</div>
+          <div className="nx-mt-12 nx-rounded nx-p-10" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>
+            <div className="nx-text-xs nx-font-700 nx-mb-6">{t('dashboardSelectedDays')}: {selectedDatesSorted.length}</div>
             <div className="nx-toolbar">
               <Button variant="primary" onClick={() => setShowAddSpecialModal(true)}>
                 + {t('dashboardAddAsSpecialDays')}
@@ -458,36 +458,36 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           </div>
         )}
 
-        <div style={{ marginTop: 16, padding: 12, background: 'var(--noorix-bg-muted)', borderRadius: 8, fontSize: 11 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8, color: 'var(--noorix-text)' }}>{lang === 'ar' ? 'دليل الألوان' : 'Color legend'}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="nx-mt-16 nx-p-12 nx-bg-muted nx-rounded nx-text-xs">
+          <div className="nx-font-700 nx-mb-8 nx-text-primary">{lang === 'ar' ? 'دليل الألوان' : 'Color legend'}</div>
+          <div className="nx-flex-col nx-gap-6">
+            <div className="nx-flex-center nx-gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: '#e5e7eb', border: '1px solid #d1d5db', flexShrink: 0 }} />
               <span>{t('dashboardLegendGray')}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="nx-flex-center nx-gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgb(220, 38, 38)', flexShrink: 0 }} />
               <span>{t('dashboardLegendRed')}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="nx-flex-center nx-gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgb(234, 179, 8)', flexShrink: 0 }} />
               <span>{t('dashboardLegendYellow')}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="nx-flex-center nx-gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgb(22, 163, 74)', flexShrink: 0 }} />
               <span>{t('dashboardLegendGreen')}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="nx-flex-center nx-gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(22,163,74,0.5)', flexShrink: 0 }} />
               <span>{t('dashboardLegendGreenNoTarget')}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="nx-flex-center nx-gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(139,92,246,0.5)', flexShrink: 0 }} />
               <span>{t('dashboardLegendSpecial')}</span>
             </div>
           </div>
           {targets.overall != null && (
-            <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--noorix-border)', fontSize: 10, color: 'var(--noorix-text-muted)' }}>
+            <div className="nx-text-muted nx-mt-8" style={{ paddingTop: 8, borderTop: '1px solid var(--noorix-border)', fontSize: 10 }}>
               {t('dashboardSalesTarget')}: {fmt(targets.overall, 2)} ﷼
             </div>
           )}
@@ -524,7 +524,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           title={t('dashboardAddAsSpecialDays')}
           size="sm"
         >
-          <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+          <p className="nx-text-sm nx-text-muted" style={{ margin: '0 0 12px' }}>
             {selectedDatesSorted[0]} — {selectedDatesSorted[selectedDatesSorted.length - 1]} ({selectedDatesSorted.length} {lang === 'ar' ? 'أيام' : 'days'})
           </p>
           <Input
@@ -532,7 +532,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             onChange={(e) => setNewSpecialName(e.target.value)}
             placeholder={t('dashboardSpecialDayName')}
           />
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+          <div className="nx-flex-end nx-gap-8 nx-mt-16">
             <Button onClick={() => { setShowAddSpecialModal(false); setNewSpecialName(''); }}>{t('cancel')}</Button>
             <Button variant="primary" onClick={handleAddSelectedAsSpecial}>{t('save')}</Button>
           </div>

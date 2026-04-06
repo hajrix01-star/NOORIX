@@ -123,17 +123,10 @@ export default function TreasuryScreen() {
   const totalIn  = useMemo(() => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'totalIn').toNumber(),  [vaultsList]);
   const totalOut = useMemo(() => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'totalOut').toNumber(), [vaultsList]);
 
-  const gridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
-    gap: 14,
-  };
+  const gridColStyle = { gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))' };
 
   const SectionLabel = ({ label }) => (
-    <div style={{
-      fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-      color: 'var(--noorix-text-muted)', marginBottom: 10,
-    }}>
+    <div className="nx-text-xs nx-font-700 nx-text-muted nx-uppercase nx-mb-10" style={{ letterSpacing: '0.06em' }}>
       {label}
     </div>
   );
@@ -148,13 +141,13 @@ export default function TreasuryScreen() {
         <div style={{ flex: '1 1 200px', minWidth: 0 }}>
           <h1 className="nx-page-title">{t('vaults')}</h1>
           {hasCompany && isFetching && !isLoading && (
-            <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--noorix-accent-blue)', fontWeight: 600 }}>
+            <p className="nx-text-sm nx-font-600" style={{ margin: '8px 0 0', color: 'var(--noorix-accent-blue)' }}>
               {t('vaultsSyncing')}
             </p>
           )}
         </div>
         <div className="nx-toolbar">
-          <label className="nx-checkbox" style={{ color: 'var(--noorix-text-muted)' }}>
+          <label className="nx-checkbox nx-text-muted">
             <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
             {t('showArchived')}
           </label>
@@ -167,13 +160,13 @@ export default function TreasuryScreen() {
       <DateFilterBar filter={dateFilter} />
 
       {!hasCompany && (
-        <div className="noorix-surface-card" style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+        <div className="noorix-surface-card nx-p-20 nx-text-center nx-text-muted">
           {t('pleaseSelectCompanyVaults')}
         </div>
       )}
 
       {hasCompany && isLoading && (
-        <div style={{ color: 'var(--noorix-text-muted)', fontSize: 13, textAlign: 'center', padding: 40 }}>
+        <div className="nx-text-muted nx-text-base nx-text-center" style={{ padding: 40 }}>
           {t('loading')}
         </div>
       )}
@@ -182,12 +175,8 @@ export default function TreasuryScreen() {
         <>
           {/* ── بطاقة الملخص الإجمالي (للشهر/الفترة المحددة) ── */}
           {vaultsList.length > 0 && (
-            <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 0,
-              borderRadius: 12, border: '1px solid var(--noorix-border)',
-              background: 'var(--noorix-bg-surface)', overflow: 'hidden',
-            }}>
-              <div style={{ gridColumn: '1 / -1', padding: '8px 20px', fontSize: 11, color: 'var(--noorix-text-muted)', borderBottom: '1px solid var(--noorix-border)' }}>
+            <div className="nx-grid nx-rounded-lg nx-bg-surface nx-overflow-hidden nx-border-all" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 0 }}>
+              <div className="nx-text-xs nx-text-muted nx-border-b" style={{ gridColumn: '1 / -1', padding: '8px 20px' }}>
                 {dateFilter?.label || t('allMonths')}
               </div>
               {[
@@ -195,14 +184,11 @@ export default function TreasuryScreen() {
                 { label: t('inbound'),      value: totalIn,      color: '#16a34a', sign: '' },
                 { label: t('outbound'),     value: totalOut,     color: 'var(--noorix-text)', sign: '' },
               ].map(({ label, value, color, sign }, i) => (
-                <div key={label} style={{
-                  padding: '16px 20px', textAlign: 'center',
-                  borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none',
-                }}>
-                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 6, letterSpacing: '0.03em' }}>{label}</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)', color }}>
+                <div key={label} className="nx-text-center" style={{ padding: '16px 20px', borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none' }}>
+                  <div className="nx-text-xs nx-text-muted nx-mb-6" style={{ letterSpacing: '0.03em' }}>{label}</div>
+                  <div className="nx-font-800" style={{ fontSize: 20, fontFamily: 'var(--noorix-font-numbers)', color }}>
                     {sign}{fmt(Math.abs(value))}
-                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--noorix-text-muted)', marginRight: 3 }}>﷼</span>
+                    <span className="nx-text-sm nx-font-500 nx-text-muted" style={{ marginRight: 3 }}>﷼</span>
                   </div>
                 </div>
               ))}
@@ -213,7 +199,7 @@ export default function TreasuryScreen() {
           {salesChannels.length > 0 && (
             <section>
               <SectionLabel label={t('salesChannelsEnabled', salesChannels.length)} />
-              <div style={gridStyle}>
+              <div className="nx-grid nx-gap-14" style={gridColStyle}>
                 {salesChannels.map((v) => (
                   <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
                 ))}
@@ -225,7 +211,7 @@ export default function TreasuryScreen() {
           {otherVaults.length > 0 && (
             <section>
               <SectionLabel label={t('otherVaults', otherVaults.length)} />
-              <div style={gridStyle}>
+              <div className="nx-grid nx-gap-14" style={gridColStyle}>
                 {otherVaults.map((v) => (
                   <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
                 ))}
@@ -237,7 +223,7 @@ export default function TreasuryScreen() {
           {includeArchived && archivedVaults.length > 0 && (
             <section>
               <SectionLabel label={t('archivedVaults', archivedVaults.length)} />
-              <div style={gridStyle}>
+              <div className="nx-grid nx-gap-14" style={gridColStyle}>
                 {archivedVaults.map((v) => (
                   <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
                 ))}
@@ -247,16 +233,16 @@ export default function TreasuryScreen() {
 
           {/* ── فارغة ── */}
           {vaultsList.length === 0 && (
-            <div className="noorix-surface-card" style={{ padding: 48, textAlign: 'center', border: '2px dashed var(--noorix-border)' }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--noorix-bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+            <div className="noorix-surface-card nx-text-center" style={{ padding: 48, border: '2px dashed var(--noorix-border)' }}>
+              <div className="nx-flex-center nx-bg-muted" style={{ width: 56, height: 56, borderRadius: 16, justifyContent: 'center', margin: '0 auto 14px' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--noorix-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
                   <rect x="2" y="6" width="20" height="12" rx="2"/>
                   <circle cx="12" cy="12" r="2.5"/>
                   <path d="M6 12h.01M18 12h.01"/>
                 </svg>
               </div>
-              <h3 style={{ margin: '0 0 6px', fontSize: 15 }}>{t('noVaults')}</h3>
-              <p style={{ margin: '0 0 18px', color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('addFirstVault')}</p>
+              <h3 className="nx-text-lg" style={{ margin: '0 0 6px' }}>{t('noVaults')}</h3>
+              <p className="nx-text-muted nx-text-base" style={{ margin: '0 0 18px' }}>{t('addFirstVault')}</p>
               <Button variant="primary" onClick={() => setShowAddForm(true)}>{t('addVault')}</Button>
             </div>
           )}

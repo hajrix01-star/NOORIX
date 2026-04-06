@@ -78,7 +78,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
 
   if (!companyId) {
     return (
-      <div className="noorix-surface-card" style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+      <div className="noorix-surface-card nx-p-24 nx-text-center nx-text-muted">
         {t('pleaseSelectCompany')}
       </div>
     );
@@ -86,7 +86,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
 
   if (isLoading) {
     return (
-      <div className="noorix-surface-card" style={{ padding: 40, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+      <div className="noorix-surface-card nx-text-center nx-text-muted" style={{ padding: 40 }}>
         {t('loading')}
       </div>
     );
@@ -106,13 +106,13 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
         }}
       >
         <div style={{ fontSize: 40, opacity: 0.25, marginBottom: 12 }}></div>
-        <div style={{ fontSize: 14 }}>{t('noDataInPeriod')}</div>
+        <div className="nx-text-md">{t('noDataInPeriod')}</div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="nx-flex nx-flex-col nx-gap-24">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
         <div
           style={{
@@ -129,7 +129,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
             <div style={{ fontSize: 28, fontWeight: 900, color: CARD_COLORS.sales.accent, fontFamily: 'var(--noorix-font-numbers)' }}>
               {fmt(appPercent, 1)}%
             </div>
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
+            <div className="nx-text-sm nx-text-muted nx-mt-6">
               {fmt(yearApp, 2)} ﷼ / {fmt(yearTotal, 2)} ﷼
             </div>
             {yearApp === 0 && (
@@ -152,8 +152,8 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
             padding: 20,
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--noorix-text)', marginBottom: 16 }}>{t('reportChannels')} — {t('dashboardAppSales')}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="nx-text-md nx-font-700" style={{ marginBottom: 16 }}>{t('reportChannels')} — {t('dashboardAppSales')}</div>
+          <div className="nx-flex nx-flex-col nx-gap-10">
             {appByChannel.map((ch) => {
               const pct = yearTotal > 0 ? (ch.app / yearTotal) * 100 : 0;
               return (
@@ -183,8 +183,8 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
             {chartData.map((point) => {
               const barHeight = `${Math.max(0, (point.percent / maxPercent) * 100)}%`;
               return (
-                <div key={point.month} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 600 }}>{point.label}</div>
+                <div key={point.month} className="nx-flex nx-flex-col nx-gap-6" style={{ alignItems: 'center' }}>
+                  <div className="nx-text-xs nx-text-muted nx-font-600">{point.label}</div>
                   <div style={{ width: '100%', height: 60, background: 'var(--noorix-bg-muted)', borderRadius: 8, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
                     <div
                       style={{

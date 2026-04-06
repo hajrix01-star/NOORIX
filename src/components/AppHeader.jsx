@@ -25,10 +25,10 @@ export default function AppHeader({
   return (
     <>
       {serverDown && (
-        <div role="alert" style={{
+        <div role="alert" className="nx-text-base nx-font-600 nx-text-center nx-flex-center nx-gap-10 nx-py-8 nx-px-16" style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-          background: '#991b1b', color: '#fff', fontSize: 13, fontWeight: 600,
-          padding: '8px 16px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          background: '#991b1b', color: '#fff',
+          justifyContent: 'center',
         }}>
           <span>{t('serverDown')}</span>
           <Button variant="ghost" size="sm" onClick={onRetryConnection}>
@@ -49,7 +49,7 @@ export default function AppHeader({
         </div>
         <div className="noorix-topbar__center">
           {coName && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="nx-flex-center nx-gap-8">
               {coLogo ? (
                 <img
                   src={coLogo}
@@ -57,11 +57,11 @@ export default function AppHeader({
                   style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
                 />
               ) : coInitial ? (
-                <div style={{
+                <div className="nx-text-sm nx-font-800" style={{
                   width: 26, height: 26, borderRadius: 6, flexShrink: 0,
                   background: 'linear-gradient(135deg, rgba(37,99,235,0.8) 0%, rgba(16,163,74,0.6) 100%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 800, color: '#fff',
+                  color: '#fff',
                 }}>
                   {coInitial}
                 </div>

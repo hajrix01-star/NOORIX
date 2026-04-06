@@ -90,7 +90,7 @@ export default function ExpensesScreen() {
         <h1 className="nx-page-title">{t('fixedAndVariableExpenses')}</h1>
       </div>
 
-      <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="noorix-surface-card nx-overflow-hidden" style={{ padding: 0 }}>
         <div className="nx-tab-bar">
           {TABS.map((tab) => (
             <Button
@@ -145,7 +145,7 @@ export default function ExpensesScreen() {
       {activeTab === 'payments' && (
         <div>
           <DateFilterBar filter={dateFilter} />
-          <div style={{ marginTop: 16 }}>
+          <div className="nx-mt-16">
             <PaymentHistoryTab companyId={companyId} dateFilter={dateFilter} />
           </div>
         </div>

@@ -163,7 +163,7 @@ export default function BankStatementAnalysisScreen() {
             </>
           }
         >
-          <p style={{ color: 'var(--noorix-text-muted)', fontSize: 14 }}>{t('bankDeleteStatementConfirm')}</p>
+          <p className="nx-text-muted nx-text-md">{t('bankDeleteStatementConfirm')}</p>
         </Modal>
 
         <Toast
@@ -187,13 +187,7 @@ export default function BankStatementAnalysisScreen() {
       </div>
 
       {completedStatements.length > 0 && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-            gap: 12,
-          }}
-        >
+        <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
           {[
             { label: t('bankStatementCardCount'), value: String(completedStatements.length), tone: 'blue' },
             { label: t('bankStatementCardDeposits'), value: fmt(quickStats.totalDeposits), tone: 'green' },
@@ -214,8 +208,8 @@ export default function BankStatementAnalysisScreen() {
                 }`,
               }}
             >
-              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{c.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, direction: 'ltr', textAlign: 'right' }}>{c.value}</div>
+              <div className="nx-text-xs nx-text-muted">{c.label}</div>
+              <div className="nx-text-2xl nx-font-800 nx-mt-4 nx-ltr nx-text-end">{c.value}</div>
             </div>
           ))}
         </div>
@@ -237,16 +231,16 @@ export default function BankStatementAnalysisScreen() {
           ))}
         </div>
 
-        <div style={{ padding: 24 }}>
+        <div className="nx-p-24">
           {activeTab === 'statements' && (
             <>
               {!summaryLoading && statements.length > 0 && completedStatements.length === 0 && (
                 <div
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                    gap: 12,
-                    marginBottom: 20,
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                  gap: 12,
+                  marginBottom: 20,
                   }}
                 >
                   {[
@@ -264,8 +258,8 @@ export default function BankStatementAnalysisScreen() {
                         border: '1px solid var(--noorix-border)',
                       }}
                     >
-                      <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 4 }}>{t(c.labelKey)}</div>
-                      <div style={{ fontSize: 18, fontWeight: 700 }}>{c.f(c.value)}</div>
+                      <div className="nx-text-xs nx-text-muted nx-mb-4">{t(c.labelKey)}</div>
+                      <div className="nx-text-2xl nx-font-700">{c.f(c.value)}</div>
                     </div>
                   ))}
                 </div>
@@ -282,8 +276,8 @@ export default function BankStatementAnalysisScreen() {
                   }}
                 >
                   <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}></div>
-                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{t('bankStatementEmptyTitle')}</div>
-                  <div style={{ fontSize: 13, color: 'var(--noorix-text-muted)', marginBottom: 16 }}>{t('bankStatementEmptyDesc')}</div>
+                  <div className="nx-text-xl nx-font-600" style={{ marginBottom: 6 }}>{t('bankStatementEmptyTitle')}</div>
+                  <div className="nx-text-base nx-text-muted" style={{ marginBottom: 16 }}>{t('bankStatementEmptyDesc')}</div>
                   <Button variant="primary" onClick={() => setShowUpload(true)}>
                     <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>＋</span>
                     {t('bankStatementUploadNew')}
@@ -293,7 +287,7 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length > 0 && (
                 <>
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+                  <div className="nx-flex nx-flex-wrap nx-gap-12" style={{ marginBottom: 16, alignItems: 'center' }}>
                     <Input
                       type="select"
                       value={filterMonth}
@@ -324,7 +318,7 @@ export default function BankStatementAnalysisScreen() {
                     </Input>
                   </div>
 
-                  <div style={{ display: 'grid', gap: 10 }}>
+                  <div className="nx-grid nx-gap-10">
                     {statements.map((stmt) => {
                       const start = stmt.startDate?.slice(0, 10);
                       const end = stmt.endDate?.slice(0, 10);
@@ -336,29 +330,21 @@ export default function BankStatementAnalysisScreen() {
                           tabIndex={0}
                           onClick={() => handleSelectStatement(stmt)}
                           onKeyDown={(e) => e.key === 'Enter' && handleSelectStatement(stmt)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 16,
-                            padding: 14,
-                            borderRadius: 10,
-                            border: '1px solid var(--noorix-border)',
-                            background: 'var(--noorix-bg)',
-                            cursor: 'pointer',
-                          }}
+                          className="nx-flex nx-gap-16 nx-p-14 nx-border-all nx-rounded nx-cursor-pointer"
+                          style={{ alignItems: 'center', background: 'var(--noorix-bg)' }}
                         >
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <div className="nx-flex-1" style={{ minWidth: 0 }}>
+                            <div className="nx-flex nx-gap-8" style={{ alignItems: 'center', marginBottom: 4 }}>
                               <span style={{ fontWeight: 600 }}>{stmt.companyName || stmt.fileName || 'كشف'}</span>
                               <Badge color={statusColor} size="sm">
                                 {stmt.status === 'mapping' ? t('bankStatementStatusMapping') : t('bankStatementStatusCompleted')}
                               </Badge>
                             </div>
-                            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                            <div className="nx-text-sm nx-text-muted">
                               {stmt.bankName || '—'} • {start && end ? `${start} – ${end}` : stmt.fileName}
                             </div>
                           </div>
-                          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                          <div className="nx-text-sm nx-text-muted">
                             {stmt.transactionCount ?? 0} {t('bankStatementTransactions')}
                           </div>
                         </div>

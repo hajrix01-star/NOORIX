@@ -17,7 +17,7 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
 
   if (!start || !end) {
     return (
-      <p style={{ color: 'var(--noorix-text-muted)', padding: 16 }}>{t('bankSalesCompareNeedDates')}</p>
+      <p className="nx-text-muted nx-p-16">{t('bankSalesCompareNeedDates')}</p>
     );
   }
 
@@ -28,52 +28,50 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
   const diff = bankCredits - expected;
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)', margin: 0 }}>{t('bankSalesCompareDescServer')}</p>
+    <div className="nx-grid nx-gap-16">
+      <p className="nx-text-base nx-text-muted nx-m-0">{t('bankSalesCompareDescServer')}</p>
 
       <div
+        className="nx-grid nx-gap-12"
         style={{
-          display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-          gap: 12,
         }}
       >
-        <div className="noorix-surface-card" style={{ padding: 16 }}>
-          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankStatementBankCredits')}</div>
-          <div style={{ fontSize: 20, fontWeight: 800, direction: 'ltr', textAlign: 'right', color: '#16a34a' }}>
+        <div className="noorix-surface-card nx-p-16">
+          <div className="nx-text-sm nx-text-muted">{t('bankStatementBankCredits')}</div>
+          <div className="nx-text-3xl nx-font-800 nx-ltr nx-text-end" style={{ color: '#16a34a' }}>
             {fmt(bankCredits)}
           </div>
         </div>
-        <div className="noorix-surface-card" style={{ padding: 16 }}>
-          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankReconExpectedCredits')}</div>
-          <div style={{ fontSize: 20, fontWeight: 800, direction: 'ltr', textAlign: 'right' }}>
+        <div className="noorix-surface-card nx-p-16">
+          <div className="nx-text-sm nx-text-muted">{t('bankReconExpectedCredits')}</div>
+          <div className="nx-text-3xl nx-font-800 nx-ltr nx-text-end">
             {reconLoading ? '…' : fmt(expected)}
           </div>
         </div>
-        <div className="noorix-surface-card" style={{ padding: 16 }}>
-          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankReconSalesBankTotal')}</div>
-          <div style={{ fontSize: 18, fontWeight: 700, direction: 'ltr', textAlign: 'right' }}>
+        <div className="noorix-surface-card nx-p-16">
+          <div className="nx-text-sm nx-text-muted">{t('bankReconSalesBankTotal')}</div>
+          <div className="nx-text-2xl nx-font-700 nx-ltr nx-text-end">
             {reconLoading ? '…' : fmt(salesBank)}
           </div>
           {saleCount != null && !reconLoading ? (
-            <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
+            <div className="nx-text-xs nx-text-muted nx-mt-4">
               {t('bankSalesInvoiceCount', String(saleCount))}
             </div>
           ) : null}
         </div>
-        <div className="noorix-surface-card" style={{ padding: 16 }}>
-          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankReconCashDeposits')}</div>
-          <div style={{ fontSize: 18, fontWeight: 700, direction: 'ltr', textAlign: 'right' }}>
+        <div className="noorix-surface-card nx-p-16">
+          <div className="nx-text-sm nx-text-muted">{t('bankReconCashDeposits')}</div>
+          <div className="nx-text-2xl nx-font-700 nx-ltr nx-text-end">
             {reconLoading ? '…' : fmt(cashDeposits)}
           </div>
         </div>
-        <div className="noorix-surface-card" style={{ padding: 16 }}>
-          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankSalesDifference')}</div>
+        <div className="noorix-surface-card nx-p-16">
+          <div className="nx-text-sm nx-text-muted">{t('bankSalesDifference')}</div>
           <div
+            className="nx-font-800 nx-ltr"
             style={{
               fontSize: 20,
-              fontWeight: 800,
-              direction: 'ltr',
               textAlign: 'right',
               color: reconLoading ? 'var(--noorix-text-muted)' : Math.abs(diff) < 1 ? '#16a34a' : '#ca8a04',
             }}
@@ -83,7 +81,7 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
         </div>
       </div>
 
-      <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', margin: 0 }}>{t('bankSalesCompareFootnote')}</p>
+      <p className="nx-text-sm nx-text-muted nx-m-0">{t('bankSalesCompareFootnote')}</p>
     </div>
   );
 }

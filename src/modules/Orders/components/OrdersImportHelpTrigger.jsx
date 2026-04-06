@@ -38,22 +38,22 @@ export function OrdersImportHelpTrigger({ t, variant }) {
           e.stopPropagation();
           setPinned((p) => !p);
         }}
+        className="nx-text-sm nx-font-600"
         style={{
           padding: '6px 12px',
-          fontSize: 12,
           borderRadius: 999,
           border: '1px solid var(--noorix-border)',
           background: pinned ? 'rgba(22,163,74,0.12)' : 'var(--noorix-bg-muted)',
-          fontWeight: 600,
         }}
       >
         ⓘ {t('ordersImportHelpBadge')}
       </Button>
       {visible && (
         <div
-          role="dialog"
+          role="region"
           aria-label={title}
           className="noorix-print-hide"
+          className="nx-text-sm nx-text-primary nx-bg-surface nx-rounded-lg"
           style={{
             position: 'absolute',
             top: 'calc(100% + 8px)',
@@ -63,35 +63,31 @@ export function OrdersImportHelpTrigger({ t, variant }) {
             overflowY: 'auto',
             zIndex: 50,
             padding: '14px 16px',
-            borderRadius: 12,
             border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
             boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-            fontSize: 12,
             lineHeight: 1.65,
-            color: 'var(--noorix-text)',
             textAlign: 'start',
           }}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div style={{ fontWeight: 800, marginBottom: 10, fontSize: 13 }}>{title}</div>
-          <p style={{ margin: '0 0 8px', color: 'var(--noorix-text-muted)', fontSize: 11 }}>{t('ordersImportHelpHoverHint')}</p>
+          <div className="nx-font-800 nx-text-base" style={{ marginBottom: 10 }}>{title}</div>
+          <p className="nx-text-xs nx-text-muted" style={{ margin: '0 0 8px' }}>{t('ordersImportHelpHoverHint')}</p>
           {variant === 'products' ? (
             <>
               <p style={{ margin: '0 0 10px' }}>{t('ordersImportWorkbookNote')}</p>
               <p style={{ margin: '0 0 10px' }}>{t('ordersImportTemplateHintProducts')}</p>
-              <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+              <ul className="nx-m-0" style={{ paddingInlineStart: 18 }}>
                 <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep1')}</li>
                 <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep2')}</li>
                 <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep3')}</li>
               </ul>
-              <p style={{ margin: '10px 0 0', fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('ordersPresetCatalogHint')}</p>
+              <p className="nx-text-xs nx-text-muted" style={{ margin: '10px 0 0' }}>{t('ordersPresetCatalogHint')}</p>
             </>
           ) : (
             <>
               <p style={{ margin: '0 0 10px' }}>{t('ordersImportWorkbookNote')}</p>
               <p style={{ margin: '0 0 10px' }}>{t('ordersImportTemplateHintCategories')}</p>
-              <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+              <ul className="nx-m-0" style={{ paddingInlineStart: 18 }}>
                 <li style={{ marginBottom: 6 }}>{t('ordersImportCategoriesStep1')}</li>
                 <li>{t('ordersImportCategoriesStep2')}</li>
               </ul>

@@ -231,16 +231,16 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
       title={t('bankMapTitle')}
       size="full"
       footer={
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+        <div className="nx-flex nx-flex-wrap nx-flex-between nx-gap-12 nx-w-full">
           <div>
             {!canConfirm ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#b45309' }}>
+              <div className="nx-flex nx-gap-6 nx-text-base" style={{ alignItems: 'center', color: '#b45309' }}>
                 <span>⚠</span>
                 <span>{t('bankMapRequiredWarningStrict')}</span>
               </div>
             ) : null}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="nx-flex nx-gap-8">
             <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
             <Button variant="primary" onClick={handleConfirm} disabled={!canConfirm || isSubmitting}>
               {isSubmitting ? t('bankStatementAIApplying') : t('bankMapConfirmAnalyze')}
@@ -249,7 +249,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
         </div>
       }
     >
-        <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankMapSubtitle')}</p>
+        <p className="nx-text-base nx-text-muted" style={{ margin: '0 0 14px' }}>{t('bankMapSubtitle')}</p>
 
         <div
           style={{
@@ -260,7 +260,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
             marginBottom: 14,
           }}
         >
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div className="nx-flex nx-flex-wrap nx-gap-8" style={{ alignItems: 'center', marginBottom: 10 }}>
             <span style={{ fontWeight: 700, fontSize: 13, color: '#1e40af' }}>{t('bankMapStatementInfo')}</span>
             {aiHeaderLoading ? (
               <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#dbeafe', color: '#1d4ed8' }}>
@@ -279,7 +279,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
               </span>
             ) : null}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+          <div className="nx-grid nx-gap-10" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
             <Input
               type="text"
               label={t('bankMapCustomerLabel')}
@@ -324,8 +324,8 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           </div>
         ) : null}
 
-        <div style={{ border: '1px solid var(--noorix-border)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t('bankStatementMapColumns')}</div>
+        <div className="nx-border-all nx-rounded nx-p-14" style={{ marginBottom: 14 }}>
+          <div className="nx-text-md nx-font-700" style={{ marginBottom: 10 }}>{t('bankStatementMapColumns')}</div>
           <div
             style={{
               display: 'grid',
@@ -335,7 +335,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           >
             {COLUMN_FIELD_DEFS.map((col) => (
               <div key={col.key}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                <label className="nx-flex nx-gap-6 nx-text-sm nx-font-600" style={{ alignItems: 'center', marginBottom: 4 }}>
                   <span>
                     {t(col.labelKey)}
                     {col.required ? <span style={{ color: 'var(--noorix-error)' }}> *</span> : null}
@@ -359,12 +359,12 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           </div>
         </div>
 
-        <div style={{ border: '1px solid var(--noorix-border)', borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{ padding: '10px 12px', background: 'var(--noorix-bg-muted)', borderBottom: '1px solid var(--noorix-border)', fontWeight: 600, fontSize: 13 }}>
+        <div className="nx-border-all nx-rounded nx-overflow-hidden nx-mb-16">
+          <div className="nx-px-12 nx-bg-muted nx-border-b nx-font-600 nx-text-base" style={{ padding: '10px 12px' }}>
             {t('bankMapPreviewTitle')}{' '}
             <span style={{ fontWeight: 400, color: 'var(--noorix-text-muted)', fontSize: 12 }}>{t('bankMapPreviewHint')}</span>
           </div>
-          <div style={{ overflow: 'auto', maxHeight: 300 }}>
+          <div className="nx-overflow-auto" style={{ maxHeight: 300 }}>
             <table style={{ width: '100%', minWidth: previewTableMinWidth, borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: 'var(--noorix-bg-muted)' }}>

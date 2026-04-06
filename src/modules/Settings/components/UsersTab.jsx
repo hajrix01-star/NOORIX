@@ -73,7 +73,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   }
 
   const columns = [
-    { key: 'email', label: t('email'), render: (v) => <span style={{ fontWeight: 600 }}>{v || '—'}</span> },
+    { key: 'email', label: t('email'), render: (v) => <span className="nx-font-600">{v || '—'}</span> },
     { key: 'nameAr', label: t('nameAr'), render: (v, row) => <span>{v || row.nameEn || '—'}</span> },
     { key: 'role', label: t('role'), render: (_, row) => <span>{row.role?.nameAr || row.role?.name || '—'}</span> },
     { key: 'companies', label: t('companies'), render: (_, row) => <span className="nx-cell-muted">{(row.userCompanies || []).map((uc) => uc.company?.nameAr).filter(Boolean).join(', ') || '—'}</span> },
@@ -85,25 +85,25 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
     <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="nx-flex-end">
         <Button variant="primary" onClick={() => { setForm({ email: '', password: '', nameAr: '', nameEn: '', roleName: roles[0]?.name || '', companyIds: [] }); setShowForm(true); }}>
           {t('addUser')}
         </Button>
       </div>
 
       {showForm && (
-        <div className="noorix-surface-card" style={{ padding: 20, borderRadius: 14 }}>
-          <h4 style={{ margin: '0 0 16px', fontSize: 14 }}>{t('newUser')}</h4>
+        <div className="noorix-surface-card nx-p-20" style={{ borderRadius: 14 }}>
+          <h4 className="nx-text-md" style={{ margin: '0 0 16px' }}>{t('newUser')}</h4>
           <form onSubmit={(e) => { e.preventDefault(); if (!form.email?.trim() || !form.password?.trim()) return; createMutation.mutate({ email: form.email.trim(), password: form.password, nameAr: form.nameAr?.trim(), nameEn: form.nameEn?.trim(), roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c) => c.id) }); }}>
-            <div style={{ display: 'grid', gap: 12, marginBottom: 14, maxWidth: 400 }}>
+            <div className="nx-grid nx-gap-12" style={{ marginBottom: 14, maxWidth: 400 }}>
               <Input type="email" label={`${t('email')} *`} value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} required />
               <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} required />
               <Input type="text" label={t('nameAr')} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} />
               <Input type="select" label={t('role')} value={form.roleName} onChange={(e) => setForm((p) => ({ ...p, roleName: e.target.value }))}>
                 {roles.map((r) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
               </Input>
-              <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('companies')}</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div><label className="nx-text-sm nx-font-600 nx-mb-4" style={{ display: 'block' }}>{t('companies')}</label>
+                <div className="nx-flex-col nx-gap-6">
                   {activeCompanies.map((c) => (
                     <label key={c.id} className="nx-checkbox">
                       <input type="checkbox" checked={form.companyIds.includes(c.id)} onChange={(e) => setForm((p) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id) => id !== c.id) }))} />
@@ -113,7 +113,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="nx-flex nx-gap-8">
               <Button type="submit" variant="primary" disabled={createMutation.isPending}>{createMutation.isPending ? t('saving') : t('save')}</Button>
               <Button type="button" onClick={() => setShowForm(false)}>{t('cancel')}</Button>
             </div>
@@ -129,22 +129,22 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
       >
         {editing && (
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
-            <div style={{ display: 'grid', gap: 12, marginBottom: 14 }}>
+            <div className="nx-grid nx-gap-12" style={{ marginBottom: 14 }}>
               <Input type="email" label={t('email')} value={editing.email} disabled />
               <Input type="text" label={t('nameAr')} value={editing.nameAr} onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))} />
               <Input type="select" label={t('role')} value={editing.roleName} onChange={(e) => setEditing((p) => ({ ...p, roleName: e.target.value }))}>
                 {roles.map((r) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
               </Input>
-              <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('companies')}</label>
+              <div><label className="nx-text-sm nx-font-600 nx-mb-4" style={{ display: 'block' }}>{t('companies')}</label>
                 {activeCompanies.map((c) => (
-                  <label key={c.id} className="nx-checkbox" style={{ marginBottom: 4 }}>
+                  <label key={c.id} className="nx-checkbox nx-mb-4">
                     <input type="checkbox" checked={editing.companyIds.includes(c.id)} onChange={(e) => setEditing((p) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id) => id !== c.id) }))} />
                     {c.nameAr}
                   </label>
                 ))}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="nx-flex nx-gap-8 nx-flex-wrap">
               <Button type="submit" variant="primary" disabled={updateMutation.isPending}>{updateMutation.isPending ? t('saving') : t('save')}</Button>
               <Button type="button" onClick={() => setEditing(null)}>{t('close')}</Button>
               {editing.isActive ? (
@@ -169,15 +169,15 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
         title={t('usersTab')}
         emptyMessage={t('noUsers')}
         renderMobileCard={(row) => (
-          <div style={{ display: 'grid', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--noorix-text)' }}>{row.nameAr || row.nameEn || row.email || '—'}</span>
+          <div className="nx-grid nx-gap-8">
+            <div className="nx-flex-between nx-gap-8">
+              <span className="nx-font-700 nx-text-md nx-text-primary">{row.nameAr || row.nameEn || row.email || '—'}</span>
               <Badge color={row.isActive ? 'green' : 'red'} size="sm">
                 {row.isActive ? t('active') : t('archived')}
               </Badge>
             </div>
-            <div className="nx-cell-muted" style={{ direction: 'ltr', textAlign: 'right' }}>{row.email || '—'}</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div className="nx-cell-muted nx-ltr" style={{ textAlign: 'right' }}>{row.email || '—'}</div>
+            <div className="nx-flex-between nx-gap-8">
               <span className="nx-cell-muted">{row.role?.nameAr || row.role?.name || '—'}</span>
               <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button>
             </div>

@@ -76,7 +76,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
   if (!companyId) return null;
 
   return (
-    <div style={{ padding: 16, maxWidth: 800, margin: '0 auto' }}>
+    <div className="nx-p-16" style={{ maxWidth: 800, margin: '0 auto' }}>
       <div
         style={{
           background: 'rgba(37, 99, 235, 0.08)',
@@ -86,21 +86,21 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
           marginBottom: 16,
         }}
       >
-        <div style={{ fontWeight: 700, fontSize: 15, color: '#1e40af', marginBottom: 6 }}>{t('bankTemplatesIntroTitle')}</div>
-        <p style={{ margin: 0, fontSize: 13, color: '#1d4ed8', lineHeight: 1.5 }}>{t('bankTemplatesIntroBody')}</p>
+        <div className="nx-font-700 nx-text-lg" style={{ color: '#1e40af', marginBottom: 6 }}>{t('bankTemplatesIntroTitle')}</div>
+        <p className="nx-m-0 nx-text-base" style={{ color: '#1d4ed8', lineHeight: 1.5 }}>{t('bankTemplatesIntroBody')}</p>
       </div>
 
       {isLoading ? <p style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}…</p> : null}
 
       {!isLoading && !list.length ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--noorix-text-muted)' }}>
+        <div className="nx-text-center nx-text-muted" style={{ padding: '40px 20px' }}>
           <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.4 }}></div>
-          <p style={{ margin: 0, fontWeight: 600 }}>{t('bankTemplatesEmptyTitle')}</p>
-          <p style={{ margin: '8px 0 0', fontSize: 13 }}>{t('bankTemplatesEmptySubtitle')}</p>
+          <p className="nx-m-0 nx-font-600">{t('bankTemplatesEmptyTitle')}</p>
+          <p className="nx-text-base" style={{ margin: '8px 0 0' }}>{t('bankTemplatesEmptySubtitle')}</p>
         </div>
       ) : null}
 
-      <div style={{ display: 'grid', gap: 12 }}>
+      <div className="nx-grid nx-gap-12">
         {sorted.map((tpl) => {
           const cols = columnsToBadges(tpl.columnsJson, t);
           const lastUsed = tpl.lastUsedAt ? new Date(tpl.lastUsedAt).toLocaleDateString('en-GB') : null;
@@ -110,9 +110,9 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
               className="noorix-surface-card"
               style={{ padding: 16, opacity: tpl.isActive ? 1 : 0.6 }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div className="nx-flex nx-gap-12" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div className="nx-flex-1" style={{ minWidth: 0 }}>
+                    <div className="nx-flex nx-flex-wrap nx-gap-8" style={{ alignItems: 'center', marginBottom: 10 }}>
                     <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{tpl.bankName || t('bankTemplatesUnspecifiedBank')}</h3>
                     {tpl.customerName ? (
                       <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1px solid var(--noorix-border)' }}>{tpl.customerName}</span>
@@ -142,9 +142,9 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                     </span>
                     {lastUsed ? <span>{t('bankTemplatesLastUsed', lastUsed)}</span> : null}
                   </div>
-                  {cols.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('bankTemplatesColumns')}:</span>
+                    {cols.length > 0 ? (
+                    <div className="nx-flex nx-flex-wrap nx-gap-6" style={{ alignItems: 'center' }}>
+                      <span className="nx-text-sm nx-text-muted">{t('bankTemplatesColumns')}:</span>
                       {cols.map((c) => (
                         <span
                           key={c.key}
@@ -162,7 +162,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                     </div>
                   ) : null}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div className="nx-flex nx-flex-col nx-gap-6">
                   <Button
                     title={tpl.isActive ? t('bankTemplatesDeactivateHint') : t('bankTemplatesActivateHint')}
                     disabled={toggleMut.isPending}
@@ -192,7 +192,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
           </>
         }
       >
-        <p style={{ fontSize: 14, color: 'var(--noorix-text-muted)' }}>{t('bankTemplatesDeleteBody')}</p>
+        <p className="nx-text-md nx-text-muted">{t('bankTemplatesDeleteBody')}</p>
       </Modal>
     </div>
   );

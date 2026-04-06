@@ -178,19 +178,19 @@ export function OrderFormModal({
         size="sm"
         hideClose={false}
       >
-        <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        <div className="nx-text-center" style={{ padding: '8px 0' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}></div>
-          <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>{t('orderSaved')}</h3>
-          <p style={{ margin: '0 0 16px', fontSize: 14, color: 'var(--noorix-text-muted)' }}>
-            {t('orderNumber')}: <strong style={{ color: 'var(--noorix-accent-blue)' }}>{savedOrder.orderNumber}</strong>
+          <h3 className="nx-text-2xl" style={{ margin: '0 0 6px' }}>{t('orderSaved')}</h3>
+          <p className="nx-text-md nx-text-muted" style={{ margin: '0 0 16px' }}>
+            {t('orderNumber')}: <strong className="nx-text-blue">{savedOrder.orderNumber}</strong>
           </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('total')}</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedOrder.totalAmount ?? 0, 2)} ﷼</div>
+          <div className="nx-flex-center nx-flex-wrap nx-gap-16" style={{ justifyContent: 'center', marginBottom: 20 }}>
+            <div className="nx-text-center">
+              <div className="nx-text-xs nx-text-muted">{t('total')}</div>
+              <div className="nx-text-2xl nx-font-numbers" style={{ fontWeight: 900, color: '#16a34a' }}>{fmt(savedOrder.totalAmount ?? 0, 2)} ﷼</div>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+          <div className="nx-flex-col nx-gap-10" style={{ alignItems: 'center' }}>
             <Button variant="success" fullWidth onClick={() => onWhatsApp?.(savedOrder)}>
               {t('sendWhatsApp')} — {t('order')}
             </Button>
@@ -222,7 +222,7 @@ export function OrderFormModal({
         </Button>
       }
     >
-      <div style={{ display: 'grid', gap: 16, marginBottom: 18 }}>
+      <div className="nx-grid nx-gap-16" style={{ marginBottom: 18 }}>
         <Input
           type="date"
           label={`${t('orderDate')} *`}
@@ -252,16 +252,16 @@ export function OrderFormModal({
       </div>
 
       <div style={{ marginBottom: 18 }}>
-        <label style={{ fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>{t('orderItems')}</label>
+        <label className="nx-text-base nx-font-700" style={{ display: 'block', marginBottom: 10 }}>{t('orderItems')}</label>
         {products.length === 0 ? (
-          <div style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
+          <div className="nx-p-20 nx-text-center nx-text-muted nx-text-base" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
             {t('ordersNoProducts')}
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr minmax(120px,1fr) minmax(70px,1fr) minmax(80px,1fr) auto', gap: 8, alignItems: 'end', marginBottom: 12 }}>
+            <div className="nx-grid nx-gap-8" style={{ gridTemplateColumns: '1fr minmax(120px,1fr) minmax(70px,1fr) minmax(80px,1fr) auto', alignItems: 'end', marginBottom: 12 }}>
               <div>
-                <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('product')}</label>
+                <label className="nx-text-xs nx-text-muted">{t('product')}</label>
                 <ProductSearchInput
                   products={products}
                   productsById={productsById}
@@ -280,7 +280,7 @@ export function OrderFormModal({
                 />
               </div>
               <div>
-                <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{productVariants.length > 0 ? t('ordersProductVariants') : t('ordersProductSize')}</label>
+                <label className="nx-text-xs nx-text-muted">{productVariants.length > 0 ? t('ordersProductVariants') : t('ordersProductSize')}</label>
                 {productVariants.length > 0 ? (
                   <Input
                     type="select"
@@ -312,24 +312,24 @@ export function OrderFormModal({
                 )}
               </div>
               <div>
-                <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('quantity')}</label>
+                <label className="nx-text-xs nx-text-muted">{t('quantity')}</label>
                 <Input type="number" min="0" step="0.01" value={addRow.quantity} onChange={(e) => setAddRow((r) => ({ ...r, quantity: e.target.value }))} placeholder="0" />
               </div>
               <div>
-                <label style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('unitPrice')}</label>
+                <label className="nx-text-xs nx-text-muted">{t('unitPrice')}</label>
                 <Input type="number" min="0" step="0.01" value={addRow.unitPrice} onChange={(e) => setAddRow((r) => ({ ...r, unitPrice: e.target.value }))} placeholder="0" />
               </div>
               <Button variant="primary" onClick={addItemFromRow}>+ {t('add')}</Button>
             </div>
-            <div style={{ overflowX: 'auto', border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <div className="nx-overflow-x-auto nx-border-all" style={{ borderRadius: 10 }}>
+              <table className="nx-w-full" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)' }}>
-                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('product')}</th>
-                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('ordersProductSize')} / {t('ordersProductPackaging')}</th>
-                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('quantity')}</th>
-                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('unitPrice')}</th>
-                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700 }}>{t('total')}</th>
+                  <tr className="nx-bg-muted" style={{ borderBottom: '2px solid var(--noorix-border)' }}>
+                    <th className="nx-text-end nx-font-700" style={{ padding: '8px 10px' }}>{t('product')}</th>
+                    <th className="nx-text-end nx-font-700" style={{ padding: '8px 10px' }}>{t('ordersProductSize')} / {t('ordersProductPackaging')}</th>
+                    <th className="nx-text-end nx-font-700" style={{ padding: '8px 10px' }}>{t('quantity')}</th>
+                    <th className="nx-text-end nx-font-700" style={{ padding: '8px 10px' }}>{t('unitPrice')}</th>
+                    <th className="nx-text-end nx-font-700" style={{ padding: '8px 10px' }}>{t('total')}</th>
                     <th style={{ width: 44, padding: '8px 4px' }} />
                   </tr>
                 </thead>
@@ -340,7 +340,7 @@ export function OrderFormModal({
                     const sizesArr = p?.sizes ? String(p.sizes).split(/[,،]/).map((x) => x.trim()).filter(Boolean) : [];
                     const variantLabel = [it.size, it.packaging, it.unit].filter(Boolean).join(' / ') || '—';
                     return (
-                      <tr key={idx} style={{ borderBottom: '1px solid var(--noorix-border)' }}>
+                      <tr key={idx} className="nx-border-b">
                         <td style={{ padding: '8px 10px', minWidth: 140 }}>
                           <ProductSearchInput
                             products={products}
@@ -365,7 +365,7 @@ export function OrderFormModal({
                             compact
                           />
                         </td>
-                        <td style={{ padding: '8px 10px' }}>
+                        <td style={{ padding: '8px 10px', minWidth: 0 }}>
                           {variantsArr.length > 0 ? (
                             <Input
                               type="select"
@@ -404,7 +404,7 @@ export function OrderFormModal({
                         <td style={{ padding: '8px 10px' }}>
                           <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} style={{ width: 80 }} />
                         </td>
-                        <td className="nx-cell-num" style={{ padding: '8px 10px', fontWeight: 600 }}>{fmt(enrichedItems[idx]?.amount ?? 0, 2)}</td>
+                        <td className="nx-cell-num nx-font-600" style={{ padding: '8px 10px' }}>{fmt(enrichedItems[idx]?.amount ?? 0, 2)}</td>
                         <td style={{ padding: '8px 4px' }}>
                           <Button size="sm" variant="danger" onClick={() => removeItem(idx)}>✕</Button>
                         </td>
@@ -414,7 +414,7 @@ export function OrderFormModal({
                 </tbody>
               </table>
               {items.length === 0 && (
-                <div style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('ordersSelectProductAndAdd') || 'اختر صنفاً واضغط إضافة'}</div>
+                <div className="nx-p-24 nx-text-center nx-text-muted nx-text-base">{t('ordersSelectProductAndAdd') || 'اختر صنفاً واضغط إضافة'}</div>
               )}
             </div>
           </>

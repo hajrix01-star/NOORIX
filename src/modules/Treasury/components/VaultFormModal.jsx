@@ -57,10 +57,10 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
       size="md"
       closeOnBackdrop={!isSaving}
     >
-      <form onSubmit={handleSave} style={{ display: 'grid', gap: 14 }}>
+      <form onSubmit={handleSave} className="nx-grid nx-gap-14">
 
         {/* الأسماء */}
-        <div className="vault-form-names-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="vault-form-names-grid nx-grid nx-gap-12" style={{ gridTemplateColumns: '1fr 1fr' }}>
           <Input
             label={t('nameArLabel')}
             type="text"
@@ -80,8 +80,8 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
 
         {/* النوع */}
         <div>
-          <label style={{ display: 'block', marginBottom: 5, fontSize: 13, fontWeight: 600 }}>{t('vaultType')}</label>
-          <div className="vault-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          <label className="nx-text-base nx-font-600" style={{ display: 'block', marginBottom: 5 }}>{t('vaultType')}</label>
+          <div className="vault-type-grid nx-grid nx-gap-8" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {VAULT_TYPES.map((vt) => (
               <Button
                 key={vt.value}
@@ -93,7 +93,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                   color: TYPE_COLORS[vt.value],
                 } : undefined}
               >
-                <span style={{ fontSize: 16, fontWeight: 800 }}>{vt.icon}</span>
+                <span className="nx-text-xl nx-font-800">{vt.icon}</span>
                 <span>{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].trim()}</span>
               </Button>
             ))}
@@ -104,18 +104,18 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
               onClick={() => set('type', 'custom')}
               style={isCustom ? { border: '2px solid #64748b', background: 'rgba(100,116,139,0.1)', color: '#475569' } : undefined}
             >
-              <span style={{ fontSize: 18, fontWeight: 800 }}>{form.customEmoji || 'خ'}</span>
+              <span className="nx-font-800" style={{ fontSize: 18 }}>{form.customEmoji || 'خ'}</span>
               <span>{t('vaultTypeCustom') || 'مخصص'}</span>
             </Button>
           </div>
 
           {/* منتقي رمز مخصص */}
           {isCustom && (
-            <div style={{ marginTop: 10, padding: 14, borderRadius: 12, border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-muted)' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--noorix-text-muted)' }}>
+            <div className="nx-bg-muted nx-rounded-lg nx-mt-10 nx-border-all" style={{ padding: 14 }}>
+              <div className="nx-text-sm nx-font-700 nx-mb-8 nx-text-muted">
                 اختر رمز الخزينة
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              <div className="nx-flex nx-flex-wrap nx-gap-4">
                 {ICON_CHARS.map((ch) => (
                   <Button
                     key={ch}
@@ -137,7 +137,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           background: form.isSalesChannel ? 'rgba(22,163,74,0.05)' : 'transparent',
           transition: 'all 150ms',
         }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: form.isSalesChannel ? 12 : 0 }}>
+          <label className="nx-flex-center nx-gap-10 nx-cursor-pointer" style={{ marginBottom: form.isSalesChannel ? 12 : 0 }}>
             <div
               onClick={() => set('isSalesChannel', !form.isSalesChannel)}
               style={{
@@ -152,8 +152,8 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
               }} />
             </div>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>{t('enableAsSalesChannel')}</span>
-            {form.isSalesChannel && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>{t('enabled')}</span>}
+            <span className="nx-font-700 nx-text-base">{t('enableAsSalesChannel')}</span>
+            {form.isSalesChannel && <span className="nx-text-sm nx-font-600" style={{ color: '#16a34a' }}>{t('enabled')}</span>}
           </label>
         </div>
 
@@ -164,7 +164,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           background: form.showAsPaymentMethod ? 'transparent' : 'rgba(245,158,11,0.06)',
           transition: 'all 150ms',
         }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 0 }}>
+          <label className="nx-flex-center nx-gap-10 nx-cursor-pointer">
             <div
               onClick={() => setShowAsPaymentMethod(!form.showAsPaymentMethod)}
               style={{
@@ -179,15 +179,15 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
               }} />
             </div>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>{t('showAsPaymentMethodLabel')}</span>
+            <span className="nx-font-700 nx-text-base">{t('showAsPaymentMethodLabel')}</span>
             {!form.showAsPaymentMethod && (
-              <span style={{ fontSize: 12, color: '#d97706', fontWeight: 600 }}>{t('hiddenFromSalesPurchasesShort')}</span>
+              <span className="nx-text-sm nx-font-600" style={{ color: '#d97706' }}>{t('hiddenFromSalesPurchasesShort')}</span>
             )}
           </label>
-          <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--noorix-text-muted)', lineHeight: 1.45 }}>
+          <p className="nx-text-sm nx-text-muted" style={{ margin: '8px 0 0', lineHeight: 1.45 }}>
             {t('showAsPaymentMethodHint')}
           </p>
-          <div style={{ marginTop: 12 }}>
+          <div className="nx-mt-12">
             <Input
               type="select"
               label={t('paymentMethod')}
@@ -214,12 +214,12 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         />
 
         {saveError && (
-          <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 13 }}>
+          <div className="nx-rounded nx-text-base" style={{ padding: '8px 12px', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626' }}>
             {saveError}
           </div>
         )}
 
-        <div className="nx-toolbar" style={{ marginTop: 4 }}>
+        <div className="nx-toolbar nx-mt-4">
           <Button type="submit" variant="success" disabled={isSaving || !form.nameAr.trim()} fullWidth>
             {isSaving ? t('saving') : isEdit ? t('saveChanges') : t('addVaultBtn')}
           </Button>

@@ -77,14 +77,14 @@ export const BatchRow = memo(function BatchRow({
   return (
     <tr style={{ borderBottom: '1px solid var(--noorix-border)' }}>
       {/* # */}
-      <td style={{ ...cp, textAlign: 'center', fontSize: 11, color: 'var(--noorix-text-muted)', fontWeight: 600 }}>
+      <td className="nx-text-center nx-text-xs nx-text-muted nx-font-600" style={cp}>
         {index + 1}
       </td>
 
       {/* المورد + bookmark */}
       <td style={{ ...cp }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="nx-flex-center nx-gap-4">
+          <div className="nx-flex-1" style={{ minWidth: 0 }}>
             <SupplierSelect
               suppliers={suppliers}
               value={row.supplierId}
@@ -98,10 +98,11 @@ export const BatchRow = memo(function BatchRow({
               type="button"
               onClick={() => onBookmark(row.supplierId)}
               title={bookmarkedIds.includes(row.supplierId) ? t('removeFromShortcuts') : t('addToShortcuts')}
+              className="nx-text-md"
               style={{
                 width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6,
                 background: bookmarkedIds.includes(row.supplierId) ? 'rgba(245,158,11,0.15)' : 'var(--noorix-bg-page)',
-                fontSize: 14, flexShrink: 0,
+                flexShrink: 0,
               }}
             >
               {bookmarkedIds.includes(row.supplierId) ? '★' : '☆'}
@@ -116,7 +117,8 @@ export const BatchRow = memo(function BatchRow({
           value={row.invoiceNumber}
           onChange={(e) => onUpdate(index, 'invoiceNumber', e.target.value)}
           placeholder={t('invoiceNumberPlaceholder')}
-          style={{ ...inputSm, textAlign: 'center', width: '100%' }}
+          className="nx-text-center nx-w-full"
+          style={inputSm}
         />
       </td>
 
@@ -127,13 +129,14 @@ export const BatchRow = memo(function BatchRow({
           value={row.totalInclusive}
           onChange={(e) => onUpdate(index, 'totalInclusive', e.target.value)}
           placeholder="0"
-          style={{ ...inputSm, textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, fontSize: 13, width: '100%' }}
+          className="nx-font-700 nx-text-base nx-w-full"
+          style={{ ...inputSm, textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)' }}
         />
       </td>
 
       {/* صافي / ضريبة — خلية واحدة، سطران */}
-      <td style={{ ...cp, fontFamily: 'var(--noorix-font-numbers)', fontSize: 11, lineHeight: 1.5 }}>
-        <div style={{ color: 'var(--noorix-text-muted)' }}>{net || '—'}</div>
+      <td className="nx-text-xs" style={{ ...cp, fontFamily: 'var(--noorix-font-numbers)', lineHeight: 1.5 }}>
+        <div className="nx-text-muted">{net || '—'}</div>
         <div style={{ color: '#d97706' }}>{tax || '—'}</div>
       </td>
 
@@ -144,7 +147,8 @@ export const BatchRow = memo(function BatchRow({
           dir="ltr"
           value={row.invoiceDate}
           onChange={(e) => onUpdate(index, 'invoiceDate', e.target.value)}
-          style={{ ...inputSm, width: '100%', textAlign: 'center' }}
+          className="nx-text-center nx-w-full"
+          style={inputSm}
         />
       </td>
 
@@ -176,12 +180,13 @@ export const BatchRow = memo(function BatchRow({
       </td>
 
       {/* زر الضريبة */}
-      <td style={{ ...cp, textAlign: 'center' }}>
+      <td className="nx-text-center" style={cp}>
         <Button
           type="button"
           onClick={() => onUpdate(index, 'isTaxable', row.isTaxable !== false ? false : true)}
+          className="nx-w-full nx-text-xs nx-font-700"
           style={{
-            width: '100%', padding: '6px 2px', borderRadius: 5, fontSize: 11, fontWeight: 700,
+            padding: '6px 2px', borderRadius: 5,
             border: `1px solid ${row.isTaxable === false ? '#94a3b8' : '#d97706'}`,
             background: row.isTaxable === false ? 'var(--noorix-bg-page)' : 'rgba(217,119,6,0.08)',
             color: row.isTaxable === false ? '#64748b' : '#d97706',
@@ -197,20 +202,22 @@ export const BatchRow = memo(function BatchRow({
           value={row.notes || ''}
           onChange={(e) => onUpdate(index, 'notes', e.target.value)}
           placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? 'اسم الخدمة*' : '...'}
-          style={{ ...inputSm, width: '100%' }}
+          className="nx-w-full"
+          style={inputSm}
           title={!row.supplierId ? (t('notesRequiredForNoSupplier') || 'مطلوب بدون مورد') : ''}
         />
       </td>
 
       {/* حذف */}
-      <td style={{ ...cp, textAlign: 'center' }}>
+      <td className="nx-text-center" style={cp}>
         <Button
           type="button"
           variant="danger"
           onClick={() => onRemove(index)}
+          className="nx-flex-center nx-text-lg"
           style={{
             width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6,
-            fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
+            justifyContent: 'center', margin: '0 auto',
           }}
           title={t('delete')}
         >

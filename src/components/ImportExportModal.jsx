@@ -174,14 +174,14 @@ function ImportPhaseSteps({ phase, importing }) {
   else if (phase === 'done') active = 5;
 
   return (
-    <div style={{
-      display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6,
-      padding: '12px 14px', borderRadius: 12, border: '1px solid var(--noorix-border)',
+    <div className="nx-flex-center nx-gap-6 nx-rounded-lg" style={{
+      flexWrap: 'wrap',
+      padding: '12px 14px', border: '1px solid var(--noorix-border)',
       background: 'var(--noorix-bg)', marginBottom: 4,
     }}>
       {steps.map((s, i) => (
         <React.Fragment key={s.n}>
-          {i > 0 && <span style={{ color: 'var(--noorix-text-muted)', fontSize: 12, userSelect: 'none' }}>→</span>}
+          {i > 0 && <span className="nx-text-muted nx-text-sm nx-select-none">→</span>}
           <span style={{
             fontSize: 12, fontWeight: active === s.n ? 800 : 500,
             color: active === s.n ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
@@ -201,18 +201,14 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
   const maxRows = 150;
   const slice = validationResults.slice(0, maxRows);
   return (
-    <div style={{ marginTop: 12, borderRadius: 10, border: '1px solid var(--noorix-border)', overflow: 'hidden' }}>
-      <div style={{
-        padding: '8px 12px', fontSize: 12, fontWeight: 700,
-        background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)',
-        borderBottom: '1px solid var(--noorix-border)',
-      }}>
+    <div className="nx-mt-12 nx-overflow-hidden" style={{ borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
+      <div className="nx-bg-muted nx-text-sm nx-font-700 nx-text-muted" style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)' }}>
         معاينة البيانات (أول {Math.min(slice.length, maxRows)} صفاً من أصل {validationResults.length})
       </div>
-      <div style={{ overflowX: 'auto', maxHeight: 280 }}>
+      <div className="nx-overflow-auto" style={{ maxHeight: 280 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
-            <tr style={{ background: 'var(--noorix-bg-surface)', position: 'sticky', top: 0, zIndex: 1 }}>
+            <tr className="nx-bg-surface" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
               {['#', 'الاسم', 'تاريخ الالتحاق', 'الراتب الأساسي', 'الحالة', 'ملاحظات'].map((h) => (
                 <th key={h} style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid var(--noorix-border)', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
@@ -248,7 +244,7 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
         </table>
       </div>
       {validationResults.length > maxRows && (
-        <div style={{ padding: '6px 12px', fontSize: 11, color: 'var(--noorix-text-muted)', borderTop: '1px solid var(--noorix-border)' }}>
+        <div className="nx-text-xs nx-text-muted" style={{ padding: '6px 12px', borderTop: '1px solid var(--noorix-border)' }}>
           … و {validationResults.length - maxRows} صفاً إضافياً (كلها مضمّنة في الاستيراد عند نجاح الفحص)
         </div>
       )}
@@ -523,11 +519,11 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       closeOnBackdrop={!importing}
     >
       {lookupsLoading && (
-        <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>جارٍ تحميل بيانات النظام…</p>
+        <p className="nx-text-sm nx-text-muted" style={{ margin: '0 0 12px' }}>جارٍ تحميل بيانات النظام…</p>
       )}
 
       {/* Tabs */}
-      <div className="nx-tab-bar" style={{ marginBottom: 16 }}>
+      <div className="nx-tab-bar nx-mb-16">
         <Button type="button" className={`nx-tab-btn${activeTab === 'import' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('import')}>استيراد</Button>
         {exportFetcher && (
           <Button type="button" className={`nx-tab-btn${activeTab === 'export' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('export')}>تصدير</Button>
@@ -536,7 +532,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
       {/* ── EXPORT TAB ─────────────────────────────────────────────── */}
       {activeTab === 'export' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="nx-flex-col nx-gap-16">
           <div style={{ ...S.card, gap: 10 }}>
             <p style={{ margin: 0, fontSize: 14, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
               يتم جلب السجلات من الخادم ثم تنزيل ملف Excel باسم يتضمن تاريخ اليوم. استخدم الفلاتر في الشاشة الرئيسية (عند توفرها) لتحديد نطاق القائمة قبل التصدير.
@@ -549,7 +545,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 </p>
               </div>
             )}
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <div className="nx-flex nx-gap-10" style={{ flexWrap: 'wrap' }}>
               <Button variant="primary" onClick={handleExport} disabled={exporting} loading={exporting}>
                 {exporting ? 'جارٍ التصدير…' : 'تنزيل Excel'}
               </Button>
@@ -560,7 +556,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
       {/* ── IMPORT TAB ──────────────────────────────────────────────── */}
       {activeTab === 'import' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div className="nx-flex-col" style={{ gap: 18 }}>
           <ImportPhaseSteps phase={phase} importing={importing} />
 
           {phase !== 'done' && !importing && (
@@ -617,7 +613,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           {phase === 'validated' && !importing && (
             <div style={S.card}>
               <p style={S.sectionTitle}>الخطوة 3 — نتائج الفحص والمعاينة</p>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <div className="nx-flex-wrap nx-gap-12">
                 <StatBadge count={validCount} label="صف صحيح" color="#16a34a" />
                 {errorCount > 0 && <StatBadge count={errorCount} label="بها أخطاء" color="#dc2626" />}
                 {warnCount > 0 && <StatBadge count={warnCount} label="تحذيرات" color="#f59e0b" />}
@@ -628,7 +624,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               )}
 
               {(errorCount > 0 || warnCount > 0) && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
+                <div className="nx-flex-col nx-gap-6" style={{ maxHeight: 280, overflowY: 'auto' }}>
                   {errorsToShow.map((r) => (
                     <div key={r.rowNum}>
                       {r.errors.map((msg, j) => (
@@ -672,11 +668,11 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
             <div style={S.card}>
               <p style={S.sectionTitle}>جارٍ الاستيراد…</p>
               <ProgressBar pct={pct} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--noorix-text-muted)' }}>
+              <div className="nx-flex-between nx-text-base nx-text-muted">
                 <span>{progress.current} / {progress.total} صف</span>
                 <span>{pct}%</span>
               </div>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <div className="nx-flex-wrap nx-gap-12">
                 <StatBadge count={progress.succeeded} label="نجح" color="#16a34a" />
                 {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="#dc2626" />}
                 {(progress.warnings || []).length > 0 && (
@@ -692,7 +688,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           {phase === 'done' && !importing && (
             <div style={{ ...S.card, border: `1px solid ${progress.failed === 0 ? '#16a34a' : '#f59e0b'}40` }}>
               <p style={S.sectionTitle}>نتائج الاستيراد</p>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <div className="nx-flex-wrap nx-gap-12">
                 <StatBadge count={progress.succeeded} label="تم بنجاح" color="#16a34a" />
                 {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="#dc2626" />}
                 {(progress.warnings || []).length > 0 && (
@@ -701,7 +697,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               </div>
 
               {(progress.warnings || []).length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 200, overflowY: 'auto', marginTop: 8 }}>
+                <div className="nx-flex-col nx-mt-8" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
                   {(progress.warnings || []).slice(0, 20).map((w, i) => (
                     <div key={i} style={S.warnRow}>
                       <span style={{ fontWeight: 700, color: '#d97706' }}>صف {w.rowNum}</span>
@@ -718,7 +714,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               )}
 
               {progress.errors.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 200, overflowY: 'auto' }}>
+                <div className="nx-flex-col" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
                   {progress.errors.slice(0, 20).map((e, i) => (
                     <div key={i} style={S.errorRow}>
                       <span style={{ fontWeight: 700, color: '#dc2626' }}>صف {e.rowNum}</span>
@@ -734,7 +730,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div className="nx-flex nx-gap-10">
                 <Button variant="primary" onClick={onClose}>إغلاق</Button>
                 <Button onClick={() => { setPhase('idle'); setParsedRows([]); setValidationResults([]); setProgress({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [], warnings: [] }); }}>
                   استيراد ملف آخر

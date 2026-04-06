@@ -435,10 +435,10 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       size="xl"
       footer={
         <>
-          <div style={{ fontWeight: 800, fontSize: 'clamp(15px, 2.4vw, 17px)', fontFamily: 'var(--noorix-font-numbers)' }}>
+          <div className="nx-font-800" style={{ fontSize: 'clamp(15px, 2.4vw, 17px)', fontFamily: 'var(--noorix-font-numbers)' }}>
             {t('payrollTotal')}: {hrFmt(totalNet)}
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div className="nx-flex nx-gap-10 nx-flex-wrap">
             <Button variant="ghost" onClick={onClose}>
               {t('cancel')}
             </Button>
@@ -446,7 +446,8 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
               variant="primary"
               onClick={handleSubmit}
               disabled={submitting || items.length === 0 || alreadyExists}
-              style={{ minWidth: 120, fontWeight: 700 }}
+              className="nx-font-700"
+              style={{ minWidth: 120 }}
             >
               {primaryLabel}
             </Button>
@@ -456,12 +457,12 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     >
       <form className="prfm-modal-form" onSubmit={handleSubmit}>
         <div style={{ padding: '4px 0 12px' }}>
-          <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6, maxWidth: '72ch' }}>
+          <p className="nx-text-base nx-text-muted" style={{ margin: '0 0 14px', lineHeight: 1.6, maxWidth: '72ch' }}>
             {t('payrollGrossFixedPackageHint')}
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)', gap: 16 }}>
+          <div className="nx-grid nx-gap-16" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)' }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('payrollMonth')}</label>
+              <label className="nx-text-sm nx-font-600 nx-text-muted nx-mb-6" style={{ display: 'block' }}>{t('payrollMonth')}</label>
               <Input
                 type="month"
                 className="prfm-modal-field"
@@ -469,13 +470,13 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 onChange={(e) => setPayrollMonth(e.target.value ? `${e.target.value}-01` : defaultMonth)}
               />
               {alreadyExists && (
-                <span style={{ fontSize: 12, color: 'var(--noorix-accent-amber)', marginTop: 6, display: 'block', fontWeight: 600 }}>
+                <span className="nx-text-sm nx-font-600 nx-mt-6" style={{ color: 'var(--noorix-accent-amber)', display: 'block' }}>
                   {t('payrollMonthExists') || 'مسيرة لهذا الشهر موجودة'}
                 </span>
               )}
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--noorix-text-muted)' }}>{t('notes')}</label>
+              <label className="nx-text-sm nx-font-600 nx-text-muted nx-mb-6" style={{ display: 'block' }}>{t('notes')}</label>
               <Input
                 type="text"
                 className="prfm-modal-field"
@@ -488,17 +489,13 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
         </div>
 
         <div
+          className="nx-flex-between nx-gap-10 nx-flex-wrap"
           style={{
             padding: '14px 0 10px',
             flexShrink: 0,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 10,
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 700 }}>{t('employeesList')} ({items.length})</span>
+          <span className="nx-text-md nx-font-700">{t('employeesList')} ({items.length})</span>
           <Button type="button" onClick={isEditMode ? loadEditingItems : initItems}>
             {t('refresh') || 'تحديث'}
           </Button>
@@ -514,7 +511,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 <th>{t('payrollAllowances')}</th>
                 <th>{t('payrollDeductions')}</th>
                 <th>{t('payrollAdvances')}</th>
-                <th style={{ textAlign: 'center' }}>{t('payrollDeferAdvanceDeduct')}</th>
+                <th className="nx-text-center">{t('payrollDeferAdvanceDeduct')}</th>
                 <th>{t('netSalary')}</th>
               </tr>
             </thead>
@@ -538,10 +535,10 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                     </td>
                     {included ? (
                       <>
-                        <td style={{ color: 'var(--noorix-text-muted)', fontSize: 12, maxWidth: 160, lineHeight: 1.45 }} title={items[idx].advanceDates || ''}>
+                        <td className="nx-text-muted nx-text-sm" style={{ maxWidth: 160, lineHeight: 1.45 }} title={items[idx].advanceDates || ''}>
                           {items[idx].advanceDates || '—'}
                         </td>
-                        <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>{hrFmt(items[idx].grossSalary)}</td>
+                        <td className="nx-font-600 nx-text-md" style={{ fontFamily: 'var(--noorix-font-numbers)', whiteSpace: 'nowrap' }}>{hrFmt(items[idx].grossSalary)}</td>
                         <td>
                           <Input
                             type="number"
@@ -582,7 +579,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             aria-label={t('payrollAdvances')}
                           />
                         </td>
-                        <td style={{ textAlign: 'center' }}>
+                        <td className="nx-text-center">
                           <label className="nx-checkbox" style={{ justifyContent: 'center', padding: '6px 4px' }}>
                             <input
                               type="checkbox"
@@ -593,10 +590,10 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             />
                           </label>
                         </td>
-                        <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, fontSize: 14, whiteSpace: 'nowrap' }}>{hrFmt(items[idx].netSalary)}</td>
+                        <td className="nx-font-800 nx-text-md" style={{ fontFamily: 'var(--noorix-font-numbers)', whiteSpace: 'nowrap' }}>{hrFmt(items[idx].netSalary)}</td>
                       </>
                     ) : (
-                      <td colSpan={7} style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>
+                      <td colSpan={7} className="nx-text-muted nx-text-base">
                         —
                       </td>
                     )}
@@ -609,15 +606,13 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
         {error && (
           <div
+            className="nx-text-base nx-font-600 nx-mt-12"
             style={{
-              margin: '12px 0 0',
               padding: '12px 14px',
               background: 'rgba(239,68,68,0.12)',
               borderRadius: 10,
               border: '1px solid rgba(239,68,68,0.25)',
               color: 'var(--noorix-accent-red)',
-              fontSize: 13,
-              fontWeight: 600,
               flexShrink: 0,
             }}
             role="alert"

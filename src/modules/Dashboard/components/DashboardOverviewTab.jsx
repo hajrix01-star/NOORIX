@@ -125,7 +125,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   if (!companyId) {
     return (
-      <div className="noorix-surface-card" style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+      <div className="noorix-surface-card nx-p-24 nx-text-center nx-text-muted">
         {t('pleaseSelectCompany')}
       </div>
     );
@@ -133,7 +133,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   if (isLoading) {
     return (
-      <div className="noorix-surface-card" style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+      <div className="noorix-surface-card nx-p-24 nx-text-center nx-text-muted">
         {t('loading')}
       </div>
     );
@@ -148,7 +148,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="nx-flex nx-flex-col nx-gap-24">
       <PeriodAnalyticsStrip
         companyId={companyId}
         year={year}
@@ -203,23 +203,23 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           padding: 24,
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--noorix-text)' }}>
+        <div className="nx-flex nx-flex-between nx-flex-wrap nx-gap-8" style={{ marginBottom: 20 }}>
+          <div className="nx-text-lg nx-font-700">
             {t('dashboardSalesTimeline')} — {filter?.label || year}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>
+          <div className="nx-text-xs nx-text-muted">
             {isDailyChart ? t('reportMonthTotal') : t('reportAnnualTotal')}: <strong style={{ fontFamily: 'var(--noorix-font-numbers)', color: CARD_COLORS.sales.accent }}>{moneyText(chartData.reduce((s, p) => s + p.amount, 0))}</strong>
           </div>
         </div>
 
         {chartData.length === 0 || chartData.every((p) => p.amount === 0) ? (
-          <div style={{ minHeight: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--noorix-text-muted)', gap: 8 }}>
+          <div className="nx-flex nx-flex-col nx-flex-center nx-text-muted nx-gap-8" style={{ minHeight: 220 }}>
             <div style={{ fontSize: 32, opacity: 0.3 }}></div>
-            <div style={{ fontSize: 13 }}>{t('noDataInPeriod')}</div>
+            <div className="nx-text-base">{t('noDataInPeriod')}</div>
           </div>
         ) : (
           <>
-        <div style={{ display: 'flex', gap: 0, minHeight: 220 }}>
+        <div className="nx-flex" style={{ gap: 0, minHeight: 220 }}>
           {/* Y-axis */}
           <div style={{ flexShrink: 0, width: 52, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 28 }}>
             {[...yAxisTicks].reverse().map((tick) => (
@@ -230,7 +230,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           </div>
 
           {/* Chart area with grid */}
-          <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+          <div className="nx-flex-1" style={{ minWidth: 0, position: 'relative' }}>
             {/* Grid lines */}
             <div style={{ position: 'absolute', inset: 0, top: 0, bottom: 32, left: 0, right: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
               {yAxisTicks.slice(1).map((_, i) => (
@@ -239,7 +239,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
             </div>
 
             {/* Bars */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 180, paddingBottom: 28 }}>
+            <div className="nx-flex nx-gap-6" style={{ alignItems: 'flex-end', height: 180, paddingBottom: 28 }}>
               {chartData.map((point) => {
                 const barHeightPct = maxSales > 0 ? (point.amount / maxSales) * 100 : 0;
                 const pointKey = point.month ?? point.day;
@@ -247,7 +247,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                 return (
                   <div
                     key={pointKey}
-                    style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 0, position: 'relative' }}
+                    className="nx-flex-1 nx-flex nx-flex-col nx-gap-4"
+                    style={{ alignItems: 'center', minWidth: 0, position: 'relative' }}
                     onMouseEnter={() => setHoveredPoint(pointKey)}
                     onMouseLeave={() => setHoveredPoint(null)}
                   >
@@ -298,7 +299,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                         }}
                       />
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>{point.label}</div>
+                    <div className="nx-text-muted nx-font-600 nx-nowrap" style={{ fontSize: 10 }}>{point.label}</div>
                   </div>
                 );
               })}
@@ -307,7 +308,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
         </div>
 
         {/* X-axis label */}
-        <div style={{ marginTop: 8, paddingRight: 52, fontSize: 11, color: 'var(--noorix-text-muted)', textAlign: 'center' }}>
+        <div className="nx-mt-8 nx-text-xs nx-text-muted nx-text-center" style={{ paddingRight: 52 }}>
           {isDailyChart ? `${t('reportYear')} ${year} — ${EN_MONTHS[month - 1]} — ${t('revenueGroup')}` : `${t('reportYear')} ${year} — ${t('revenueGroup')}`}
         </div>
           </>

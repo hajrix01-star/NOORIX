@@ -104,19 +104,19 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
         </>
       }
     >
-      <div className="invoice-edit-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <p style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+      <div className="invoice-edit-modal-body nx-flex nx-flex-col nx-gap-14">
+        <p className="nx-text-sm nx-text-muted nx-m-0 nx-mb-4">
           {invoice.supplierInvoiceNumber || invoice.invoiceNumber}
         </p>
 
         {error && (
-          <div style={{ padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#dc2626', fontSize: 13 }}>
+          <div className="nx-p-10 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>
             {error}
           </div>
         )}
 
         <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{t('supplier')}</label>
+          <label className="nx-text-sm nx-font-600 nx-mb-4" style={{ display: 'block' }}>{t('supplier')}</label>
           <SupplierSelect
             suppliers={suppliers}
             value={form.supplierId}
@@ -154,7 +154,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
             style={{ fontFamily: 'var(--noorix-font-numbers)' }}
           />
           {form.totalAmount && parseFloat(form.totalAmount) > 0 && (
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
+            <div className="nx-text-sm nx-text-muted nx-mt-4">
               {t('netShort')}: {form.netAmount} | {t('tax')}: {form.taxAmount}
             </div>
           )}

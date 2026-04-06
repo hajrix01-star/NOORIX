@@ -231,11 +231,11 @@ export default function TaxReportTab() {
   };
 
   return (
-    <div style={{ display: 'grid', gap: 24 }}>
+    <div className="nx-grid nx-gap-24">
       <div className="nx-page-header">
         <div>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{lang === 'ar' ? 'تقرير الضرائب — نموذج الإفصاح الضريبي' : 'Tax Report — ZATCA Disclosure Form'}</h2>
-          <p style={{ marginTop: 6, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
+          <h2 className="nx-text-2xl nx-font-700" style={{ margin: 0 }}>{lang === 'ar' ? 'تقرير الضرائب — نموذج الإفصاح الضريبي' : 'Tax Report — ZATCA Disclosure Form'}</h2>
+          <p className="nx-mt-6 nx-text-base nx-text-muted">
             {lang === 'ar' ? 'مطابق لنموذج مصلحة الزكاة والضريبة والجمارك. جميع الحقول قابلة للتعديل.' : 'Matches ZATCA tax disclosure form. All fields are editable.'}
           </p>
         </div>
@@ -255,111 +255,111 @@ export default function TaxReportTab() {
       </div>
 
       {!activeCompanyId ? (
-        <div className="noorix-surface-card" style={{ padding: 20, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+        <div className="noorix-surface-card nx-p-20 nx-text-center nx-text-muted">
           {t('pleaseSelectCompany')}
         </div>
       ) : (
-        <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: 16, borderBottom: '1px solid var(--noorix-border)', background: 'rgba(37,99,235,0.04)' }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--noorix-accent-blue)' }}>{companyName}</div>
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
+        <div className="noorix-surface-card nx-overflow-hidden" style={{ padding: 0 }}>
+          <div className="nx-p-16 nx-border-b" style={{ background: 'rgba(37,99,235,0.04)' }}>
+            <div className="nx-text-md nx-font-700 nx-text-blue">{companyName}</div>
+            <div className="nx-text-sm nx-text-muted nx-mt-4">
               {lang === 'ar' ? 'نموذج الإفصاح الضريبي — ضريبة القيمة المضافة' : 'VAT Tax Disclosure Form'} — {periodKey}
             </div>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', minWidth: 700, borderCollapse: 'collapse', fontSize: 14 }}>
+          <div className="nx-overflow-x-auto">
+            <table className="nx-w-full" style={{ minWidth: 700, borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'var(--noorix-table-header-bg)', fontWeight: 700, width: 280 }}>
+                  <th className="nx-text-end nx-border-b nx-font-700" style={{ padding: '10px 12px', background: 'var(--noorix-table-header-bg)', width: 280 }}>
                     {t('reportItem')}
                   </th>
-                  <th style={{ textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'var(--noorix-table-header-bg)', fontWeight: 700 }}>
+                  <th className="nx-text-center nx-border-b nx-font-700" style={{ padding: '10px 12px', background: 'var(--noorix-table-header-bg)' }}>
                     {lang === 'ar' ? 'المبلغ (ر.س)' : 'Amount (SAR)'}
                   </th>
-                  <th style={{ textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'var(--noorix-table-header-bg)', fontWeight: 700 }}>
+                  <th className="nx-text-center nx-border-b nx-font-700" style={{ padding: '10px 12px', background: 'var(--noorix-table-header-bg)' }}>
                     {lang === 'ar' ? 'التعديلات (ر.س)' : 'Adjustments (SAR)'}
                   </th>
-                  <th style={{ textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'var(--noorix-table-header-bg)', fontWeight: 700 }}>
+                  <th className="nx-text-center nx-border-b nx-font-700" style={{ padding: '10px 12px', background: 'var(--noorix-table-header-bg)' }}>
                     {lang === 'ar' ? 'ضريبة القيمة المضافة (ر.س)' : 'VAT (SAR)'}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td colSpan={4} style={{ padding: '10px 12px', background: 'rgba(22,163,74,0.06)', fontWeight: 700, color: '#16a34a' }}>
+                  <td colSpan={4} className="nx-font-700" style={{ padding: '10px 12px', background: 'rgba(22,163,74,0.06)', color: '#16a34a' }}>
                     {lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)'}
                   </td>
                 </tr>
                 {OUTPUT_ROWS.map((r) => (
                   <tr key={r.key} style={{ background: r.isTotal ? 'rgba(15,23,42,0.04)' : undefined }}>
-                    <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', fontWeight: r.isTotal ? 700 : 500 }}>
+                    <td className="nx-border-b" style={{ padding: '10px 12px', fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
-                    <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center' }}>
+                    <td className="nx-text-center nx-border-b" style={{ padding: '8px 12px' }}>
                       {r.isTotal ? fmt(outputTotal, 2) : renderEditableCell(r.key, 'amount')}
                     </td>
-                    <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center' }}>
+                    <td className="nx-text-center nx-border-b" style={{ padding: '8px 12px' }}>
                       {r.isTotal ? '—' : renderEditableCell(r.key, 'adjustment')}
                     </td>
-                    <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', fontFamily: 'var(--noorix-font-numbers)' }}>
+                    <td className="nx-text-center nx-border-b nx-font-numbers" style={{ padding: '8px 12px' }}>
                       {r.isTotal ? fmt(outputTotal, 2) : renderEditableCell(r.key, 'vat')}
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} style={{ padding: '10px 12px', background: 'rgba(220,38,38,0.06)', fontWeight: 700, color: '#dc2626' }}>
+                  <td colSpan={4} className="nx-font-700" style={{ padding: '10px 12px', background: 'rgba(220,38,38,0.06)', color: '#dc2626' }}>
                     {lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)'}
                   </td>
                 </tr>
                 {INPUT_ROWS.map((r) => (
                   <tr key={r.key} style={{ background: r.isTotal ? 'rgba(15,23,42,0.04)' : undefined }}>
-                    <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', fontWeight: r.isTotal ? 700 : 500 }}>
+                    <td className="nx-border-b" style={{ padding: '10px 12px', fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
-                    <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center' }}>
+                    <td className="nx-text-center nx-border-b" style={{ padding: '8px 12px' }}>
                       {r.isTotal ? fmt(inputTotal, 2) : renderEditableCell(r.key, 'amount')}
                     </td>
-                    <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center' }}>
+                    <td className="nx-text-center nx-border-b" style={{ padding: '8px 12px' }}>
                       {r.isTotal ? '—' : renderEditableCell(r.key, 'adjustment')}
                     </td>
-                    <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', fontFamily: 'var(--noorix-font-numbers)' }}>
+                    <td className="nx-text-center nx-border-b nx-font-numbers" style={{ padding: '8px 12px' }}>
                       {r.isTotal ? fmt(inputTotal, 2) : renderEditableCell(r.key, 'vat')}
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} style={{ padding: '10px 12px', background: 'rgba(37,99,235,0.06)', fontWeight: 700, color: '#2563eb' }}>
+                  <td colSpan={4} className="nx-font-700" style={{ padding: '10px 12px', background: 'rgba(37,99,235,0.06)', color: '#2563eb' }}>
                     {lang === 'ar' ? 'الملخص' : 'Summary'}
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)' }}>{lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td>
-                  <td colSpan={3} style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(outputTotal, 2)} ر.س</td>
+                  <td className="nx-border-b" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td>
+                  <td colSpan={3} className="nx-border-b nx-text-end nx-font-numbers" style={{ padding: '10px 12px' }}>{fmt(outputTotal, 2)} ر.س</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)' }}>{lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable'}</td>
-                  <td colSpan={3} style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(inputTotal, 2)} ر.س</td>
+                  <td className="nx-border-b" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable'}</td>
+                  <td colSpan={3} className="nx-border-b nx-text-end nx-font-numbers" style={{ padding: '10px 12px' }}>{fmt(inputTotal, 2)} ر.س</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)' }}>{lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td>
-                  <td colSpan={3} style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700 }}>{fmt(netVat, 2)} ر.س</td>
+                  <td className="nx-border-b" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td>
+                  <td colSpan={3} className="nx-border-b nx-text-end nx-font-numbers nx-font-700" style={{ padding: '10px 12px' }}>{fmt(netVat, 2)} ر.س</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)' }}>{lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td>
-                  <td colSpan={3} style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center' }}>
+                  <td className="nx-border-b" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td>
+                  <td colSpan={3} className="nx-border-b nx-text-center" style={{ padding: '8px 12px' }}>
                     <Input type="text" inputMode="decimal" value={priorAdj || ''} onChange={(e) => updateRow('prior_adjustments', null, e.target.value)} placeholder="0" />
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--noorix-border)' }}>{lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td>
-                  <td colSpan={3} style={{ padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center' }}>
+                  <td className="nx-border-b" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td>
+                  <td colSpan={3} className="nx-border-b nx-text-center" style={{ padding: '8px 12px' }}>
                     <Input type="text" inputMode="decimal" value={balanceCarried || ''} onChange={(e) => updateRow('balance_carried', null, e.target.value)} placeholder="0" />
                   </td>
                 </tr>
                 <tr style={{ background: 'rgba(37,99,235,0.08)', borderTop: '2px solid var(--noorix-accent-blue)' }}>
-                  <td style={{ padding: '12px 12px', fontWeight: 800 }}>{lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td>
-                  <td colSpan={3} style={{ padding: '12px 12px', textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, color: netPayable >= 0 ? '#dc2626' : '#16a34a' }}>
+                  <td className="nx-font-800" style={{ padding: '12px 12px' }}>{lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td>
+                  <td colSpan={3} className="nx-text-end nx-font-numbers nx-font-800" style={{ padding: '12px 12px', color: netPayable >= 0 ? '#dc2626' : '#16a34a' }}>
                     {fmt(netPayable, 2)} ر.س {netPayable >= 0 ? (lang === 'ar' ? '(مستحقة)' : '(payable)') : (lang === 'ar' ? '(مطالب بها)' : '(refundable)')}
                   </td>
                 </tr>

@@ -83,7 +83,7 @@ export default function DashboardScreen() {
       </div>
 
       {/* بطاقة التبويبات */}
-      <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="noorix-surface-card nx-overflow-hidden" style={{ padding: 0 }}>
         <div className="nx-tab-bar">
           {DASHBOARD_TABS.map((tab) => (
             <Button

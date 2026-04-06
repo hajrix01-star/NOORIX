@@ -38,9 +38,9 @@ export default function ExpenseLineList({
       render: (v, row) => (
         <Button
           variant="ghost"
-          className="expense-line-name-btn"
+          className="expense-line-name-btn nx-font-600"
           onClick={() => onLineClick(row)}
-          style={{ padding: 0, color: 'var(--noorix-accent-blue)', fontWeight: 600, textAlign: 'inherit', fontSize: 'inherit' }}
+          style={{ padding: 0, color: 'var(--noorix-accent-blue)', textAlign: 'inherit', fontSize: 'inherit' }}
         >
           {v || row.nameEn || '—'}
         </Button>
@@ -89,20 +89,20 @@ export default function ExpenseLineList({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <Button
             variant="ghost"
-            className="expense-line-name-btn"
+            className="expense-line-name-btn nx-font-700 nx-text-md nx-text-start"
             onClick={() => onLineClick(row)}
-            style={{ padding: 0, color: 'var(--noorix-accent-blue)', fontWeight: 700, fontSize: 14, textAlign: 'start' }}
+            style={{ padding: 0, color: 'var(--noorix-accent-blue)' }}
           >
             {row.nameAr || row.nameEn || '—'}
           </Button>
           <Badge {...Badge.fromStatus(row.kind, KIND_STATUS_MAP)} size="sm" />
         </div>
-        <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div className="nx-text-sm nx-text-muted nx-mb-8 nx-flex nx-flex-wrap nx-gap-10">
           {row.categoryName && row.categoryName !== '—' && <span>{row.categoryName}</span>}
           {row.supplierName && row.supplierName !== '—' && <span>{row.supplierName}</span>}
           {row.serviceNumber && <span className="nx-cell-num">#{row.serviceNumber}</span>}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <div className="nx-flex nx-gap-8" style={{ justifyContent: 'flex-end' }}>
           <Button size="sm" onClick={() => onEditLine?.(row)}>تعديل</Button>
           <Button size="sm" variant="danger" onClick={() => onDeleteLine?.(row)}>حذف</Button>
         </div>
@@ -130,7 +130,7 @@ export default function ExpenseLineList({
 
   return (
     <div>
-      <div className="nx-toolbar" style={{ marginBottom: 16 }}>
+      <div className="nx-toolbar nx-mb-16">
         <Input
           type="select"
           value={filterKind}

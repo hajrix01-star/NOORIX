@@ -186,7 +186,7 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
               </Button>
             )}
           </div>
-          <div style={{ width: '100%', marginTop: 8 }}>
+          <div className="nx-w-full nx-mt-8">
             <div style={{ position: 'relative' }}>
               <Button
                 ref={coDropBtnRef}
@@ -199,21 +199,20 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                   minHeight: 44, cursor: showCompanySwitcher ? 'pointer' : 'default',
                 }}
               >
-                <div style={{
-                  width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                <div className="nx-rounded nx-font-800 nx-text-base nx-overflow-hidden" style={{
+                  width: 30, height: 30, flexShrink: 0,
                   background: activeCo?.logoUrl ? 'transparent' : 'linear-gradient(135deg, rgba(37,99,235,0.9) 0%, rgba(16,163,74,0.7) 100%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, fontSize: 13, color: '#fff', letterSpacing: '-0.02em',
-                  overflow: 'hidden',
+                  color: '#fff', letterSpacing: '-0.02em',
                 }}>
                   {activeCo?.logoUrl
-                    ? <img src={activeCo.logoUrl} alt={coName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ? <img src={activeCo.logoUrl} alt={coName} className="nx-w-full" style={{ height: '100%', objectFit: 'cover' }} />
                     : initial
                   }
                 </div>
-                <div style={{ flex: 1, minWidth: 0, textAlign: 'start' }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{t('activeCompany')}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{coName}</div>
+                <div className="nx-flex-1" style={{ textAlign: 'start' }}>
+                  <div className="nx-text-xs" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{t('activeCompany')}</div>
+                  <div className="nx-text-base nx-font-700" style={{ color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{coName}</div>
                 </div>
                 {showCompanySwitcher && (
                   <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" width="14" height="14" style={{ flexShrink: 0, transition: 'transform 150ms', transform: coDropOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
@@ -225,12 +224,12 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                 <div
                   ref={coDropMenuRef}
                   role="listbox"
+                  className="nx-bg-surface"
                   style={{
                     position: 'fixed', zIndex: 99999,
                     top: coDropPos.top, left: coDropPos.left,
                     width: coDropPos.width, maxHeight: 240,
                     overflowY: 'auto', borderRadius: 10,
-                    background: 'var(--noorix-bg-surface)',
                     border: '1px solid var(--noorix-border)',
                     boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
                   }}
@@ -344,8 +343,8 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
           </>
         }
       >
-        <div style={{ textAlign: 'center', fontSize: 36, marginBottom: 8 }}></div>
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--noorix-text)', lineHeight: 1.6 }}>
+        <div className="nx-text-center nx-mb-8" style={{ fontSize: 36 }}></div>
+        <p className="nx-m-0 nx-text-md nx-text-primary" style={{ lineHeight: 1.6 }}>
           {t('switchCompanyConfirmBody')} <strong>{pendingName}</strong>؟
         </p>
       </Modal>

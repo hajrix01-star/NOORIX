@@ -109,24 +109,25 @@ export function SalesEntryModal({
           </>
         }
       >
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-          <p style={{ margin: '0 0 16px', fontSize: 14, color: 'var(--noorix-text-muted)' }}>
+        <div className="nx-text-center">
+          <div className="nx-mb-12" style={{ fontSize: 48 }}>✅</div>
+          <p className="nx-text-md nx-text-muted nx-m-0 nx-mb-16">
             {t('summaryNumber')}: <strong style={{ color: 'var(--noorix-accent-blue)' }}>{savedSummary.summaryNumber}</strong>
           </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('total')}</div>
+          <div className="nx-flex nx-gap-16 nx-mb-20" style={{ justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="nx-text-center">
+              <div className="nx-text-xs nx-text-muted">{t('total')}</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedSummary.totalAmount, 2)} ﷼</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('customers')}</div>
+            <div className="nx-text-center">
+              <div className="nx-text-xs nx-text-muted">{t('customers')}</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#2563eb' }}>{savedSummary.customerCount}</div>
             </div>
           </div>
           <Button
             variant="success"
-            style={{ width: '100%', maxWidth: 280 }}
+            className="nx-w-full"
+            style={{ maxWidth: 280 }}
             onClick={() => onWhatsApp?.(savedSummary)}
           >
             {t('sendWhatsApp')} — {t('salesDailySummary')}
@@ -148,7 +149,7 @@ export function SalesEntryModal({
             variant="success"
             disabled={createSummary.isPending || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || salesChannels.length === 0 || !customerCount || parseInt(customerCount, 10) <= 0}
             onClick={handleSave}
-            style={{ flex: 1 }}
+            className="nx-flex-1"
           >
             {createSummary.isPending ? t('saving') : t('saveSummary')}
           </Button>
@@ -156,33 +157,33 @@ export function SalesEntryModal({
         </>
       }
     >
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 14, marginBottom: 18 }}>
+      <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', marginBottom: 18 }}>
         <Input type="date" label={t('transactionDate')} value={txDate} onChange={(e) => setTxDate(e.target.value)} />
         <Input type="number" min="0" label={t('customerCount')} required value={customerCount} onChange={(e) => setCustomerCount(e.target.value)} placeholder="0" />
         <Input type="number" min="0" step="0.01" label={t('cashOnHand')} value={cashOnHand} onChange={(e) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
 
       <div style={{ marginBottom: 18 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{t('salesChannels')}</label>
+        <label className="nx-text-base nx-font-700 nx-mb-8" style={{ display: 'block' }}>{t('salesChannels')}</label>
         {salesChannelsLoading ? (
-          <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
+          <div className="nx-p-16 nx-text-center nx-text-muted nx-text-base" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
             {t('loading')}
           </div>
         ) : salesChannelsError ? (
-          <div style={{ padding: 16, textAlign: 'center', color: '#b91c1c', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
+          <div className="nx-p-16 nx-text-center nx-text-base nx-font-600" style={{ color: '#b91c1c', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10 }}>
             {salesChannelsError}
           </div>
         ) : salesChannels.length === 0 ? (
-          <div style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', border: '2px dashed var(--noorix-border)', borderRadius: 10, fontSize: 13 }}>
+          <div className="nx-p-16 nx-text-center nx-text-muted nx-text-base" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
             {t('noSalesChannels')}
           </div>
         ) : (
-          <div className="sales-channels-grid" style={{ display: 'grid', gap: 8 }}>
+          <div className="sales-channels-grid nx-grid nx-gap-8">
             {salesChannels.map((v) => {
               const amt = channelAmounts[v.id] || '';
               return (
-                <div key={v.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--noorix-text-muted)' }}>{vaultDisplayName(v, lang)}</label>
+                <div key={v.id} className="nx-flex-col nx-gap-4">
+                  <label className="nx-text-sm nx-font-600 nx-text-muted">{vaultDisplayName(v, lang)}</label>
                   <Input
                     type="number"
                     min="0"
@@ -190,7 +191,8 @@ export function SalesEntryModal({
                     value={amt}
                     onChange={(e) => setChannelAmounts((p) => ({ ...p, [v.id]: e.target.value }))}
                     placeholder="0.00"
-                    style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, fontSize: 14, fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', border: '1px solid var(--noorix-border)', background: 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}
+                    className="nx-w-full nx-rounded nx-text-md nx-bg-surface nx-text-primary"
+                    style={{ boxSizing: 'border-box', padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', border: '1px solid var(--noorix-border)' }}
                   />
                 </div>
               );
@@ -203,7 +205,7 @@ export function SalesEntryModal({
         <Input multiline label={t('notes')} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder={t('notesPlaceholder')} style={{ resize: 'vertical' }} />
       </div>
 
-      <div className={`noorix-summary-bar noorix-summary-bar--${vatEnabled && totalAmount.gt(0) ? '5' : '3'}`} style={{ marginBottom: 8 }}>
+      <div className={`noorix-summary-bar noorix-summary-bar--${vatEnabled && totalAmount.gt(0) ? '5' : '3'} nx-mb-8`}>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">{t('totalLabel')}</div>
           <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount, 2)} ﷼</div>

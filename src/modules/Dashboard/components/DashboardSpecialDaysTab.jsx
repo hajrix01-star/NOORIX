@@ -75,7 +75,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
 
   if (!companyId) {
     return (
-      <div className="noorix-surface-card" style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+      <div className="noorix-surface-card nx-p-24 nx-text-center nx-text-muted">
         {t('pleaseSelectCompany')}
       </div>
     );
@@ -84,15 +84,15 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   return (
     <div style={{ maxWidth: 560 }}>
       <div style={{ marginBottom: 20 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{t('dashboardSpecialDays')} — {monthLabel} {year}</h3>
-        <p style={{ marginTop: 6, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('dashboardSpecialDaysDesc')}</p>
+        <h3 className="nx-m-0 nx-text-xl nx-font-700">{t('dashboardSpecialDays')} — {monthLabel} {year}</h3>
+        <p className="nx-mt-6 nx-text-base nx-text-muted">{t('dashboardSpecialDaysDesc')}</p>
       </div>
 
       {showForm && (
         <div style={{ padding: 20, marginBottom: 20, background: 'var(--noorix-bg-muted)', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
           <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('dashboardSpecialDaysFromTo')}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div className="nx-flex nx-flex-col nx-gap-12">
+            <div className="nx-flex nx-flex-wrap nx-gap-12" style={{ alignItems: 'flex-start' }}>
               <div style={{ flex: 1, minWidth: 140 }}>
                 <Input type="date" label={t('dateFilterFrom')} value={newFrom} onChange={(e) => setNewFrom(e.target.value)} />
               </div>
@@ -106,7 +106,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
               onChange={(e) => setNewName(e.target.value)}
               placeholder={t('dashboardSpecialDayName')}
             />
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="nx-flex nx-gap-8">
               <Button variant="primary" onClick={handleAdd}>{t('save')}</Button>
               <Button onClick={() => { setShowForm(false); setNewFrom(startDate); setNewTo(endDate); setNewName(''); }}>{t('cancel')}</Button>
             </div>
@@ -120,9 +120,9 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         </Button>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="nx-flex nx-flex-col nx-gap-10">
         {specialDaysList.map((sp) => (
-          <div key={sp.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', borderRadius: 10 }}>
+          <div key={sp.id} className="nx-flex nx-gap-12 nx-p-14 nx-bg-surface nx-border-all nx-rounded" style={{ alignItems: 'center' }}>
             <div style={{ width: 12, height: 12, borderRadius: 6, background: sp.color || '#8b5cf6', flexShrink: 0 }} />
             {editingId === sp.id ? (
               <>
@@ -137,8 +137,8 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
               </>
             ) : (
               <>
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 600, cursor: 'pointer' }} onClick={() => { setEditingId(sp.id); setEditingName(sp.name || ''); }} title={t('edit')}>{sp.name || '—'}</span>
-                <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{sp.fromDate} — {sp.toDate}</span>
+                <span className="nx-flex-1 nx-text-md nx-font-600 nx-cursor-pointer" onClick={() => { setEditingId(sp.id); setEditingName(sp.name || ''); }} title={t('edit')}>{sp.name || '—'}</span>
+                <span className="nx-text-sm nx-text-muted">{sp.fromDate} — {sp.toDate}</span>
                 <Button variant="danger" onClick={() => handleRemove(sp.id)}>✕</Button>
               </>
             )}

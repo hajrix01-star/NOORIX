@@ -61,43 +61,43 @@ export default function TaxSettingsTab() {
 
   if (!activeCompanyId) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>—</div>
-        <p style={{ margin: 0, fontSize: 14 }}>يجب اختيار شركة أولاً من القائمة العلوية.</p>
+      <div className="nx-text-center nx-text-muted" style={{ padding: 32 }}>
+        <div className="nx-mb-12" style={{ fontSize: 40 }}>—</div>
+        <p className="nx-text-md nx-m-0">يجب اختيار شركة أولاً من القائمة العلوية.</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>
+      <div className="nx-text-center nx-text-muted" style={{ padding: 32 }}>
         جاري التحميل...
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'grid', gap: 24, maxWidth: 480 }}>
+    <div className="nx-grid nx-gap-24" style={{ maxWidth: 480 }}>
       <div>
-        <h3 style={{ margin: '0 0 8px', fontSize: 18 }}>إعدادات الضريبة</h3>
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
+        <h3 className="nx-text-2xl" style={{ margin: '0 0 8px' }}>إعدادات الضريبة</h3>
+        <p className="nx-text-base nx-text-muted nx-m-0">
           تفعيل ضريبة القيمة المضافة للمبيعات ونسبة الضريبة المستخدمة في الحسابات.
         </p>
       </div>
 
-      <div className="noorix-surface-card" style={{ padding: 20, borderRadius: 12 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="noorix-surface-card nx-p-20 nx-rounded-lg">
+        <div className="nx-flex nx-flex-col nx-gap-12">
           {/* مفتاح التفعيل */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
+          <div className="nx-flex nx-flex-between nx-border-all nx-rounded-lg nx-bg-surface" style={{ padding: '12px 14px' }}>
             <label style={{ ...labelStyle, margin: 0, fontWeight: 600 }}>تفعيل ضريبة القيمة المضافة للمبيعات</label>
-            <label className="nx-checkbox" style={{ margin: 0 }}>
+            <label className="nx-checkbox nx-m-0">
               <input
                 type="checkbox"
                 checked={vatEnabled}
                 onChange={(e) => setVatEnabled(e.target.checked)}
                 style={{ width: 18, height: 18, accentColor: 'var(--noorix-accent-green)' }}
               />
-              <span style={{ marginRight: 8, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{vatEnabled ? 'مفعّل' : 'معطّل'}</span>
+              <span className="nx-text-base nx-text-muted" style={{ marginRight: 8 }}>{vatEnabled ? 'مفعّل' : 'معطّل'}</span>
             </label>
           </div>
 
@@ -112,21 +112,13 @@ export default function TaxSettingsTab() {
               value={vatRate}
               onChange={(e) => setVatRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
             />
-            <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+            <p className="nx-text-sm nx-text-muted" style={{ margin: '6px 0 0' }}>
               القيمة الافتراضية 15% (ZATCA / السعودية)
             </p>
           </div>
 
           {hasChanges && (
-            <div style={{
-              padding: '10px 14px',
-              borderRadius: 10,
-              background: 'rgba(234,179,8,0.08)',
-              border: '1px solid rgba(234,179,8,0.35)',
-              fontSize: 13,
-              color: 'var(--noorix-text-default)',
-              lineHeight: 1.6,
-            }}>
+            <div className="nx-rounded-lg nx-text-base" style={{ padding: '10px 14px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.35)', color: 'var(--noorix-text-default)', lineHeight: 1.6 }}>
               <strong>⚠️ تنبيه مهم:</strong> تغيير إعدادات الضريبة سيُطبَّق على <strong>الفواتير والمعاملات الجديدة فقط</strong>. الفواتير والسجلات المحفوظة مسبقاً لن تتأثر بهذا التغيير ولن تُعاد حسابها تلقائياً.
             </div>
           )}
@@ -144,10 +136,10 @@ export default function TaxSettingsTab() {
           )}
 
           {updateMutation.isSuccess && (
-            <span style={{ fontSize: 13, color: 'var(--noorix-accent-green)' }}>تم حفظ الإعدادات بنجاح.</span>
+            <span className="nx-text-base" style={{ color: 'var(--noorix-accent-green)' }}>تم حفظ الإعدادات بنجاح.</span>
           )}
           {updateMutation.isError && (
-            <span style={{ fontSize: 13, color: 'var(--noorix-accent-red)' }}>{updateMutation.error?.message}</span>
+            <span className="nx-text-base" style={{ color: 'var(--noorix-accent-red)' }}>{updateMutation.error?.message}</span>
           )}
         </div>
       </div>

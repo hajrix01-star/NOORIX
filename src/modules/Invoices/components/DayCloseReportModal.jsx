@@ -167,10 +167,9 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
       `}</style>
 
       <div
-        className="day-close-print-root"
+        className="day-close-print-root nx-w-full"
         dir="rtl"
         style={{
-          width: '100%',
           position: 'relative',
         }}
       >
@@ -184,23 +183,24 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
             </header>
           </div>
 
-          <div className="day-close-no-print" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <h2 id="day-close-title" style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{t('dayCloseTitle')}</h2>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                <span style={{ color: 'var(--noorix-text-muted)' }}>{t('date')}</span>
+          <div className="day-close-no-print nx-flex-between nx-gap-8" style={{ flexWrap: 'wrap', marginBottom: 14 }}>
+            <div className="nx-flex-center nx-gap-10" style={{ flexWrap: 'wrap' }}>
+              <h2 id="day-close-title" className="nx-m-0 nx-font-800" style={{ fontSize: 17 }}>{t('dayCloseTitle')}</h2>
+              <label className="nx-flex-center nx-gap-6 nx-text-base">
+                <span className="nx-text-muted">{t('date')}</span>
                 <Input
                   type="date"
                   value={dateStr}
                   onChange={(e) => setDateStr(e.target.value)}
-                  style={{ padding: '4px 8px', borderRadius: 8, border: '1px solid var(--noorix-border)' }}
+                  className="nx-rounded"
+                  style={{ padding: '4px 8px', border: '1px solid var(--noorix-border)' }}
                 />
               </label>
               <Button onClick={() => refetch()} disabled={isFetching}>
                 {t('dayCloseRefresh')}
               </Button>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="nx-flex nx-gap-8">
               <Button onClick={() => window.print()}>
                 {t('dayClosePrint')}
               </Button>
@@ -211,18 +211,18 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           </div>
 
           {isLoading && (
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('dayCloseLoading')}</p>
+            <p className="nx-m-0 nx-text-base nx-text-muted">{t('dayCloseLoading')}</p>
           )}
           {isError && (
-            <p style={{ margin: 0, fontSize: 13, color: '#dc2626' }}>{error?.message || t('dayCloseLoadFailed')}</p>
+            <p className="nx-m-0 nx-text-base" style={{ color: '#dc2626' }}>{error?.message || t('dayCloseLoadFailed')}</p>
           )}
 
           {data && !isLoading && (
-            <div style={{ display: 'grid', gap: 14 }}>
-              <div className="day-close-screen-only" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, paddingBottom: 8, borderBottom: '1px solid #e2e8f0' }}>
+            <div className="nx-grid nx-gap-14">
+              <div className="day-close-screen-only nx-flex nx-gap-8" style={{ justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', paddingBottom: 8, borderBottom: '1px solid #e2e8f0' }}>
                 <div>
-                  <div style={{ fontSize: 11, color: '#64748b' }}>{t('dayCloseReportDate')}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>{reportDateLabel}</div>
+                  <div className="nx-text-xs" style={{ color: '#64748b' }}>{t('dayCloseReportDate')}</div>
+                  <div className="nx-text-lg nx-font-800">{reportDateLabel}</div>
                 </div>
                 <div style={{ fontSize: 10, color: '#94a3b8', maxWidth: 340, textAlign: 'right', lineHeight: 1.45 }}>
                   {t('dayCloseVaultBalanceNote')}
@@ -317,7 +317,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, alignItems: 'start' }}>
+              <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', alignItems: 'start' }}>
                 <div>
                   <SectionTitle>{t('dayCloseByKind')}</SectionTitle>
                   <table className="dc-table">
@@ -411,7 +411,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                     <tbody>
                       {(data.salesSummaries || []).map((s) => (
                         <tr key={s.id}>
-                          <td style={{ fontWeight: 700 }}>{s.summaryNumber}</td>
+                          <td className="nx-font-700">{s.summaryNumber}</td>
                           <td className="dc-num">{s.customerCount}</td>
                           <td className="dc-num">{fmt(Number(s.cashOnHand), 2)}</td>
                           <td className="dc-num">{fmt(Number(s.totalAmount), 2)}</td>
@@ -425,7 +425,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+              <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
                 <div>
                   <SectionTitle>{t('dayCloseVaultMovementDay')}</SectionTitle>
                   <table className="dc-table">
@@ -481,7 +481,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
               <div>
                 <SectionTitle>{t('dayCloseOperationsTable')} — {data.meta?.invoiceCountAll ?? 0}</SectionTitle>
                 <div className="day-close-ops-wrap">
-                  <table className="dc-table" style={{ margin: 0, border: 'none' }}>
+                  <table className="dc-table nx-m-0" style={{ border: 'none' }}>
                     <thead>
                       <tr>
                         <th>{t('documentNumber')}</th>
@@ -498,7 +498,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                       )}
                       {(data.operations || []).map((op) => (
                         <tr key={op.id} style={{ opacity: op.status === 'cancelled' ? 0.55 : 1 }}>
-                          <td style={{ fontWeight: 700 }}>{op.invoiceNumber}</td>
+                          <td className="nx-font-700">{op.invoiceNumber}</td>
                           <td>{kindLabel[op.kind] || op.kind}</td>
                           <td className="dc-num">{fmt(Number(op.totalAmount), 2)}</td>
                           <td className="dc-muted" style={{ maxWidth: 200 }}>

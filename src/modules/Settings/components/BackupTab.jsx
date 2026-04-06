@@ -77,17 +77,17 @@ function BackupCountsGrid({ counts, t, lang }) {
   const rows = sortedCountEntries(counts);
   if (!rows.length) {
     return (
-      <p style={{ margin: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>—</p>
+      <p className="nx-m-0 nx-text-base nx-text-muted">—</p>
     );
   }
   const total = rows.reduce((s, [, n]) => s + (Number(n) || 0), 0);
   return (
-    <div style={{ display: 'grid', gap: 0 }}>
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--noorix-text-muted)' }}>
+    <div className="nx-grid" style={{ gap: 0 }}>
+      <div className="nx-mb-8">
+        <div className="nx-text-sm nx-font-800 nx-text-muted">
           {t('backupReportCounts')}
         </div>
-        <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
+        <div className="nx-text-sm nx-text-muted nx-mt-4">
           {t('backupReportTotalRows')}:{' '}
           <strong dir="ltr">{total.toLocaleString('en-GB')}</strong>
         </div>
@@ -95,18 +95,16 @@ function BackupCountsGrid({ counts, t, lang }) {
       {rows.map(([key, val]) => (
         <div
           key={key}
+          className="nx-grid nx-gap-8 nx-text-base"
           style={{
-            display: 'grid',
             gridTemplateColumns: '1fr auto',
-            gap: 8,
             padding: '6px 0',
-            fontSize: 13,
             borderBottom: '1px solid var(--noorix-border)',
             alignItems: 'baseline',
           }}
         >
-          <span style={{ color: 'var(--noorix-text)' }}>{statLabel(t, key)}</span>
-          <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+          <span className="nx-text-primary">{statLabel(t, key)}</span>
+          <span dir="ltr" className="nx-font-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {Number(val).toLocaleString('en-GB')}
           </span>
         </div>
@@ -360,7 +358,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             </Button>
           </div>
           {!activeCompanies.length && (
-            <p className="backup-meta-line" style={{ margin: 0 }}>
+            <p className="backup-meta-line nx-m-0">
               {t('noActiveCompanies')}
             </p>
           )}
@@ -378,7 +376,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             <h3 id="backup-system-title" className="backup-panel__title">
               {t('backupSystemHeading')}
             </h3>
-            <p className="backup-meta-line" style={{ margin: 0 }}>
+            <p className="backup-meta-line nx-m-0">
               {t('backupSystemIntro')}
             </p>
             <label className="nx-checkbox backup-check-row">
@@ -474,16 +472,16 @@ export default function BackupTab({ activeCompanies = [] }) {
             <div className="backup-sys-jobs">
               {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
                 <div key={sj.id} className="backup-sys-job">
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 10px', minWidth: 0 }}>
-                    <span dir="ltr" style={{ fontWeight: 700 }}>
+                  <div className="nx-flex-center" style={{ flexWrap: 'wrap', gap: '6px 10px', minWidth: 0 }}>
+                    <span dir="ltr" className="nx-font-700">
                       {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
                       {formatBackupDate(sj.createdAt, lang)}
                     </span>
-                    <span className="backup-job__status" style={{ margin: 0 }} data-status={sj.status || ''}>
+                    <span className="backup-job__status nx-m-0" data-status={sj.status || ''}>
                       {statusLabel(sj.status, t)}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch' }}>
+                  <div className="nx-flex-col nx-gap-4" style={{ alignItems: 'stretch' }}>
                     {sj.verifyOk === true && (
                       <span style={{ color: '#15803d', fontSize: 11 }}>{t('backupVerifyOk')}</span>
                     )}
@@ -615,16 +613,15 @@ export default function BackupTab({ activeCompanies = [] }) {
         size="md"
       >
         <div
+          className="nx-text-base nx-font-500"
           style={{
             padding: '10px 14px',
             marginBottom: 14,
             background: 'rgba(220,38,38,0.08)',
             border: '1px solid rgba(220,38,38,0.45)',
             borderRadius: 6,
-            fontSize: 13,
             color: 'var(--noorix-accent-red)',
             lineHeight: 1.65,
-            fontWeight: 500,
           }}
           role="alert"
         >
@@ -633,7 +630,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             : '⚠️ Warning: A new company will be created from this backup. Make sure the backup is correct before proceeding.'}
         </div>
 
-        <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6, margin: '0 0 12px' }}>
+        <p className="nx-text-base nx-text-muted nx-m-0 nx-mb-12" style={{ lineHeight: 1.6 }}>
           {t('backupImportWarn')}
         </p>
 
@@ -646,10 +643,9 @@ export default function BackupTab({ activeCompanies = [] }) {
 
         <label
           className="nx-checkbox"
+          className="nx-text-base nx-text-primary"
           style={{
-            fontSize: 13,
             margin: '12px 0 16px',
-            color: 'var(--noorix-text)',
             lineHeight: 1.5,
           }}
         >
@@ -666,7 +662,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           </span>
         </label>
 
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+        <div className="nx-flex-end nx-gap-8" style={{ flexWrap: 'wrap' }}>
           <Button
             type="button"
             variant="ghost"
@@ -694,19 +690,19 @@ export default function BackupTab({ activeCompanies = [] }) {
       >
         {reportModal && (
           <>
-            <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
-              {isAr ? reportModal.payload?.messageAr : reportModal.payload?.messageEn || reportModal.payload?.messageAr}
-            </p>
+        <p className="nx-text-base nx-text-muted nx-m-0 nx-mb-16" style={{ lineHeight: 1.6 }}>
+          {isAr ? reportModal.payload?.messageAr : reportModal.payload?.messageEn || reportModal.payload?.messageAr}
+        </p>
 
-            <div style={{ display: 'grid', gap: 14 }}>
+            <div className="nx-grid nx-gap-14">
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, color: 'var(--noorix-text-muted)' }}>
+                <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
                   {t('backupReportSummary')}
                 </div>
-                <div style={{ fontSize: 13, lineHeight: 1.85 }}>
+                <div className="nx-text-base" style={{ lineHeight: 1.85 }}>
                   <div>
                     <strong>{t('backupReportJobId')}:</strong>{' '}
-                    <code style={{ fontSize: 12 }}>{reportModal.payload?.jobId}</code>
+                    <code className="nx-text-sm">{reportModal.payload?.jobId}</code>
                   </div>
                   <div>
                     <strong>{t('backupReportScope')}:</strong> {scopeLabel(reportModal.payload?.scope, t)}
@@ -716,10 +712,10 @@ export default function BackupTab({ activeCompanies = [] }) {
 
               {reportModal.payload?.meta && (
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, color: 'var(--noorix-text-muted)' }}>
+                  <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
                     {t('backupReportMeta')}
                   </div>
-                  <div style={{ fontSize: 13, lineHeight: 1.85 }}>
+                  <div className="nx-text-base" style={{ lineHeight: 1.85 }}>
                     <div>
                       <strong>{t('backupReportExportedAt')}:</strong>{' '}
                       {formatBackupDate(reportModal.payload.meta.exportedAt, lang)}
@@ -741,10 +737,10 @@ export default function BackupTab({ activeCompanies = [] }) {
 
               {reportModal.payload?.integrity && (
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, color: 'var(--noorix-text-muted)' }}>
-                    {t('backupReportIntegrity')}
+                <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
+                  {t('backupReportIntegrity')}
                   </div>
-                  <div style={{ fontSize: 12, lineHeight: 1.75, wordBreak: 'break-all' }}>
+                  <div className="nx-text-sm" style={{ lineHeight: 1.75, wordBreak: 'break-all' }}>
                     {reportModal.payload.integrity.sizeBytes != null && (
                       <div>
                         <strong>{t('backupReportSizeBytes')}:</strong> {String(reportModal.payload.integrity.sizeBytes)}
@@ -763,18 +759,13 @@ export default function BackupTab({ activeCompanies = [] }) {
                 <BackupCountsGrid counts={reportModal.payload.counts} t={t} lang={lang} />
               )}
 
-              <details style={{ fontSize: 12 }}>
-                <summary style={{ cursor: 'pointer', fontWeight: 700 }}>{t('backupReportRawJson')}</summary>
+              <details className="nx-text-sm">
+                <summary className="nx-cursor-pointer nx-font-700">{t('backupReportRawJson')}</summary>
                 <pre
+                  className="nx-text-xs nx-bg-muted nx-p-12 nx-overflow-auto nx-ltr nx-mt-10"
                   style={{
-                    marginTop: 10,
-                    fontSize: 11,
-                    background: 'var(--noorix-bg-muted)',
-                    padding: 12,
                     borderRadius: 10,
-                    overflow: 'auto',
                     maxHeight: 220,
-                    direction: 'ltr',
                     textAlign: 'left',
                   }}
                 >
@@ -783,7 +774,7 @@ export default function BackupTab({ activeCompanies = [] }) {
               </details>
             </div>
 
-            <div style={{ marginTop: 18, display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="nx-flex-end" style={{ marginTop: 18 }}>
               <Button type="button" variant="primary" onClick={() => setReportModal(null)}>
                 {t('close')}
               </Button>
@@ -800,16 +791,16 @@ export default function BackupTab({ activeCompanies = [] }) {
       >
         {importReportModal && (
           <>
-            <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.6 }}>
+            <p className="nx-text-base nx-text-muted nx-m-0 nx-mb-16" style={{ lineHeight: 1.6 }}>
               {t('backupImportOk')}
             </p>
 
-            <div style={{ display: 'grid', gap: 14 }}>
+              <div className="nx-grid nx-gap-14">
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, color: 'var(--noorix-text-muted)' }}>
+                <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
                   {t('backupReportNewCompany')}
                 </div>
-                <div style={{ fontSize: 13, lineHeight: 1.85 }}>
+                <div className="nx-text-base" style={{ lineHeight: 1.85 }}>
                   <div>
                     <strong>{t('backupReportNameAr')}:</strong> {importReportModal.nameAr}
                   </div>
@@ -834,10 +825,10 @@ export default function BackupTab({ activeCompanies = [] }) {
               {importReportModal.summary?.sourceMeta &&
                 Object.keys(importReportModal.summary.sourceMeta).some((k) => importReportModal.summary.sourceMeta[k] != null) && (
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, color: 'var(--noorix-text-muted)' }}>
+                    <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
                       {t('backupReportMeta')}
                     </div>
-                    <div style={{ fontSize: 13, lineHeight: 1.85 }}>
+                    <div className="nx-text-base" style={{ lineHeight: 1.85 }}>
                       {importReportModal.summary.sourceMeta.exportedAt && (
                         <div>
                           <strong>{t('backupReportExportedAt')}:</strong>{' '}
@@ -853,7 +844,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                       {importReportModal.summary.sourceMeta.originalCompanyId && (
                         <div>
                           <strong>{t('backupReportOriginalCompany')}:</strong>{' '}
-                          <code style={{ fontSize: 11 }}>{importReportModal.summary.sourceMeta.originalCompanyId}</code>
+                          <code className="nx-text-xs">{importReportModal.summary.sourceMeta.originalCompanyId}</code>
                         </div>
                       )}
                     </div>
@@ -864,18 +855,13 @@ export default function BackupTab({ activeCompanies = [] }) {
                 <BackupCountsGrid counts={importReportModal.summary.counts} t={t} lang={lang} />
               )}
 
-              <details style={{ fontSize: 12 }}>
-                <summary style={{ cursor: 'pointer', fontWeight: 700 }}>{t('backupReportRawJson')}</summary>
+              <details className="nx-text-sm">
+                <summary className="nx-cursor-pointer nx-font-700">{t('backupReportRawJson')}</summary>
                 <pre
+                  className="nx-text-xs nx-bg-muted nx-p-12 nx-overflow-auto nx-ltr nx-mt-10"
                   style={{
-                    marginTop: 10,
-                    fontSize: 11,
-                    background: 'var(--noorix-bg-muted)',
-                    padding: 12,
                     borderRadius: 10,
-                    overflow: 'auto',
                     maxHeight: 220,
-                    direction: 'ltr',
                     textAlign: 'left',
                   }}
                 >
@@ -884,7 +870,7 @@ export default function BackupTab({ activeCompanies = [] }) {
               </details>
             </div>
 
-            <div style={{ marginTop: 18, display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="nx-flex-end" style={{ marginTop: 18 }}>
               <Button type="button" variant="primary" onClick={() => setImportReportModal(null)}>
                 {t('close')}
               </Button>

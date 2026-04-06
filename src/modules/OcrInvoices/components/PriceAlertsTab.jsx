@@ -10,20 +10,17 @@ function MiniImageViewer({ src }) {
   const [rotation, setRotation] = useState(0);
   const [zoomed,   setZoomed]   = useState(false);
   if (!src) return (
-    <div style={{
-      height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'var(--noorix-bg-muted)', borderRadius: 8, color: 'var(--noorix-text-muted)', fontSize: 13,
-    }}>
+    <div className="nx-flex-center nx-bg-muted nx-rounded nx-text-muted nx-text-base" style={{ height: 100, justifyContent: 'center' }}>
       {'\u2014'}
     </div>
   );
   return (
-    <div style={{ background: 'var(--noorix-bg-muted)', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--noorix-border)' }}>
+    <div className="nx-bg-muted nx-rounded nx-overflow-hidden nx-border-all">
       <div style={{ maxHeight: zoomed ? 360 : 140, overflow: zoomed ? 'auto' : 'hidden', transition: 'max-height 0.3s' }}>
-        <img src={src} alt="" style={{ width: '100%', objectFit: 'contain', display: 'block', transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s', cursor: 'pointer' }}
+        <img src={src} alt="" className="nx-w-full nx-cursor-pointer" style={{ objectFit: 'contain', display: 'block', transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s' }}
           onClick={() => setZoomed((z) => !z)} />
       </div>
-      <div style={{ display: 'flex', gap: 4, padding: '5px 8px', borderTop: '1px solid var(--noorix-border)' }}>
+      <div className="nx-flex nx-gap-4" style={{ padding: '5px 8px', borderTop: '1px solid var(--noorix-border)' }}>
         <Button className="lb-btn" onClick={() => setRotation((r) => (r + 90) % 360)}>↺</Button>
         <Button className="lb-btn" onClick={() => setZoomed((z) => !z)}>{zoomed ? '−' : '+'}</Button>
       </div>
@@ -56,12 +53,12 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
               {latestInvoice?.imageUrl && (
                 <MiniImageViewer src={latestInvoice.imageUrl} />
               )}
-              <div className="compare-invoice-meta" style={{ marginTop: 10 }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#b91c1c' }}>
-                  {fmtNum(alert.latestPrice)} <span style={{ fontSize: 12, fontWeight: 400 }}>{isAr ? 'ريال' : 'SAR'}</span>
+              <div className="compare-invoice-meta nx-mt-10">
+                <div className="nx-font-800" style={{ fontSize: 22, color: '#b91c1c' }}>
+                  {fmtNum(alert.latestPrice)} <span className="nx-text-sm" style={{ fontWeight: 400 }}>{isAr ? 'ريال' : 'SAR'}</span>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{alert.latestSupplier}</div>
-                <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{fmtDate(alert.latestInvoiceDate)}</div>
+                <div className="nx-text-sm nx-text-muted">{alert.latestSupplier}</div>
+                <div className="nx-text-sm nx-text-muted">{fmtDate(alert.latestInvoiceDate)}</div>
               </div>
             </div>
 
@@ -73,21 +70,21 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
               {lowestInvoice?.imageUrl && (
                 <MiniImageViewer src={lowestInvoice.imageUrl} />
               )}
-              <div className="compare-invoice-meta" style={{ marginTop: 10 }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#15803d' }}>
-                  {fmtNum(alert.lowestPrice)} <span style={{ fontSize: 12, fontWeight: 400 }}>{isAr ? 'ريال' : 'SAR'}</span>
+              <div className="compare-invoice-meta nx-mt-10">
+                <div className="nx-font-800" style={{ fontSize: 22, color: '#15803d' }}>
+                  {fmtNum(alert.lowestPrice)} <span className="nx-text-sm" style={{ fontWeight: 400 }}>{isAr ? 'ريال' : 'SAR'}</span>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{alert.lowestSupplier}</div>
-                <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{fmtDate(alert.lowestInvoiceDate)}</div>
+                <div className="nx-text-sm nx-text-muted">{alert.lowestSupplier}</div>
+                <div className="nx-text-sm nx-text-muted">{fmtDate(alert.lowestInvoiceDate)}</div>
               </div>
             </div>
           </div>
 
-          <div style={{ padding: '12px 14px', borderRadius: 8, background: 'rgba(22,163,74,0.05)', border: '1px solid var(--noorix-border)' }}>
-            <div style={{ fontWeight: 600, fontSize: 13, color: '#15803d', marginBottom: 2 }}>
+          <div className="nx-rounded" style={{ padding: '12px 14px', background: 'rgba(22,163,74,0.05)', border: '1px solid var(--noorix-border)' }}>
+            <div className="nx-font-600 nx-text-base" style={{ color: '#15803d', marginBottom: 2 }}>
               {isAr ? 'التوفير المحتمل' : 'Potential Savings'}: {fmtNum(saving)} {isAr ? 'ريال / وحدة' : 'SAR/unit'}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+            <div className="nx-text-sm nx-text-muted">
               {isAr ? `المتوسط التاريخي: ${fmtNum(alert.averagePrice)} ريال` : `Historical avg: ${fmtNum(alert.averagePrice)} SAR`}
             </div>
           </div>
@@ -163,7 +160,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
   );
 
   return (
-    <div dir={dir} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div dir={dir} className="nx-flex-col" style={{ gap: 18 }}>
 
       {/* Stats */}
       <div className="ocr-alerts-stats">
@@ -225,7 +222,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
           <div className="ocr-empty-text">{isAr ? 'لا توجد نتائج' : 'No results'}</div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="nx-flex-col nx-gap-6">
           {visibleAlerts.map((alert, i) => {
             const latestInvoice = invoices.find((inv) => inv.id === alert.latestInvoiceId);
             const lowestInvoice = invoices.find((inv) => inv.id === alert.lowestInvoiceId);
@@ -237,10 +234,12 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
                 onClick={() => setComparing({ alert, latestInvoice, lowestInvoice })}
                 style={isSelected ? { borderColor: 'var(--noorix-text)', background: 'var(--noorix-bg-muted)' } : {}}>
 
-                <input type="checkbox" checked={isSelected}
-                  onChange={() => toggleSelect(alert.itemId)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="ocr-catalog-checkbox" />
+                <label className="nx-checkbox">
+                  <input type="checkbox" checked={isSelected}
+                    onChange={() => toggleSelect(alert.itemId)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="ocr-catalog-checkbox" />
+                </label>
 
                 <div className="ocr-alert-icon">↑</div>
 
@@ -248,7 +247,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
                   <div className="ocr-alert-title">{alert.itemName}</div>
                   <div className="ocr-alert-detail">
                     {alert.latestSupplier} · {fmtDate(alert.latestInvoiceDate)}
-                    {saving > 0 && <span style={{ color: '#15803d', fontWeight: 600, marginInlineStart: 8 }}>
+                    {saving > 0 && <span className="nx-font-600" style={{ color: '#15803d', marginInlineStart: 8 }}>
                       {isAr ? `توفير ${fmtNum(saving)}` : `Save ${fmtNum(saving)}`}
                     </span>}
                   </div>

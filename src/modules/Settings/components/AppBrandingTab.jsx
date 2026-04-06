@@ -64,45 +64,45 @@ export default function AppBrandingTab() {
   };
 
   return (
-    <div style={{ display: 'grid', gap: 28, maxWidth: 620 }}>
+    <div className="nx-grid" style={{ gap: 28, maxWidth: 620 }}>
 
       {/* ── توضيح المستويات الثلاثة ──────────────────────────────────────── */}
-      <div style={{ padding: 14, borderRadius: 12, background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', fontSize: 12, color: 'var(--noorix-text-muted)', display: 'grid', gap: 6 }}>
-        <div style={{ fontWeight: 700, color: 'var(--noorix-text)', marginBottom: 2 }}>ℹ️ كيف تعمل الهويات؟</div>
+      <div className="nx-rounded-lg nx-text-sm nx-text-muted nx-grid nx-gap-6" style={{ padding: 14, background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)' }}>
+        <div className="nx-font-700 nx-text-primary" style={{ marginBottom: 2 }}>ℹ️ كيف تعمل الهويات؟</div>
         <div>• <strong>هوية التطبيق (هنا)</strong>: الاسم والشعار العام للنظام — يظهر في تبويب المتصفح، أيقونة PWA، وأعلى الشريط الجانبي.</div>
         <div>• <strong>شعار الشركة</strong> (إدارة الشركات): يظهر بجانب اسم الشركة النشطة في الشريط الجانبي وفي الفواتير والتقارير. لا يؤثر على أيقونة المتصفح.</div>
         <div>• <strong>إذا لم تضع شعار للتطبيق</strong>، يظهر الحرف الأول من اسم التطبيق كأيقونة في الشريط.</div>
       </div>
 
       {/* ── معاينة ────────────────────────────────────────────────────────── */}
-      <div style={{ padding: 20, borderRadius: 16, background: 'var(--noorix-bg-muted)', border: '1px solid var(--noorix-border)' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--noorix-text-muted)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+      <div className="nx-p-20 nx-bg-muted" style={{ borderRadius: 16, border: '1px solid var(--noorix-border)' }}>
+        <div className="nx-text-xs nx-font-700 nx-text-muted" style={{ marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>
           معاينة مباشرة
         </div>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="nx-flex-center nx-gap-16" style={{ flexWrap: 'wrap' }}>
           {/* أيقونة */}
-          <div style={{
+          <div className="nx-overflow-hidden" style={{
             width: 56, height: 56, borderRadius: 14, flexShrink: 0,
-            background: color, overflow: 'hidden',
+            background: color,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
           }}>
             {logoUrl
               ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <span style={{ fontSize: 22, color: '#fff', fontWeight: 800 }}>{nameAr?.[0] || 'ن'}</span>
+              : <span className="nx-font-800" style={{ fontSize: 22, color: '#fff' }}>{nameAr?.[0] || 'ن'}</span>
             }
           </div>
           {/* نصوص */}
-          <div style={{ display: 'grid', gap: 4, minWidth: 0, flex: 1 }}>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--noorix-text)', direction: 'rtl' }}>{nameAr || 'نووريكس'}</span>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>·</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--noorix-text)', direction: 'ltr' }}>{nameEn || 'Noorix'}</span>
+          <div className="nx-grid nx-gap-4 nx-flex-1" style={{ minWidth: 0 }}>
+            <div className="nx-flex nx-gap-10" style={{ alignItems: 'baseline', flexWrap: 'wrap' }}>
+              <span className="nx-text-xl nx-font-800 nx-text-primary" style={{ direction: 'rtl' }}>{nameAr || 'نووريكس'}</span>
+              <span className="nx-text-sm nx-text-muted">·</span>
+              <span className="nx-text-base nx-font-600 nx-text-primary nx-ltr">{nameEn || 'Noorix'}</span>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', direction: 'rtl' }}>{taglineAr || 'الجملة بالعربي'}</span>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>·</span>
-              <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', direction: 'ltr' }}>{taglineEn || 'English tagline'}</span>
+            <div className="nx-flex nx-gap-8" style={{ flexWrap: 'wrap' }}>
+              <span className="nx-text-sm nx-text-muted" style={{ direction: 'rtl' }}>{taglineAr || 'الجملة بالعربي'}</span>
+              <span className="nx-text-sm nx-text-muted">·</span>
+              <span className="nx-text-sm nx-text-muted" style={{ direction: 'ltr' }}>{taglineEn || 'English tagline'}</span>
             </div>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function AppBrandingTab() {
       {/* ── الاسم ─────────────────────────────────────────────────────────── */}
       <div>
         <div style={sectionTitle}>اسم التطبيق</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 12 }}>
+        <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))' }}>
           <Input
             type="text"
             label="بالعربي"
@@ -129,7 +129,7 @@ export default function AppBrandingTab() {
             maxLength={40}
           />
         </div>
-        <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
+        <div className="nx-text-xs nx-text-muted" style={{ marginTop: 6 }}>
           يظهر في تبويب المتصفح وأعلى القائمة الجانبية حسب لغة التطبيق
         </div>
       </div>
@@ -137,7 +137,7 @@ export default function AppBrandingTab() {
       {/* ── الجملة التعريفية ──────────────────────────────────────────────── */}
       <div>
         <div style={sectionTitle}>الجملة التعريفية (تحت الاسم)</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 12 }}>
+        <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))' }}>
           <Input
             type="text"
             label="بالعربي"
@@ -155,7 +155,7 @@ export default function AppBrandingTab() {
             maxLength={60}
           />
         </div>
-        <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
+        <div className="nx-text-xs nx-text-muted" style={{ marginTop: 6 }}>
           تظهر أسفل الاسم في القائمة الجانبية وفي تذييلها
         </div>
       </div>
@@ -163,20 +163,18 @@ export default function AppBrandingTab() {
       {/* ── الشعار ────────────────────────────────────────────────────────── */}
       <div>
         <div style={sectionTitle}>شعار التطبيق (الأيقونة)</div>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-          <div style={{
+        <div className="nx-flex nx-gap-14" style={{ alignItems: 'flex-start' }}>
+          <div className="nx-flex-center nx-bg-muted nx-overflow-hidden" style={{
             width: 72, height: 72, borderRadius: 16, flexShrink: 0,
             border: '2px dashed var(--noorix-border)',
-            background: 'var(--noorix-bg-muted)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            overflow: 'hidden',
+            justifyContent: 'center',
           }}>
             {logoUrl
               ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <span style={{ fontSize: 28, color: 'var(--noorix-text-muted)' }}>—</span>
+              : <span className="nx-text-muted" style={{ fontSize: 28 }}>—</span>
             }
           </div>
-          <div style={{ flex: 1, display: 'grid', gap: 8 }}>
+          <div className="nx-flex-1 nx-grid nx-gap-8">
             <Input
               type="url"
               value={logoUrl}
@@ -194,7 +192,7 @@ export default function AppBrandingTab() {
             )}
           </div>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 8 }}>
+        <div className="nx-text-xs nx-text-muted nx-mt-8">
           مقاس مقترح: 512×512 بكسل. يستخدم نفس الشعار لكلا اللغتين.
         </div>
       </div>
@@ -202,11 +200,11 @@ export default function AppBrandingTab() {
       {/* ── دومين تسجيل الدخول ────────────────────────────────────────────── */}
       <div>
         <div style={sectionTitle}>دومين النظام (يظهر كتلميح في صفحة الدخول)</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: 320 }}>
-          <span style={{
-            padding: '10px 12px', background: 'var(--noorix-bg-muted)',
+        <div className="nx-flex-center" style={{ gap: 0, maxWidth: 320 }}>
+          <span className="nx-bg-muted nx-text-base nx-text-muted nx-ltr" style={{
+            padding: '10px 12px',
             border: '1px solid var(--noorix-border)', borderRadius: '10px 0 0 10px',
-            fontSize: 13, color: 'var(--noorix-text-muted)', flexShrink: 0, direction: 'ltr',
+            flexShrink: 0,
           }}>@</span>
           <Input
             type="text"
@@ -217,7 +215,7 @@ export default function AppBrandingTab() {
             maxLength={60}
           />
         </div>
-        <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 6 }}>
+        <div className="nx-text-xs nx-text-muted" style={{ marginTop: 6 }}>
           يظهر كتلميح في خانة البريد الإلكتروني بصفحة الدخول. لا يغير الإيميلات المسجّلة فعلياً.
         </div>
       </div>
@@ -225,22 +223,24 @@ export default function AppBrandingTab() {
       {/* ── لون الهوية ────────────────────────────────────────────────────── */}
       <div>
         <div style={sectionTitle}>لون هوية التطبيق</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div className="nx-flex-center nx-gap-10" style={{ flexWrap: 'wrap' }}>
           <Input
             type="color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            style={{ width: 48, height: 42, padding: 3, borderRadius: 10, border: '1px solid var(--noorix-border)', cursor: 'pointer', background: 'var(--noorix-bg-surface)', flexShrink: 0 }}
+            className="nx-cursor-pointer nx-bg-surface"
+            style={{ width: 48, height: 42, padding: 3, borderRadius: 10, border: '1px solid var(--noorix-border)', flexShrink: 0 }}
           />
           <Input
             type="text"
             value={color}
             onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
-            style={{ width: 100, minWidth: 0, fontFamily: 'monospace', fontSize: 13 }}
+            className="nx-text-base"
+            style={{ width: 100, minWidth: 0, fontFamily: 'monospace' }}
             placeholder="#0a1f44"
             maxLength={7}
           />
-          <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', flexShrink: 1 }}>يظهر في شريط العنوان على Android والـ PWA</span>
+          <span className="nx-text-sm nx-text-muted" style={{ flexShrink: 1 }}>يظهر في شريط العنوان على Android والـ PWA</span>
         </div>
       </div>
 
@@ -255,7 +255,7 @@ export default function AppBrandingTab() {
       </div>
 
       {/* ── ملاحظة PWA ────────────────────────────────────────────────────── */}
-      <div style={{ padding: 14, borderRadius: 12, background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', fontSize: 13, color: 'var(--noorix-text-muted)', lineHeight: 1.7 }}>
+      <div className="nx-rounded-lg nx-text-base nx-text-muted" style={{ padding: 14, background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', lineHeight: 1.7 }}>
         <strong style={{ color: 'var(--noorix-accent-blue)' }}>ℹ ملاحظة PWA:</strong>
         <br />
         التغييرات تُطبَّق فوراً على تبويب المتصفح والأيقونة. إذا كان التطبيق مثبّتاً على الجوال، قد تحتاج لإضافته مجدداً للحصول على الأيقونة المحدّثة.

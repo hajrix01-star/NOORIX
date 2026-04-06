@@ -5,6 +5,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { fmt } from '../../../utils/format';
 import { getTxKey, FALLBACK_CATEGORIES } from './bankAnalysisUtils';
 import { Button, Modal, Input } from '../../../ui';
+import SmartTable from '../../../components/common/SmartTable';
 
 export default function BankStatementPieDrilldownModal({
   open,
@@ -59,106 +60,88 @@ export default function BankStatementPieDrilldownModal({
       size="full"
       footer={<Button onClick={onClose}>{t('close') || 'إغلاق'}</Button>}
     >
-      <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+      <div className="nx-text-sm nx-text-muted nx-mb-12 nx-flex-center nx-flex-wrap nx-gap-16">
+        <span className="nx-flex-center nx-gap-6">
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-text-muted)', display: 'inline-block' }} />
-          {t('bankStatementTransactions')}: <strong style={{ color: 'var(--noorix-text)' }}>{rows.length}</strong>
+          {t('bankStatementTransactions')}: <strong className="nx-text-primary">{rows.length}</strong>
         </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <span className="nx-flex-center nx-gap-6">
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
-          {t('bankStatementColDebit')}: <strong style={{ direction: 'ltr', display: 'inline-block', color: '#dc2626' }}>{fmt(totals.debit)}</strong>
+          {t('bankStatementColDebit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: '#dc2626' }}>{fmt(totals.debit)}</strong>
         </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <span className="nx-flex-center nx-gap-6">
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
-          {t('bankStatementColCredit')}: <strong style={{ direction: 'ltr', display: 'inline-block', color: '#16a34a' }}>{fmt(totals.credit)}</strong>
+          {t('bankStatementColCredit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: '#16a34a' }}>{fmt(totals.credit)}</strong>
         </span>
       </div>
 
-      <div style={{ overflow: 'auto', maxHeight: 'min(60vh, 540px)' }}>
-        {rows.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--noorix-text-muted)', padding: 40 }}>{t('bankPieDrilldownEmpty')}</p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-              <tr style={{ background: 'var(--noorix-bg-muted)', borderBottom: '2px solid var(--noorix-border)' }}>
-                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11, whiteSpace: 'nowrap' }}>{t('bankStatementDate')}</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11 }}>{t('bankStatementDescription')}</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11, whiteSpace: 'nowrap' }}>{t('bankStatementColDebit')}</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11, whiteSpace: 'nowrap' }}>{t('bankStatementColCredit')}</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--noorix-text-muted)', fontSize: 11, minWidth: 200, whiteSpace: 'nowrap' }}>{t('bankStatementCategories')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((tx, i) => {
-                const k = getTxKey(tx);
+      <div className="nx-overflow-auto" style={{ maxHeight: 'min(60vh, 540px)' }}>
+        <SmartTable
+          columns={[
+            { key: 'txDate', label: t('bankStatementDate'),
+              render: (v) => <span className="nx-nowrap nx-text-muted nx-text-sm">{v}</span> },
+            { key: 'description', label: t('bankStatementDescription'),
+              render: (v) => <div className="nx-truncate nx-text-primary" title={v}>{v}</div> },
+            { key: 'debit', label: t('bankStatementColDebit'), numeric: true,
+              render: (v) => (
+                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? '#dc2626' : 'var(--noorix-text-muted)' }}>
+                  {Number(v) > 0 ? fmt(Number(v)) : '—'}
+                </span>
+              ) },
+            { key: 'credit', label: t('bankStatementColCredit'), numeric: true,
+              render: (v) => (
+                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? '#16a34a' : 'var(--noorix-text-muted)' }}>
+                  {Number(v) > 0 ? fmt(Number(v)) : '—'}
+                </span>
+              ) },
+            { key: 'category', label: t('bankStatementCategories'),
+              render: (_, tx) => {
                 const catId = tx.categoryId || '';
-                return (
-                  <tr key={k} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 === 0 ? 'var(--noorix-bg-surface)' : 'var(--noorix-bg-muted)' }}>
-                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', color: 'var(--noorix-text-muted)', fontSize: 12 }}>{tx.txDate}</td>
-                    <td style={{ padding: '10px 14px', maxWidth: 280 }}>
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--noorix-text)' }} title={tx.description}>
-                        {tx.description}
-                      </div>
-                    </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', direction: 'ltr', fontWeight: Number(tx.debit) > 0 ? 700 : 400, color: Number(tx.debit) > 0 ? '#dc2626' : 'var(--noorix-text-muted)' }}>
-                      {Number(tx.debit) > 0 ? fmt(Number(tx.debit)) : '—'}
-                    </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', direction: 'ltr', fontWeight: Number(tx.credit) > 0 ? 700 : 400, color: Number(tx.credit) > 0 ? '#16a34a' : 'var(--noorix-text-muted)' }}>
-                      {Number(tx.credit) > 0 ? fmt(Number(tx.credit)) : '—'}
-                    </td>
-                    <td style={{ padding: '10px 14px' }}>
-                      {editingTxId === tx.id ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          <Input
-                            type="select"
-                            value={editingCategoryId}
-                            onChange={(e) => setEditingCategoryId(e.target.value)}
-                          >
-                            <option value="">{uncategorizedLabel}</option>
-                            {allCategoryOptions.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.label}
-                              </option>
-                            ))}
-                          </Input>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={async () => {
-                                try {
-                                  await onSaveTxCategory(tx.id, editingCategoryId || null);
-                                  setEditingTxId(null);
-                                  showToast?.(t('savedSuccessfully') || 'OK');
-                                } catch (e) {
-                                  showToast?.(e?.message || 'Error', 'error');
-                                }
-                              }}
-                            >
-                              {t('save')}
-                            </Button>
-                            <Button size="sm" onClick={() => setEditingTxId(null)}>{t('cancel')}</Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          style={{ textAlign: 'right', maxWidth: '100%' }}
-                          onClick={() => {
-                            setEditingTxId(tx.id);
-                            setEditingCategoryId(catId);
-                          }}
-                        >
-                          {tx.category?.nameAr || tx.category?.nameEn || uncategorizedLabel}
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
+                return editingTxId === tx.id ? (
+                  <div className="nx-flex-col nx-gap-6">
+                    <Input
+                      type="select"
+                      value={editingCategoryId}
+                      onChange={(e) => setEditingCategoryId(e.target.value)}
+                    >
+                      <option value="">{uncategorizedLabel}</option>
+                      {allCategoryOptions.map((c) => (
+                        <option key={c.id} value={c.id}>{c.label}</option>
+                      ))}
+                    </Input>
+                    <div className="nx-flex nx-gap-6">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await onSaveTxCategory(tx.id, editingCategoryId || null);
+                            setEditingTxId(null);
+                            showToast?.(t('savedSuccessfully') || 'OK');
+                          } catch (e) {
+                            showToast?.(e?.message || 'Error', 'error');
+                          }
+                        }}
+                      >
+                        {t('save')}
+                      </Button>
+                      <Button size="sm" onClick={() => setEditingTxId(null)}>{t('cancel')}</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => { setEditingTxId(tx.id); setEditingCategoryId(catId); }}
+                  >
+                    {tx.category?.nameAr || tx.category?.nameEn || uncategorizedLabel}
+                  </Button>
                 );
-              })}
-            </tbody>
-          </table>
-        )}
+              } },
+          ]}
+          data={rows}
+          keyExtractor={(tx) => getTxKey(tx)}
+          emptyMessage={t('bankPieDrilldownEmpty')}
+        />
       </div>
     </Modal>
   );

@@ -177,7 +177,7 @@ export const StaffFormModal = memo(function StaffFormModal({
       }
     >
       <form onSubmit={handleSubmit}>
-        <div className="staff-form-names-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+        <div className="staff-form-names-grid nx-grid-2 nx-gap-12" style={{ marginBottom: 14 }}>
           <Input
             label={`${t('employeeName')} *`}
             value={form.name}
@@ -190,7 +190,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             value={form.nameEn}
             onChange={(e) => set('nameEn', e.target.value)}
             placeholder="Employee name in English"
-            style={{ direction: 'ltr', textAlign: 'left' }}
+            className="nx-ltr nx-text-start"
           />
           <Input
             label={t('jobTitle')}
@@ -265,7 +265,7 @@ export const StaffFormModal = memo(function StaffFormModal({
               value={overtimeWorkDays}
               onChange={(e) => setOvertimeWorkDays(e.target.value)}
             />
-            <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 4, lineHeight: 1.45 }}>
+            <div className="nx-text-xs nx-text-muted nx-mt-4" style={{ lineHeight: 1.45 }}>
               {t('overtimeWorkDaysHelp')}
             </div>
           </div>
@@ -284,7 +284,7 @@ export const StaffFormModal = memo(function StaffFormModal({
           )}
         </div>
         {isEdit && form.status === 'terminated' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
+          <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: 14 }}>
             <div>
               <Input
                 type="select"
@@ -297,7 +297,7 @@ export const StaffFormModal = memo(function StaffFormModal({
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </Input>
-              <div style={{ marginTop: 4, fontSize: 11, color: 'var(--noorix-text-muted)' }}>
+              <div className="nx-mt-4 nx-text-xs nx-text-muted">
                 {t('terminationReasonExamples')}
               </div>
             </div>
@@ -331,14 +331,14 @@ export const StaffFormModal = memo(function StaffFormModal({
             style={{ resize: 'vertical' }}
           />
         </div>
-        <div style={{ marginBottom: 18, border: '1px solid var(--noorix-border)', borderRadius: 12, padding: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-            <strong style={{ fontSize: 13 }}>{t('customAllowances')}</strong>
+        <div className="nx-border-all nx-rounded-lg nx-p-14" style={{ marginBottom: 18 }}>
+          <div className="nx-flex nx-flex-between nx-flex-wrap nx-gap-8" style={{ marginBottom: 10 }}>
+            <strong className="nx-text-base">{t('customAllowances')}</strong>
             <Button type="button" size="sm" onClick={() => addAllowanceRow()}>
               {t('addCustomAllowance')}
             </Button>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+          <div className="nx-flex nx-flex-wrap nx-gap-8 nx-mb-12">
             {ALLOWANCE_TEMPLATES.map((item) => (
               <Button
                 key={item.key}
@@ -351,11 +351,11 @@ export const StaffFormModal = memo(function StaffFormModal({
             ))}
           </div>
           {customAllowances.length === 0 && (
-            <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('noCustomAllowances')}</div>
+            <div className="nx-text-sm nx-text-muted">{t('noCustomAllowances')}</div>
           )}
-          <div style={{ display: 'grid', gap: 8 }}>
+          <div className="nx-grid nx-gap-8">
             {customAllowances.map((row) => (
-              <div key={row.rowId} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr auto', gap: 8, alignItems: 'end' }}>
+              <div key={row.rowId} className="nx-grid nx-gap-8" style={{ gridTemplateColumns: '1.4fr 1fr auto', alignItems: 'end' }}>
                 <Input
                   label={t('customAllowanceName')}
                   value={row.nameAr}
@@ -376,7 +376,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             ))}
           </div>
           {allowanceError && (
-            <div style={{ marginTop: 10, fontSize: 12, color: '#dc2626' }}>{allowanceError}</div>
+            <div className="nx-mt-10 nx-text-sm" style={{ color: '#dc2626' }}>{allowanceError}</div>
           )}
         </div>
       </form>

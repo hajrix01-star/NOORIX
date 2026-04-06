@@ -126,15 +126,12 @@ const SmartTable = memo(function SmartTable({
   const emptyMsg   = emptyMessage ?? t('noDataInPeriod');
 
   return (
-    <div className="noorix-surface-card noorix-table-frame nx-table-frame" style={{ overflow: 'hidden', padding: innerPadding }}>
+    <div className="noorix-surface-card noorix-table-frame nx-table-frame nx-overflow-hidden" style={{ padding: innerPadding }}>
       {/* ── رأس الجدول ── */}
       {(title || badge || onSearchChange) && (
-        <div style={{
-          padding: '10px 16px', borderBottom: '1px solid var(--noorix-border)',
-          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-        }}>
-          {title && <span style={{ fontWeight: 700, fontSize: 15, flexShrink: 0 }}>{title}</span>}
-          {badge && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>{badge}</div>}
+        <div className="nx-flex-center nx-gap-10" style={{ padding: '10px 16px', borderBottom: '1px solid var(--noorix-border)', flexWrap: 'wrap' }}>
+          {title && <span className="nx-font-700 nx-text-lg" style={{ flexShrink: 0 }}>{title}</span>}
+          {badge && <div className="nx-flex-center nx-gap-8" style={{ flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>{badge}</div>}
           {onSearchChange && (
             <Input
               type="search"
@@ -151,24 +148,21 @@ const SmartTable = memo(function SmartTable({
 
       {/* ── خطأ — يظهر دائماً عند isError حتى أثناء إعادة التحميل ── */}
       {isError && (
-        <div style={{
-          padding: 16, margin: 12, background: 'rgba(239,68,68,0.08)',
-          borderRadius: 10, color: '#ef4444', fontSize: 14,
-        }}>
+        <div className="nx-p-16 nx-text-md" style={{ margin: 12, background: 'rgba(239,68,68,0.08)', borderRadius: 10, color: '#ef4444' }}>
           ⚠ {errMsg}
         </div>
       )}
 
       {/* ── تحميل — Skeleton احترافي ── */}
       {isLoading && (
-        <div style={{ padding: 24, fontFamily: 'var(--noorix-font-primary)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <div className="nx-p-24" style={{ fontFamily: 'var(--noorix-font-primary)' }}>
+          <div className="nx-flex-center nx-gap-12 nx-mb-16">
             <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid var(--noorix-border)', borderTopColor: 'var(--noorix-accent-blue)', animation: 'noorix-spin 0.8s linear infinite' }} />
-            <span style={{ color: 'var(--noorix-text-muted)', fontSize: 14, fontWeight: 500 }}>{t('loading')}</span>
+            <span className="nx-text-muted nx-text-md nx-font-500">{t('loading')}</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="nx-flex-col nx-gap-8">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} style={{ height: 44, borderRadius: 8, background: 'linear-gradient(90deg, var(--noorix-bg-muted) 25%, var(--noorix-border-muted) 50%, var(--noorix-bg-muted) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+              <div key={i} className="nx-rounded" style={{ height: 44, background: 'linear-gradient(90deg, var(--noorix-bg-muted) 25%, var(--noorix-border-muted) 50%, var(--noorix-bg-muted) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
             ))}
           </div>
         </div>
@@ -178,7 +172,7 @@ const SmartTable = memo(function SmartTable({
       {!isLoading && showCards && (
         <div>
           {data.length === 0 ? (
-            <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--noorix-text-muted)', fontSize: 13 }}>
+            <div className="nx-text-center nx-text-muted nx-text-base" style={{ padding: '24px 16px' }}>
               {emptyMsg}
             </div>
           ) : data.map((row, i) => (
@@ -198,7 +192,7 @@ const SmartTable = memo(function SmartTable({
       {/* ── الجدول — مطاطي على الديسك توب، تمرير أفقي على الجوال فقط ── */}
       {!isLoading && !showCards && (
         <div className="noorix-table-scroll-wrapper">
-          <table className="noorix-table" style={{ width: '100%', tableLayout: layout, minWidth: minW || undefined, maxWidth: !isWideTable ? '100%' : undefined }}>
+          <table className="noorix-table nx-w-full" style={{ tableLayout: layout, minWidth: minW || undefined, maxWidth: !isWideTable ? '100%' : undefined }}>
             <thead>
               <tr style={{ textAlign: 'right' }}>
                 {showRowNumbers && (
@@ -226,7 +220,7 @@ const SmartTable = memo(function SmartTable({
                     >
                       {col.label}
                       {col.sortable && (
-                        <span style={{ marginRight: 4, opacity: isSorted ? 1 : 0.3, fontSize: 13 }}>
+                        <span className="nx-text-base" style={{ marginRight: 4, opacity: isSorted ? 1 : 0.3 }}>
                           {isSorted ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                         </span>
                       )}
@@ -238,9 +232,9 @@ const SmartTable = memo(function SmartTable({
             <tbody>
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan={effectiveCols} style={{
-                    padding: compact ? '24px 16px' : '36px', textAlign: 'center',
-                    color: 'var(--noorix-text-muted)', fontSize: compact ? 13 : 15,
+                  <td colSpan={effectiveCols} className="nx-text-center nx-text-muted" style={{
+                    padding: compact ? '24px 16px' : '36px',
+                    fontSize: compact ? 13 : 15,
                   }}>
                     {emptyMsg}
                   </td>
@@ -248,14 +242,13 @@ const SmartTable = memo(function SmartTable({
               ) : data.map((row, i) => (
                 <tr
                   key={row.id ?? i}
-                  className={typeof getRowClassName === 'function' ? getRowClassName(row, i) : undefined}
+                  className={`nx-border-b${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
                   style={{
-                    borderBottom: '1px solid var(--noorix-border)',
                     background: i % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent',
                   }}
                 >
                   {showRowNumbers && (
-                    <td style={{ padding: cellPad.td, fontSize: cellFs, textAlign: 'center', color: 'var(--noorix-text-muted)', fontWeight: 600, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36 }}>
+                    <td className="nx-text-center nx-text-muted nx-font-600" style={{ padding: cellPad.td, fontSize: cellFs, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36 }}>
                       {(page - 1) * safePageSize + i + 1}
                     </td>
                   )}

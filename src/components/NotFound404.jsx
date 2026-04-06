@@ -6,21 +6,13 @@ export default function NotFound404() {
   const navigate = useNavigate();
   return (
     <div
-      style={{
-        minHeight: '60vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-        textAlign: 'center',
-        direction: 'rtl',
-      }}
+      className="nx-flex-col-center nx-text-center nx-p-24"
+      style={{ minHeight: '60vh', direction: 'rtl' }}
     >
-      <div className="noorix-surface-card" style={{ maxWidth: 400, padding: 32, borderRadius: 12 }}>
-        <div style={{ fontSize: 52, fontWeight: 800, color: 'var(--noorix-text-muted)', letterSpacing: -2, marginBottom: 12, lineHeight: 1 }}>404</div>
-        <h2 style={{ margin: '0 0 8px', fontSize: 20 }}>الصفحة غير موجودة</h2>
-        <p style={{ margin: '0 0 20px', color: 'var(--noorix-text-muted)', fontSize: 14 }}>
+      <div className="noorix-surface-card nx-p-20 nx-rounded-lg" style={{ maxWidth: 400 }}>
+        <div className="nx-font-800 nx-text-muted" style={{ fontSize: 52, letterSpacing: -2, marginBottom: 12, lineHeight: 1 }}>404</div>
+        <h2 className="nx-m-0 nx-text-xl" style={{ marginBottom: 8 }}>الصفحة غير موجودة</h2>
+        <p className="nx-m-0 nx-text-muted nx-text-md" style={{ marginBottom: 20 }}>
           الرابط الذي تبحث عنه غير موجود أو تم نقله.
         </p>
         <Button variant="primary" onClick={() => navigate('/')}>

@@ -141,15 +141,9 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
   }
 
   return (
-    <div style={{ display: 'grid', gap: 10 }}>
+    <div className="nx-grid nx-gap-10">
       {/* ── شريط الأدوات ── */}
-      <div style={{
-        display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
-        padding: '10px 14px',
-        background: 'var(--noorix-bg-muted)',
-        borderRadius: 10,
-        border: '1px solid var(--noorix-border)',
-      }}>
+      <div className="nx-flex-center nx-flex-wrap nx-gap-8 nx-bg-muted nx-rounded nx-border-all" style={{ padding: '10px 14px' }}>
         <Button onClick={handleDownloadTemplate}>تنزيل النموذج</Button>
 
         <Button
@@ -182,13 +176,13 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
           border: `1px solid ${result.failed === 0 ? 'rgba(22,163,74,0.25)' : 'rgba(234,179,8,0.35)'}`,
           fontSize: 13,
         }}>
-          <div style={{ fontWeight: 700, marginBottom: result.errors.length ? 6 : 0 }}>
+          <div className="nx-font-700" style={{ marginBottom: result.errors.length ? 6 : 0 }}>
             {result.failed === 0
               ? `تم استيراد ${result.success} مورد بنجاح`
               : `تم استيراد ${result.success} بنجاح — فشل ${result.failed}`}
           </div>
           {result.errors.length > 0 && (
-            <ul style={{ margin: 0, padding: 'revert', fontSize: 12, color: 'var(--noorix-accent-red)', maxHeight: 120, overflowY: 'auto' }}>
+            <ul className="nx-m-0" style={{ padding: 'revert', fontSize: 12, color: 'var(--noorix-accent-red)', maxHeight: 120, overflowY: 'auto' }}>
               {result.errors.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
           )}
@@ -196,7 +190,8 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
             variant="ghost"
             type="button"
             onClick={() => setResult(null)}
-            style={{ marginTop: 8, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--noorix-text-muted)' }}
+            className="nx-mt-8 nx-cursor-pointer nx-text-muted"
+            style={{ fontSize: 11, background: 'none', border: 'none' }}
           >
             إخفاء
           </Button>

@@ -59,10 +59,9 @@ export default function LoginScreen() {
   return (
     <div
       dir={pageDir}
+      className="nx-flex-center"
       style={{
         minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
         justifyContent: 'center',
         padding: 'clamp(20px, 5vw, 48px) 16px',
         background: `
@@ -72,33 +71,32 @@ export default function LoginScreen() {
         `,
       }}
     >
-      <div style={{ width: '100%', maxWidth: 420 }}>
+      <div className="nx-w-full" style={{ maxWidth: 420 }}>
 
         {/* ── الشعار واسم التطبيق ── */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div className="nx-text-center" style={{ marginBottom: 32 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             gap: 14, marginBottom: 10,
           }}>
             {/* أيقونة الشعار */}
-            <div style={{
+            <div className="nx-overflow-hidden" style={{
               width: 56, height: 56, borderRadius: 16, flexShrink: 0,
               background: brandLogo ? 'transparent' : `linear-gradient(135deg, ${brandColor} 0%, #0f172a 100%)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
               boxShadow: '0 10px 28px rgba(37,99,235,0.22)',
             }}>
               {brandLogo
-                ? <img src={brandLogo} alt={brandName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ? <img src={brandLogo} alt={brandName} className="nx-w-full" style={{ height: '100%', objectFit: 'cover' }} />
                 : <span style={{ color: '#fff', fontSize: 24, fontWeight: 900, lineHeight: 1 }}>{brandName?.[0] || 'N'}</span>
               }
             </div>
             {/* الاسم */}
             <div style={{ textAlign: isEnglish ? 'left' : 'right' }}>
-              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--noorix-text)', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
+              <div className="nx-font-800 nx-text-primary" style={{ fontSize: 24, letterSpacing: '-0.3px', lineHeight: 1.1 }}>
                 {brandName}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 3 }}>
+              <div className="nx-text-sm nx-text-muted" style={{ marginTop: 3 }}>
                 {brandTagline || t('loginBrandSub')}
               </div>
             </div>
@@ -106,33 +104,30 @@ export default function LoginScreen() {
         </div>
 
         {/* ── بطاقة تسجيل الدخول ── */}
-        <div style={{
-          background: 'var(--noorix-bg-surface, #fff)',
-          border: '1px solid var(--noorix-border)',
+        <div className="nx-bg-surface nx-border-all nx-overflow-hidden" style={{
           borderRadius: 20,
           boxShadow: '0 20px 60px rgba(15,23,42,0.12)',
-          overflow: 'hidden',
         }}>
           {/* شريط لوني علوي */}
           <div style={{ height: 4, background: 'linear-gradient(90deg, #2563eb 0%, #16a34a 100%)' }} />
 
           <div style={{ padding: 'clamp(24px, 5vw, 36px)' }}>
-            <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px', color: 'var(--noorix-text)' }}>
+            <h2 className="nx-font-800 nx-text-primary" style={{ fontSize: 20, margin: '0 0 6px' }}>
               {t('login')}
             </h2>
-            <p style={{ fontSize: 13, color: 'var(--noorix-text-muted)', margin: '0 0 24px' }}>
+            <p className="nx-text-base nx-text-muted" style={{ margin: '0 0 24px' }}>
               {t('loginSubtitle')}
             </p>
 
             <form onSubmit={handleSubmit} noValidate>
               {/* البريد الإلكتروني */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--noorix-text)' }}>
+              <div className="nx-mb-16">
+                <div className="nx-flex-between nx-mb-6">
+                  <label className="nx-text-base nx-font-700 nx-text-primary">
                     {t('usernameOrEmail')}
                   </label>
                   {loginDomain && (
-                    <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)', direction: 'ltr', fontFamily: 'monospace' }}>
+                    <span className="nx-text-xs nx-text-muted nx-ltr" style={{ fontFamily: 'monospace' }}>
                       @{loginDomain}
                     </span>
                   )}
@@ -144,8 +139,9 @@ export default function LoginScreen() {
                   placeholder={`user@${loginDomain}`}
                   autoComplete="username"
                   dir="ltr"
+                  className="nx-w-full"
                   style={{
-                    width: '100%', height: 50, padding: '0 14px', fontSize: 15,
+                    height: 50, padding: '0 14px', fontSize: 15,
                     border: '1.5px solid var(--noorix-border)',
                     borderRadius: 12,
                     background: 'var(--noorix-bg-muted, #f8fafc)',
@@ -161,7 +157,7 @@ export default function LoginScreen() {
 
               {/* كلمة المرور */}
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6, color: 'var(--noorix-text)' }}>
+                <label className="nx-text-base nx-font-700 nx-text-primary" style={{ display: 'block', marginBottom: 6 }}>
                   {t('password')}
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -171,8 +167,9 @@ export default function LoginScreen() {
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
                     dir="ltr"
+                    className="nx-w-full"
                     style={{
-                      width: '100%', height: 50,
+                      height: 50,
                       paddingTop: 0, paddingBottom: 0,
                       paddingLeft: isEnglish ? 14 : 80,
                       paddingRight: isEnglish ? 80 : 14,
@@ -205,11 +202,11 @@ export default function LoginScreen() {
 
               {/* خطأ */}
               {error && (
-                <div style={{
-                  padding: '11px 14px', marginBottom: 16,
+                <div className="nx-mb-16 nx-text-base" style={{
+                  padding: '11px 14px',
                   background: 'rgba(220,38,38,0.07)',
                   border: '1px solid rgba(220,38,38,0.18)',
-                  borderRadius: 10, fontSize: 13,
+                  borderRadius: 10,
                   color: '#dc2626', lineHeight: 1.7,
                 }}>
                   {error}
@@ -231,7 +228,7 @@ export default function LoginScreen() {
         </div>
 
         {/* ── تذييل بسيط ── */}
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+        <p className="nx-text-center nx-text-sm nx-text-muted nx-mt-20">
           {t('secureSession')} &nbsp;·&nbsp; Noorix © {new Date().getFullYear()}
         </p>
 

@@ -33,40 +33,26 @@ export class ErrorBoundary extends React.Component {
       return (
         <div
           role="alert"
-          style={{
-            minHeight: '60vh',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 24,
-            textAlign: 'center',
-            fontFamily: 'var(--noorix-font-arabic), sans-serif',
-            direction: 'rtl',
-          }}
+          className="nx-flex-col-center nx-text-center nx-p-24"
+          style={{ minHeight: '60vh', fontFamily: 'var(--noorix-font-arabic), sans-serif', direction: 'rtl' }}
         >
           <div
-            className="noorix-surface-card"
-            style={{
-              maxWidth: 420,
-              padding: 32,
-              borderRadius: 12,
-              border: '1px solid var(--noorix-border)',
-            }}
+            className="noorix-surface-card nx-p-20 nx-rounded-lg nx-border-all"
+            style={{ maxWidth: 420 }}
           >
-            <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-            <h2 style={{ margin: '0 0 8px', fontSize: 20, color: 'var(--noorix-text)' }}>
+            <div className="nx-text-3xl nx-mb-12">⚠️</div>
+            <h2 className="nx-m-0 nx-text-xl nx-text-primary" style={{ marginBottom: 8 }}>
               حدث خطأ غير متوقع
             </h2>
-            <p style={{ margin: '0 0 20px', color: 'var(--noorix-text-muted)', fontSize: 14 }}>
+            <p className="nx-m-0 nx-text-muted nx-text-md" style={{ marginBottom: 20 }}>
               نعتذر عن الإزعاج. يمكنك تحديث الصفحة والمحاولة مرة أخرى.
             </p>
             {this.state.error?.message && (
-              <pre style={{ margin: '0 0 16px', padding: 12, background: 'rgba(0,0,0,0.05)', borderRadius: 8, fontSize: 12, textAlign: 'left', direction: 'ltr', overflow: 'auto', maxHeight: 120 }}>
+              <pre className="nx-text-sm nx-ltr nx-overflow-auto nx-rounded nx-mb-12" style={{ padding: 12, background: 'rgba(0,0,0,0.05)', marginBottom: 16, maxHeight: 120 }}>
                 {this.state.error.message}
               </pre>
             )}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="nx-flex nx-justify-center nx-flex-wrap nx-gap-10">
               <Button type="button" onClick={this.handleRetry}>
                 إعادة المحاولة
               </Button>

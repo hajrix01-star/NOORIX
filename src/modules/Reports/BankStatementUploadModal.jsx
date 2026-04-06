@@ -102,12 +102,12 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
       }
     >
       {/* خطوات التقدم */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
+      <div className="nx-flex nx-gap-4 nx-mb-20">
         {STEPS.map((s, i) => (
           <div
             key={s.id}
+            className="nx-flex-1"
             style={{
-              flex: 1,
               height: 4,
               borderRadius: 2,
               background: i <= step ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
@@ -119,13 +119,10 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
 
       {error && (
         <div
+          className="nx-p-12 nx-mb-16 nx-rounded nx-text-base"
           style={{
-            padding: 12,
-            marginBottom: 16,
             background: 'rgba(239,68,68,0.1)',
-            borderRadius: 8,
             color: 'var(--noorix-error)',
-            fontSize: 13,
           }}
         >
           {error}
@@ -138,56 +135,42 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
+          className="nx-rounded-lg nx-text-center nx-cursor-pointer"
           style={{
             border: `2px dashed ${isDragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
-            borderRadius: 12,
             padding: 40,
-            textAlign: 'center',
-            cursor: 'pointer',
             background: isDragging ? 'rgba(37,99,235,0.05)' : 'var(--noorix-bg-muted)',
           }}
         >
-          <div style={{ fontSize: 36, marginBottom: 8 }}></div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--noorix-text)' }}>
+          <div className="nx-mb-8" style={{ fontSize: 36 }}></div>
+          <div className="nx-text-lg nx-font-600 nx-text-primary">
             {t('bankStatementDragDrop')}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>
+          <div className="nx-text-sm nx-text-muted nx-mt-4">
             Excel (.xlsx, .xls) أو CSV
           </div>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleInputChange} hidden />
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 12 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: 12,
-              background: 'var(--noorix-bg-muted)',
-              borderRadius: 8,
-            }}
-          >
+        <div className="nx-grid nx-gap-12">
+          <div className="nx-flex-center nx-gap-12 nx-p-12 nx-bg-muted nx-rounded">
             <span style={{ fontSize: 24 }}></span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, color: 'var(--noorix-text)' }}>{file.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+            <div className="nx-flex-1" style={{ minWidth: 0 }}>
+              <div className="nx-font-600 nx-text-primary">{file.name}</div>
+              <div className="nx-text-sm nx-text-muted">
                 {raw?.length ?? 0} صف • {step >= 4 ? t('bankStatementStepDone') : STEPS[step] && t(STEPS[step].labelKey)}
               </div>
             </div>
             {step >= 4 && (
-              <span style={{ color: 'var(--noorix-success)', fontSize: 14 }}>✓</span>
+              <span className="nx-text-md" style={{ color: 'var(--noorix-success)' }}>✓</span>
             )}
           </div>
           {result?.status === 'mapping' && (
             <div
-              style={{
-                padding: 12,
-                background: 'rgba(34,197,94,0.1)',
-                borderRadius: 8,
-                fontSize: 13,
-                color: 'var(--noorix-text)',
-              }}
+            className="nx-p-12 nx-rounded nx-text-base nx-text-primary"
+            style={{
+              background: 'rgba(34,197,94,0.1)',
+            }}
             >
               {t('bankStatementMappingRequired')}
             </div>

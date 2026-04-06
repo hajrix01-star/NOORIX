@@ -116,7 +116,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
         {typeLabels[v] || v}
       </Badge>
     ) },
-    { key: 'parent', label: t('parentCategory'), render: (_, row) => <span style={{ fontSize: 12 }}>{row._parentName || '—'}</span> },
+    { key: 'parent', label: t('parentCategory'), render: (_, row) => <span className="nx-text-sm">{row._parentName || '—'}</span> },
     { key: 'actions', label: t('actions'), render: (_, row) => (
       <span style={{ display: 'inline-flex', gap: 6 }}>
         <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button>
@@ -130,14 +130,14 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   return (
     <div className="nx-screen">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="nx-flex nx-flex-end">
         <Button variant={showForm ? 'default' : 'primary'} onClick={() => (showForm ? resetForm() : setShowForm(true))}>
           {showForm ? t('cancel') : t('addCategory')}
         </Button>
       </div>
       {showForm && (
         <Card>
-          <h4 style={{ margin: '0 0 16px', fontSize: 14 }}>{editing ? t('editCategory') : t('newCategory')}</h4>
+          <h4 className="nx-text-md nx-m-0 nx-mb-16">{editing ? t('editCategory') : t('newCategory')}</h4>
           <form onSubmit={handleSave}>
             <FormRow cols={2} style={{ marginBottom: 14 }}>
               <Input
@@ -183,7 +183,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
                 ))}
               </Input>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="nx-flex nx-gap-8">
               <Button type="submit" variant="primary" disabled={create.isPending || update.isPending} loading={create.isPending || update.isPending}>
                 {create.isPending || update.isPending ? t('saving') : t('save')}
               </Button>
@@ -192,8 +192,8 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
           </form>
         </Card>
       )}
-      <div style={{ textAlign: 'right', marginBottom: 8 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{t(titleKey)}</h3>
+      <div className="nx-text-end nx-mb-8">
+        <h3 className="nx-text-xl nx-font-700 nx-m-0">{t(titleKey)}</h3>
       </div>
       <SmartTable columns={columns} data={rows} total={rows.length} page={1} pageSize={50} showRowNumbers rowNumberWidth="1%" isLoading={isLoading} emptyMessage={t('noCategories')} />
     </div>

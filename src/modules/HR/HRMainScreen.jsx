@@ -70,7 +70,7 @@ export default function HRMainScreen() {
           <h1 className="nx-page-title">{t('staffTitle')}</h1>
         </div>
         {companyId && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="nx-flex nx-flex-wrap nx-gap-8">
             <div className="noorix-stat-card noorix-stat-card--green" style={{ padding: '10px 16px', minWidth: 110 }}>
               <div className="noorix-stat-card__stripe" />
               <div className="noorix-stat-card__body">
@@ -92,18 +92,14 @@ export default function HRMainScreen() {
       </div>
 
       {/* ── شريط التبويبات — مستقل خارج البطاقة لضمان التمرير الأفقي ── */}
-      <div style={{
-        background: 'var(--noorix-bg-surface)',
-        border: '1px solid var(--noorix-border)',
-        borderRadius: 12,
-        padding: '4px',
+      <div className="nx-bg-surface nx-rounded-lg nx-border-all nx-p-4" style={{
         overflowX: 'auto',
         overflowY: 'visible',
         WebkitOverflowScrolling: 'touch',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
       }}>
-        <div style={{ display: 'flex', gap: 2, width: 'max-content', minWidth: '100%' }}>
+        <div className="nx-flex" style={{ gap: 2, width: 'max-content', minWidth: '100%' }}>
           {TABS.map((tab) => (
             <Button
               key={tab.id}
@@ -119,7 +115,7 @@ export default function HRMainScreen() {
       </div>
 
       {/* ── محتوى التبويب ── */}
-      <div className="noorix-surface-card" style={{ padding: 20, minHeight: 200 }}>
+      <div className="noorix-surface-card nx-p-20" style={{ minHeight: 200 }}>
         {activeTab === 'employees' && <StaffListScreen embedded />}
         {activeTab === 'payroll'   && <PayrollTab />}
         {activeTab === 'leave'     && <LeaveTab />}

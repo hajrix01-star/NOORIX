@@ -76,7 +76,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
   return (
     <Modal open={true} onClose={onClose} title={t('changePassword')} size="sm">
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="nx-flex nx-flex-col nx-gap-16">
           <Input
             type="password"
             label={t('changePasswordCurrent') || 'كلمة المرور الحالية'}
@@ -95,8 +95,8 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               autoComplete="new-password"
             />
             {newPassword && (
-              <div style={{ marginTop: 8 }}>
-                <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+              <div className="nx-mt-8">
+                <div className="nx-flex nx-gap-4 nx-mb-4">
                   {[1, 2, 3, 4].map((level) => (
                     <div
                       key={level}
@@ -110,7 +110,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
                     />
                   ))}
                 </div>
-                <span style={{ fontSize: 11, color: strengthColor }}>{strengthLabel}</span>
+                <span className="nx-text-xs" style={{ color: strengthColor }}>{strengthLabel}</span>
               </div>
             )}
           </div>
@@ -124,17 +124,17 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               autoComplete="new-password"
             />
             {confirmPassword && confirmPassword !== newPassword && (
-              <span style={{ fontSize: 11, color: '#ef4444', marginTop: 4, display: 'block' }}>
+              <span className="nx-text-xs nx-mt-4" style={{ color: '#ef4444', display: 'block' }}>
                 كلمتا المرور غير متطابقتين
               </span>
             )}
           </div>
           {error && (
-            <div style={{ padding: 10, borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#dc2626', fontSize: 13 }}>
+            <div className="nx-p-10 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>
               {error}
             </div>
           )}
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <div className="nx-flex nx-flex-end nx-gap-10">
             <Button type="button" onClick={onClose}>
               {t('cancel')}
             </Button>

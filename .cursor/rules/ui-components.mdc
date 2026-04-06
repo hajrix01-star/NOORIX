@@ -1,167 +1,175 @@
 ---
-description: Enforce using Noorix UI component library (src/ui) for all new features and edits
+description: STRICT — Enforce Noorix UI system (src/ui). Block raw HTML, inline styles for layout/colors, and old noorix-btn-* classes.
 globs: src/**/*.{jsx,tsx,js,ts}
 alwaysApply: true
 ---
 
-# Noorix UI Components — إلزامي لكل الشاشات الجديدة والتعديلات
+# Noorix UI System — قواعد صارمة لا استثناءات
 
-كل ميزة جديدة أو تعديل على ملف موجود **يجب أن يستخدم** المكوّنات من `src/ui/`.
+## 🚨 المحظورات المطلقة (سبب رفض الكود)
 
-## الاستيراد
+### 1. العناصر الخام (Raw HTML) — ممنوع بالكامل
 
 ```jsx
-import { Button, Input, Card, Badge, Modal, Spinner, SmartTable, Divider, FormRow } from '../../ui';
+// ❌ يُرفض فوراً
+<button ...>
+<input type="text|number|date|search|email|tel|url|password|month|time" ...>
+<select ...>
+
+// ✅ البديل الوحيد المقبول
+import { Button, Input } from '../../ui';
+<Button variant="primary|danger|success|ghost|warning|raw">
+<Input type="text|number|date|select|search|...">
 ```
 
----
-
-## القواعد الإلزامية
-
-### ❌ ممنوع — ✅ البديل الصحيح
-
-**الأزرار:**
-```jsx
-// ❌
-<button className="noorix-btn-primary" onClick={fn}>حفظ</button>
-<button className="noorix-btn-nav" disabled={loading}>إلغاء</button>
-
-// ✅
-<Button variant="primary" onClick={fn}>حفظ</Button>
-<Button disabled={loading}>إلغاء</Button>
-```
-
-**حقول الإدخال:**
-```jsx
-// ❌
-<input style={{ padding:'9px 12px', borderRadius:8, border:'1px solid var(--noorix-border)' }} />
-<select style={{...inputStyle}}>...</select>
-const inputStyle = { padding: '8px 12px', borderRadius: 8 }; // لا تنشئ هذا
-
-// ✅
-<Input label="الاسم" value={v} onChange={fn} />
-<Input type="select" label="الحالة"><option>...</option></Input>
-```
-
-**البطاقات:**
-```jsx
-// ❌
-<div className="noorix-surface-card" style={{ padding:20, borderRadius:14 }}>
-
-// ✅
-<Card>...</Card>
-<Card padding="lg" variant="exec" stripe="green" title="الإيرادات" value="50,000 ﷼" />
-```
-
-**شارات الحالة:**
-```jsx
-// ❌
-<span style={{ padding:'2px 8px', borderRadius:999, background:'rgba(22,163,74,0.1)', color:'#15803d' }}>
-  نشط
-</span>
-
-// ✅
-<Badge color="green">نشط</Badge>
-// أو باستخدام map:
-const STATUS_MAP = { active:{color:'green',label:'نشط'}, inactive:{color:'gray',label:'غير نشط'} };
-<Badge {...Badge.fromStatus(row.status, STATUS_MAP)} />
-```
-
-**النوافذ المنبثقة:**
-```jsx
-// ❌
-<div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:9999 }}>
-  <div className="noorix-surface-card" style={{ maxWidth:560 }}>
-
-// ✅
-<Modal open={open} onClose={onClose} title="تعديل الموظف" size="md">
-  ...محتوى النموذج...
-</Modal>
-```
-
-**التحميل:**
-```jsx
-// ❌
-<div style={{ width:24, height:24, borderRadius:'50%', border:'2px solid...', animation:'...' }} />
-
-// ✅
-<Spinner />
-<Spinner.Page label="جاري التحميل..." />
-```
-
-**الجداول:**
-```jsx
-// ❌ — لا تبني جداول HTML يدوياً في الشاشات
-
-// ✅
-<SmartTable
-  columns={[
-    { key:'name', label:'الاسم', sortable:true },
-    { key:'amount', label:'المبلغ', numeric:true },
-    { key:'status', label:'الحالة', render:(v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} /> },
-    { key:'actions', label:'', render:(_, row) => <Button size="sm" variant="danger">حذف</Button> },
-  ]}
-  data={rows}
-  total={total}
-  page={page}
-  pageSize={50}
-  onPageChange={setPage}
-  isLoading={isLoading}
-/>
-```
-
-**تخطيط النماذج:**
-```jsx
-// ❌
-<div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-
-// ✅
-<FormRow>
-  <Input label="الاسم الأول" />
-  <Input label="الاسم الأخير" />
-</FormRow>
-```
-
----
-
-## CSS Variables — لا تُكسر
-
-المتغيرات موجودة في `src/index.css`. **لا تكتب ألواناً صلبة (hardcoded):**
+### 2. الـ Inline Styles للتخطيط والألوان — محظور تماماً
 
 ```jsx
-// ❌
-style={{ color: '#1a2332', background: '#ffffff', border: '1px solid #dde3ec' }}
+// ❌ يُرفض — تخطيط ثابت
+<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+<div style={{ padding: 16, borderRadius: 8 }}>
+<div style={{ fontSize: 13, fontWeight: 600 }}>
+<div style={{ color: 'var(--noorix-text-muted)' }}>
+<div style={{ background: 'var(--noorix-bg-muted)' }}>
+<div style={{ width: '100%', overflow: 'auto' }}>
 
-// ✅ — إذا احتجت ضرورياً لـ inline style
-style={{ color: 'var(--noorix-text)', background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}
-```
+// ✅ البديل — استخدم classes من src/ui/ui.css
+<div className="nx-flex-center nx-gap-12">
+<div className="nx-p-16 nx-rounded">
+<div className="nx-text-base nx-font-600">
+<div className="nx-text-muted">
+<div className="nx-bg-muted">
+<div className="nx-w-full nx-overflow-auto">
 
----
-
-## متى يُسمح بـ inline style؟
-
-فقط لقيم **ديناميكية** لا يمكن تعبيرها بـ class ثابت:
-```jsx
-// ✅ مقبول — قيمة حسابية ديناميكية
+// ✅ مقبول فقط — قيم ديناميكية محسوبة من state/props
 style={{ width: `${progress}%` }}
 style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
 style={{ height: rowHeight * count }}
+style={{ color: item.dynamicColor }}     // من data
+style={{ top: menuY, left: menuX }}      // من DOM measurements
+```
+
+### 3. الكلاسات القديمة — محظور ذكرها
+
+```jsx
+// ❌ dead code — تمت إزالتها من index.css
+className="noorix-btn-nav"
+className="noorix-btn-primary"
+className="noorix-btn-success"
+className="noorix-btn-danger"
+className="noorix-btn-ghost"
+className="noorix-btn"
+className="noorix-btn--primary"
+```
+
+### 4. الجداول اليدوية — ممنوع في شاشات البيانات
+
+```jsx
+// ❌ في شاشات عرض البيانات
+<table><thead><tr><th>...</th></tr></thead><tbody>...
+
+// ✅ استخدم SmartTable
+import { SmartTable } from '../../ui';
+<SmartTable columns={cols} data={rows} total={total} page={page} onPageChange={setPage} />
+
+// استثناء مقبول: مستندات الطباعة (PDF/print) — جداول HTML مسموح بها
+```
+
+### 5. النوافذ المنبثقة خارج Modal.jsx — ممنوع
+
+```jsx
+// ❌
+createPortal(<div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)' }}> ... </div>)
+<div className="modal-overlay"> ... </div>
+
+// ✅
+import { Modal } from '../../ui';
+<Modal open={open} onClose={onClose} title="العنوان" size="md|lg|sm">
+  {children}
+</Modal>
 ```
 
 ---
 
-## مرجع سريع
+## ✅ مرجع الـ Utility Classes (src/ui/ui.css)
 
-| الحاجة | المكوّن |
-|--------|---------|
-| زر | `<Button variant="primary\|danger\|success\|ghost\|warning">` |
-| حقل نص/رقم/تاريخ | `<Input type="text\|number\|date">` |
-| قائمة منسدلة | `<Input type="select">` |
-| textarea | `<Input multiline>` |
-| بطاقة | `<Card>` / `<Card variant="exec">` / `<Card variant="stat">` |
-| شارة حالة | `<Badge color="green\|red\|amber\|blue\|gray">` |
-| نافذة | `<Modal open onClose title>` |
-| تحميل | `<Spinner>` / `<Spinner.Page>` |
-| جدول | `<SmartTable columns data ...>` |
-| فاصل | `<Divider>` / `<Divider label="أو">` |
-| صف نموذج | `<FormRow cols={2}>` |
+### Layout
+| Class | CSS |
+|-------|-----|
+| `nx-flex` | `display: flex` |
+| `nx-flex-center` | `display:flex; align-items:center` |
+| `nx-flex-between` | `display:flex; align-items:center; justify-content:space-between` |
+| `nx-flex-col` | `display:flex; flex-direction:column` |
+| `nx-flex-end` | `display:flex; align-items:center; justify-content:flex-end` |
+| `nx-flex-wrap` | `display:flex; flex-wrap:wrap` |
+| `nx-grid` | `display:grid` |
+| `nx-grid-2` | `display:grid; grid-template-columns:1fr 1fr` |
+| `nx-grid-3` | `display:grid; grid-template-columns:1fr 1fr 1fr` |
+| `nx-flex-1` | `flex:1; min-width:0` |
+| `nx-row-between` | flex + space-between + flex-wrap |
+
+### Gap
+`nx-gap-4` `nx-gap-6` `nx-gap-8` `nx-gap-10` `nx-gap-12` `nx-gap-14` `nx-gap-16` `nx-gap-20` `nx-gap-24`
+
+### Typography
+| Class | Value |
+|-------|-------|
+| `nx-text-xs` | font-size: 11px |
+| `nx-text-sm` | font-size: 12px |
+| `nx-text-base` | font-size: 13px |
+| `nx-text-md` | font-size: 14px |
+| `nx-text-lg` | font-size: 15px |
+| `nx-text-xl` | font-size: 16px |
+| `nx-text-2xl` | font-size: 18px |
+| `nx-text-3xl` | font-size: 20px |
+| `nx-font-500/600/700/800` | font-weight |
+| `nx-text-muted` | color: var(--noorix-text-muted) |
+| `nx-text-primary` | color: var(--noorix-text) |
+| `nx-text-center/end/start` | text-align |
+| `nx-truncate` | ellipsis overflow |
+| `nx-ltr` | direction: ltr |
+| `nx-uppercase` | text-transform: uppercase |
+
+### Spacing
+`nx-p-4/6/8/10/12/14/16/20/24`
+`nx-px-8/12/16` | `nx-py-4/6/8/12`
+`nx-m-0` | `nx-mt-0/4/6/8/10/12/16/20` | `nx-mb-0/4/6/8/12/16`
+
+### Surface
+| Class | CSS |
+|-------|-----|
+| `nx-surface` | bg-surface + border + border-radius 12px |
+| `nx-surface-sm` | bg-surface + border + border-radius 8px |
+| `nx-bg-muted` | background: var(--noorix-bg-muted) |
+| `nx-bg-surface` | background: var(--noorix-bg-surface) |
+| `nx-border-all` | border: 1px solid var(--noorix-border) |
+| `nx-border-b/t` | border-bottom/top |
+| `nx-rounded` | border-radius: 8px |
+| `nx-rounded-lg` | border-radius: 12px |
+
+### Misc
+`nx-w-full` | `nx-overflow-auto` | `nx-overflow-hidden` | `nx-cursor-pointer`
+`nx-ltr` | `nx-rtl` | `nx-select-none` | `nx-truncate` | `nx-nowrap`
+
+---
+
+## الاستيراد الصحيح
+
+```jsx
+import { Button, Input, Card, Badge, Modal, Spinner, SmartTable, Divider, FormRow } from '../../ui';
+// أو حسب عمق الملف:
+import { Button, Input, Modal } from '../../../ui';
+```
+
+---
+
+## متى يُسمح بـ inline style؟ (الحالات الاستثنائية الوحيدة)
+
+1. **قيمة مئوية محسوبة**: `style={{ width: `${pct}%` }}`
+2. **أبعاد من state**: `style={{ height: chartHeight, width: chartWidth }}`
+3. **ألوان من البيانات**: `style={{ color: category.color }}`
+4. **إحداثيات من DOM**: `style={{ top: y, left: x }}` (للقوائم المنسدلة المُحسوبة)
+5. **CSS Grid الديناميكي**: `style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}`
+6. **مستندات الطباعة** (print/PDF templates): أنماط دقيقة للطباعة مقبولة
+
+**أي شيء خارج هذه الحالات = كود خاطئ يجب رفضه.**

@@ -38,24 +38,14 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
   if (!dateStr) return null;
 
   return (
-    <div style={{
-      flex: '0 0 280px',
-      minWidth: 260,
-      borderRadius: 10,
-      border: '1px solid var(--noorix-border)',
-      background: 'var(--noorix-bg-surface)',
-      padding: 16,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 12,
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{formatSaudiDate(dateStr)}</h4>
+    <div className="nx-flex nx-flex-col nx-gap-12 nx-p-16 nx-bg-surface nx-border-all nx-rounded" style={{ flex: '0 0 280px', minWidth: 260 }}>
+      <div className="nx-flex nx-flex-between">
+        <h4 className="nx-m-0 nx-text-lg nx-font-700">{formatSaudiDate(dateStr)}</h4>
         {onPrint && (
           <Button variant="primary" onClick={onPrint}>{t('print')}</Button>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+      <div className="nx-flex nx-flex-wrap nx-gap-12">
         <div style={{ padding: 10, borderRadius: 8, background: 'rgba(37,99,235,0.08)', flex: 1, minWidth: 90 }}>
           <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 4 }}>{t('dashboardSalesTarget')}</div>
           <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget, 2) : '—'} ﷼</div>
@@ -80,8 +70,8 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
         {isSavingNote && <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>…</span>}
       </div>
 
-      <div style={{ fontSize: 12, fontWeight: 600 }}>{t('salesChannels')} / {t('summaryNumber')}</div>
-      <div style={{ flex: 1, minHeight: 100, overflow: 'auto', border: '1px solid var(--noorix-border)', borderRadius: 8 }}>
+      <div className="nx-text-sm nx-font-600">{t('salesChannels')} / {t('summaryNumber')}</div>
+      <div className="nx-flex-1 nx-overflow-auto nx-border-all nx-rounded" style={{ minHeight: 100 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             <tr style={{ background: 'var(--noorix-bg-muted)' }}>

@@ -74,11 +74,11 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
       }
     >
       {error && (
-        <div style={{ padding: 12, marginBottom: 12, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#dc2626', fontSize: 13 }}>
+        <div className="nx-rounded nx-text-base nx-p-12 nx-mb-12" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>
           {error}
         </div>
       )}
-      <div className="noorix-table-frame" style={{ overflowX: 'auto' }}>
+      <div className="noorix-table-frame nx-overflow-auto">
         <table className="noorix-table">
           <thead>
             <tr style={{ background: 'var(--noorix-bg-page)', borderBottom: '2px solid var(--noorix-border)' }}>
@@ -93,7 +93,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
           <tbody>
             {invoices.map((inv, i) => (
               <tr key={inv.id || i} style={{ borderBottom: '1px solid var(--noorix-border)', opacity: inv.status === 'cancelled' ? 0.5 : 1, background: inv.status === 'cancelled' ? 'var(--noorix-bg-page)' : 'transparent' }}>
-                <td style={{ padding: 6, textAlign: 'center', color: 'var(--noorix-text-muted)', fontWeight: 600 }}>{i + 1}</td>
+                <td className="nx-text-center nx-text-muted nx-font-600" style={{ padding: 6 }}>{i + 1}</td>
                 <td style={{ padding: 6 }}>
                   {inv.status === 'cancelled' ? (
                     <span className="nx-cell-muted">{(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}</span>
@@ -154,7 +154,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                 </td>
                 <td style={{ padding: 6 }}>
                   {inv.status === 'cancelled' ? (
-                    <span style={{ fontSize: 12, color: '#dc2626', fontWeight: 600 }}>{t('cancelled')}</span>
+                    <span className="nx-text-sm nx-font-600" style={{ color: '#dc2626' }}>{t('cancelled')}</span>
                   ) : (
                     <Button
                       size="sm"

@@ -107,8 +107,9 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
   const dropdown = open && (
     <div
       ref={menuRef}
-      role="dialog"
+      role="menu"
       aria-label={t('userAccount')}
+      className="nx-bg-surface nx-text-primary nx-rounded-lg"
       style={{
         position: 'fixed',
         zIndex: 10050,
@@ -120,10 +121,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
         overflowY: 'auto',
         WebkitOverflowScrolling: 'touch',
         direction: lang === 'ar' ? 'rtl' : 'ltr',
-        background: 'var(--noorix-bg-surface)',
-        color: 'var(--noorix-text)',
         border: '1px solid var(--noorix-border)',
-        borderRadius: 12,
         boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)',
         animation: 'fadeSlideDown 0.15s ease',
       }}
@@ -131,7 +129,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
       {/* رأس القائمة */}
       <div style={S.dropdownHeader}>
         <div style={{ ...S.avatarLg, borderColor: roleColor }}>{initials}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="nx-flex-1" style={{ minWidth: 0 }}>
           <div style={S.dropdownName}>{displayName}</div>
           <div style={S.dropdownEmail}>{email}</div>
           <span style={{ ...S.dropdownRoleBadge, background: roleColor + '22', color: roleColor, borderColor: roleColor + '44' }}>
@@ -147,13 +145,13 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
           <div style={S.dropdownBody}>
             <Button variant="ghost" className="user-menu-item" style={S.menuItemAction} onClick={toggleTheme}>
               <span style={{ ...S.menuItemIcon, fontSize: 14, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{theme === 'light' ? '◑' : '○'}</span>
-              <span style={{ flex: 1, textAlign: 'inherit' }}>
+              <span className="nx-flex-1" style={{ textAlign: 'inherit' }}>
                 {theme === 'light' ? t('darkMode') : t('lightMode')}
               </span>
             </Button>
             <Button variant="ghost" className="user-menu-item" style={S.menuItemAction} onClick={toggleLanguage}>
               <span style={{ ...S.menuItemIcon, fontSize: 11, fontWeight: 800, color: 'var(--noorix-text-muted)' }}>{language === 'ar' ? 'EN' : 'ع'}</span>
-              <span style={{ flex: 1, textAlign: 'inherit', fontWeight: 600, fontSize: 12 }}>
+              <span className="nx-flex-1 nx-font-600 nx-text-sm" style={{ textAlign: 'inherit' }}>
                 {language === 'ar' ? 'English' : 'العربية'}
               </span>
               <span style={{
@@ -205,7 +203,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
   );
 
   return (
-    <div style={{ position: 'relative', direction: 'ltr', minWidth: 0 }} className="user-menu-wrapper">
+    <div className="user-menu-wrapper nx-ltr" style={{ position: 'relative', minWidth: 0 }}>
       {/* زر الأفاتار */}
       <Button
         ref={btnRef}

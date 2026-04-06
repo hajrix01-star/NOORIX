@@ -153,8 +153,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
 
   const footerCells = (
     <>
-      <td colSpan={8} style={{ padding: '8px 12px', fontSize: 13, fontWeight: 700, color: 'var(--noorix-text-muted)' }}>{t('payrollTotalAfterDeductions')}</td>
-      <td style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)', fontSize: 14, fontWeight: 900, color: '#16a34a', textAlign: 'right' }}>{hrFmt(totalNet)}</td>
+      <td colSpan={8} className="nx-text-base nx-font-700 nx-text-muted" style={{ padding: '8px 12px' }}>{t('payrollTotalAfterDeductions')}</td>
+      <td className="nx-text-md" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900, color: '#16a34a', textAlign: 'right' }}>{hrFmt(totalNet)}</td>
     </>
   );
 
@@ -171,8 +171,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
         </>
       }
     >
-      <div style={{ marginBottom: 16 }}>
-        <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--noorix-text-muted)' }}>
+      <div className="nx-mb-16">
+        <p className="nx-text-base nx-text-muted nx-m-0 nx-mb-8">
           {formatSaudiDate(run.payrollMonth)} — {items.length} {t('employeesList')}
         </p>
         <Badge color={statusInfo.badgeColor}>{t(statusInfo.labelKey)}</Badge>
@@ -193,7 +193,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
       />
 
       {run.notes && (
-        <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: 'var(--noorix-text-muted)' }}>{run.notes}</p>
+        <p className="nx-mt-16 nx-mb-0 nx-text-base nx-text-muted">{run.notes}</p>
       )}
     </Modal>
   );

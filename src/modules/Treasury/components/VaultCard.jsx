@@ -115,12 +115,12 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod
             <Button
               key={label}
               variant="ghost"
-              className="vault-card-action-item"
+              className="vault-card-action-item nx-w-full nx-text-base"
               onClick={action}
               style={{
-                display: 'block', width: '100%',
+                display: 'block',
                 textAlign: isRtl ? 'right' : 'left',
-                padding: '10px 16px', fontSize: 13, color, whiteSpace: 'nowrap',
+                padding: '10px 16px', color, whiteSpace: 'nowrap',
               }}
             >
               {label}
@@ -155,12 +155,10 @@ const VaultCard = memo(function VaultCard({
     /* لا overflow:hidden هنا — ضروري حتى تبرز قائمة الإجراءات (position:absolute) */
     <div
       onClick={() => onClick(vault)}
+      className="nx-flex-col nx-bg-surface nx-cursor-pointer"
       style={{
         borderRadius: 14,
         border: '1px solid var(--noorix-border)',
-        background: 'var(--noorix-bg-surface)',
-        display: 'flex', flexDirection: 'column',
-        cursor: 'pointer',
         opacity: isArchived ? 0.65 : 1,
         boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         transition: 'box-shadow 150ms',
@@ -177,23 +175,23 @@ const VaultCard = memo(function VaultCard({
       }} />
 
       {/* هيدر الكرت */}
-      <div style={{ padding: '14px 16px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <div style={{
+      <div className="nx-flex-between nx-gap-10" style={{ padding: '14px 16px 12px' }}>
+        <div className="nx-flex-center nx-gap-10" style={{ minWidth: 0 }}>
+          <div className="nx-flex-center" style={{
             width: 38, height: 38, borderRadius: 10, flexShrink: 0,
             background: isArchived ? 'var(--noorix-bg-muted)' : accentColor + '14',
             color: isArchived ? 'var(--noorix-text-muted)' : accentColor,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            justifyContent: 'center',
           }}>
             {isCustom
               ? <span style={{ fontSize: 20, lineHeight: 1 }}>{customEmoji}</span>
               : (ICONS[vault.type] || ICONS.bank)}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div className="nx-font-700 nx-text-md nx-truncate">
               {displayName}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginTop: 1 }}>
+            <div className="nx-text-xs nx-text-muted" style={{ marginTop: 1 }}>
               {subName}
             </div>
           </div>
@@ -203,54 +201,51 @@ const VaultCard = memo(function VaultCard({
       </div>
 
       {/* الرصيد */}
-      <div style={{ padding: '2px 16px 16px', textAlign: 'center' }}>
-        <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 4, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+      <div className="nx-text-center" style={{ padding: '2px 16px 16px' }}>
+        <div className="nx-text-xs nx-text-muted nx-mb-4 nx-uppercase" style={{ letterSpacing: '0.04em' }}>
           {t('balance')}
         </div>
-        <div style={{
-          fontSize: 26, fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)',
+        <div className="nx-font-800" style={{
+          fontSize: 26, fontFamily: 'var(--noorix-font-numbers)',
           color: balance < 0 ? '#dc2626' : 'var(--noorix-text)',
           letterSpacing: '-0.5px',
         }}>
           {balance < 0 ? '−' : ''}{fmt(Math.abs(balance), 2)}
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--noorix-text-muted)', marginRight: 4 }}>﷼</span>
+          <span className="nx-text-md nx-font-600 nx-text-muted" style={{ marginRight: 4 }}>﷼</span>
         </div>
       </div>
 
       <div style={{ margin: '0 16px', height: 1, background: 'var(--noorix-border)' }} />
 
       {/* وارد / صادر */}
-      <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      <div className="nx-grid-2 nx-gap-8" style={{ padding: '12px 16px' }}>
         <div>
-          <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div className="nx-flex-center nx-gap-4 nx-text-muted" style={{ fontSize: 10, marginBottom: 3 }}>
             <svg viewBox="0 0 12 12" fill="none" stroke="#16a34a" strokeWidth="2" width="10" height="10">
               <path d="M6 10V2M2 6l4-4 4 4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             {t('inbound')}
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a' }}>
-            {fmt(totalIn, 2)} <span style={{ fontWeight: 400, color: 'var(--noorix-text-muted)', fontSize: 11 }}>﷼</span>
+          <div className="nx-text-base nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a' }}>
+            {fmt(totalIn, 2)} <span className="nx-font-400 nx-text-muted nx-text-xs">﷼</span>
           </div>
         </div>
         <div style={{ textAlign: 'left', borderRight: '1px solid var(--noorix-border)', paddingRight: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
+          <div className="nx-flex-center nx-gap-4 nx-text-muted" style={{ fontSize: 10, marginBottom: 3, justifyContent: 'flex-end' }}>
             {t('outbound')}
             <svg viewBox="0 0 12 12" fill="none" stroke="#dc2626" strokeWidth="2" width="10" height="10">
               <path d="M6 2v8M2 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text)', textAlign: 'right' }}>
-            {fmt(totalOut, 2)} <span style={{ fontWeight: 400, color: 'var(--noorix-text-muted)', fontSize: 11 }}>﷼</span>
+          <div className="nx-text-base nx-font-700 nx-text-primary" style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>
+            {fmt(totalOut, 2)} <span className="nx-font-400 nx-text-muted nx-text-xs">﷼</span>
           </div>
         </div>
       </div>
 
       {/* فوتر: شارات الحالة */}
       {(vault.isSalesChannel || vault.account?.code || isArchived || vault.showAsPaymentMethod === false) && (
-        <div style={{
-          padding: '8px 16px', borderTop: '1px solid var(--noorix-border)',
-          display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center',
-        }}>
+        <div className="nx-flex-center nx-flex-wrap nx-gap-6 nx-border-t" style={{ padding: '8px 16px' }}>
           {vault.isSalesChannel && (
             <Badge color="green" size="sm">{t('salesChannel')}</Badge>
           )}

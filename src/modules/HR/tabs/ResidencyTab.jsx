@@ -78,7 +78,7 @@ export default function ResidencyTab() {
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 170,
-      render: (v) => <span style={{ fontWeight: 600, fontSize: 13 }}>{v || '—'}</span> },
+      render: (v) => <span className="nx-font-600 nx-text-base">{v || '—'}</span> },
     { key: 'iqamaNumber', label: t('iqamaNumber'), sortable: true, width: 150, minWidth: 140,
       render: (v) => <span className="nx-cell-num">{v || '—'}</span> },
     { key: 'issueDate', label: t('startDate'), sortable: true, width: 120, minWidth: 115,
@@ -134,27 +134,27 @@ export default function ResidencyTab() {
         : t('statusActive');
     return (
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-          <span style={{ fontWeight: 700, fontSize: 14 }}>{row.employeeName}</span>
+        <div className="nx-flex nx-mb-4" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <span className="nx-font-700 nx-text-md">{row.employeeName}</span>
           <Badge color={statusColorMap[row.status] || 'blue'} size="sm" style={{ flexShrink: 0 }}>{statusLabel}</Badge>
         </div>
         {row.iqamaNumber && (
-          <div style={{ fontSize: 12, fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text-muted)', marginBottom: 8 }}>{row.iqamaNumber}</div>
+          <div className="nx-text-sm nx-text-muted nx-mb-8" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.iqamaNumber}</div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: 'var(--noorix-bg-page)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+        <div className="nx-grid-2 nx-gap-6 nx-rounded" style={{ background: 'var(--noorix-bg-page)', padding: '8px 10px', marginBottom: 10 }}>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('startDate')}</div>
-            <div style={{ fontSize: 13, fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.issueDate)}</div>
+            <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.issueDate)}</div>
           </div>
           <div>
             <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('expiryDate')}</div>
-            <div style={{ fontSize: 13, fontFamily: 'var(--noorix-font-numbers)', color: soon ? '#f59e0b' : undefined, fontWeight: soon ? 700 : undefined }}>
+            <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)', color: soon ? '#f59e0b' : undefined, fontWeight: soon ? 700 : undefined }}>
               {formatSaudiDate(row.expiryDate)}
               {soon && <span style={{ marginRight: 4, fontSize: 10, background: 'rgba(245,158,11,0.2)', padding: '1px 5px', borderRadius: 4 }}>⚠</span>}
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="nx-flex-end">
           <HRActionsCell row={row} type="residency" onEdit={() => setEditingResidency(row)} onDelete={() => { if (window.confirm(t('deleteResidencyConfirm'))) deleteMutation.mutate(row.id); }} />
         </div>
       </div>
@@ -167,14 +167,11 @@ export default function ResidencyTab() {
 
       <div className="nx-toolbar">
         {expiringCount > 0 && (
-          <span style={{
-            padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-            background: 'rgba(245,158,11,0.15)', color: '#f59e0b',
-          }}>
+          <span className="nx-rounded nx-text-base nx-font-600" style={{ padding: '6px 12px', background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
             {t('residencyExpiringSoon')}: {expiringCount}
           </span>
         )}
-        <div style={{ marginRight: 'auto', display: 'flex', gap: 8 }}>
+        <div className="nx-flex nx-gap-8" style={{ marginRight: 'auto' }}>
           <Button onClick={() => exportToExcel(exportData, 'residencies.xlsx')}>{t('exportExcel')}</Button>
         </div>
         <Button variant="primary" onClick={() => setShowAdd(true)}>

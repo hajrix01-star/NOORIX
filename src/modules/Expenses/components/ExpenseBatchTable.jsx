@@ -200,7 +200,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+      <div className="nx-flex nx-flex-wrap nx-gap-12 nx-mb-16" style={{ alignItems: 'flex-end' }}>
         <Input
           label="تاريخ العملية"
           type="date"
@@ -225,7 +225,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
 
       <SmartTable columns={columns} data={tableData} keyExtractor={(r) => r.key} showRowNumbers rowNumberWidth="1%" />
 
-      <div className="noorix-summary-bar noorix-summary-bar--4" style={{ marginTop: 16 }}>
+      <div className="noorix-summary-bar noorix-summary-bar--4 nx-mt-16">
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">عدد الصفوف</div>
           <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{summary.count}</div>
@@ -247,7 +247,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
         variant="primary"
         onClick={() => saveMutation.mutate()}
         disabled={saveMutation.isPending || validRows.length === 0 || !vaultId}
-        style={{ width: '100%', marginTop: 12 }}
+        className="nx-w-full nx-mt-12"
       >
         {saveMutation.isPending ? 'جاري الحفظ...' : 'حفظ الدفعة'}
       </Button>

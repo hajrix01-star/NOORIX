@@ -166,15 +166,15 @@ export default function StaffListScreen({ embedded }) {
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
-      render: (v) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis" style={{ fontSize: 13 }} title={v || ''}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis nx-text-base" title={v || ''}>{v || '—'}</span> },
     { key: 'name', label: t('employeeName'), sortable: true, minWidth: 170,
-      render: (_, row) => <span className="nx-cell-bold" style={{ fontSize: 13 }}>{employeeDisplayName(row, lang)}</span> },
+      render: (_, row) => <span className="nx-cell-bold nx-text-base">{employeeDisplayName(row, lang)}</span> },
     { key: 'jobTitle', label: t('jobTitle'), sortable: true, minWidth: 150,
       render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125, minWidth: 120,
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140, minWidth: 130,
-      render: (_, row) => <span className="nx-cell-num" style={{ fontSize: 13 }}>{hrFmt(row.totalSalary)}</span> },
+      render: (_, row) => <span className="nx-cell-num nx-text-base">{hrFmt(row.totalSalary)}</span> },
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
       render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     ...(viewMode === 'terminated' || viewMode === 'archived'
@@ -366,7 +366,7 @@ export default function StaffListScreen({ embedded }) {
 
   const renderMobileCard = useCallback((row) => (
     <div>
-      <div className="nx-mc__header" style={{ marginBottom: 4 }}>
+      <div className="nx-mc__header nx-mb-4">
         <span className="nx-cell-num nx-cell-muted-sm">{row.employeeSerial || '—'}</span>
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
       </div>
@@ -375,7 +375,7 @@ export default function StaffListScreen({ embedded }) {
       <div className="nx-mc__grid nx-mc__grid--2">
         <div>
           <div className="nx-mc__stat-label">{t('joinDate')}</div>
-          <div className="nx-mc__stat-value" style={{ fontSize: 13 }}>{formatSaudiDate(row.joinDate)}</div>
+          <div className="nx-mc__stat-value nx-text-base">{formatSaudiDate(row.joinDate)}</div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('totalSalary')}</div>
@@ -433,8 +433,8 @@ export default function StaffListScreen({ embedded }) {
             }}
           />
 
-          <div className="nx-page-header" style={{ marginBottom: 8 }}>
-            <div className="nx-toolbar" style={{ flex: '1 1 auto', minWidth: 0 }}>
+          <div className="nx-page-header nx-mb-8">
+            <div className="nx-toolbar nx-flex-1">
               <Button size="sm" onClick={() => setViewMode('active')}>{t('activeEmployeesList')}</Button>
               <Button size="sm" onClick={() => setViewMode('terminated')}>{t('terminatedEmployeesList')}</Button>
               <Button size="sm" onClick={() => setViewMode('archived')}>{t('archivedEmployeesList')}</Button>
@@ -546,7 +546,7 @@ export default function StaffListScreen({ embedded }) {
           </>
         }
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+        <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
           <Input
             type="select"
             label={t('terminationReason')}

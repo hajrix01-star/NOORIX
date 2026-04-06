@@ -7,6 +7,7 @@ import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { amountText, moneyText, percentText, truncateText, PERCENT_COLOR } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button, Modal } from '../../ui';
+import SmartTable from '../../components/common/SmartTable';
 
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }) {
   const navigate = useNavigate();
@@ -78,109 +79,109 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     >
       {drillTarget.path === '/sales' ? t('reportOpenInSales') : t('reportOpenInInvoices')}
     </Button>
-  ) : (
-    state?.itemKey?.startsWith('account:') || state?.groupKey === 'grossProfit' || state?.groupKey === 'netProfit' ? (
-      <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('reportDrillNoLink')}</span>
-    ) : null
-  );
+    ) : (
+      state?.itemKey?.startsWith('account:') || state?.groupKey === 'grossProfit' || state?.groupKey === 'netProfit' ? (
+        <span className="nx-text-sm nx-text-muted">{t('reportDrillNoLink')}</span>
+      ) : null
+    );
 
   return (
     <Modal open={!!state} onClose={onClose} title={modalTitle} size="xl" footer={footerContent}>
       {(isLoading || trendLoading) && (
-        <div style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('loading')}</div>
+        <div className="nx-p-24 nx-text-center nx-text-muted">{t('loading')}</div>
       )}
 
       {error && (
-        <div style={{ padding: 16, borderRadius: 12, background: 'rgba(239,68,68,0.08)', color: '#dc2626' }}>
+        <div className="nx-p-16 nx-rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626' }}>
           {error.message}
         </div>
       )}
 
       {!isLoading && !error && data && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 18 }}>
-            <div className="noorix-surface-card" style={{ padding: 14 }}>
-              <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{data.month ? t('selectedMonth') : t('reportBreakdown')}</div>
-              <div style={{ marginTop: 6, fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900, fontSize: 22 }}>{moneyText(data.contextAmount)}</div>
+          <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', marginBottom: 18 }}>
+            <div className="noorix-surface-card nx-p-14">
+              <div className="nx-text-sm nx-text-muted">{data.month ? t('selectedMonth') : t('reportBreakdown')}</div>
+              <div className="nx-mt-6 nx-font-numbers" style={{ fontWeight: 900, fontSize: 22 }}>{moneyText(data.contextAmount)}</div>
             </div>
             {data.kind === 'invoices' && (
               <>
-                <div className="noorix-surface-card" style={{ padding: 14 }}>
-                  <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('reportAnnualTotal')}</div>
-                  <div style={{ marginTop: 6, fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900, fontSize: 22 }}>{moneyText(data.annualAmount)}</div>
+                <div className="noorix-surface-card nx-p-14">
+                  <div className="nx-text-sm nx-text-muted">{t('reportAnnualTotal')}</div>
+                  <div className="nx-mt-6 nx-font-numbers" style={{ fontWeight: 900, fontSize: 22 }}>{moneyText(data.annualAmount)}</div>
                 </div>
-                <div className="noorix-surface-card" style={{ padding: 14 }}>
-                  <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('reportSalesShare')}</div>
-                  <div style={{ marginTop: 6, fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900, fontSize: 22 }}>{percentText(data.contextPercentOfSales)}</div>
+                <div className="noorix-surface-card nx-p-14">
+                  <div className="nx-text-sm nx-text-muted">{t('reportSalesShare')}</div>
+                  <div className="nx-mt-6 nx-font-numbers" style={{ fontWeight: 900, fontSize: 22 }}>{percentText(data.contextPercentOfSales)}</div>
                 </div>
-                <div className="noorix-surface-card" style={{ padding: 14 }}>
-                  <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{t('reportInvoicesCount')}</div>
-                  <div style={{ marginTop: 6, fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900, fontSize: 22 }}>{Number(data.invoiceCount || 0).toLocaleString('en')}</div>
+                <div className="noorix-surface-card nx-p-14">
+                  <div className="nx-text-sm nx-text-muted">{t('reportInvoicesCount')}</div>
+                  <div className="nx-mt-6 nx-font-numbers" style={{ fontWeight: 900, fontSize: 22 }}>{Number(data.invoiceCount || 0).toLocaleString('en')}</div>
                 </div>
               </>
             )}
           </div>
 
           {state?.showTrend && trend && (
-            <div className="noorix-surface-card" style={{ padding: 16, marginBottom: 18 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+            <div className="noorix-surface-card nx-p-16" style={{ marginBottom: 18 }}>
+              <div className="nx-flex-between nx-gap-12 nx-mb-12 nx-flex-wrap">
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 800 }}>{t('reportTrend')}</div>
-                  <div style={{ marginTop: 4, color: 'var(--noorix-text-muted)', fontSize: 12 }}>{t('reportTimeline')}</div>
+                  <div className="nx-text-md nx-font-800">{t('reportTrend')}</div>
+                  <div className="nx-mt-4 nx-text-muted nx-text-sm">{t('reportTimeline')}</div>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-                  {t('reportSalesShare')}: <strong style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{percentText(trend.percentOfSalesYear)}</strong>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 14 }}>
-                <div style={{ border: '1px solid var(--noorix-border)', borderRadius: 12, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('reportMonthlyAverage')}</div>
-                  <div style={{ marginTop: 4, fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)' }}>{moneyText(averageAmount)}</div>
-                </div>
-                <div style={{ border: '1px solid var(--noorix-border)', borderRadius: 12, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('reportTopMonth')}</div>
-                  <div style={{ marginTop: 4, fontWeight: 800 }}>{peakPoint?.label || '—'}</div>
-                  <div style={{ marginTop: 2, fontSize: 12, fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text-muted)' }}>{moneyText(peakPoint?.amount)}</div>
-                </div>
-                <div style={{ border: '1px solid var(--noorix-border)', borderRadius: 12, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>{t('selectedMonth')}</div>
-                  <div style={{ marginTop: 4, fontWeight: 800 }}>{data?.monthLabel || t('allMonths')}</div>
-                  <div style={{ marginTop: 2, fontSize: 12, fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text-muted)' }}>{moneyText(data?.contextAmount)}</div>
+                <div className="nx-text-sm nx-text-muted">
+                  {t('reportSalesShare')}: <strong className="nx-font-numbers">{percentText(trend.percentOfSalesYear)}</strong>
                 </div>
               </div>
-              <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
+              <div className="nx-grid nx-gap-10" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: 14 }}>
+                <div className="nx-border-all nx-rounded-lg" style={{ padding: '10px 12px' }}>
+                  <div className="nx-text-xs nx-text-muted">{t('reportMonthlyAverage')}</div>
+                  <div className="nx-mt-4 nx-font-800 nx-font-numbers">{moneyText(averageAmount)}</div>
+                </div>
+                <div className="nx-border-all nx-rounded-lg" style={{ padding: '10px 12px' }}>
+                  <div className="nx-text-xs nx-text-muted">{t('reportTopMonth')}</div>
+                  <div className="nx-mt-4 nx-font-800">{peakPoint?.label || '—'}</div>
+                  <div className="nx-text-sm nx-font-numbers nx-text-muted" style={{ marginTop: 2 }}>{moneyText(peakPoint?.amount)}</div>
+                </div>
+                <div className="nx-border-all nx-rounded-lg" style={{ padding: '10px 12px' }}>
+                  <div className="nx-text-xs nx-text-muted">{t('selectedMonth')}</div>
+                  <div className="nx-mt-4 nx-font-800">{data?.monthLabel || t('allMonths')}</div>
+                  <div className="nx-text-sm nx-font-numbers nx-text-muted" style={{ marginTop: 2 }}>{moneyText(data?.contextAmount)}</div>
+                </div>
+              </div>
+              <div className="nx-grid nx-gap-8 nx-mb-16">
                 {(trend.points || []).map((point) => {
                   const amount = Number(point.amount || 0);
                   const width = `${(Math.abs(amount) / maxAmount) * 100}%`;
                   return (
-                    <div key={point.month} style={{ display: 'grid', gridTemplateColumns: '52px 1fr 120px 78px', gap: 10, alignItems: 'center' }}>
-                      <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>{point.label}</div>
-                      <div style={{ height: 12, borderRadius: 999, background: 'var(--noorix-bg-muted)', overflow: 'hidden' }}>
-                        <div style={{ width, height: '100%', borderRadius: 999, background: amount >= 0 ? '#16a34a' : '#dc2626' }} />
+                    <div key={point.month} className="nx-grid nx-gap-10" style={{ gridTemplateColumns: '52px 1fr 120px 78px', alignItems: 'center' }}>
+                      <div className="nx-text-sm nx-text-muted">{point.label}</div>
+                      <div className="nx-bg-muted nx-overflow-hidden nx-rounded-full" style={{ height: 12 }}>
+                        <div className="nx-h-full nx-rounded-full" style={{ width, background: amount >= 0 ? '#16a34a' : '#dc2626' }} />
                       </div>
-                      <div style={{ textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700 }}>{moneyText(point.amount)}</div>
-                      <div style={{ textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)', fontSize: 12, color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>
+                      <div className="nx-text-end nx-font-numbers nx-font-700">{moneyText(point.amount)}</div>
+                      <div className="nx-text-end nx-font-numbers nx-text-sm" style={{ color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>
                     </div>
                   );
                 })}
               </div>
               <div
-                className="reports-detail-timeline-grid"
-                style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(120px, 1fr))' : 'repeat(12, minmax(62px, 1fr))', gap: 8 }}
+                className="reports-detail-timeline-grid nx-grid nx-gap-8"
+                style={{ gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(120px, 1fr))' : 'repeat(12, minmax(62px, 1fr))' }}
               >
                 {(trend.points || []).map((point) => (
                   <div
                     key={`timeline-${point.month}`}
+                    className="nx-rounded-lg"
                     style={{
-                      borderRadius: 12,
                       padding: 8,
                       background: state?.month === point.month ? 'rgba(37,99,235,0.10)' : 'var(--noorix-bg-muted)',
                       border: state?.month === point.month ? '1px solid rgba(37,99,235,0.28)' : '1px solid var(--noorix-border)',
                     }}
                   >
-                    <div style={{ fontSize: 11, color: 'var(--noorix-text-muted)', marginBottom: 6 }}>{point.label}</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)' }}>{amountText(point.amount)}</div>
-                    <div style={{ fontSize: 11, color: PERCENT_COLOR, marginTop: 4 }}>{percentText(point.percentOfSales)}</div>
+                    <div className="nx-text-xs nx-text-muted nx-mb-6">{point.label}</div>
+                    <div className="nx-text-base nx-font-800 nx-font-numbers">{amountText(point.amount)}</div>
+                    <div className="nx-text-xs nx-mt-4" style={{ color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>
                   </div>
                 ))}
               </div>
@@ -188,22 +189,15 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           )}
 
           {data.kind === 'derived' && (
-            <div className="reports-detail-derived-list" style={{ display: 'grid', gap: 10 }}>
+            <div className="reports-detail-derived-list nx-grid nx-gap-10">
               {(data.items || []).map((item) => (
                 <div
                   key={item.key}
-                  className="reports-detail-derived-item"
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    border: '1px solid var(--noorix-border)',
-                    borderRadius: 12,
-                    padding: '12px 14px',
-                  }}
+                  className="reports-detail-derived-item nx-flex-between nx-border-all nx-rounded-lg"
+                  style={{ padding: '12px 14px' }}
                 >
-                  <div style={{ fontWeight: 700 }}>{lang === 'en' ? item.labelEn : item.labelAr}</div>
-                  <div style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800 }}>{moneyText(item.amount)}</div>
+                  <div className="nx-font-700">{lang === 'en' ? item.labelEn : item.labelAr}</div>
+                  <div className="nx-font-numbers nx-font-800">{moneyText(item.amount)}</div>
                 </div>
               ))}
             </div>
@@ -211,64 +205,48 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
 
           {data.kind === 'invoices' && (
             <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-              <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+              <div className="noorix-surface-card nx-overflow-hidden nx-rounded-lg" style={{ padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 <div className="nx-section-header">
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 800 }}>{t('reportSmartSummary')}</div>
-                    <div style={{ marginTop: 4, fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                    <div className="nx-text-base nx-font-800">{t('reportSmartSummary')}</div>
+                    <div className="nx-mt-4 nx-text-sm nx-text-muted">
                       {t('reportShowingLatest', Math.min(data.items?.length || 0, 8), data.items?.length || 0)}
                     </div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)' }}>
-                    {t('reportAnnualTotal')}: <strong style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{moneyText(data.annualAmount)}</strong>
+                  <div className="nx-text-sm nx-text-muted">
+                    {t('reportAnnualTotal')}: <strong className="nx-font-numbers">{moneyText(data.annualAmount)}</strong>
                   </div>
                 </div>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', minWidth: 860, borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                    <colgroup>
-                      <col style={{ width: 150 }} />
-                      <col style={{ width: 100 }} />
-                      <col />
-                      <col style={{ width: 150 }} />
-                      <col style={{ width: 100 }} />
-                      <col />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: 'right', padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontSize: 13, fontWeight: 700, color: '#374151', background: 'var(--noorix-bg-surface)' }}>{t('transactionDate')}</th>
-                        <th style={{ textAlign: 'right', padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontSize: 13, fontWeight: 700, color: '#374151', background: 'var(--noorix-bg-surface)' }}>{t('reportInvoiceNumber')}</th>
-                        <th style={{ textAlign: 'right', padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontSize: 13, fontWeight: 700, color: '#374151', background: 'var(--noorix-bg-surface)' }}>{t('reportSourceOrSupplier')}</th>
-                        <th style={{ textAlign: 'right', padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontSize: 13, fontWeight: 700, color: '#374151', background: 'rgba(248,250,252,1)' }}>{t('reportNetAmount')}</th>
-                        <th style={{ textAlign: 'right', padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontSize: 13, fontWeight: 700, color: '#374151', background: 'var(--noorix-bg-surface)' }}>{t('reportSalesShare')}</th>
-                        <th style={{ textAlign: 'right', padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontSize: 13, fontWeight: 700, color: '#374151', background: 'var(--noorix-bg-surface)' }}>{t('notes')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(data.items || []).length === 0 && (
-                        <tr>
-                          <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--noorix-text-muted)' }}>{t('noDataInPeriod')}</td>
-                        </tr>
-                      )}
-                      {(data.items || []).slice(0, 8).map((item) => (
-                        <tr key={item.id} className="report-table-row">
-                          <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)' }}>{String(item.transactionDate || '').slice(0, 10)}</td>
-                          <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontWeight: 700 }}>{item.summaryNumber || item.invoiceNumber || '—'}</td>
-                          <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            <div style={{ fontWeight: 600 }} title={(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}>{(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}</div>
-                            {item.channelNames?.length > 0 && (
-                              <div style={{ marginTop: 3, fontSize: 11, color: 'var(--noorix-text-muted)' }}>
-                                {item.channelNames.slice(0, 2).map((channel) => lang === 'en' ? (channel.nameEn || channel.nameAr) : (channel.nameAr || channel.nameEn)).join(' | ')}
-                              </div>
-                            )}
-                          </td>
-                          <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, textAlign: 'right', background: 'rgba(248,250,252,0.9)' }}>{amountText(item.netAmount)}</td>
-                          <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, textAlign: 'right', color: PERCENT_COLOR }}>{percentText(item.percentOfSales ?? item.percentOfTotal)}</td>
-                          <td style={{ padding: '16px 24px', borderBottom: '1px solid var(--noorix-border)', color: 'var(--noorix-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }} title={truncateText(item.notes)}>{truncateText(item.notes)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <SmartTable
+                  columns={[
+                    { key: 'transactionDate', label: t('transactionDate'),
+                      render: (v) => String(v || '').slice(0, 10) },
+                    { key: 'invoiceNumber', label: t('reportInvoiceNumber'),
+                      render: (_, item) => <span className="nx-font-700">{item.summaryNumber || item.invoiceNumber || '—'}</span> },
+                    { key: 'supplier', label: t('reportSourceOrSupplier'),
+                      render: (_, item) => (
+                        <div>
+                          <div className="nx-font-600 nx-truncate" title={(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}>
+                            {(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}
+                          </div>
+                          {item.channelNames?.length > 0 && (
+                            <div className="nx-text-xs nx-text-muted" style={{ marginTop: 3 }}>
+                              {item.channelNames.slice(0, 2).map((channel) => lang === 'en' ? (channel.nameEn || channel.nameAr) : (channel.nameAr || channel.nameEn)).join(' | ')}
+                            </div>
+                          )}
+                        </div>
+                      ) },
+                    { key: 'netAmount', label: t('reportNetAmount'), numeric: true,
+                      render: (v) => <span className="nx-font-numbers nx-font-700">{amountText(v)}</span> },
+                    { key: 'percentOfSales', label: t('reportSalesShare'),
+                      render: (_, item) => <span className="nx-font-numbers" style={{ color: PERCENT_COLOR }}>{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
+                    { key: 'notes', label: t('notes'),
+                      render: (v) => <span className="nx-text-muted nx-truncate">{truncateText(v)}</span> },
+                  ]}
+                  data={(data.items || []).slice(0, 8)}
+                  keyExtractor={(item) => item.id}
+                  emptyMessage={t('noDataInPeriod')}
+                />
               </div>
             </div>
           )}

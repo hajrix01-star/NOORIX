@@ -67,11 +67,8 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
 
   return (
     <div>
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 8, gap: 8,
-      }}>
-        <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', fontWeight: 500 }}>
+      <div className="nx-flex-between nx-mb-8 nx-gap-8">
+        <span className="nx-text-sm nx-text-muted nx-font-500">
           {isAr
             ? `${permissions.length} / ${totalPerms} صلاحية`
             : `${permissions.length} / ${totalPerms} permissions`}
@@ -88,7 +85,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
       </div>
 
       <div style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <table className="nx-w-full nx-text-base" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{
               background: 'var(--noorix-bg-page)',
@@ -277,19 +274,19 @@ export default function RolesTab({ userRole, language }) {
       Object.values(m.permissions).some((p) => perms.includes(p))
     );
     return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+      <div className="nx-flex nx-gap-4" style={{ flexWrap: 'wrap' }}>
         {activeModules.slice(0, 5).map((m) => (
-          <span key={m.key} style={{
+          <span key={m.key} className="nx-rounded-lg nx-font-600" style={{
             background: 'var(--noorix-accent-soft, rgba(59,130,246,0.1))',
             color: 'var(--noorix-accent)',
-            padding: '2px 8px', borderRadius: 12, fontSize: 10, fontWeight: 600,
+            padding: '2px 8px', fontSize: 10,
             whiteSpace: 'nowrap',
           }}>
             {m.icon} {isAr ? m.labelAr : m.labelEn}
           </span>
         ))}
         {activeModules.length > 5 && (
-          <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>
+          <span className="nx-text-muted" style={{ fontSize: 10 }}>
             +{activeModules.length - 5}
           </span>
         )}
@@ -298,15 +295,15 @@ export default function RolesTab({ userRole, language }) {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="nx-grid nx-gap-16">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+      <div className="nx-flex-between nx-gap-8" style={{ flexWrap: 'wrap' }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+          <h3 className="nx-m-0 nx-text-xl nx-font-700">
             {isAr ? 'الأدوار والصلاحيات' : 'Roles & Permissions'}
           </h3>
-          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+          <p className="nx-text-sm nx-text-muted nx-m-0 nx-mt-4">
             {isAr ? 'أنشئ أدوار مخصصة وتحكم بالصلاحيات لكل صفحة وعملية' : 'Create custom roles and control permissions per page and operation'}
           </p>
         </div>
@@ -319,55 +316,54 @@ export default function RolesTab({ userRole, language }) {
       </div>
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: 'var(--noorix-text-muted)' }}>
+        <div className="nx-text-center nx-text-muted" style={{ padding: 40 }}>
           {t('loading')}
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 12 }}>
+        <div className="nx-grid nx-gap-12">
           {roles.map((role) => (
-            <div key={role.id} className="noorix-surface-card" style={{
-              padding: 16, borderRadius: 12,
+            <div key={role.id} className="noorix-surface-card nx-p-16 nx-rounded-lg nx-cursor-pointer" style={{
               border: '1px solid var(--noorix-border)',
-              cursor: 'pointer', transition: 'box-shadow 0.15s',
+              transition: 'box-shadow 0.15s',
             }}
               onClick={() => openEdit(role)}
               onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700 }}>{role.nameAr || role.name}</span>
+              <div className="nx-flex nx-gap-12" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div className="nx-flex-1" style={{ minWidth: 200 }}>
+                  <div className="nx-flex-center nx-gap-8 nx-mb-4">
+                    <span className="nx-text-lg nx-font-700">{role.nameAr || role.name}</span>
                     {role.isSystem && (
-                      <span style={{
+                      <span className="nx-rounded nx-font-700" style={{
                         background: 'var(--noorix-text-muted)', color: '#fff',
-                        padding: '1px 8px', borderRadius: 8, fontSize: 9, fontWeight: 700,
+                        padding: '1px 8px', fontSize: 9,
                       }}>
                         {isAr ? 'نظام' : 'System'}
                       </span>
                     )}
                   </div>
                   {role.description && (
-                    <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 6 }}>
+                    <div className="nx-text-sm nx-text-muted" style={{ marginBottom: 6 }}>
                       {role.description}
                     </div>
                   )}
                   {renderPermissionBadges(role.permissions)}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--noorix-accent)' }}>
+                <div className="nx-flex-center nx-gap-12" style={{ flexShrink: 0 }}>
+                  <div className="nx-text-center">
+                    <div className="nx-font-700" style={{ fontSize: 18, color: 'var(--noorix-accent)' }}>
                       {role._count?.users ?? 0}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>
+                    <div className="nx-text-muted" style={{ fontSize: 10 }}>
                       {isAr ? 'مستخدم' : 'users'}
                     </div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>
+                  <div className="nx-text-center">
+                    <div className="nx-font-700" style={{ fontSize: 18 }}>
                       {renderPermissionSummary(role.permissions)}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>
+                    <div className="nx-text-muted" style={{ fontSize: 10 }}>
                       {isAr ? 'صلاحية' : 'perms'}
                     </div>
                   </div>
@@ -395,15 +391,15 @@ export default function RolesTab({ userRole, language }) {
             permissions: form.permissions,
           });
         }}>
-          <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+          <div className="nx-grid nx-gap-12 nx-mb-16">
+            <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
               <Input type="text" label={isAr ? 'اسم الدور (إنجليزي) *' : 'Role Name (EN) *'} value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="warehouse_manager" required />
               <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} placeholder="مدير المستودع" />
             </div>
             <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
           </div>
 
-          <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700 }}>
+          <h4 className="nx-text-md nx-font-700" style={{ margin: '0 0 12px' }}>
             {isAr ? 'الصلاحيات' : 'Permissions'}
           </h4>
           <PermissionMatrix
@@ -415,7 +411,7 @@ export default function RolesTab({ userRole, language }) {
             language={language}
           />
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <div className="nx-flex nx-gap-8 nx-mt-16">
             <Button type="submit" variant="primary" disabled={createMutation.isPending}>
               {createMutation.isPending ? t('saving') : (isAr ? 'إنشاء الدور' : 'Create Role')}
             </Button>
@@ -446,23 +442,23 @@ export default function RolesTab({ userRole, language }) {
             });
           }}>
             {editing.isSystem && (
-              <div style={{ marginBottom: 12 }}>
-                <span style={{
+              <div className="nx-mb-12">
+                <span className="nx-rounded nx-font-700" style={{
                   background: 'var(--noorix-text-muted)', color: '#fff',
-                  padding: '2px 10px', borderRadius: 8, fontSize: 10, fontWeight: 700,
+                  padding: '2px 10px', fontSize: 10,
                 }}>
                   {isAr ? 'دور نظام' : 'System role'}
                 </span>
               </div>
             )}
-            <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+            <div className="nx-grid nx-gap-12 nx-mb-16">
+              <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
                 <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={editing.nameAr} onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))} />
                 <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={editing.description} onChange={(e) => setEditing((p) => ({ ...p, description: e.target.value }))} />
               </div>
             </div>
 
-            <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700 }}>
+            <h4 className="nx-text-md nx-font-700" style={{ margin: '0 0 12px' }}>
               {isAr ? 'مصفوفة الصلاحيات' : 'Permissions Matrix'}
             </h4>
             <PermissionMatrix
@@ -474,7 +470,7 @@ export default function RolesTab({ userRole, language }) {
               language={language}
             />
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+            <div className="nx-flex nx-gap-8 nx-mt-16" style={{ flexWrap: 'wrap' }}>
               <Button type="submit" variant="primary" disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? t('saving') : t('save')}
               </Button>

@@ -244,10 +244,10 @@ export default function EOSCalcTab() {
   }
 
   return (
-    <div className="noorix-surface-card" style={{ padding: 24, maxWidth: 480 }}>
-      <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>{t('hrTabEOSCalc')}</h3>
+    <div className="noorix-surface-card nx-p-24" style={{ maxWidth: 480 }}>
+      <h3 className="nx-text-2xl nx-m-0 nx-mb-20">{t('hrTabEOSCalc')}</h3>
 
-      <div style={{ marginBottom: 16 }}>
+      <div className="nx-mb-16">
         <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)}>
           <option value="">—</option>
           {employees.map((e) => (
@@ -256,19 +256,19 @@ export default function EOSCalcTab() {
         </Input>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div className="nx-mb-16">
         <Input type="date" label={t('eosCalcJoinDate')} value={jd ? jd.slice(0, 10) : ''} onChange={(e) => setJoinDate(e.target.value)} />
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div className="nx-mb-16">
         <Input type="date" label={t('eosCalcEndDate')} value={ed ? ed.slice(0, 10) : ''} onChange={(e) => setEndDate(e.target.value)} />
       </div>
 
-      <div style={{ marginBottom: 20 }}>
+      <div className="nx-mb-20">
         <Input type="number" label={t('eosCalcSalary')} min="0" step="0.01" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} />
       </div>
 
-      <div style={{ marginBottom: 20 }}>
+      <div className="nx-mb-20">
         <Input type="select" label={t('eosCalcReason')} value={terminationReason} onChange={(e) => setTerminationReason(e.target.value)}>
           <option value="employer">{t('eosCalcReasonEmployer')}</option>
           <option value="resignation">{t('eosCalcReasonResignation')}</option>
@@ -289,7 +289,7 @@ export default function EOSCalcTab() {
             <span className="noorix-result-panel__row-value">{serviceYears.toDecimalPlaces(2).toString()}</span>
           </div>
           {/* تفصيل حسابي: نصف شهر للخمس الأولى + شهر كامل لما بعدها — م84 */}
-          <div className="noorix-result-panel__row" style={{ opacity: 0.82, fontSize: 12 }}>
+          <div className="noorix-result-panel__row nx-text-sm" style={{ opacity: 0.82 }}>
             <span className="noorix-result-panel__row-label">
               نصف شهر × {firstFiveYears.toDecimalPlaces(2).toString()} سنة (≤5)
             </span>
@@ -298,7 +298,7 @@ export default function EOSCalcTab() {
             </span>
           </div>
           {remainingYears.gt(0) && (
-            <div className="noorix-result-panel__row" style={{ opacity: 0.82, fontSize: 12 }}>
+            <div className="noorix-result-panel__row nx-text-sm" style={{ opacity: 0.82 }}>
               <span className="noorix-result-panel__row-label">
                 شهر كامل × {remainingYears.toDecimalPlaces(2).toString()} سنة ({'>'}5)
               </span>
@@ -326,7 +326,7 @@ export default function EOSCalcTab() {
       </div>
       <Button
         onClick={handlePrint}
-        style={{ width: '100%', marginTop: 12, padding: 10 }}
+        className="nx-w-full nx-mt-12 nx-p-10"
       >
         {t('printCalc')}
       </Button>
