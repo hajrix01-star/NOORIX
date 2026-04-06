@@ -267,17 +267,15 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length === 0 && (
                 <div
+                  className="nx-text-center nx-bg-muted nx-rounded-lg"
                   style={{
-                    textAlign: 'center',
                     padding: '48px 24px',
-                    background: 'var(--noorix-bg-muted)',
-                    borderRadius: 12,
                     border: '1px dashed var(--noorix-border)',
                   }}
                 >
                   <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}></div>
-                  <div className="nx-text-xl nx-font-600" style={{ marginBottom: 6 }}>{t('bankStatementEmptyTitle')}</div>
-                  <div className="nx-text-base nx-text-muted" style={{ marginBottom: 16 }}>{t('bankStatementEmptyDesc')}</div>
+                  <div className="nx-text-xl nx-font-600 nx-mb-6">{t('bankStatementEmptyTitle')}</div>
+                  <div className="nx-text-base nx-text-muted nx-mb-16">{t('bankStatementEmptyDesc')}</div>
                   <Button variant="primary" onClick={() => setShowUpload(true)}>
                     <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>＋</span>
                     {t('bankStatementUploadNew')}
@@ -287,7 +285,7 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length > 0 && (
                 <>
-                  <div className="nx-flex nx-flex-wrap nx-gap-12" style={{ marginBottom: 16, alignItems: 'center' }}>
+                  <div className="nx-flex nx-flex-wrap nx-gap-12 nx-mb-16" style={{ alignItems: 'center' }}>
                     <Input
                       type="select"
                       value={filterMonth}

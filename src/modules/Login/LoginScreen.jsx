@@ -156,7 +156,7 @@ export default function LoginScreen() {
               </div>
 
               {/* كلمة المرور */}
-              <div style={{ marginBottom: 20 }}>
+              <div className="nx-mb-20">
                 <label className="nx-text-base nx-font-700 nx-text-primary" style={{ display: 'block', marginBottom: 6 }}>
                   {t('password')}
                 </label>

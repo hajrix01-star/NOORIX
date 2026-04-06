@@ -134,20 +134,20 @@ export default function ResidencyTab() {
         : t('statusActive');
     return (
       <div>
-        <div className="nx-flex nx-mb-4" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="nx-flex-between nx-flex-wrap nx-mb-4">
           <span className="nx-font-700 nx-text-md">{row.employeeName}</span>
           <Badge color={statusColorMap[row.status] || 'blue'} size="sm" style={{ flexShrink: 0 }}>{statusLabel}</Badge>
         </div>
         {row.iqamaNumber && (
           <div className="nx-text-sm nx-text-muted nx-mb-8" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.iqamaNumber}</div>
         )}
-        <div className="nx-grid-2 nx-gap-6 nx-rounded" style={{ background: 'var(--noorix-bg-page)', padding: '8px 10px', marginBottom: 10 }}>
+        <div className="nx-grid-2 nx-gap-6 nx-rounded nx-bg-muted nx-mb-10" style={{ padding: '8px 10px' }}>
           <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('startDate')}</div>
+            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('startDate')}</div>
             <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.issueDate)}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('expiryDate')}</div>
+            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('expiryDate')}</div>
             <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)', color: soon ? '#f59e0b' : undefined, fontWeight: soon ? 700 : undefined }}>
               {formatSaudiDate(row.expiryDate)}
               {soon && <span style={{ marginRight: 4, fontSize: 10, background: 'rgba(245,158,11,0.2)', padding: '1px 5px', borderRadius: 4 }}>⚠</span>}
@@ -167,11 +167,11 @@ export default function ResidencyTab() {
 
       <div className="nx-toolbar">
         {expiringCount > 0 && (
-          <span className="nx-rounded nx-text-base nx-font-600" style={{ padding: '6px 12px', background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+          <span className="nx-rounded nx-text-base nx-font-600 nx-px-12 nx-py-6" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
             {t('residencyExpiringSoon')}: {expiringCount}
           </span>
         )}
-        <div className="nx-flex nx-gap-8" style={{ marginRight: 'auto' }}>
+        <div className="nx-flex nx-gap-8 nx-flex-1">
           <Button onClick={() => exportToExcel(exportData, 'residencies.xlsx')}>{t('exportExcel')}</Button>
         </div>
         <Button variant="primary" onClick={() => setShowAdd(true)}>

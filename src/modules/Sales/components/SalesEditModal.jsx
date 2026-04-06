@@ -122,18 +122,18 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       }
     >
       {error && (
-        <div className="nx-rounded nx-text-base nx-mb-16 nx-p-10" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #dc2626', color: '#dc2626' }}>
+        <div className="nx-rounded nx-text-base nx-mb-16 nx-p-10 nx-text-expense" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #dc2626' }}>
           {error}
         </div>
       )}
 
-      <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: 18 }}>
+      <div className="nx-grid nx-gap-14 nx-mb-16" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
         <Input type="date" label="تاريخ العملية *" value={txDate} onChange={(e) => setTxDate(e.target.value)} />
         <Input type="number" min="0" label="عدد العملاء" value={customerCount} onChange={(e) => setCustomerCount(e.target.value)} placeholder="0" />
         <Input type="number" min="0" step="0.01" label="المبلغ الموجود بالصندوق" value={cashOnHand} onChange={(e) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
 
-      <div style={{ marginBottom: 18 }}>
+      <div className="nx-mb-16">
         <label className="nx-text-base nx-font-700 nx-mb-8" style={{ display: 'block' }}>قنوات البيع</label>
         {salesChannelsLoading ? (
           <div className="nx-p-16 nx-text-center nx-text-muted nx-text-base" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
@@ -181,19 +181,19 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         )}
       </div>
 
-      <div style={{ marginBottom: 18 }}>
+      <div className="nx-mb-16">
         <Input multiline label="ملاحظات" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="أي ملاحظات..." style={{ resize: 'vertical' }} />
       </div>
 
-      <div className="nx-grid nx-gap-10" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', marginBottom: 18 }}>
+      <div className="nx-grid nx-gap-10 nx-mb-16" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
         <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)' }}>
-          <div className="nx-text-xs" style={{ color: '#16a34a' }}>الإجمالي</div>
+          <div className="nx-text-xs nx-text-income">الإجمالي</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)} ﷼</div>
         </div>
         {vatEnabled && totalAmount.gt(0) && (
           <>
             <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)' }}>
-              <div className="nx-text-xs" style={{ color: '#0ea5e9' }}>الصافي</div>
+              <div className="nx-text-xs" style={{ color: 'var(--noorix-accent-blue)' }}>الصافي</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#0ea5e9', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)} ﷼</div>
             </div>
             <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>

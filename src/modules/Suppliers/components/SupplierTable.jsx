@@ -37,7 +37,7 @@ function TypeBadge({ type }) {
 /* ── checkbox مُنسَّق ── */
 function CB({ checked, indeterminate, onChange, ariaLabel }) {
   return (
-    <label className="nx-checkbox" style={{ justifyContent: 'center', minHeight: 36, minWidth: 36, padding: 4 }}>
+    <label className="nx-checkbox nx-p-4" style={{ justifyContent: 'center', minHeight: 36, minWidth: 36 }}>
       <input
         type="checkbox"
         checked={checked}
@@ -54,7 +54,7 @@ function CB({ checked, indeterminate, onChange, ariaLabel }) {
 /* ── أزرار الإجراء ── */
 function ActionBtns({ onEdit, onDelete, t }) {
   return (
-    <div className="nx-flex nx-gap-6" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+    <div className="nx-flex-end nx-gap-6 nx-nowrap">
       <Button size="sm" onClick={onEdit}>✎ {t('edit')}</Button>
       <Button size="sm" variant="danger" onClick={onDelete}>× {t('delete')}</Button>
     </div>
@@ -89,8 +89,8 @@ export const SupplierTable = memo(function SupplierTable({
 
   if (suppliers.length === 0) {
     return (
-      <div className="nx-text-center nx-text-muted" style={{ padding: 32, border: '2px dashed var(--noorix-border)', borderRadius: 14 }}>
-        <div className="nx-mb-8 nx-text-muted" style={{ fontSize: 32 }}>—</div>
+      <div className="nx-text-center nx-text-muted nx-p-20 nx-rounded-lg" style={{ border: '2px dashed var(--noorix-border)' }}>
+        <div className="nx-mb-8 nx-text-muted nx-text-3xl">—</div>
         <p className="nx-m-0 nx-text-base">{t('noSuppliers')}</p>
       </div>
     );
@@ -98,7 +98,7 @@ export const SupplierTable = memo(function SupplierTable({
 
   /* ── شريط الحذف الجماعي ── */
   const BulkBar = hasSelection ? (
-    <div className="nx-flex-center nx-gap-12" style={{ padding: '10px 16px', background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)', flexWrap: 'wrap' }}>
+    <div className="nx-flex-center nx-flex-wrap nx-gap-12 nx-px-16 nx-py-8" style={{ background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)' }}>
       <span className="nx-text-base nx-font-700 nx-flex-1" style={{ color: 'var(--noorix-accent-red)' }}>
         تم تحديد {selectedIds.size} {selectedIds.size === 1 ? 'مورد' : 'موردين'}
       </span>
@@ -112,7 +112,7 @@ export const SupplierTable = memo(function SupplierTable({
     return (
       <div className="noorix-surface-card" style={{ overflow: 'hidden' }}>
         {/* رأس: عدد + تحديد الكل */}
-        <div className="nx-flex-center nx-gap-8" style={{ padding: '10px 16px', borderBottom: '1px solid var(--noorix-border)' }}>
+          <div className="nx-flex-center nx-gap-8 nx-px-16 nx-py-8 nx-border-b">
           <CB
             checked={allSelected}
             indeterminate={someSelected}
@@ -134,7 +134,8 @@ export const SupplierTable = memo(function SupplierTable({
             return (
               <div
                 key={s.id}
-                style={{ padding: '12px 16px', borderBottom: '1px solid var(--noorix-border)', background: checked ? 'rgba(22,163,74,0.04)' : 'transparent' }}
+                  className="nx-px-16 nx-py-12 nx-border-b"
+                  style={{ background: checked ? 'rgba(22,163,74,0.04)' : 'transparent' }}
               >
                 <div className="nx-flex nx-gap-8" style={{ alignItems: 'flex-start' }}>
                   {/* checkbox */}
@@ -149,7 +150,7 @@ export const SupplierTable = memo(function SupplierTable({
                       <TypeBadge type={s.supplierType || 'purchases'} />
                     </div>
                     {(s.phone || s.taxNumber) && (
-                      <div className="nx-flex nx-gap-12 nx-text-sm nx-text-muted" style={{ marginBottom: 6 }}>
+                      <div className="nx-flex nx-gap-12 nx-text-sm nx-text-muted nx-mb-4">
                         {s.phone && <span>{s.phone}</span>}
                         {s.taxNumber && <span className="nx-cell-num">{s.taxNumber}</span>}
                       </div>
@@ -187,7 +188,7 @@ export const SupplierTable = memo(function SupplierTable({
   return (
     <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden">
       {/* رأس: عدد */}
-      <div className="nx-flex-center nx-gap-8 nx-text-sm nx-text-muted" style={{ padding: '10px 16px', borderBottom: '1px solid var(--noorix-border)' }}>
+      <div className="nx-flex-center nx-gap-8 nx-text-sm nx-text-muted nx-px-16 nx-py-8 nx-border-b">
         <span className="nx-flex-1">{t('supplierCount', suppliers.length)}</span>
       </div>
 
@@ -230,7 +231,7 @@ export const SupplierTable = memo(function SupplierTable({
                   <td className="nx-text-sm" style={{ padding: '9px 12px' }}>{s.phone || '—'}</td>
                   <td className="nx-text-sm" style={{ padding: '9px 12px' }}>
                     {cat ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span className="nx-flex-center nx-gap-6">
                         {icon && <span className="nx-text-md">{icon}</span>}
                         <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
                           {cat.nameAr}

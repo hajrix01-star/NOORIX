@@ -79,7 +79,7 @@ export default function AppBrandingTab() {
         <div className="nx-text-xs nx-font-700 nx-text-muted" style={{ marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>
           معاينة مباشرة
         </div>
-        <div className="nx-flex-center nx-gap-16" style={{ flexWrap: 'wrap' }}>
+        <div className="nx-flex-center nx-flex-wrap nx-gap-16">
           {/* أيقونة */}
           <div className="nx-overflow-hidden" style={{
             width: 56, height: 56, borderRadius: 14, flexShrink: 0,
@@ -94,13 +94,13 @@ export default function AppBrandingTab() {
           </div>
           {/* نصوص */}
           <div className="nx-grid nx-gap-4 nx-flex-1" style={{ minWidth: 0 }}>
-            <div className="nx-flex nx-gap-10" style={{ alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <div className="nx-flex nx-gap-10 nx-flex-wrap" style={{ alignItems: 'baseline' }}>
               <span className="nx-text-xl nx-font-800 nx-text-primary" style={{ direction: 'rtl' }}>{nameAr || 'نووريكس'}</span>
               <span className="nx-text-sm nx-text-muted">·</span>
               <span className="nx-text-base nx-font-600 nx-text-primary nx-ltr">{nameEn || 'Noorix'}</span>
             </div>
-            <div className="nx-flex nx-gap-8" style={{ flexWrap: 'wrap' }}>
-              <span className="nx-text-sm nx-text-muted" style={{ direction: 'rtl' }}>{taglineAr || 'الجملة بالعربي'}</span>
+          <div className="nx-flex nx-flex-wrap nx-gap-8">
+            <span className="nx-text-sm nx-text-muted" style={{ direction: 'rtl' }}>{taglineAr || 'الجملة بالعربي'}</span>
               <span className="nx-text-sm nx-text-muted">·</span>
               <span className="nx-text-sm nx-text-muted" style={{ direction: 'ltr' }}>{taglineEn || 'English tagline'}</span>
             </div>
@@ -129,7 +129,7 @@ export default function AppBrandingTab() {
             maxLength={40}
           />
         </div>
-        <div className="nx-text-xs nx-text-muted" style={{ marginTop: 6 }}>
+        <div className="nx-text-xs nx-text-muted nx-mt-6">
           يظهر في تبويب المتصفح وأعلى القائمة الجانبية حسب لغة التطبيق
         </div>
       </div>
@@ -155,7 +155,7 @@ export default function AppBrandingTab() {
             maxLength={60}
           />
         </div>
-        <div className="nx-text-xs nx-text-muted" style={{ marginTop: 6 }}>
+        <div className="nx-text-xs nx-text-muted nx-mt-6">
           تظهر أسفل الاسم في القائمة الجانبية وفي تذييلها
         </div>
       </div>
@@ -215,7 +215,7 @@ export default function AppBrandingTab() {
             maxLength={60}
           />
         </div>
-        <div className="nx-text-xs nx-text-muted" style={{ marginTop: 6 }}>
+        <div className="nx-text-xs nx-text-muted nx-mt-6">
           يظهر كتلميح في خانة البريد الإلكتروني بصفحة الدخول. لا يغير الإيميلات المسجّلة فعلياً.
         </div>
       </div>
@@ -223,7 +223,7 @@ export default function AppBrandingTab() {
       {/* ── لون الهوية ────────────────────────────────────────────────────── */}
       <div>
         <div style={sectionTitle}>لون هوية التطبيق</div>
-        <div className="nx-flex-center nx-gap-10" style={{ flexWrap: 'wrap' }}>
+        <div className="nx-flex-center nx-flex-wrap nx-gap-10">
           <Input
             type="color"
             value={color}
@@ -255,7 +255,7 @@ export default function AppBrandingTab() {
       </div>
 
       {/* ── ملاحظة PWA ────────────────────────────────────────────────────── */}
-      <div className="nx-rounded-lg nx-text-base nx-text-muted" style={{ padding: 14, background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', lineHeight: 1.7 }}>
+      <div className="nx-rounded-lg nx-text-base nx-text-muted nx-p-14" style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', lineHeight: 1.7 }}>
         <strong style={{ color: 'var(--noorix-accent-blue)' }}>ℹ ملاحظة PWA:</strong>
         <br />
         التغييرات تُطبَّق فوراً على تبويب المتصفح والأيقونة. إذا كان التطبيق مثبّتاً على الجوال، قد تحتاج لإضافته مجدداً للحصول على الأيقونة المحدّثة.

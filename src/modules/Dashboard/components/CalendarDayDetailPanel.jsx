@@ -46,13 +46,13 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
         )}
       </div>
       <div className="nx-flex nx-flex-wrap nx-gap-12">
-        <div style={{ padding: 10, borderRadius: 8, background: 'rgba(37,99,235,0.08)', flex: 1, minWidth: 90 }}>
-          <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 4 }}>{t('dashboardSalesTarget')}</div>
-          <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget, 2) : '—'} ﷼</div>
+        <div className="nx-rounded nx-flex-1" style={{ padding: 10, background: 'rgba(37,99,235,0.08)', minWidth: 90 }}>
+          <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('dashboardSalesTarget')}</div>
+          <div className="nx-text-xl nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget, 2) : '—'} ﷼</div>
         </div>
-        <div style={{ padding: 10, borderRadius: 8, background: achieved ? 'rgba(22,163,74,0.12)' : 'var(--noorix-bg-muted)', flex: 1, minWidth: 90 }}>
-          <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 4 }}>{t('total')}</div>
-          <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: achieved ? '#16a34a' : 'var(--noorix-text)' }}>{fmt(totalAmount, 2)} ﷼ {achieved && '✓'}</div>
+        <div className="nx-rounded nx-flex-1" style={{ padding: 10, background: achieved ? 'rgba(22,163,74,0.12)' : 'var(--noorix-bg-muted)', minWidth: 90 }}>
+          <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('total')}</div>
+          <div className="nx-text-xl nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? '#16a34a' : 'var(--noorix-text)' }}>{fmt(totalAmount, 2)} ﷼ {achieved && '✓'}</div>
         </div>
       </div>
 
@@ -72,9 +72,9 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
 
       <div className="nx-text-sm nx-font-600">{t('salesChannels')} / {t('summaryNumber')}</div>
       <div className="nx-flex-1 nx-overflow-auto nx-border-all nx-rounded" style={{ minHeight: 100 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <table className="nx-w-full" style={{ borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
-            <tr style={{ background: 'var(--noorix-bg-muted)' }}>
+            <tr className="nx-bg-muted">
               <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('summaryNumber')}</th>
               <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('salesChannels')}</th>
               <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('customers')}</th>
@@ -83,15 +83,15 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
           </thead>
           <tbody>
             {daySummaries.length === 0 ? (
-              <tr><td colSpan={4} style={{ padding: 16, textAlign: 'center', color: 'var(--noorix-text-muted)', fontSize: 11 }}>{t('noDataInPeriod')}</td></tr>
+              <tr><td colSpan={4} className="nx-p-16 nx-text-center nx-text-muted nx-text-xs">{t('noDataInPeriod')}</td></tr>
             ) : daySummaries.map((s) => {
               const chText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount || 0, 2)}`).join(' | ');
               return (
-                <tr key={s.id} style={{ borderTop: '1px solid var(--noorix-border)' }}>
+                <tr key={s.id} className="nx-border-t">
                   <td style={{ padding: '6px 8px' }}>{s.summaryNumber || '—'}</td>
                   <td className="nx-cell-ellipsis" style={{ padding: '6px 8px' }} title={chText || ''}>{chText || '—'}</td>
                   <td className="nx-cell-num" style={{ padding: '6px 8px' }}>{s.customerCount ?? 0}</td>
-                  <td className="nx-cell-num" style={{ padding: '6px 8px', fontWeight: 600, color: '#16a34a' }}>{fmt(Number(s.totalAmount || 0), 2)}</td>
+                  <td className="nx-cell-num nx-font-600 nx-text-income" style={{ padding: '6px 8px' }}>{fmt(Number(s.totalAmount || 0), 2)}</td>
                 </tr>
               );
             })}

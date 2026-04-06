@@ -234,7 +234,7 @@ export default function TaxReportTab() {
     <div className="nx-grid nx-gap-24">
       <div className="nx-page-header">
         <div>
-          <h2 className="nx-text-2xl nx-font-700" style={{ margin: 0 }}>{lang === 'ar' ? 'تقرير الضرائب — نموذج الإفصاح الضريبي' : 'Tax Report — ZATCA Disclosure Form'}</h2>
+          <h2 className="nx-text-2xl nx-font-700 nx-m-0">{lang === 'ar' ? 'تقرير الضرائب — نموذج الإفصاح الضريبي' : 'Tax Report — ZATCA Disclosure Form'}</h2>
           <p className="nx-mt-6 nx-text-base nx-text-muted">
             {lang === 'ar' ? 'مطابق لنموذج مصلحة الزكاة والضريبة والجمارك. جميع الحقول قابلة للتعديل.' : 'Matches ZATCA tax disclosure form. All fields are editable.'}
           </p>
@@ -260,7 +260,7 @@ export default function TaxReportTab() {
         </div>
       ) : (
         <div className="noorix-surface-card nx-overflow-hidden" style={{ padding: 0 }}>
-          <div className="nx-p-16 nx-border-b" style={{ background: 'rgba(37,99,235,0.04)' }}>
+          <div className="nx-p-16 nx-border-b nx-bg-surface">
             <div className="nx-text-md nx-font-700 nx-text-blue">{companyName}</div>
             <div className="nx-text-sm nx-text-muted nx-mt-4">
               {lang === 'ar' ? 'نموذج الإفصاح الضريبي — ضريبة القيمة المضافة' : 'VAT Tax Disclosure Form'} — {periodKey}
@@ -287,7 +287,7 @@ export default function TaxReportTab() {
               </thead>
               <tbody>
                 <tr>
-                  <td colSpan={4} className="nx-font-700" style={{ padding: '10px 12px', background: 'rgba(22,163,74,0.06)', color: '#16a34a' }}>
+                  <td colSpan={4} className="nx-font-700 nx-text-income" style={{ padding: '10px 12px', background: 'rgba(22,163,74,0.06)' }}>
                     {lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)'}
                   </td>
                 </tr>
@@ -308,7 +308,7 @@ export default function TaxReportTab() {
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} className="nx-font-700" style={{ padding: '10px 12px', background: 'rgba(220,38,38,0.06)', color: '#dc2626' }}>
+                  <td colSpan={4} className="nx-font-700 nx-text-expense" style={{ padding: '10px 12px', background: 'rgba(220,38,38,0.06)' }}>
                     {lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)'}
                   </td>
                 </tr>
@@ -329,7 +329,7 @@ export default function TaxReportTab() {
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} className="nx-font-700" style={{ padding: '10px 12px', background: 'rgba(37,99,235,0.06)', color: '#2563eb' }}>
+                  <td colSpan={4} className="nx-font-700 nx-text-primary" style={{ padding: '10px 12px', background: 'rgba(37,99,235,0.06)' }}>
                     {lang === 'ar' ? 'الملخص' : 'Summary'}
                   </td>
                 </tr>

@@ -141,7 +141,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   if (error) {
     return (
-      <div className="noorix-surface-card" style={{ padding: 20, color: '#dc2626', background: 'rgba(239,68,68,0.08)' }}>
+      <div className="noorix-surface-card nx-p-20 nx-text-expense" style={{ background: 'rgba(239,68,68,0.08)' }}>
         {error.message}
       </div>
     );
@@ -155,7 +155,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
         month={selectedMonth ?? null}
         enabled={canPeriodAnalytics}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+      <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
         {cards.map((card) => {
           const profitPct = (card.key === 'grossProfit' || card.key === 'netProfit') ? getCardProfitPercent(card.key) : null;
           const sectionPct = getSectionPercentOfSales(card.key);
@@ -168,22 +168,17 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           return (
             <div
               key={card.key}
-              style={{
-                borderRadius: CARD_BORDER_RADIUS,
-                border: '1px solid var(--noorix-border)',
-                background: 'var(--noorix-bg-surface)',
-                overflow: 'hidden',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-              }}
+              className="nx-surface nx-overflow-hidden"
+              style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
             >
               <div style={{ height: 3, background: accent }} />
-              <div style={{ padding: 16, background: 'var(--noorix-bg-surface)' }}>
-                <div style={{ fontSize: 12, color: accent, marginBottom: 8, fontWeight: 700 }}>{card.label}</div>
+              <div className="nx-p-16 nx-bg-surface">
+                <div className="nx-text-sm nx-font-700 nx-mb-8" style={{ color: accent }}>{card.label}</div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: accent, fontFamily: 'var(--noorix-font-numbers)' }}>
                   {moneyText(getCardValue(card.key))}
                 </div>
                 {(ratioLabel && ratioValue != null) && (
-                  <div style={{ fontSize: 12, color: accent, marginTop: 6, opacity: 0.9 }}>
+                  <div className="nx-text-sm nx-mt-6" style={{ color: accent, opacity: 0.9 }}>
                     {ratioLabel}: {ratioValue}%
                   </div>
                 )}
@@ -193,17 +188,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
         })}
       </div>
 
-      <div
-        style={{
-          borderRadius: CARD_BORDER_RADIUS,
-          border: '1px solid var(--noorix-border)',
-          background: 'var(--noorix-bg-surface)',
-          overflow: 'hidden',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          padding: 24,
-        }}
-      >
-        <div className="nx-flex nx-flex-between nx-flex-wrap nx-gap-8" style={{ marginBottom: 20 }}>
+      <div className="nx-surface nx-overflow-hidden nx-p-24" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div className="nx-flex nx-flex-between nx-flex-wrap nx-gap-8 nx-mb-20">
           <div className="nx-text-lg nx-font-700">
             {t('dashboardSalesTimeline')} — {filter?.label || year}
           </div>
@@ -223,14 +209,14 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           {/* Y-axis */}
           <div style={{ flexShrink: 0, width: 52, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 28 }}>
             {[...yAxisTicks].reverse().map((tick) => (
-              <div key={tick} style={{ fontSize: 10, fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-text-muted)', fontWeight: 600 }}>
+              <div key={tick} className="nx-text-muted nx-font-600" style={{ fontSize: 10, fontFamily: 'var(--noorix-font-numbers)' }}>
                 {formatAxisValue(tick)}
               </div>
             ))}
           </div>
 
           {/* Chart area with grid */}
-          <div className="nx-flex-1" style={{ minWidth: 0, position: 'relative' }}>
+          <div className="nx-flex-1" style={{ position: 'relative' }}>
             {/* Grid lines */}
             <div style={{ position: 'absolute', inset: 0, top: 0, bottom: 32, left: 0, right: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
               {yAxisTicks.slice(1).map((_, i) => (
@@ -276,8 +262,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                       </div>
                     )}
                     <div
+                      className="nx-w-full"
                       style={{
-                        width: '100%',
                         maxWidth: 36,
                         height: '100%',
                         display: 'flex',

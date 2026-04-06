@@ -81,14 +81,13 @@ export default function BankStatementTransactionsFullTab({
     filteredTransactions.every((tx) => selectedTxIds.has(getTxKey(tx)));
 
   return (
-    <div className="nx-grid" style={{ gap: 14 }}>
+    <div className="nx-grid nx-gap-14">
       {/* ── شريط الفلاتر ── */}
       <div
         className="nx-grid nx-gap-10 nx-bg-muted nx-rounded-lg"
+        className="nx-p-12 nx-border-all"
         style={{
           gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          padding: '12px 14px',
-          border: '1px solid var(--noorix-border)',
         }}
       >
         {/* بحث */}
@@ -148,12 +147,7 @@ export default function BankStatementTransactionsFullTab({
 
         {/* إحصاء */}
         <div
-          className="nx-flex-center nx-gap-10 nx-text-sm nx-rounded"
-          style={{
-            padding: '6px 12px',
-            background: 'var(--noorix-surface)',
-            border: '1px solid var(--noorix-border)',
-          }}
+          className="nx-flex-center nx-gap-10 nx-text-sm nx-rounded nx-px-12 nx-py-4 nx-bg-surface nx-border-all"
         >
           <span style={{ color: 'var(--noorix-text-muted)' }}>النتائج:</span>
           <span style={{ fontWeight: 700 }}>{filteredTransactions.length}</span>
@@ -177,13 +171,7 @@ export default function BankStatementTransactionsFullTab({
 
       {/* ── إضافة فئة جديدة ── */}
       <div
-        className="nx-flex-center nx-gap-8 nx-bg-muted"
-        style={{
-          flexWrap: 'wrap',
-          padding: '10px 14px',
-          borderRadius: 10,
-          border: '1px solid var(--noorix-border)',
-        }}
+        className="nx-flex-center nx-flex-wrap nx-gap-8 nx-bg-muted nx-rounded nx-border-all nx-px-12 nx-py-8"
       >
         <span className="nx-text-sm nx-font-600 nx-text-muted">
           {t('bankStatementAddCategory')}:
@@ -206,7 +194,7 @@ export default function BankStatementTransactionsFullTab({
       </div>
 
       {/* ── الجدول ── */}
-      <div className="nx-overflow-auto nx-rounded-lg" style={{ border: '1px solid var(--noorix-border)', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+      <div className="nx-overflow-auto nx-rounded-lg nx-border-all" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 780 }}>
           <thead>
             <tr

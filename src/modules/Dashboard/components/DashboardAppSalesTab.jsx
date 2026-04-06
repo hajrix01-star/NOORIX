@@ -94,18 +94,8 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
 
   if (yearTotal === 0) {
     return (
-      <div
-        style={{
-          borderRadius: CARD_BORDER_RADIUS,
-          border: '1px solid var(--noorix-border)',
-          background: 'var(--noorix-bg-surface)',
-          padding: 48,
-          textAlign: 'center',
-          color: 'var(--noorix-text-muted)',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-        }}
-      >
-        <div style={{ fontSize: 40, opacity: 0.25, marginBottom: 12 }}></div>
+      <div className="nx-rounded-lg nx-border-all nx-bg-surface nx-text-center nx-text-muted" style={{ padding: 48, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div className="nx-mb-12" style={{ fontSize: 40, opacity: 0.25 }}></div>
         <div className="nx-text-md">{t('noDataInPeriod')}</div>
       </div>
     );
@@ -113,19 +103,11 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
 
   return (
     <div className="nx-flex nx-flex-col nx-gap-24">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-        <div
-          style={{
-            borderRadius: CARD_BORDER_RADIUS,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-            overflow: 'hidden',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          }}
-        >
+      <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        <div className="nx-surface nx-overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           <div style={{ height: 3, background: CARD_COLORS.sales.accent }} />
-          <div style={{ padding: 16, background: 'var(--noorix-bg-surface)' }}>
-            <div style={{ fontSize: 12, color: CARD_COLORS.sales.accent, marginBottom: 8, fontWeight: 700 }}>{t('dashboardAppSalesRatio')}</div>
+          <div className="nx-p-16 nx-bg-surface">
+            <div className="nx-text-sm nx-font-700 nx-mb-8" style={{ color: CARD_COLORS.sales.accent }}>{t('dashboardAppSalesRatio')}</div>
             <div style={{ fontSize: 28, fontWeight: 900, color: CARD_COLORS.sales.accent, fontFamily: 'var(--noorix-font-numbers)' }}>
               {fmt(appPercent, 1)}%
             </div>
@@ -133,7 +115,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
               {fmt(yearApp, 2)} ﷼ / {fmt(yearTotal, 2)} ﷼
             </div>
             {yearApp === 0 && (
-              <div style={{ marginTop: 8, fontSize: 11, color: '#f59e0b', fontWeight: 600 }}>
+              <div className="nx-mt-8 nx-text-xs nx-font-600" style={{ color: '#f59e0b' }}>
                 {t('dashboardNoAppSales')}
               </div>
             )}
@@ -142,23 +124,14 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
       </div>
 
       {appByChannel.length > 0 && (
-        <div
-          style={{
-            borderRadius: CARD_BORDER_RADIUS,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
-            overflow: 'hidden',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-            padding: 20,
-          }}
-        >
-          <div className="nx-text-md nx-font-700" style={{ marginBottom: 16 }}>{t('reportChannels')} — {t('dashboardAppSales')}</div>
+        <div className="nx-surface nx-overflow-hidden nx-p-20" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div className="nx-text-md nx-font-700 nx-mb-16">{t('reportChannels')} — {t('dashboardAppSales')}</div>
           <div className="nx-flex nx-flex-col nx-gap-10">
             {appByChannel.map((ch) => {
               const pct = yearTotal > 0 ? (ch.app / yearTotal) * 100 : 0;
               return (
-                <div key={ch.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--noorix-bg-muted)', borderRadius: 8 }}>
-                  <span style={{ fontWeight: 600 }}>{ch.name}</span>
+                <div key={ch.name} className="nx-flex-between nx-bg-muted nx-rounded" style={{ padding: '10px 14px' }}>
+                  <span className="nx-font-600">{ch.name}</span>
                   <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, color: CARD_COLORS.sales.accent }}>{fmt(pct, 1)}%</span>
                 </div>
               );
@@ -167,25 +140,16 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
         </div>
       )}
 
-      <div
-        style={{
-          borderRadius: CARD_BORDER_RADIUS,
-          border: '1px solid var(--noorix-border)',
-          background: 'var(--noorix-bg-surface)',
-          overflow: 'hidden',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          padding: 20,
-        }}
-      >
-        <div style={{ fontSize: 14, fontWeight: 700, color: CARD_COLORS.sales.accent, marginBottom: 16 }}>{t('dashboardAppSalesChart')}</div>
+      <div className="nx-surface nx-overflow-hidden nx-p-20" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div className="nx-text-md nx-font-700 nx-mb-16" style={{ color: CARD_COLORS.sales.accent }}>{t('dashboardAppSalesChart')}</div>
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(36px, 1fr))', gap: 8, alignItems: 'end', minHeight: 100, minWidth: 360 }}>
+          <div className="nx-grid nx-gap-8" style={{ gridTemplateColumns: 'repeat(12, minmax(36px, 1fr))', alignItems: 'end', minHeight: 100, minWidth: 360 }}>
             {chartData.map((point) => {
               const barHeight = `${Math.max(0, (point.percent / maxPercent) * 100)}%`;
               return (
                 <div key={point.month} className="nx-flex nx-flex-col nx-gap-6" style={{ alignItems: 'center' }}>
                   <div className="nx-text-xs nx-text-muted nx-font-600">{point.label}</div>
-                  <div style={{ width: '100%', height: 60, background: 'var(--noorix-bg-muted)', borderRadius: 8, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                  <div className="nx-w-full nx-bg-muted nx-rounded nx-overflow-hidden" style={{ height: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
                     <div
                       style={{
                         width: '70%',

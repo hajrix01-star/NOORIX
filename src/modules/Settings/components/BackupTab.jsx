@@ -472,7 +472,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             <div className="backup-sys-jobs">
               {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
                 <div key={sj.id} className="backup-sys-job">
-                  <div className="nx-flex-center" style={{ flexWrap: 'wrap', gap: '6px 10px', minWidth: 0 }}>
+                  <div className="nx-flex-center nx-flex-wrap nx-gap-10" style={{ minWidth: 0 }}>
                     <span dir="ltr" className="nx-font-700">
                       {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
                       {formatBackupDate(sj.createdAt, lang)}
@@ -642,18 +642,13 @@ export default function BackupTab({ activeCompanies = [] }) {
         />
 
         <label
-          className="nx-checkbox"
-          className="nx-text-base nx-text-primary"
-          style={{
-            margin: '12px 0 16px',
-            lineHeight: 1.5,
-          }}
+          className="nx-checkbox nx-text-base nx-text-primary nx-mt-12 nx-mb-16"
+          style={{ lineHeight: 1.5 }}
         >
           <input
             type="checkbox"
             checked={importConfirmed}
             onChange={(e) => setImportConfirmed(e.target.checked)}
-            style={{ marginTop: 2, flexShrink: 0 }}
           />
           <span>
             {isAr
@@ -662,7 +657,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           </span>
         </label>
 
-        <div className="nx-flex-end nx-gap-8" style={{ flexWrap: 'wrap' }}>
+        <div className="nx-flex-end nx-flex-wrap nx-gap-8">
           <Button
             type="button"
             variant="ghost"
@@ -762,9 +757,8 @@ export default function BackupTab({ activeCompanies = [] }) {
               <details className="nx-text-sm">
                 <summary className="nx-cursor-pointer nx-font-700">{t('backupReportRawJson')}</summary>
                 <pre
-                  className="nx-text-xs nx-bg-muted nx-p-12 nx-overflow-auto nx-ltr nx-mt-10"
+                  className="nx-text-xs nx-bg-muted nx-p-12 nx-overflow-auto nx-ltr nx-mt-10 nx-rounded"
                   style={{
-                    borderRadius: 10,
                     maxHeight: 220,
                     textAlign: 'left',
                   }}
@@ -858,9 +852,8 @@ export default function BackupTab({ activeCompanies = [] }) {
               <details className="nx-text-sm">
                 <summary className="nx-cursor-pointer nx-font-700">{t('backupReportRawJson')}</summary>
                 <pre
-                  className="nx-text-xs nx-bg-muted nx-p-12 nx-overflow-auto nx-ltr nx-mt-10"
+                  className="nx-text-xs nx-bg-muted nx-p-12 nx-overflow-auto nx-ltr nx-mt-10 nx-rounded"
                   style={{
-                    borderRadius: 10,
                     maxHeight: 220,
                     textAlign: 'left',
                   }}

@@ -309,8 +309,8 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
   const active = category.isActive !== false;
 
   return (
-    <div className="noorix-surface-card" style={{ padding: 14, opacity: active ? 1 : 0.55 }}>
-        <div className="nx-flex nx-gap-12" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div className="noorix-surface-card nx-p-14" style={{ opacity: active ? 1 : 0.55 }}>
+        <div className="nx-flex nx-gap-12 nx-flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div className="nx-flex-1" style={{ minWidth: 0 }}>
           <div className="nx-flex-center nx-flex-wrap nx-gap-8 nx-mb-8">
             {index != null ? (
@@ -374,7 +374,7 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
             </div>
           ) : null}
         </div>
-        <div className="nx-flex-col nx-gap-6" style={{ alignItems: 'flex-end' }}>
+        <div className="nx-flex-col nx-gap-6 nx-flex-shrink-0" style={{ alignItems: 'flex-end' }}>
           <label className="nx-checkbox">
             <input type="checkbox" checked={active} onChange={() => onToggle()} />
             {t('bankTreeActive')}
@@ -617,7 +617,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
 
   return (
     <div className="nx-p-16" style={{ maxWidth: 800, margin: '0 auto' }}>
-      <div className="noorix-surface-card nx-flex-center nx-flex-wrap nx-gap-12 nx-p-12" style={{ marginBottom: 14 }}>
+      <div className="noorix-surface-card nx-flex-center nx-flex-wrap nx-gap-12 nx-p-12 nx-mb-12">
         <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeStatsCategories')}</span>
         <strong>{sortedCategories.length}</strong>
         <span style={{ color: 'var(--noorix-border)' }}>|</span>
@@ -650,14 +650,14 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
       {isLoading ? <p className="nx-text-muted">{t('loading')}…</p> : null}
 
       {!isLoading && sortedCategories.length === 0 && inactiveCategories.length === 0 ? (
-        <div className="noorix-surface-card nx-text-center nx-text-muted" style={{ padding: 40 }}>
-          <div className="nx-mb-12" style={{ fontSize: 40 }}></div>
+        <div className="noorix-surface-card nx-text-center nx-text-muted nx-p-24">
+          <div className="nx-mb-12 nx-text-3xl"></div>
           <div className="nx-font-600 nx-mb-6">{t('bankTreeEmptyTitle')}</div>
           <div className="nx-text-base nx-mb-8">{t('bankTreeEmptyDesc')}</div>
-          <p style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginBottom: 16, maxWidth: 420, marginInline: 'auto' }}>
+          <p className="nx-text-sm nx-text-muted nx-mb-16" style={{ maxWidth: 420, marginInline: 'auto' }}>
             {t('bankTreeSeedDefaultsHint')}
           </p>
-          <div className="nx-flex-wrap nx-gap-10" style={{ justifyContent: 'center' }}>
+          <div className="nx-flex-wrap nx-gap-10 nx-text-center" style={{ justifyContent: 'center' }}>
             <Button variant="primary" onClick={openNew}>{t('bankTreeCreateFirst')}</Button>
             <Button disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
               {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
@@ -731,7 +731,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
         }
       >
         <p className="nx-text-base nx-text-muted">{t('bankTreeMigrateBody', String(activeFlat.length), String(groupedForMigrate.length))}</p>
-        <div className="nx-overflow-auto nx-grid nx-gap-8 nx-mt-12" style={{ maxHeight: 200 }}>
+        <div className="nx-overflow-auto nx-grid nx-gap-8 nx-mt-12 nx-rounded" style={{ maxHeight: 200 }}>
           {groupedForMigrate.map((g, i) => (
             <div key={i} className="nx-p-8 nx-rounded nx-bg-muted nx-text-sm">
               <strong>{g.categoryName}</strong> — {g.keywords.slice(0, 6).join(', ')}
@@ -795,7 +795,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
               </label>
             </div>
           ) : null}
-          <div className="nx-grid nx-gap-8" style={{ borderTop: '1px solid var(--noorix-border)', paddingTop: 10 }}>
+          <div className="nx-grid nx-gap-8 nx-border-t" style={{ paddingTop: 10 }}>
             <label className="nx-checkbox">
               <input type="radio" name="impMode" checked={importMode === 'merge'} onChange={() => setImportMode('merge')} />
               {t('bankRulesImportModeMerge')}

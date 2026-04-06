@@ -84,7 +84,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
         </Button>
       </div>
 
-      <div style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
+      <div className="nx-overflow-auto nx-rounded nx-border-all">
         <table className="nx-w-full nx-text-base" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{
@@ -274,7 +274,7 @@ export default function RolesTab({ userRole, language }) {
       Object.values(m.permissions).some((p) => perms.includes(p))
     );
     return (
-      <div className="nx-flex nx-gap-4" style={{ flexWrap: 'wrap' }}>
+      <div className="nx-flex-wrap nx-gap-4">
         {activeModules.slice(0, 5).map((m) => (
           <span key={m.key} className="nx-rounded-lg nx-font-600" style={{
             background: 'var(--noorix-accent-soft, rgba(59,130,246,0.1))',
@@ -298,7 +298,7 @@ export default function RolesTab({ userRole, language }) {
     <div className="nx-grid nx-gap-16">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="nx-flex-between nx-gap-8" style={{ flexWrap: 'wrap' }}>
+      <div className="nx-flex-between nx-gap-8 nx-flex-wrap">
         <div>
           <h3 className="nx-m-0 nx-text-xl nx-font-700">
             {isAr ? 'الأدوار والصلاحيات' : 'Roles & Permissions'}
@@ -322,15 +322,14 @@ export default function RolesTab({ userRole, language }) {
       ) : (
         <div className="nx-grid nx-gap-12">
           {roles.map((role) => (
-            <div key={role.id} className="noorix-surface-card nx-p-16 nx-rounded-lg nx-cursor-pointer" style={{
-              border: '1px solid var(--noorix-border)',
+            <div key={role.id} className="noorix-surface-card nx-p-16 nx-rounded-lg nx-cursor-pointer nx-border-all" style={{
               transition: 'box-shadow 0.15s',
             }}
               onClick={() => openEdit(role)}
               onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
             >
-              <div className="nx-flex nx-gap-12" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div className="nx-flex nx-gap-12 nx-flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div className="nx-flex-1" style={{ minWidth: 200 }}>
                   <div className="nx-flex-center nx-gap-8 nx-mb-4">
                     <span className="nx-text-lg nx-font-700">{role.nameAr || role.name}</span>
@@ -350,20 +349,20 @@ export default function RolesTab({ userRole, language }) {
                   )}
                   {renderPermissionBadges(role.permissions)}
                 </div>
-                <div className="nx-flex-center nx-gap-12" style={{ flexShrink: 0 }}>
+                <div className="nx-flex-center nx-gap-12 nx-flex-shrink-0">
                   <div className="nx-text-center">
-                    <div className="nx-font-700" style={{ fontSize: 18, color: 'var(--noorix-accent)' }}>
+                    <div className="nx-text-2xl nx-font-700" style={{ color: 'var(--noorix-accent)' }}>
                       {role._count?.users ?? 0}
                     </div>
-                    <div className="nx-text-muted" style={{ fontSize: 10 }}>
+                    <div className="nx-text-muted nx-text-xs">
                       {isAr ? 'مستخدم' : 'users'}
                     </div>
                   </div>
                   <div className="nx-text-center">
-                    <div className="nx-font-700" style={{ fontSize: 18 }}>
+                    <div className="nx-text-2xl nx-font-700">
                       {renderPermissionSummary(role.permissions)}
                     </div>
-                    <div className="nx-text-muted" style={{ fontSize: 10 }}>
+                    <div className="nx-text-muted nx-text-xs">
                       {isAr ? 'صلاحية' : 'perms'}
                     </div>
                   </div>
@@ -399,7 +398,7 @@ export default function RolesTab({ userRole, language }) {
             <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
           </div>
 
-          <h4 className="nx-text-md nx-font-700" style={{ margin: '0 0 12px' }}>
+          <h4 className="nx-text-md nx-font-700 nx-m-0 nx-mb-12">
             {isAr ? 'الصلاحيات' : 'Permissions'}
           </h4>
           <PermissionMatrix
@@ -458,7 +457,7 @@ export default function RolesTab({ userRole, language }) {
               </div>
             </div>
 
-            <h4 className="nx-text-md nx-font-700" style={{ margin: '0 0 12px' }}>
+            <h4 className="nx-text-md nx-font-700 nx-m-0 nx-mb-12">
               {isAr ? 'مصفوفة الصلاحيات' : 'Permissions Matrix'}
             </h4>
             <PermissionMatrix
@@ -470,7 +469,7 @@ export default function RolesTab({ userRole, language }) {
               language={language}
             />
 
-            <div className="nx-flex nx-gap-8 nx-mt-16" style={{ flexWrap: 'wrap' }}>
+            <div className="nx-flex nx-gap-8 nx-mt-16 nx-flex-wrap">
               <Button type="submit" variant="primary" disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? t('saving') : t('save')}
               </Button>

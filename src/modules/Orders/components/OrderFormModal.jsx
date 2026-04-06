@@ -179,7 +179,7 @@ export function OrderFormModal({
         hideClose={false}
       >
         <div className="nx-text-center" style={{ padding: '8px 0' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}></div>
+          <div className="nx-mb-12" style={{ fontSize: 48 }}></div>
           <h3 className="nx-text-2xl" style={{ margin: '0 0 6px' }}>{t('orderSaved')}</h3>
           <p className="nx-text-md nx-text-muted" style={{ margin: '0 0 16px' }}>
             {t('orderNumber')}: <strong className="nx-text-blue">{savedOrder.orderNumber}</strong>
@@ -187,7 +187,7 @@ export function OrderFormModal({
           <div className="nx-flex-center nx-flex-wrap nx-gap-16" style={{ justifyContent: 'center', marginBottom: 20 }}>
             <div className="nx-text-center">
               <div className="nx-text-xs nx-text-muted">{t('total')}</div>
-              <div className="nx-text-2xl nx-font-numbers" style={{ fontWeight: 900, color: '#16a34a' }}>{fmt(savedOrder.totalAmount ?? 0, 2)} ﷼</div>
+              <div className="nx-text-2xl nx-font-numbers nx-text-income" style={{ fontWeight: 900 }}>{fmt(savedOrder.totalAmount ?? 0, 2)} ﷼</div>
             </div>
           </div>
           <div className="nx-flex-col nx-gap-10" style={{ alignItems: 'center' }}>
@@ -259,7 +259,7 @@ export function OrderFormModal({
           </div>
         ) : (
           <>
-            <div className="nx-grid nx-gap-8" style={{ gridTemplateColumns: '1fr minmax(120px,1fr) minmax(70px,1fr) minmax(80px,1fr) auto', alignItems: 'end', marginBottom: 12 }}>
+            <div className="nx-grid nx-gap-8 nx-mb-12" style={{ gridTemplateColumns: '1fr minmax(120px,1fr) minmax(70px,1fr) minmax(80px,1fr) auto', alignItems: 'end' }}>
               <div>
                 <label className="nx-text-xs nx-text-muted">{t('product')}</label>
                 <ProductSearchInput

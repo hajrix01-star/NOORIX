@@ -35,7 +35,7 @@ function invalidateHrQueries(qc, companyId) {
 function Field({ id, label, children, error }) {
   return (
     <div className="nx-mb-16">
-      <label htmlFor={id} className="nx-text-base nx-font-600" style={{ display: 'block', marginBottom: 6 }}>
+      <label htmlFor={id} className="nx-text-base nx-font-600 nx-mb-6" style={{ display: 'block' }}>
         {label}
       </label>
       {children}
@@ -404,7 +404,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
           {confirmStep && pendingData && (
             <div className="nx-flex nx-flex-col nx-gap-20">
               <div className="nx-text-md nx-font-600 nx-text-muted">{t('confirmSaveTitle')}</div>
-              <div style={{ padding: 16, borderRadius: 12, background: 'var(--noorix-bg-muted)', fontSize: 15, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+              <div className="nx-p-16 nx-rounded-lg nx-bg-muted nx-text-lg" style={{ lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                 {isAr ? pendingData.report?.textAr : pendingData.report?.textEn}
               </div>
               <div className="nx-flex nx-gap-12">
@@ -430,13 +430,10 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
 
           {!confirmStep && formError && (
             <div
+              className="nx-mb-16 nx-p-12 nx-rounded nx-text-md"
               style={{
-                marginBottom: 16,
-                padding: 12,
-                borderRadius: 10,
                 background: 'rgba(220,38,38,0.08)',
                 color: 'var(--noorix-accent-red)',
-                fontSize: 14,
               }}
             >
               {formError}
@@ -548,7 +545,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
 
           {!confirmStep && !dataLoading && mode === 'increase' && (
             <div>
-              <div className="nx-flex nx-gap-8" style={{ marginBottom: 20 }}>
+              <div className="nx-flex nx-gap-8 nx-mb-16">
                 {segmentBtn('movement', isAr ? t('chatMovementSection') : 'Promotion / raise')}
                 {segmentBtn('allowance', isAr ? t('chatAllowanceSection') : 'Allowance')}
               </div>

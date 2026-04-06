@@ -1809,3 +1809,78 @@
 }
 .nx-list-option:hover { background: var(--noorix-bg-muted); }
 .nx-list-option--active { background: rgba(37,99,235,0.08); color: var(--noorix-accent-blue); font-weight: 600; }
+
+/* ── Semantic Colors — ألوان دلالية مالية ─────────── */
+/* الإيرادات والإيداعات (أخضر) */
+.nx-text-income   { color: #16a34a; }
+.nx-bg-income     { background: rgba(22,163,74,0.08); }
+.nx-border-income { border-color: #16a34a; }
+
+/* المصروفات والسحوبات (أحمر) */
+.nx-text-expense  { color: #dc2626; }
+.nx-bg-expense    { background: rgba(220,38,38,0.08); }
+.nx-border-expense { border-color: #dc2626; }
+
+/* تحذير/معلق (كهرماني) */
+.nx-text-warn     { color: #d97706; }
+.nx-bg-warn       { background: rgba(217,119,6,0.08); }
+
+/* معلومة/رابط (أزرق) */
+.nx-text-info     { color: #2563eb; }
+.nx-bg-info       { background: rgba(37,99,235,0.08); }
+
+/* ── Number Display — أرقام مالية ───────────────── */
+/* رقم مالي LTR */
+.nx-num { direction: ltr; display: inline-block; font-family: var(--noorix-font-numbers); }
+.nx-num-bold { direction: ltr; display: inline-block; font-family: var(--noorix-font-numbers); font-weight: 700; }
+
+/* ── Progress Bar — شريط تقدم ───────────────────── */
+.nx-progress-track {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--noorix-border);
+  overflow: hidden;
+  flex: 1;
+}
+.nx-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* ── Badge Row — شارة داخل صف ───────────────────── */
+.nx-badge-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Card Row — صف داخل بطاقة ───────────────────── */
+.nx-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--noorix-border);
+}
+.nx-card-row:last-child { border-bottom: none; }
+
+/* ── Stat Value — قيمة إحصائية ──────────────────── */
+.nx-stat-value {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--noorix-font-numbers);
+  direction: ltr;
+  text-align: end;
+  line-height: 1.2;
+}
+.nx-stat-label {
+  font-size: 12px;
+  color: var(--noorix-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Inline Block LTR (للأرقام في النص) ─────────── */
+.nx-inline-ltr { display: inline-block; direction: ltr; }

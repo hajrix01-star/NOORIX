@@ -83,20 +83,20 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
 
   return (
     <div style={{ maxWidth: 560 }}>
-      <div style={{ marginBottom: 20 }}>
+      <div className="nx-mb-20">
         <h3 className="nx-m-0 nx-text-xl nx-font-700">{t('dashboardSpecialDays')} — {monthLabel} {year}</h3>
         <p className="nx-mt-6 nx-text-base nx-text-muted">{t('dashboardSpecialDaysDesc')}</p>
       </div>
 
       {showForm && (
-        <div style={{ padding: 20, marginBottom: 20, background: 'var(--noorix-bg-muted)', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
-          <div style={{ fontWeight: 700, marginBottom: 12 }}>{t('dashboardSpecialDaysFromTo')}</div>
+        <div className="nx-p-20 nx-mb-20 nx-bg-muted nx-border-all nx-rounded">
+          <div className="nx-font-700 nx-mb-12">{t('dashboardSpecialDaysFromTo')}</div>
           <div className="nx-flex nx-flex-col nx-gap-12">
             <div className="nx-flex nx-flex-wrap nx-gap-12" style={{ alignItems: 'flex-start' }}>
-              <div style={{ flex: 1, minWidth: 140 }}>
+              <div className="nx-flex-1" style={{ minWidth: 140 }}>
                 <Input type="date" label={t('dateFilterFrom')} value={newFrom} onChange={(e) => setNewFrom(e.target.value)} />
               </div>
-              <div style={{ flex: 1, minWidth: 140 }}>
+              <div className="nx-flex-1" style={{ minWidth: 140 }}>
                 <Input type="date" label={t('dateFilterTo')} value={newTo} onChange={(e) => setNewTo(e.target.value)} />
               </div>
             </div>
@@ -115,14 +115,14 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
       )}
 
       {!showForm && (
-        <Button variant="primary" onClick={() => { setShowForm(true); setNewFrom(startDate); setNewTo(endDate); }} style={{ marginBottom: 12 }}>
+        <Button variant="primary" className="nx-mb-12" onClick={() => { setShowForm(true); setNewFrom(startDate); setNewTo(endDate); }}>
           + {t('add')}
         </Button>
       )}
 
       <div className="nx-flex nx-flex-col nx-gap-10">
         {specialDaysList.map((sp) => (
-          <div key={sp.id} className="nx-flex nx-gap-12 nx-p-14 nx-bg-surface nx-border-all nx-rounded" style={{ alignItems: 'center' }}>
+          <div key={sp.id} className="nx-flex-center nx-gap-12 nx-p-14 nx-bg-surface nx-border-all nx-rounded">
             <div style={{ width: 12, height: 12, borderRadius: 6, background: sp.color || '#8b5cf6', flexShrink: 0 }} />
             {editingId === sp.id ? (
               <>
@@ -131,7 +131,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
                   onChange={(e) => setEditingName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { handleUpdate(sp.id, { name: editingName.trim() || sp.name }); } }}
                   autoFocus
-                  style={{ flex: 1 }}
+                  className="nx-flex-1"
                 />
                 <Button variant="primary" onClick={() => { handleUpdate(sp.id, { name: editingName.trim() || sp.name }); setEditingId(null); }}>✓</Button>
               </>
@@ -145,7 +145,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
           </div>
         ))}
         {specialDaysList.length === 0 && !showForm && (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--noorix-text-muted)', fontSize: 13, border: '1px dashed var(--noorix-border)', borderRadius: 10 }}>
+          <div className="nx-text-center nx-text-muted nx-text-base" style={{ padding: 32, border: '1px dashed var(--noorix-border)', borderRadius: 10 }}>
             {t('dashboardNoSpecialDays')}
           </div>
         )}

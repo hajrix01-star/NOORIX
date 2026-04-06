@@ -270,7 +270,7 @@ export default function OwnerDashboardScreen() {
               <div style={{ height: 3, background: '#dc2626' }} />
               <div className="nx-p-16">
                 <div className="nx-text-xs nx-text-muted nx-mb-4">{t('purchasesToSalesRatio')}</div>
-                <div className="nx-text-3xl nx-font-800 nx-font-numbers" style={{ color: '#dc2626' }}>
+                <div className="nx-text-3xl nx-font-800 nx-font-numbers nx-text-expense">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) : '—'}%
                 </div>
                 <div className="nx-text-2xs nx-text-muted nx-mt-4">{fmt(aggregated.totalPurchases, 2)} ﷼</div>

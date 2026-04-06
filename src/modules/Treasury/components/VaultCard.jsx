@@ -96,21 +96,19 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod
       </Button>
 
       {open && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          /* RTL: الزر على اليسار → القائمة تمتد يميناً داخل الكرت (left:0) */
-          /* LTR: الزر على اليمين → القائمة تمتد يساراً داخل الكرت (right:0) */
-          ...(isRtl ? { left: 0 } : { right: 0 }),
-          background: 'var(--noorix-bg-surface)',
-          border: '1px solid var(--noorix-border)',
-          borderRadius: 12,
-          boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
-          minWidth: 160, width: 'max-content', maxWidth: 220,
-          padding: '6px 0',
-          direction: isRtl ? 'rtl' : 'ltr',
-          zIndex: 100,
-        }}>
+        <div
+          className="nx-bg-surface nx-border-all nx-rounded-lg"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            ...(isRtl ? { left: 0 } : { right: 0 }),
+            boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
+            minWidth: 160, width: 'max-content', maxWidth: 220,
+            padding: '6px 0',
+            direction: isRtl ? 'rtl' : 'ltr',
+            zIndex: 100,
+          }}
+        >
           {items.map(({ label, action, color }) => (
             <Button
               key={label}
@@ -155,10 +153,9 @@ const VaultCard = memo(function VaultCard({
     /* لا overflow:hidden هنا — ضروري حتى تبرز قائمة الإجراءات (position:absolute) */
     <div
       onClick={() => onClick(vault)}
-      className="nx-flex-col nx-bg-surface nx-cursor-pointer"
+      className="nx-flex-col nx-bg-surface nx-cursor-pointer nx-border-all"
       style={{
         borderRadius: 14,
-        border: '1px solid var(--noorix-border)',
         opacity: isArchived ? 0.65 : 1,
         boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         transition: 'box-shadow 150ms',
@@ -218,7 +215,7 @@ const VaultCard = memo(function VaultCard({
       <div style={{ margin: '0 16px', height: 1, background: 'var(--noorix-border)' }} />
 
       {/* وارد / صادر */}
-      <div className="nx-grid-2 nx-gap-8" style={{ padding: '12px 16px' }}>
+      <div className="nx-grid-2 nx-gap-8 nx-py-12 nx-px-16">
         <div>
           <div className="nx-flex-center nx-gap-4 nx-text-muted" style={{ fontSize: 10, marginBottom: 3 }}>
             <svg viewBox="0 0 12 12" fill="none" stroke="#16a34a" strokeWidth="2" width="10" height="10">
@@ -226,7 +223,7 @@ const VaultCard = memo(function VaultCard({
             </svg>
             {t('inbound')}
           </div>
-          <div className="nx-text-base nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#16a34a' }}>
+          <div className="nx-text-base nx-font-700 nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
             {fmt(totalIn, 2)} <span className="nx-font-400 nx-text-muted nx-text-xs">﷼</span>
           </div>
         </div>
@@ -245,7 +242,7 @@ const VaultCard = memo(function VaultCard({
 
       {/* فوتر: شارات الحالة */}
       {(vault.isSalesChannel || vault.account?.code || isArchived || vault.showAsPaymentMethod === false) && (
-        <div className="nx-flex-center nx-flex-wrap nx-gap-6 nx-border-t" style={{ padding: '8px 16px' }}>
+        <div className="nx-flex-center nx-flex-wrap nx-gap-6 nx-border-t nx-py-8 nx-px-16">
           {vault.isSalesChannel && (
             <Badge color="green" size="sm">{t('salesChannel')}</Badge>
           )}

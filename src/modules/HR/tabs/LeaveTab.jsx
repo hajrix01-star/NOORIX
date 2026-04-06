@@ -123,24 +123,24 @@ export default function LeaveTab() {
     const ss = statusStyles[row.status] || { label: row.status };
     return (
       <div>
-        <div className="nx-flex nx-mb-4" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="nx-flex-between nx-flex-wrap nx-mb-4">
           <span className="nx-font-700 nx-text-md">{row.employeeName}</span>
           <Badge color={statusColorMap[row.status] || 'gray'} size="sm" style={{ flexShrink: 0 }}>{ss.label}</Badge>
         </div>
         <div className="nx-text-base nx-text-muted nx-mb-8">
           {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
         </div>
-        <div className="nx-grid-3 nx-gap-6 nx-rounded" style={{ background: 'var(--noorix-bg-page)', padding: '8px 10px', marginBottom: 10 }}>
+        <div className="nx-grid-3 nx-gap-6 nx-rounded nx-bg-muted nx-mb-10" style={{ padding: '8px 10px' }}>
           <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('startDate')}</div>
+            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('startDate')}</div>
             <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.startDate)}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('endDate')}</div>
+            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('endDate')}</div>
             <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.endDate)}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: 'var(--noorix-text-muted)', marginBottom: 2 }}>{t('daysCount')}</div>
+            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('daysCount')}</div>
             <div className="nx-text-md nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.daysCount ?? '—'}</div>
           </div>
         </div>
@@ -165,7 +165,7 @@ export default function LeaveTab() {
             <option key={y} value={y}>{y}</option>
           ))}
         </Input>
-        <div className="nx-flex nx-gap-8" style={{ marginRight: 'auto' }}>
+        <div className="nx-flex nx-gap-8 nx-flex-1">
           <Button onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>{t('exportExcel')}</Button>
         </div>
         <Button variant="primary" onClick={() => setShowAdd(true)}>

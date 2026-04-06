@@ -114,7 +114,7 @@ export function SalesEntryModal({
           <p className="nx-text-md nx-text-muted nx-m-0 nx-mb-16">
             {t('summaryNumber')}: <strong style={{ color: 'var(--noorix-accent-blue)' }}>{savedSummary.summaryNumber}</strong>
           </p>
-          <div className="nx-flex nx-gap-16 nx-mb-20" style={{ justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="nx-flex nx-flex-wrap nx-gap-16 nx-mb-20" style={{ justifyContent: 'center' }}>
             <div className="nx-text-center">
               <div className="nx-text-xs nx-text-muted">{t('total')}</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedSummary.totalAmount, 2)} ﷼</div>
@@ -157,13 +157,13 @@ export function SalesEntryModal({
         </>
       }
     >
-      <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', marginBottom: 18 }}>
+      <div className="nx-grid nx-gap-14 nx-mb-16" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
         <Input type="date" label={t('transactionDate')} value={txDate} onChange={(e) => setTxDate(e.target.value)} />
         <Input type="number" min="0" label={t('customerCount')} required value={customerCount} onChange={(e) => setCustomerCount(e.target.value)} placeholder="0" />
         <Input type="number" min="0" step="0.01" label={t('cashOnHand')} value={cashOnHand} onChange={(e) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
 
-      <div style={{ marginBottom: 18 }}>
+      <div className="nx-mb-16">
         <label className="nx-text-base nx-font-700 nx-mb-8" style={{ display: 'block' }}>{t('salesChannels')}</label>
         {salesChannelsLoading ? (
           <div className="nx-p-16 nx-text-center nx-text-muted nx-text-base" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
@@ -201,7 +201,7 @@ export function SalesEntryModal({
         )}
       </div>
 
-      <div style={{ marginBottom: 18 }}>
+      <div className="nx-mb-16">
         <Input multiline label={t('notes')} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder={t('notesPlaceholder')} style={{ resize: 'vertical' }} />
       </div>
 

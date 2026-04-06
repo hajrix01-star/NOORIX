@@ -306,10 +306,10 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                   ].map((label, i) => (
                     <th
                       key={label}
-                      className={i === 7 ? 'noorix-print-hide' : ''}
+                      className={`${i === 7 ? 'noorix-print-hide' : ''} nx-text-center nx-nowrap nx-font-700`.trim()}
                       style={{
-                        padding: '11px 14px', fontWeight: 700, fontSize: 12,
-                        color: '#fff', textAlign: 'center', whiteSpace: 'nowrap',
+                        padding: '11px 14px', fontSize: 12,
+                        color: '#fff',
                         borderInlineEnd: i < 7 ? '1px solid rgba(255,255,255,0.15)' : 'none',
                         letterSpacing: '0.02em',
                       }}
@@ -326,7 +326,8 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                   return (
                   <tr
                     key={o.id}
-                    style={{ borderBottom: '1px solid var(--noorix-border)', background: rowBg, transition: 'background 0.12s' }}
+                    className="nx-border-b"
+                    style={{ background: rowBg, transition: 'background 0.12s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(37,99,235,0.05)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = rowBg; }}
                   >

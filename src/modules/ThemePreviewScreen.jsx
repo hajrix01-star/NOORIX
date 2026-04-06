@@ -28,14 +28,10 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
 
   return (
     <div
+      className="nx-bg-surface nx-p-20 nx-flex nx-flex-col nx-cursor-pointer"
       style={{
-        background: 'var(--noorix-bg-surface)',
-        padding: 20,
         minHeight: 140,
-        display: 'flex',
-        flexDirection: 'column',
         justifyContent: 'space-between',
-        cursor: 'pointer',
         transition: 'all 0.2s ease',
         outline: isSelected ? '2px solid var(--noorix-accent-blue)' : 'none',
         outlineOffset: 2,
@@ -47,13 +43,13 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(styleId); }}
     >
       <div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--noorix-text-muted)', letterSpacing: '0.05em', marginBottom: 4 }}>#{styleId}</div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--noorix-text)' }}>{name}</div>
-        <div style={{ fontSize: 12, color: 'var(--noorix-text-muted)', marginTop: 4 }}>{desc}</div>
+        <div className="nx-text-xs nx-font-700 nx-text-muted nx-mb-4" style={{ letterSpacing: '0.05em' }}>#{styleId}</div>
+        <div className="nx-text-lg nx-font-700 nx-text-primary">{name}</div>
+        <div className="nx-text-sm nx-text-muted nx-mt-4">{desc}</div>
       </div>
-      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-        <span style={{ fontSize: 11, padding: '4px 8px', background: 'rgba(22,163,74,0.1)', color: '#16a34a', borderRadius: 6, fontWeight: 600 }}>12,500 ﷼</span>
-        <span style={{ fontSize: 11, padding: '4px 8px', background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)', borderRadius: 6 }}>مثال</span>
+      <div className="nx-flex nx-gap-8 nx-mt-12">
+        <span className="nx-text-xs nx-font-600 nx-text-income" style={{ padding: '4px 8px', background: 'rgba(22,163,74,0.1)', borderRadius: 6 }}>12,500 ﷼</span>
+        <span className="nx-text-xs nx-bg-muted nx-text-muted" style={{ padding: '4px 8px', borderRadius: 6 }}>مثال</span>
       </div>
     </div>
   );
@@ -73,10 +69,10 @@ export default function ThemePreviewScreen() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200 }}>
+    <div className="nx-p-24" style={{ maxWidth: 1200 }}>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t('themePreview')}</h1>
-        <p style={{ marginTop: 8, color: 'var(--noorix-text-muted)', fontSize: 14 }}>
+        <h1 className="nx-font-800 nx-m-0" style={{ fontSize: 22 }}>{t('themePreview')}</h1>
+        <p className="nx-mt-8 nx-text-muted nx-text-md">
           {lang === 'ar' ? 'اختر شكلاً للكروت لتطبيقه على النظام كاملاً. اضغط على أي كرت لتحديده.' : 'Select a card style to apply across the entire system. Click any card to select it.'}
         </p>
       </div>
@@ -97,8 +93,8 @@ export default function ThemePreviewScreen() {
         ))}
       </div>
 
-      <div style={{ marginTop: 24, padding: 16, background: 'var(--noorix-bg-muted)', borderRadius: 12, fontSize: 13, color: 'var(--noorix-text-muted)' }}>
-        <strong style={{ color: 'var(--noorix-text)' }}>
+      <div className="nx-p-16 nx-bg-muted nx-rounded-lg nx-text-base nx-text-muted" style={{ marginTop: 24 }}>
+        <strong className="nx-text-primary">
           {lang === 'ar' ? `الشكل المحدد حاليًا: #${currentStyle}` : `Current selection: #${currentStyle}`}
         </strong>
         {' — '}

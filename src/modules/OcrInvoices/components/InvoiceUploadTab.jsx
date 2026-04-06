@@ -204,15 +204,15 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
       )}
 
       {preview && (
-        <div className="nx-flex" style={{ flexWrap: 'wrap', gap: 18, alignItems: 'start' }}>
-          <div className="nx-p-16 nx-rounded-lg nx-bg-surface" style={{ flex: '1 1 280px', minWidth: 0, border: '1px solid var(--noorix-border)' }}>
+        <div className="nx-flex nx-flex-wrap" style={{ gap: 18, alignItems: 'start' }}>
+          <div className="nx-p-16 nx-rounded-lg nx-bg-surface nx-border-all" style={{ flex: '1 1 280px', minWidth: 0 }}>
             <div className="nx-flex-between nx-mb-12">
               <span className="nx-font-600 nx-text-md">{isAr ? 'صورة الفاتورة' : 'Invoice Image'}</span>
               <Button className="modal-close-btn" style={{ width: 28, height: 28 }}
                 onClick={() => { setPreview(null); setBase64(null); setExtracted(null); setError(null); setEditItems(null); }}>✕</Button>
             </div>
             <img src={preview} alt="invoice" className="nx-w-full nx-rounded" style={{ maxHeight: 500, objectFit: 'contain' }} />
-            <div className="nx-mt-12 nx-flex nx-gap-8" style={{ flexWrap: 'wrap' }}>
+            <div className="nx-mt-12 nx-flex nx-gap-8 nx-flex-wrap">
               {!extracted && (
                 <Button onClick={handleExtract} disabled={loading} variant="primary" className="nx-flex-1">
                   {loading ? t('ocrExtracting') : t('ocrExtract')}
@@ -234,7 +234,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
           {extracted && (
             <div className="nx-flex-col" style={{ gap: 14, flex: '1 1 280px', minWidth: 0 }}>
 
-              <div className="nx-p-16 nx-rounded-lg nx-bg-surface" style={{ border: '1px solid var(--noorix-border)' }}>
+              <div className="nx-p-16 nx-rounded-lg nx-bg-surface nx-border-all">
                 <div className="nx-font-600 nx-text-md nx-mb-12">{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>
                 <div className="nx-grid nx-gap-8">
                   <FieldRow label={t('ocrSupplierField')} value={extracted.supplier?.name} confidence={extracted.supplier?.confidence} match={extracted.supplierMatch} />
@@ -244,21 +244,21 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                 </div>
 
                 {(extracted.subtotalAmount?.value || extracted.vatAmount?.value || extracted.totalAmount?.value) && (
-                  <div className="nx-mt-12 nx-rounded nx-overflow-hidden" style={{ border: '1px solid var(--noorix-border)' }}>
+                  <div className="nx-mt-12 nx-rounded nx-overflow-hidden nx-border-all">
                     {extracted.subtotalAmount?.value && (
-                      <div className="nx-flex nx-bg-muted" style={{ justifyContent: 'space-between', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)' }}>
+                      <div className="nx-flex-between nx-bg-muted nx-border-b nx-py-8 nx-px-12">
                         <span className="nx-text-base nx-text-muted">{isAr ? 'المجموع قبل الضريبة' : 'Subtotal'}</span>
                         <span className="nx-text-base nx-font-600">{extracted.subtotalAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
                     )}
                     {extracted.vatAmount?.value && (
-                      <div className="nx-flex" style={{ justifyContent: 'space-between', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)' }}>
+                      <div className="nx-flex-between nx-border-b nx-py-8 nx-px-12">
                         <span className="nx-text-base nx-text-muted">{isAr ? 'ضريبة القيمة المضافة' : 'VAT (15%)'}</span>
                         <span className="nx-text-base nx-font-600" style={{ color: '#b45309' }}>{extracted.vatAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
                     )}
                     {extracted.totalAmount?.value && (
-                      <div className="nx-flex nx-bg-muted" style={{ justifyContent: 'space-between', padding: '10px 12px' }}>
+                      <div className="nx-flex-between nx-bg-muted" style={{ padding: '10px 12px' }}>
                         <span className="nx-text-base nx-font-700">{isAr ? 'الإجمالي شامل الضريبة' : 'Total (inc. VAT)'}</span>
                         <span className="nx-text-base nx-font-700">{extracted.totalAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
@@ -285,7 +285,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
               )}
 
               {activeItems.length > 0 && (
-                <div className="nx-p-16 nx-rounded-lg nx-bg-surface" style={{ border: '1px solid var(--noorix-border)' }}>
+                <div className="nx-p-16 nx-rounded-lg nx-bg-surface nx-border-all">
                   <div className="nx-font-600 nx-text-md nx-mb-12">
                     {t('ocrItems')} ({activeItems.length})
                   </div>
@@ -320,7 +320,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
 function FieldRow({ label, value, confidence, match }) {
   return (
-    <div className="nx-flex nx-gap-8" style={{ alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid var(--noorix-border)' }}>
+    <div className="nx-flex nx-gap-8 nx-border-b" style={{ alignItems: 'flex-start', padding: '6px 0' }}>
       <span className="nx-text-base nx-text-muted" style={{ minWidth: 100 }}>{label}</span>
       <div className="nx-flex-1">
         <span className="nx-text-md nx-font-600 nx-text-primary">{value || '—'}</span>
@@ -381,7 +381,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
       border: `1px solid ${hasMathWarn ? 'rgba(245,158,11,0.4)' : 'var(--noorix-border)'}`,
     }}>
       {/* رأس الصنف */}
-      <div className="nx-flex nx-gap-8" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 8 }}>
+      <div className="nx-flex nx-gap-8 nx-flex-wrap nx-mb-8" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div className="nx-flex-1">
           <div className="nx-font-600 nx-text-md">{displayName}</div>
           {sizeLabel && (

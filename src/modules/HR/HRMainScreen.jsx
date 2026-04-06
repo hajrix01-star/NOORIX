@@ -71,7 +71,7 @@ export default function HRMainScreen() {
         </div>
         {companyId && (
           <div className="nx-flex nx-flex-wrap nx-gap-8">
-            <div className="noorix-stat-card noorix-stat-card--green" style={{ padding: '10px 16px', minWidth: 110 }}>
+            <div className="noorix-stat-card noorix-stat-card--green nx-px-16 nx-py-8" style={{ minWidth: 110 }}>
               <div className="noorix-stat-card__stripe" />
               <div className="noorix-stat-card__body">
                 <div className="noorix-stat-card__label">{t('hrStatsActive')}</div>
@@ -79,7 +79,7 @@ export default function HRMainScreen() {
               </div>
             </div>
             {expiringCount > 0 && (
-              <div className="noorix-stat-card noorix-stat-card--amber" style={{ padding: '10px 16px', minWidth: 130 }}>
+              <div className="noorix-stat-card noorix-stat-card--amber nx-px-16 nx-py-8" style={{ minWidth: 130 }}>
                 <div className="noorix-stat-card__stripe" />
                 <div className="noorix-stat-card__body">
                   <div className="noorix-stat-card__label">{t('hrStatsResidencyExpiring')}</div>
@@ -92,8 +92,7 @@ export default function HRMainScreen() {
       </div>
 
       {/* ── شريط التبويبات — مستقل خارج البطاقة لضمان التمرير الأفقي ── */}
-      <div className="nx-bg-surface nx-rounded-lg nx-border-all nx-p-4" style={{
-        overflowX: 'auto',
+      <div className="nx-bg-surface nx-rounded-lg nx-border-all nx-p-4 nx-overflow-auto" style={{
         overflowY: 'visible',
         WebkitOverflowScrolling: 'touch',
         scrollbarWidth: 'none',

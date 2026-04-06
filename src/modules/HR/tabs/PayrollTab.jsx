@@ -121,7 +121,7 @@ export default function PayrollTab() {
 
   const columns = useMemo(() => [
     { key: 'runNumber', label: t('payrollRunNumber'), sortable: true, width: 150, minWidth: 140,
-      render: (v) => <span className="nx-cell-num nx-cell-accent nx-text-base" style={{ whiteSpace: 'nowrap' }}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-accent nx-text-base nx-nowrap">{v || '—'}</span> },
     { key: 'month', label: t('payrollMonth'), sortable: true, width: 130, minWidth: 120,
       render: (v) => <span className="nx-text-base">{v || '—'}</span> },
     { key: 'grossTotal', label: t('payrollGross'), numeric: true, sortable: true, width: 130, minWidth: 120,
@@ -150,9 +150,9 @@ export default function PayrollTab() {
 
   const footerCells = (
     <>
-      <td colSpan={2} className="nx-text-sm nx-text-muted nx-font-600" style={{ padding: '6px 10px' }}>{t('payrollTotal')} ({allFilteredData.length})</td>
-      <td className="nx-text-base" style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{hrFmt(allFilteredData.reduce((s, r) => s + (r.grossTotal ?? 0), 0))}</td>
-      <td className="nx-text-base" style={{ padding: '6px 10px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900, color: '#16a34a', textAlign: 'right' }}>{hrFmt(totalNet)}</td>
+      <td colSpan={2} className="nx-text-sm nx-text-muted nx-font-600 nx-py-6 nx-px-12">{t('payrollTotal')} ({allFilteredData.length})</td>
+      <td className="nx-text-base nx-text-end nx-py-6 nx-px-12" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(allFilteredData.reduce((s, r) => s + (r.grossTotal ?? 0), 0))}</td>
+      <td className="nx-text-base nx-text-end nx-py-6 nx-px-12 nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900 }}>{hrFmt(totalNet)}</td>
       <td colSpan={2} />
     </>
   );
@@ -169,19 +169,19 @@ export default function PayrollTab() {
     const ss = statusStyles[row.status] || { label: row.status };
     return (
       <div>
-        <div className="nx-flex nx-mb-4" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <span className="nx-cell-num nx-cell-accent" style={{ fontSize: 14 }}>{row.runNumber}</span>
+        <div className="nx-flex-between nx-flex-wrap nx-mb-4">
+          <span className="nx-cell-num nx-cell-accent nx-text-md">{row.runNumber}</span>
           <Badge color={statusColorMap[row.status] || 'gray'} size="sm" style={{ flexShrink: 0 }}>{ss.label}</Badge>
         </div>
         {row.month && <div className="nx-cell-muted nx-mb-8">{row.month}</div>}
-          <div className="nx-grid-2 nx-gap-6 nx-rounded nx-mb-10" style={{ background: 'var(--noorix-bg-page)', padding: '8px 10px' }}>
+          <div className="nx-grid-2 nx-gap-6 nx-rounded nx-bg-muted nx-mb-10" style={{ padding: '8px 10px' }}>
           <div>
-            <div className="nx-text-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('payrollGross')}</div>
+            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('payrollGross')}</div>
             <div className="nx-text-md" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.grossTotal)}</div>
           </div>
           <div>
-            <div className="nx-text-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('payrollNet')}</div>
-            <div className="nx-text-lg nx-font-800" style={{ color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.netTotal)}</div>
+            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('payrollNet')}</div>
+            <div className="nx-text-lg nx-font-800 nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.netTotal)}</div>
           </div>
         </div>
         <div className="nx-flex nx-flex-end">
@@ -232,7 +232,7 @@ export default function PayrollTab() {
             <option key={y} value={y}>{y}</option>
           ))}
         </Input>
-        <div className="nx-flex nx-flex-wrap nx-gap-8" style={{ marginRight: 'auto' }}>
+        <div className="nx-flex nx-flex-wrap nx-gap-8 nx-flex-1">
           <Button onClick={handleExportExcel}>{t('exportExcel')}</Button>
           <Button onClick={handlePrint}>{t('printPayroll')}</Button>
         </div>

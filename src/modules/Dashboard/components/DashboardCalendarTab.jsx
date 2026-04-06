@@ -291,16 +291,10 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     <div className="noorix-calendar-layout">
       {/* ── التقويم ── */}
       <div
-        className="noorix-calendar-card"
+        className="noorix-calendar-card nx-surface nx-overflow-hidden nx-p-16 nx-w-full"
         style={{
-          borderRadius: CARD_BORDER_RADIUS,
-          border: '1px solid var(--noorix-border)',
-          background: 'var(--noorix-bg-surface)',
-          overflow: 'hidden',
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          padding: 16,
           maxWidth: 760,
-          width: '100%',
           minWidth: 0,
           boxSizing: 'border-box',
         }}
@@ -365,7 +359,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         )}
 
         {isSelectionMode && (
-          <div style={{ fontSize: 10, color: 'var(--noorix-accent-blue)', marginBottom: 8 }}>{t('dashboardSelectDaysHint')}</div>
+          <div className="nx-mb-8" style={{ fontSize: 10, color: 'var(--noorix-accent-blue)' }}>{t('dashboardSelectDaysHint')}</div>
         )}
 
         {isLoading ? (
@@ -487,7 +481,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             </div>
           </div>
           {targets.overall != null && (
-            <div className="nx-text-muted nx-mt-8" style={{ paddingTop: 8, borderTop: '1px solid var(--noorix-border)', fontSize: 10 }}>
+            <div className="nx-text-muted nx-mt-8 nx-border-t" style={{ paddingTop: 8, fontSize: 10 }}>
               {t('dashboardSalesTarget')}: {fmt(targets.overall, 2)} ﷼
             </div>
           )}
@@ -524,7 +518,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           title={t('dashboardAddAsSpecialDays')}
           size="sm"
         >
-          <p className="nx-text-sm nx-text-muted" style={{ margin: '0 0 12px' }}>
+          <p className="nx-text-sm nx-text-muted nx-mb-12 nx-m-0">
             {selectedDatesSorted[0]} — {selectedDatesSorted[selectedDatesSorted.length - 1]} ({selectedDatesSorted.length} {lang === 'ar' ? 'أيام' : 'days'})
           </p>
           <Input

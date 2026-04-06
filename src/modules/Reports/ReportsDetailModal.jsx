@@ -92,38 +92,38 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
       )}
 
       {error && (
-        <div className="nx-p-16 nx-rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626' }}>
+        <div className="nx-p-16 nx-rounded-lg nx-text-expense" style={{ background: 'rgba(239,68,68,0.08)' }}>
           {error.message}
         </div>
       )}
 
       {!isLoading && !error && data && (
         <>
-          <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', marginBottom: 18 }}>
+          <div className="nx-grid nx-gap-12 nx-mb-16" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
             <div className="noorix-surface-card nx-p-14">
               <div className="nx-text-sm nx-text-muted">{data.month ? t('selectedMonth') : t('reportBreakdown')}</div>
-              <div className="nx-mt-6 nx-font-numbers" style={{ fontWeight: 900, fontSize: 22 }}>{moneyText(data.contextAmount)}</div>
+              <div className="nx-mt-6 nx-font-numbers nx-font-800 nx-text-3xl">{moneyText(data.contextAmount)}</div>
             </div>
             {data.kind === 'invoices' && (
               <>
                 <div className="noorix-surface-card nx-p-14">
                   <div className="nx-text-sm nx-text-muted">{t('reportAnnualTotal')}</div>
-                  <div className="nx-mt-6 nx-font-numbers" style={{ fontWeight: 900, fontSize: 22 }}>{moneyText(data.annualAmount)}</div>
+                  <div className="nx-mt-6 nx-font-numbers nx-font-800 nx-text-3xl">{moneyText(data.annualAmount)}</div>
                 </div>
                 <div className="noorix-surface-card nx-p-14">
                   <div className="nx-text-sm nx-text-muted">{t('reportSalesShare')}</div>
-                  <div className="nx-mt-6 nx-font-numbers" style={{ fontWeight: 900, fontSize: 22 }}>{percentText(data.contextPercentOfSales)}</div>
+                  <div className="nx-mt-6 nx-font-numbers nx-font-800 nx-text-3xl">{percentText(data.contextPercentOfSales)}</div>
                 </div>
                 <div className="noorix-surface-card nx-p-14">
                   <div className="nx-text-sm nx-text-muted">{t('reportInvoicesCount')}</div>
-                  <div className="nx-mt-6 nx-font-numbers" style={{ fontWeight: 900, fontSize: 22 }}>{Number(data.invoiceCount || 0).toLocaleString('en')}</div>
+                  <div className="nx-mt-6 nx-font-numbers nx-font-800 nx-text-3xl">{Number(data.invoiceCount || 0).toLocaleString('en')}</div>
                 </div>
               </>
             )}
           </div>
 
           {state?.showTrend && trend && (
-            <div className="noorix-surface-card nx-p-16" style={{ marginBottom: 18 }}>
+            <div className="noorix-surface-card nx-p-16 nx-mb-16">
               <div className="nx-flex-between nx-gap-12 nx-mb-12 nx-flex-wrap">
                 <div>
                   <div className="nx-text-md nx-font-800">{t('reportTrend')}</div>
@@ -133,20 +133,20 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   {t('reportSalesShare')}: <strong className="nx-font-numbers">{percentText(trend.percentOfSalesYear)}</strong>
                 </div>
               </div>
-              <div className="nx-grid nx-gap-10" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: 14 }}>
-                <div className="nx-border-all nx-rounded-lg" style={{ padding: '10px 12px' }}>
+              <div className="nx-grid nx-gap-10 nx-mb-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+                <div className="nx-border-all nx-rounded-lg nx-px-12 nx-py-8">
                   <div className="nx-text-xs nx-text-muted">{t('reportMonthlyAverage')}</div>
                   <div className="nx-mt-4 nx-font-800 nx-font-numbers">{moneyText(averageAmount)}</div>
                 </div>
-                <div className="nx-border-all nx-rounded-lg" style={{ padding: '10px 12px' }}>
+                <div className="nx-border-all nx-rounded-lg nx-px-12 nx-py-8">
                   <div className="nx-text-xs nx-text-muted">{t('reportTopMonth')}</div>
                   <div className="nx-mt-4 nx-font-800">{peakPoint?.label || '—'}</div>
-                  <div className="nx-text-sm nx-font-numbers nx-text-muted" style={{ marginTop: 2 }}>{moneyText(peakPoint?.amount)}</div>
+                  <div className="nx-text-sm nx-font-numbers nx-text-muted nx-mt-4">{moneyText(peakPoint?.amount)}</div>
                 </div>
-                <div className="nx-border-all nx-rounded-lg" style={{ padding: '10px 12px' }}>
+                <div className="nx-border-all nx-rounded-lg nx-px-12 nx-py-8">
                   <div className="nx-text-xs nx-text-muted">{t('selectedMonth')}</div>
                   <div className="nx-mt-4 nx-font-800">{data?.monthLabel || t('allMonths')}</div>
-                  <div className="nx-text-sm nx-font-numbers nx-text-muted" style={{ marginTop: 2 }}>{moneyText(data?.contextAmount)}</div>
+                  <div className="nx-text-sm nx-font-numbers nx-text-muted nx-mt-4">{moneyText(data?.contextAmount)}</div>
                 </div>
               </div>
               <div className="nx-grid nx-gap-8 nx-mb-16">
@@ -193,8 +193,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
               {(data.items || []).map((item) => (
                 <div
                   key={item.key}
-                  className="reports-detail-derived-item nx-flex-between nx-border-all nx-rounded-lg"
-                  style={{ padding: '12px 14px' }}
+                  className="reports-detail-derived-item nx-flex-between nx-border-all nx-rounded-lg nx-px-12 nx-py-8"
                 >
                   <div className="nx-font-700">{lang === 'en' ? item.labelEn : item.labelAr}</div>
                   <div className="nx-font-numbers nx-font-800">{moneyText(item.amount)}</div>
@@ -204,7 +203,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           )}
 
           {data.kind === 'invoices' && (
-            <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <div className="nx-w-full" style={{ maxWidth: 1200, margin: '0 auto' }}>
               <div className="noorix-surface-card nx-overflow-hidden nx-rounded-lg" style={{ padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 <div className="nx-section-header">
                   <div>
@@ -230,7 +229,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                             {(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}
                           </div>
                           {item.channelNames?.length > 0 && (
-                            <div className="nx-text-xs nx-text-muted" style={{ marginTop: 3 }}>
+                            <div className="nx-text-xs nx-text-muted nx-mt-4">
                               {item.channelNames.slice(0, 2).map((channel) => lang === 'en' ? (channel.nameEn || channel.nameAr) : (channel.nameAr || channel.nameEn)).join(' | ')}
                             </div>
                           )}

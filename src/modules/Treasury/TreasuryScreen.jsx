@@ -138,10 +138,10 @@ export default function TreasuryScreen() {
 
       {/* هيدر */}
       <div className="nx-page-header">
-        <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+        <div className="nx-flex-1" style={{ minWidth: 0 }}>
           <h1 className="nx-page-title">{t('vaults')}</h1>
           {hasCompany && isFetching && !isLoading && (
-            <p className="nx-text-sm nx-font-600" style={{ margin: '8px 0 0', color: 'var(--noorix-accent-blue)' }}>
+            <p className="nx-text-sm nx-font-600 nx-mt-8" style={{ margin: 0, color: 'var(--noorix-accent-blue)' }}>
               {t('vaultsSyncing')}
             </p>
           )}
@@ -184,7 +184,7 @@ export default function TreasuryScreen() {
                 { label: t('inbound'),      value: totalIn,      color: '#16a34a', sign: '' },
                 { label: t('outbound'),     value: totalOut,     color: 'var(--noorix-text)', sign: '' },
               ].map(({ label, value, color, sign }, i) => (
-                <div key={label} className="nx-text-center" style={{ padding: '16px 20px', borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none' }}>
+                <div key={label} className="nx-text-center nx-p-16" style={{ borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none' }}>
                   <div className="nx-text-xs nx-text-muted nx-mb-6" style={{ letterSpacing: '0.03em' }}>{label}</div>
                   <div className="nx-font-800" style={{ fontSize: 20, fontFamily: 'var(--noorix-font-numbers)', color }}>
                     {sign}{fmt(Math.abs(value))}
@@ -233,7 +233,7 @@ export default function TreasuryScreen() {
 
           {/* ── فارغة ── */}
           {vaultsList.length === 0 && (
-            <div className="noorix-surface-card nx-text-center" style={{ padding: 48, border: '2px dashed var(--noorix-border)' }}>
+            <div className="noorix-surface-card nx-text-center nx-p-24" style={{ border: '2px dashed var(--noorix-border)' }}>
               <div className="nx-flex-center nx-bg-muted" style={{ width: 56, height: 56, borderRadius: 16, justifyContent: 'center', margin: '0 auto 14px' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--noorix-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
                   <rect x="2" y="6" width="20" height="12" rx="2"/>
@@ -241,8 +241,8 @@ export default function TreasuryScreen() {
                   <path d="M6 12h.01M18 12h.01"/>
                 </svg>
               </div>
-              <h3 className="nx-text-lg" style={{ margin: '0 0 6px' }}>{t('noVaults')}</h3>
-              <p className="nx-text-muted nx-text-base" style={{ margin: '0 0 18px' }}>{t('addFirstVault')}</p>
+              <h3 className="nx-text-lg nx-mb-6 nx-m-0">{t('noVaults')}</h3>
+              <p className="nx-text-muted nx-text-base nx-mb-16 nx-m-0">{t('addFirstVault')}</p>
               <Button variant="primary" onClick={() => setShowAddForm(true)}>{t('addVault')}</Button>
             </div>
           )}

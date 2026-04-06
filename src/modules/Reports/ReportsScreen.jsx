@@ -114,15 +114,15 @@ export default function ReportsScreen() {
   }
 
   return (
-    <div className="nx-flex-col" style={{ gap: 18 }}>
+    <div className="nx-flex-col nx-gap-16">
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
-      <div className="nx-flex-col" style={{ gap: 18 }}>
+      <div className="nx-flex-col nx-gap-16">
       <div className="nx-page-header">
-        <div style={{ minWidth: 0, flex: '1 1 auto' }}>
-          <h2 className="nx-font-700 nx-m-0" style={{ fontSize: 18 }}>{t('reportGeneral')}</h2>
+        <div className="nx-flex-1" style={{ minWidth: 0 }}>
+          <h2 className="nx-font-700 nx-m-0 nx-text-2xl">{t('reportGeneral')}</h2>
         </div>
-        <div className="nx-flex-center nx-gap-8" style={{ flexWrap: 'wrap', flex: '0 1 auto' }}>
+        <div className="nx-flex-center nx-flex-wrap nx-gap-8" style={{ flex: '0 1 auto' }}>
           <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </Input>
@@ -161,7 +161,7 @@ export default function ReportsScreen() {
           />
 
           {report && (
-            <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+            <div className="nx-grid nx-gap-12 nx-mt-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
               {[
                 { key: 'sales', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('revenueGroup')}` : t('annualSales') },
                 { key: 'purchases', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('purchasesGroup')}` : t('annualPurchases') },
@@ -210,7 +210,7 @@ export default function ReportsScreen() {
           )}
 
           {error && (
-            <div className="noorix-surface-card nx-p-20" style={{ color: '#dc2626', background: 'rgba(239,68,68,0.08)' }}>
+            <div className="noorix-surface-card nx-p-20 nx-text-expense" style={{ background: 'rgba(239,68,68,0.08)' }}>
               {error.message}
             </div>
           )}

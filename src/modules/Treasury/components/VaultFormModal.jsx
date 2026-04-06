@@ -60,7 +60,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
       <form onSubmit={handleSave} className="nx-grid nx-gap-14">
 
         {/* الأسماء */}
-        <div className="vault-form-names-grid nx-grid nx-gap-12" style={{ gridTemplateColumns: '1fr 1fr' }}>
+        <div className="vault-form-names-grid nx-grid-2 nx-gap-12">
           <Input
             label={t('nameArLabel')}
             type="text"
@@ -80,7 +80,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
 
         {/* النوع */}
         <div>
-          <label className="nx-text-base nx-font-600" style={{ display: 'block', marginBottom: 5 }}>{t('vaultType')}</label>
+          <label className="nx-text-base nx-font-600 nx-mb-6" style={{ display: 'block' }}>{t('vaultType')}</label>
           <div className="vault-type-grid nx-grid nx-gap-8" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {VAULT_TYPES.map((vt) => (
               <Button
@@ -153,7 +153,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
               }} />
             </div>
             <span className="nx-font-700 nx-text-base">{t('enableAsSalesChannel')}</span>
-            {form.isSalesChannel && <span className="nx-text-sm nx-font-600" style={{ color: '#16a34a' }}>{t('enabled')}</span>}
+            {form.isSalesChannel && <span className="nx-text-sm nx-font-600 nx-text-income">{t('enabled')}</span>}
           </label>
         </div>
 
@@ -184,7 +184,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
               <span className="nx-text-sm nx-font-600" style={{ color: '#d97706' }}>{t('hiddenFromSalesPurchasesShort')}</span>
             )}
           </label>
-          <p className="nx-text-sm nx-text-muted" style={{ margin: '8px 0 0', lineHeight: 1.45 }}>
+          <p className="nx-text-sm nx-text-muted nx-mt-8" style={{ margin: 0, lineHeight: 1.45 }}>
             {t('showAsPaymentMethodHint')}
           </p>
           <div className="nx-mt-12">
@@ -213,8 +213,8 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           placeholder={t('notesPlaceholderVault')}
         />
 
-        {saveError && (
-          <div className="nx-rounded nx-text-base" style={{ padding: '8px 12px', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626' }}>
+          {saveError && (
+          <div className="nx-rounded nx-text-base nx-py-8 nx-px-12 nx-text-expense" style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)' }}>
             {saveError}
           </div>
         )}

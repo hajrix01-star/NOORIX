@@ -538,7 +538,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                         <td className="nx-text-muted nx-text-sm" style={{ maxWidth: 160, lineHeight: 1.45 }} title={items[idx].advanceDates || ''}>
                           {items[idx].advanceDates || '—'}
                         </td>
-                        <td className="nx-font-600 nx-text-md" style={{ fontFamily: 'var(--noorix-font-numbers)', whiteSpace: 'nowrap' }}>{hrFmt(items[idx].grossSalary)}</td>
+                        <td className="nx-font-600 nx-text-md nx-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(items[idx].grossSalary)}</td>
                         <td>
                           <Input
                             type="number"
@@ -590,7 +590,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             />
                           </label>
                         </td>
-                        <td className="nx-font-800 nx-text-md" style={{ fontFamily: 'var(--noorix-font-numbers)', whiteSpace: 'nowrap' }}>{hrFmt(items[idx].netSalary)}</td>
+                        <td className="nx-font-800 nx-text-md nx-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(items[idx].netSalary)}</td>
                       </>
                     ) : (
                       <td colSpan={7} className="nx-text-muted nx-text-base">
@@ -606,11 +606,9 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
         {error && (
           <div
-            className="nx-text-base nx-font-600 nx-mt-12"
+            className="nx-text-base nx-font-600 nx-mt-12 nx-rounded nx-p-12"
             style={{
-              padding: '12px 14px',
               background: 'rgba(239,68,68,0.12)',
-              borderRadius: 10,
               border: '1px solid rgba(239,68,68,0.25)',
               color: 'var(--noorix-accent-red)',
               flexShrink: 0,
