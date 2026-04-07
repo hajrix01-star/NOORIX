@@ -245,10 +245,12 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6 p-6">
-        <div className="nx-kpi-grid">
-          {[1,2,3,4,5].map((i) => (
-            <div key={i} className="nx-kpi-card min-h-[130px] bg-noorix-bg-muted shadow-none bg-[length:200%_100%] animate-[shimmer_1.4s_ease_infinite]" />
-          ))}
+        <div className="nx-kpi-container">
+          <div className="nx-kpi-grid">
+            {[1,2,3,4,5].map((i) => (
+              <div key={i} className="nx-kpi-card min-h-[130px] bg-noorix-bg-muted shadow-none bg-[length:200%_100%] animate-[shimmer_1.4s_ease_infinite]" />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -274,7 +276,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
         enabled={canPeriodAnalytics}
       />
 
-      {/* ── كروت KPI ── */}
+      {/* ── كروت KPI — الغلاف يحمل container-type ── */}
+      <div className="nx-kpi-container">
       <div className="nx-kpi-grid">
         {cards.map((card) => {
           const rawVal    = getCardValue(card.key);
@@ -334,6 +337,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           );
         })}
       </div>
+      </div>{/* /nx-kpi-container */}
 
       {/* ── الرسوم البيانية: الأداء الشهري + توزيع القنوات ── */}
       <div className="grid gap-5" style={{ gridTemplateColumns: channelData.length > 0 ? '1fr 340px' : '1fr' }}>

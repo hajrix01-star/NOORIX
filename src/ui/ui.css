@@ -2113,35 +2113,37 @@
   --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-violet) 8%, transparent);
 }
 
-/* شبكة كروت KPI — عدد أعمدة ثابت لكل breakpoint */
+/* ══════════════════════════════════════════════════════════
+   شبكة كروت KPI — Container Queries (يستجيب للحاوية لا للشاشة)
+   يتكيف تلقائياً مع الشريط الجانبي مفتوحاً أو مغلقاً
+   ══════════════════════════════════════════════════════════ */
+
+/* الحاوية المرجعية — تُضاف على div الغلاف في JSX */
+.nx-kpi-container {
+  container-type: inline-size;
+  container-name: kpi-section;
+}
+
+/* الشبكة: الافتراضي = عمودان (للبيئات التي لا تدعم @container) */
 .nx-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* سطح مكتب: 5 كروت متساوية دائماً */
-  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-/* تابلت كبير (1024px – 1280px): 3 أعمدة إذا الشريط الجانبي ضيّق المساحة */
-@media (min-width: 1024px) and (max-width: 1280px) {
-  .nx-kpi-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
+/* ≥ 960px من عرض الحاوية: 5 أعمدة */
+@container kpi-section (min-width: 960px) {
+  .nx-kpi-grid { grid-template-columns: repeat(5, 1fr); gap: 14px; }
 }
 
-/* تابلت (641px – 1023px): 3 أعمدة */
-@media (min-width: 641px) and (max-width: 1023px) {
-  .nx-kpi-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
+/* 640px – 959px: 3 أعمدة */
+@container kpi-section (min-width: 640px) and (max-width: 959px) {
+  .nx-kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
 }
 
-/* جوال (≤640px): عمودان */
-@media (max-width: 640px) {
-  .nx-kpi-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
+/* 380px – 639px: عمودان */
+@container kpi-section (min-width: 380px) and (max-width: 639px) {
+  .nx-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .nx-kpi-card {
     --kpi-px: 14px;
     --kpi-pt: 14px;
@@ -2153,11 +2155,9 @@
   .nx-kpi-card__footer  { padding: 4px var(--kpi-px) 6px; }
 }
 
-/* جوال صغير (≤380px): عمود واحد */
-@media (max-width: 380px) {
-  .nx-kpi-grid {
-    grid-template-columns: 1fr;
-  }
+/* < 380px: عمود واحد */
+@container kpi-section (max-width: 379px) {
+  .nx-kpi-grid { grid-template-columns: 1fr; gap: 10px; }
   .nx-kpi-card {
     --kpi-px: 16px;
     --kpi-pt: 16px;
@@ -2165,6 +2165,13 @@
   }
   .nx-kpi-card__value { font-size: 20px; }
   .nx-kpi-card__label { font-size: 12px; }
+}
+
+/* Fallback لمتصفحات لا تدعم @container (نادرة في 2026) */
+@supports not (container-type: inline-size) {
+  .nx-kpi-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  @media (max-width: 640px) { .nx-kpi-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 380px) { .nx-kpi-grid { grid-template-columns: 1fr; } }
 }
 
 /* ═══════════════════════════════════════════════════════════
