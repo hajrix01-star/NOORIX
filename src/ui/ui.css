@@ -1903,23 +1903,21 @@
 
 /* متغيرات الكرت — سهولة التعديل من مكان واحد */
 .nx-kpi-card {
-  --kpi-px: 20px;   /* حشو أفقي */
-  --kpi-pt: 18px;   /* حشو علوي */
-  --kpi-sp: 58px;   /* ارتفاع Sparkline */
+  --kpi-px: 20px;   /* حشو أفقي للمحتوى */
+  --kpi-sp: 64px;   /* ارتفاع Sparkline العلوي */
 
   position: relative;
   background: var(--noorix-bg-surface, #fff);
   border: 1px solid var(--noorix-border, #dde3ec);
-  border-top: 4px solid var(--kpi-accent, #2563eb); /* خط نيوني علوي — سميك وواضح */
   border-radius: 8px;
-  padding: var(--kpi-pt) var(--kpi-px) 0;
+  padding: 0;           /* بلا حشو على الكرت — المحتوى له غلافه الخاص */
   overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
   min-width: 0;
+  min-height: 210px;    /* بين المربع والمستطيل */
   box-shadow:
-    inset 0 6px 28px -8px var(--kpi-accent, #2563eb), /* توهج نيوني داخلي */
     0 1px 3px rgba(15,23,42,0.08),
     0 4px 10px rgba(15,23,42,0.10),
     0 10px 24px rgba(15,23,42,0.08);
@@ -1927,7 +1925,6 @@
 }
 .nx-kpi-card:hover {
   box-shadow:
-    inset 0 8px 36px -8px var(--kpi-accent, #2563eb),
     0 2px 6px rgba(15,23,42,0.10),
     0 8px 20px rgba(15,23,42,0.14),
     0 20px 40px rgba(15,23,42,0.10);
@@ -2013,12 +2010,21 @@
   color: var(--noorix-text-muted);
 }
 
-/* Sparkline — يمتد حتى حواف الكرت أفقياً (يُعوِّض الحشو الجانبي) */
+/* Sparkline علوي — يمتد حتى حواف الكرت كاملاً (بلا حشو) */
 .nx-kpi-card__sparkline {
-  margin-inline: calc(-1 * var(--kpi-px));
+  width: 100%;
   height: var(--kpi-sp);
   overflow: hidden;
   flex-shrink: 0;
+  display: block;
+}
+
+/* غلاف محتوى الكرت — يحمل الحشو الأفقي */
+.nx-kpi-card__body {
+  padding: 14px var(--kpi-px) 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* تذييل الكرت: تسميتان صغيرتان */
@@ -2026,10 +2032,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px var(--kpi-px) 8px;
-  margin-inline: calc(-1 * var(--kpi-px));
+  padding: 5px var(--kpi-px) 10px;
   background: rgba(0,0,0,0.018);
   border-top: 1px solid var(--noorix-border);
+  margin-top: auto;
 }
 .nx-kpi-card__footer-label {
   font-size: 10px;
@@ -2158,27 +2164,17 @@
 /* 380px – 639px: عمودان */
 @container kpi-section (min-width: 380px) and (max-width: 639px) {
   .nx-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .nx-kpi-card {
-    --kpi-px: 14px;
-    --kpi-pt: 14px;
-    --kpi-sp: 44px;
-  }
-  .nx-kpi-card__value   { font-size: 17px; }
-  .nx-kpi-card__label   { font-size: 11px; margin-bottom: 8px; }
-  .nx-kpi-card__num-row { gap: 4px; margin-bottom: 10px; }
-  .nx-kpi-card__footer  { padding: 4px var(--kpi-px) 6px; }
+  .nx-kpi-card { --kpi-px: 14px; --kpi-sp: 50px; min-height: 180px; }
+  .nx-kpi-card__value   { font-size: 18px; }
+  .nx-kpi-card__label   { font-size: 11px; margin-bottom: 7px; }
+  .nx-kpi-card__num-row { gap: 4px; margin-bottom: 8px; }
 }
 
 /* < 380px: عمود واحد */
 @container kpi-section (max-width: 379px) {
   .nx-kpi-grid { grid-template-columns: 1fr; gap: 10px; }
-  .nx-kpi-card {
-    --kpi-px: 16px;
-    --kpi-pt: 16px;
-    --kpi-sp: 50px;
-  }
+  .nx-kpi-card { --kpi-px: 16px; --kpi-sp: 56px; min-height: 190px; }
   .nx-kpi-card__value { font-size: 20px; }
-  .nx-kpi-card__label { font-size: 12px; }
 }
 
 /* Fallback لمتصفحات لا تدعم @container (نادرة في 2026) */

@@ -319,23 +319,27 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
           return (
             <div key={card.key} className={`nx-kpi-card ${colorClass}`}>
-              {/* العنوان */}
-              <div className="nx-kpi-card__label">{card.label}</div>
 
-              {/* صف: ر.س + الرقم الكبير + باج % */}
-              <div className="nx-kpi-card__num-row">
-                <span className="nx-kpi-card__sar">ر.س</span>
-                <div className="nx-kpi-card__value">{amountText(rawVal)}</div>
-                {!isSales && pctNum != null && (
-                  <span className={`nx-kpi-card__pct ${pctClass}`}>
-                    {arrow}{Math.abs(pctNum)}%
-                  </span>
-                )}
-              </div>
-
-              {/* Sparkline — ممتد حتى الحواف */}
+              {/* Sparkline في الأعلى — يمتد حتى حواف الكرت */}
               <div className="nx-kpi-card__sparkline">
                 <SparkLine data={sparkData} color={accentColor} />
+              </div>
+
+              {/* محتوى الكرت — له حشوه الخاص */}
+              <div className="nx-kpi-card__body">
+                {/* العنوان */}
+                <div className="nx-kpi-card__label">{card.label}</div>
+
+                {/* صف: ر.س + الرقم الكبير + باج % */}
+                <div className="nx-kpi-card__num-row">
+                  <span className="nx-kpi-card__sar">ر.س</span>
+                  <div className="nx-kpi-card__value">{amountText(rawVal)}</div>
+                  {!isSales && pctNum != null && (
+                    <span className={`nx-kpi-card__pct ${pctClass}`}>
+                      {arrow}{Math.abs(pctNum)}%
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* تذييل الكرت: الفترة الزمنية | تسمية المؤشر */}
