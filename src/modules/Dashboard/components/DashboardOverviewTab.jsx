@@ -299,12 +299,22 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
           const sparkData = getMonthlyData(card.key);
 
-          /* كلاس + سهم باج النسبة */
+          /*
+           * باج النسبة % مع السهم — لكل الكروت كالتصميم المرجعي:
+           * - مبيعات:   لا باج (هي الأساس 100%)
+           * - مشتريات: ↓ محايد (تستهلك X% من المبيعات)
+           * - مصاريف:  ↓ محايد (تستهلك X% من المبيعات)
+           * - ربح إجمالي/صافي: ↑ أخضر إذا موجب، ↓ أحمر إذا سالب
+           */
           let pctClass = 'nx-kpi-card__pct--neutral';
           let arrow    = '';
           if (isProfit && pctNum != null) {
             pctClass = pctNum >= 0 ? 'nx-kpi-card__pct--up' : 'nx-kpi-card__pct--down';
             arrow    = pctNum >= 0 ? '↑ ' : '↓ ';
+          } else if (!isSales && pctNum != null) {
+            /* مشتريات ومصاريف: سهم محايد للأسفل — تُشير لنسبة الاستهلاك */
+            pctClass = 'nx-kpi-card__pct--neutral';
+            arrow    = '↓ ';
           }
 
           return (
@@ -316,7 +326,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
               <div className="nx-kpi-card__num-row">
                 <span className="nx-kpi-card__sar">ر.س</span>
                 <div className="nx-kpi-card__value">{amountText(rawVal)}</div>
-                {pctNum != null && (
+                {!isSales && pctNum != null && (
                   <span className={`nx-kpi-card__pct ${pctClass}`}>
                     {arrow}{Math.abs(pctNum)}%
                   </span>
