@@ -180,23 +180,23 @@ export function OrderFormModal({
         className="order-form-success-drawer"
         hideClose={false}
       >
-        <div className="text-center" className="py-2">
-          <div className="mb-3" className="text-[48px]"></div>
-          <h3 className="text-[18px]" className="mb-1.5">{t('orderSaved')}</h3>
-          <p className="text-[14px] text-noorix-muted" className="mb-4">
+        <div className="text-center py-2">
+          <div className="mb-3 text-[48px]">?</div>
+          <h3 className="text-[18px] mb-1.5">{t('orderSaved')}</h3>
+          <p className="text-[14px] text-noorix-muted mb-4">
             {t('orderNumber')}: <strong className="text-noorix-blue">{savedOrder.orderNumber}</strong>
           </p>
-          <div className="flex items-center flex flex-wrap gap-4" className="justify-center mb-5">
+          <div className="flex items-center flex-wrap gap-4 justify-center mb-5">
             <div className="text-center">
               <div className="text-[11px] text-noorix-muted">{t('total')}</div>
               <div className="text-[18px] nx-font-numbers text-noorix-green font-[900]">{fmt(savedOrder.totalAmount ?? 0, 2)} ?</div>
             </div>
           </div>
-          <div className="flex flex-col gap-2.5" className="items-center">
+          <div className="flex flex-col gap-2.5 items-center">
             <Button variant="success" fullWidth onClick={() => onWhatsApp?.(savedOrder)}>
               {t('sendWhatsApp')} ? {t('order')}
             </Button>
-            <div className="nx-toolbar" className="justify-center">
+            <div className="nx-toolbar justify-center">
               <Button onClick={() => { resetForm(); }}>{t('ordersAddNewOrder')}</Button>
               <Button onClick={() => { onClose?.(); resetForm(); }}>{t('close')}</Button>
             </div>
@@ -226,7 +226,7 @@ export function OrderFormModal({
         </Button>
       }
     >
-      <div className="grid gap-4" className="mb-[18px]">
+      <div className="grid gap-4 mb-[18px]">
         <Input
           type="date"
           label={`${t('orderDate')} *`}
@@ -325,15 +325,15 @@ export function OrderFormModal({
               </div>
               <Button variant="primary" onClick={addItemFromRow}>+ {t('add')}</Button>
             </div>
-            <div className="overflow-x-auto border border-noorix-border" className="rounded-[10px]">
-              <table className="w-full" className="border-collapse text-[13px]">
+            <div className="overflow-x-auto border border-noorix-border rounded-[10px]">
+              <table className="w-full border-collapse text-[13px]">
                 <thead>
-                  <tr className="bg-noorix-bg-muted" className="border-b-2 border-noorix-border">
-                    <th className="text-end font-bold" className="py-2 px-2.5">{t('product')}</th>
-                    <th className="text-end font-bold" className="py-2 px-2.5">{t('ordersProductSize')} / {t('ordersProductPackaging')}</th>
-                    <th className="text-end font-bold" className="py-2 px-2.5">{t('quantity')}</th>
-                    <th className="text-end font-bold" className="py-2 px-2.5">{t('unitPrice')}</th>
-                    <th className="text-end font-bold" className="py-2 px-2.5">{t('total')}</th>
+                  <tr className="bg-noorix-bg-muted border-b-2 border-noorix-border">
+                    <th className="text-end font-bold py-2 px-2.5">{t('product')}</th>
+                    <th className="text-end font-bold py-2 px-2.5">{t('ordersProductSize')} / {t('ordersProductPackaging')}</th>
+                    <th className="text-end font-bold py-2 px-2.5">{t('quantity')}</th>
+                    <th className="text-end font-bold py-2 px-2.5">{t('unitPrice')}</th>
+                    <th className="text-end font-bold py-2 px-2.5">{t('total')}</th>
                     <th className="w-11 py-2 px-1" />
                   </tr>
                 </thead>
@@ -408,7 +408,7 @@ export function OrderFormModal({
                         <td className="py-2 px-2.5">
                           <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} className="w-20" />
                         </td>
-                        <td className="nx-cell-num font-semibold" className="py-2 px-2.5">{fmt(enrichedItems[idx]?.amount ?? 0, 2)}</td>
+                        <td className="nx-cell-num font-semibold py-2 px-2.5">{fmt(enrichedItems[idx]?.amount ?? 0, 2)}</td>
                         <td className="py-2 px-1">
                           <Button size="sm" variant="danger" onClick={() => removeItem(idx)}>?</Button>
                         </td>

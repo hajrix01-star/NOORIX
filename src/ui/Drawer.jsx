@@ -48,16 +48,26 @@ export default function Drawer({
     if (e.key === 'Escape') onClose?.();
   }, [onClose]);
 
+  /* 1) إدارة overflow + initial focus */
   useEffect(() => {
     if (!open) return;
-    document.addEventListener('keydown', handleEscape);
     document.body.style.overflow = 'hidden';
-    const rafId = requestAnimationFrame(() => panelRef.current?.focus());
+    const rafId = requestAnimationFrame(() => {
+      if (panelRef.current && !panelRef.current.contains(document.activeElement)) {
+        panelRef.current.focus();
+      }
+    });
     return () => {
-      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
       cancelAnimationFrame(rafId);
     };
+  }, [open]);
+
+  /* 2) مفتاح Escape فقط */
+  useEffect(() => {
+    if (!open) return;
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
   }, [open, handleEscape]);
 
   if (!open) return null;

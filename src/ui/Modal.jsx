@@ -50,16 +50,27 @@ export default function Modal({
     if (e.key === 'Escape') onClose?.();
   }, [onClose]);
 
+  /* 1) إدارة overflow + initial focus — يعمل مرة واحدة عند الفتح فقط */
   useEffect(() => {
     if (!open) return;
-    document.addEventListener('keydown', handleEscape);
     document.body.style.overflow = 'hidden';
-    const rafId = requestAnimationFrame(() => dialogRef.current?.focus());
+    const rafId = requestAnimationFrame(() => {
+      // فقط إذا لم يكن أي عنصر داخل النافذة مُركَّزاً مسبقاً
+      if (dialogRef.current && !dialogRef.current.contains(document.activeElement)) {
+        dialogRef.current.focus();
+      }
+    });
     return () => {
-      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
       cancelAnimationFrame(rafId);
     };
+  }, [open]);
+
+  /* 2) مفتاح Escape — يُحدَّث عند تغير الـ handler فقط (بدون إعادة focus) */
+  useEffect(() => {
+    if (!open) return;
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
   }, [open, handleEscape]);
 
   if (!open) return null;
