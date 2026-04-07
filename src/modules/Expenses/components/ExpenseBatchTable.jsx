@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ExpenseBatchTable — إدخال جماعي لمصاريف (ثابت/متغير)
  * كل صف: بند مصروف، رقم فاتورة، مبلغ، ملاحظات
  */
@@ -173,7 +173,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       ),
     },
     { key: 'net', label: 'الصافي', numeric: true, render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v)}</span> },
-    { key: 'tax', label: 'الضريبة', numeric: true, render: (v) => <span className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(v)}</span> },
+    { key: 'tax', label: 'الضريبة', numeric: true, render: (v) => <span className="nx-cell-num text-noorix-amber">{fmt(v)}</span> },
     {
       key: 'notes',
       label: 'ملاحظات',
@@ -200,14 +200,14 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
 
   return (
     <div>
-      <div className="nx-flex nx-flex-wrap nx-gap-12 nx-mb-16" style={{ alignItems: 'flex-end' }}>
+      <div className="flex flex-wrap gap-3 mb-4 items-end">
         <Input
           label="تاريخ العملية"
           type="date"
           value={batchDate}
           onChange={(e) => setBatchDate(e.target.value)}
         />
-        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+        <div className="flex-[1_1_160px] min-w-0">
           <Input
             label="الخزينة *"
             type="select"
@@ -225,7 +225,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
 
       <SmartTable columns={columns} data={tableData} keyExtractor={(r) => r.key} showRowNumbers rowNumberWidth="1%" />
 
-      <div className="noorix-summary-bar noorix-summary-bar--4 nx-mt-16">
+      <div className="noorix-summary-bar noorix-summary-bar--4 mt-4">
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">عدد الصفوف</div>
           <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{summary.count}</div>
@@ -247,7 +247,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
         variant="primary"
         onClick={() => saveMutation.mutate()}
         disabled={saveMutation.isPending || validRows.length === 0 || !vaultId}
-        className="nx-w-full nx-mt-12"
+        className="w-full mt-3"
       >
         {saveMutation.isPending ? 'جاري الحفظ...' : 'حفظ الدفعة'}
       </Button>

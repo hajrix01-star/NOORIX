@@ -1,4 +1,4 @@
-/**
+﻿/**
  * تبويب التحليل — رسوم بيانية احترافية وبطاقات قابلة للإضافة/الحذف
  */
 import React, { useMemo, useState } from 'react';
@@ -38,12 +38,12 @@ const BAR_CHART_TOOLTIP_STYLE = {
 };
 
 const COLORS = [
-  '#2563eb', '#16a34a', '#ca8a04', '#dc2626', '#7c3aed',
-  '#0891b2', '#db2777', '#4f46e5', '#ea580c', '#84cc16',
+  'var(--noorix-accent-blue)', 'var(--noorix-accent-green)', '#ca8a04', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)',
+  '#0891b2', '#db2777', 'var(--noorix-accent-violet)', '#ea580c', '#84cc16',
 ];
 
-const RED_PIE_TINTS = ['#dc2626', '#b91c1c', '#ef4444', '#991b1b', '#f87171'];
-const GREEN_PIE_TINTS = ['#16a34a', '#15803d', '#22c55e', '#166534', '#4ade80'];
+const RED_PIE_TINTS = ['var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--color-danger-bg)', '#f87171'];
+const GREEN_PIE_TINTS = ['var(--noorix-accent-green)', 'var(--noorix-accent-green)', 'var(--noorix-accent-green)', 'var(--noorix-accent-green)', '#4ade80'];
 
 function pieSliceFill(mode, index, item) {
   if (mode === 'combined') {
@@ -75,19 +75,19 @@ function DailyTooltip({ active, payload, label }) {
   const deposits = payload.find((p) => p.dataKey === 'deposits')?.value ?? 0;
   const withdrawals = payload.find((p) => p.dataKey === 'withdrawals')?.value ?? 0;
   return (
-    <div className="nx-text-sm nx-rtl nx-recharts-tooltip-shell">
-      <div className="nx-font-700 nx-text-primary nx-mb-6">{label}</div>
-      <div className="nx-text-income nx-mb-4">
+    <div className="text-[12px] nx-rtl nx-recharts-tooltip-shell">
+      <div className="font-bold text-noorix-text mb-1.5">{label}</div>
+      <div className="text-noorix-green mb-1">
         إيداعات: <span className="nx-num-bold">{fmt(deposits)}</span>
       </div>
-      <div className="nx-text-expense nx-mb-4">
+      <div className="text-noorix-red mb-1">
         سحوبات: <span className="nx-num-bold">{fmt(withdrawals)}</span>
       </div>
       <div
-        className="nx-font-700 nx-recharts-tooltip-footer"
-        style={{ color: deposits - withdrawals >= 0 ? '#059669' : '#e11d48' }}
+        className="font-bold nx-recharts-tooltip-footer"
+        style={{ color: deposits - withdrawals >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)' }}
       >
-        الصافي: <span className="nx-inline-ltr">{fmt(deposits - withdrawals)}</span>
+        الصافي: <span className="inline-block ltr">{fmt(deposits - withdrawals)}</span>
       </div>
     </div>
   );
@@ -99,29 +99,29 @@ function PieTooltip({ active, payload, pieMode, t }) {
   const d = payload[0];
   const p = d.payload;
   return (
-    <div className="nx-text-sm nx-rtl nx-recharts-tooltip-shell">
-      <div className="nx-font-700 nx-text-primary nx-mb-6">{d.name}</div>
+    <div className="text-[12px] nx-rtl nx-recharts-tooltip-shell">
+      <div className="font-bold text-noorix-text mb-1.5">{d.name}</div>
       {pieMode === 'combined' ? (
         <>
-          <div className="nx-text-expense nx-mb-3">
+          <div className="text-noorix-red mb-[3px]">
             {t('bankStatementColDebit')}:{' '}
             <span className="nx-num-bold">{fmt(p.debit)}</span>
           </div>
-          <div className="nx-text-income nx-mb-3">
+          <div className="text-noorix-green mb-[3px]">
             {t('bankStatementColCredit')}:{' '}
             <span className="nx-num-bold">{fmt(p.credit)}</span>
           </div>
-          <div className="nx-font-700 nx-mb-4 nx-recharts-tooltip-footer--loose">
+          <div className="font-bold mb-1 nx-recharts-tooltip-footer--loose">
             {t('bankPieCenterVolume')}:{' '}
-            <span className="nx-inline-ltr">{fmt(d.value)}</span>
+            <span className="inline-block ltr">{fmt(d.value)}</span>
           </div>
         </>
       ) : (
-        <div className="nx-font-700 nx-mb-4" style={{ color: p.fill }}>{fmt(d.value)}</div>
+        <div className="font-bold mb-1" style={{ color: p.fill }}>{fmt(d.value)}</div>
       )}
-      <div className="nx-text-muted">{p.percent}%</div>
+      <div className="text-noorix-muted">{p.percent}%</div>
       {p.count != null ? (
-        <div className="nx-text-muted nx-text-xs nx-mt-4">
+        <div className="text-noorix-muted text-[11px] mt-1">
           {t('bankStatementTransactions')}: {p.count}
         </div>
       ) : null}
@@ -135,10 +135,10 @@ function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }) 
     <div className="noorix-surface-card nx-analysis-card">
       <div className="nx-analysis-card__head">
         <div className="nx-analysis-card__title-cluster">
-          <span className="nx-text-3xl nx-flex-shrink-0 nx-leading-none">{icon}</span>
-          <span className="nx-font-700 nx-text-lg nx-leading-135">{title}</span>
+          <span className="text-[20px] shrink-0 leading-none">{icon}</span>
+          <span className="font-bold text-[15px] leading-[1.35]">{title}</span>
         </div>
-        <Button size="sm" onClick={() => onRemove(cardId)} className="nx-flex-shrink-0 nx-nowrap">
+        <Button size="sm" onClick={() => onRemove(cardId)} className="shrink-0 whitespace-nowrap">
           {removeLabel}
         </Button>
       </div>
@@ -148,10 +148,10 @@ function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }) 
 }
 
 /* ── شريط تقدم بسيط ── */
-function ProgressBar({ value, color = '#2563eb', max = 100 }) {
+function ProgressBar({ value, color = 'var(--noorix-accent-blue)', max = 100 }) {
   const pct = Math.min(100, Math.max(0, max > 0 ? (value / max) * 100 : 0));
   return (
-    <div className="nx-progress-track nx-flex-1">
+    <div className="nx-progress-track flex-1 min-w-0">
       <div className="nx-progress-fill" style={{ width: `${pct}%`, background: color }} />
     </div>
   );
@@ -294,7 +294,7 @@ export default function BankStatementAnalysisCardsTab({
       if (dailyData.length < 2) return null;
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCashFlow')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div className="nx-w-full nx-h-260">
+          <div className="w-full h-[260px]">
             <ResponsiveContainer>
               <AreaChart data={dailyData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <defs>
@@ -303,26 +303,26 @@ export default function BankStatementAnalysisCardsTab({
                     <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gradWithdrawals" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#dc2626" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--noorix-accent-red)" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="var(--noorix-accent-red)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" vertical={false} />
                 <XAxis dataKey="dateLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 10 }} width={60} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                 <Tooltip content={<DailyTooltip />} />
-                <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
+                <ReferenceLine y={0} stroke="var(--noorix-text-muted-2)" strokeDasharray="4 4" />
                 <Area type="monotone" dataKey="deposits" stroke="#16a34a" strokeWidth={2} fill="url(#gradDeposits)" name="إيداعات" />
-                <Area type="monotone" dataKey="withdrawals" stroke="#dc2626" strokeWidth={2} fill="url(#gradWithdrawals)" name="سحوبات" />
+                <Area type="monotone" dataKey="withdrawals" stroke="var(--noorix-accent-red)" strokeWidth={2} fill="url(#gradWithdrawals)" name="سحوبات" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="nx-flex nx-gap-24 nx-mt-10 nx-flex-center">
-            <div className="nx-flex-center nx-gap-6 nx-text-sm">
+          <div className="flex gap-6 mt-2.5 flex items-center">
+            <div className="flex items-center gap-6 text-[12px]">
               <span className="nx-legend-dot nx-legend-dot--income" />
               <span>إيداعات</span>
             </div>
-            <div className="nx-flex-center nx-gap-6 nx-text-sm">
+            <div className="flex items-center gap-6 text-[12px]">
               <span className="nx-legend-dot nx-legend-dot--expense" />
               <span>سحوبات</span>
             </div>
@@ -336,32 +336,32 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardAlerts')} icon="⚠" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {alerts.length === 0 ? (
-            <p className="nx-text-muted nx-text-base">لا توجد سحوبات.</p>
+            <p className="text-noorix-muted text-[13px]">لا توجد سحوبات.</p>
           ) : (
-            <div className="nx-grid nx-gap-10">
-              <div className="nx-overflow-auto nx-rounded nx-border-all">
-                <table className="nx-w-full nx-text-sm nx-table-collapse">
+            <div className="grid gap-2.5">
+              <div className="overflow-auto rounded-lg border border-noorix-border">
+                <table className="w-full text-[12px] nx-table-collapse">
                   <thead>
-                    <tr className="nx-bg-muted nx-border-b">
-                      <th className="nx-font-700 nx-th-pad">التاريخ</th>
-                      <th className="nx-font-700 nx-th-pad">الوصف</th>
-                      <th className="nx-font-700 nx-nowrap nx-th-pad">المبلغ</th>
-                      <th className="nx-font-700 nx-th-pad-center nx-w-100px">إجراء</th>
+                    <tr className="bg-noorix-bg-muted border-b border-noorix-border">
+                      <th className="font-bold nx-th-pad">التاريخ</th>
+                      <th className="font-bold nx-th-pad">الوصف</th>
+                      <th className="font-bold whitespace-nowrap nx-th-pad">المبلغ</th>
+                      <th className="font-bold nx-th-pad-center w-[100px]">إجراء</th>
                     </tr>
                   </thead>
                   <tbody>
                     {alerts.map((tx, i) => (
                       <tr key={i} className={`nx-bank-row ${i % 2 ? 'nx-bank-row--b' : 'nx-bank-row--a'}`}>
-                        <td className="nx-text-muted nx-nowrap nx-td-pad">{tx.txDate}</td>
-                        <td className="nx-td-pad nx-max-w-360">
-                          <div className="nx-truncate" title={tx.description || ''}>
+                        <td className="text-noorix-muted whitespace-nowrap nx-td-pad">{tx.txDate}</td>
+                        <td className="nx-td-pad max-w-[360px]">
+                          <div className="truncate" title={tx.description || ''}>
                             {tx.description || '—'}
                           </div>
                         </td>
-                        <td className="nx-text-end nx-ltr nx-font-800 nx-text-expense nx-nowrap nx-td-pad">
+                        <td className="text-end nx-ltr font-extrabold text-noorix-red whitespace-nowrap nx-td-pad">
                           {fmt(Number(tx.debit))}
                         </td>
-                        <td className="nx-text-center nx-td-pad">
+                        <td className="text-center nx-td-pad">
                           <Button size="sm" onClick={() => { setTypeFilter('debit'); setActiveTab('transactions'); }}>
                             {t('bankViewTransactions')}
                         </Button>
@@ -381,14 +381,14 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'pos_hint') {
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosHint')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div className="nx-flex nx-gap-16 nx-flex-wrap">
-            <div className="nx-bg-muted nx-border-all nx-stat-tile">
-              <div className="nx-font-800 nx-text-info nx-text-28">{posCount}</div>
-              <div className="nx-text-xs nx-text-muted nx-mt-4">عملية تشبه نقاط البيع</div>
+          <div className="flex gap-4 flex flex-wrap">
+            <div className="bg-noorix-bg-muted border border-noorix-border nx-stat-tile">
+              <div className="font-extrabold text-noorix-blue text-[28px]">{posCount}</div>
+              <div className="text-[11px] text-noorix-muted mt-1">عملية تشبه نقاط البيع</div>
             </div>
-            <div className="nx-bg-muted nx-border-all nx-stat-tile">
-              <div className="nx-font-800 nx-text-28 nx-text-violet">{txs.length}</div>
-              <div className="nx-text-xs nx-text-muted nx-mt-4">إجمالي العمليات</div>
+            <div className="bg-noorix-bg-muted border border-noorix-border nx-stat-tile">
+              <div className="font-extrabold text-[28px] text-noorix-violet">{txs.length}</div>
+              <div className="text-[11px] text-noorix-muted mt-1">إجمالي العمليات</div>
             </div>
           </div>
         </AnalysisCard>
@@ -414,8 +414,8 @@ export default function BankStatementAnalysisCardsTab({
 
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div className="nx-flex-center nx-gap-8 nx-flex-wrap nx-mb-14">
-            <span className="nx-text-sm nx-font-700 nx-text-muted">{t('bankPieViewMode')}</span>
+          <div className="flex items-center gap-8 flex flex-wrap mb-3.5">
+            <span className="text-[12px] font-bold text-noorix-muted">{t('bankPieViewMode')}</span>
             {(['combined', 'debit', 'credit']).map((m) => (
               <Button
                 key={m}
@@ -427,24 +427,24 @@ export default function BankStatementAnalysisCardsTab({
               </Button>
             ))}
           </div>
-          <p className="nx-text-sm nx-text-muted nx-m-0 nx-mb-14 nx-line-145">
+          <p className="text-[12px] text-noorix-muted m-0 mb-3.5 nx-line-145">
             {t('bankPieLegendHint')}
           </p>
-          <div className="nx-flex-wrap nx-gap-24 nx-items-stretch">
+          <div className="flex flex-wrap gap-6 items-stretch">
             <div className="nx-pie-chart-wrap">
               {/* النص المركزي يُرسم أولاً ليبقى تحت tooltip الدائرة */}
               {pieDisplayData.length > 0 ? (
                 <div className="nx-pie-center-label">
-                  <div className="nx-text-muted nx-font-600 nx-text-10 nx-line-145">
+                  <div className="text-noorix-muted font-semibold text-[10px] nx-line-145">
                     {centerTitle}
                   </div>
-                  <div className="nx-font-800 nx-text-primary nx-ltr nx-mt-4 nx-text-17">
+                  <div className="font-extrabold text-noorix-text nx-ltr mt-1 text-[17px]">
                     {fmt(centerMain)}
                   </div>
                   {pieMode === 'combined' && (pieGrandTotals.totalDebit > 0 || pieGrandTotals.totalCredit > 0) ? (
-                    <div className="nx-text-10 nx-mt-6px nx-leading-135">
-                      <div className="nx-text-expense nx-ltr">{fmt(pieGrandTotals.totalDebit)}</div>
-                      <div className="nx-text-income nx-ltr">{fmt(pieGrandTotals.totalCredit)}</div>
+                    <div className="text-[10px] mt-[6px] leading-[1.35]">
+                      <div className="text-noorix-red nx-ltr">{fmt(pieGrandTotals.totalDebit)}</div>
+                      <div className="text-noorix-green nx-ltr">{fmt(pieGrandTotals.totalCredit)}</div>
                     </div>
                   ) : null}
                 </div>
@@ -464,7 +464,7 @@ export default function BankStatementAnalysisCardsTab({
                       cursor="pointer"
                       isAnimationActive={false}
                       label={({ percent }) => (percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : '')}
-                      labelLine={{ stroke: '#94a3b8', strokeWidth: 1 }}
+                      labelLine={{ stroke: 'var(--noorix-text-muted-2)', strokeWidth: 1 }}
                       onClick={(_, index) => {
                         const item = pieDisplayData[index];
                         if (item?.name) setPieDrilldownCategory(item.name);
@@ -483,20 +483,20 @@ export default function BankStatementAnalysisCardsTab({
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="nx-flex-center nx-bg-muted nx-rounded-lg nx-text-md nx-text-muted nx-h-320 nx-pie-empty-box">
+                <div className="flex items-center bg-noorix-bg-muted rounded-xl text-[14px] text-noorix-muted h-[320px] nx-pie-empty-box">
                   {t('bankNoCategoryData')}
                 </div>
               )}
             </div>
-            <div className="nx-flex-col nx-pie-legend-aside">
-              <div className="nx-text-sm nx-font-700 nx-text-muted nx-mb-10">
+            <div className="flex flex-col nx-pie-legend-aside">
+              <div className="text-[12px] font-bold text-noorix-muted mb-2.5">
                 {t('bankPieCategoryKey')}
               </div>
               <div
-                className="nx-rounded-lg nx-p-12 nx-bg-muted nx-flex-1 nx-grid nx-gap-8 nx-border-all"
+                className="rounded-xl p-3 bg-noorix-bg-muted flex-1 min-w-0 grid gap-2 border border-noorix-border"
               >
                 {pieDisplayData.length === 0 ? (
-                  <span className="nx-text-sm nx-text-muted nx-text-center nx-p-12">
+                  <span className="text-[12px] text-noorix-muted text-center p-3">
                     {t('bankNoCategoryData')}
                   </span>
                 ) : (
@@ -506,26 +506,26 @@ export default function BankStatementAnalysisCardsTab({
                       <Button
                         key={item.name}
                         variant="ghost"
-                        className="bank-pie-legend-row nx-bank-pie-legend-btn nx-flex-col nx-w-full nx-text-base nx-text-end"
+                        className="bank-pie-legend-row nx-bank-pie-legend-btn flex flex-col w-full text-[13px] text-end"
                         onClick={() => setPieDrilldownCategory(item.name)}
                       >
-                        <div className="nx-flex-center nx-gap-10 nx-w-full">
+                        <div className="flex items-center gap-10 w-full">
                           <span
                             className="nx-bank-dot-10"
                             style={{ background: dot }}
                           />
-                          <span className="nx-flex-1 nx-truncate nx-font-600">
+                          <span className="flex-1 min-w-0 truncate font-semibold">
                             {item.name}
                           </span>
-                          <span className="nx-text-muted nx-flex-shrink-0 nx-text-sm">{item.percent}%</span>
-                          <span className="nx-font-800 nx-ltr nx-flex-shrink-0 nx-text-base">{fmt(item.value)}</span>
+                          <span className="text-noorix-muted shrink-0 text-[12px]">{item.percent}%</span>
+                          <span className="font-extrabold nx-ltr shrink-0 text-[13px]">{fmt(item.value)}</span>
                         </div>
                         {pieMode === 'combined' ? (
-                          <div className="nx-flex-between nx-gap-8 nx-text-xs nx-text-muted nx-ps-20">
-                            <span className="nx-text-expense">
+                          <div className="flex items-center justify-between gap-2 text-[11px] text-noorix-muted ps-5">
+                            <span className="text-noorix-red">
                               {t('bankStatementColDebit')}: <strong className="nx-ltr">{fmt(item.debit)}</strong>
                             </span>
-                            <span className="nx-text-income">
+                            <span className="text-noorix-green">
                               {t('bankStatementColCredit')}: <strong className="nx-ltr">{fmt(item.credit)}</strong>
                             </span>
                           </div>
@@ -549,11 +549,11 @@ export default function BankStatementAnalysisCardsTab({
         if (!rows.length) return null;
         const h = Math.max(168, 52 + rows.length * 46);
         return (
-          <div className="nx-mb-8">
-            <div className="nx-text-sm nx-font-700 nx-text-muted nx-border-b nx-bank-bar-section-hdr">
+          <div className="mb-2">
+            <div className="text-[12px] font-bold text-noorix-muted border-b border-noorix-border nx-bank-bar-section-hdr">
               {blockTitle}
             </div>
-            <div className="nx-w-full" style={{ height: h }}>
+            <div className="w-full" style={{ height: h }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={rows} layout="vertical" margin={{ left: 4, right: 32, top: 6, bottom: 6 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" horizontal={false} />
@@ -584,16 +584,16 @@ export default function BankStatementAnalysisCardsTab({
 
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryBar')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          {renderBarBlock(barRowsDebit, 'أعلى الفئات — السحوبات', '#dc2626', barDebitAxisW)}
-          {renderBarBlock(barRowsCredit, 'أعلى الفئات — الإيداعات', '#16a34a', barCreditAxisW)}
-          <div className="nx-flex nx-flex-wrap nx-mt-16 nx-border-t nx-bank-bar-legend-row">
-            <div className="nx-flex-center nx-gap-8 nx-text-sm">
+          {renderBarBlock(barRowsDebit, 'أعلى الفئات — السحوبات', 'var(--noorix-accent-red)', barDebitAxisW)}
+          {renderBarBlock(barRowsCredit, 'أعلى الفئات — الإيداعات', 'var(--noorix-accent-green)', barCreditAxisW)}
+          <div className="flex flex flex-wrap mt-4 border-t border-noorix-border nx-bank-bar-legend-row">
+            <div className="flex items-center gap-8 text-[12px]">
               <span className="nx-legend-dot--bar nx-legend-dot--bar-red" />
-              <span className="nx-font-600">سحوبات</span>
+              <span className="font-semibold">سحوبات</span>
             </div>
-            <div className="nx-flex-center nx-gap-8 nx-text-sm">
+            <div className="flex items-center gap-8 text-[12px]">
               <span className="nx-legend-dot--bar nx-legend-dot--bar-green" />
-              <span className="nx-font-600">إيداعات</span>
+              <span className="font-semibold">إيداعات</span>
             </div>
           </div>
         </AnalysisCard>
@@ -604,15 +604,15 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'category_table') {
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryTable')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div className="nx-overflow-auto">
-            <table className="nx-w-full nx-text-sm nx-table-collapse nx-table-min-540">
+          <div className="overflow-auto">
+            <table className="w-full text-[12px] nx-table-collapse nx-table-min-540">
               <thead>
-                <tr className="nx-bg-muted nx-border-b-2-muted">
-                  <th className="nx-font-700 nx-nowrap nx-th-pad">الفئة</th>
-                  <th className="nx-font-700 nx-th-pad-center">العمليات</th>
-                  <th className="nx-font-700 nx-text-expense nx-nowrap nx-th-pad">السحوبات</th>
-                  <th className="nx-font-700 nx-text-income nx-nowrap nx-th-pad">الإيداعات</th>
-                  <th className="nx-font-700 nx-th-pad nx-min-w-120">النسبة (سحب)</th>
+                <tr className="bg-noorix-bg-muted border-b-2 border-noorix-border">
+                  <th className="font-bold whitespace-nowrap nx-th-pad">الفئة</th>
+                  <th className="font-bold nx-th-pad-center">العمليات</th>
+                  <th className="font-bold text-noorix-red whitespace-nowrap nx-th-pad">السحوبات</th>
+                  <th className="font-bold text-noorix-green whitespace-nowrap nx-th-pad">الإيداعات</th>
+                  <th className="font-bold nx-th-pad min-w-[120px]">النسبة (سحب)</th>
                 </tr>
               </thead>
               <tbody>
@@ -624,7 +624,7 @@ export default function BankStatementAnalysisCardsTab({
                     title="انقر لعرض عمليات هذه الفئة"
                   >
                     <td className="nx-td-pad-9">
-                      <div className="nx-flex-center nx-gap-7">
+                      <div className="flex items-center gap-7">
                         <span
                           className="nx-bank-dot-8"
                           style={{ background: COLORS[i % COLORS.length] }}
@@ -632,21 +632,21 @@ export default function BankStatementAnalysisCardsTab({
                         {row.name}
                       </div>
                     </td>
-                    <td className="nx-text-center nx-text-muted nx-td-pad-9">{row.count}</td>
+                    <td className="text-center text-noorix-muted nx-td-pad-9">{row.count}</td>
                     <td
-                      className={`nx-text-end nx-ltr nx-td-pad-9 ${row.debit > 0 ? 'nx-text-expense nx-font-700' : 'nx-text-muted nx-font-400'}`}
+                      className={`text-end nx-ltr nx-td-pad-9 ${row.debit > 0 ? 'text-noorix-red font-bold' : 'text-noorix-muted font-normal'}`}
                     >
                       {row.debit > 0 ? fmt(row.debit) : '—'}
                     </td>
                     <td
-                      className={`nx-text-end nx-ltr nx-td-pad-9 ${row.credit > 0 ? 'nx-text-income nx-font-700' : 'nx-text-muted nx-font-400'}`}
+                      className={`text-end nx-ltr nx-td-pad-9 ${row.credit > 0 ? 'text-noorix-green font-bold' : 'text-noorix-muted font-normal'}`}
                     >
                       {row.credit > 0 ? fmt(row.credit) : '—'}
                     </td>
                     <td className="nx-td-pad-9">
-                      <div className="nx-flex-center nx-gap-8">
+                      <div className="flex items-center gap-8">
                         <ProgressBar value={row.debit} max={totalDebit} color={COLORS[i % COLORS.length]} />
-                        <span className="nx-text-muted nx-flex-shrink-0 nx-min-w-38 nx-ltr nx-text-start">
+                        <span className="text-noorix-muted shrink-0 min-w-[38px] nx-ltr text-start">
                           {row.debitPct.toFixed(1)}%
                         </span>
                       </div>
@@ -655,14 +655,14 @@ export default function BankStatementAnalysisCardsTab({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="nx-font-800 nx-bg-muted nx-border-t-2-muted">
+                <tr className="font-extrabold bg-noorix-bg-muted border-t-2 border-noorix-border">
                   <td className="nx-td-pad-10">الإجمالي</td>
-                  <td className="nx-text-center nx-td-pad-10">
+                  <td className="text-center nx-td-pad-10">
                     {categoryRows.reduce((s, r) => s + r.count, 0)}
                   </td>
-                  <td className="nx-text-end nx-ltr nx-text-expense nx-td-pad-10">{fmt(totalDebit)}</td>
-                  <td className="nx-text-end nx-ltr nx-text-income nx-td-pad-10">{fmt(totalCredit)}</td>
-                  <td className="nx-text-muted nx-td-pad-10">100%</td>
+                  <td className="text-end nx-ltr text-noorix-red nx-td-pad-10">{fmt(totalDebit)}</td>
+                  <td className="text-end nx-ltr text-noorix-green nx-td-pad-10">{fmt(totalCredit)}</td>
+                  <td className="text-noorix-muted nx-td-pad-10">100%</td>
                 </tr>
               </tfoot>
             </table>
@@ -677,17 +677,17 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardDepositsTable')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {depositsByCategory.length === 0 ? (
-            <p className="nx-text-muted nx-text-base">لا توجد إيداعات.</p>
+            <p className="text-noorix-muted text-[13px]">لا توجد إيداعات.</p>
           ) : (
-            <div className="nx-overflow-auto">
-              <table className="nx-w-full nx-text-sm nx-table-collapse nx-table-min-400">
+            <div className="overflow-auto">
+              <table className="w-full text-[12px] nx-table-collapse nx-table-min-400">
                 <thead>
-                  <tr className="nx-bg-muted nx-border-b-2-muted">
-                    <th className="nx-font-700 nx-th-pad">#</th>
-                    <th className="nx-font-700 nx-th-pad">الفئة</th>
-                    <th className="nx-font-700 nx-th-pad-center">العمليات</th>
-                    <th className="nx-font-700 nx-text-income nx-th-pad">إجمالي الإيداعات</th>
-                    <th className="nx-font-700 nx-th-pad nx-min-w-120">النسبة</th>
+                  <tr className="bg-noorix-bg-muted border-b-2 border-noorix-border">
+                    <th className="font-bold nx-th-pad">#</th>
+                    <th className="font-bold nx-th-pad">الفئة</th>
+                    <th className="font-bold nx-th-pad-center">العمليات</th>
+                    <th className="font-bold text-noorix-green nx-th-pad">إجمالي الإيداعات</th>
+                    <th className="font-bold nx-th-pad min-w-[120px]">النسبة</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -699,9 +699,9 @@ export default function BankStatementAnalysisCardsTab({
                         className={`nx-bank-row nx-bank-row--click ${i % 2 === 0 ? 'nx-bank-row--a' : 'nx-bank-row--b'}`}
                         onClick={() => { setCategoryFilter(row.name); setTypeFilter('credit'); setActiveTab('transactions'); }}
                       >
-                        <td className="nx-text-muted nx-font-700 nx-td-pad-9">{i + 1}</td>
+                        <td className="text-noorix-muted font-bold nx-td-pad-9">{i + 1}</td>
                         <td className="nx-td-pad-9">
-                          <div className="nx-flex-center nx-gap-7">
+                          <div className="flex items-center gap-7">
                             <span
                               className="nx-bank-dot-8"
                               style={{ background: COLORS[i % COLORS.length] }}
@@ -709,12 +709,12 @@ export default function BankStatementAnalysisCardsTab({
                             {row.name}
                           </div>
                         </td>
-                        <td className="nx-text-center nx-text-muted nx-td-pad-9">{row.count}</td>
-                        <td className="nx-text-end nx-ltr nx-text-income nx-font-700 nx-td-pad-9">{fmt(row.total)}</td>
+                        <td className="text-center text-noorix-muted nx-td-pad-9">{row.count}</td>
+                        <td className="text-end nx-ltr text-noorix-green font-bold nx-td-pad-9">{fmt(row.total)}</td>
                         <td className="nx-td-pad-9">
-                          <div className="nx-flex-center nx-gap-8">
+                          <div className="flex items-center gap-8">
                             <ProgressBar value={row.total} max={totalDep} color="#16a34a" />
-                            <span className="nx-text-muted nx-flex-shrink-0 nx-min-w-38 nx-ltr nx-text-start">{pct.toFixed(1)}%</span>
+                            <span className="text-noorix-muted shrink-0 min-w-[38px] nx-ltr text-start">{pct.toFixed(1)}%</span>
                           </div>
                         </td>
                       </tr>
@@ -722,11 +722,11 @@ export default function BankStatementAnalysisCardsTab({
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="nx-font-800 nx-bg-muted nx-border-t-2-muted">
+                  <tr className="font-extrabold bg-noorix-bg-muted border-t-2 border-noorix-border">
                     <td colSpan={2} className="nx-td-pad-10">الإجمالي</td>
-                    <td className="nx-text-center nx-td-pad-10">{depositsByCategory.reduce((s, r) => s + r.count, 0)}</td>
-                    <td className="nx-text-end nx-ltr nx-text-income nx-td-pad-10">{fmt(totalDep)}</td>
-                    <td className="nx-text-muted nx-td-pad-10">100%</td>
+                    <td className="text-center nx-td-pad-10">{depositsByCategory.reduce((s, r) => s + r.count, 0)}</td>
+                    <td className="text-end nx-ltr text-noorix-green nx-td-pad-10">{fmt(totalDep)}</td>
+                    <td className="text-noorix-muted nx-td-pad-10">100%</td>
                   </tr>
                 </tfoot>
               </table>
@@ -742,30 +742,30 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosTerminals')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {posTerminals.length === 0 ? (
-            <p className="nx-text-muted nx-text-base">
+            <p className="text-noorix-muted text-[13px]">
               لم يتم الكشف عن أجهزة نقاط بيع في هذا الكشف.
             </p>
           ) : (
-            <div className="nx-grid nx-gap-12">
+            <div className="grid gap-3">
               <div className="nx-grid-auto-fill-140">
-                <div className="nx-bg-muted nx-border-all nx-rounded-lg nx-text-center nx-py-12 nx-px-14">
-                  <div className="nx-font-800 nx-text-income nx-text-22">{posTerminals.reduce((s, t) => s + t.count, 0)}</div>
-                  <div className="nx-text-xs nx-text-muted nx-mt-4">عدد العمليات</div>
+                <div className="bg-noorix-bg-muted border border-noorix-border rounded-xl text-center py-3 px-3.5">
+                  <div className="font-extrabold text-noorix-green text-[22px]">{posTerminals.reduce((s, t) => s + t.count, 0)}</div>
+                  <div className="text-[11px] text-noorix-muted mt-1">عدد العمليات</div>
                 </div>
-                <div className="nx-bg-muted nx-border-all nx-rounded-lg nx-text-center nx-py-12 nx-px-14">
-                  <div className="nx-text-2xl nx-font-800 nx-text-income nx-ltr">{fmt(totalPOS)}</div>
-                  <div className="nx-text-xs nx-text-muted nx-mt-4">إجمالي المبيعات</div>
+                <div className="bg-noorix-bg-muted border border-noorix-border rounded-xl text-center py-3 px-3.5">
+                  <div className="text-[18px] font-extrabold text-noorix-green nx-ltr">{fmt(totalPOS)}</div>
+                  <div className="text-[11px] text-noorix-muted mt-1">إجمالي المبيعات</div>
                 </div>
               </div>
-              <div className="nx-overflow-auto nx-rounded nx-border-all">
-                <table className="nx-w-full nx-text-sm nx-table-collapse">
+              <div className="overflow-auto rounded-lg border border-noorix-border">
+                <table className="w-full text-[12px] nx-table-collapse">
                   <thead>
-                    <tr className="nx-bg-muted nx-border-b">
-                      <th className="nx-font-700 nx-th-pad nx-w-40">#</th>
-                      <th className="nx-font-700 nx-th-pad">الجهاز</th>
-                      <th className="nx-font-700 nx-th-pad-center">العمليات</th>
-                      <th className="nx-font-700 nx-th-pad">المبلغ</th>
-                      <th className="nx-font-700 nx-th-pad">النسبة</th>
+                    <tr className="bg-noorix-bg-muted border-b border-noorix-border">
+                      <th className="font-bold nx-th-pad w-10">#</th>
+                      <th className="font-bold nx-th-pad">الجهاز</th>
+                      <th className="font-bold nx-th-pad-center">العمليات</th>
+                      <th className="font-bold nx-th-pad">المبلغ</th>
+                      <th className="font-bold nx-th-pad">النسبة</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -773,16 +773,16 @@ export default function BankStatementAnalysisCardsTab({
                       const pct = totalPOS > 0 ? (term.total / totalPOS) * 100 : 0;
                       return (
                         <tr key={term.terminalId} className={`nx-bank-row ${i % 2 ? 'nx-bank-row--b' : 'nx-bank-row--a'}`}>
-                          <td className="nx-font-700 nx-text-muted nx-td-pad">{i + 1}</td>
+                          <td className="font-bold text-noorix-muted nx-td-pad">{i + 1}</td>
                           <td className="nx-td-pad">
                             <code className="nx-code-inline">…{term.terminalId.slice(-8)}</code>
                           </td>
-                          <td className="nx-text-center nx-td-pad">{term.count}</td>
-                          <td className="nx-text-end nx-ltr nx-font-800 nx-text-income nx-td-pad">{fmt(term.total)}</td>
-                          <td className="nx-text-end nx-td-pad">
-                            <div className="nx-flex-end nx-gap-8">
+                          <td className="text-center nx-td-pad">{term.count}</td>
+                          <td className="text-end nx-ltr font-extrabold text-noorix-green nx-td-pad">{fmt(term.total)}</td>
+                          <td className="text-end nx-td-pad">
+                            <div className="flex items-center justify-end gap-2">
                               <ProgressBar value={term.total} max={totalPOS} color={COLORS[i % COLORS.length]} />
-                              <span className="nx-text-xs nx-text-muted nx-min-w-36 nx-ltr nx-text-start">{pct.toFixed(1)}%</span>
+                              <span className="text-[11px] text-noorix-muted min-w-[36px] nx-ltr text-start">{pct.toFixed(1)}%</span>
                             </div>
                           </td>
                         </tr>
@@ -801,10 +801,10 @@ export default function BankStatementAnalysisCardsTab({
   };
 
   return (
-    <div className="nx-grid nx-gap-18">
+    <div className="grid gap-[18px]">
       {/* شريط التحكم — إضافة بطاقات */}
-      <div className="nx-row-between nx-bg-muted nx-border-all nx-rounded-lg nx-gap-10 nx-px-16 nx-py-12">
-        <span className="nx-text-base nx-text-muted">
+      <div className="flex items-center justify-between gap-2 flex-wrap bg-noorix-bg-muted border border-noorix-border rounded-xl gap-2.5 px-4 py-3">
+        <span className="text-[13px] text-noorix-muted">
           {activeCards.length} بطاقة معروضة
         </span>
         <div className="nx-bank-add-wrap">
@@ -826,7 +826,7 @@ export default function BankStatementAnalysisCardsTab({
                 <Button
                   key={c.id}
                   variant="ghost"
-                  className="bank-add-card-item nx-bank-add-menu-item nx-flex-center nx-gap-10 nx-w-full nx-text-base nx-text-end nx-border-b"
+                  className="bank-add-card-item nx-bank-add-menu-item flex items-center gap-2.5 w-full text-[13px] text-end border-b border-noorix-border"
                   onClick={() => { addCard(c.id); setAddOpen(false); }}
                 >
                   <span>{c.icon}</span>
@@ -839,7 +839,7 @@ export default function BankStatementAnalysisCardsTab({
       </div>
 
       {/* البطاقات — عمودان تلقائياً عندما تسمح الشاشة (min ~400px لكل عمود) */}
-      <div className="nx-grid nx-bank-cards-grid">
+      <div className="grid nx-bank-cards-grid">
         {activeCards.map((id) => {
           const card = renderCard(id);
           if (!card) return null;
@@ -856,9 +856,9 @@ export default function BankStatementAnalysisCardsTab({
       </div>
 
       {!activeCards.length && (
-        <div className="nx-text-center nx-text-muted nx-p-48">
-          <div className="nx-mb-16 nx-text-40" />
-          <p className="nx-text-lg nx-font-600">{t('bankNoCardsPickAbove')}</p>
+        <div className="text-center text-noorix-muted p-12">
+          <div className="mb-4 text-[40px]" />
+          <p className="text-[15px] font-semibold">{t('bankNoCardsPickAbove')}</p>
         </div>
       )}
 

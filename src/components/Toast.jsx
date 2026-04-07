@@ -41,47 +41,28 @@ export default function Toast({ message, type = 'success', visible, onDismiss })
       role="alert"
       aria-live="assertive"
       aria-atomic="true"
+      className="py-[10px] px-[14px] rounded-[10px] font-semibold text-[14px] flex items-start gap-[10px] break-words text-white"
       style={{
         position: 'fixed',
         top: 16,
         insetInlineEnd: 16,
         maxWidth: 'min(360px, calc(100vw - 32px))',
-        padding: '10px 14px',
-        borderRadius: 10,
         background: style.background,
-        color: '#fff',
-        fontWeight: 600,
-        fontSize: 14,
         fontFamily: 'var(--noorix-font-primary)',
         boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
         zIndex: 9999,
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 10,
         direction: 'inherit',
-        wordBreak: 'break-word',
       }}
     >
       <span
         aria-hidden="true"
-        style={{
-          flexShrink: 0,
-          width: 22,
-          height: 22,
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 12,
-          fontWeight: 800,
-          marginTop: 1,
-        }}
+        className="shrink-0 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[12px] font-extrabold mt-px"
+        style={{ background: 'rgba(255,255,255,0.2)' }}
       >
         {style.icon}
       </span>
 
-      <span style={{ flex: 1, lineHeight: 1.5 }}>{message}</span>
+      <span className="flex-1 leading-[1.5]">{message}</span>
 
       <Button
         className="nx-shell-icon-btn"

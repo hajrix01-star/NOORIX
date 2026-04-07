@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CategoriesManager — مكون مشترك لإدارة التصنيفات (فئات الحسابات)
  * يُستخدم في: Suppliers/CategoriesTab (الموردين والتصنيفات)
  */
@@ -100,9 +100,8 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   const columns = useMemo(() => [
     { key: 'nameAr', label: t('nameAr'), align: 'right', render: (v, row) => (
       <span
+        className="block text-right"
         style={{
-          display: 'block',
-          textAlign: 'right',
           fontWeight: row._level === 0 ? 700 : 500,
           paddingRight: row._level === 1 ? 32 : 0,
         }}
@@ -116,9 +115,9 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
         {typeLabels[v] || v}
       </Badge>
     ) },
-    { key: 'parent', label: t('parentCategory'), render: (_, row) => <span className="nx-text-sm">{row._parentName || '—'}</span> },
+    { key: 'parent', label: t('parentCategory'), render: (_, row) => <span className="text-[12px]">{row._parentName || '—'}</span> },
     { key: 'actions', label: t('actions'), render: (_, row) => (
-      <span style={{ display: 'inline-flex', gap: 6 }}>
+      <span className="inline-flex gap-1.5">
         <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button>
         <Button size="sm" variant="danger" onClick={() => handleDelete(row)}>{t('delete')}</Button>
       </span>
@@ -128,18 +127,18 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   if (!companyId) return null;
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-      <div className="nx-flex nx-flex-end">
+      <div className="flex flex items-center justify-end">
         <Button variant={showForm ? 'default' : 'primary'} onClick={() => (showForm ? resetForm() : setShowForm(true))}>
           {showForm ? t('cancel') : t('addCategory')}
         </Button>
       </div>
       {showForm && (
         <Card>
-          <h4 className="nx-text-md nx-m-0 nx-mb-16">{editing ? t('editCategory') : t('newCategory')}</h4>
+          <h4 className="text-[14px] m-0 mb-4">{editing ? t('editCategory') : t('newCategory')}</h4>
           <form onSubmit={handleSave}>
-            <FormRow cols={2} style={{ marginBottom: 14 }}>
+            <FormRow cols={2} className="mb-3.5">
               <Input
                 type="text"
                 label={`${t('nameAr')} *`}
@@ -170,7 +169,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
                 placeholder=""
               />
             </FormRow>
-            <div style={{ marginBottom: 14 }}>
+            <div className="mb-[14px]">
               <Input
                 type="select"
                 label={t('parentCategory')}
@@ -183,7 +182,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
                 ))}
               </Input>
             </div>
-            <div className="nx-flex nx-gap-8">
+            <div className="flex gap-2">
               <Button type="submit" variant="primary" disabled={create.isPending || update.isPending} loading={create.isPending || update.isPending}>
                 {create.isPending || update.isPending ? t('saving') : t('save')}
               </Button>
@@ -192,8 +191,8 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
           </form>
         </Card>
       )}
-      <div className="nx-text-end nx-mb-8">
-        <h3 className="nx-text-xl nx-font-700 nx-m-0">{t(titleKey)}</h3>
+      <div className="text-end mb-2">
+        <h3 className="text-[16px] font-bold m-0">{t(titleKey)}</h3>
       </div>
       <SmartTable columns={columns} data={rows} total={rows.length} page={1} pageSize={50} showRowNumbers rowNumberWidth="1%" isLoading={isLoading} emptyMessage={t('noCategories')} />
     </div>

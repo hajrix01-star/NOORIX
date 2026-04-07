@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+﻿import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
@@ -144,8 +144,8 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
       className="ocr-invoice-detail-drawer"
     >
       <div dir={dir}>
-        <div className="nx-flex-between nx-flex-wrap nx-gap-8 nx-mb-12">
-          <p className="nx-text-sm nx-text-muted nx-m-0">{supplierName}</p>
+        <div className="flex items-center justify-between flex flex-wrap gap-2 mb-3">
+          <p className="text-[12px] text-noorix-muted m-0">{supplierName}</p>
           <span className={`status-badge ${statusInfo.bgCls}`}>
             {isAr ? statusInfo.ar : statusInfo.en}
           </span>
@@ -187,9 +187,9 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
               <div className="inv-lines-table">
                 <div className="inv-lines-thead">
                   <span>{isAr ? 'الصنف' : 'Item'}</span>
-                  <span className="nx-text-center">{isAr ? 'الكمية' : 'Qty'}</span>
-                  <span className="nx-text-center">{isAr ? 'السعر' : 'Price'}</span>
-                  <span className="nx-text-center">{isAr ? 'الإجمالي' : 'Total'}</span>
+                  <span className="text-center">{isAr ? 'الكمية' : 'Qty'}</span>
+                  <span className="text-center">{isAr ? 'السعر' : 'Price'}</span>
+                  <span className="text-center">{isAr ? 'الإجمالي' : 'Total'}</span>
                 </div>
                 {invoice.lines.map((line, i) => (
                   <div key={i} className="inv-lines-row">
@@ -202,9 +202,9 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
                         <span className="inv-line-size">{line.size}{line.sizeUnit || ''}</span>
                       )}
                     </div>
-                    <div className="nx-text-center">{line.quantity ?? '—'}</div>
-                    <div className="nx-text-center">{line.unitPrice  != null ? fmt(line.unitPrice)  : '—'}</div>
-                    <div className="nx-text-center nx-font-700">{line.totalPrice != null ? fmt(line.totalPrice) : '—'}</div>
+                    <div className="text-center">{line.quantity ?? '—'}</div>
+                    <div className="text-center">{line.unitPrice  != null ? fmt(line.unitPrice)  : '—'}</div>
+                    <div className="text-center font-bold">{line.totalPrice != null ? fmt(line.totalPrice) : '—'}</div>
                   </div>
                 ))}
               </div>

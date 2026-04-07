@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AppSidebar — القائمة الجانبية الرئيسية
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -25,8 +25,6 @@ import {
   IconSettings,
 } from './SidebarIcons';
 
-// VIEW_EMPLOYEES يتحكم في ظهور صفحة الموارد البشرية في القائمة
-// EMPLOYEES_READ يتحكم في قراءة بيانات الموظفين (للمحادثة الذكية وغيرها) بدون ظهور الصفحة
 const SIDEBAR_LINKS = [
   { to: '/owner', labelKey: 'ownerDashboard', icon: IconCrown, permission: 'VIEW_OWNER' },
   { to: '/', end: true, labelKey: 'dashboard', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
@@ -69,7 +67,6 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
     if (isReportsExpanded) setReportsOpen(true);
   }, [isReportsExpanded]);
 
-  // ── البراندينج ─────────────────────────────────────────────────────────────
   const [brandName,    setBrandName]    = useState(() => getBrandName(lang));
   const [brandLogo,    setBrandLogo]    = useState(getBrandLogo);
   const [brandTagline, setBrandTagline] = useState(() => getBrandTagline(lang));
@@ -89,7 +86,6 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
     return () => window.removeEventListener('noorix:branding-changed', refresh);
   }, [lang]);
 
-  // ── تبديل الشركة مع تأكيد ──────────────────────────────────────────────────
   const [pendingCompany, setPendingCompany] = useState(null);
   const pendingCo = pendingCompany ? companies.find((c) => c.id === pendingCompany) : null;
   const pendingName = pendingCo
@@ -118,18 +114,18 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
   useEffect(() => {
     if (!coDropOpen) return undefined;
     updateCoDropPos();
-    const onClose = () => setCoDropOpen(false);
+    const handleClose = () => setCoDropOpen(false);
     const onMouseDown = (e) => {
       if (!coDropBtnRef.current?.contains(e.target) && !coDropMenuRef.current?.contains(e.target)) {
         setCoDropOpen(false);
       }
     };
-    window.addEventListener('resize', onClose);
-    window.addEventListener('scroll', onClose, true);
+    window.addEventListener('resize', handleClose);
+    window.addEventListener('scroll', handleClose, true);
     document.addEventListener('mousedown', onMouseDown);
     return () => {
-      window.removeEventListener('resize', onClose);
-      window.removeEventListener('scroll', onClose, true);
+      window.removeEventListener('resize', handleClose);
+      window.removeEventListener('scroll', handleClose, true);
       document.removeEventListener('mousedown', onMouseDown);
     };
   }, [coDropOpen, updateCoDropPos]);
@@ -165,7 +161,10 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
       <aside className={`app-sidebar${isOpen ? ' app-sidebar--open' : ''}`}>
         <div className="app-sidebar__header">
           <div className="app-sidebar__logo">
-            <div className="app-sidebar__logo-mark" style={brandLogo ? { padding: 0, overflow: 'hidden' } : {}}>
+            <div
+              className="app-sidebar__logo-mark"
+              style={brandLogo ? { padding: 0, overflow: 'hidden' } : {}}
+            >
               {brandLogo
                 ? <img src={brandLogo} alt={brandName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
                 : (brandName?.[0] || 'N')
@@ -177,60 +176,71 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
             </div>
             {isOpen && (
               <Button
-                className="nx-shell-icon-btn app-sidebar__close-btn"
+                variant="ghost"
+                className="ms-auto !text-white/70 hover:!text-white hover:!bg-white/10"
                 onClick={onClose}
                 aria-label={t('close')}
-                style={{ marginInlineStart: 'auto' }}
               >
                 ✕
               </Button>
             )}
           </div>
-          <div className="nx-w-full nx-mt-8">
-            <div style={{ position: 'relative' }}>
+
+          {/* مبدّل الشركة */}
+          <div className="w-full mt-2">
+            <div className="relative">
               <Button
+                variant="raw"
+                size="auto"
                 ref={coDropBtnRef}
                 onClick={showCompanySwitcher ? () => { updateCoDropPos(); setCoDropOpen((v) => !v); } : undefined}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] min-h-[44px] transition-colors"
                 style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 12px', borderRadius: 10,
                   background: 'rgba(255,255,255,0.07)',
                   border: '1px solid rgba(255,255,255,0.10)',
-                  minHeight: 44, cursor: showCompanySwitcher ? 'pointer' : 'default',
+                  cursor: showCompanySwitcher ? 'pointer' : 'default',
                 }}
               >
-                <div className="nx-rounded nx-font-800 nx-text-base nx-overflow-hidden" style={{
-                  width: 30, height: 30, flexShrink: 0,
-                  background: activeCo?.logoUrl ? 'transparent' : 'linear-gradient(135deg, rgba(37,99,235,0.9) 0%, rgba(16,163,74,0.7) 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', letterSpacing: '-0.02em',
-                }}>
+                <div
+                  className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-white font-extrabold text-[13px] shrink-0 overflow-hidden"
+                  style={{
+                    background: activeCo?.logoUrl
+                      ? 'transparent'
+                      : 'linear-gradient(135deg, var(--noorix-blue-90) 0%, var(--noorix-green-50) 100%)',
+                  }}
+                >
                   {activeCo?.logoUrl
-                    ? <img src={activeCo.logoUrl} alt={coName} className="nx-w-full" style={{ height: '100%', objectFit: 'cover' }} />
+                    ? <img src={activeCo.logoUrl} alt={coName} className="w-full h-full object-cover" />
                     : initial
                   }
                 </div>
-                <div className="nx-flex-1" style={{ textAlign: 'start' }}>
-                  <div className="nx-text-xs" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{t('activeCompany')}</div>
-                  <div className="nx-text-base nx-font-700" style={{ color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{coName}</div>
+                <div className="flex-1 text-start min-w-0">
+                  <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{t('activeCompany')}</div>
+                  <div className="text-[13px] font-bold truncate" style={{ color: 'rgba(255,255,255,0.92)' }}>{coName}</div>
                 </div>
                 {showCompanySwitcher && (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" width="14" height="14" style={{ flexShrink: 0, transition: 'transform 150ms', transform: coDropOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  <svg
+                    viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"
+                    width="14" height="14"
+                    className="shrink-0 transition-transform duration-150"
+                    style={{ transform: coDropOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  >
                     <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
               </Button>
+
               {showCompanySwitcher && coDropOpen && createPortal(
                 <div
                   ref={coDropMenuRef}
                   role="listbox"
-                  className="nx-bg-surface"
+                  className="fixed bg-noorix-surface rounded-[10px] border border-noorix-border overflow-y-auto"
                   style={{
-                    position: 'fixed', zIndex: 99999,
-                    top: coDropPos.top, left: coDropPos.left,
-                    width: coDropPos.width, maxHeight: 240,
-                    overflowY: 'auto', borderRadius: 10,
-                    border: '1px solid var(--noorix-border)',
+                    zIndex: 99999,
+                    top: coDropPos.top,
+                    left: coDropPos.left,
+                    width: coDropPos.width,
+                    maxHeight: 240,
                     boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
                   }}
                 >
@@ -240,21 +250,19 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                     return (
                       <Button
                         key={c.id}
+                        variant="raw"
+                        size="auto"
                         role="option"
                         aria-selected={isActive}
                         onClick={() => handleCompanySelect(c.id)}
+                        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-[13px] text-start border-b border-noorix-border last:border-b-0 transition-colors hover:bg-noorix-bg-muted"
                         style={{
-                          width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                          padding: '10px 14px', borderRadius: 0,
-                          background: isActive ? 'rgba(37,99,235,0.08)' : 'transparent',
-                          borderBottom: '1px solid var(--noorix-border)',
-                          textAlign: 'start', justifyContent: 'flex-start',
+                          background: isActive ? 'var(--noorix-blue-8)' : 'transparent',
                           fontWeight: isActive ? 700 : 500,
                           color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text)',
-                          fontSize: 13, minHeight: 'unset',
                         }}
                       >
-                        {isActive && <span style={{ fontSize: 10 }}>✓</span>}
+                        {isActive && <span className="text-[10px]">✓</span>}
                         {cName}
                       </Button>
                     );
@@ -328,7 +336,8 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
 
         <div className="app-sidebar__footer">{brandName} • {brandTagline}</div>
       </aside>
-      {isOpen ? <div className="app-sidebar-backdrop" onClick={onClose} /> : null}
+
+      {isOpen && <div className="app-sidebar-backdrop" onClick={onClose} />}
 
       {/* نافذة تأكيد تبديل الشركة */}
       <Modal
@@ -343,8 +352,8 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
           </>
         }
       >
-        <div className="nx-text-center nx-mb-8" style={{ fontSize: 36 }}></div>
-        <p className="nx-m-0 nx-text-md nx-text-primary" style={{ lineHeight: 1.6 }}>
+        <div className="text-center mb-2 text-[36px]"></div>
+        <p className="m-0 text-[14px] text-noorix-text leading-relaxed">
           {t('switchCompanyConfirmBody')} <strong>{pendingName}</strong>؟
         </p>
       </Modal>

@@ -22,7 +22,7 @@ export function AddSizeModal({ visible, onClose, value, onChange, onAdd }) {
         </>
       }
     >
-      <div style={{ display: 'grid', gap: 12 }}>
+      <div className="grid gap-3">
         <Input
           label={`${t('productNameAr')} *`}
           value={value.ar}

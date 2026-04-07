@@ -1,4 +1,4 @@
-/**
+﻿/**
  * نافذة تفاصيل فئة من مخطط الدائري — جدول عمليات + تغيير الفئة
  */
 import React, { useMemo, useState, useEffect } from 'react';
@@ -62,37 +62,37 @@ export default function BankStatementPieDrilldownModal({
       className="bank-pie-drilldown-drawer"
       footer={<Button onClick={onClose}>{t('close') || 'إغلاق'}</Button>}
     >
-      <div className="nx-text-sm nx-text-muted nx-mb-12 nx-flex-center nx-flex-wrap nx-gap-16">
-        <span className="nx-flex-center nx-gap-6">
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-text-muted)', display: 'inline-block' }} />
-          {t('bankStatementTransactions')}: <strong className="nx-text-primary">{rows.length}</strong>
+      <div className="text-[12px] text-noorix-muted mb-3 flex items-center flex flex-wrap gap-4">
+        <span className="flex items-center gap-6">
+          <span className="w-[6px] h-[6px] rounded-full inline-block bg-noorix-muted" />
+          {t('bankStatementTransactions')}: <strong className="text-noorix-text">{rows.length}</strong>
         </span>
-        <span className="nx-flex-center nx-gap-6">
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
-          {t('bankStatementColDebit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: '#dc2626' }}>{fmt(totals.debit)}</strong>
+        <span className="flex items-center gap-6">
+          <span className="w-[6px] h-[6px] rounded-full inline-block bg-noorix-red" />
+          {t('bankStatementColDebit')}: <strong className="nx-ltr inline-block text-noorix-red">{fmt(totals.debit)}</strong>
         </span>
-        <span className="nx-flex-center nx-gap-6">
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
-          {t('bankStatementColCredit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: '#16a34a' }}>{fmt(totals.credit)}</strong>
+        <span className="flex items-center gap-6">
+          <span className="w-[6px] h-[6px] rounded-full inline-block bg-noorix-green" />
+          {t('bankStatementColCredit')}: <strong className="nx-ltr inline-block text-noorix-green">{fmt(totals.credit)}</strong>
         </span>
       </div>
 
-      <div className="nx-overflow-auto" style={{ maxHeight: 'min(60vh, 540px)' }}>
+      <div className="overflow-auto max-h-[min(60vh,540px)]">
         <SmartTable
           columns={[
             { key: 'txDate', label: t('bankStatementDate'),
-              render: (v) => <span className="nx-nowrap nx-text-muted nx-text-sm">{v}</span> },
+              render: (v) => <span className="whitespace-nowrap text-noorix-muted text-[12px]">{v}</span> },
             { key: 'description', label: t('bankStatementDescription'),
-              render: (v) => <div className="nx-truncate nx-text-primary" title={v}>{v}</div> },
+              render: (v) => <div className="truncate text-noorix-text" title={v}>{v}</div> },
             { key: 'debit', label: t('bankStatementColDebit'), numeric: true,
               render: (v) => (
-                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? '#dc2626' : 'var(--noorix-text-muted)' }}>
+                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text-muted)' }}>
                   {Number(v) > 0 ? fmt(Number(v)) : '—'}
                 </span>
               ) },
             { key: 'credit', label: t('bankStatementColCredit'), numeric: true,
               render: (v) => (
-                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? '#16a34a' : 'var(--noorix-text-muted)' }}>
+                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>
                   {Number(v) > 0 ? fmt(Number(v)) : '—'}
                 </span>
               ) },
@@ -100,7 +100,7 @@ export default function BankStatementPieDrilldownModal({
               render: (_, tx) => {
                 const catId = tx.categoryId || '';
                 return editingTxId === tx.id ? (
-                  <div className="nx-flex-col nx-gap-6">
+                  <div className="flex flex-col gap-1.5">
                     <Input
                       type="select"
                       value={editingCategoryId}
@@ -111,7 +111,7 @@ export default function BankStatementPieDrilldownModal({
                         <option key={c.id} value={c.id}>{c.label}</option>
                       ))}
                     </Input>
-                    <div className="nx-flex nx-gap-6">
+                    <div className="flex gap-1.5">
                       <Button
                         variant="primary"
                         size="sm"

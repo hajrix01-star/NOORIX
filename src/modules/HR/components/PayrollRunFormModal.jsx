@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PayrollRunFormModal — إنشاء/تعديل مسيرة راتب
  */
 import React, { useState, useMemo } from 'react';
@@ -437,10 +437,10 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       className="payroll-run-form-drawer"
       footer={
         <>
-          <div className="nx-font-800" style={{ fontSize: 'clamp(15px, 2.4vw, 17px)', fontFamily: 'var(--noorix-font-numbers)' }}>
+          <div className="font-extrabold nx-font-numbers text-[clamp(15px,2.4vw,17px)]">
             {t('payrollTotal')}: {hrFmt(totalNet)}
           </div>
-          <div className="nx-flex nx-gap-10 nx-flex-wrap">
+          <div className="flex gap-2.5 flex flex-wrap">
             <Button variant="ghost" onClick={onClose}>
               {t('cancel')}
             </Button>
@@ -448,8 +448,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
               variant="primary"
               onClick={handleSubmit}
               disabled={submitting || items.length === 0 || alreadyExists}
-              className="nx-font-700"
-              style={{ minWidth: 120 }}
+              className="font-bold min-w-[120px]"
             >
               {primaryLabel}
             </Button>
@@ -458,13 +457,13 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       }
     >
       <form className="prfm-modal-form" onSubmit={handleSubmit}>
-        <div style={{ padding: '4px 0 12px' }}>
-          <p className="nx-text-base nx-text-muted" style={{ margin: '0 0 14px', lineHeight: 1.6, maxWidth: '72ch' }}>
+        <div className="pt-1 pb-3">
+          <p className="text-[13px] text-noorix-muted m-0 mb-[14px] leading-[1.6] max-w-[72ch]">
             {t('payrollGrossFixedPackageHint')}
           </p>
-          <div className="nx-grid nx-gap-16" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)' }}>
+          <div className="grid gap-4 [grid-template-columns:minmax(0,1fr)_minmax(0,1.2fr)]">
             <div>
-              <label className="nx-text-sm nx-font-600 nx-text-muted nx-mb-6" style={{ display: 'block' }}>{t('payrollMonth')}</label>
+              <label className="text-[12px] font-semibold text-noorix-muted mb-1.5 block">{t('payrollMonth')}</label>
               <Input
                 type="month"
                 className="prfm-modal-field"
@@ -472,13 +471,13 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 onChange={(e) => setPayrollMonth(e.target.value ? `${e.target.value}-01` : defaultMonth)}
               />
               {alreadyExists && (
-                <span className="nx-text-sm nx-font-600 nx-mt-6" style={{ color: 'var(--noorix-accent-amber)', display: 'block' }}>
+                <span className="text-[12px] font-semibold mt-1.5 block text-noorix-amber">
                   {t('payrollMonthExists') || 'مسيرة لهذا الشهر موجودة'}
                 </span>
               )}
             </div>
             <div>
-              <label className="nx-text-sm nx-font-600 nx-text-muted nx-mb-6" style={{ display: 'block' }}>{t('notes')}</label>
+              <label className="text-[12px] font-semibold text-noorix-muted mb-1.5 block">{t('notes')}</label>
               <Input
                 type="text"
                 className="prfm-modal-field"
@@ -490,14 +489,8 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           </div>
         </div>
 
-        <div
-          className="nx-flex-between nx-gap-10 nx-flex-wrap"
-          style={{
-            padding: '14px 0 10px',
-            flexShrink: 0,
-          }}
-        >
-          <span className="nx-text-md nx-font-700">{t('employeesList')} ({items.length})</span>
+        <div className="flex items-center justify-between gap-2.5 flex-wrap pt-[14px] pb-[10px] shrink-0">
+          <span className="text-[14px] font-bold">{t('employeesList')} ({items.length})</span>
           <Button type="button" onClick={isEditMode ? loadEditingItems : initItems}>
             {t('refresh') || 'تحديث'}
           </Button>
@@ -507,13 +500,13 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           <table>
             <thead>
               <tr>
-                <th style={{ minWidth: 200 }}>{t('employeeName')}</th>
+                <th className="min-w-[200px]">{t('employeeName')}</th>
                 <th>{t('payrollAdvanceDates')}</th>
                 <th>{t('grossSalary')}</th>
                 <th>{t('payrollAllowances')}</th>
                 <th>{t('payrollDeductions')}</th>
                 <th>{t('payrollAdvances')}</th>
-                <th className="nx-text-center">{t('payrollDeferAdvanceDeduct')}</th>
+                <th className="text-center">{t('payrollDeferAdvanceDeduct')}</th>
                 <th>{t('netSalary')}</th>
               </tr>
             </thead>
@@ -531,15 +524,15 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                           onChange={() => toggleInclude(emp)}
                           aria-label={t('employeeName')}
                         />
-                        <span className={included ? 'nx-font-600' : 'nx-font-400'}>{employeeDisplayName(emp, lang)}</span>
+                        <span className={included ? 'font-semibold' : 'font-normal'}>{employeeDisplayName(emp, lang)}</span>
                       </label>
                     </td>
                     {included ? (
                       <>
-                        <td className="nx-text-muted nx-text-sm nx-max-w-160 nx-line-145 nx-truncate" title={items[idx].advanceDates || ''}>
+                        <td className="text-noorix-muted text-[12px] max-w-[160px] nx-line-145 truncate" title={items[idx].advanceDates || ''}>
                           {items[idx].advanceDates || '—'}
                         </td>
-                        <td className="nx-font-600 nx-text-md nx-nowrap nx-font-numbers">{hrFmt(items[idx].grossSalary)}</td>
+                        <td className="font-semibold text-[14px] whitespace-nowrap nx-font-numbers">{hrFmt(items[idx].grossSalary)}</td>
                         <td>
                           <Input
                             type="number"
@@ -580,7 +573,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             aria-label={t('payrollAdvances')}
                           />
                         </td>
-                        <td className="nx-text-center">
+                        <td className="text-center">
                           <label className="nx-checkbox nx-checkbox--cell-center">
                             <input
                               type="checkbox"
@@ -590,10 +583,10 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             />
                           </label>
                         </td>
-                        <td className="nx-font-800 nx-text-md nx-nowrap nx-font-numbers">{hrFmt(items[idx].netSalary)}</td>
+                        <td className="font-extrabold text-[14px] whitespace-nowrap nx-font-numbers">{hrFmt(items[idx].netSalary)}</td>
                       </>
                     ) : (
-                      <td colSpan={7} className="nx-text-muted nx-text-base">
+                      <td colSpan={7} className="text-noorix-muted text-[13px]">
                         —
                       </td>
                     )}
@@ -606,13 +599,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
         {error && (
           <div
-            className="nx-text-base nx-font-600 nx-mt-12 nx-rounded nx-p-12"
-            style={{
-              background: 'rgba(239,68,68,0.12)',
-              border: '1px solid rgba(239,68,68,0.25)',
-              color: 'var(--noorix-accent-red)',
-              flexShrink: 0,
-            }}
+            className="text-[13px] font-semibold mt-3 rounded-lg p-3 shrink-0 bg-noorix-red/15 border border-noorix-red/25 text-noorix-red"
             role="alert"
           >
             {error}

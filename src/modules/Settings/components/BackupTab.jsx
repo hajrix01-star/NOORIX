@@ -1,4 +1,4 @@
-/**
+﻿/**
  * النسخ الاحتياطي — لقطة منطقية لكل شركة، سجل، تقرير استرجاع، إعادة رفع خارجي
  */
 import React, { useState } from 'react';
@@ -77,17 +77,17 @@ function BackupCountsGrid({ counts, t, lang }) {
   const rows = sortedCountEntries(counts);
   if (!rows.length) {
     return (
-      <p className="nx-m-0 nx-text-base nx-text-muted">—</p>
+      <p className="m-0 text-[13px] text-noorix-muted">—</p>
     );
   }
   const total = rows.reduce((s, [, n]) => s + (Number(n) || 0), 0);
   return (
-    <div className="nx-grid" style={{ gap: 0 }}>
-      <div className="nx-mb-8">
-        <div className="nx-text-sm nx-font-800 nx-text-muted">
+    <div className="grid gap-0">
+      <div className="mb-2">
+        <div className="text-[12px] font-extrabold text-noorix-muted">
           {t('backupReportCounts')}
         </div>
-        <div className="nx-text-sm nx-text-muted nx-mt-4">
+        <div className="text-[12px] text-noorix-muted mt-1">
           {t('backupReportTotalRows')}:{' '}
           <strong dir="ltr">{total.toLocaleString('en-GB')}</strong>
         </div>
@@ -95,16 +95,10 @@ function BackupCountsGrid({ counts, t, lang }) {
       {rows.map(([key, val]) => (
         <div
           key={key}
-          className="nx-grid nx-gap-8 nx-text-base"
-          style={{
-            gridTemplateColumns: '1fr auto',
-            padding: '6px 0',
-            borderBottom: '1px solid var(--noorix-border)',
-            alignItems: 'baseline',
-          }}
+          className="grid gap-2 text-[13px] py-1.5 border-b border-noorix-border items-baseline [grid-template-columns:1fr_auto]"
         >
-          <span className="nx-text-primary">{statLabel(t, key)}</span>
-          <span dir="ltr" className="nx-font-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <span className="text-noorix-text">{statLabel(t, key)}</span>
+          <span dir="ltr" className="font-semibold tabular-nums">
             {Number(val).toLocaleString('en-GB')}
           </span>
         </div>
@@ -358,7 +352,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             </Button>
           </div>
           {!activeCompanies.length && (
-            <p className="backup-meta-line nx-m-0">
+            <p className="backup-meta-line m-0">
               {t('noActiveCompanies')}
             </p>
           )}
@@ -376,7 +370,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             <h3 id="backup-system-title" className="backup-panel__title">
               {t('backupSystemHeading')}
             </h3>
-            <p className="backup-meta-line nx-m-0">
+            <p className="backup-meta-line m-0">
               {t('backupSystemIntro')}
             </p>
             <label className="nx-checkbox backup-check-row">
@@ -472,21 +466,21 @@ export default function BackupTab({ activeCompanies = [] }) {
             <div className="backup-sys-jobs">
               {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
                 <div key={sj.id} className="backup-sys-job">
-                  <div className="nx-flex-center nx-flex-wrap nx-gap-10" style={{ minWidth: 0 }}>
-                    <span dir="ltr" className="nx-font-700">
+                  <div className="flex items-center flex-wrap gap-2.5 min-w-0">
+                    <span dir="ltr" className="font-bold">
                       {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
                       {formatBackupDate(sj.createdAt, lang)}
                     </span>
-                    <span className="backup-job__status nx-m-0" data-status={sj.status || ''}>
+                    <span className="backup-job__status m-0" data-status={sj.status || ''}>
                       {statusLabel(sj.status, t)}
                     </span>
                   </div>
-                  <div className="nx-flex-col nx-gap-4" style={{ alignItems: 'stretch' }}>
+                  <div className="flex flex-col gap-1 items-stretch">
                     {sj.verifyOk === true && (
-                      <span style={{ color: '#15803d', fontSize: 11 }}>{t('backupVerifyOk')}</span>
+                      <span className="text-[11px] text-noorix-green">{t('backupVerifyOk')}</span>
                     )}
                     {sj.verifyOk === false && sj.verifyError && (
-                      <span style={{ color: '#b91c1c', fontSize: 11, wordBreak: 'break-word' }}>{sj.verifyError}</span>
+                      <span className="text-[11px] break-words text-noorix-red">{sj.verifyError}</span>
                     )}
                     {sj.status === 'completed' && sj.localRelativePath && (
                       <Button
@@ -536,17 +530,17 @@ export default function BackupTab({ activeCompanies = [] }) {
                   </span>
                 </div>
                 {j.errorMessage && (
-                  <div className="backup-job__flags" style={{ color: '#b91c1c' }}>
+                  <div className="backup-job__flags text-noorix-red">
                     {j.errorMessage}
                   </div>
                 )}
                 {j.verifyOk === true && (
-                  <div className="backup-job__flags" style={{ color: '#15803d' }}>
+                  <div className="backup-job__flags text-noorix-green">
                     {t('backupVerifyOk')}
                   </div>
                 )}
                 {j.verifyOk === false && j.verifyError && (
-                  <div className="backup-job__flags" style={{ color: '#b91c1c' }}>
+                  <div className="backup-job__flags text-noorix-red">
                     {j.verifyError}
                   </div>
                 )}
@@ -615,16 +609,7 @@ export default function BackupTab({ activeCompanies = [] }) {
         className="backup-import-drawer"
       >
         <div
-          className="nx-text-base nx-font-500"
-          style={{
-            padding: '10px 14px',
-            marginBottom: 14,
-            background: 'rgba(220,38,38,0.08)',
-            border: '1px solid rgba(220,38,38,0.45)',
-            borderRadius: 6,
-            color: 'var(--noorix-accent-red)',
-            lineHeight: 1.65,
-          }}
+          className="text-[13px] font-medium py-[10px] px-[14px] mb-[14px] rounded-md leading-[1.65] bg-noorix-red/10 border border-noorix-red/45 text-noorix-red"
           role="alert"
         >
           {isAr
@@ -632,7 +617,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             : '⚠️ Warning: A new company will be created from this backup. Make sure the backup is correct before proceeding.'}
         </div>
 
-        <p className="nx-text-base nx-text-muted nx-m-0 nx-mb-12" style={{ lineHeight: 1.6 }}>
+        <p className="text-[13px] text-noorix-muted m-0 mb-3 leading-[1.6]">
           {t('backupImportWarn')}
         </p>
 
@@ -644,8 +629,8 @@ export default function BackupTab({ activeCompanies = [] }) {
         />
 
         <label
-          className="nx-checkbox nx-text-base nx-text-primary nx-mt-12 nx-mb-16"
-          style={{ lineHeight: 1.5 }}
+          className="nx-checkbox text-[13px] text-noorix-text mt-3 mb-4"
+          className="leading-[1.5]"
         >
           <input
             type="checkbox"
@@ -659,7 +644,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           </span>
         </label>
 
-        <div className="nx-flex-end nx-flex-wrap nx-gap-8">
+        <div className="flex items-center justify-end flex flex-wrap gap-2">
           <Button
             type="button"
             variant="ghost"
@@ -689,19 +674,19 @@ export default function BackupTab({ activeCompanies = [] }) {
       >
         {reportModal && (
           <>
-        <p className="nx-text-base nx-text-muted nx-m-0 nx-mb-16" style={{ lineHeight: 1.6 }}>
+        <p className="text-[13px] text-noorix-muted m-0 mb-4 leading-[1.6]">
           {isAr ? reportModal.payload?.messageAr : reportModal.payload?.messageEn || reportModal.payload?.messageAr}
         </p>
 
-            <div className="nx-grid nx-gap-14">
+            <div className="grid gap-3.5">
               <div>
-                <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
+                <div className="text-[12px] font-extrabold mb-2 text-noorix-muted">
                   {t('backupReportSummary')}
                 </div>
-                <div className="nx-text-base" style={{ lineHeight: 1.85 }}>
+                <div className="text-[13px] leading-[1.85]">
                   <div>
                     <strong>{t('backupReportJobId')}:</strong>{' '}
-                    <code className="nx-text-sm">{reportModal.payload?.jobId}</code>
+                    <code className="text-[12px]">{reportModal.payload?.jobId}</code>
                   </div>
                   <div>
                     <strong>{t('backupReportScope')}:</strong> {scopeLabel(reportModal.payload?.scope, t)}
@@ -711,10 +696,10 @@ export default function BackupTab({ activeCompanies = [] }) {
 
               {reportModal.payload?.meta && (
                 <div>
-                  <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
+                  <div className="text-[12px] font-extrabold mb-2 text-noorix-muted">
                     {t('backupReportMeta')}
                   </div>
-                  <div className="nx-text-base" style={{ lineHeight: 1.85 }}>
+                  <div className="text-[13px] leading-[1.85]">
                     <div>
                       <strong>{t('backupReportExportedAt')}:</strong>{' '}
                       {formatBackupDate(reportModal.payload.meta.exportedAt, lang)}
@@ -727,7 +712,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                     {reportModal.payload.meta.companyId && (
                       <div>
                         <strong>{t('backupReportOriginalCompany')}:</strong>{' '}
-                        <code style={{ fontSize: 11 }}>{reportModal.payload.meta.companyId}</code>
+                        <code className="text-[11px]">{reportModal.payload.meta.companyId}</code>
                       </div>
                     )}
                   </div>
@@ -736,10 +721,10 @@ export default function BackupTab({ activeCompanies = [] }) {
 
               {reportModal.payload?.integrity && (
                 <div>
-                <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
+                <div className="text-[12px] font-extrabold mb-2 text-noorix-muted">
                   {t('backupReportIntegrity')}
                   </div>
-                  <div className="nx-text-sm" style={{ lineHeight: 1.75, wordBreak: 'break-all' }}>
+                  <div className="text-[12px] leading-[1.75] break-all">
                     {reportModal.payload.integrity.sizeBytes != null && (
                       <div>
                         <strong>{t('backupReportSizeBytes')}:</strong> {String(reportModal.payload.integrity.sizeBytes)}
@@ -758,21 +743,18 @@ export default function BackupTab({ activeCompanies = [] }) {
                 <BackupCountsGrid counts={reportModal.payload.counts} t={t} lang={lang} />
               )}
 
-              <details className="nx-text-sm">
-                <summary className="nx-cursor-pointer nx-font-700">{t('backupReportRawJson')}</summary>
+              <details className="text-[12px]">
+                <summary className="cursor-pointer font-bold">{t('backupReportRawJson')}</summary>
                 <pre
-                  className="nx-text-xs nx-bg-muted nx-p-12 nx-overflow-auto nx-ltr nx-mt-10 nx-rounded"
-                  style={{
-                    maxHeight: 220,
-                    textAlign: 'left',
-                  }}
+                  className="text-[11px] bg-noorix-bg-muted p-3 overflow-auto nx-ltr mt-2.5 rounded-lg"
+                  className="max-h-[220px] text-left"
                 >
                   {JSON.stringify(reportModal.payload, null, 2)}
                 </pre>
               </details>
             </div>
 
-            <div className="nx-flex-end" style={{ marginTop: 18 }}>
+            <div className="flex items-center justify-end mt-[18px]">
               <Button type="button" variant="primary" onClick={() => setReportModal(null)}>
                 {t('close')}
               </Button>
@@ -791,16 +773,16 @@ export default function BackupTab({ activeCompanies = [] }) {
       >
         {importReportModal && (
           <>
-            <p className="nx-text-base nx-text-muted nx-m-0 nx-mb-16" style={{ lineHeight: 1.6 }}>
+            <p className="text-[13px] text-noorix-muted m-0 mb-4 leading-[1.6]">
               {t('backupImportOk')}
             </p>
 
-              <div className="nx-grid nx-gap-14">
+              <div className="grid gap-3.5">
               <div>
-                <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
+                <div className="text-[12px] font-extrabold mb-2 text-noorix-muted">
                   {t('backupReportNewCompany')}
                 </div>
-                <div className="nx-text-base" style={{ lineHeight: 1.85 }}>
+                <div className="text-[13px] leading-[1.85]">
                   <div>
                     <strong>{t('backupReportNameAr')}:</strong> {importReportModal.nameAr}
                   </div>
@@ -811,7 +793,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   )}
                   <div>
                     <strong>{t('backupReportNewId')}:</strong>{' '}
-                    <code style={{ fontSize: 11 }}>{importReportModal.newCompanyId}</code>
+                        <code className="text-[11px]">{importReportModal.newCompanyId}</code>
                   </div>
                   {importReportModal.summary?.importedAt && (
                     <div>
@@ -825,10 +807,10 @@ export default function BackupTab({ activeCompanies = [] }) {
               {importReportModal.summary?.sourceMeta &&
                 Object.keys(importReportModal.summary.sourceMeta).some((k) => importReportModal.summary.sourceMeta[k] != null) && (
                   <div>
-                    <div className="nx-text-sm nx-font-800 nx-mb-8 nx-text-muted">
+                    <div className="text-[12px] font-extrabold mb-2 text-noorix-muted">
                       {t('backupReportMeta')}
                     </div>
-                    <div className="nx-text-base" style={{ lineHeight: 1.85 }}>
+                    <div className="text-[13px] leading-[1.85]">
                       {importReportModal.summary.sourceMeta.exportedAt && (
                         <div>
                           <strong>{t('backupReportExportedAt')}:</strong>{' '}
@@ -844,7 +826,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                       {importReportModal.summary.sourceMeta.originalCompanyId && (
                         <div>
                           <strong>{t('backupReportOriginalCompany')}:</strong>{' '}
-                          <code className="nx-text-xs">{importReportModal.summary.sourceMeta.originalCompanyId}</code>
+                          <code className="text-[11px]">{importReportModal.summary.sourceMeta.originalCompanyId}</code>
                         </div>
                       )}
                     </div>
@@ -855,21 +837,18 @@ export default function BackupTab({ activeCompanies = [] }) {
                 <BackupCountsGrid counts={importReportModal.summary.counts} t={t} lang={lang} />
               )}
 
-              <details className="nx-text-sm">
-                <summary className="nx-cursor-pointer nx-font-700">{t('backupReportRawJson')}</summary>
+              <details className="text-[12px]">
+                <summary className="cursor-pointer font-bold">{t('backupReportRawJson')}</summary>
                 <pre
-                  className="nx-text-xs nx-bg-muted nx-p-12 nx-overflow-auto nx-ltr nx-mt-10 nx-rounded"
-                  style={{
-                    maxHeight: 220,
-                    textAlign: 'left',
-                  }}
+                  className="text-[11px] bg-noorix-bg-muted p-3 overflow-auto nx-ltr mt-2.5 rounded-lg"
+                  className="max-h-[220px] text-left"
                 >
                   {JSON.stringify(importReportModal, null, 2)}
                 </pre>
               </details>
             </div>
 
-            <div className="nx-flex-end" style={{ marginTop: 18 }}>
+            <div className="flex items-center justify-end mt-[18px]">
               <Button type="button" variant="primary" onClick={() => setImportReportModal(null)}>
                 {t('close')}
               </Button>

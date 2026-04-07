@@ -1,70 +1,107 @@
 ---
-description: STRICT — Breakpoints, Button sizes, cards on mobile/desktop, touch targets, audit workflow for Noorix UI.
+description: Noorix — معايير الاستجابة والكثافة بـ Tailwind CSS v4 (سطح المكتب + الجوال)
 globs: src/**/*.{jsx,tsx}
 alwaysApply: true
 ---
 
-# Noorix — معايير الاستجابة والكثافة (سطح المكتب + الجوال)
+# Noorix — معايير الاستجابة والكثافة (Tailwind v4)
 
 ## نقاط الكسر الرسمية (Breakpoints)
 
-| الاسم | العرض | الاستخدام |
-|-------|--------|------------|
-| **mobile** | `max-width: 640px` | هاتف — الكثافة أعلى، حشو أقل، أزرار شريط أدوات `sm` مفضّل |
-| **tablet** | `641px` – `1023px` | تابلت — وسيط |
-| **desktop** | `min-width: 1024px` | سطح المكتب — التخطيط الكامل |
+| الاسم | العرض | Tailwind | الاستخدام |
+|----|-----|---|---|
+| **mobile** | `max-width: 640px` | افتراضي (بدون prefix) | هاتف |
+| **sm** | `641px+` | `sm:` | تابلت صغير |
+| **lg** | `1024px+` | `lg:` | سطح المكتب |
 
-**في الكود:** استخدم نفس أرقام المشروع (`640px` موجودة في `index.css`). لا تضف breakpoint عشوائي بدون توثيق.
+```jsx
+// ✅ عمودي على الجوال، صف على سطح المكتب
+<div className="flex flex-col sm:flex-row gap-3">
+
+// ✅ شبكة متجاوبة
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+// ✅ حشو متجاوب
+<div className="p-4 lg:p-6">
+```
 
 ---
 
 ## أزرار `Button` — إلزامي حسب السياق
 
-| السياق | الـ `size` | ملاحظة |
-|--------|------------|--------|
-| شريط أدوات (`nx-toolbar`)، رأس صفحة، صف فلاتر، صف أزرار بجانب بعض | **`sm`** | كثافة + اتساق |
-| خلايا جدول / إجراءات صف (`SmartTable`، `*ActionsCell`) | **`sm`** | |
-| زر إرسال رئيسي في مودال (حفظ / تأكيد واحد بارز) | **`md`** (افتراضي) أو **`lg`** فقط إذا الشاشة فارغة تقريباً (مثل تسجيل دخول) | لا تكثر من `lg` |
-| أزرار الشريط الجانبي (`app-nav-link` + `Button`) | حسب التصميم الحالي — غالباً بدون `lg` | |
-
-**محظور:** وضع 4+ أزرار `md` بجانب بعض في صف واحد على الجوال — استخدم `sm` + `nx-flex-wrap` أو تكديس عمودي.
-
-**قبل الدمج:** راجع الشاشة على **عرض 375px** و **768px**.
+| السياق | الـ `size` |
+|-----|---|
+| شريط أدوات، رأس صفحة، صف فلاتر | **`sm`** |
+| خلايا جدول / إجراءات صف | **`sm`** |
+| زر إرسال رئيسي في مودال | **`md`** (افتراضي) |
+| زر بارز وحيد (تسجيل دخول) | **`lg`** |
 
 ---
 
-## كروت `noorix-surface-card` و `nx-surface`
+## بطاقات (Cards)
 
-- على **الجوال** يُخفَّض الحشو تلقائياً عند استخدام `nx-p-24` / `nx-p-20` / `nx-p-16` داخل `.app-main` (انظر `index.css`).
-- لا تضع `padding` ضخماً بـ `style={{}}` — استخدم فئات `nx-p-*` فقط.
-- كروت KPI: استخدم `nx-kpi-card`؛ لا تكرر كرتاً مخصصاً بنفس الدور.
+```jsx
+// ✅ بطاقة قياسية
+<div className="bg-noorix-surface border border-noorix-border rounded-xl shadow-sm p-4">
 
----
+// ✅ بطاقة من المكوّن
+import { Card } from '../../ui';
+<Card>محتوى</Card>
 
-## أهداف اللمس (Touch)
-
-- الحد الأدنى المقبول لمنطقة ضغط واضحة على الجوال: **حوالي 44px** ارتفاعاً (القيمة في `index.css` لبعض العناصر `min-height: 44px`).
-- لا تصغّر زراً أساسياً في مسار حرج (حفظ، دفع، إضافة) بحيث يصبح أقل من ذلك **بدون** أن يكون ضمن `size="sm"` مقصوداً في شريط ثانوي.
-
----
-
-## اكتشاف المخالفات (قبل كل دمج كبير)
-
-من جذر المشروع:
-
-```bash
-npm run ui:audit
+// ✅ شبكة بطاقات KPI متجاوبة
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
 ```
 
-يعرض ملخصاً: `style={{` في JSX، أزرار بلا `size` في مجلدات حساسة، وغير ذلك.
+---
 
-**فحص يدوي سريع (3 عروض):** 1280px، 768px، 375px — مسار: لوحة → قسم يومي → جدول → مودال.
+## هيكل الشاشة القياسي
+
+```jsx
+// ✅ شاشة كاملة مع رأس وجدول
+<div className="flex flex-col gap-4 p-4 lg:p-6">
+  {/* رأس */}
+  <div className="flex flex-wrap items-center justify-between gap-3">
+    <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('title')}</h1>
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* أزرار بـ size="sm" */}
+      <Button size="sm" variant="primary">{t('add')}</Button>
+    </div>
+  </div>
+
+  {/* جدول */}
+  <SmartTable columns={cols} data={rows} ... />
+</div>
+```
 
 ---
 
-## التزام مع `ui-components.mdc`
+## بطاقات الجوال في SmartTable
 
-- لا عناصر خام (`<button>`, `<input>`, `<select>`).
-- لا `style={{}}` للتخطيط/الألوان (استثناءات الديناميكي فقط كما في القاعدة الأصلية).
+```jsx
+// ✅ renderMobileCard مع Tailwind
+renderMobileCard={(row) => (
+  <div className="flex flex-col gap-2">
+    <div className="flex items-center justify-between gap-2">
+      <span className="font-bold text-noorix-blue ltr">#{row.number}</span>
+      <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
+    </div>
+    <div className="grid grid-cols-3 gap-2">
+      <div>
+        <div className="text-[11px] text-noorix-muted">{t('total')}</div>
+        <div className="text-[13px] font-bold text-noorix-green ltr">{fmt(row.total, 2)}</div>
+      </div>
+    </div>
+  </div>
+)}
+```
 
-**أي شاشة جديدة:** تمر بالمعايير أعلاه + القاعدة العامة للمكوّنات.
+---
+
+## فحص يدوي سريع (3 عروض)
+
+1280px → 768px → 375px — مسار: لوحة → قسم يومي → جدول → مودال
+
+**قاعدة الجوال:**
+- لا عرض ثابت بـ style={{ width: 'NNNpx' }} على العناصر الظاهرة
+- الجداول داخل `overflow-x-auto` دائماً
+- أزرار مهمة ≥ `min-h-[44px]` على مسارات حرجة

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import {
@@ -11,16 +11,16 @@ function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
   const [form, setForm] = useState({ nameAr: '', nameEn: '', taxNumber: '', phone: '', notes: '', ...initial });
   const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   return (
-    <div className="nx-grid nx-gap-12">
+    <div className="grid gap-3">
       <Input placeholder={`${t('ocrSupplierNameAr')} *`} value={form.nameAr} onChange={f('nameAr')} />
       <Input placeholder={t('ocrSupplierNameEn')} value={form.nameEn} onChange={f('nameEn')} />
       <Input placeholder={t('ocrSupplierTax')} value={form.taxNumber} onChange={f('taxNumber')} />
       <Input placeholder={t('ocrSupplierPhone')} value={form.phone} onChange={f('phone')} />
-      <div className="nx-flex nx-gap-8">
-        <Button onClick={() => onSave(form)} disabled={loading || !form.nameAr} variant="primary" className="nx-flex-1">
+      <div className="flex gap-2">
+        <Button onClick={() => onSave(form)} disabled={loading || !form.nameAr} variant="primary" className="flex-1 min-w-0">
           {loading ? '...' : t('ocrSave')}
         </Button>
-        <Button onClick={onCancel} className="nx-flex-1">{t('ocrCancel')}</Button>
+        <Button onClick={onCancel} className="flex-1 min-w-0">{t('ocrCancel')}</Button>
       </div>
     </div>
   );
@@ -99,7 +99,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   return (
     <div dir={dir}>
       {/* Toolbar */}
-      <div className="inv-toolbar nx-mb-16">
+      <div className="inv-toolbar mb-4">
         <label className="nx-checkbox inv-select-all-wrap">
           <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(filtered.map(s => s.id)))} className="inv-toolbar-checkbox" />
           <span className="inv-select-all-label">
@@ -123,8 +123,8 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       </div>
 
       {adding && (
-        <div className="nx-rounded-lg nx-bg-surface nx-mb-16 nx-p-20 nx-border-all">
-          <div className="nx-font-600 nx-mb-12 nx-text-md">{t('ocrAddSupplier')}</div>
+        <div className="rounded-xl bg-noorix-surface mb-4 p-5 border border-noorix-border">
+          <div className="font-semibold mb-3 text-[14px]">{t('ocrAddSupplier')}</div>
           <SupplierForm onSave={handleCreate} onCancel={() => setAdding(false)} loading={saving} />
         </div>
       )}
@@ -139,7 +139,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
           {filtered.map((s) => (
             <div key={s.id}>
               {editing?.id === s.id ? (
-                <div className="nx-bg-surface nx-p-16 nx-rounded nx-border-all">
+                <div className="bg-noorix-surface p-4 rounded-lg border border-noorix-border">
                   <SupplierForm initial={s} onSave={handleUpdate} onCancel={() => setEditing(null)} loading={saving} />
                 </div>
               ) : (
@@ -148,12 +148,12 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
                     <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggleSelect(s.id)} className="ocr-catalog-checkbox" onClick={e => e.stopPropagation()} />
                   </label>
                   <div className="ocr-catalog-avatar">{(s.nameAr || s.nameEn || '?')[0]}</div>
-                  <div className="ocr-catalog-name nx-cursor-pointer" onClick={() => setViewing(s)}>
+                  <div className="ocr-catalog-name cursor-pointer" onClick={() => setViewing(s)}>
                     <div className="ocr-catalog-name-primary">{isAr ? s.nameAr : (s.nameEn || s.nameAr)}</div>
                     {s.nameEn && s.nameAr && <div className="ocr-catalog-name-secondary">{isAr ? s.nameEn : s.nameAr}</div>}
                   </div>
                   <span className="ocr-catalog-badge">{s._count?.invoices || 0} {isAr ? 'فاتورة' : 'inv.'}</span>
-                  <div className="nx-flex nx-gap-4">
+                  <div className="flex gap-1">
                     <Button onClick={() => setEditing(s)} size="sm">{t('ocrEdit')}</Button>
                     <Button onClick={() => handleDelete(s.id)} size="sm" variant="danger">{t('ocrDelete')}</Button>
                   </div>
@@ -174,20 +174,20 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         className="ocr-supplier-aliases-drawer"
       >
         <div dir={dir}>
-          <p className="nx-text-sm nx-text-muted nx-mt-0 nx-mb-12">{t('ocrAliases')}</p>
+          <p className="text-[12px] text-noorix-muted mt-0 mb-3">{t('ocrAliases')}</p>
           <div className="modal-body">
             {(viewing?.aliases || []).length === 0 && (
-              <div className="nx-text-muted nx-text-base">{isAr ? 'لا توجد أسماء بديلة بعد' : 'No aliases yet'}</div>
+              <div className="text-noorix-muted text-[13px]">{isAr ? 'لا توجد أسماء بديلة بعد' : 'No aliases yet'}</div>
             )}
-            <div className="nx-flex-col nx-gap-4">
+            <div className="flex flex-col gap-1">
               {(viewing?.aliases || []).map((a) => (
-                <div key={a.id} className="nx-rounded nx-bg-muted nx-text-base nx-py-8 nx-px-12">
-                  {a.alias} <span className="nx-text-muted nx-text-xs">({a.language})</span>
+                <div key={a.id} className="rounded-lg bg-noorix-bg-muted text-[13px] py-2 px-3">
+                  {a.alias} <span className="text-noorix-muted text-[11px]">({a.language})</span>
                 </div>
               ))}
             </div>
-            <div className="nx-flex nx-gap-8">
-              <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="nx-flex-1" />
+            <div className="flex gap-2">
+              <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="flex-1 min-w-0" />
               <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
                 <option value="ar">AR</option>
                 <option value="en">EN</option>

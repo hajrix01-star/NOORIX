@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BankStatementUploadModal — رفع ملف كشف مع سير العمل من 5 خطوات
  */
 import React, { useState, useRef } from 'react';
@@ -104,14 +104,12 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
       }
     >
       {/* خطوات التقدم */}
-      <div className="nx-flex nx-gap-4 nx-mb-20">
+      <div className="flex gap-1 mb-5">
         {STEPS.map((s, i) => (
           <div
             key={s.id}
-            className="nx-flex-1"
+            className="flex-1 min-w-0 h-1 rounded-sm"
             style={{
-              height: 4,
-              borderRadius: 2,
               background: i <= step ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
             }}
             title={t(s.labelKey)}
@@ -121,9 +119,9 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
 
       {error && (
         <div
-          className="nx-p-12 nx-mb-16 nx-rounded nx-text-base"
+          className="p-3 mb-4 rounded-lg text-[13px]"
           style={{
-            background: 'rgba(239,68,68,0.1)',
+            background: 'var(--noorix-red-10)',
             color: 'var(--noorix-error)',
           }}
         >
@@ -137,41 +135,40 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
-          className="nx-rounded-lg nx-text-center nx-cursor-pointer"
+          className="rounded-xl text-center cursor-pointer p-10"
           style={{
             border: `2px dashed ${isDragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
-            padding: 40,
-            background: isDragging ? 'rgba(37,99,235,0.05)' : 'var(--noorix-bg-muted)',
+            background: isDragging ? 'var(--noorix-blue-5)' : 'var(--noorix-bg-muted)',
           }}
         >
-          <div className="nx-mb-8" style={{ fontSize: 36 }}></div>
-          <div className="nx-text-lg nx-font-600 nx-text-primary">
+          <div className="mb-2 text-[36px]"></div>
+          <div className="text-[15px] font-semibold text-noorix-text">
             {t('bankStatementDragDrop')}
           </div>
-          <div className="nx-text-sm nx-text-muted nx-mt-4">
+          <div className="text-[12px] text-noorix-muted mt-1">
             Excel (.xlsx, .xls) أو CSV
           </div>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleInputChange} hidden />
         </div>
       ) : (
-        <div className="nx-grid nx-gap-12">
-          <div className="nx-flex-center nx-gap-12 nx-p-12 nx-bg-muted nx-rounded">
-            <span style={{ fontSize: 24 }}></span>
-            <div className="nx-flex-1" style={{ minWidth: 0 }}>
-              <div className="nx-font-600 nx-text-primary">{file.name}</div>
-              <div className="nx-text-sm nx-text-muted">
+        <div className="grid gap-3">
+          <div className="flex items-center gap-12 p-3 bg-noorix-bg-muted rounded-lg">
+            <span className="text-[24px]"></span>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-noorix-text">{file.name}</div>
+              <div className="text-[12px] text-noorix-muted">
                 {raw?.length ?? 0} صف • {step >= 4 ? t('bankStatementStepDone') : STEPS[step] && t(STEPS[step].labelKey)}
               </div>
             </div>
             {step >= 4 && (
-              <span className="nx-text-md" style={{ color: 'var(--noorix-success)' }}>✓</span>
+              <span className="text-[14px]" style={{ color: 'var(--noorix-success)' }}>✓</span>
             )}
           </div>
           {result?.status === 'mapping' && (
             <div
-            className="nx-p-12 nx-rounded nx-text-base nx-text-primary"
+            className="p-3 rounded-lg text-[13px] text-noorix-text"
             style={{
-              background: 'rgba(34,197,94,0.1)',
+              background: 'var(--noorix-green-10)',
             }}
             >
               {t('bankStatementMappingRequired')}

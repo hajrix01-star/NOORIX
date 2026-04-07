@@ -1,4 +1,4 @@
-/**
+﻿/**
  * شريط تحليل خفيف للفترة — يعتمد على /reports/period-analytics
  */
 import React, { useMemo } from 'react';
@@ -49,21 +49,21 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
 
   return (
     <div
-      className="noorix-surface-card nx-grid nx-gap-14 nx-border-all"
-      style={{ padding: '14px 16px', border: '1px solid rgba(37,99,235,0.15)', background: 'linear-gradient(135deg, rgba(37,99,235,0.04) 0%, var(--noorix-bg-surface) 48%)' }}
+      className="noorix-surface-card grid gap-3.5 border border-noorix-border py-[14px] px-4"
+      style={{ border: '1px solid var(--noorix-blue-15)', background: 'linear-gradient(135deg, var(--noorix-blue-4) 0%, var(--noorix-bg-surface) 48%)' }}
     >
-      <div className="nx-flex nx-flex-between nx-flex-wrap nx-gap-12">
-        <div className="nx-text-md nx-font-800">{t('periodAnalyticsTitle')}</div>
-        <div className="nx-text-sm nx-text-muted">{from} — {to}</div>
+      <div className="flex flex items-center justify-between flex flex-wrap gap-3">
+        <div className="text-[14px] font-extrabold">{t('periodAnalyticsTitle')}</div>
+        <div className="text-[12px] text-noorix-muted">{from} — {to}</div>
       </div>
-      {isLoading && <div className="nx-text-base nx-text-muted">{t('loading')}</div>}
-      {isError && <div className="nx-text-base" style={{ color: 'var(--noorix-error)' }}>{t('loadDataFailed')}</div>}
+      {isLoading && <div className="text-[13px] text-noorix-muted">{t('loading')}</div>}
+      {isError && <div className="text-[13px] text-noorix-red">{t('loadDataFailed')}</div>}
       {!isLoading && !isError && data && (
-        <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+        <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
           <div>
-            <div className="nx-text-sm nx-text-muted nx-mb-8">{t('periodAnalyticsByKind')}</div>
-            <div className="nx-flex nx-flex-col nx-gap-6">
-              {byKindRows.length === 0 && <span className="nx-text-sm nx-text-muted">—</span>}
+            <div className="text-[12px] text-noorix-muted mb-2">{t('periodAnalyticsByKind')}</div>
+            <div className="flex flex flex-col gap-1.5">
+              {byKindRows.length === 0 && <span className="text-[12px] text-noorix-muted">—</span>}
               {byKindRows.map((row) => (
                 <Button
                   key={row.kind}
@@ -72,22 +72,21 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                     const q = row.kind === 'sale' ? { from, to } : { from, to, kind: row.kind };
                     navigate(`${path}?${drillToSearchParams(q)}`);
                   }}
-                  className="nx-flex nx-flex-between nx-w-full nx-text-sm"
-                  style={{ textAlign: 'start' }}
+                  className="flex items-center justify-between w-full text-[12px] text-start"
                 >
-                  <span className="nx-font-700">{kindLabel(t, row.kind)}</span>
-                  <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#2563eb' }}>
-                    {fmt(row.total, 0)} <small style={{ opacity: 0.7 }}>({row.count})</small>
+                  <span className="font-bold">{kindLabel(t, row.kind)}</span>
+                  <span className="nx-font-numbers text-noorix-blue">
+                    {fmt(row.total, 0)} <small className="opacity-70">({row.count})</small>
                   </span>
                 </Button>
               ))}
             </div>
           </div>
           <div>
-            <div className="nx-text-sm nx-text-muted nx-mb-8">{t('periodAnalyticsTopSuppliers')}</div>
-            <div className="nx-flex nx-flex-col nx-gap-6">
+            <div className="text-[12px] text-noorix-muted mb-2">{t('periodAnalyticsTopSuppliers')}</div>
+            <div className="flex flex flex-col gap-1.5">
               {(!data.topSuppliers || data.topSuppliers.length === 0) && (
-                <span className="nx-text-sm nx-text-muted">—</span>
+                <span className="text-[12px] text-noorix-muted">—</span>
               )}
               {(data.topSuppliers || []).map((s) => (
                 <Button
@@ -95,14 +94,13 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                   onClick={() =>
                     navigate(`/invoices?${drillToSearchParams({ from, to, supplierId: s.supplierId })}`)
                   }
-                  className="nx-flex nx-flex-between nx-w-full nx-text-sm"
-                  style={{ textAlign: 'start' }}
+                  className="flex items-center justify-between w-full text-[12px] text-start"
                 >
-                  <span className="nx-font-600 nx-truncate" style={{ maxWidth: '58%' }} title={lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}>
+                  <span className="font-semibold truncate max-w-[58%]" title={lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}>
                     {lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}
                   </span>
-                  <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#dc2626', flexShrink: 0 }}>
-                    {fmt(Number(s.totalAmount || 0), 0)} <small style={{ opacity: 0.7 }}>({s.invoiceCount})</small>
+                  <span className="shrink-0 nx-font-numbers text-noorix-red">
+                    {fmt(Number(s.totalAmount || 0), 0)} <small className="opacity-70">({s.invoiceCount})</small>
                   </span>
                 </Button>
               ))}

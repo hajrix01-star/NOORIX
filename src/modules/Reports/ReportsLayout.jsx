@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ReportsLayout — إطار التقارير مع قائمة فرعية شجرية
  * يعرض: التقرير العام | الضريبي | تحليل كشف الحسابات
  */
@@ -16,13 +16,13 @@ export default function ReportsLayout() {
   const { t } = useTranslation();
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div>
-        <h1 className="nx-page-title">{t('reports')}</h1>
+        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('reports')}</h1>
       </div>
 
-      <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="noorix-tab-bar" style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div className="noorix-surface-card p-0 overflow-hidden">
+        <div className="noorix-tab-bar flex gap-0 border-b border-noorix-border overflow-x-auto [-webkit-overflow-scrolling:touch]">
           {REPORT_SUB_LINKS.map((link) => (
             <NavLink
               key={link.to}
@@ -32,7 +32,7 @@ export default function ReportsLayout() {
                 borderRadius: 0,
                 border: 'none',
                 borderBottom: isActive ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
-                background: isActive ? 'rgba(37,99,235,0.07)' : 'transparent',
+                background: isActive ? 'var(--noorix-blue-7)' : 'transparent',
                 color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
                 fontWeight: isActive ? 700 : 500,
                 whiteSpace: 'nowrap',
@@ -45,7 +45,7 @@ export default function ReportsLayout() {
             </NavLink>
           ))}
         </div>
-        <div style={{ padding: 24 }}>
+        <div className="p-6">
           <Outlet />
         </div>
       </div>

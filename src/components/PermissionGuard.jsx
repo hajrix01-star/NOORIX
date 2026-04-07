@@ -20,7 +20,7 @@ export default function PermissionGuard({ children, userRole, userPermissions, i
 
   if (isUserLoading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', color: 'var(--noorix-text-muted)', fontSize: 14 }}>
+      <div className="flex items-center justify-center min-h-[50vh] text-[14px]" style={{ color: 'var(--noorix-text-muted)' }}>
         جاري التحقق...
       </div>
     );

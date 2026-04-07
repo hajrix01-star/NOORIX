@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ExpenseFormModal — نموذج تسجيل مصروف (إصدار فاتورة)
  * يختار المستخدم بند مصروف، مبلغ، تاريخ، خزنة، ملاحظات
  */
@@ -101,7 +101,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
     <AdaptiveSheet open={true} onClose={onClose} title="تسجيل مصروف" size="md" side="start" className="expense-form-drawer" footer={footer}>
       <form id="expense-form-modal" onSubmit={handleSubmit}>
         {error && (
-          <div style={{ padding: 12, marginBottom: 16, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
+          <div className="p-3 mb-4 rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
             {error}
           </div>
         )}

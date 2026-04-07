@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LeaveFormModal — إضافة إجازة جديدة
  */
 import React, { useState } from 'react';
@@ -142,7 +142,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
           ))}
         </Input>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="grid grid-cols-2 gap-3">
           <Input
             type="date"
             label={t('startDate')}
@@ -176,7 +176,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
         />
 
         {error && (
-          <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
+          <div className="mb-3 p-[10px] rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
             {error}
           </div>
         )}

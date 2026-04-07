@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ResidencyFormModal — إضافة أو تعديل إقامة مع خيار إصدار فاتورة
  */
 import React, { useState } from 'react';
@@ -157,7 +157,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
           placeholder="1234567890"
         />
 
-        <div className="nx-grid-2 nx-gap-12">
+        <div className="grid grid-cols-2 gap-3">
           <Input
             type="date"
             label={t('startDate')}
@@ -175,7 +175,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
 
         {!isEdit && (
           <>
-            <label className="nx-checkbox nx-mb-12 nx-text-base">
+            <label className="nx-checkbox mb-3 text-[13px]">
               <input
                 type="checkbox"
                 checked={createInvoiceForResidency}
@@ -194,7 +194,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
                   <option value="renewal">{t('opResidencyRenewal') || 'تجديد إقامة'}</option>
                   <option value="new">{t('residencyNew') || 'إقامة جديدة'}</option>
                 </Input>
-                <div className="nx-grid-2 nx-gap-12">
+                <div className="grid grid-cols-2 gap-3">
                   <Input
                     type="number"
                     step="0.01"
@@ -243,7 +243,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
         />
 
         {error && (
-          <div className="nx-mb-12 nx-rounded nx-text-base" style={{ padding: 10, background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+          <div className="mb-3 rounded-lg text-[13px] p-[10px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
             {error}
           </div>
         )}

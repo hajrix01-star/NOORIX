@@ -1,4 +1,4 @@
-/**
+﻿/**
  * تقرير نهاية اليوم — جداول موحّدة + طباعة نظيفة (بدون قوالب التطبيق)
  */
 import React, { useMemo, useState, useEffect } from 'react';
@@ -107,10 +107,10 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
         .day-close-report .dc-kpi-card__label { font-size: 10px; font-weight: 800; color: #334155; margin-bottom: 4px; }
         .day-close-report .dc-kpi-card__val { font-size: 16px; font-weight: 800; font-family: var(--noorix-font-numbers); letter-spacing: 0.02em; }
         .day-close-report .dc-kpi-card__sub { font-size: 10px; color: var(--dc-muted); margin-top: 4px; }
-        .day-close-report .dc-kpi-card--in { border-color: rgba(22,163,74,0.35); background: rgba(22,163,74,0.06); }
-        .day-close-report .dc-kpi-card--out { border-color: rgba(220,38,38,0.25); background: rgba(220,38,38,0.04); }
-        .day-close-report .dc-kpi-card--cash { border-color: rgba(37,99,235,0.3); background: rgba(37,99,235,0.05); }
-        .day-close-report .dc-kpi-card--bal { border-color: rgba(124,58,237,0.28); background: rgba(124,58,237,0.05); }
+        .day-close-report .dc-kpi-card--in { border-color: var(--noorix-green-35); background: var(--noorix-green-6); }
+        .day-close-report .dc-kpi-card--out { border-color: var(--noorix-red-25); background: var(--noorix-red-4); }
+        .day-close-report .dc-kpi-card--cash { border-color: var(--noorix-blue-30); background: var(--noorix-blue-5); }
+        .day-close-report .dc-kpi-card--bal { border-color: var(--noorix-violet-28); background: var(--noorix-violet-5); }
         .day-close-report .dc-inline-stats {
           display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; margin-top: 4px;
         }
@@ -167,7 +167,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
       `}</style>
 
       <div
-        className="day-close-print-root nx-w-full"
+        className="day-close-print-root w-full"
         dir="rtl"
         style={{
           position: 'relative',
@@ -183,24 +183,23 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
             </header>
           </div>
 
-          <div className="day-close-no-print nx-flex-between nx-gap-8" style={{ flexWrap: 'wrap', marginBottom: 14 }}>
-            <div className="nx-flex-center nx-gap-10" style={{ flexWrap: 'wrap' }}>
-              <h2 id="day-close-title" className="nx-m-0 nx-font-800" style={{ fontSize: 17 }}>{t('dayCloseTitle')}</h2>
-              <label className="nx-flex-center nx-gap-6 nx-text-base">
-                <span className="nx-text-muted">{t('date')}</span>
+          <div className="day-close-no-print flex items-center justify-between gap-2 flex-wrap mb-[14px]">
+            <div className="flex items-center gap-10 flex-wrap">
+              <h2 id="day-close-title" className="m-0 font-extrabold text-[17px]">{t('dayCloseTitle')}</h2>
+              <label className="flex items-center gap-6 text-[13px]">
+                <span className="text-noorix-muted">{t('date')}</span>
                 <Input
                   type="date"
                   value={dateStr}
                   onChange={(e) => setDateStr(e.target.value)}
-                  className="nx-rounded"
-                  style={{ padding: '4px 8px', border: '1px solid var(--noorix-border)' }}
+                  className="rounded-lg py-1 px-2 border border-noorix-border"
                 />
               </label>
               <Button onClick={() => refetch()} disabled={isFetching}>
                 {t('dayCloseRefresh')}
               </Button>
             </div>
-            <div className="nx-flex nx-gap-8">
+            <div className="flex gap-2">
               <Button onClick={() => window.print()}>
                 {t('dayClosePrint')}
               </Button>
@@ -211,26 +210,26 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           </div>
 
           {isLoading && (
-            <p className="nx-m-0 nx-text-base nx-text-muted">{t('dayCloseLoading')}</p>
+            <p className="m-0 text-[13px] text-noorix-muted">{t('dayCloseLoading')}</p>
           )}
           {isError && (
-            <p className="nx-m-0 nx-text-base" style={{ color: '#dc2626' }}>{error?.message || t('dayCloseLoadFailed')}</p>
+            <p className="m-0 text-[13px]" style={{ color: 'var(--noorix-accent-red)' }}>{error?.message || t('dayCloseLoadFailed')}</p>
           )}
 
           {data && !isLoading && (
-            <div className="nx-grid nx-gap-14">
-              <div className="day-close-screen-only nx-flex nx-gap-8" style={{ justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', paddingBottom: 8, borderBottom: '1px solid #e2e8f0' }}>
+            <div className="grid gap-3.5">
+              <div className="day-close-screen-only flex gap-2 justify-between items-baseline flex-wrap pb-2 border-b border-noorix-border">
                 <div>
-                  <div className="nx-text-xs" style={{ color: '#64748b' }}>{t('dayCloseReportDate')}</div>
-                  <div className="nx-text-lg nx-font-800">{reportDateLabel}</div>
+                  <div className="text-[11px]" style={{ color: 'var(--noorix-text-muted)' }}>{t('dayCloseReportDate')}</div>
+                  <div className="text-[15px] font-extrabold">{reportDateLabel}</div>
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', maxWidth: 340, textAlign: 'right', lineHeight: 1.45 }}>
+                <div className="text-[10px] text-[var(--noorix-text-muted-2)] max-w-[340px] text-right leading-[1.45]">
                   {t('dayCloseVaultBalanceNote')}
                 </div>
               </div>
 
               {data.meta?.invoicesTruncated && (
-                <div style={{ fontSize: 11, padding: '8px 10px', background: 'rgba(234,179,8,0.12)', borderRadius: 8, color: '#a16207', border: '1px solid rgba(234,179,8,0.35)' }}>
+                <div className="text-[11px] py-2 px-[10px] bg-[var(--noorix-yellow-12)] rounded-lg text-noorix-amber border border-[var(--noorix-yellow-35)]">
                   {t('dayCloseTruncatedWarning', data.meta.operationsReturned)}
                 </div>
               )}
@@ -317,7 +316,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 </div>
               </div>
 
-              <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', alignItems: 'start' }}>
+              <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] items-start">
                 <div>
                   <SectionTitle>{t('dayCloseByKind')}</SectionTitle>
                   <table className="dc-table">
@@ -411,11 +410,11 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                     <tbody>
                       {(data.salesSummaries || []).map((s) => (
                         <tr key={s.id}>
-                          <td className="nx-font-700">{s.summaryNumber}</td>
+                          <td className="font-bold">{s.summaryNumber}</td>
                           <td className="dc-num">{s.customerCount}</td>
                           <td className="dc-num">{fmt(Number(s.cashOnHand), 2)}</td>
                           <td className="dc-num">{fmt(Number(s.totalAmount), 2)}</td>
-                          <td className="dc-muted" style={{ fontSize: 10 }}>
+                          <td className="dc-muted text-[10px]">
                             {(s.channels || []).map((c) => `${c.vaultName}: ${fmt(Number(c.amount), 2)}`).join(' · ') || '—'}
                           </td>
                         </tr>
@@ -425,7 +424,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 </div>
               )}
 
-              <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+              <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
                 <div>
                   <SectionTitle>{t('dayCloseVaultMovementDay')}</SectionTitle>
                   <table className="dc-table">
@@ -481,7 +480,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
               <div>
                 <SectionTitle>{t('dayCloseOperationsTable')} — {data.meta?.invoiceCountAll ?? 0}</SectionTitle>
                 <div className="day-close-ops-wrap">
-                  <table className="dc-table nx-m-0" style={{ border: 'none' }}>
+                  <table className="dc-table m-0" style={{ border: 'none' }}>
                     <thead>
                       <tr>
                         <th>{t('documentNumber')}</th>
@@ -498,7 +497,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                       )}
                       {(data.operations || []).map((op) => (
                         <tr key={op.id} style={{ opacity: op.status === 'cancelled' ? 0.55 : 1 }}>
-                          <td className="nx-font-700">{op.invoiceNumber}</td>
+                          <td className="font-bold">{op.invoiceNumber}</td>
                           <td>{kindLabel[op.kind] || op.kind}</td>
                           <td className="dc-num">{fmt(Number(op.totalAmount), 2)}</td>
                           <td className="dc-muted" style={{ maxWidth: 200 }}>

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ChangePasswordModal — نافذة تغيير كلمة المرور
  */
 import React, { useState } from 'react';
@@ -24,7 +24,7 @@ function getPasswordStrength(pwd) {
 }
 
 const STRENGTH_LABELS = ['ضعيفة جداً', 'ضعيفة', 'متوسطة', 'جيدة', 'قوية'];
-const STRENGTH_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a'];
+const STRENGTH_COLORS = ['var(--noorix-accent-red)', '#f97316', '#eab308', 'var(--noorix-accent-green)', 'var(--noorix-accent-green)'];
 
 export default function ChangePasswordModal({ onClose, onSuccess }) {
   const { t } = useTranslation();
@@ -76,7 +76,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
   return (
     <AdaptiveSheet open={true} onClose={onClose} title={t('changePassword')} size="sm" side="start" className="change-password-drawer">
       <form onSubmit={handleSubmit}>
-        <div className="nx-flex nx-flex-col nx-gap-16">
+        <div className="flex flex flex-col gap-4">
           <Input
             type="password"
             label={t('changePasswordCurrent') || 'كلمة المرور الحالية'}
@@ -95,22 +95,19 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               autoComplete="new-password"
             />
             {newPassword && (
-              <div className="nx-mt-8">
-                <div className="nx-flex nx-gap-4 nx-mb-4">
+              <div className="mt-2">
+                <div className="flex gap-1 mb-1">
                   {[1, 2, 3, 4].map((level) => (
                     <div
                       key={level}
+                      className="flex-1 h-1 rounded transition-[background] duration-200"
                       style={{
-                        flex: 1,
-                        height: 4,
-                        borderRadius: 4,
                         background: strength >= level ? strengthColor : 'var(--noorix-border)',
-                        transition: 'background 0.2s',
                       }}
                     />
                   ))}
                 </div>
-                <span className="nx-text-xs" style={{ color: strengthColor }}>{strengthLabel}</span>
+                <span className="text-[11px]" style={{ color: strengthColor }}>{strengthLabel}</span>
               </div>
             )}
           </div>
@@ -124,17 +121,17 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               autoComplete="new-password"
             />
             {confirmPassword && confirmPassword !== newPassword && (
-              <span className="nx-text-xs nx-mt-4" style={{ color: '#ef4444', display: 'block' }}>
+              <span className="text-[11px] mt-1 block" style={{ color: 'var(--noorix-accent-red)' }}>
                 كلمتا المرور غير متطابقتين
               </span>
             )}
           </div>
           {error && (
-            <div className="nx-p-10 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>
+            <div className="p-2.5 rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
               {error}
             </div>
           )}
-          <div className="nx-flex nx-flex-end nx-gap-10">
+          <div className="flex flex items-center justify-end gap-2.5">
             <Button type="button" onClick={onClose}>
               {t('cancel')}
             </Button>

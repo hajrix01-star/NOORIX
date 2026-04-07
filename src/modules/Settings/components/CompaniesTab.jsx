@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CompaniesTab — تبويب إدارة الشركات
  */
 import React, { useState, useCallback } from 'react';
@@ -102,19 +102,19 @@ export default function CompaniesTab({ onCompanyCreated }) {
   };
 
   return (
-    <div className="nx-grid nx-gap-24">
+    <div className="grid gap-6">
       {isError && (
-        <div className="nx-p-12 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid var(--noorix-accent-red)' }}>
+        <div className="p-3 rounded-lg text-[13px] bg-noorix-red/10 border border-noorix-red">
           لا يمكن الاتصال بالسيرفر.
-          <Button onClick={() => refetch()} style={{ marginRight: 8, fontSize: 12 }}>إعادة المحاولة</Button>
+          <Button onClick={() => refetch()} className="mr-2 text-[12px]">إعادة المحاولة</Button>
         </div>
       )}
 
       {isEmpty && !isLoading && !showAddForm && (
-        <div className="noorix-surface-card nx-text-center nx-rounded-lg" style={{ padding: 32, border: '2px dashed var(--noorix-border)' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>—</div>
-          <h3 className="nx-m-0 nx-mb-8 nx-text-2xl">لا توجد شركات</h3>
-          <p className="nx-m-0 nx-text-md nx-text-muted">اضغط "إضافة شركة" لإنشاء شركتك الأولى.</p>
+        <div className="noorix-surface-card text-center rounded-xl p-8 border-2 border-dashed border-noorix-border">
+          <div className="text-[40px] mb-3">—</div>
+          <h3 className="m-0 mb-2 text-[18px]">لا توجد شركات</h3>
+          <p className="m-0 text-[14px] text-noorix-muted">اضغط "إضافة شركة" لإنشاء شركتك الأولى.</p>
         </div>
       )}
 
@@ -123,7 +123,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
           {showAddForm ? 'إلغاء الإضافة' : 'إضافة شركة'}
         </Button>
         {!isEmpty && (
-          <label className="nx-checkbox nx-text-muted">
+          <label className="nx-checkbox text-noorix-muted">
             <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
             عرض المؤرشفة
           </label>
@@ -131,10 +131,10 @@ export default function CompaniesTab({ onCompanyCreated }) {
       </div>
 
       {showAddForm && (
-        <div className="noorix-surface-card nx-p-20 nx-rounded-lg nx-border-all">
-          <h3 className="nx-m-0 nx-mb-16 nx-text-xl">إضافة شركة جديدة</h3>
+        <div className="noorix-surface-card p-5 rounded-xl border border-noorix-border">
+          <h3 className="m-0 mb-4 text-[16px]">إضافة شركة جديدة</h3>
           <form onSubmit={(e) => { e.preventDefault(); if (!nameAr.trim()) return; addMutation.mutate({ nameAr: nameAr.trim(), nameEn: nameEn.trim() || undefined, taxNumber: taxNumber.trim() || undefined, phone: phone.trim() || undefined, address: address.trim() || undefined, email: email.trim() || undefined, logoUrl: logoUrl.trim() || undefined }); }}
-            className="nx-grid nx-gap-12" style={{ maxWidth: 480 }}>
+            className="grid gap-3 max-w-[480px]">
             <Input type="text" label="الاسم بالعربي *" value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder="مطعم المعلم الشامي" required />
             <Input type="text" label="الاسم بالإنجليزي" value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="Al-Moalem Al-Shami" />
             <Input type="text" label="الرقم الضريبي" value={taxNumber} onChange={(e) => setTaxNumber(e.target.value)} placeholder="300000000000003" />
@@ -144,9 +144,9 @@ export default function CompaniesTab({ onCompanyCreated }) {
             <div>
               <label style={labelStyle}>شعار الشركة</label>
               <Input type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." />
-              <label className="nx-file-label" style={{ marginTop: 6 }}>
+              <label className="nx-file-label mt-1.5">
                 رفع صورة من الجهاز
-                <input type="file" accept="image/*" onChange={handleLogoFile} style={{ display: 'none' }} />
+                <input type="file" accept="image/*" onChange={handleLogoFile} className="hidden" />
               </label>
             </div>
             <div className="nx-toolbar">
@@ -155,7 +155,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
               </Button>
               <Button type="button" onClick={() => setShowAddForm(false)}>إلغاء</Button>
             </div>
-            {addMutation.isError && <p className="nx-m-0 nx-text-base" style={{ color: 'var(--noorix-accent-red)' }}>{addMutation.error?.message}</p>}
+            {addMutation.isError && <p className="m-0 text-[13px] text-noorix-red">{addMutation.error?.message}</p>}
           </form>
         </div>
       )}
@@ -169,23 +169,23 @@ export default function CompaniesTab({ onCompanyCreated }) {
               tabIndex={0}
               onClick={(e) => openEdit(c, e)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openEdit(c, e); }}
-              className="noorix-exec-card noorix-exec-card--inbound nx-cursor-pointer"
+              className="noorix-exec-card noorix-exec-card--inbound cursor-pointer"
               style={{ opacity: c.isArchived ? 0.75 : 1 }}
             >
               <div className="noorix-exec-card__stripe" />
               <div className="noorix-exec-card__header">
                 <div className="noorix-exec-card__icon">
                   {c.logoUrl ? (
-                    <img src={c.logoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'cover' }} />
+                    <img src={c.logoUrl} alt="" className="w-9 h-9 rounded-[9px] object-cover" />
                   ) : (
-                    <span className="nx-text-muted" style={{ fontSize: 18 }}>—</span>
+                    <span className="text-noorix-muted text-[18px]">—</span>
                   )}
                 </div>
                 <span className="noorix-exec-card__title">{c.nameAr}</span>
               </div>
               <div className="noorix-exec-card__total">
-                  <span className="noorix-exec-card__amount nx-text-2xl">{c.nameEn || c.nameAr}</span>
-                <span className="noorix-exec-card__currency nx-text-sm">{c.taxNumber ? `الرقم الضريبي: ${c.taxNumber}` : ''}</span>
+                  <span className="noorix-exec-card__amount text-[18px]">{c.nameEn || c.nameAr}</span>
+                <span className="noorix-exec-card__currency text-[12px]">{c.taxNumber ? `الرقم الضريبي: ${c.taxNumber}` : ''}</span>
               </div>
               <div className="noorix-exec-card__divider" />
               <div className="noorix-exec-card__footer">
@@ -195,14 +195,14 @@ export default function CompaniesTab({ onCompanyCreated }) {
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">البريد</span>
-                  <span className="noorix-exec-card__stat-value nx-cell-ellipsis nx-text-xs">{c.email || '—'}</span>
+                  <span className="noorix-exec-card__stat-value nx-cell-ellipsis text-[11px]">{c.email || '—'}</span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">الحالة</span>
                   <span className="noorix-exec-card__stat-value">{c.isArchived ? 'مؤرشفة' : 'نشطة'}</span>
                 </div>
               </div>
-              <div className="nx-text-sm nx-text-muted" style={{ padding: '8px 18px 14px' }}>اضغط للتعديل</div>
+              <div className="text-[12px] text-noorix-muted pt-2 px-[18px] pb-[14px]">اضغط للتعديل</div>
             </div>
           ))}
         </div>
@@ -216,12 +216,12 @@ export default function CompaniesTab({ onCompanyCreated }) {
         side="start"
         className="companies-edit-drawer"
         footer={
-          <div className="nx-flex-end nx-flex-wrap nx-gap-10">
+          <div className="flex items-center justify-end flex flex-wrap gap-2.5">
             {editModal && !editModal.isArchived && (
               <Button variant="warning" onClick={() => updateMutation.mutate({ id: editModal.id, body: { isArchived: true } })} disabled={updateMutation.isPending}>أرشفة</Button>
             )}
             <Button onClick={() => setEditModal(null)}>إلغاء</Button>
-            <Button type="submit" form="edit-company-form" variant="primary" disabled={updateMutation.isPending || !editModal?.nameAr?.trim()} style={{ minWidth: 120 }}>
+            <Button type="submit" form="edit-company-form" variant="primary" disabled={updateMutation.isPending || !editModal?.nameAr?.trim()} className="min-w-[120px]">
               {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
             </Button>
           </div>
@@ -235,13 +235,13 @@ export default function CompaniesTab({ onCompanyCreated }) {
                 e.preventDefault();
                 updateMutation.mutate({ id: editModal.id, body: { nameAr: editModal.nameAr.trim(), nameEn: editModal.nameEn.trim() || undefined, taxNumber: editModal.taxNumber.trim() || undefined, phone: editModal.phone.trim() || undefined, address: editModal.address.trim() || undefined, email: editModal.email.trim() || undefined, logoUrl: editModal.logoUrl.trim() || undefined } });
               }}
-              className="nx-grid nx-gap-14"
+              className="grid gap-3.5"
             >
-              <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))' }}>
+              <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))]">
                 <Input type="text" label="الاسم بالعربي *" value={editModal.nameAr} onChange={(e) => setEditModal((p) => ({ ...p, nameAr: e.target.value }))} required />
                 <Input type="text" label="الاسم بالإنجليزي" value={editModal.nameEn} onChange={(e) => setEditModal((p) => ({ ...p, nameEn: e.target.value }))} />
               </div>
-              <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))' }}>
+              <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))]">
                 <Input type="text" label="الرقم الضريبي" value={editModal.taxNumber} onChange={(e) => setEditModal((p) => ({ ...p, taxNumber: e.target.value }))} placeholder="300000000000003" />
                 <Input type="text" label="رقم الهاتف" value={editModal.phone} onChange={(e) => setEditModal((p) => ({ ...p, phone: e.target.value }))} placeholder="05xxxxxxxx" />
               </div>
@@ -249,50 +249,50 @@ export default function CompaniesTab({ onCompanyCreated }) {
               <Input type="email" label="البريد الإلكتروني" value={editModal.email} onChange={(e) => setEditModal((p) => ({ ...p, email: e.target.value }))} placeholder="info@example.com" />
 
               {/* شعار الشركة */}
-              <div className="nx-rounded-lg nx-bg-muted nx-p-14 nx-border-all">
-                <label style={{ ...labelStyle, display: 'block', marginBottom: 10 }}>شعار الشركة (يُستخدم في الفواتير والتقارير والشريط الجانبي)</label>
-                <div className="nx-flex-center nx-gap-14">
-                  <div className="nx-flex-center nx-rounded-lg nx-bg-surface nx-overflow-hidden" style={{ width: 56, height: 56, border: '2px dashed var(--noorix-border)', justifyContent: 'center', flexShrink: 0 }}>
+              <div className="rounded-xl bg-noorix-bg-muted p-3.5 border border-noorix-border">
+                <label className="block mb-2.5 text-[14px]">شعار الشركة (يُستخدم في الفواتير والتقارير والشريط الجانبي)</label>
+                <div className="flex items-center gap-14">
+                  <div className="flex items-center rounded-xl bg-noorix-surface overflow-hidden w-14 h-14 justify-center shrink-0 border-2 border-dashed border-noorix-border">
                     {editModal.logoUrl ? (
-                      <img src={editModal.logoUrl} alt="logo" className="nx-w-full" style={{ height: '100%', objectFit: 'cover' }} />
+                      <img src={editModal.logoUrl} alt="logo" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="nx-text-muted" style={{ fontSize: 24 }}>—</span>
+                      <span className="text-noorix-muted text-[24px]">—</span>
                     )}
                   </div>
-                  <div className="nx-flex-1 nx-grid nx-gap-8">
+                  <div className="flex-1 min-w-0 grid gap-2">
                     <Input type="url" value={editModal.logoUrl} onChange={(e) => setEditModal((p) => ({ ...p, logoUrl: e.target.value }))} placeholder="https://رابط-الصورة.com/logo.png" />
                     <label className="nx-file-label">
                       رفع صورة من الجهاز
-                      <input type="file" accept="image/*" onChange={(e) => handleLogoFile(e, true)} style={{ display: 'none' }} />
+                      <input type="file" accept="image/*" onChange={(e) => handleLogoFile(e, true)} className="hidden" />
                     </label>
                   </div>
                 </div>
               </div>
 
-              {updateMutation.isError && <p className="nx-m-0 nx-text-base nx-rounded" style={{ color: 'var(--noorix-accent-red)', padding: '8px 12px', background: 'rgba(239,68,68,0.08)' }}>{updateMutation.error?.message}</p>}
+              {updateMutation.isError && <p className="m-0 text-[13px] rounded-lg py-2 px-3 text-noorix-red bg-noorix-red/10">{updateMutation.error?.message}</p>}
             </form>
 
             {/* قسم الخطر */}
-            <div className="nx-rounded-lg" style={{ marginTop: 24, padding: 14, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
-              <div className="nx-text-base nx-font-700 nx-mb-12" style={{ color: 'var(--noorix-accent-red)' }}>⚠ منطقة الخطر</div>
-              <div className="nx-grid nx-gap-10">
+            <div className="rounded-xl mt-6 p-[14px] bg-noorix-red/5 border border-noorix-red/20">
+              <div className="text-[13px] font-bold mb-3 text-noorix-red">⚠ منطقة الخطر</div>
+              <div className="grid gap-2.5">
                 <div>
-                  <label style={{ ...labelStyle, fontSize: 11 }}>رقم سر الحذف (للضبط)</label>
-                  <div className="nx-flex nx-gap-8 nx-flex-wrap">
+                  <label className="block mb-1 text-[11px]">رقم سر الحذف (للضبط)</label>
+                  <div className="flex gap-2 flex flex-wrap">
                     <Input type="password" value={deleteCodeSetting} onChange={(e) => setDeleteCodeSetting(e.target.value)} placeholder="رقم سري" />
                     <Button onClick={() => { const v = (deleteCodeSetting || '').trim() || DEFAULT_DELETE_CODE; setDeleteCode(v); setDeleteCodeSetting(v); }}>حفظ الرقم</Button>
                   </div>
                 </div>
                 <div>
-                  <label style={{ ...labelStyle, fontSize: 11 }}>أدخل رقم التأكيد لحذف الشركة</label>
-                  <div className="nx-flex nx-gap-8 nx-flex-wrap">
+                  <label className="block mb-1 text-[11px]">أدخل رقم التأكيد لحذف الشركة</label>
+                  <div className="flex gap-2 flex flex-wrap">
                     <Input type="password" value={deleteConfirmCode} onChange={(e) => setDeleteConfirmCode(e.target.value)} placeholder="رقم التأكيد" />
                     <Button variant="danger" onClick={handleDelete} disabled={deleteMutation.isPending}>
                       {deleteMutation.isPending ? 'جاري...' : 'حذف الشركة'}
                     </Button>
                   </div>
                 </div>
-                {deleteMutation.isError && <p className="nx-m-0 nx-text-sm" style={{ color: 'var(--noorix-accent-red)' }}>{deleteMutation.error?.message}</p>}
+                {deleteMutation.isError && <p className="m-0 text-[12px] text-noorix-red">{deleteMutation.error?.message}</p>}
               </div>
             </div>
           </>

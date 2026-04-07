@@ -1,4 +1,4 @@
-/**
+﻿/**
  * مطابق BankTemplatesManager.jsx في Base44 — بطاقة تعريف، أعمدة، تفعيل/تعطيل، حذف نهائي
  */
 import React, { useState, useMemo } from 'react';
@@ -76,44 +76,44 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
   if (!companyId) return null;
 
   return (
-    <div className="nx-p-16" style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div className="p-4 max-w-[800px] mx-auto">
       <div
-        className="nx-rounded nx-p-14 nx-mb-16"
+        className="rounded-lg p-3.5 mb-4"
         style={{
           background: 'rgba(37, 99, 235, 0.08)',
           border: '1px solid rgba(37, 99, 235, 0.25)',
         }}
       >
-        <div className="nx-font-700 nx-text-lg" style={{ color: '#1e40af', marginBottom: 6 }}>{t('bankTemplatesIntroTitle')}</div>
-        <p className="nx-m-0 nx-text-base" style={{ color: '#1d4ed8', lineHeight: 1.5 }}>{t('bankTemplatesIntroBody')}</p>
+        <div className="font-bold text-[15px] mb-1.5" style={{ color: 'var(--noorix-accent-blue)' }}>{t('bankTemplatesIntroTitle')}</div>
+        <p className="m-0 text-[13px] leading-[1.5]" style={{ color: 'var(--noorix-accent-blue)' }}>{t('bankTemplatesIntroBody')}</p>
       </div>
 
-      {isLoading ? <p style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}…</p> : null}
+      {isLoading ? <p className="text-noorix-muted">{t('loading')}…</p> : null}
 
       {!isLoading && !list.length ? (
-        <div className="nx-text-center nx-text-muted nx-p-24">
-          <div className="nx-mb-12 nx-text-3xl" style={{ opacity: 0.4 }}></div>
-          <p className="nx-m-0 nx-font-600">{t('bankTemplatesEmptyTitle')}</p>
-          <p className="nx-text-base nx-m-0 nx-mt-8">{t('bankTemplatesEmptySubtitle')}</p>
+        <div className="text-center text-noorix-muted p-6">
+          <div className="mb-3 text-[20px] opacity-40"></div>
+          <p className="m-0 font-semibold">{t('bankTemplatesEmptyTitle')}</p>
+          <p className="text-[13px] m-0 mt-2">{t('bankTemplatesEmptySubtitle')}</p>
         </div>
       ) : null}
 
-      <div className="nx-grid nx-gap-12">
+      <div className="grid gap-3">
         {sorted.map((tpl) => {
           const cols = columnsToBadges(tpl.columnsJson, t);
           const lastUsed = tpl.lastUsedAt ? new Date(tpl.lastUsedAt).toLocaleDateString('en-GB') : null;
           return (
             <div
               key={tpl.id}
-              className="noorix-surface-card nx-p-16"
+              className="noorix-surface-card p-4"
               style={{ opacity: tpl.isActive ? 1 : 0.6 }}
             >
-                <div className="nx-flex nx-gap-12 nx-flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div className="nx-flex-1">
-                    <div className="nx-flex-center nx-flex-wrap nx-gap-8 nx-mb-10">
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{tpl.bankName || t('bankTemplatesUnspecifiedBank')}</h3>
+                <div className="flex flex-wrap gap-3 justify-between items-start">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center flex flex-wrap gap-2 mb-2.5">
+                    <h3 className="m-0 text-[17px] font-extrabold">{tpl.bankName || t('bankTemplatesUnspecifiedBank')}</h3>
                     {tpl.customerName ? (
-                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1px solid var(--noorix-border)' }}>{tpl.customerName}</span>
+                      <span className="text-[11px] py-px px-2 rounded-md border border-noorix-border">{tpl.customerName}</span>
                     ) : null}
                     <span
                       style={{
@@ -121,14 +121,14 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                         padding: '2px 10px',
                         borderRadius: 6,
                         fontWeight: 700,
-                        background: tpl.isActive ? 'rgba(34,197,94,0.15)' : 'rgba(220,38,38,0.12)',
-                        color: tpl.isActive ? '#166534' : '#b91c1c',
+                        background: tpl.isActive ? 'var(--noorix-green-15)' : 'var(--noorix-red-12)',
+                        color: tpl.isActive ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
                       }}
                     >
                       {tpl.isActive ? t('bankTemplatesStatusActive') : t('bankTemplatesStatusInactive')}
                     </span>
                   </div>
-                  <div className="nx-grid nx-gap-8 nx-text-sm nx-text-muted nx-mb-10" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+                  <div className="grid gap-2 text-[12px] text-noorix-muted mb-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
                     <span>
                       # {t('bankStatementHeaderRow')}: {tpl.headerRow ?? '—'}
                     </span>
@@ -141,18 +141,12 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                     {lastUsed ? <span>{t('bankTemplatesLastUsed', lastUsed)}</span> : null}
                   </div>
                     {cols.length > 0 ? (
-                    <div className="nx-flex-center nx-flex-wrap nx-gap-6">
-                      <span className="nx-text-sm nx-text-muted">{t('bankTemplatesColumns')}:</span>
+                    <div className="flex items-center flex flex-wrap gap-1.5">
+                      <span className="text-[12px] text-noorix-muted">{t('bankTemplatesColumns')}:</span>
                       {cols.map((c) => (
                         <span
                           key={c.key}
-                          style={{
-                            fontSize: 11,
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            background: 'var(--noorix-bg-muted)',
-                            border: '1px solid var(--noorix-border)',
-                          }}
+                          className="text-[11px] py-px px-2 rounded-md bg-noorix-bg-muted border border-noorix-border"
                         >
                           {c.label}: {c.index}
                         </span>
@@ -160,7 +154,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                     </div>
                   ) : null}
                 </div>
-                <div className="nx-flex-col nx-gap-6 nx-flex-shrink-0">
+                <div className="flex flex-col gap-1.5 shrink-0">
                   <Button
                     title={tpl.isActive ? t('bankTemplatesDeactivateHint') : t('bankTemplatesActivateHint')}
                     disabled={toggleMut.isPending}
@@ -191,7 +185,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
           </>
         }
       >
-        <p className="nx-text-md nx-text-muted">{t('bankTemplatesDeleteBody')}</p>
+        <p className="text-[14px] text-noorix-muted">{t('bankTemplatesDeleteBody')}</p>
       </Modal>
     </div>
   );

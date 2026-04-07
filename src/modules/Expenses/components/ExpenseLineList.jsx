@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ExpenseLineList — قائمة بنود المصاريف (هاتف 1، كهرب 1، إيجار محل)
  * عند الضغط على بند → فتح تفاصيله وسجل مدفوعاته
  */
@@ -10,8 +10,8 @@ import SmartTable from '../../../components/common/SmartTable';
 import { Button, Badge, Input } from '../../../ui';
 
 const KIND_LABELS = {
-  fixed_expense: { label: 'ثابت', bg: 'rgba(100,116,139,0.12)', color: '#64748b' },
-  expense: { label: 'متغير', bg: 'rgba(217,119,6,0.12)', color: '#d97706' },
+  fixed_expense: { label: 'ثابت', bg: 'var(--noorix-muted-12)', color: 'var(--noorix-text-muted)' },
+  expense: { label: 'متغير', bg: 'var(--noorix-amber-12)', color: 'var(--noorix-accent-amber)' },
 };
 
 const KIND_STATUS_MAP = {
@@ -38,9 +38,9 @@ export default function ExpenseLineList({
       render: (v, row) => (
         <Button
           variant="ghost"
-          className="expense-line-name-btn nx-font-600"
+          className="expense-line-name-btn font-semibold"
           onClick={() => onLineClick(row)}
-          style={{ padding: 0, color: 'var(--noorix-accent-blue)', textAlign: 'inherit', fontSize: 'inherit' }}
+          className="p-0 text-noorix-blue"
         >
           {v || row.nameEn || '—'}
         </Button>
@@ -55,7 +55,7 @@ export default function ExpenseLineList({
       render: (v) => <span className="nx-cell-num">{v || '—'}</span> },
     { key: 'actions', label: 'إجراءات',
       render: (_, row) => (
-        <span style={{ display: 'inline-flex', gap: 6 }}>
+        <span className="inline-flex gap-1.5">
           <Button size="sm" onClick={(e) => { e.stopPropagation(); onEditLine?.(row); }}>تعديل</Button>
           <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); onDeleteLine?.(row); }}>حذف</Button>
         </span>
@@ -83,26 +83,26 @@ export default function ExpenseLineList({
   );
 
   const renderMobileCard = useCallback((row) => {
-    const kindS = KIND_LABELS[row.kind] || { label: row.kind, bg: 'rgba(100,116,139,0.08)', color: '#64748b' };
+    const kindS = KIND_LABELS[row.kind] || { label: row.kind, bg: 'var(--noorix-muted-8)', color: 'var(--noorix-text-muted)' };
     return (
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+        <div className="flex justify-between items-start mb-2">
           <Button
             variant="ghost"
-            className="expense-line-name-btn nx-font-700 nx-text-md nx-text-start"
+            className="expense-line-name-btn font-bold text-[14px] text-start"
             onClick={() => onLineClick(row)}
-            style={{ padding: 0, color: 'var(--noorix-accent-blue)' }}
+            className="p-0 text-noorix-blue"
           >
             {row.nameAr || row.nameEn || '—'}
           </Button>
           <Badge {...Badge.fromStatus(row.kind, KIND_STATUS_MAP)} size="sm" />
         </div>
-        <div className="nx-text-sm nx-text-muted nx-mb-8 nx-flex nx-flex-wrap nx-gap-10">
+        <div className="text-[12px] text-noorix-muted mb-2 flex flex flex-wrap gap-2.5">
           {row.categoryName && row.categoryName !== '—' && <span>{row.categoryName}</span>}
           {row.supplierName && row.supplierName !== '—' && <span>{row.supplierName}</span>}
           {row.serviceNumber && <span className="nx-cell-num">#{row.serviceNumber}</span>}
         </div>
-        <div className="nx-flex nx-gap-8" style={{ justifyContent: 'flex-end' }}>
+        <div className="flex gap-2 justify-end">
           <Button size="sm" onClick={() => onEditLine?.(row)}>تعديل</Button>
           <Button size="sm" variant="danger" onClick={() => onDeleteLine?.(row)}>حذف</Button>
         </div>
@@ -130,7 +130,7 @@ export default function ExpenseLineList({
 
   return (
     <div>
-      <div className="nx-toolbar nx-mb-16">
+      <div className="nx-toolbar mb-4">
         <Input
           type="select"
           value={filterKind}

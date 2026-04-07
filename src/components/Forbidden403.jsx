@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui';
 
@@ -6,13 +6,13 @@ export default function Forbidden403() {
   const navigate = useNavigate();
   return (
     <div
-      className="nx-flex-col-center nx-text-center nx-p-24"
-      style={{ minHeight: '60vh', direction: 'rtl' }}
+      className="flex flex-col items-center text-center p-6 min-h-[60vh]"
+      style={{ direction: 'rtl' }}
     >
-      <div className="noorix-surface-card nx-p-20 nx-rounded-lg" style={{ maxWidth: 400 }}>
-        <div className="nx-font-800 nx-text-muted" style={{ fontSize: 52, letterSpacing: -2, marginBottom: 12, lineHeight: 1 }}>403</div>
-        <h2 className="nx-m-0 nx-text-xl" style={{ marginBottom: 8 }}>غير مصرح لك</h2>
-        <p className="nx-m-0 nx-text-muted nx-text-md" style={{ marginBottom: 20 }}>
+      <div className="noorix-surface-card p-5 rounded-xl max-w-[400px]">
+        <div className="font-extrabold text-noorix-muted text-[52px] mb-3 leading-none tracking-[-2px]">403</div>
+        <h2 className="m-0 text-[16px] mb-2">غير مصرح لك</h2>
+        <p className="m-0 text-noorix-muted text-[14px] mb-5">
           لا تملك صلاحية لعرض هذه الصفحة. ما لا تملك صلاحية عليه لا تراه.
         </p>
         <Button variant="primary" onClick={() => navigate('/')}>

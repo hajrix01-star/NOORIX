@@ -1,15 +1,15 @@
 /**
- * ImportExportModal — نظام استيراد وتصدير موحد
+ * ImportExportModal ? ???? ??????? ?????? ????
  * Entities: invoices | employees | sales
  *
  * Import flow:
- *   1. User downloads template → fills it → uploads
+ *   1. User downloads template ? fills it ? uploads
  *   2. Rows are validated client-side (with lookup resolution)
  *   3. Valid rows are sent to backend in parallel/sequential batches
  *   4. Progress bar tracks completed rows; results show per-row errors
  *
  * Export flow:
- *   1. exportFetcher() is called → returns pre-formatted row objects
+ *   1. exportFetcher() is called ? returns pre-formatted row objects
  *   2. Exported to Excel with entity-appropriate filename
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -31,11 +31,11 @@ import {
 } from '../services/api';
 import { Button, AdaptiveSheet } from '../ui';
 
-// ─── Config per entity type ──────────────────────────────────────────────────
+// ??? Config per entity type ??????????????????????????????????????????????????
 
 const ENTITY_CONFIG = {
   invoices: {
-    label: 'الفواتير',
+    label: '????????',
     labelEn: 'Invoices',
     downloadTemplate: null,
     validate: null,
@@ -44,7 +44,7 @@ const ENTITY_CONFIG = {
     exportFilename: 'invoices-export.xlsx',
   },
   employees: {
-    label: 'الموظفون',
+    label: '????????',
     labelEn: 'Employees',
     downloadTemplate: downloadEmployeeTemplate,
     validate: (rows) => validateEmployeeRows(rows),
@@ -53,7 +53,7 @@ const ENTITY_CONFIG = {
     exportFilename: 'employees-export.xlsx',
   },
   sales: {
-    label: 'المبيعات اليومية',
+    label: '???????? ???????',
     labelEn: 'Daily Sales',
     downloadTemplate: null,
     validate: null,
@@ -63,7 +63,7 @@ const ENTITY_CONFIG = {
   },
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ??? Styles ???????????????????????????????????????????????????????????????????
 
 const S = {
   tabs: {
@@ -78,7 +78,7 @@ const S = {
   }),
   sectionTitle: {
     fontSize: 13, fontWeight: 700, color: 'var(--noorix-text-muted)',
-    textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8,
+    textTransform: 'uppercase', marginBottom: 8,
   },
   card: {
     borderRadius: 12, border: '1px solid var(--noorix-border)',
@@ -88,7 +88,7 @@ const S = {
     border: `2px dashed ${dragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
     borderRadius: 12, padding: '28px 20px',
     textAlign: 'center', cursor: 'pointer',
-    background: dragging ? 'rgba(37,99,235,0.06)' : 'var(--noorix-bg)',
+    background: dragging ? 'var(--noorix-blue-6)' : 'var(--noorix-bg)',
     transition: 'all 0.18s ease',
     color: 'var(--noorix-text-muted)',
   }),
@@ -96,21 +96,21 @@ const S = {
     display: 'grid', gridTemplateColumns: '56px 1fr',
     gap: 8, alignItems: 'start',
     padding: '6px 10px', borderRadius: 8,
-    background: 'rgba(239,68,68,0.07)', fontSize: 13,
+    background: 'var(--noorix-red-7)', fontSize: 13,
   },
   warnRow: {
     display: 'grid', gridTemplateColumns: '56px 1fr',
     gap: 8, alignItems: 'start',
     padding: '5px 10px', borderRadius: 8,
-    background: 'rgba(245,158,11,0.07)', fontSize: 12,
+    background: 'var(--noorix-yellow-7)', fontSize: 12,
   },
 };
 
-// ─── Small helpers ───────────────────────────────────────────────────────────
+// ??? Small helpers ???????????????????????????????????????????????????????????
 
 function ProgressBar({ pct }) {
   return (
-    <div style={{ height: 10, borderRadius: 99, overflow: 'hidden', background: 'var(--noorix-border)' }}>
+    <div className="h-[10px] rounded-full overflow-hidden bg-noorix-border">
       <div className="nx-progress-fill" style={{ width: `${pct}%`, background: 'var(--noorix-accent-blue)' }} />
     </div>
   );
@@ -118,14 +118,14 @@ function ProgressBar({ pct }) {
 
 function StatBadge({ count, label, color }) {
   return (
-    <div className="nx-text-center" style={{ padding: '10px 20px', borderRadius: 10, background: color + '14', border: `1px solid ${color}30`, minWidth: 90 }}>
-      <div style={{ fontSize: 26, fontWeight: 900, color, fontFamily: 'var(--noorix-font-numbers)' }}>{count}</div>
-      <div className="nx-text-sm nx-text-muted" style={{ marginTop: 2 }}>{label}</div>
+    <div className="text-center" style={{ padding: '10px 20px', borderRadius: 10, background: color + '14', border: `1px solid ${color}30`, minWidth: 90 }}>
+      <div className="text-[26px] font-black" style={{ color, fontFamily: 'var(--noorix-font-numbers)' }}>{count}</div>
+      <div className="text-[12px] text-noorix-muted mt-0.5">{label}</div>
     </div>
   );
 }
 
-/** دمج أخطاء دفعة الموظفين مع أرقام الصفوف */
+/** ??? ????? ???? ???????? ?? ????? ?????? */
 function appendEmployeesBatchErrors(batchErrors, slice, errors) {
   if (!Array.isArray(batchErrors)) return;
   for (const err of batchErrors) {
@@ -133,7 +133,7 @@ function appendEmployeesBatchErrors(batchErrors, slice, errors) {
       const rowEntry = slice[err.index];
       errors.push({
         rowNum: rowEntry?.rowNum ?? err.index + 2,
-        message: err.message || 'خطأ',
+        message: err.message || '???',
       });
     } else if (typeof err === 'string') {
       const m = err.match(/^([^:]+):\s*(.+)$/s);
@@ -158,14 +158,14 @@ function appendEmployeesBatchWarnings(batchWarnings, slice, warnings) {
   }
 }
 
-/** شريط مراحل الاستيراد */
+/** ???? ????? ????????? */
 function ImportPhaseSteps({ phase, importing }) {
   const steps = [
-    { n: 1, label: 'القالب' },
-    { n: 2, label: 'رفع الملف' },
-    { n: 3, label: 'المعاينة والفحص' },
-    { n: 4, label: 'التنفيذ' },
-    { n: 5, label: 'النتيجة' },
+    { n: 1, label: '??????' },
+    { n: 2, label: '??? ?????' },
+    { n: 3, label: '???????? ??????' },
+    { n: 4, label: '???????' },
+    { n: 5, label: '???????' },
   ];
   let active = 1;
   if (phase === 'parsing') active = 2;
@@ -174,18 +174,15 @@ function ImportPhaseSteps({ phase, importing }) {
   else if (phase === 'done') active = 5;
 
   return (
-    <div className="nx-flex-center nx-gap-6 nx-rounded-lg nx-flex-wrap nx-border-all" style={{
-      padding: '12px 14px',
-      background: 'var(--noorix-bg)', marginBottom: 4,
-    }}>
+    <div className="flex items-center gap-6 rounded-xl flex-wrap border border-noorix-border py-3 px-[14px] bg-noorix-bg mb-1">
       {steps.map((s, i) => (
         <React.Fragment key={s.n}>
-          {i > 0 && <span className="nx-text-muted nx-text-sm nx-select-none">→</span>}
-          <span className="nx-text-sm nx-rounded nx-nowrap" style={{
+          {i > 0 && <span className="text-noorix-muted text-[12px] select-none">?</span>}
+          <span className="text-[12px] rounded-lg whitespace-nowrap" style={{
             fontWeight: active === s.n ? 800 : 500,
             color: active === s.n ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
             padding: '4px 8px',
-            background: active === s.n ? 'rgba(37,99,235,0.1)' : 'transparent',
+            background: active === s.n ? 'var(--noorix-blue-10)' : 'transparent',
           }}>
             {s.n}. {s.label}
           </span>
@@ -199,42 +196,42 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
   const maxRows = 150;
   const slice = validationResults.slice(0, maxRows);
   return (
-    <div className="nx-mt-12 nx-overflow-hidden nx-rounded nx-border-all">
-      <div className="nx-bg-muted nx-text-sm nx-font-700 nx-text-muted nx-py-8 nx-px-12 nx-border-b">
-        معاينة البيانات (أول {Math.min(slice.length, maxRows)} صفاً من أصل {validationResults.length})
+    <div className="mt-3 overflow-hidden rounded-lg border border-noorix-border">
+      <div className="bg-noorix-bg-muted text-[12px] font-bold text-noorix-muted py-2 px-3 border-b border-noorix-border">
+        ?????? ???????? (??? {Math.min(slice.length, maxRows)} ???? ?? ??? {validationResults.length})
       </div>
-      <div className="nx-overflow-auto" style={{ maxHeight: 280 }}>
-        <table className="nx-w-full nx-text-sm" style={{ borderCollapse: 'collapse' }}>
+      <div className="overflow-auto max-h-[280px]">
+        <table className="w-full text-[12px] border-collapse">
           <thead>
-            <tr className="nx-bg-surface" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-              {['#', 'الاسم', 'تاريخ الالتحاق', 'الراتب الأساسي', 'الحالة', 'ملاحظات'].map((h) => (
-                <th key={h} className="nx-border-b nx-nowrap" style={{ padding: '8px 10px', textAlign: 'right' }}>{h}</th>
+            <tr className="bg-noorix-surface sticky top-0 z-[1]">
+              {['#', '?????', '????? ????????', '?????? ???????', '??????', '???????'].map((h) => (
+                <th key={h} className="border-b border-noorix-border whitespace-nowrap py-2 px-2.5 text-right">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {slice.map((r) => {
               const raw = parsedRows[r.rowNum - 2] || {};
-              const nameStr = String(raw['الاسم بالعربية'] ?? raw.name ?? '').trim();
-              const name = r.payload?.name ?? (nameStr || '—');
-              const jdStr = String(raw['تاريخ الالتحاق'] ?? raw.joinDate ?? '').trim();
-              const jd = r.payload?.joinDate ?? (jdStr || '—');
-              const salRaw = r.payload?.basicSalary ?? raw['الراتب الأساسي'] ?? raw.basicSalary;
-              const sal = salRaw === undefined || salRaw === null || salRaw === '' ? '—' : salRaw;
+              const nameStr = String(raw['????? ????????'] ?? raw.name ?? '').trim();
+              const name = r.payload?.name ?? (nameStr || '?');
+              const jdStr = String(raw['????? ????????'] ?? raw.joinDate ?? '').trim();
+              const jd = r.payload?.joinDate ?? (jdStr || '?');
+              const salRaw = r.payload?.basicSalary ?? raw['?????? ???????'] ?? raw.basicSalary;
+              const sal = salRaw === undefined || salRaw === null || salRaw === '' ? '?' : salRaw;
               const ok = r.valid;
               const note = ok
-                ? (r.warnings.length ? r.warnings.join('؛ ') : '—')
-                : r.errors.join('؛ ');
+                ? (r.warnings.length ? r.warnings.join('? ') : '?')
+                : r.errors.join('? ');
               return (
-                <tr key={r.rowNum} style={{ background: ok ? 'transparent' : 'rgba(239,68,68,0.06)' }}>
-                  <td className="nx-border-b" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{r.rowNum}</td>
-                  <td className="nx-border-b nx-truncate" style={{ padding: '7px 10px', maxWidth: 160 }}>{name}</td>
-                  <td className="nx-border-b nx-nowrap" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{jd}</td>
-                  <td className="nx-border-b" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{sal}</td>
-                  <td className="nx-border-b nx-font-700" style={{ padding: '7px 10px', color: ok ? '#16a34a' : '#dc2626' }}>
-                    {ok ? '✓ صالح' : '✗ خطأ'}
+                <tr key={r.rowNum} style={{ background: ok ? 'transparent' : 'var(--noorix-red-6)' }}>
+                  <td className="border-b border-noorix-border py-[7px] px-2.5" style={{ fontFamily: "var(--noorix-font-numbers)" }}>{r.rowNum}</td>
+                  <td className="border-b border-noorix-border truncate py-[7px] px-2.5 max-w-[160px]">{name}</td>
+                  <td className="border-b border-noorix-border whitespace-nowrap py-[7px] px-2.5" style={{ fontFamily: "var(--noorix-font-numbers)" }}>{jd}</td>
+                  <td className="border-b border-noorix-border py-[7px] px-2.5" style={{ fontFamily: "var(--noorix-font-numbers)" }}>{sal}</td>
+                  <td className="border-b border-noorix-border font-bold py-[7px] px-2.5" style={{ color: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }}>
+                    {ok ? '? ????' : '? ???'}
                   </td>
-                  <td className="nx-border-b nx-text-muted nx-truncate" style={{ padding: '7px 10px', maxWidth: 220 }} title={note}>{note}</td>
+                  <td className="border-b border-noorix-border text-noorix-muted truncate py-[7px] px-2.5 max-w-[220px]" title={note}>{note}</td>
                 </tr>
               );
             })}
@@ -242,8 +239,8 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
         </table>
       </div>
       {validationResults.length > maxRows && (
-        <div className="nx-text-xs nx-text-muted nx-py-6 nx-px-12 nx-border-t">
-          … و {validationResults.length - maxRows} صفاً إضافياً (كلها مضمّنة في الاستيراد عند نجاح الفحص)
+        <div className="text-[11px] text-noorix-muted py-1.5 px-3 border-t border-noorix-border">
+          ? ? {validationResults.length - maxRows} ???? ??????? (???? ?????? ?? ????????? ??? ???? ?????)
         </div>
       )}
     </div>
@@ -251,11 +248,11 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
 }
 
 const EMPLOYEE_EXPORT_COLUMNS_AR = [
-  'الاسم بالعربية', 'الاسم بالإنجليزية', 'رقم الموظف', 'رقم الإقامة', 'المسمى الوظيفي',
-  'الراتب الأساسي', 'بدل السكن', 'بدل النقل', 'بدلات أخرى', 'تاريخ الالتحاق', 'ساعات العمل', 'الحالة', 'ملاحظات',
+  '????? ????????', '????? ???????????', '??? ??????', '??? ???????', '?????? ???????',
+  '?????? ???????', '??? ?????', '??? ?????', '????? ????', '????? ????????', '????? ?????', '??????', '???????',
 ];
 
-// ─── Main component ──────────────────────────────────────────────────────────
+// ??? Main component ??????????????????????????????????????????????????????????
 
 /**
  * @param {{
@@ -330,14 +327,14 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
     if (!['xlsx', 'xls', 'csv'].includes(ext)) {
-      alert('يرجى رفع ملف Excel (.xlsx/.xls) أو CSV');
+      alert('???? ??? ??? Excel (.xlsx/.xls) ?? CSV');
       return;
     }
     setPhase('parsing');
     setValidationResults([]);
     try {
       const rows = await importFromExcel(file);
-      if (!rows.length) { setPhase('idle'); alert('الملف فارغ أو لا يحتوي على بيانات'); return; }
+      if (!rows.length) { setPhase('idle'); alert('????? ???? ?? ?? ????? ??? ??????'); return; }
       setParsedRows(rows);
 
       let results;
@@ -352,7 +349,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       setPhase('validated');
     } catch (err) {
       setPhase('idle');
-      alert('حدث خطأ أثناء قراءة الملف: ' + (err?.message ?? 'خطأ غير متوقع'));
+      alert('??? ??? ????? ????? ?????: ' + (err?.message ?? '??? ??? ?????'));
     }
   }, [entityType, lookups]);
 
@@ -373,12 +370,12 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     setExporting(true);
     try {
       const rows = await exportFetcher();
-      if (!rows.length) { alert('لا توجد بيانات للتصدير'); return; }
+      if (!rows.length) { alert('?? ???? ?????? ???????'); return; }
       const stamp = new Date().toISOString().slice(0, 10);
       const base = String(cfg.exportFilename || 'export.xlsx').replace(/\.xlsx$/i, '');
       await exportToExcel(rows, `${base}-${stamp}.xlsx`);
     } catch (err) {
-      alert('خطأ في التصدير: ' + (err?.message ?? ''));
+      alert('??? ?? ???????: ' + (err?.message ?? ''));
     } finally {
       setExporting(false);
     }
@@ -412,7 +409,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
             succeeded++;
           } else {
             failed++;
-            errors.push({ rowNum, message: res.reason?.message ?? 'خطأ غير معروف' });
+            errors.push({ rowNum, message: res.reason?.message ?? '??? ??? ?????' });
           }
         });
         setProgress({ current: i + slice.length, total, succeeded, failed, errors: [...errors], warnings: [...importWarnings] });
@@ -429,7 +426,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
             items: slice.map((r) => ({ ...r.payload, companyId })),
           });
         } catch (err) {
-          res = { success: false, error: err?.message ?? 'خطأ شبكة' };
+          res = { success: false, error: err?.message ?? '??? ????' };
         }
         if (res?.success) {
           const br = res.data || {};
@@ -444,12 +441,12 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               r2 = await createEmployeesBatch({ companyId, items: [{ ...r.payload, companyId }] });
             } catch (e2) {
               failed += 1;
-              errors.push({ rowNum: r.rowNum, message: e2?.message ?? 'خطأ غير معروف' });
+              errors.push({ rowNum: r.rowNum, message: e2?.message ?? '??? ??? ?????' });
               continue;
             }
             if (!r2?.success) {
               failed += 1;
-              errors.push({ rowNum: r.rowNum, message: r2?.error || res?.error || 'فشل الاستيراد' });
+              errors.push({ rowNum: r.rowNum, message: r2?.error || res?.error || '??? ?????????' });
             } else {
               const br = r2.data || {};
               succeeded += Number(br.created) || 0;
@@ -470,7 +467,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           succeeded++;
         } catch (err) {
           failed++;
-          errors.push({ rowNum: r.rowNum, message: err?.message ?? 'خطأ غير معروف' });
+          errors.push({ rowNum: r.rowNum, message: err?.message ?? '??? ??? ?????' });
         }
         setProgress({ current: i + 1, total, succeeded, failed, errors: [...errors], warnings: [...importWarnings] });
       }
@@ -482,13 +479,13 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
   }
 
   async function handleDownloadErrorReport() {
-    const rows = progress.errors.map((e) => ({ 'رقم الصف': e.rowNum, 'الخطأ': e.message }));
+    const rows = progress.errors.map((e) => ({ '??? ????': e.rowNum, '?????': e.message }));
     await exportToExcel(rows, 'import-errors.xlsx');
   }
 
   async function handleDownloadWarningsReport() {
     const list = progress.warnings || [];
-    const rows = list.map((w) => ({ 'رقم الصف': w.rowNum, 'التحذير': w.message }));
+    const rows = list.map((w) => ({ '??? ????': w.rowNum, '???????': w.message }));
     await exportToExcel(rows, 'import-warnings.xlsx');
   }
 
@@ -496,8 +493,8 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     const rows = validationResults
       .filter((r) => !r.valid || r.warnings.length > 0)
       .flatMap((r) => [
-        ...r.errors.map((msg) => ({ 'رقم الصف': r.rowNum, 'النوع': 'خطأ', 'الوصف': msg })),
-        ...r.warnings.map((msg) => ({ 'رقم الصف': r.rowNum, 'النوع': 'تحذير', 'الوصف': msg })),
+        ...r.errors.map((msg) => ({ '??? ????': r.rowNum, '?????': '???', '?????': msg })),
+        ...r.warnings.map((msg) => ({ '??? ????': r.rowNum, '?????': '?????', '?????': msg })),
       ]);
     await exportToExcel(rows, 'validation-errors.xlsx');
   }
@@ -512,71 +509,71 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     <AdaptiveSheet
       open={isOpen}
       onClose={() => { if (!importing) onClose(); }}
-      title={`استيراد وتصدير — ${cfg.label}`}
+      title={`??????? ?????? ? ${cfg.label}`}
       size="xl"
       side="start"
       className="import-export-drawer"
       closeOnBackdrop={!importing}
     >
       {lookupsLoading && (
-        <p className="nx-text-sm nx-text-muted" style={{ margin: '0 0 12px' }}>جارٍ تحميل بيانات النظام…</p>
+        <p className="text-[12px] text-noorix-muted mb-3">???? ????? ?????? ???????</p>
       )}
 
       {/* Tabs */}
-      <div className="nx-tab-bar nx-mb-16">
-        <Button type="button" className={`nx-tab-btn${activeTab === 'import' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('import')}>استيراد</Button>
+      <div className="nx-tab-bar mb-4">
+        <Button type="button" className={`nx-tab-btn${activeTab === 'import' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('import')}>???????</Button>
         {exportFetcher && (
-          <Button type="button" className={`nx-tab-btn${activeTab === 'export' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('export')}>تصدير</Button>
+          <Button type="button" className={`nx-tab-btn${activeTab === 'export' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('export')}>?????</Button>
         )}
       </div>
 
-      {/* ── EXPORT TAB ─────────────────────────────────────────────── */}
+      {/* ?? EXPORT TAB ??????????????????????????????????????????????? */}
       {activeTab === 'export' && (
-        <div className="nx-flex-col nx-gap-16">
-          <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-10">
-            <p className="nx-m-0 nx-text-md nx-text-muted" style={{ lineHeight: 1.6 }}>
-              يتم جلب السجلات من الخادم ثم تنزيل ملف Excel باسم يتضمن تاريخ اليوم. استخدم الفلاتر في الشاشة الرئيسية (عند توفرها) لتحديد نطاق القائمة قبل التصدير.
+        <div className="flex flex-col gap-4">
+          <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-2.5">
+            <p className="m-0 text-[14px] text-noorix-muted leading-[1.6]">
+              ??? ??? ??????? ?? ?????? ?? ????? ??? Excel ???? ????? ????? ?????. ?????? ??????? ?? ?????? ???????? (??? ??????) ?????? ???? ??????? ??? ???????.
             </p>
             {entityType === 'employees' && (
-              <div className="nx-mt-4">
-                <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8 nx-mt-0" style={{ letterSpacing: 0.5 }}>أعمدة ملف الموظفين</p>
-                <p className="nx-m-0 nx-text-sm nx-text-muted" style={{ lineHeight: 1.65 }}>
-                  {EMPLOYEE_EXPORT_COLUMNS_AR.join(' · ')}
+              <div className="mt-1">
+                <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2 mt-0" >????? ??? ????????</p>
+                <p className="m-0 text-[12px] text-noorix-muted leading-[1.65]">
+                  {EMPLOYEE_EXPORT_COLUMNS_AR.join(' ? ')}
                 </p>
               </div>
             )}
-            <div className="nx-flex nx-gap-10 nx-flex-wrap">
+            <div className="flex gap-2.5 flex flex-wrap">
               <Button variant="primary" onClick={handleExport} disabled={exporting} loading={exporting}>
-                {exporting ? 'جارٍ التصدير…' : 'تنزيل Excel'}
+                {exporting ? '???? ????????' : '????? Excel'}
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── IMPORT TAB ──────────────────────────────────────────────── */}
+      {/* ?? IMPORT TAB ???????????????????????????????????????????????? */}
       {activeTab === 'import' && (
-        <div className="nx-flex-col" style={{ gap: 18 }}>
+        <div className="flex flex-col gap-[18px]">
           <ImportPhaseSteps phase={phase} importing={importing} />
 
           {phase !== 'done' && !importing && (
-            <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-12">
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>الخطوة 1 — تحميل القالب</p>
-              <p className="nx-m-0 nx-text-base nx-text-muted" style={{ lineHeight: 1.6 }}>
-                حمّل قالب Excel الجاهز، افتحه في Excel أو Google Sheets، أضف بياناتك ثم احفظه.
-                {entityType === 'invoices' && ' أسماء الموردين والصناديق يجب أن تتطابق مع الأسماء المسجلة في النظام.'}
-                {entityType === 'sales' && ' أعمدة القنوات تتطابق مع أسماء الصناديق في نظامك.'}
-                {entityType === 'employees' && ' للقبول في الفحص: الاسم بالعربية أو الإنجليزية (أحدهما كافٍ). باقي الأعمدة اختيارية؛ التاريخ والراتب والبدلات تُستبدل بقيم افتراضية إن وُجدت فارغة.'}
+            <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >?????? 1 ? ????? ??????</p>
+              <p className="m-0 text-[13px] text-noorix-muted leading-[1.6]">
+                ???? ???? Excel ?????? ????? ?? Excel ?? Google Sheets? ??? ??????? ?? ?????.
+                {entityType === 'invoices' && ' ????? ???????? ????????? ??? ?? ?????? ?? ??????? ??????? ?? ??????.'}
+                {entityType === 'sales' && ' ????? ??????? ?????? ?? ????? ???????? ?? ?????.'}
+                {entityType === 'employees' && ' ?????? ?? ?????: ????? ???????? ?? ?????????? (?????? ????). ???? ??????? ???????? ??????? ??????? ???????? ??????? ???? ???????? ?? ????? ?????.'}
               </p>
               <Button onClick={handleDownloadTemplate} disabled={lookupsLoading}>
-                {lookupsLoading ? 'تحميل…' : 'تحميل قالب Excel'}
+                {lookupsLoading ? '??????' : '????? ???? Excel'}
               </Button>
             </div>
           )}
 
           {phase !== 'done' && !importing && (
-            <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-12">
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>الخطوة 2 — رفع الملف</p>
+            <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >?????? 2 ? ??? ?????</p>
               <div
                 style={S.dropzone(dragging)}
                 onClick={() => fileInputRef.current?.click()}
@@ -584,25 +581,25 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 onDragLeave={() => setDragging(false)}
                 onDrop={handleDrop}
               >
-                <div className="nx-mb-8" style={{ fontSize: 36 }}></div>
-                <div className="nx-text-md nx-font-600 nx-mb-4">
-                  {phase === 'parsing' ? 'جارٍ قراءة الملف…' : 'اسحب ملف Excel هنا أو انقر للاختيار'}
+                <div className="mb-2 text-[36px]"></div>
+                <div className="text-[14px] font-semibold mb-1">
+                  {phase === 'parsing' ? '???? ????? ??????' : '???? ??? Excel ??? ?? ???? ????????'}
                 </div>
-                <div className="nx-text-sm nx-text-muted">xlsx / xls / csv</div>
+                <div className="text-[12px] text-noorix-muted">xlsx / xls / csv</div>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".xlsx,.xls,.csv"
-                style={{ display: 'none' }}
+                className="hidden"
                 onChange={(e) => handleFile(e.target.files?.[0])}
               />
               {parsedRows.length > 0 && (
-                <div className="nx-text-base nx-text-muted">
-                  ✓ تم قراءة <strong>{parsedRows.length}</strong> صف من الملف
+                <div className="text-[13px] text-noorix-muted">
+                  ? ?? ????? <strong>{parsedRows.length}</strong> ?? ?? ?????
                   {phase !== 'done' && (
-                    <Button variant="ghost" size="sm" style={{ marginRight: 12 }} onClick={() => fileInputRef.current?.click()}>
-                      تغيير الملف
+                    <Button variant="ghost" size="sm" className="me-3" onClick={() => fileInputRef.current?.click()}>
+                      ????? ?????
                     </Button>
                   )}
                 </div>
@@ -611,12 +608,12 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           )}
 
           {phase === 'validated' && !importing && (
-            <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-12">
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>الخطوة 3 — نتائج الفحص والمعاينة</p>
-              <div className="nx-flex-wrap nx-gap-12">
-                <StatBadge count={validCount} label="صف صحيح" color="#16a34a" />
-                {errorCount > 0 && <StatBadge count={errorCount} label="بها أخطاء" color="#dc2626" />}
-                {warnCount > 0 && <StatBadge count={warnCount} label="تحذيرات" color="#f59e0b" />}
+            <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >?????? 3 ? ????? ????? ?????????</p>
+              <div className="flex flex-wrap gap-3">
+                <StatBadge count={validCount} label="?? ????" color="#16a34a" />
+                {errorCount > 0 && <StatBadge count={errorCount} label="??? ?????" color="var(--noorix-accent-red)" />}
+                {warnCount > 0 && <StatBadge count={warnCount} label="???????" color="#f59e0b" />}
               </div>
 
               {entityType === 'employees' && validationResults.length > 0 && (
@@ -624,116 +621,116 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               )}
 
               {(errorCount > 0 || warnCount > 0) && (
-                <div className="nx-flex-col nx-gap-6" style={{ maxHeight: 280, overflowY: 'auto' }}>
+                <div className="flex flex-col gap-1.5 max-h-[280px] overflow-y-auto">
                   {errorsToShow.map((r) => (
                     <div key={r.rowNum}>
                       {r.errors.map((msg, j) => (
-                        <div key={j} className="nx-grid nx-gap-8 nx-rounded nx-text-base" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'rgba(239,68,68,0.07)' }}>
-                          <span className="nx-font-700 nx-text-expense">صف {r.rowNum}</span>
-                          <span className="nx-text-expense">✗ {msg}</span>
+                        <div key={j} className="grid gap-2 rounded-lg text-[13px] grid-cols-[56px_1fr] items-start py-1.5 px-2.5 bg-[var(--noorix-red-7)]">
+                          <span className="font-bold text-noorix-red">?? {r.rowNum}</span>
+                          <span className="text-noorix-red">? {msg}</span>
                         </div>
                       ))}
                       {r.warnings.map((msg, j) => (
-                        <div key={`w${j}`} className="nx-grid nx-gap-8 nx-rounded nx-text-sm" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
-                          <span className="nx-font-700 nx-text-warn">صف {r.rowNum}</span>
-                          <span style={{ color: '#92400e' }}>⚠ {msg}</span>
+                        <div key={`w${j}`} className="grid gap-2 rounded-lg text-[12px] grid-cols-[56px_1fr] items-start py-[5px] px-[10px] bg-[var(--noorix-yellow-7)]">
+                          <span className="font-bold text-noorix-amber">?? {r.rowNum}</span>
+                          <span style={{ color: 'var(--noorix-accent-amber)' }}>? {msg}</span>
                         </div>
                       ))}
                     </div>
                   ))}
                   {validationResults.filter((r) => !r.valid || r.warnings.length > 0).length > 10 && (
-                    <Button variant="ghost" size="sm" style={{ alignSelf: 'flex-start' }} onClick={() => setShowAllErrors(!showAllErrors)}>
-                      {showAllErrors ? 'عرض أقل' : `عرض الكل (${validationResults.filter((r) => !r.valid || r.warnings.length > 0).length})`}
+                    <Button variant="ghost" size="sm" className="self-start" onClick={() => setShowAllErrors(!showAllErrors)}>
+                      {showAllErrors ? '??? ???' : `??? ???? (${validationResults.filter((r) => !r.valid || r.warnings.length > 0).length})`}
                     </Button>
                   )}
-                  <Button variant="ghost" size="sm" style={{ alignSelf: 'flex-start' }} onClick={handleDownloadValidationErrors}>
-                    تحميل تقرير الفحص
+                  <Button variant="ghost" size="sm" className="self-start" onClick={handleDownloadValidationErrors}>
+                    ????? ????? ?????
                   </Button>
                 </div>
               )}
 
               {validCount === 0 ? (
-                <div className="nx-text-md nx-text-expense nx-font-600">
-                  لا توجد صفوف صحيحة للاستيراد. يرجى مراجعة الأخطاء وإعادة رفع الملف.
+                <div className="text-[14px] text-noorix-red font-semibold">
+                  ?? ???? ???? ????? ?????????. ???? ?????? ??????? ?????? ??? ?????.
                 </div>
               ) : (
-                <Button variant="primary" style={{ alignSelf: 'flex-start' }} onClick={handleImport}>
-                  استيراد {validCount} صف{errorCount > 0 ? ` (سيتم تخطي ${errorCount} صف به أخطاء)` : ''}
+                <Button variant="primary" className="self-start" onClick={handleImport}>
+                  ??????? {validCount} ??{errorCount > 0 ? ` (???? ???? ${errorCount} ?? ?? ?????)` : ''}
                 </Button>
               )}
             </div>
           )}
 
           {importing && (
-            <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-12">
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>جارٍ الاستيراد…</p>
+            <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >???? ??????????</p>
               <ProgressBar pct={pct} />
-              <div className="nx-flex-between nx-text-base nx-text-muted">
-                <span>{progress.current} / {progress.total} صف</span>
+              <div className="flex items-center justify-between text-[13px] text-noorix-muted">
+                <span>{progress.current} / {progress.total} ??</span>
                 <span>{pct}%</span>
               </div>
-              <div className="nx-flex-wrap nx-gap-12">
-                <StatBadge count={progress.succeeded} label="نجح" color="#16a34a" />
-                {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="#dc2626" />}
+              <div className="flex flex-wrap gap-3">
+                <StatBadge count={progress.succeeded} label="???" color="#16a34a" />
+                {progress.failed > 0 && <StatBadge count={progress.failed} label="???" color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
-                  <StatBadge count={(progress.warnings || []).length} label="تحذيرات من الخادم" color="#d97706" />
+                  <StatBadge count={(progress.warnings || []).length} label="??????? ?? ??????" color="var(--noorix-accent-amber)" />
                 )}
               </div>
-              <Button variant="danger" size="sm" style={{ alignSelf: 'flex-start' }} onClick={() => { abortRef.current = true; }}>
-                إيقاف
+              <Button variant="danger" size="sm" className="self-start" onClick={() => { abortRef.current = true; }}>
+                ?????
               </Button>
             </div>
           )}
 
           {phase === 'done' && !importing && (
-            <div className="nx-rounded-lg nx-p-16 nx-flex-col nx-gap-12" style={{ border: `1px solid ${progress.failed === 0 ? '#16a34a' : '#f59e0b'}40` }}>
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>نتائج الاستيراد</p>
-              <div className="nx-flex-wrap nx-gap-12">
-                <StatBadge count={progress.succeeded} label="تم بنجاح" color="#16a34a" />
-                {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="#dc2626" />}
+            <div className="rounded-xl p-4 flex flex-col gap-3" style={{ border: `1px solid ${progress.failed === 0 ? 'var(--noorix-accent-green)' : 'var(--color-noorix-amber)'}40` }}>
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >????? ?????????</p>
+              <div className="flex flex-wrap gap-3">
+                <StatBadge count={progress.succeeded} label="?? ?????" color="#16a34a" />
+                {progress.failed > 0 && <StatBadge count={progress.failed} label="???" color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
-                  <StatBadge count={(progress.warnings || []).length} label="تحذيرات" color="#d97706" />
+                  <StatBadge count={(progress.warnings || []).length} label="???????" color="var(--noorix-accent-amber)" />
                 )}
               </div>
 
               {(progress.warnings || []).length > 0 && (
-                <div className="nx-flex-col nx-mt-8" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
+                <div className="flex flex-col mt-2 gap-[5px] max-h-[200px] overflow-y-auto">
                   {(progress.warnings || []).slice(0, 20).map((w, i) => (
-                    <div key={i} className="nx-grid nx-gap-8 nx-rounded nx-text-sm" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
-                      <span className="nx-font-700 nx-text-warn">صف {w.rowNum}</span>
-                      <span style={{ color: '#92400e' }}>⚠ {w.message}</span>
+                    <div key={i} className="grid gap-2 rounded-lg text-[12px] grid-cols-[56px_1fr] items-start py-[5px] px-2.5 bg-[var(--noorix-yellow-7)]">
+                      <span className="font-bold text-noorix-amber">?? {w.rowNum}</span>
+                      <span style={{ color: 'var(--noorix-accent-amber)' }}>? {w.message}</span>
                     </div>
                   ))}
                   {(progress.warnings || []).length > 20 && (
-                    <span className="nx-text-sm nx-text-muted">… و {(progress.warnings || []).length - 20} تحذير آخر</span>
+                    <span className="text-[12px] text-noorix-muted">? ? {(progress.warnings || []).length - 20} ????? ???</span>
                   )}
-                  <Button variant="ghost" size="sm" style={{ alignSelf: 'flex-start' }} onClick={handleDownloadWarningsReport}>
-                    تحميل تقرير التحذيرات
+                  <Button variant="ghost" size="sm" className="self-start" onClick={handleDownloadWarningsReport}>
+                    ????? ????? ?????????
                   </Button>
                 </div>
               )}
 
               {progress.errors.length > 0 && (
-                <div className="nx-flex-col" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
+                <div className="flex flex-col gap-[5px] max-h-[200px] overflow-y-auto">
                   {progress.errors.slice(0, 20).map((e, i) => (
-                    <div key={i} className="nx-grid nx-gap-8 nx-rounded nx-text-base" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'rgba(239,68,68,0.07)' }}>
-                      <span className="nx-font-700 nx-text-expense">صف {e.rowNum}</span>
-                      <span className="nx-text-expense">✗ {e.message}</span>
+                    <div key={i} className="grid gap-2 rounded-lg text-[13px] grid-cols-[56px_1fr] items-start py-1.5 px-2.5 bg-[var(--noorix-red-7)]">
+                      <span className="font-bold text-noorix-red">?? {e.rowNum}</span>
+                      <span className="text-noorix-red">? {e.message}</span>
                     </div>
                   ))}
                   {progress.errors.length > 20 && (
-                    <span className="nx-text-sm nx-text-muted">… و {progress.errors.length - 20} خطأ آخر</span>
+                    <span className="text-[12px] text-noorix-muted">? ? {progress.errors.length - 20} ??? ???</span>
                   )}
-                  <Button variant="ghost" size="sm" style={{ alignSelf: 'flex-start' }} onClick={handleDownloadErrorReport}>
-                    تحميل تقرير الأخطاء
+                  <Button variant="ghost" size="sm" className="self-start" onClick={handleDownloadErrorReport}>
+                    ????? ????? ???????
                   </Button>
                 </div>
               )}
 
-              <div className="nx-flex nx-gap-10">
-                <Button variant="primary" onClick={onClose}>إغلاق</Button>
+              <div className="flex gap-2.5">
+                <Button variant="primary" onClick={onClose}>?????</Button>
                 <Button onClick={() => { setPhase('idle'); setParsedRows([]); setValidationResults([]); setProgress({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [], warnings: [] }); }}>
-                  استيراد ملف آخر
+                  ??????? ??? ???
                 </Button>
               </div>
             </div>

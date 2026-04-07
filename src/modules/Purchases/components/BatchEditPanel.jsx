@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BatchEditPanel — عرض دفعة وتعديل/حذف فواتيرها
  */
 import React, { useState } from 'react';
@@ -76,27 +76,27 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
       }
     >
       {error && (
-        <div className="nx-rounded nx-text-base nx-p-12 nx-mb-12" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>
+        <div className="rounded-lg text-[13px] p-3 mb-3" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
           {error}
         </div>
       )}
-      <div className="noorix-table-frame nx-overflow-auto">
+      <div className="noorix-table-frame overflow-auto">
         <table className="noorix-table">
           <thead>
-            <tr style={{ background: 'var(--noorix-bg-page)', borderBottom: '2px solid var(--noorix-border)' }}>
-              <th style={{ padding: '8px 10px', textAlign: 'right', width: 36 }}>#</th>
-              <th style={{ padding: '8px 10px', textAlign: 'right', minWidth: 140 }}>{t('supplier')}</th>
-              <th style={{ padding: '8px 10px', textAlign: 'right', width: 90 }}>{t('supplierInvoiceNumber')}</th>
-              <th style={{ padding: '8px 10px', textAlign: 'right', width: 90 }}>{t('total')}</th>
-              <th style={{ padding: '8px 10px', textAlign: 'right', width: 80 }}>{t('kind')}</th>
-              <th style={{ padding: '8px 10px', width: 44 }} />
+            <tr className="bg-noorix-bg border-b-2 border-noorix-border">
+              <th className="py-2 px-2.5 text-right w-9">#</th>
+              <th className="py-2 px-2.5 text-right min-w-[140px]">{t('supplier')}</th>
+              <th className="py-2 px-2.5 text-right w-[90px]">{t('supplierInvoiceNumber')}</th>
+              <th className="py-2 px-2.5 text-right w-[90px]">{t('total')}</th>
+              <th className="py-2 px-2.5 text-right w-20">{t('kind')}</th>
+              <th className="py-2 px-2.5 w-11" />
             </tr>
           </thead>
           <tbody>
             {invoices.map((inv, i) => (
               <tr key={inv.id || i} style={{ borderBottom: '1px solid var(--noorix-border)', opacity: inv.status === 'cancelled' ? 0.5 : 1, background: inv.status === 'cancelled' ? 'var(--noorix-bg-page)' : 'transparent' }}>
-                <td className="nx-text-center nx-text-muted nx-font-600" style={{ padding: 6 }}>{i + 1}</td>
-                <td style={{ padding: 6 }}>
+                <td className="text-center text-noorix-muted font-semibold p-1.5">{i + 1}</td>
+                <td className="p-1.5">
                   {inv.status === 'cancelled' ? (
                     <span className="nx-cell-muted">{(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}</span>
                   ) : (
@@ -109,7 +109,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                     />
                   )}
                 </td>
-                <td style={{ padding: 6 }}>
+                <td className="p-1.5">
                   {inv.status === 'cancelled' ? (
                     <span className="nx-cell-muted">{inv.supplierInvoiceNumber || inv.invoiceNumber}</span>
                   ) : (
@@ -120,7 +120,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                     />
                   )}
                 </td>
-                <td style={{ padding: 6 }}>
+                <td className="p-1.5">
                   {inv.status === 'cancelled' ? (
                     <span className="nx-cell-num">{fmt(inv.totalAmount)}</span>
                   ) : (
@@ -140,7 +140,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                     />
                   )}
                 </td>
-                <td style={{ padding: 6 }}>
+                <td className="p-1.5">
                   {inv.status === 'cancelled' ? (
                     <span className="nx-cell-muted-sm">{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</span>
                   ) : (
@@ -154,9 +154,9 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                     </Input>
                   )}
                 </td>
-                <td style={{ padding: 6 }}>
+                <td className="p-1.5">
                   {inv.status === 'cancelled' ? (
-                    <span className="nx-text-sm nx-font-600" style={{ color: '#dc2626' }}>{t('cancelled')}</span>
+                    <span className="text-[12px] font-semibold text-noorix-red">{t('cancelled')}</span>
                   ) : (
                     <Button
                       size="sm"

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * OrdersSummaryCard — كرت ملخص واحد كبير
  * تنسيق هرمي: المستلم → المشتريات → خط → النتيجة
  */
@@ -9,35 +9,33 @@ import { fmt } from '../../../utils/format';
 function SectionBlock({ title, received, spent, result, receivedLabel, spentLabel, resultLabel, accentColor }) {
   const resNum = Number(result ?? 0);
   return (
-    <div className="nx-border-all nx-overflow-hidden nx-bg-surface nx-flex-col" style={{ borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-      <div style={{ height: 3, background: accentColor || '#2563eb' }} />
-      <div style={{ padding: '14px 16px 12px' }}>
-        <div className="nx-text-xs nx-font-700 nx-text-muted nx-mb-12 nx-uppercase" style={{ letterSpacing: '0.04em' }}>
+    <div className="border border-noorix-border overflow-hidden bg-noorix-surface flex flex-col rounded-[14px]" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+      <div className="h-[3px]" style={{ background: accentColor || 'var(--noorix-accent-blue)' }} />
+      <div className="pt-[14px] px-4 pb-3">
+        <div className="text-[11px] font-bold text-noorix-muted mb-3 uppercase tracking-[0.04em]">
           {title}
         </div>
-        <div className="nx-grid nx-gap-8">
-          <div className="nx-flex-between">
-            <span className="nx-text-2xs nx-text-muted">{receivedLabel}</span>
-            <span className="nx-font-numbers nx-font-700 nx-text-base nx-text-green">{fmt(Number(received ?? 0), 2)} <span className="nx-font-400 nx-text-muted nx-text-xs">﷼</span></span>
+        <div className="grid gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-noorix-muted">{receivedLabel}</span>
+            <span className="nx-font-numbers font-bold text-[13px] text-noorix-green">{fmt(Number(received ?? 0), 2)} <span className="font-normal text-noorix-muted text-[11px]">﷼</span></span>
           </div>
-          <div className="nx-flex-between">
-            <span className="nx-text-2xs nx-text-muted">{spentLabel}</span>
-            <span className="nx-font-numbers nx-font-700 nx-text-base nx-text-red">− {fmt(Number(spent ?? 0), 2)} <span className="nx-font-400 nx-text-muted nx-text-xs">﷼</span></span>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-noorix-muted">{spentLabel}</span>
+            <span className="nx-font-numbers font-bold text-[13px] text-noorix-red">− {fmt(Number(spent ?? 0), 2)} <span className="font-normal text-noorix-muted text-[11px]">﷼</span></span>
           </div>
         </div>
       </div>
-      <div className="nx-border-t" style={{ margin: '0 16px' }} />
-      <div className="nx-text-center" style={{ padding: '12px 16px' }}>
-        <div className="nx-text-2xs nx-text-muted nx-mb-4 nx-uppercase" style={{ letterSpacing: '0.04em' }}>
+      <div className="border-t border-noorix-border mx-4" />
+      <div className="text-center py-3 px-4">
+        <div className="text-[10px] text-noorix-muted mb-1 uppercase tracking-[0.04em]">
           {resultLabel}
         </div>
-        <div className="nx-font-800 nx-font-numbers" style={{
-          fontSize: 22,
-          color: resNum < 0 ? '#dc2626' : 'var(--noorix-text)',
-          letterSpacing: '-0.5px',
+        <div className="font-extrabold nx-font-numbers text-[22px] tracking-[-0.5px]" style={{
+          color: resNum < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
         }}>
           {resNum < 0 ? '−' : ''}{fmt(Math.abs(resNum), 2)}
-          <span className="nx-text-md nx-font-600 nx-text-muted" style={{ marginRight: 4 }}>﷼</span>
+          <span className="text-[14px] font-semibold text-noorix-muted mr-1">﷼</span>
         </div>
       </div>
     </div>
@@ -55,20 +53,20 @@ export function OrdersSummaryCard({ summary = {}, cashSalesTotal = 0, isLoading 
 
   if (isLoading) {
     return (
-      <div className="nx-border-all nx-bg-surface nx-p-24 nx-text-center nx-text-muted" style={{ borderRadius: 14 }}>
+      <div className="border border-noorix-border bg-noorix-surface p-6 text-center text-noorix-muted rounded-[14px]">
         {t('loading')}
       </div>
     );
   }
 
   return (
-    <div className="nx-border-all nx-bg-surface nx-overflow-hidden" style={{ borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-      <div style={{ height: 3, background: 'linear-gradient(90deg, #2563eb, #16a34a)' }} />
-      <div className="nx-p-20">
-        <div className="nx-text-base nx-font-700 nx-text-muted nx-mb-16" style={{ letterSpacing: '0.04em' }}>
+    <div className="border border-noorix-border bg-noorix-surface overflow-hidden rounded-[14px]" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+      <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, var(--noorix-accent-blue), var(--noorix-accent-green))' }} />
+      <div className="p-5">
+        <div className="text-[13px] font-bold text-noorix-muted mb-4 tracking-[0.04em]">
           {t('ordersSummaryCardTitle')}
         </div>
-        <div className="nx-grid nx-gap-14" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))' }}>
+        <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
           <SectionBlock
             title={t('ordersDelegateSection')}
             received={pettyCash}

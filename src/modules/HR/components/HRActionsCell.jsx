@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HRActionsCell — قائمة إجراءات منسدلة (Kebab) لصفوف HR
  * عرض، تعديل، اعتماد، صرف — حسب نوع الجدول والسياق
  */
@@ -43,17 +43,17 @@ export const HRActionsCell = memo(function HRActionsCell({
 
   const items = [];
   if (onView) items.push({ key: 'view', label: t('view'), fn: onView, color: 'var(--noorix-text)' });
-  if (onEdit) items.push({ key: 'edit', label: t('edit'), fn: onEdit, color: '#16a34a' });
-  if (onApprove) items.push({ key: 'approve', label: t('statusApproved'), fn: onApprove, color: '#16a34a' });
-  if (onReject) items.push({ key: 'reject', label: t('statusRejected'), fn: onReject, color: '#ef4444' });
-  if (onPay) items.push({ key: 'pay', label: t('payrollPay') || 'صرف المسيرة', fn: onPay, color: '#2563eb' });
-  if (onAdvance) items.push({ key: 'advance', label: t('quickAdvance') || 'صرف سلفة', fn: onAdvance, color: '#f59e0b' });
-  if (onSettle) items.push({ key: 'settle', label: t('settleAdvance') || 'تسديد السلفة', fn: onSettle, color: '#b45309' });
-  if (onTerminate) items.push({ key: 'terminate', label: t('terminateEmployee'), fn: onTerminate, color: '#ef4444' });
-  if (onArchive) items.push({ key: 'archive', label: t('archiveEmployee'), fn: onArchive, color: '#64748b' });
-  if (onRestore) items.push({ key: 'restore', label: t('restoreEmployee'), fn: onRestore, color: '#16a34a' });
-  if (onDelete) items.push({ key: 'delete', label: t('delete'), fn: onDelete, color: '#dc2626' });
-  if (onPermanentDelete) items.push({ key: 'permdelete', label: t('deleteEmployeePermanent'), fn: onPermanentDelete, color: '#7f1d1d' });
+  if (onEdit) items.push({ key: 'edit', label: t('edit'), fn: onEdit, color: 'var(--noorix-accent-green)' });
+  if (onApprove) items.push({ key: 'approve', label: t('statusApproved'), fn: onApprove, color: 'var(--noorix-accent-green)' });
+  if (onReject) items.push({ key: 'reject', label: t('statusRejected'), fn: onReject, color: 'var(--noorix-accent-red)' });
+  if (onPay) items.push({ key: 'pay', label: t('payrollPay') || 'صرف المسيرة', fn: onPay, color: 'var(--noorix-accent-blue)' });
+  if (onAdvance) items.push({ key: 'advance', label: t('quickAdvance') || 'صرف سلفة', fn: onAdvance, color: 'var(--color-noorix-amber)' });
+  if (onSettle) items.push({ key: 'settle', label: t('settleAdvance') || 'تسديد السلفة', fn: onSettle, color: 'var(--noorix-accent-amber)' });
+  if (onTerminate) items.push({ key: 'terminate', label: t('terminateEmployee'), fn: onTerminate, color: 'var(--noorix-accent-red)' });
+  if (onArchive) items.push({ key: 'archive', label: t('archiveEmployee'), fn: onArchive, color: 'var(--noorix-text-muted)' });
+  if (onRestore) items.push({ key: 'restore', label: t('restoreEmployee'), fn: onRestore, color: 'var(--noorix-accent-green)' });
+  if (onDelete) items.push({ key: 'delete', label: t('delete'), fn: onDelete, color: 'var(--noorix-accent-red)' });
+  if (onPermanentDelete) items.push({ key: 'permdelete', label: t('deleteEmployeePermanent'), fn: onPermanentDelete, color: 'var(--noorix-accent-red-dark)' });
 
   useEffect(() => {
     if (open && btnRef.current) {
@@ -85,7 +85,7 @@ export const HRActionsCell = memo(function HRActionsCell({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  if (items.length === 0) return <span style={{ color: 'var(--noorix-text-muted)', fontSize: 12 }}>—</span>;
+  if (items.length === 0) return <span className="text-[12px] text-noorix-muted">—</span>;
 
   const close = () => setOpen(false);
   const run = (fn) => { close(); fn?.(row); };
@@ -115,7 +115,7 @@ export const HRActionsCell = memo(function HRActionsCell({
   );
 
   return (
-    <div style={{ position: 'relative', display: 'inline-flex' }}>
+    <div className="relative inline-flex">
       <Button
         ref={btnRef}
         aria-label={t('actions')}

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * EmployeeDocModal — وثائق الموظف الاحترافية (ثنائية اللغة)
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -611,7 +611,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
 
   return (
     <ModalShell title={t('documentContract') || 'عقد عمل'} onClose={onClose} onPrint={handlePrint} onSave={handleSaveToDocuments} saving={saving} t={t}>
-      <div className="nx-flex-center nx-gap-12" style={{ padding: '8px 4px 12px', flexWrap: 'wrap' }}>
+      <div className="flex items-center gap-12" style={{ padding: '8px 4px 12px', flexWrap: 'wrap' }}>
         <Input
           type="date"
           label="تاريخ انتهاء العقد (اختياري)"
@@ -755,7 +755,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
             </label>
           </div>
           <div style={{ padding: '12px 22px', borderBottom: '1px solid var(--noorix-border)', background: '#f8fafc' }}>
-            <div className="nx-font-700 nx-mb-8">حاسبة نهاية الخدمة (تفصيل قبل الطباعة) / EOS Calculator (before print)</div>
+            <div className="font-bold mb-2">حاسبة نهاية الخدمة (تفصيل قبل الطباعة) / EOS Calculator (before print)</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
               <div>
                 <Input type="date" label="تاريخ نهاية الخدمة" value={eosEndDate} onChange={(e) => setEosEndDate(e.target.value)} />
@@ -853,10 +853,10 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
           </div>
           <div style={{ padding: '10px 14px' }}>
             <div style={{ color: '#64748b', fontSize: 10, textAlign: 'center' }}>تاريخ الإصدار / Issue Date: {formatSaudiDate(new Date())}</div>
-            <div className="nx-grid nx-gap-12 nx-mt-12" style={{ gridTemplateColumns: '1fr 1fr 1fr', direction: 'ltr' }}>
-              <div className="nx-text-center" style={{ paddingTop: 20, borderTop: '1px solid #cbd5e1', fontSize: 10 }}>HR / الموارد البشرية</div>
-              <div className="nx-text-center" style={{ paddingTop: 20, borderTop: '1px solid #cbd5e1', fontSize: 10 }}>Employee / الموظف</div>
-              <div className="nx-text-center" style={{ paddingTop: 20, borderTop: '1px solid #cbd5e1', fontSize: 10 }}>Company Approval / اعتماد الشركة</div>
+            <div className="grid gap-3 mt-3" style={{ gridTemplateColumns: '1fr 1fr 1fr', direction: 'ltr' }}>
+              <div className="text-center" style={{ paddingTop: 20, borderTop: '1px solid #cbd5e1', fontSize: 10 }}>HR / الموارد البشرية</div>
+              <div className="text-center" style={{ paddingTop: 20, borderTop: '1px solid #cbd5e1', fontSize: 10 }}>Employee / الموظف</div>
+              <div className="text-center" style={{ paddingTop: 20, borderTop: '1px solid #cbd5e1', fontSize: 10 }}>Company Approval / اعتماد الشركة</div>
             </div>
           </div>
         </DocumentFrame>

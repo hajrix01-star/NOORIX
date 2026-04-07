@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AISettingsTab — الذكاء المستخدم (Gemini)
  * عرض حالة الاتصال، التشخيص، وزر الفحص الاحترافي
  */
@@ -53,13 +53,13 @@ export default function AISettingsTab() {
   };
 
   return (
-    <div className="nx-grid nx-gap-24" style={{ maxWidth: 560 }}>
+    <div className="grid gap-6 max-w-[560px]">
       {/* ─── العنوان والوصف ─── */}
       <div>
-        <h2 className="nx-text-2xl nx-font-700 nx-m-0">
+        <h2 className="text-[18px] font-bold m-0">
           {lang === 'ar' ? 'المحادثة الذكية — Gemini' : 'Smart Chat — Gemini'}
         </h2>
-        <p className="nx-text-base nx-text-muted" style={{ margin: '8px 0 0', lineHeight: 1.5 }}>
+        <p className="text-[13px] text-noorix-muted mt-2 mb-0 leading-[1.5]">
           {lang === 'ar'
             ? 'يُستخدم Gemini لفهم أسئلتك الطبيعية في المحادثة الذكية. المفتاح يُعرّف في backend/.env ولا يُعرض هنا.'
             : 'Gemini is used to understand natural language in Smart Chat. The API key is set in backend/.env and is not displayed here.'}
@@ -68,12 +68,12 @@ export default function AISettingsTab() {
 
       {/* ─── بطاقة الحالة والتشخيص ─── */}
       <div
-        className="noorix-surface-card nx-border-all nx-rounded nx-p-20"
+        className="noorix-surface-card border border-noorix-border rounded-lg p-5"
         style={{ background: 'var(--noorix-bg)' }}
       >
         {/* شريط الحالة: أونلاين / أوفلاين */}
-        <div className="nx-flex nx-flex-between nx-flex-wrap nx-gap-12 nx-border-b nx-mb-20" style={{ paddingBottom: 16 }}>
-          <div className="nx-flex nx-gap-10">
+        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-noorix-border mb-5 pb-4">
+          <div className="flex gap-2.5">
             <span
               style={{
                 width: 10,
@@ -81,13 +81,13 @@ export default function AISettingsTab() {
                 borderRadius: '50%',
                 background: status === STATUS_ONLINE ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
                 boxShadow: status === STATUS_ONLINE
-                  ? '0 0 8px rgba(22,163,74,0.5)'
+                  ? '0 0 8px var(--noorix-green-50)'
                   : '0 0 8px rgba(var(--noorix-accent-red-rgb,220,38,38),0.5)',
               }}
               title={status === STATUS_ONLINE ? 'متصل' : 'غير متصل'}
             />
             <span
-              className="nx-text-lg nx-font-600"
+              className="text-[15px] font-semibold"
               style={{
                 color: status === STATUS_ONLINE ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
               }}
@@ -97,7 +97,7 @@ export default function AISettingsTab() {
                 : (lang === 'ar' ? 'أوفلاين' : 'Offline')}
             </span>
           </div>
-          <div className="nx-flex nx-gap-8">
+          <div className="flex gap-2">
             <Button
               type="button"
               onClick={handleRefresh}
@@ -117,7 +117,7 @@ export default function AISettingsTab() {
         </div>
 
         {/* التشخيص */}
-        <div className="nx-grid nx-gap-12">
+        <div className="grid gap-3">
           <DiagnosticRow
             label={lang === 'ar' ? 'السيرفر' : 'Backend'}
             value={healthLoading ? (lang === 'ar' ? 'جاري التحقق...' : 'Checking...') : (isOnline ? (lang === 'ar' ? 'متصل' : 'Connected') : (healthData?.error || (lang === 'ar' ? 'غير متصل' : 'Disconnected')))}
@@ -146,8 +146,8 @@ export default function AISettingsTab() {
       {/* تلميح إعداد المفتاح */}
       {!geminiAvailable && isOnline && (
         <div
-          className="nx-p-12 nx-rounded nx-text-base nx-text-primary"
-          style={{ background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.4)' }}
+          className="p-3 rounded-lg text-[13px] text-noorix-text"
+          style={{ background: 'var(--noorix-yellow-12)', border: '1px solid var(--noorix-yellow-40)' }}
         >
           {lang === 'ar'
             ? 'لتفعيل Gemini: أضف GEMINI_API_KEY في backend/.env ثم أعد تشغيل السيرفر. احصل على المفتاح من: https://aistudio.google.com/app/apikey'
@@ -160,11 +160,11 @@ export default function AISettingsTab() {
 
 function DiagnosticRow({ label, value, ok, pending }) {
   return (
-    <div className="nx-flex nx-flex-between nx-gap-12 nx-border-all nx-rounded" style={{ padding: '10px 12px', background: 'var(--noorix-surface)' }}>
-      <span className="nx-text-base nx-font-500 nx-text-muted">{label}</span>
-      <div className="nx-flex nx-gap-8">
+    <div className="flex items-center justify-between gap-3 border border-noorix-border rounded-lg py-[10px] px-3" style={{ background: 'var(--noorix-surface)' }}>
+      <span className="text-[13px] font-medium text-noorix-muted">{label}</span>
+      <div className="flex gap-2">
         <span
-          className="nx-text-base nx-font-500"
+          className="text-[13px] font-medium"
           style={{
             color: pending ? 'var(--noorix-text-muted)' : ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
           }}
@@ -173,12 +173,8 @@ function DiagnosticRow({ label, value, ok, pending }) {
         </span>
         {!pending && (
           <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
-            }}
+            className="w-[6px] h-[6px] rounded-full"
+            style={{ background: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }}
           />
         )}
       </div>

@@ -1,10 +1,14 @@
-/**
+﻿/**
  * ui.css — نظام مكوّنات نووريكس الذري
  * يتضمن: Button | Input | Card | Badge | Modal | Spinner | Divider | FormRow | Table
  * ─────────────────────────────────────
  * مبني فوق CSS Variables الموجودة في index.css
  * كل قسم مُعلَّق بوضوح ويمكن تعديله من مكان واحد
+ *
+ * [Tailwind Layer] جميع قواعد هذا الملف ضمن @layer components
+ * يعني Tailwind utilities يمكنها تجاوزها بشكل صحيح
  */
+@layer components {
 
 /* ═══════════════════════════════════════════════════════════
    0. Z-Index System — نظام الطبقات الموحّد
@@ -115,8 +119,8 @@
 /* — hover / active / disabled / focus ── */
 .nx-btn:hover:not(:disabled) {
   background: var(--btn-default-hover);
-  border-color: #a8bcd4;
-  box-shadow: 0 1px 4px rgba(10,31,68,0.1), 0 2px 8px rgba(10,31,68,0.06);
+  border-color: var(--noorix-border);
+  box-shadow: 0 1px 4px var(--noorix-navy-10), 0 2px 8px rgba(10,31,68,0.06);
 }
 .nx-btn:active:not(:disabled)  { transform: translateY(1px); }
 .nx-btn:disabled                { opacity: 0.45; cursor: not-allowed; }
@@ -135,7 +139,7 @@
 .nx-btn--primary:hover:not(:disabled) {
   background: var(--btn-primary-hover);
   border-color: var(--btn-primary-hover);
-  box-shadow: 0 2px 8px rgba(37,99,235,0.3), 0 4px 16px rgba(37,99,235,0.12);
+  box-shadow: 0 2px 8px var(--noorix-blue-30), 0 4px 16px rgba(37,99,235,0.12);
   color: #fff;
 }
 
@@ -148,7 +152,7 @@
 .nx-btn--success:hover:not(:disabled) {
   background: var(--btn-success-hover);
   border-color: var(--btn-success-hover);
-  box-shadow: 0 2px 8px rgba(22,163,74,0.25);
+  box-shadow: 0 2px 8px var(--noorix-green-25);
   color: #fff;
 }
 
@@ -286,7 +290,7 @@
 
 .nx-input__field:focus {
   border-color: var(--noorix-accent-blue);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  box-shadow: 0 0 0 3px var(--noorix-blue-10);
 }
 
 .nx-input__field:disabled,
@@ -307,7 +311,7 @@
   border-color: var(--noorix-accent-red, #dc2626);
 }
 .nx-input--has-error .nx-input__field:focus {
-  box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+  box-shadow: 0 0 0 3px var(--noorix-red-10);
 }
 
 /* — Select ── */
@@ -746,8 +750,8 @@
   background: rgba(220, 38, 38, 0.03);
   border-bottom-color: rgba(220, 38, 38, 0.12);
 }
-.nx-modal--danger .nx-modal__title { color: #dc2626; }
-.nx-modal--danger .nx-modal__body  { background: #ffffff; }
+.nx-modal--danger .nx-modal__title { color: var(--noorix-accent-red); }
+.nx-modal--danger .nx-modal__body  { background: var(--noorix-bg-modal, var(--noorix-bg-surface)); }
 
 /* ── Flush variant (محتوى يملأ بدون padding) ── */
 .nx-modal--flush .nx-modal__body { padding: 0; }
@@ -1329,109 +1333,9 @@
    10. Layout Utilities — تخطيط الشاشات والهيدرات
    ═══════════════════════════════════════════════════════════ */
 
-/* الغلاف الرئيسي لأي شاشة */
-.nx-screen {
-  display: grid;
-  gap: 18px;
-}
-
-/* هيدر الصفحة: عنوان + شريط أدوات */
-.nx-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.nx-page-header__titles {
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.nx-page-title {
-  font-size: 22px;
-  font-weight: 800;
-  margin: 0;
-  color: var(--noorix-text);
-  line-height: 1.25;
-}
-
-.nx-page-desc {
-  margin-top: 6px;
-  margin-bottom: 0;
-  font-size: 13px;
-  color: var(--noorix-text-muted);
-}
-
-/* شريط الأدوات (أزرار الهيدر) */
-.nx-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-}
-
-/* شريط الفلتر (selects ونصوص labels) */
-.nx-filter-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.nx-filter-label {
-  font-size: 13px;
-  color: var(--noorix-text-muted);
-  white-space: nowrap;
-}
-
-/* ─── شريط التبويبات ─── */
-.nx-tab-bar {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--noorix-border);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.nx-tab-btn {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: var(--noorix-font-primary);
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  color: var(--noorix-text-muted);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color var(--noorix-transition), border-color var(--noorix-transition), background var(--noorix-transition);
-  margin: 0;
-}
-
-.nx-tab-btn:hover {
-  color: var(--noorix-accent-blue);
-  background: rgba(37, 99, 235, 0.04);
-}
-
-.nx-tab-btn--active {
-  color: var(--noorix-accent-blue);
-  border-bottom-color: var(--noorix-accent-blue);
-  background: rgba(37, 99, 235, 0.07);
-  font-weight: 700;
-}
-
-/* محتوى التبويب */
-.nx-tab-content {
-  padding: clamp(12px, 3vw, 24px);
-}
+/* ملاحظة: هذه الكلاسات انتقلت إلى @layer components في index.css */
+/* nx-screen, nx-page-header, nx-toolbar, nx-filter-controls,
+   nx-tab-bar, nx-tab-btn, nx-tab-btn--active → src/index.css */
 
 /* ─── حالات فارغة وأخطاء ─── */
 .nx-empty-state {
@@ -1446,7 +1350,7 @@
   border-radius: 10px;
   border: 1px solid rgba(239, 68, 68, 0.2);
   background: rgba(239, 68, 68, 0.06);
-  color: #b91c1c;
+  color: var(--noorix-accent-red);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1467,11 +1371,11 @@
   white-space: nowrap;
 }
 
-.nx-cell-num--blue   { color: #2563eb; }
-.nx-cell-num--green  { color: #16a34a; }
-.nx-cell-num--violet { color: #7c3aed; }
-.nx-cell-num--amber  { color: #d97706; }
-.nx-cell-num--red    { color: #dc2626; }
+.nx-cell-num--blue   { color: var(--noorix-accent-blue); }
+.nx-cell-num--green  { color: var(--noorix-accent-green); }
+.nx-cell-num--violet { color: var(--noorix-accent-violet); }
+.nx-cell-num--amber  { color: var(--noorix-accent-amber); }
+.nx-cell-num--red    { color: var(--noorix-accent-red); }
 
 /* نصية */
 .nx-cell-bold   { font-weight: 700; }
@@ -1579,7 +1483,7 @@
   white-space: nowrap;
 }
 
-.nx-pill--blue { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+.nx-pill--blue { background: color-mix(in srgb, var(--noorix-accent-blue) 10%, transparent); color: var(--noorix-accent-blue); }
 .nx-pill--sm   { font-size: 11px; padding: 2px 8px; }
 
 /* Modal flush — يُزيل الـ padding من داخل الـ Modal لمحتوى يملأ كامل العرض */
@@ -1673,7 +1577,7 @@
 }
 
 .nx-vault-icon-btn:hover:not(:disabled) {
-  background: rgba(37,99,235,0.08);
+  background: var(--noorix-blue-8);
   border-color: var(--noorix-accent-blue);
 }
 
@@ -1891,7 +1795,7 @@
 }
 
 .nx-supplier-option[aria-selected="true"] {
-  background: rgba(37,99,235,0.08);
+  background: var(--noorix-blue-8);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1916,225 +1820,23 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   21. Utility Classes — بديل الـ Inline Styles
-   مكتبة شاملة لإلغاء style={{ ... }} في مكونات النظام
+   21. Legacy Utility — ما تبقى (الباقي نُقل إلى Tailwind)
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Flex Layout ─────────────────────────────────── */
-.nx-flex           { display: flex; }
-.nx-flex-col       { display: flex; flex-direction: column; }
-.nx-flex-center    { display: flex; align-items: center; }
-.nx-flex-between   { display: flex; align-items: center; justify-content: space-between; }
-.nx-flex-end       { display: flex; align-items: center; justify-content: flex-end; }
-.nx-flex-start     { display: flex; align-items: flex-start; }
-.nx-flex-wrap      { display: flex; flex-wrap: wrap; }
-.nx-flex-col-center { display: flex; flex-direction: column; align-items: center; }
-.nx-inline-flex    { display: inline-flex; align-items: center; }
-.nx-flex-1         { flex: 1; min-width: 0; }
-.nx-flex-shrink-0  { flex-shrink: 0; }
-.nx-items-start    { align-items: flex-start; }
-.nx-items-end      { align-items: flex-end; }
-.nx-justify-center { justify-content: center; }
-.nx-justify-end    { justify-content: flex-end; }
-
-/* ── Grid Layout ─────────────────────────────────── */
-.nx-grid           { display: grid; }
-.nx-grid-2         { display: grid; grid-template-columns: 1fr 1fr; }
-.nx-grid-3         { display: grid; grid-template-columns: 1fr 1fr 1fr; }
-.nx-grid-4         { display: grid; grid-template-columns: repeat(4, 1fr); }
-.nx-grid-auto      { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-
-/* ── Gap ─────────────────────────────────────────── */
-.nx-gap-2  { gap: 2px; }
-.nx-gap-4  { gap: 4px; }
-.nx-gap-6  { gap: 6px; }
-.nx-gap-7  { gap: 7px; }
-.nx-gap-8  { gap: 8px; }
-.nx-gap-10 { gap: 10px; }
-.nx-gap-12 { gap: 12px; }
-.nx-gap-14 { gap: 14px; }
-.nx-gap-16 { gap: 16px; }
-.nx-gap-20 { gap: 20px; }
-.nx-gap-24 { gap: 24px; }
-
-/* ── Padding ─────────────────────────────────────── */
-.nx-p-4  { padding: 4px; }
-.nx-p-6  { padding: 6px; }
-.nx-p-8  { padding: 8px; }
-.nx-p-10 { padding: 10px; }
-.nx-p-12 { padding: 12px; }
-.nx-p-14 { padding: 14px; }
-.nx-p-16 { padding: 16px; }
-.nx-p-20 { padding: 20px; }
-.nx-p-24 { padding: 24px; }
-.nx-px-8  { padding-inline: 8px; }
-.nx-px-12 { padding-inline: 12px; }
-.nx-px-16 { padding-inline: 16px; }
-.nx-py-4  { padding-block: 4px; }
-.nx-py-6  { padding-block: 6px; }
-.nx-py-8  { padding-block: 8px; }
-.nx-py-12 { padding-block: 12px; }
-
-/* ── Margin ─────────────────────────────────────── */
-.nx-m-0  { margin: 0; }
-.nx-mt-0 { margin-top: 0; }
-.nx-mt-4 { margin-top: 4px; }
-.nx-mt-6 { margin-top: 6px; }
-.nx-mt-8 { margin-top: 8px; }
-.nx-mt-10 { margin-top: 10px; }
-.nx-mt-12 { margin-top: 12px; }
-.nx-mt-16 { margin-top: 16px; }
-.nx-mt-20 { margin-top: 20px; }
-.nx-mb-0 { margin-bottom: 0; }
-.nx-mb-4 { margin-bottom: 4px; }
-.nx-mb-6 { margin-bottom: 6px; }
-.nx-mb-8 { margin-bottom: 8px; }
-.nx-mb-12 { margin-bottom: 12px; }
-.nx-mb-16 { margin-bottom: 16px; }
-
-/* ── Typography ─────────────────────────────────── */
-.nx-text-xs   { font-size: 11px; }
-.nx-text-2xs  { font-size: 10px; }
-.nx-text-sm   { font-size: 12px; }
-.nx-text-base { font-size: 13px; }
-.nx-text-md   { font-size: 14px; }
-.nx-text-lg   { font-size: 15px; }
-.nx-text-xl   { font-size: 16px; }
-.nx-text-2xl  { font-size: 18px; }
-.nx-text-3xl  { font-size: 20px; }
-
-.nx-font-400 { font-weight: 400; }
-.nx-font-500 { font-weight: 500; }
-.nx-font-600 { font-weight: 600; }
-.nx-font-700 { font-weight: 700; }
-.nx-font-800 { font-weight: 800; }
-
-.nx-text-muted   { color: var(--noorix-text-muted); }
-.nx-text-primary { color: var(--noorix-text); }
-.nx-text-blue    { color: var(--noorix-accent-blue); }
-.nx-text-green   { color: var(--noorix-accent-green); }
-.nx-text-red     { color: #dc2626; }
-.nx-text-orange  { color: #f59e0b; }
-.nx-text-center  { text-align: center; }
-.nx-text-end     { text-align: end; }
-.nx-text-start   { text-align: start; }
-.nx-uppercase    { text-transform: uppercase; letter-spacing: 0.05em; }
-.nx-nowrap       { white-space: nowrap; }
-.nx-truncate     { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nx-font-numbers { font-family: var(--noorix-font-numbers); }
-
-/* ── Surface / Card ─────────────────────────────── */
-.nx-surface    { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 12px; }
-.nx-surface-sm { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 8px; }
-.nx-bg-muted   { background: var(--noorix-bg-muted); }
-.nx-bg-surface { background: var(--noorix-bg-surface); }
-.nx-bg-page    { background: var(--noorix-bg-page); }
-.nx-border-b   { border-bottom: 1px solid var(--noorix-border); }
-.nx-border-t   { border-top: 1px solid var(--noorix-border); }
-.nx-border-all { border: 1px solid var(--noorix-border); }
-.nx-rounded    { border-radius: 8px; }
-.nx-rounded-lg { border-radius: 12px; }
-.nx-rounded-xl { border-radius: 16px; }
-.nx-rounded-full { border-radius: 999px; }
-
-/* ── Dimensions ─────────────────────────────────── */
-.nx-w-full    { width: 100%; }
-.nx-w-auto    { width: auto; }
-.nx-min-w-0   { min-width: 0; }
-.nx-h-full    { height: 100%; }
-.nx-max-w-sm  { max-width: 400px; }
-.nx-max-w-md  { max-width: 560px; }
-.nx-max-w-lg  { max-width: 720px; }
-
-/* ── Overflow / Scroll ───────────────────────────── */
-.nx-overflow-auto    { overflow: auto; }
-.nx-overflow-hidden  { overflow: hidden; }
-.nx-overflow-x-auto  { overflow-x: auto; }
-.nx-scroll-x         { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-.nx-scroll-x::-webkit-scrollbar { display: none; }
-
-/* ── Position ────────────────────────────────────── */
-.nx-relative { position: relative; }
-.nx-absolute { position: absolute; }
-
-/* ── Direction ───────────────────────────────────── */
+/* ── Direction (no Tailwind equivalent) ──────────── */
 .nx-ltr  { direction: ltr; unicode-bidi: isolate; }
 .nx-rtl  { direction: rtl; unicode-bidi: isolate; }
 
-/* ── Misc ────────────────────────────────────────── */
-.nx-cursor-pointer { cursor: pointer; }
-.nx-select-none    { user-select: none; }
-.nx-opacity-50     { opacity: 0.5; }
-.nx-sr-only        { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
-.nx-no-wrap        { white-space: nowrap; }
-.nx-break-all      { word-break: break-all; }
-.nx-line-clamp-2   { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* ── Surface / Card (compound, kept as component) ── */
+.nx-surface    { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 12px; }
+.nx-surface-sm { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 8px; }
 
-/* ── Common Compound Patterns ────────────────────── */
-/* شريط أدوات مع عنوان + أزرار */
-.nx-row-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-/* حاوية مكدسة عمودياً بفجوة موحدة */
-.nx-stack-12 { display: flex; flex-direction: column; gap: 12px; }
-.nx-stack-16 { display: flex; flex-direction: column; gap: 16px; }
-.nx-stack-20 { display: flex; flex-direction: column; gap: 20px; }
-/* بطاقة حالة (رقم + ملصق) */
-.nx-stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  text-align: center;
-}
-/* رأس قسم مع خط سفلي */
-.nx-section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--noorix-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--noorix-border);
-  margin-bottom: 12px;
-}
-/* عنصر قائمة اختيار (dropdown/listbox item) */
-.nx-list-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--noorix-text);
-  transition: background 120ms;
-}
-.nx-list-option:hover { background: var(--noorix-bg-muted); }
-.nx-list-option--active { background: rgba(37,99,235,0.08); color: var(--noorix-accent-blue); font-weight: 600; }
+/* ── Scrollable X (complex, keep) ───────────────── */
+.nx-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.nx-scroll-x::-webkit-scrollbar { display: none; }
 
-/* ── Semantic Colors — ألوان دلالية مالية ─────────── */
-/* الإيرادات والإيداعات (أخضر) */
-.nx-text-income   { color: #16a34a; }
-.nx-bg-income     { background: rgba(22,163,74,0.08); }
-.nx-border-income { border-color: #16a34a; }
-
-/* المصروفات والسحوبات (أحمر) */
-.nx-text-expense  { color: #dc2626; }
-.nx-bg-expense    { background: rgba(220,38,38,0.08); }
-.nx-border-expense { border-color: #dc2626; }
-
-/* تحذير/معلق (كهرماني) */
-.nx-text-warn     { color: #d97706; }
-.nx-bg-warn       { background: rgba(217,119,6,0.08); }
-
-/* معلومة/رابط (أزرق) */
-.nx-text-info     { color: #2563eb; }
-.nx-bg-info       { background: rgba(37,99,235,0.08); }
+/* ── Font numbers (custom font, keep) ──────────── */
+.nx-font-numbers { font-family: var(--noorix-font-numbers); }
 
 /* ── Number Display — أرقام مالية ───────────────── */
 /* رقم مالي LTR */
@@ -2209,7 +1911,7 @@
   transition: box-shadow 200ms, transform 200ms;
 }
 .nx-kpi-card:hover {
-  box-shadow: 0 2px 8px rgba(10,31,68,0.06), 0 8px 28px rgba(10,31,68,0.1);
+  box-shadow: 0 2px 8px rgba(10,31,68,0.06), 0 8px 28px var(--noorix-navy-10);
   transform: translateY(-1px);
 }
 
@@ -2233,7 +1935,7 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--kpi-accent-bg, rgba(37,99,235,0.08));
+  background: var(--kpi-accent-bg, var(--noorix-blue-8));
   color: var(--kpi-accent, #2563eb);
   flex-shrink: 0;
   margin-bottom: 14px;
@@ -2272,7 +1974,7 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  background: var(--kpi-accent-bg, rgba(37,99,235,0.08));
+  background: var(--kpi-accent-bg, var(--noorix-blue-8));
   color: var(--kpi-accent, #2563eb);
   width: fit-content;
 }
@@ -2294,28 +1996,28 @@
 
 /* ── ألوان محددة مسبقاً ── */
 .nx-kpi-card--sales {
-  --kpi-accent:    #16a34a;
-  --kpi-accent-bg: rgba(22,163,74,0.08);
+  --kpi-accent:    var(--noorix-accent-green);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-green) 8%, transparent);
 }
 .nx-kpi-card--purchases {
-  --kpi-accent:    #dc2626;
-  --kpi-accent-bg: rgba(220,38,38,0.08);
+  --kpi-accent:    var(--noorix-accent-red);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-red) 8%, transparent);
 }
 .nx-kpi-card--expenses {
-  --kpi-accent:    #ea580c;
-  --kpi-accent-bg: rgba(234,88,12,0.08);
+  --kpi-accent:    var(--noorix-accent-amber);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-amber) 8%, transparent);
 }
 .nx-kpi-card--profit {
-  --kpi-accent:    #2563eb;
-  --kpi-accent-bg: rgba(37,99,235,0.08);
+  --kpi-accent:    var(--noorix-accent-blue);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-blue) 8%, transparent);
 }
 .nx-kpi-card--loss {
-  --kpi-accent:    #dc2626;
-  --kpi-accent-bg: rgba(220,38,38,0.08);
+  --kpi-accent:    var(--noorix-accent-red);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-red) 8%, transparent);
 }
 .nx-kpi-card--neutral {
-  --kpi-accent:    #6366f1;
-  --kpi-accent-bg: rgba(99,102,241,0.08);
+  --kpi-accent:    var(--noorix-accent-violet);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-violet) 8%, transparent);
 }
 
 /* شبكة كروت KPI */
@@ -2414,8 +2116,8 @@
   display: inline-block;
   flex-shrink: 0;
 }
-.nx-legend-dot--income { background: #16a34a; }
-.nx-legend-dot--expense { background: #dc2626; }
+.nx-legend-dot--income { background: var(--noorix-accent-green); }
+.nx-legend-dot--expense { background: var(--noorix-accent-red); }
 .nx-legend-dot--bar {
   width: 14px;
   height: 14px;
@@ -2423,8 +2125,8 @@
   display: inline-block;
   flex-shrink: 0;
 }
-.nx-legend-dot--bar-red { background: #dc2626; }
-.nx-legend-dot--bar-green { background: #16a34a; }
+.nx-legend-dot--bar-red { background: var(--noorix-accent-red); }
+.nx-legend-dot--bar-green { background: var(--noorix-accent-green); }
 
 .nx-table-collapse { border-collapse: collapse; }
 .nx-th-pad { padding: 8px 10px; text-align: start; vertical-align: middle; }
@@ -2454,7 +2156,7 @@
   text-align: center;
 }
 .nx-text-violet {
-  color: #7c3aed;
+  color: var(--noorix-accent-violet);
 }
 
 .nx-pie-chart-wrap {
@@ -2580,3 +2282,5 @@
   flex-shrink: 0;
   display: inline-block;
 }
+
+} /* end @layer components */

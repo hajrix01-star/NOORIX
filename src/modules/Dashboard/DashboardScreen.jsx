@@ -1,5 +1,5 @@
-/**
- * DashboardScreen — لوحة التحكم الرئيسية مع تبويبات (نظرة عامة، تقويم، مبيعات التطبيق)
+﻿/**
+ * DashboardScreen — لوحة التحكم الرئيسية
  */
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
@@ -48,32 +48,22 @@ export default function DashboardScreen() {
   }), [year, selectedMonthNumber]);
 
   return (
-    <div className="nx-screen">
-      {/* هيدر: عنوان + فلتر السنة/الشهر */}
-      <div className="nx-page-header">
-        <div className="nx-page-header__titles">
-          <h1 className="nx-page-title">{t('dashboard')}</h1>
-          <p className="nx-page-desc">{t('dashboardDesc')}</p>
+    <div className="flex flex-col gap-4 p-4 lg:p-6 flex flex-col gap-4">
+      {/* هيدر */}
+      <div className="flex flex-wrap items-start justify-between gap-3 nx-page-header">
+        <div>
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('dashboard')}</h1>
+          <p className="text-[13px] text-noorix-muted mt-1 m-0">{t('dashboardDesc')}</p>
         </div>
-
-        <div className="nx-filter-controls">
-          <label className="nx-filter-label">{t('reportYear')}</label>
-          <Input
-            type="select"
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-          >
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[12px] text-noorix-muted">{t('reportYear')}</span>
+          <Input type="select" size="sm" value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {[now.year, now.year - 1, now.year - 2].map((y) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </Input>
-
-          <label className="nx-filter-label">{t('reportMonth')}</label>
-          <Input
-            type="select"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-          >
+          <span className="text-[12px] text-noorix-muted">{t('reportMonth')}</span>
+          <Input type="select" size="sm" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
             <option value="">{t('allMonths')}</option>
             {MONTH_NAMES_EN.map((m, i) => (
               <option key={i} value={i + 1}>{m}</option>
@@ -83,21 +73,27 @@ export default function DashboardScreen() {
       </div>
 
       {/* بطاقة التبويبات */}
-      <div className="noorix-surface-card nx-overflow-hidden" style={{ padding: 0 }}>
-        <div className="nx-tab-bar">
+      <div className="bg-noorix-surface border border-noorix-border rounded-xl shadow-sm overflow-hidden noorix-surface-card">
+        {/* شريط التبويبات */}
+        <div className="flex border-b border-noorix-border overflow-x-auto nx-tab-bar">
           {DASHBOARD_TABS.map((tab) => (
             <Button
               key={tab.id}
-              type="button"
-              className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
+              variant="raw"
+              size="auto"
               onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-noorix-blue text-noorix-blue'
+                  : 'border-transparent text-noorix-muted hover:text-noorix-text'
+              } nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
             >
               {t(tab.labelKey)}
             </Button>
           ))}
         </div>
 
-        <div className="nx-tab-content">
+        <div className="p-4 nx-tab-content">
           {activeTab === 'overview'    && <DashboardOverviewTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
           {activeTab === 'calendar'    && <DashboardCalendarTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
           {activeTab === 'specialDays' && <DashboardSpecialDaysTab companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} />}

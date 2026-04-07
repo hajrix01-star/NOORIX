@@ -1,4 +1,4 @@
-/**
+﻿/**
  * جدول العمليات الكامل — فرز، تصفية، تصنيف، ملاحظات
  * واجهة محترفة مع تمييز لوني وعرض واضح للأرقام
  */
@@ -70,7 +70,7 @@ export default function BankStatementTransactionsFullTab({
       onClick={() => handleSort(sortKey)}
     >
       {label}
-      <span style={{ fontSize: 10, opacity: sortConfig.key === sortKey ? 1 : 0.35 }}>
+      <span className="text-[10px]" style={{ opacity: sortConfig.key === sortKey ? 1 : 0.35 }}>
         {sortConfig.key === sortKey ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}
       </span>
     </Button>
@@ -81,10 +81,10 @@ export default function BankStatementTransactionsFullTab({
     filteredTransactions.every((tx) => selectedTxIds.has(getTxKey(tx)));
 
   return (
-    <div className="nx-grid nx-gap-14">
+    <div className="grid gap-3.5">
       {/* ── شريط الفلاتر ── */}
       <div
-        className="nx-grid nx-gap-10 nx-bg-muted nx-rounded-lg nx-p-12 nx-border-all"
+        className="grid gap-2.5 bg-noorix-bg-muted rounded-xl p-3 border border-noorix-border"
         style={{
           gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
         }}
@@ -146,22 +146,13 @@ export default function BankStatementTransactionsFullTab({
 
         {/* إحصاء */}
         <div
-          className="nx-flex-center nx-gap-10 nx-text-sm nx-rounded nx-px-12 nx-py-4 nx-bg-surface nx-border-all"
+          className="flex items-center gap-10 text-[12px] rounded-lg px-3 py-1 bg-noorix-surface border border-noorix-border"
         >
-          <span style={{ color: 'var(--noorix-text-muted)' }}>النتائج:</span>
-          <span style={{ fontWeight: 700 }}>{filteredTransactions.length}</span>
-          <span style={{ color: 'var(--noorix-text-muted)' }}>عملية</span>
+          <span className="text-noorix-muted">النتائج:</span>
+          <span className="font-bold">{filteredTransactions.length}</span>
+          <span className="text-noorix-muted">عملية</span>
           {selectedTxIds.size > 0 && (
-            <span
-              style={{
-                background: 'var(--noorix-accent-blue)',
-                color: '#fff',
-                borderRadius: 12,
-                padding: '2px 8px',
-                fontSize: 11,
-                fontWeight: 700,
-              }}
-            >
+            <span className="bg-noorix-blue text-white rounded-xl px-2 py-[2px] text-[11px] font-bold">
               {selectedTxIds.size} محدد
             </span>
           )}
@@ -170,9 +161,9 @@ export default function BankStatementTransactionsFullTab({
 
       {/* ── إضافة فئة جديدة ── */}
       <div
-        className="nx-flex-center nx-flex-wrap nx-gap-8 nx-bg-muted nx-rounded nx-border-all nx-px-12 nx-py-8"
+        className="flex items-center flex flex-wrap gap-2 bg-noorix-bg-muted rounded-lg border border-noorix-border px-3 py-2"
       >
-        <span className="nx-text-sm nx-font-600 nx-text-muted">
+        <span className="text-[12px] font-semibold text-noorix-muted">
           {t('bankStatementAddCategory')}:
         </span>
         <Input
@@ -193,16 +184,11 @@ export default function BankStatementTransactionsFullTab({
       </div>
 
       {/* ── الجدول ── */}
-      <div className="nx-overflow-auto nx-rounded-lg nx-border-all" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 780 }}>
+      <div className="overflow-auto rounded-xl border border-noorix-border" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+        <table className="w-full text-[12px] min-w-[780px]" style={{ borderCollapse: 'collapse' }}>
           <thead>
-            <tr
-              className="nx-bg-muted"
-              style={{
-                borderBottom: '2px solid var(--noorix-border)',
-              }}
-            >
-              <th style={{ width: 36, padding: '10px 10px' }}>
+            <tr className="bg-noorix-bg-muted border-b-2 border-noorix-border">
+              <th className="w-9 p-2.5">
                 <label className="nx-checkbox">
                   <input
                     type="checkbox"
@@ -212,25 +198,25 @@ export default function BankStatementTransactionsFullTab({
                   />
                 </label>
               </th>
-              <th style={{ padding: '10px 10px', textAlign: 'right' }}>
+              <th className="p-2.5 text-right">
                 <SortBtn label={t('bankStatementDate')} sortKey="txDate" />
               </th>
-              <th style={{ padding: '10px 10px', textAlign: 'right' }}>
+              <th className="p-2.5 text-right">
                 <SortBtn label={t('bankStatementDescription')} sortKey="description" />
               </th>
-              <th style={{ padding: '10px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+              <th className="p-2.5 text-right whitespace-nowrap">
                 {t('bankStatementCategories')}
               </th>
-              <th style={{ padding: '10px 10px', textAlign: 'right' }}>
+              <th className="p-2.5 text-right">
                 <SortBtn label={t('bankStatementColDebit')} sortKey="debit" />
               </th>
-              <th style={{ padding: '10px 10px', textAlign: 'right' }}>
+              <th className="p-2.5 text-right">
                 <SortBtn label={t('bankStatementColCredit')} sortKey="credit" />
               </th>
-              <th style={{ padding: '10px 10px', textAlign: 'right' }}>
+              <th className="p-2.5 text-right">
                 <SortBtn label={t('bankStatementBalance')} sortKey="balance" />
               </th>
-              <th style={{ padding: '10px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+              <th className="p-2.5 text-right whitespace-nowrap">
                 {t('bankStatementAddNote')}
               </th>
             </tr>
@@ -238,7 +224,7 @@ export default function BankStatementTransactionsFullTab({
           <tbody>
             {filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan={8} className="nx-text-center nx-text-muted" style={{ padding: 32 }}>
+                <td colSpan={8} className="text-center text-noorix-muted p-8">
                   لا توجد عمليات تطابق الفلاتر المحددة.
                 </td>
               </tr>
@@ -256,7 +242,7 @@ export default function BankStatementTransactionsFullTab({
                     style={{
                       borderBottom: '1px solid var(--noorix-border)',
                       background: isSelected
-                        ? 'rgba(37,99,235,0.06)'
+                        ? 'var(--noorix-blue-6)'
                         : rowIdx % 2 === 0
                         ? 'transparent'
                         : 'var(--noorix-bg-muted)',
@@ -264,7 +250,7 @@ export default function BankStatementTransactionsFullTab({
                     }}
                   >
                     {/* Checkbox */}
-                    <td style={{ padding: '8px 10px' }}>
+                    <td className="py-2 px-[10px]">
                       <label className="nx-checkbox">
                         <input
                           type="checkbox"
@@ -275,18 +261,14 @@ export default function BankStatementTransactionsFullTab({
                     </td>
 
                     {/* التاريخ */}
-                    <td style={{ padding: '8px 10px', whiteSpace: 'nowrap', color: 'var(--noorix-text-muted)', fontSize: 11 }}>
+                    <td className="py-2 px-2.5 whitespace-nowrap text-noorix-muted text-[11px]">
                       {tx.txDate}
                     </td>
 
                     {/* الوصف */}
-                    <td style={{ padding: '8px 10px', maxWidth: 280 }}>
+                    <td className="py-2 px-2.5 max-w-[280px]">
                       <div
-                        className="nx-overflow-hidden nx-text-sm"
-                        style={{
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
+                        className="overflow-hidden text-[12px] truncate"
                         title={tx.description}
                       >
                         {tx.description}
@@ -294,9 +276,9 @@ export default function BankStatementTransactionsFullTab({
                     </td>
 
                     {/* الفئة */}
-                    <td style={{ padding: '8px 10px' }}>
+                    <td className="py-2 px-2.5">
                       {editingTxId === tx.id ? (
-                        <div className="nx-flex-col nx-gap-4">
+                        <div className="flex flex-col gap-1">
                           <Input
                             type="select"
                             value={editingCategory}
@@ -307,7 +289,7 @@ export default function BankStatementTransactionsFullTab({
                               <option key={c.id} value={c.id}>{c.label}</option>
                             ))}
                           </Input>
-                          <div className="nx-flex nx-gap-4">
+                          <div className="flex gap-1">
                             <Button
                               variant="primary"
                               size="sm"
@@ -322,7 +304,7 @@ export default function BankStatementTransactionsFullTab({
                       ) : (
                         <Button
                           size="sm"
-                          style={{ textAlign: 'start', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
+                          className="text-start max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap block"
                           onClick={() => {
                             setEditingTxId(tx.id);
                             setEditingCategory(catId);
@@ -334,58 +316,36 @@ export default function BankStatementTransactionsFullTab({
                     </td>
 
                     {/* السحب */}
-                    <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                    <td className="py-2 px-2.5 text-right">
                       {isDebit ? (
-                        <span
-                          style={{
-                            direction: 'ltr',
-                            display: 'inline-block',
-                            fontWeight: 700,
-                            color: '#dc2626',
-                            background: 'rgba(220,38,38,0.07)',
-                            borderRadius: 6,
-                            padding: '2px 8px',
-                            fontSize: 12,
-                          }}
-                        >
+                        <span className="nx-ltr inline-block font-bold text-noorix-red px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-red-7)]">
                           {fmt(Number(tx.debit))}
                         </span>
                       ) : (
-                        <span style={{ color: 'var(--noorix-text-muted)' }}>—</span>
+                        <span className="text-noorix-muted">—</span>
                       )}
                     </td>
 
                     {/* الإيداع */}
-                    <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                    <td className="py-2 px-2.5 text-right">
                       {isCredit ? (
-                        <span
-                          style={{
-                            direction: 'ltr',
-                            display: 'inline-block',
-                            fontWeight: 700,
-                            color: '#16a34a',
-                            background: 'rgba(22,163,74,0.07)',
-                            borderRadius: 6,
-                            padding: '2px 8px',
-                            fontSize: 12,
-                          }}
-                        >
+                        <span className="nx-ltr inline-block font-bold text-noorix-green px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-green-7)]">
                           {fmt(Number(tx.credit))}
                         </span>
                       ) : (
-                        <span style={{ color: 'var(--noorix-text-muted)' }}>—</span>
+                        <span className="text-noorix-muted">—</span>
                       )}
                     </td>
 
                     {/* الرصيد */}
-                    <td style={{ padding: '8px 10px', textAlign: 'right', direction: 'ltr', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+                    <td className="py-2 px-2.5 text-right nx-ltr text-[12px] text-noorix-muted">
                       {tx.balance != null && Number(tx.balance) !== 0 ? fmt(Number(tx.balance)) : '—'}
                     </td>
 
                     {/* الملاحظة */}
-                    <td style={{ padding: '8px 10px' }}>
+                    <td className="py-2 px-2.5">
                       {editingNoteId === tx.id ? (
-                        <div className="nx-flex-col nx-gap-4">
+                        <div className="flex flex-col gap-1">
                           <Input
                             value={editingNote}
                             onChange={(e) => setEditingNote(e.target.value)}
@@ -397,7 +357,7 @@ export default function BankStatementTransactionsFullTab({
                               width: 150,
                             }}
                           />
-                          <div className="nx-flex nx-gap-4">
+                          <div className="flex gap-1">
                             <Button variant="primary" size="sm" disabled={updateNoteMutation.isPending} onClick={() => handleNoteChange(tx.id)}>
                               {t('save')}
                             </Button>
@@ -423,33 +383,24 @@ export default function BankStatementTransactionsFullTab({
             )}
           </tbody>
           <tfoot>
-            <tr
-              className="nx-bg-muted nx-font-800"
-              style={{
-                borderTop: '2px solid var(--noorix-border)',
-              }}
-            >
-              <td colSpan={4} style={{ padding: '10px 12px', fontSize: 12, color: 'var(--noorix-text-muted)' }}>
+            <tr className="bg-noorix-bg-muted font-extrabold border-t-2 border-noorix-border">
+              <td colSpan={4} className="p-[10px_12px] text-[12px] text-noorix-muted">
                 {t('bankColumnTotalsFiltered')} ({filteredTransactions.length} عملية)
               </td>
-              <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                <span style={{ color: '#dc2626', direction: 'ltr', display: 'inline-block', fontSize: 13 }}>
+              <td className="p-[10px_12px] text-right">
+                <span className="nx-ltr inline-block text-noorix-red text-[13px]">
                   {fmt(columnTotals.debit)}
                 </span>
               </td>
-              <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                <span style={{ color: '#16a34a', direction: 'ltr', display: 'inline-block', fontSize: 13 }}>
+              <td className="p-[10px_12px] text-right">
+                <span className="nx-ltr inline-block text-noorix-green text-[13px]">
                   {fmt(columnTotals.credit)}
                 </span>
               </td>
-              <td colSpan={2} style={{ padding: '10px 12px', textAlign: 'right', fontSize: 12 }}>
+              <td colSpan={2} className="p-[10px_12px] text-right text-[12px]">
                 <span
-                  style={{
-                    color: columnTotals.credit - columnTotals.debit >= 0 ? '#059669' : '#e11d48',
-                    fontWeight: 800,
-                    direction: 'ltr',
-                    display: 'inline-block',
-                  }}
+                  className="nx-ltr inline-block font-[800]"
+                  style={{ color: columnTotals.credit - columnTotals.debit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)' }}
                 >
                   {columnTotals.credit - columnTotals.debit >= 0 ? '+' : ''}{fmt(columnTotals.credit - columnTotals.debit)}
                 </span>

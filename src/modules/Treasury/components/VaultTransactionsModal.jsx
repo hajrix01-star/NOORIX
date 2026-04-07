@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VaultTransactionsModal — عرض حركات الخزنة مع ترقيم + فلترة زمنية + تصدير Excel وطباعة PDF
  * الترقيم: 50 صف/صفحة. الفلترة الزمنية إلزامية (من DateFilterBar في الشاشة الأم).
  */
@@ -103,7 +103,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     const rows = items.map((r) =>
       `<tr><td>${(r.documentNumber || r.referenceId || '—').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(r.transactionDate).replace(/</g, '&lt;')}</td><td>${(r.referenceType || '—').replace(/</g, '&lt;')}</td><td style="text-align:right;font-family:Cairo">${r.debit != null ? fmt(r.debit, 2) : '—'}</td><td style="text-align:right;font-family:Cairo">${r.credit != null ? fmt(r.credit, 2) : '—'}</td></tr>`,
     ).join('');
-    const totalRow = `<tr style="font-weight:700;background:rgba(37,99,235,0.08)"><td colspan="3">${t('total').replace(/</g, '&lt;')}</td><td style="text-align:right;font-family:Cairo">${fmt(totalDebit, 2)}</td><td style="text-align:right;font-family:Cairo">${fmt(totalCredit, 2)}</td></tr>`;
+    const totalRow = `<tr style="font-weight:700;background:var(--noorix-blue-8)"><td colspan="3">${t('total').replace(/</g, '&lt;')}</td><td style="text-align:right;font-family:Cairo">${fmt(totalDebit, 2)}</td><td style="text-align:right;font-family:Cairo">${fmt(totalCredit, 2)}</td></tr>`;
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('transactions') || '').replace(/</g, '&lt;')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd;text-align:right}th{background:#2563eb;color:#fff;font-weight:700}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}@media print{body{padding:0}}</style></head><body>
@@ -120,27 +120,27 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
 
   const columns = [
     { key: 'documentNumber', label: t('documentNumber'), render: (_, r) => <span className="nx-cell-num">{r.documentNumber || r.referenceId || '—'}</span> },
-    { key: 'transactionDate', label: t('date'), render: (v) => <span className="nx-text-sm">{formatSaudiDate(v)}</span> },
-    { key: 'referenceType', label: t('type'), render: (v) => <span className="nx-text-sm">{v || '—'}</span> },
-    { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <span className="nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> : <span>—</span> },
-    { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <span className="nx-text-expense" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> : <span>—</span> },
+    { key: 'transactionDate', label: t('date'), render: (v) => <span className="text-[12px]">{formatSaudiDate(v)}</span> },
+    { key: 'referenceType', label: t('type'), render: (v) => <span className="text-[12px]">{v || '—'}</span> },
+    { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <span className="text-noorix-green nx-font-numbers">{fmt(v)}</span> : <span>—</span> },
+    { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <span className="text-noorix-red nx-font-numbers">{fmt(v)}</span> : <span>—</span> },
   ];
 
   const renderMobileCard = useCallback((row) => (
     <div>
-      <div className="nx-flex nx-flex-between nx-mb-4">
-        <span className="nx-font-700 nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.documentNumber || row.referenceId || '—'}</span>
-        <span className="nx-text-sm nx-text-muted">{formatSaudiDate(row.transactionDate)}</span>
+      <div className="flex flex items-center justify-between mb-1">
+        <span className="font-bold text-[13px] nx-font-numbers">{row.documentNumber || row.referenceId || '—'}</span>
+        <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
       </div>
-      {row.referenceType && <div className="nx-text-sm nx-text-muted nx-mb-8">{row.referenceType}</div>}
-      <div className="nx-grid-2 nx-gap-6 nx-rounded nx-bg-muted" style={{ padding: '8px 10px' }}>
+      {row.referenceType && <div className="text-[12px] text-noorix-muted mb-2">{row.referenceType}</div>}
+      <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted py-2 px-[10px]">
         <div>
-          <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('debit')}</div>
-          <div className="nx-text-md nx-font-700 nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.debit != null ? fmt(row.debit) : '—'}</div>
+          <div className="text-noorix-muted mb-1 text-[10px]">{t('debit')}</div>
+          <div className="text-[14px] font-bold text-noorix-green nx-font-numbers">{row.debit != null ? fmt(row.debit) : '—'}</div>
         </div>
         <div>
-          <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('credit')}</div>
-          <div className="nx-text-md nx-font-700 nx-text-expense" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.credit != null ? fmt(row.credit) : '—'}</div>
+          <div className="text-noorix-muted mb-1 text-[10px]">{t('credit')}</div>
+          <div className="text-[14px] font-bold text-noorix-red nx-font-numbers">{row.credit != null ? fmt(row.credit) : '—'}</div>
         </div>
       </div>
     </div>
@@ -148,9 +148,9 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
 
   const footerCells = items.length > 0 ? (
     <>
-      <td colSpan={4} className="nx-font-700 nx-p-10" style={{ background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{t('total')}</td>
-      <td className="nx-font-700 nx-text-end nx-p-10 nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)', background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalDebit, 2)}</td>
-      <td className="nx-font-700 nx-text-end nx-p-10 nx-text-expense" style={{ fontFamily: 'var(--noorix-font-numbers)', background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalCredit, 2)}</td>
+      <td colSpan={4} className="font-bold p-2.5 bg-noorix-blue/6 border-t-2 border-noorix-border">{t('total')}</td>
+      <td className="font-bold text-end p-2.5 text-noorix-green nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border">{fmt(totalDebit, 2)}</td>
+      <td className="font-bold text-end p-2.5 text-noorix-red nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border">{fmt(totalCredit, 2)}</td>
     </>
   ) : null;
 
@@ -167,13 +167,13 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
       side="start"
       className="vault-transactions-drawer"
     >
-      <div className="nx-toolbar nx-mb-16">
+      <div className="nx-toolbar mb-4">
         <Button onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>Excel</Button>
         <Button onClick={handlePrintPdf} disabled={!items.length}>PDF</Button>
       </div>
 
       {isPaginatedTotal && (
-        <div className="nx-text-sm nx-text-muted nx-bg-surface nx-border-all nx-rounded nx-mb-12 nx-px-12 nx-py-6" style={{ lineHeight: 1.5 }}>
+        <div className="text-[12px] text-noorix-muted bg-noorix-surface border border-noorix-border rounded-lg mb-3 px-3 py-1.5 leading-[1.5]">
           ℹ️ المجموع الظاهر في الأسفل يعكس إجمالي حركات الفترة بأكملها ({data?.total?.toLocaleString('en')} حركة)، وليس مجموع الصفحة الحالية فقط. للاطلاع على جميع الحركات استخدم تصدير Excel.
         </div>
       )}

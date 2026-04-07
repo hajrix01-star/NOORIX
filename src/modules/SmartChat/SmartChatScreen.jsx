@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SmartChatScreen — المحادثة الذكية
  * نسق مرجعي: أوامر مجمّعة، إدخال، نوافذ مركزية، تخزين محلي مع فلتر.
  */
@@ -48,16 +48,10 @@ function ToastBanner({ message, type, isAr, onDismiss }) {
   return (
     <div
       role="alert"
+      className="fixed bottom-6 py-3 px-5 rounded-[10px] text-white text-[14px] font-semibold"
       style={{
-        position: 'fixed',
-        bottom: 24,
         [isAr ? 'right' : 'left']: 24,
-        padding: '12px 20px',
-        borderRadius: 10,
-        background: isError ? 'rgba(220,38,38,0.95)' : 'rgba(34,197,94,0.95)',
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: 600,
+        background: isError ? 'var(--noorix-red-95)' : 'var(--noorix-accent-green)',
         zIndex: 1100,
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
       }}
@@ -83,19 +77,13 @@ function ReportCard({ text, isAr, createdAt }) {
 
   return (
     <div
-      className="nx-bg-surface nx-text-primary nx-text-lg"
+      className="bg-noorix-surface text-noorix-text text-[15px] py-4 px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words min-w-[200px]"
       style={{
-        padding: '16px 20px',
-        borderRadius: 14,
-        border: '1px solid var(--noorix-border)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-        lineHeight: 1.7,
-        wordBreak: 'break-word',
-        minWidth: 200,
       }}
     >
       {rows.length > 0 ? (
-        <div className="nx-grid" style={{ gridTemplateColumns: 'auto 1fr', gap: '8px 16px', alignItems: 'baseline', direction: isAr ? 'rtl' : 'ltr' }}>
+        <div className="grid grid-cols-[auto_1fr] gap-y-2 gap-x-4 items-baseline" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
           {rows.map((line, i) => {
             const colonIdx = line.indexOf(':');
             const hasLabel = colonIdx > 0 && colonIdx < 50;
@@ -107,7 +95,7 @@ function ReportCard({ text, isAr, createdAt }) {
               <React.Fragment key={i}>
                 {label ? (
                   <>
-                    <span className="nx-text-base nx-text-muted nx-font-600">
+                    <span className="text-[13px] text-noorix-muted font-semibold">
                       {label}:
                     </span>
                     <span style={valueStyle}>{value}</span>
@@ -120,10 +108,10 @@ function ReportCard({ text, isAr, createdAt }) {
           })}
         </div>
       ) : (
-        <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
+        <div className="whitespace-pre-wrap">{text}</div>
       )}
       {createdAt && (
-        <div className="nx-text-sm nx-text-muted nx-border-t nx-ltr" style={{ marginTop: 14, paddingTop: 12 }}>
+        <div className="text-[12px] text-noorix-muted border-t border-noorix-border nx-ltr mt-[14px] pt-3">
           {new Date(createdAt).toLocaleString('en', { dateStyle: 'short', timeStyle: 'short' })}
         </div>
       )}
@@ -390,7 +378,7 @@ export default function SmartChatScreen() {
   return (
     <div className="noorix-smart-chat-root">
       {!activeCompanyId && (
-        <div className="noorix-surface-card nx-text-center nx-text-muted nx-p-24" style={{ margin: 16 }}>
+        <div className="noorix-surface-card text-center text-noorix-muted p-6 m-4">
           {t('pleaseSelectCompany')}
         </div>
       )}
@@ -459,13 +447,13 @@ export default function SmartChatScreen() {
           )}
           {displayedMessages.length === 0 && (
             dateFilter ? (
-              <div className="nx-text-muted nx-text-md nx-text-center nx-p-24">
+              <div className="text-noorix-muted text-[14px] text-center p-6">
                 {t('chatNoMessagesOnDate')}
               </div>
             ) : (
-              <div className="nx-flex-1 nx-flex-col nx-text-muted nx-text-center nx-gap-16" style={{ justifyContent: 'center', alignItems: 'center', padding: 32 }}>
-                <div style={{ fontSize: 48, opacity: 0.25 }}></div>
-                <div className="nx-text-lg" style={{ maxWidth: 360, lineHeight: 1.7, opacity: 0.7 }}>
+              <div className="flex-1 min-w-0 flex flex-col text-noorix-muted text-center gap-4 justify-center items-center p-8">
+                <div className="text-[48px] opacity-25"></div>
+                <div className="text-[15px] max-w-[360px] leading-[1.7] opacity-70">
                   {isAr
                     ? 'استخدم «الأوامر» لإدخال البيانات، أو «أسئلة جاهزة» للاستفسار، أو اكتب سؤالك مباشرة.'
                     : 'Use Commands to enter data, Suggested for queries, or type your question below.'}
@@ -495,8 +483,8 @@ export default function SmartChatScreen() {
           ))}
           {loading && (
             <div className={`noorix-chat-msg-row noorix-chat-msg-row--assistant`}>
-              <div className="nx-bg-muted nx-text-md nx-text-muted nx-gap-8" style={{ padding: '12px 18px', borderRadius: 18, display: 'inline-flex', alignItems: 'center' }}>
-                <span className="noorix-chat-spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(100,116,139,0.3)', borderTopColor: 'var(--noorix-text-muted)' }} />
+              <div className="bg-noorix-bg-muted text-[14px] text-noorix-muted gap-2 py-3 px-[18px] rounded-[18px] inline-flex items-center">
+                <span className="noorix-chat-spinner w-[14px] h-[14px] border-2" style={{ borderColor: 'var(--noorix-muted-30)', borderTopColor: 'var(--noorix-text-muted)' }} />
                 {isAr ? 'جاري البحث...' : 'Searching...'}
               </div>
             </div>
@@ -532,9 +520,9 @@ export default function SmartChatScreen() {
 
       {faqOpen && (
         <AdaptiveSheet open={true} onClose={() => setFaqOpen(false)} title={isAr ? 'أسئلة جاهزة' : 'Suggested questions'} size="md" side="start" className="smartchat-faq-drawer">
-          <div className="nx-flex-col nx-gap-8">
+          <div className="flex flex-col gap-2">
             {visibleFaqQuestions.map((q, i) => (
-              <Button key={i} className="nx-w-full nx-text-lg" style={{ textAlign: isAr ? 'right' : 'left', justifyContent: 'flex-start', padding: '14px 16px' }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
+              <Button key={i} className="w-full text-[15px] justify-start py-[14px] px-4" style={{ textAlign: isAr ? 'right' : 'left' }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
                 {isAr ? q.ar : q.en}
               </Button>
             ))}
@@ -594,9 +582,9 @@ export default function SmartChatScreen() {
       {expenseMode === 'editLine' && activeCompanyId && (
         expenseEditLine === undefined ? (
           <AdaptiveSheet open={true} onClose={() => setExpenseMode(null)} title={t('chatEditFixedExpense')} size="sm" side="start" className="smartchat-expense-pick-drawer">
-            <div className="nx-flex-col nx-gap-8">
+            <div className="flex flex-col gap-2">
               {expenseLines.filter((l) => l.isActive !== false).map((line) => (
-                <Button key={line.id} className="nx-w-full" style={{ textAlign: isAr ? 'right' : 'left', justifyContent: 'flex-start', padding: '12px 14px' }} onClick={() => setExpenseEditLine(line)}>
+                <Button key={line.id} className="w-full justify-start py-3 px-[14px]" style={{ textAlign: isAr ? 'right' : 'left' }} onClick={() => setExpenseEditLine(line)}>
                   {line.nameAr || line.nameEn || line.name || '—'}
                 </Button>
               ))}

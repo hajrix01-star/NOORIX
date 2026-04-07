@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BankStatementAnalysisScreen — تحليل كشوف الحساب (واجهة كاملة مكيّفة من المشروع السابق)
  */
 import React, { useState, useCallback, useMemo } from 'react';
@@ -136,7 +136,7 @@ export default function BankStatementAnalysisScreen() {
 
   if (selectedStatementId) {
     return (
-      <div className="nx-screen">
+      <div className="flex flex-col gap-4 p-4 lg:p-6">
         <BankStatementDetailView
           statementId={selectedStatementId}
           companyId={companyId}
@@ -164,7 +164,7 @@ export default function BankStatementAnalysisScreen() {
             </>
           }
         >
-          <p className="nx-text-muted nx-text-md">{t('bankDeleteStatementConfirm')}</p>
+          <p className="text-noorix-muted text-[14px]">{t('bankDeleteStatementConfirm')}</p>
         </Modal>
 
         <Toast
@@ -178,17 +178,17 @@ export default function BankStatementAnalysisScreen() {
   }
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="nx-page-header">
-        <h1 className="nx-page-title">{t('reportBankStatementAnalysis')}</h1>
+        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('reportBankStatementAnalysis')}</h1>
         <Button variant="primary" onClick={() => setShowUpload(true)}>
-          <span aria-hidden style={{ fontSize: 18, lineHeight: 1, opacity: 0.95 }}>＋</span>
+          <span aria-hidden className="text-[18px] leading-none opacity-[0.95]">＋</span>
           {t('bankStatementUploadNew')}
         </Button>
       </div>
 
       {completedStatements.length > 0 && (
-        <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
           {[
             { label: t('bankStatementCardCount'), value: String(completedStatements.length), tone: 'blue' },
             { label: t('bankStatementCardDeposits'), value: fmt(quickStats.totalDeposits), tone: 'green' },
@@ -201,22 +201,21 @@ export default function BankStatementAnalysisScreen() {
           ].map((c, i) => (
             <div
               key={i}
-              className="noorix-surface-card"
+              className="noorix-surface-card p-[14px]"
               style={{
-                padding: 14,
                 borderLeft: `4px solid ${
-                  c.tone === 'blue' ? '#2563eb' : c.tone === 'green' ? '#16a34a' : '#dc2626'
+                  c.tone === 'blue' ? 'var(--noorix-accent-blue)' : c.tone === 'green' ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)'
                 }`,
               }}
             >
-              <div className="nx-text-xs nx-text-muted">{c.label}</div>
-              <div className="nx-text-2xl nx-font-800 nx-mt-4 nx-ltr nx-text-end">{c.value}</div>
+              <div className="text-[11px] text-noorix-muted">{c.label}</div>
+              <div className="text-[18px] font-extrabold mt-1 nx-ltr text-end">{c.value}</div>
             </div>
           ))}
         </div>
       )}
 
-      <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="noorix-surface-card p-0 overflow-hidden">
         <div className="noorix-bank-tab-row" role="tablist">
           {TABS.map((tab) => (
             <Button
@@ -232,17 +231,13 @@ export default function BankStatementAnalysisScreen() {
           ))}
         </div>
 
-        <div className="nx-p-24">
+        <div className="p-6">
           {activeTab === 'statements' && (
             <>
               {!summaryLoading && statements.length > 0 && completedStatements.length === 0 && (
                 <div
-                  style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                  gap: 12,
-                  marginBottom: 20,
-                  }}
+                  className="grid gap-3 mb-5"
+                  style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
                 >
                   {[
                     { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.data?.statementCount ?? 0, f: (v) => String(v) },
@@ -252,15 +247,10 @@ export default function BankStatementAnalysisScreen() {
                   ].map((c) => (
                     <div
                       key={c.key}
-                      style={{
-                        padding: 14,
-                        borderRadius: 10,
-                        background: 'var(--noorix-bg-muted)',
-                        border: '1px solid var(--noorix-border)',
-                      }}
+                      className="p-[14px] rounded-[10px] bg-noorix-bg-muted border border-noorix-border"
                     >
-                      <div className="nx-text-xs nx-text-muted nx-mb-4">{t(c.labelKey)}</div>
-                      <div className="nx-text-2xl nx-font-700">{c.f(c.value)}</div>
+                      <div className="text-[11px] text-noorix-muted mb-1">{t(c.labelKey)}</div>
+                      <div className="text-[18px] font-bold">{c.f(c.value)}</div>
                     </div>
                   ))}
                 </div>
@@ -268,17 +258,14 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length === 0 && (
                 <div
-                  className="nx-text-center nx-bg-muted nx-rounded-lg"
-                  style={{
-                    padding: '48px 24px',
-                    border: '1px dashed var(--noorix-border)',
-                  }}
+                  className="text-center bg-noorix-bg-muted rounded-xl py-12 px-6"
+                  style={{ border: '1px dashed var(--noorix-border)' }}
                 >
-                  <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}></div>
-                  <div className="nx-text-xl nx-font-600 nx-mb-6">{t('bankStatementEmptyTitle')}</div>
-                  <div className="nx-text-base nx-text-muted nx-mb-16">{t('bankStatementEmptyDesc')}</div>
+                  <div className="text-[48px] mb-3 opacity-50"></div>
+                  <div className="text-[16px] font-semibold mb-1.5">{t('bankStatementEmptyTitle')}</div>
+                  <div className="text-[13px] text-noorix-muted mb-4">{t('bankStatementEmptyDesc')}</div>
                   <Button variant="primary" onClick={() => setShowUpload(true)}>
-                    <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>＋</span>
+                    <span aria-hidden className="text-[18px] leading-none">＋</span>
                     {t('bankStatementUploadNew')}
                   </Button>
                 </div>
@@ -286,7 +273,7 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length > 0 && (
                 <>
-                  <div className="nx-flex nx-flex-wrap nx-gap-12 nx-mb-16" style={{ alignItems: 'center' }}>
+                  <div className="flex flex-wrap gap-3 mb-4 items-center">
                     <Input
                       type="select"
                       value={filterMonth}
@@ -317,7 +304,7 @@ export default function BankStatementAnalysisScreen() {
                     </Input>
                   </div>
 
-                  <div className="nx-grid nx-gap-10">
+                  <div className="grid gap-2.5">
                     {statements.map((stmt) => {
                       const start = stmt.startDate?.slice(0, 10);
                       const end = stmt.endDate?.slice(0, 10);
@@ -329,21 +316,21 @@ export default function BankStatementAnalysisScreen() {
                           tabIndex={0}
                           onClick={() => handleSelectStatement(stmt)}
                           onKeyDown={(e) => e.key === 'Enter' && handleSelectStatement(stmt)}
-                          className="nx-flex nx-gap-16 nx-p-14 nx-border-all nx-rounded nx-cursor-pointer"
-                          style={{ alignItems: 'center', background: 'var(--noorix-bg)' }}
+                          className="flex gap-4 p-3.5 border border-noorix-border rounded-lg cursor-pointer items-center"
+                          style={{ background: 'var(--noorix-bg)' }}
                         >
-                          <div className="nx-flex-1" style={{ minWidth: 0 }}>
-                            <div className="nx-flex nx-gap-8" style={{ alignItems: 'center', marginBottom: 4 }}>
-                              <span style={{ fontWeight: 600 }}>{stmt.companyName || stmt.fileName || 'كشف'}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex gap-2 items-center mb-1">
+                              <span className="font-semibold">{stmt.companyName || stmt.fileName || 'كشف'}</span>
                               <Badge color={statusColor} size="sm">
                                 {stmt.status === 'mapping' ? t('bankStatementStatusMapping') : t('bankStatementStatusCompleted')}
                               </Badge>
                             </div>
-                            <div className="nx-text-sm nx-text-muted">
+                            <div className="text-[12px] text-noorix-muted">
                               {stmt.bankName || '—'} • {start && end ? `${start} – ${end}` : stmt.fileName}
                             </div>
                           </div>
-                          <div className="nx-text-sm nx-text-muted">
+                          <div className="text-[12px] text-noorix-muted">
                             {stmt.transactionCount ?? 0} {t('bankStatementTransactions')}
                           </div>
                         </div>

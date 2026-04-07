@@ -1,4 +1,4 @@
-/**
+﻿/**
  * OwnerDashboardScreen — لوحة المالك
  * مؤشرات شاملة: المبيعات الشهرية لكل شركة، الأرباح المجمعة، توزيع الأرباح
  */
@@ -12,7 +12,7 @@ import { fmt } from '../../utils/format';
 import { CARD_BORDER_RADIUS } from '../../utils/cardStyles';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 
-const COLORS = ['#16a34a', '#2563eb', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#4f46e5', '#059669'];
+const COLORS = ['var(--noorix-accent-green)', 'var(--noorix-accent-blue)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-violet)', 'var(--noorix-accent-red)', '#0891b2', 'var(--noorix-accent-violet)', 'var(--noorix-accent-green)'];
 
 function formatAxisValue(n) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
@@ -172,9 +172,9 @@ export default function OwnerDashboardScreen() {
 
   if (companyList.length === 0) {
     return (
-      <div className="nx-screen">
-        <h1 className="nx-page-title">{t('ownerDashboard')}</h1>
-        <div className="noorix-surface-card nx-text-center nx-text-muted nx-mt-16" style={{ padding: 32 }}>
+      <div className="flex flex-col gap-4 p-4 lg:p-6">
+        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('ownerDashboard')}</h1>
+        <div className="noorix-surface-card text-center text-noorix-muted mt-4 p-8">
           {t('pleaseSelectCompany')}
         </div>
       </div>
@@ -182,11 +182,11 @@ export default function OwnerDashboardScreen() {
   }
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="nx-page-header">
         <div className="nx-page-header__titles">
-          <h1 className="nx-page-title">{t('ownerDashboard')}</h1>
-          <p className="nx-page-desc">{t('ownerDashboardDesc')}</p>
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('ownerDashboard')}</h1>
+          <p className="text-[13px] text-noorix-muted m-0">{t('ownerDashboardDesc')}</p>
         </div>
         <div className="nx-toolbar">
           <Input
@@ -214,9 +214,9 @@ export default function OwnerDashboardScreen() {
       </div>
 
       {/* اختيار الشركات — أزرار عين */}
-      <div className="noorix-surface-card nx-border-all" style={{ padding: isMobile ? 12 : 16, borderRadius: CARD_BORDER_RADIUS }}>
-        <div className="nx-font-700 nx-mb-12">{t('ownerSelectCompanies')}</div>
-        <div className="nx-flex-center nx-flex-wrap nx-gap-8">
+      <div className="noorix-surface-card border border-noorix-border" style={{ padding: isMobile ? 12 : 16, borderRadius: CARD_BORDER_RADIUS }}>
+        <div className="font-bold mb-3">{t('ownerSelectCompanies')}</div>
+        <div className="flex items-center flex flex-wrap gap-2">
           <Button onClick={selectAll} size="sm">{t('ownerAllCompanies')}</Button>
           <Button onClick={selectNone} size="sm">{lang === 'ar' ? 'إخفاء الكل' : 'Hide all'}</Button>
           {companyList.map((c, i) => {
@@ -224,7 +224,7 @@ export default function OwnerDashboardScreen() {
             return (
               <Button
                 key={c.id}
-                className="owner-company-card nx-flex-center nx-gap-6 nx-text-sm"
+                className="owner-company-card flex items-center gap-1.5 text-[12px]"
                 onClick={() => toggleCompany(c.id)}
                 title={isVisible ? (lang === 'ar' ? 'إخفاء' : 'Hide') : (lang === 'ar' ? 'عرض' : 'Show')}
                 style={{
@@ -247,53 +247,53 @@ export default function OwnerDashboardScreen() {
       </div>
 
       {isLoading && (
-        <div className="noorix-surface-card nx-text-center nx-text-muted" style={{ padding: 32 }}>{t('loading')}</div>
+        <div className="noorix-surface-card text-center text-noorix-muted p-8">{t('loading')}</div>
       )}
 
       {isError && (
-        <div className="noorix-surface-card nx-p-20" style={{ color: '#dc2626', background: 'rgba(239,68,68,0.08)' }}>{error?.message || t('loading')}</div>
+        <div className="noorix-surface-card p-5" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-8)' }}>{error?.message || t('loading')}</div>
       )}
 
       {!isLoading && !isError && idsToFetch.length > 0 && (
         <>
           {/* كروت الإجماليات + النسب */}
-          <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-            <div className="nx-border-all nx-overflow-hidden nx-bg-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: '#16a34a' }} />
-              <div className="nx-p-16">
-                <div className="nx-text-xs nx-text-muted nx-mb-4">{t('ownerTotalSales')}</div>
-                <div className="nx-text-3xl nx-font-800 nx-font-numbers">{fmt(aggregated.totalSales, 2)} ﷼</div>
-                <div className="nx-text-2xs nx-text-muted nx-mt-4">100%</div>
+          <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+            <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
+              <div className="h-[3px] bg-noorix-green" />
+              <div className="p-4">
+                <div className="text-[11px] text-noorix-muted mb-1">{t('ownerTotalSales')}</div>
+                <div className="text-[20px] font-extrabold nx-font-numbers">{fmt(aggregated.totalSales, 2)} ﷼</div>
+                <div className="text-[10px] text-noorix-muted mt-1">100%</div>
               </div>
             </div>
-            <div className="nx-border-all nx-overflow-hidden nx-bg-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: '#dc2626' }} />
-              <div className="nx-p-16">
-                <div className="nx-text-xs nx-text-muted nx-mb-4">{t('purchasesToSalesRatio')}</div>
-                <div className="nx-text-3xl nx-font-800 nx-font-numbers nx-text-expense">
+            <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
+              <div className="h-[3px] bg-noorix-red" />
+              <div className="p-4">
+                <div className="text-[11px] text-noorix-muted mb-1">{t('purchasesToSalesRatio')}</div>
+                <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) : '—'}%
                 </div>
-                <div className="nx-text-2xs nx-text-muted nx-mt-4">{fmt(aggregated.totalPurchases, 2)} ﷼</div>
+                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalPurchases, 2)} ﷼</div>
               </div>
             </div>
-            <div className="nx-border-all nx-overflow-hidden nx-bg-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: '#b91c1c' }} />
-              <div className="nx-p-16">
-                <div className="nx-text-xs nx-text-muted nx-mb-4">{t('annualExpenses')} {t('sectionToSalesRatio')}</div>
-                <div className="nx-text-3xl nx-font-800 nx-font-numbers" style={{ color: '#b91c1c' }}>
+            <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
+              <div className="h-[3px] bg-noorix-red" />
+              <div className="p-4">
+                <div className="text-[11px] text-noorix-muted mb-1">{t('annualExpenses')} {t('sectionToSalesRatio')}</div>
+                <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalExpenses / aggregated.totalSales) * 100, 1) : '—'}%
                 </div>
-                <div className="nx-text-2xs nx-text-muted nx-mt-4">{fmt(aggregated.totalExpenses, 2)} ﷼</div>
+                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalExpenses, 2)} ﷼</div>
               </div>
             </div>
-            <div className="nx-border-all nx-overflow-hidden nx-bg-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: aggregated.totalNetProfit >= 0 ? '#2563eb' : '#dc2626' }} />
-              <div className="nx-p-16">
-                <div className="nx-text-xs nx-text-muted nx-mb-4">{t('ownerTotalNetProfit')}</div>
-                <div className="nx-text-3xl nx-font-800 nx-font-numbers" style={{ color: aggregated.totalNetProfit >= 0 ? '#2563eb' : '#dc2626' }}>
+            <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
+              <div style={{ height: 3, background: aggregated.totalNetProfit >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)' }} />
+              <div className="p-4">
+                <div className="text-[11px] text-noorix-muted mb-1">{t('ownerTotalNetProfit')}</div>
+                <div className="text-[20px] font-extrabold nx-font-numbers" style={{ color: aggregated.totalNetProfit >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)' }}>
                   {fmt(aggregated.totalNetProfit, 2)} ﷼
                 </div>
-                <div className="nx-text-2xs nx-text-muted nx-mt-4">
+                <div className="text-[10px] text-noorix-muted mt-1">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalNetProfit / aggregated.totalSales) * 100, 1) + '%' : '—'}
                 </div>
               </div>
@@ -301,25 +301,25 @@ export default function OwnerDashboardScreen() {
           </div>
 
           {/* المبيعات الشهرية — رسم بياني */}
-          <div className="noorix-surface-card nx-border-all" style={{ padding: isMobile ? 12 : 24, borderRadius: CARD_BORDER_RADIUS }}>
-            <div className="nx-text-xl nx-font-700 nx-mb-20">{t('ownerMonthlySales')} — {year}{selectedMonthNum ? ` (${EN_MONTHS[selectedMonthNum - 1]})` : ''}</div>
-            <div className="nx-flex" style={{ gap: 0, minHeight: 220 }}>
-              <div className="nx-flex-shrink-0 nx-flex-col" style={{ width: 48, justifyContent: 'space-between', paddingTop: 4, paddingBottom: 28 }}>
+          <div className="noorix-surface-card border border-noorix-border" style={{ padding: isMobile ? 12 : 24, borderRadius: CARD_BORDER_RADIUS }}>
+            <div className="text-[16px] font-bold mb-5">{t('ownerMonthlySales')} — {year}{selectedMonthNum ? ` (${EN_MONTHS[selectedMonthNum - 1]})` : ''}</div>
+            <div className="flex gap-0 min-h-[220px]">
+              <div className="shrink-0 flex flex-col w-12 justify-between pt-1 pb-7">
                 {[...yAxisTicks].reverse().map((tick) => (
-                  <div key={tick} className="nx-text-2xs nx-font-numbers nx-text-muted nx-font-600">
+                  <div key={tick} className="text-[10px] nx-font-numbers text-noorix-muted font-semibold">
                     {formatAxisValue(tick)}
                   </div>
                 ))}
               </div>
-              <div className="nx-flex-1">
-                <div className="nx-flex nx-gap-6" style={{ alignItems: 'flex-end', height: 180, paddingBottom: 28 }}>
+              <div className="flex-1 min-w-0">
+                <div className="flex gap-1.5 items-end h-[180px] pb-7">
                   {chartData.map((point) => {
                     const companyAmounts = point.byCompany || {};
                     const total = Object.values(companyAmounts).reduce((a, b) => a + b, 0);
                     const barHeightPct = maxChartValue > 0 ? (total / maxChartValue) * 100 : 0;
                     return (
-                      <div key={point.month} className="nx-flex-1 nx-flex-col nx-gap-4 nx-min-w-0" style={{ alignItems: 'center' }}>
-                        <div className="nx-w-full nx-h-full nx-flex" style={{ maxWidth: 40, flexDirection: 'column-reverse', alignItems: 'stretch' }}>
+                      <div key={point.month} className="flex-1 min-w-0 flex flex-col gap-1 items-center">
+                        <div className="w-full h-full flex max-w-[40px] flex-col-reverse items-stretch">
                           {idsToFetch.map((companyId, i) => {
                             const amt = companyAmounts[companyId] || 0;
                             if (amt <= 0) return null;
@@ -338,20 +338,20 @@ export default function OwnerDashboardScreen() {
                             );
                           })}
                         </div>
-                        <div className="nx-text-2xs nx-text-muted nx-font-600">{point.label}</div>
+                        <div className="text-[10px] text-noorix-muted font-semibold">{point.label}</div>
                       </div>
                     );
                   })}
                 </div>
               </div>
             </div>
-            <div className="nx-flex nx-flex-wrap nx-gap-16 nx-mt-16 nx-border-t" style={{ paddingTop: 12 }}>
+            <div className="flex flex-wrap gap-4 mt-4 border-t border-noorix-border pt-3">
               {idsToFetch.map((companyId, i) => {
                 const c = companyList.find((x) => x.id === companyId);
                 return (
-                  <div key={companyId} className="nx-flex-center nx-gap-6">
+                  <div key={companyId} className="flex items-center gap-6">
                     <span style={{ width: 10, height: 10, borderRadius: 2, background: COLORS[i % COLORS.length] }} />
-                    <span className="nx-text-sm">{lang === 'ar' ? c?.nameAr || c?.nameEn : c?.nameEn || c?.nameAr}</span>
+                    <span className="text-[12px]">{lang === 'ar' ? c?.nameAr || c?.nameEn : c?.nameEn || c?.nameAr}</span>
                   </div>
                 );
               })}
@@ -359,40 +359,40 @@ export default function OwnerDashboardScreen() {
           </div>
 
           {/* توزيع الأرباح */}
-          <div className="noorix-surface-card nx-p-16 nx-border-all" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-            <div className="nx-text-xl nx-font-700" style={{ marginBottom: 14 }}>{t('ownerProfitDistribution')}</div>
-            <div className="nx-stack-12">
+          <div className="noorix-surface-card p-4 border border-noorix-border" style={{ borderRadius: CARD_BORDER_RADIUS }}>
+            <div className="text-[16px] font-bold mb-3.5">{t('ownerProfitDistribution')}</div>
+            <div className="flex flex-col gap-3">
               {aggregated.byCompany
                 .filter((x) => Math.abs(x.netProfit) > 0.001)
                 .sort((a, b) => b.netProfit - a.netProfit)
                 .map((item, i) => {
                   const pct = aggregated.totalNetProfit !== 0 ? (item.netProfit / aggregated.totalNetProfit) * 100 : 0;
                   const barWidth = Math.min(100, Math.max(0, Math.abs(pct)));
-                  const profitColor = item.netProfit >= 0 ? '#16a34a' : '#dc2626';
+                  const profitColor = item.netProfit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)';
                   return (
                     <div key={item.companyId}>
-                      <div className="nx-flex-between nx-gap-8 nx-mb-4">
-                        <div className="nx-flex-center nx-gap-8 nx-min-w-0">
-                          <span className="nx-flex-shrink-0" style={{ width: 8, height: 8, borderRadius: 2, background: COLORS[i % COLORS.length] }} />
-                          <span className="nx-text-base nx-font-600 nx-truncate">{item.name}</span>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-8 min-w-0">
+                          <span className="shrink-0" style={{ width: 8, height: 8, borderRadius: 2, background: COLORS[i % COLORS.length] }} />
+                          <span className="text-[13px] font-semibold truncate">{item.name}</span>
                         </div>
-                        <div className="nx-flex-center nx-gap-8 nx-flex-shrink-0">
-                          <span className="nx-text-base nx-font-700 nx-font-numbers" style={{ color: profitColor }}>
+                        <div className="flex items-center gap-8 shrink-0">
+                          <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor /* dynamic: profit/loss color */ }}>
                             {fmt(item.netProfit, 2)} ﷼
                           </span>
-                          <span className="nx-text-xs nx-text-muted nx-text-end" style={{ minWidth: 38 }}>
+                          <span className="text-[11px] text-noorix-muted text-end min-w-[38px]">
                             {aggregated.totalNetProfit !== 0 ? `${fmt(pct, 1)}%` : '—'}
                           </span>
                         </div>
                       </div>
-                      <div className="nx-bg-muted nx-overflow-hidden" style={{ height: 6, borderRadius: 4 }}>
-                        <div className="nx-h-full" style={{ width: `${barWidth}%`, background: profitColor, borderRadius: 4, transition: 'width 400ms ease' }} />
+                      <div className="bg-noorix-bg-muted overflow-hidden h-1.5 rounded">
+                        <div className="h-full" style={{ width: `${barWidth}%`, background: profitColor, borderRadius: 4, transition: 'width 400ms ease' }} />
                       </div>
                     </div>
                   );
                 })}
               {aggregated.byCompany.filter((x) => Math.abs(x.netProfit) > 0.001).length === 0 && (
-                <div className="nx-p-24 nx-text-center nx-text-muted nx-text-base">{t('reportNoData')}</div>
+                <div className="p-6 text-center text-noorix-muted text-[13px]">{t('reportNoData')}</div>
               )}
             </div>
           </div>

@@ -1,5 +1,46 @@
-/* Noorix Theme – خط Cairo احترافي للعربية والإنجليزية */
+﻿/* Noorix Theme */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* ألوان نووريكس الأساسية */
+  --color-noorix-blue:    #2563eb;
+  --color-noorix-green:   #16a34a;
+  --color-noorix-red:     #dc2626;
+  --color-noorix-amber:   #d97706;
+  --color-noorix-violet:  #6366f1;
+  --color-noorix-sky:     #0284c7;
+  --color-noorix-rose:    #e11d48;
+  --color-noorix-navy:    #0a1f44;
+  --color-noorix-navy-mid: #123159;
+  --color-noorix-navy-light: #1b3f73;
+
+  /* ألوان ديناميكية من CSS variables */
+  --color-noorix-text:     var(--noorix-text);
+  --color-noorix-muted:    var(--noorix-text-muted);
+  --color-noorix-muted2:   var(--noorix-text-muted-2);
+  --color-noorix-border:   var(--noorix-border);
+  --color-noorix-surface:  var(--noorix-bg-surface);
+  --color-noorix-bg:       var(--noorix-bg-page);
+  --color-noorix-bg-muted: var(--noorix-bg-muted);
+
+  /* ألوان overlay شائعة */
+  --color-danger-bg:       #991b1b;
+  --color-white-7:         rgba(255,255,255,0.07);
+  --color-white-10:        rgba(255,255,255,0.10);
+  --color-white-45:        rgba(255,255,255,0.45);
+  --color-white-92:        rgba(255,255,255,0.92);
+
+  /* خط Cairo */
+  --font-cairo: 'Cairo', system-ui, sans-serif;
+  --font-sans:  'Cairo', system-ui, sans-serif;
+
+  /* حدود دائرية */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
 
 @keyframes fadeSlideDown {
   from { opacity: 0; transform: translateY(-6px); }
@@ -12,8 +53,29 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+@keyframes nx-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes nx-modal-in {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes nx-drawer-in-start {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes nx-drawer-in-end {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+[dir="rtl"] .nx-drawer-slide-start { animation: nx-drawer-in-start 0.28s cubic-bezier(0.4,0,0.2,1); }
+[dir="rtl"] .nx-drawer-slide-end   { animation: nx-drawer-in-end   0.28s cubic-bezier(0.4,0,0.2,1); }
+[dir="ltr"] .nx-drawer-slide-start { animation: nx-drawer-in-end   0.28s cubic-bezier(0.4,0,0.2,1); }
+[dir="ltr"] .nx-drawer-slide-end   { animation: nx-drawer-in-start 0.28s cubic-bezier(0.4,0,0.2,1); }
+.nx-modal-animate { animation: nx-modal-in 0.22s cubic-bezier(0.34,1.1,0.64,1); }
 
-/* ========== متغيرات الثيم الفاتح ========== */
+/* ========== متغيرات الثيم ========== */
 :root {
   /* ألوان أساسية */
   --noorix-navy:        #0a1f44;
@@ -51,6 +113,103 @@
   --noorix-accent-amber:  #d97706;
   --noorix-accent-rose:   #e11d48;
   --noorix-accent-red:    #dc2626;
+  --noorix-accent-red-dark: #7f1d1d;
+  /* Alpha tints — استخدمها بدلاً من rgba(R,G,B,X) المشفرة مباشرة */
+  /* ── Alpha tints ── استخدمها بدلاً من rgba(R,G,B,X) المشفرة مباشرة ── */
+  /* Blue */
+  --noorix-blue-4:    color-mix(in srgb, var(--noorix-accent-blue)   4%, transparent);
+  --noorix-blue-5:    color-mix(in srgb, var(--noorix-accent-blue)   5%, transparent);
+  --noorix-blue-6:    color-mix(in srgb, var(--noorix-accent-blue)   6%, transparent);
+  --noorix-blue-7:    color-mix(in srgb, var(--noorix-accent-blue)   7%, transparent);
+  --noorix-blue-8:    color-mix(in srgb, var(--noorix-accent-blue)   8%, transparent);
+  --noorix-blue-10:   color-mix(in srgb, var(--noorix-accent-blue)  10%, transparent);
+  --noorix-blue-12:   color-mix(in srgb, var(--noorix-accent-blue)  12%, transparent);
+  --noorix-blue-15:   color-mix(in srgb, var(--noorix-accent-blue)  15%, transparent);
+  --noorix-blue-18:   color-mix(in srgb, var(--noorix-accent-blue)  18%, transparent);
+  --noorix-blue-20:   color-mix(in srgb, var(--noorix-accent-blue)  20%, transparent);
+  --noorix-blue-28:   color-mix(in srgb, var(--noorix-accent-blue)  28%, transparent);
+  --noorix-blue-25:   color-mix(in srgb, var(--noorix-accent-blue)  25%, transparent);
+  --noorix-blue-30:   color-mix(in srgb, var(--noorix-accent-blue)  30%, transparent);
+  --noorix-blue-35:   color-mix(in srgb, var(--noorix-accent-blue)  35%, transparent);
+  --noorix-blue-45:   color-mix(in srgb, var(--noorix-accent-blue)  45%, transparent);
+  --noorix-blue-90:   color-mix(in srgb, var(--noorix-accent-blue)  90%, transparent);
+  /* Red */
+  --noorix-red-4:     color-mix(in srgb, var(--noorix-accent-red)    4%, transparent);
+  --noorix-red-5:     color-mix(in srgb, var(--noorix-accent-red)    5%, transparent);
+  --noorix-red-6:     color-mix(in srgb, var(--noorix-accent-red)    6%, transparent);
+  --noorix-red-7:     color-mix(in srgb, var(--noorix-accent-red)    7%, transparent);
+  --noorix-red-8:     color-mix(in srgb, var(--noorix-accent-red)    8%, transparent);
+  --noorix-red-10:    color-mix(in srgb, var(--noorix-accent-red)   10%, transparent);
+  --noorix-red-12:    color-mix(in srgb, var(--noorix-accent-red)   12%, transparent);
+  --noorix-red-15:    color-mix(in srgb, var(--noorix-accent-red)   15%, transparent);
+  --noorix-red-20:    color-mix(in srgb, var(--noorix-accent-red)   20%, transparent);
+  --noorix-red-25:    color-mix(in srgb, var(--noorix-accent-red)   25%, transparent);
+  --noorix-red-45:    color-mix(in srgb, var(--noorix-accent-red)   45%, transparent);
+  --noorix-red-95:    color-mix(in srgb, var(--noorix-accent-red)   95%, transparent);
+  /* Amber (--noorix-accent-amber #d97706 — canonical warning color) */
+  --noorix-amber-6:   color-mix(in srgb, var(--noorix-accent-amber)  6%, transparent);
+  --noorix-amber-7:   color-mix(in srgb, var(--noorix-accent-amber)  7%, transparent);
+  --noorix-amber-8:   color-mix(in srgb, var(--noorix-accent-amber)  8%, transparent);
+  --noorix-amber-10:  color-mix(in srgb, var(--noorix-accent-amber) 10%, transparent);
+  --noorix-amber-12:  color-mix(in srgb, var(--noorix-accent-amber) 12%, transparent);
+  --noorix-amber-15:  color-mix(in srgb, var(--noorix-accent-amber) 15%, transparent);
+  --noorix-amber-18:  color-mix(in srgb, var(--noorix-accent-amber) 18%, transparent);
+  --noorix-amber-20:  color-mix(in srgb, var(--noorix-accent-amber) 20%, transparent);
+  --noorix-amber-25:  color-mix(in srgb, var(--noorix-accent-amber) 25%, transparent);
+  --noorix-amber-30:  color-mix(in srgb, var(--noorix-accent-amber) 30%, transparent);
+  --noorix-amber-35:  color-mix(in srgb, var(--noorix-accent-amber) 35%, transparent);
+  --noorix-amber-40:  color-mix(in srgb, var(--noorix-accent-amber) 40%, transparent);
+  /* Yellow (--noorix-accent-yellow #f59e0b = amber-400, lighter warning variant) */
+  --noorix-accent-yellow: #f59e0b;
+  --noorix-yellow-6:  color-mix(in srgb, var(--noorix-accent-yellow)  6%, transparent);
+  --noorix-yellow-7:  color-mix(in srgb, var(--noorix-accent-yellow)  7%, transparent);
+  --noorix-yellow-8:  color-mix(in srgb, var(--noorix-accent-yellow)  8%, transparent);
+  --noorix-yellow-10: color-mix(in srgb, var(--noorix-accent-yellow) 10%, transparent);
+  --noorix-yellow-12: color-mix(in srgb, var(--noorix-accent-yellow) 12%, transparent);
+  --noorix-yellow-15: color-mix(in srgb, var(--noorix-accent-yellow) 15%, transparent);
+  --noorix-yellow-20: color-mix(in srgb, var(--noorix-accent-yellow) 20%, transparent);
+  --noorix-yellow-25: color-mix(in srgb, var(--noorix-accent-yellow) 25%, transparent);
+  --noorix-yellow-30: color-mix(in srgb, var(--noorix-accent-yellow) 30%, transparent);
+  --noorix-yellow-35: color-mix(in srgb, var(--noorix-accent-yellow) 35%, transparent);
+  --noorix-yellow-40: color-mix(in srgb, var(--noorix-accent-yellow) 40%, transparent);
+  /* Green */
+  --noorix-green-4:   color-mix(in srgb, var(--noorix-accent-green)  4%, transparent);
+  --noorix-green-5:   color-mix(in srgb, var(--noorix-accent-green)  5%, transparent);
+  --noorix-green-6:   color-mix(in srgb, var(--noorix-accent-green)  6%, transparent);
+  --noorix-green-7:   color-mix(in srgb, var(--noorix-accent-green)  7%, transparent);
+  --noorix-green-8:   color-mix(in srgb, var(--noorix-accent-green)  8%, transparent);
+  --noorix-green-10:  color-mix(in srgb, var(--noorix-accent-green) 10%, transparent);
+  --noorix-green-12:  color-mix(in srgb, var(--noorix-accent-green) 12%, transparent);
+  --noorix-green-15:  color-mix(in srgb, var(--noorix-accent-green) 15%, transparent);
+  --noorix-green-25:  color-mix(in srgb, var(--noorix-accent-green) 25%, transparent);
+  --noorix-green-30:  color-mix(in srgb, var(--noorix-accent-green) 30%, transparent);
+  --noorix-green-35:  color-mix(in srgb, var(--noorix-accent-green) 35%, transparent);
+  --noorix-green-50:  color-mix(in srgb, var(--noorix-accent-green) 50%, transparent);
+  /* Violet */
+  --noorix-violet-5:  color-mix(in srgb, var(--noorix-accent-violet)  5%, transparent);
+  --noorix-violet-8:  color-mix(in srgb, var(--noorix-accent-violet)  8%, transparent);
+  --noorix-violet-10: color-mix(in srgb, var(--noorix-accent-violet) 10%, transparent);
+  --noorix-violet-15: color-mix(in srgb, var(--noorix-accent-violet) 15%, transparent);
+  --noorix-violet-28: color-mix(in srgb, var(--noorix-accent-violet) 28%, transparent);
+  --noorix-violet-30: color-mix(in srgb, var(--noorix-accent-violet) 30%, transparent);
+  --noorix-violet-50: color-mix(in srgb, var(--noorix-accent-violet) 50%, transparent);
+  /* Sky */
+  --noorix-sky-10:    color-mix(in srgb, var(--noorix-accent-sky)   10%, transparent);
+  --noorix-sky-30:    color-mix(in srgb, var(--noorix-accent-sky)   30%, transparent);
+  /* Navy / near-black */
+  --noorix-navy-4:    color-mix(in srgb, var(--noorix-navy)          4%, transparent);
+  --noorix-navy-10:   color-mix(in srgb, var(--noorix-navy)         10%, transparent);
+  --noorix-navy-12:   color-mix(in srgb, var(--noorix-navy)         12%, transparent);
+  --noorix-navy-95:   color-mix(in srgb, var(--noorix-navy)         95%, transparent);
+  /* Muted */
+  --noorix-muted-8:   color-mix(in srgb, var(--noorix-text-muted)    8%, transparent);
+  --noorix-muted-10:  color-mix(in srgb, var(--noorix-text-muted)   10%, transparent);
+  --noorix-muted-12:  color-mix(in srgb, var(--noorix-text-muted)   12%, transparent);
+  --noorix-muted-15:  color-mix(in srgb, var(--noorix-text-muted)   15%, transparent);
+  --noorix-muted-20:  color-mix(in srgb, var(--noorix-text-muted)   20%, transparent);
+  --noorix-muted-30:  color-mix(in srgb, var(--noorix-text-muted)   30%, transparent);
+  /* Semantic alias */
+  --noorix-accent-soft: var(--noorix-blue-10);
   /* أزرار */
   --btn-default-bg:     #ffffff;
   --btn-default-border: #c8d4e3;
@@ -69,7 +228,7 @@
   --noorix-font-numbers: 'Cairo',system-ui,sans-serif;
   --noorix-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(10,31,68,0.07);
   --noorix-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-  --noorix-shadow-md: 0 4px 20px rgba(10,31,68,0.1);
+  --noorix-shadow-md: 0 4px 20px var(--noorix-navy-10);
   --noorix-shadow-lg: 0 8px 32px rgba(10,31,68,0.14);
   --noorix-radius-xs: 6px;
   --noorix-radius-sm: 8px;
@@ -86,36 +245,7 @@
   --noorix-line-height: 1.6;
 }
 
-/* ========== ثيم داكن ========== */
-.dark {
-  --noorix-bg-page:     #0d1524;
-  --noorix-bg-surface:  #172033;
-  --noorix-surface:     #172033;
-  --noorix-bg-muted:    #1f2d42;
-  --noorix-text:        #e8f0fa;
-  --noorix-text-muted:  #8fa8c8;
-  --noorix-text-muted-2:#5a7a9e;
-  --noorix-border:      #253449;
-  --noorix-border-muted:rgba(100,140,190,0.18);
-  --noorix-border-strong:rgba(100,140,190,0.4);
-  --noorix-sidebar-bg:  linear-gradient(180deg,#0f2744 0%,#0a1f44 50%,#060e22 100%);
-  --noorix-sidebar-text:#ffffff;
-  --noorix-sidebar-text-sub:#ffffff;
-  --noorix-topbar-bg:   #172033;
-  --noorix-topbar-text: #e8f0fa;
-  --noorix-topbar-border: #253449;
-  --noorix-table-header-bg: #1c2c44;
-  --noorix-table-row-even: #1a2840;
-  /* أزرار داكن */
-  --btn-default-bg:     #1f2d42;
-  --btn-default-border: #2e4060;
-  --btn-default-text:   #c8daf0;
-  --btn-default-hover:  #263650;
-  --noorix-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.22);
-  --noorix-shadow-sm: 0 1px 3px rgba(0,0,0,0.15);
-  --noorix-shadow-md: 0 4px 20px rgba(0,0,0,0.25);
-  --noorix-shadow-lg: 0 8px 32px rgba(0,0,0,0.32);
-}
+/* Dark mode محذوف — يُضاف مستقبلاً بـ Tailwind dark: prefix */
 
 /* ورقة/لوحة منبثقة بثيم فاتح ثابت — وضوح عند تشغيل التطبيق بالوضع الداكن */
 .noorix-light-sheet {
@@ -152,12 +282,6 @@
     0 4px 16px rgba(10,31,68,0.08),
     0 20px 60px rgba(10,31,68,0.18);
   --noorix-modal-radius:      18px;
-}
-.dark {
-  --noorix-bg-modal:          #1e2d45;
-  --noorix-modal-header-bg:   #1e2d45;
-  --noorix-modal-footer-bg:   #192538;
-  --noorix-modal-shadow:      0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.5);
 }
 
 /* ── خط موحد لجميع النوافذ ── */
@@ -221,11 +345,11 @@
 .noorix-modal-backdrop .noorix-surface-card.noorix-light-sheet,
 .modal-overlay .noorix-surface-card.noorix-light-sheet {
   color-scheme: light;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
+  background: var(--noorix-bg-surface) !important;
+  background-color: var(--noorix-bg-surface) !important;
   background-image: none !important;
-  color: #1a2332 !important;
-  border-color: #dde3ec !important;
+  color: var(--noorix-text) !important;
+  border-color: var(--noorix-border) !important;
   box-shadow: 0 8px 32px rgba(10, 31, 68, 0.12) !important;
 }
 
@@ -349,7 +473,7 @@ a { color: inherit; text-decoration: none; }
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: linear-gradient(145deg,#34d399,#16a34a);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--noorix-accent-green) 60%, #fff), var(--noorix-accent-green));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -357,7 +481,7 @@ a { color: inherit; text-decoration: none; }
   font-weight: 900;
   font-size: 18px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(22,163,74,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+  box-shadow: 0 2px 8px var(--noorix-green-35), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 .app-sidebar__title { display: flex; flex-direction: column; gap: 1px; }
 .app-sidebar__title-main {
@@ -433,16 +557,16 @@ a { color: inherit; text-decoration: none; }
   border-color: rgba(255,255,255,0.08);
 }
 .app-nav-link--active {
-  background: rgba(22,163,74,0.15);
+  background: var(--noorix-green-15);
   color: #fff;
   font-weight: 700;
   border-color: rgba(22,163,74,0.22);
-  border-right: 3px solid #4ade80;
+  border-right: 3px solid var(--noorix-accent-green);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 [dir='ltr'] .app-nav-link--active {
   border-right: none;
-  border-left: 3px solid #4ade80;
+  border-left: 3px solid var(--noorix-accent-green);
 }
 .app-nav-link__label {
   display: flex;
@@ -628,7 +752,7 @@ a { color: inherit; text-decoration: none; }
   width: 22px;
   height: 22px;
   border-radius: 5px;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -715,7 +839,7 @@ a { color: inherit; text-decoration: none; }
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%);
   border: 2px solid transparent;
   display: flex;
   align-items: center;
@@ -746,7 +870,7 @@ a { color: inherit; text-decoration: none; }
   background: var(--noorix-bg-modal, #fff);
   border: 1px solid var(--noorix-border);
   border-radius: 14px;
-  box-shadow: 0 4px 20px rgba(10,31,68,0.1), 0 16px 48px rgba(10,31,68,0.16);
+  box-shadow: 0 4px 20px var(--noorix-navy-10), 0 16px 48px rgba(10,31,68,0.16);
   overflow: hidden;
   overflow-y: auto;
   animation: fadeSlideDown 0.15s cubic-bezier(0.34,1.1,0.64,1);
@@ -763,7 +887,7 @@ a { color: inherit; text-decoration: none; }
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%);
   border: 2px solid transparent;
   display: flex;
   align-items: center;
@@ -860,9 +984,9 @@ a { color: inherit; text-decoration: none; }
 .um-item--disabled:hover { background: transparent; }
 
 .um-item--danger {
-  color: #ef4444;
+  color: var(--noorix-accent-red);
 }
-.um-item--danger:hover { background: rgba(239,68,68,0.08); }
+.um-item--danger:hover { background: var(--noorix-red-8); }
 
 .um-item-icon {
   font-size: 14px;
@@ -899,12 +1023,8 @@ a { color: inherit; text-decoration: none; }
   color: var(--noorix-text-muted);
 }
 .um-lang-chip--active {
-  background: rgba(37,99,235,0.1);
-  color: #2563eb;
-}
-.dark .um-lang-chip--active {
-  background: rgba(37,99,235,0.2);
-  color: #60a5fa;
+  background: var(--noorix-blue-10);
+  color: var(--noorix-accent-blue);
 }
 
 /* backdrop جوال */
@@ -1037,13 +1157,6 @@ html[data-card-style="3"] .noorix-stat-card {
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
-.dark html[data-card-style="3"] .noorix-surface-card,
-.dark html[data-card-style="3"] .noorix-table-frame,
-.dark html[data-card-style="3"] .noorix-exec-card,
-.dark html[data-card-style="3"] .noorix-stat-card {
-  background: rgba(23,32,51,0.85);
-  border-color: rgba(255,255,255,0.08);
-}
 /* 4. نيومورفيك — Neumorphism */
 html[data-card-style="4"] .noorix-surface-card,
 html[data-card-style="4"] .noorix-table-frame,
@@ -1054,12 +1167,6 @@ html[data-card-style="4"] .noorix-stat-card {
   background: var(--noorix-bg-surface);
   box-shadow: 6px 6px 14px rgba(0,0,0,0.08), -6px -6px 14px rgba(255,255,255,0.9);
 }
-.dark html[data-card-style="4"] .noorix-surface-card,
-.dark html[data-card-style="4"] .noorix-table-frame,
-.dark html[data-card-style="4"] .noorix-exec-card,
-.dark html[data-card-style="4"] .noorix-stat-card {
-  box-shadow: 6px 6px 14px rgba(0,0,0,0.4), -6px -6px 14px rgba(30,45,65,0.5);
-}
 /* 5. شريط جانبي — Side Accent */
 html[data-card-style="5"] .noorix-surface-card,
 html[data-card-style="5"] .noorix-table-frame,
@@ -1068,7 +1175,7 @@ html[data-card-style="5"] .noorix-stat-card {
   border-radius: 14px;
   border: 1px solid var(--noorix-border);
   border-inline-start-width: 4px;
-  border-inline-start-color: #16a34a;
+  border-inline-start-color: var(--noorix-accent-green);
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 /* 6. حدود متدرجة — Gradient Border */
@@ -1079,7 +1186,7 @@ html[data-card-style="6"] .noorix-stat-card {
   border-radius: 14px;
   border: 2px solid transparent;
   background: linear-gradient(var(--noorix-bg-surface), var(--noorix-bg-surface)) padding-box,
-    linear-gradient(135deg, #16a34a, #2563eb) border-box;
+    linear-gradient(135deg, var(--noorix-accent-green), var(--noorix-accent-blue)) border-box;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 /* 7. ظل عائم — Floating Shadow */
@@ -1110,14 +1217,8 @@ html[data-card-style="9"] .noorix-table-frame,
 html[data-card-style="9"] .noorix-exec-card,
 html[data-card-style="9"] .noorix-stat-card {
   border-radius: 16px;
-  border: 1px solid rgba(37,99,235,0.2);
-  box-shadow: 0 2px 12px rgba(37,99,235,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
-}
-.dark html[data-card-style="9"] .noorix-surface-card,
-.dark html[data-card-style="9"] .noorix-table-frame,
-.dark html[data-card-style="9"] .noorix-exec-card,
-.dark html[data-card-style="9"] .noorix-stat-card {
-  box-shadow: 0 2px 12px rgba(37,99,235,0.15), inset 0 1px 0 rgba(255,255,255,0.03);
+  border: 1px solid var(--noorix-blue-20);
+  box-shadow: 0 2px 12px var(--noorix-blue-8), inset 0 1px 0 rgba(255,255,255,0.5);
 }
 /* 10. حدود مزدوجة — Double Outline */
 html[data-card-style="10"] .noorix-surface-card,
@@ -1131,7 +1232,7 @@ html[data-card-style="10"] .noorix-stat-card {
 
 /* ========== تقارير — hover على الصفوف ========== */
 .report-table-row:hover td {
-  background: #f8fafc !important;
+  background: var(--noorix-bg-muted) !important;
   transition: background 0.15s ease;
 }
 
@@ -1177,8 +1278,6 @@ html[data-card-style="10"] .noorix-stat-card {
   border-inline-end: 1px solid var(--noorix-border-muted);
   text-align: center;
 }
-.dark .noorix-table-frame thead th,
-.dark .noorix-table thead th { color: var(--noorix-text-muted); }
 .noorix-table-frame thead th:first-child,
 .noorix-table thead th:first-child {
   border-inline-start: none;
@@ -1360,12 +1459,12 @@ html[data-card-style="10"] .noorix-stat-card {
   transform: translateY(-2px);
 }
 .noorix-stat-card__stripe { height: 3px; }
-.noorix-stat-card--blue   .noorix-stat-card__stripe { background: #2563eb; }
-.noorix-stat-card--green  .noorix-stat-card__stripe { background: #16a34a; }
-.noorix-stat-card--amber  .noorix-stat-card__stripe { background: #d97706; }
-.noorix-stat-card--red    .noorix-stat-card__stripe { background: #dc2626; }
-.noorix-stat-card--purple .noorix-stat-card__stripe { background: #7c3aed; }
-.noorix-stat-card--slate  .noorix-stat-card__stripe { background: #64748b; }
+.noorix-stat-card--blue   .noorix-stat-card__stripe { background: var(--noorix-accent-blue); }
+.noorix-stat-card--green  .noorix-stat-card__stripe { background: var(--noorix-accent-green); }
+.noorix-stat-card--amber  .noorix-stat-card__stripe { background: var(--noorix-accent-amber); }
+.noorix-stat-card--red    .noorix-stat-card__stripe { background: var(--noorix-accent-red); }
+.noorix-stat-card--purple .noorix-stat-card__stripe { background: var(--noorix-accent-violet); }
+.noorix-stat-card--slate  .noorix-stat-card__stripe { background: var(--noorix-text-muted); }
 .noorix-stat-card__body { padding: 12px 16px; }
 .noorix-stat-card__label {
   font-size: 11px;
@@ -1390,9 +1489,9 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 /* Amber warning variant: tinted background */
 .noorix-stat-card--amber .noorix-stat-card__body  { background: rgba(245,158,11,0.04); }
-.noorix-stat-card--amber .noorix-stat-card__value  { color: #d97706; }
-.noorix-stat-card--red   .noorix-stat-card__body   { background: rgba(220,38,38,0.04); }
-.noorix-stat-card--red   .noorix-stat-card__value   { color: #dc2626; }
+.noorix-stat-card--amber .noorix-stat-card__value  { color: var(--noorix-accent-amber); }
+.noorix-stat-card--red   .noorix-stat-card__body   { background: var(--noorix-red-4); }
+.noorix-stat-card--red   .noorix-stat-card__value   { color: var(--noorix-accent-red); }
 
 /* ── Summary Bar: شريط إحصاء أفقي متعدد الخانات ─────────── */
 .noorix-summary-bar {
@@ -1427,10 +1526,10 @@ html[data-card-style="10"] .noorix-stat-card {
   font-family: var(--noorix-font-numbers);
   white-space: nowrap;
 }
-.noorix-summary-bar__value--green  { color: #16a34a; }
-.noorix-summary-bar__value--blue   { color: #2563eb; }
-.noorix-summary-bar__value--amber  { color: #d97706; }
-.noorix-summary-bar__value--purple { color: #7c3aed; }
+.noorix-summary-bar__value--green  { color: var(--noorix-accent-green); }
+.noorix-summary-bar__value--blue   { color: var(--noorix-accent-blue); }
+.noorix-summary-bar__value--amber  { color: var(--noorix-accent-amber); }
+.noorix-summary-bar__value--purple { color: var(--noorix-accent-violet); }
 
 /* Sales Entry Modal — Bottom Sheet على الجوال */
 @media (max-width: 767px) {
@@ -1523,9 +1622,9 @@ html[data-card-style="10"] .noorix-stat-card {
   overflow: hidden;
   background: var(--noorix-bg-surface);
 }
-.noorix-result-panel__stripe { height: 3px; background: #2563eb; }
-.noorix-result-panel--green .noorix-result-panel__stripe { background: #16a34a; }
-.noorix-result-panel--amber .noorix-result-panel__stripe { background: #d97706; }
+.noorix-result-panel__stripe { height: 3px; background: var(--noorix-accent-blue); }
+.noorix-result-panel--green .noorix-result-panel__stripe { background: var(--noorix-accent-green); }
+.noorix-result-panel--amber .noorix-result-panel__stripe { background: var(--noorix-accent-amber); }
 .noorix-result-panel__body  { padding: 4px 0; }
 .noorix-result-panel__row {
   display: flex;
@@ -1545,11 +1644,11 @@ html[data-card-style="10"] .noorix-stat-card {
   text-align: left;
 }
 .noorix-result-panel__row--highlight {
-  background: rgba(22,163,74,0.04);
+  background: var(--noorix-green-4);
   border-top: 1px solid var(--noorix-border);
 }
 .noorix-result-panel__row--highlight .noorix-result-panel__row-label { font-weight: 700; color: var(--noorix-text); }
-.noorix-result-panel__row--highlight .noorix-result-panel__row-value { font-size: 16px; color: #16a34a; }
+.noorix-result-panel__row--highlight .noorix-result-panel__row-value { font-size: 16px; color: var(--noorix-accent-green); }
 .noorix-result-panel__note {
   padding: 8px 16px;
   font-size: 11px;
@@ -1560,9 +1659,9 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-result-panel__warn {
   padding: 8px 16px;
   font-size: 11px;
-  color: #b45309;
-  background: rgba(245,158,11,0.06);
-  border-top: 1px solid rgba(245,158,11,0.2);
+  color: var(--noorix-accent-amber);
+  background: var(--noorix-yellow-6);
+  border-top: 1px solid var(--noorix-yellow-20);
 }
 
 /* ========== كروت تنفيذية — نفس ثيم خزائن VaultCard ========== */
@@ -1592,9 +1691,6 @@ html[data-card-style="10"] .noorix-stat-card {
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   transform: translateY(-1px);
 }
-.dark .noorix-exec-card {
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-}
 
 /* الشريط اللوني العلوي — نفس طريقة VaultCard */
 .noorix-exec-card__stripe {
@@ -1602,8 +1698,8 @@ html[data-card-style="10"] .noorix-stat-card {
   width: 100%;
   flex-shrink: 0;
 }
-.noorix-exec-card--inbound  .noorix-exec-card__stripe { background: #16a34a; }
-.noorix-exec-card--outbound .noorix-exec-card__stripe { background: #2563eb; }
+.noorix-exec-card--inbound  .noorix-exec-card__stripe { background: var(--noorix-accent-green); }
+.noorix-exec-card--outbound .noorix-exec-card__stripe { background: var(--noorix-accent-blue); }
 
 /* هيدر الكرت: أيقونة + عنوان */
 .noorix-exec-card__header {
@@ -1621,8 +1717,8 @@ html[data-card-style="10"] .noorix-stat-card {
   align-items: center;
   justify-content: center;
 }
-.noorix-exec-card--inbound  .noorix-exec-card__icon { background: rgba(22,163,74,0.1);  color: #16a34a; }
-.noorix-exec-card--outbound .noorix-exec-card__icon { background: rgba(37,99,235,0.1);  color: #2563eb; }
+.noorix-exec-card--inbound  .noorix-exec-card__icon { background: color-mix(in srgb, var(--noorix-accent-green) 10%, transparent); color: var(--noorix-accent-green); }
+.noorix-exec-card--outbound .noorix-exec-card__icon { background: color-mix(in srgb, var(--noorix-accent-blue)  10%, transparent); color: var(--noorix-accent-blue);  }
 .noorix-exec-card__title {
   font-size: 11px;
   font-weight: 700;
@@ -1762,7 +1858,7 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--noorix-accent-blue) !important;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  box-shadow: 0 0 0 3px var(--noorix-blue-12);
 }
 
 /* ========== استجابة الجوال — NOORIX UI MANIFESTO ========== */
@@ -1912,7 +2008,7 @@ input:focus, select:focus, textarea:focus {
 }
 .noorix-settings-tab[data-active="true"] {
   border-bottom-color: var(--noorix-accent-green);
-  background: rgba(22,163,74,0.07);
+  background: var(--noorix-green-7);
   color: var(--noorix-accent-green);
   font-weight: 700;
 }
@@ -1929,7 +2025,7 @@ input:focus, select:focus, textarea:focus {
   gap: 0;
   padding: 0 16px;
   border-bottom: 2px solid var(--noorix-accent-green);
-  background: rgba(22,163,74,0.05);
+  background: var(--noorix-green-5);
   min-height: 52px;
 }
 .noorix-settings-mobile-nav__label {
@@ -2254,18 +2350,18 @@ input:focus, select:focus, textarea:focus {
 }
 .backup-job__status[data-status='completed'] {
   background: rgba(22, 163, 74, 0.12);
-  color: #166534;
+  color: var(--noorix-accent-green);
   border-color: rgba(22, 163, 74, 0.25);
 }
 .backup-job__status[data-status='running'],
 .backup-job__status[data-status='pending'] {
   background: rgba(37, 99, 235, 0.1);
-  color: #1d4ed8;
+  color: var(--noorix-accent-blue);
   border-color: rgba(37, 99, 235, 0.2);
 }
 .backup-job__status[data-status='failed'] {
   background: rgba(220, 38, 38, 0.1);
-  color: #b91c1c;
+  color: var(--noorix-accent-red);
   border-color: rgba(220, 38, 38, 0.22);
 }
 .backup-job__status[data-status='skipped_duplicate'] {
@@ -2488,7 +2584,7 @@ input:focus, select:focus, textarea:focus {
 .ndfb-fields input[type="date"]:focus,
 .ndfb-fields select:focus {
   border-color: var(--noorix-accent-blue) !important;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1) !important;
+  box-shadow: 0 0 0 3px var(--noorix-blue-10) !important;
 }
 
 /* شارة النطاق */
@@ -2498,8 +2594,8 @@ input:focus, select:focus, textarea:focus {
   gap: 5px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(37,99,235,0.08);
-  border: 1px solid rgba(37,99,235,0.18);
+  background: var(--noorix-blue-8);
+  border: 1px solid var(--noorix-blue-18);
   color: var(--noorix-accent-blue);
   font-size: 13px;
   font-weight: 600;
@@ -2820,13 +2916,13 @@ input:focus, select:focus, textarea:focus {
     padding: 12px 24px;
     border-radius: 16px;
     border: none;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid) 100%);
     color: #fff;
     font-size: 15px;
     font-weight: 700;
     font-family: var(--noorix-font-primary);
     cursor: pointer;
-    box-shadow: 0 8px 28px rgba(37,99,235,0.35);
+    box-shadow: 0 8px 28px var(--noorix-blue-35);
     align-items: center;
     justify-content: center;
     gap: 8px;
@@ -3282,7 +3378,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 .ocr-stat-card:hover {
   border-color: var(--noorix-accent-blue);
-  box-shadow: 0 2px 12px rgba(37,99,235,0.08);
+  box-shadow: 0 2px 12px var(--noorix-blue-8);
 }
 .ocr-stat-num   { font-size: 22px; font-weight: 800; color: var(--noorix-text); line-height: 1; }
 .ocr-stat-label { font-size: 11px; color: var(--noorix-text-muted); }
@@ -3648,9 +3744,9 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 
 /* ── Status badges ── */
 .status-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 5px; }
-.status--pending   { background: rgba(245,158,11,0.12); color: #b45309; }
-.status--confirmed { background: rgba(22,163,74,0.12);  color: #15803d; }
-.status--rejected  { background: rgba(220,38,38,0.12);  color: #b91c1c; }
+.status--pending   { background: color-mix(in srgb, var(--noorix-accent-amber) 12%, transparent); color: var(--noorix-accent-amber); }
+.status--confirmed { background: color-mix(in srgb, var(--noorix-accent-green) 12%, transparent); color: var(--noorix-accent-green); }
+.status--rejected  { background: color-mix(in srgb, var(--noorix-accent-red)   12%, transparent); color: var(--noorix-accent-red);   }
 
 /* ═══════════════════════════════════════════════════════════════════
    Invoice Detail Modal
@@ -3923,7 +4019,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 .ocr-upload-zone--active {
   border-color: var(--noorix-accent-blue);
-  background: rgba(37,99,235,0.04);
+  background: var(--noorix-blue-4);
 }
 .ocr-upload-icon {
   font-size: 32px;
@@ -3978,6 +4074,107 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .ocr-catalog-name {
   flex: 1;
   min-width: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   @layer components — بنية الشاشات (Tailwind-managed)
+   يعني هذه الكلاسات جزء رسمي من طبقة Tailwind وتُغلب بـ utilities
+   ═══════════════════════════════════════════════════════════ */
+@layer components {
+  /* غلاف الشاشة الرئيسية */
+  .nx-screen {
+    display: grid;
+    gap: 18px;
+  }
+
+  /* ─── رأس الصفحة: عنوان + شريط أدوات ─── */
+  .nx-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .nx-page-header__titles {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .nx-page-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+    color: var(--noorix-text);
+    line-height: 1.25;
+  }
+  .nx-page-desc {
+    margin-top: 6px;
+    margin-bottom: 0;
+    font-size: 13px;
+    color: var(--noorix-text-muted);
+  }
+
+  /* ─── شريط الأدوات ─── */
+  .nx-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  /* ─── شريط الفلاتر ─── */
+  .nx-filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .nx-filter-label {
+    font-size: 13px;
+    color: var(--noorix-text-muted);
+    white-space: nowrap;
+  }
+
+  /* ─── شريط التبويبات ─── */
+  .nx-tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--noorix-border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nx-tab-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--noorix-font-primary);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    color: var(--noorix-text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color var(--noorix-transition), border-color var(--noorix-transition), background var(--noorix-transition);
+    margin: 0;
+  }
+  .nx-tab-btn:hover {
+    color: var(--noorix-accent-blue);
+    background: rgba(37, 99, 235, 0.04);
+  }
+  .nx-tab-btn--active {
+    color: var(--noorix-accent-blue);
+    border-bottom-color: var(--noorix-accent-blue);
+    background: rgba(37, 99, 235, 0.07);
+    font-weight: 700;
+  }
+  .nx-tab-content {
+    padding: clamp(12px, 3vw, 24px);
+  }
 }
 .ocr-catalog-name-primary {
   font-weight: 600;
@@ -4052,7 +4249,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(239,68,68,0.08);
+  background: var(--noorix-red-8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4099,8 +4296,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   font-weight: 700;
   padding: 3px 8px;
   border-radius: 5px;
-  background: rgba(239,68,68,0.08);
-  color: #dc2626;
+  background: var(--noorix-red-8);
+  color: var(--noorix-accent-red);
   flex-shrink: 0;
 }
 

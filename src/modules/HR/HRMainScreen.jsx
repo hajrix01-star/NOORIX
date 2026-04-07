@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HRMainScreen — الشاشة الرئيسية للموارد البشرية
  */
 import React, { useState } from 'react';
@@ -62,28 +62,28 @@ export default function HRMainScreen() {
   }).length;
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
 
       {/* ── ترويسة الصفحة ── */}
       <div className="nx-page-header">
         <div>
-          <h1 className="nx-page-title">{t('staffTitle')}</h1>
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
         </div>
         {companyId && (
-          <div className="nx-flex nx-flex-wrap nx-gap-8">
-            <div className="noorix-stat-card noorix-stat-card--green nx-px-16 nx-py-8" style={{ minWidth: 110 }}>
+          <div className="flex flex flex-wrap gap-2">
+            <div className="noorix-stat-card noorix-stat-card--green px-4 py-2 min-w-[110px]">
               <div className="noorix-stat-card__stripe" />
               <div className="noorix-stat-card__body">
                 <div className="noorix-stat-card__label">{t('hrStatsActive')}</div>
-                <div className="noorix-stat-card__value" style={{ fontSize: 22 }}>{activeCount}</div>
+                <div className="noorix-stat-card__value text-[22px]">{activeCount}</div>
               </div>
             </div>
             {expiringCount > 0 && (
-              <div className="noorix-stat-card noorix-stat-card--amber nx-px-16 nx-py-8" style={{ minWidth: 130 }}>
+              <div className="noorix-stat-card noorix-stat-card--amber px-4 py-2 min-w-[130px]">
                 <div className="noorix-stat-card__stripe" />
                 <div className="noorix-stat-card__body">
                   <div className="noorix-stat-card__label">{t('hrStatsResidencyExpiring')}</div>
-                  <div className="noorix-stat-card__value" style={{ fontSize: 22 }}>{expiringCount}</div>
+                  <div className="noorix-stat-card__value text-[22px]">{expiringCount}</div>
                 </div>
               </div>
             )}
@@ -92,20 +92,15 @@ export default function HRMainScreen() {
       </div>
 
       {/* ── شريط التبويبات — مستقل خارج البطاقة لضمان التمرير الأفقي ── */}
-      <div className="nx-bg-surface nx-rounded-lg nx-border-all nx-p-4 nx-overflow-auto" style={{
-        overflowY: 'visible',
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-      }}>
-        <div className="nx-flex" style={{ gap: 2, width: 'max-content', minWidth: '100%' }}>
+      <div className="bg-noorix-surface rounded-xl border border-noorix-border p-1 overflow-x-auto overflow-y-visible [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none]">
+        <div className="flex gap-[2px] w-max min-w-full">
           {TABS.map((tab) => (
             <Button
               key={tab.id}
               type="button"
               className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
-              style={activeTab === tab.id ? { background: 'var(--noorix-accent-green)', color: '#fff' } : undefined}
+              style={activeTab === tab.id ? { background: 'var(--noorix-accent-green)', color: 'white' } : undefined}
             >
               {t(tab.labelKey)}
             </Button>
@@ -114,7 +109,7 @@ export default function HRMainScreen() {
       </div>
 
       {/* ── محتوى التبويب ── */}
-      <div className="noorix-surface-card nx-p-20" style={{ minHeight: 200 }}>
+      <div className="noorix-surface-card p-5 min-h-[200px]">
         {activeTab === 'employees' && <StaffListScreen embedded />}
         {activeTab === 'payroll'   && <PayrollTab />}
         {activeTab === 'leave'     && <LeaveTab />}

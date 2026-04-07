@@ -111,7 +111,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   }
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast
         visible={toast.visible}
         message={toast.message}
@@ -157,7 +157,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
 
       {/* ── الجدول ── */}
       {isLoading
-        ? <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('loading')}</p>
+        ? <p className="text-noorix-muted text-[13px]">{t('loading')}</p>
         : (
           <SupplierTable
             suppliers={suppliers}

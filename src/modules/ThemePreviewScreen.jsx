@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ThemePreviewScreen — معاينة الثيم واختيار أشكال الكروت
  * 10 أشكال احترافية للكروت — اختيار واحد لتطبيقه على النظام كاملاً
  */
@@ -20,7 +20,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
     6: { borderRadius: 14, border: '2px solid transparent', background: 'linear-gradient(var(--noorix-bg-surface), var(--noorix-bg-surface)) padding-box, linear-gradient(135deg, #16a34a, #2563eb) border-box', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
     7: { borderRadius: 16, border: '1px solid var(--noorix-border)', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' },
     8: { borderRadius: 4, border: '1px solid var(--noorix-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' },
-    9: { borderRadius: 16, border: '1px solid rgba(37,99,235,0.2)', boxShadow: '0 2px 12px rgba(37,99,235,0.08), inset 0 1px 0 rgba(255,255,255,0.5)' },
+    9: { borderRadius: 16, border: '1px solid var(--noorix-blue-20)', boxShadow: '0 2px 12px var(--noorix-blue-8), inset 0 1px 0 rgba(255,255,255,0.5)' },
     10: { borderRadius: 12, border: '2px solid var(--noorix-border)', boxShadow: 'inset 0 0 0 1px var(--noorix-border-muted)' },
   };
 
@@ -28,10 +28,8 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
 
   return (
     <div
-      className="nx-bg-surface nx-p-20 nx-flex nx-flex-col nx-cursor-pointer"
+      className="bg-noorix-surface p-5 flex flex-col cursor-pointer min-h-[140px] justify-between"
       style={{
-        minHeight: 140,
-        justifyContent: 'space-between',
         transition: 'all 0.2s ease',
         outline: isSelected ? '2px solid var(--noorix-accent-blue)' : 'none',
         outlineOffset: 2,
@@ -43,13 +41,13 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(styleId); }}
     >
       <div>
-        <div className="nx-text-xs nx-font-700 nx-text-muted nx-mb-4" style={{ letterSpacing: '0.05em' }}>#{styleId}</div>
-        <div className="nx-text-lg nx-font-700 nx-text-primary">{name}</div>
-        <div className="nx-text-sm nx-text-muted nx-mt-4">{desc}</div>
+        <div className="text-[11px] font-bold text-noorix-muted mb-1 tracking-[0.05em]">#{styleId}</div>
+        <div className="text-[15px] font-bold text-noorix-text">{name}</div>
+        <div className="text-[12px] text-noorix-muted mt-1">{desc}</div>
       </div>
-      <div className="nx-flex nx-gap-8 nx-mt-12">
-        <span className="nx-text-xs nx-font-600 nx-text-income" style={{ padding: '4px 8px', background: 'rgba(22,163,74,0.1)', borderRadius: 6 }}>12,500 ﷼</span>
-        <span className="nx-text-xs nx-bg-muted nx-text-muted" style={{ padding: '4px 8px', borderRadius: 6 }}>مثال</span>
+      <div className="flex gap-2 mt-3">
+        <span className="text-[11px] font-semibold text-noorix-green py-1 px-2 rounded-md" style={{ background: 'var(--noorix-green-10)' }}>12,500 ﷼</span>
+        <span className="text-[11px] bg-noorix-bg-muted text-noorix-muted py-1 px-2 rounded-md">مثال</span>
       </div>
     </div>
   );
@@ -69,15 +67,15 @@ export default function ThemePreviewScreen() {
   };
 
   return (
-    <div className="nx-p-24" style={{ maxWidth: 1200 }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 className="nx-font-800 nx-m-0" style={{ fontSize: 22 }}>{t('themePreview')}</h1>
-        <p className="nx-mt-8 nx-text-muted nx-text-md">
+    <div className="p-6 max-w-[1200px]">
+      <div className="mb-6">
+        <h1 className="font-extrabold m-0 text-[22px]">{t('themePreview')}</h1>
+        <p className="mt-2 text-noorix-muted text-[14px]">
           {lang === 'ar' ? 'اختر شكلاً للكروت لتطبيقه على النظام كاملاً. اضغط على أي كرت لتحديده.' : 'Select a card style to apply across the entire system. Click any card to select it.'}
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
+      <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
         {CARD_STYLES.map((item) => (
           <CardPreview
             key={item.id}
@@ -93,8 +91,8 @@ export default function ThemePreviewScreen() {
         ))}
       </div>
 
-      <div className="nx-p-16 nx-bg-muted nx-rounded-lg nx-text-base nx-text-muted" style={{ marginTop: 24 }}>
-        <strong className="nx-text-primary">
+      <div className="p-4 bg-noorix-bg-muted rounded-xl text-[13px] text-noorix-muted mt-6">
+        <strong className="text-noorix-text">
           {lang === 'ar' ? `الشكل المحدد حاليًا: #${currentStyle}` : `Current selection: #${currentStyle}`}
         </strong>
         {' — '}

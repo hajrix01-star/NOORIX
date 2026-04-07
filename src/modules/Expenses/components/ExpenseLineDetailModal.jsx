@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ExpenseLineDetailModal — تفاصيل بند مصروف + سجل مدفوعاته
  */
 import React, { useState } from 'react';
@@ -50,13 +50,13 @@ export default function ExpenseLineDetailModal({
 
   const paymentColumns = [
     { key: 'invoiceNumber', label: 'رقم السند',
-      render: (_, row) => <span className="nx-cell-num nx-font-600">{row.invoiceNumber || '—'}</span> },
+      render: (_, row) => <span className="nx-cell-num font-semibold">{row.invoiceNumber || '—'}</span> },
     { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد',
       render: (_, row) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '—'}</span> },
     { key: 'transactionDate', label: 'التاريخ',
       render: (v) => <span className="nx-cell-muted">{formatSaudiDate(v) || '—'}</span> },
     { key: 'totalAmount', label: 'المبلغ',
-      render: (v) => <span className="nx-cell-num nx-cell-num--green nx-font-600">{fmt(v)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--green font-semibold">{fmt(v)}</span> },
     { key: 'vaultName', label: 'الخزنة',
       render: (_, row) => <span className="nx-cell-muted">{row.vaultName || row.vault?.nameAr || '—'}</span> },
     { key: 'notes', label: 'ملاحظات',
@@ -96,15 +96,15 @@ export default function ExpenseLineDetailModal({
 
   return (
     <AdaptiveSheet open={true} onClose={onClose} title={modalTitle} size="xl" side="start" className="expense-line-detail-drawer">
-      <div className="nx-flex nx-flex-wrap nx-gap-12 nx-text-base nx-text-muted nx-mb-16">
+      <div className="flex flex flex-wrap gap-3 text-[13px] text-noorix-muted mb-4">
         <span>النوع: {KIND_LABELS[line?.kind] || line?.kind || '—'}</span>
         <span>الفئة: {line?.category?.nameAr || '—'}</span>
         <span>المورد: {(lang === 'en' ? line?.supplier?.nameEn || line?.supplier?.nameAr : line?.supplier?.nameAr || line?.supplier?.nameEn) || '—'}</span>
         {line?.serviceNumber && <span>رقم الخدمة: {line.serviceNumber}</span>}
       </div>
 
-      <div className="nx-page-header nx-mb-12">
-        <h3 className="nx-text-xl nx-font-600 nx-m-0">سجل المدفوعات</h3>
+      <div className="nx-page-header mb-3">
+        <h3 className="text-[16px] font-semibold m-0">سجل المدفوعات</h3>
         <div className="nx-toolbar">
           <Button onClick={handlePrintPayments} disabled={!payments.length}>طباعة</Button>
           <Button onClick={() => exportToExcel(paymentExportData, `payments-${line?.nameAr || 'line'}.xlsx`)} disabled={!payments.length}>Excel</Button>
@@ -113,11 +113,11 @@ export default function ExpenseLineDetailModal({
       </div>
 
       {dateFilter?.startDate && (
-        <p className="nx-text-sm nx-text-muted nx-mt-0 nx-mb-12">
+        <p className="text-[12px] text-noorix-muted mt-0 mb-3">
           الفترة: {formatSaudiDate(dateFilter.startDate)} — {formatSaudiDate(dateFilter.endDate)}
         </p>
       )}
-      <p className="nx-text-md nx-font-600 nx-mt-0 nx-mb-16">
+      <p className="text-[14px] font-semibold mt-0 mb-4">
         إجمالي المدفوع في الفترة: <span className="nx-cell-num nx-cell-num--green">{fmt(totalPaid)}</span>
       </p>
       <SmartTable

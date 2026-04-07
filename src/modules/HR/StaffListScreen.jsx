@@ -1,4 +1,4 @@
-/**
+﻿/**
  * StaffListScreen — قائمة الموظفين (احترافي كامل)
  */
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -166,15 +166,15 @@ export default function StaffListScreen({ embedded }) {
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
-      render: (v) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis nx-text-base" title={v || ''}>{v || '—'}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={v || ''}>{v || '—'}</span> },
     { key: 'name', label: t('employeeName'), sortable: true, minWidth: 170,
-      render: (_, row) => <span className="nx-cell-bold nx-text-base">{employeeDisplayName(row, lang)}</span> },
+      render: (_, row) => <span className="nx-cell-bold text-[13px]">{employeeDisplayName(row, lang)}</span> },
     { key: 'jobTitle', label: t('jobTitle'), sortable: true, minWidth: 150,
       render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125, minWidth: 120,
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140, minWidth: 130,
-      render: (_, row) => <span className="nx-cell-num nx-text-base">{hrFmt(row.totalSalary)}</span> },
+      render: (_, row) => <span className="nx-cell-num text-[13px]">{hrFmt(row.totalSalary)}</span> },
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
       render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     ...(viewMode === 'terminated' || viewMode === 'archived'
@@ -366,7 +366,7 @@ export default function StaffListScreen({ embedded }) {
 
   const renderMobileCard = useCallback((row) => (
     <div>
-      <div className="nx-mc__header nx-mb-4">
+      <div className="nx-mc__header mb-1">
         <span className="nx-cell-num nx-cell-muted-sm">{row.employeeSerial || '—'}</span>
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
       </div>
@@ -375,7 +375,7 @@ export default function StaffListScreen({ embedded }) {
       <div className="nx-mc__grid nx-mc__grid--2">
         <div>
           <div className="nx-mc__stat-label">{t('joinDate')}</div>
-          <div className="nx-mc__stat-value nx-text-base">{formatSaudiDate(row.joinDate)}</div>
+          <div className="nx-mc__stat-value text-[13px]">{formatSaudiDate(row.joinDate)}</div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('totalSalary')}</div>
@@ -398,11 +398,11 @@ export default function StaffListScreen({ embedded }) {
   ), [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete]);
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       {!embedded && (
         <div>
-          <h1 className="nx-page-title">{t('staffTitle')}</h1>
-          <p className="nx-page-desc">{t('staffDesc')}</p>
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
+          <p className="text-[13px] text-noorix-muted m-0">{t('staffDesc')}</p>
         </div>
       )}
 
@@ -433,8 +433,8 @@ export default function StaffListScreen({ embedded }) {
             }}
           />
 
-          <div className="nx-page-header nx-mb-8">
-            <div className="nx-toolbar nx-flex-1">
+          <div className="nx-page-header mb-2">
+            <div className="nx-toolbar flex-1 min-w-0">
               <Button size="sm" onClick={() => setViewMode('active')}>{t('activeEmployeesList')}</Button>
               <Button size="sm" onClick={() => setViewMode('terminated')}>{t('terminatedEmployeesList')}</Button>
               <Button size="sm" onClick={() => setViewMode('archived')}>{t('archivedEmployeesList')}</Button>
@@ -547,7 +547,7 @@ export default function StaffListScreen({ embedded }) {
           </>
         }
       >
-        <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
           <Input
             type="select"
             label={t('terminationReason')}

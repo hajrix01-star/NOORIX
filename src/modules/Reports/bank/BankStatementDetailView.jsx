@@ -1,4 +1,4 @@
-/**
+﻿/**
  * عرض كشف كامل (صفحة) — بديل النافذة المنبثقة البسيطة؛ مستوحى من المشروع السابق.
  */
 import React, { useState } from 'react';
@@ -29,7 +29,7 @@ export default function BankStatementDetailView({
 
   if (vm.isLoading) {
     return (
-      <div className="nx-text-center nx-text-muted" style={{ padding: 48 }}>
+      <div className="text-center text-noorix-muted p-12">
         {t('loading')}…
       </div>
     );
@@ -37,18 +37,18 @@ export default function BankStatementDetailView({
 
   if (!vm.statement) {
     return (
-      <div className="nx-text-center" style={{ padding: 48 }}>
-        <p className="nx-text-xl">{t('bankStatementNotFound')}</p>
-        <Button variant="primary" className="nx-mt-16" onClick={onBack}>{t('bankBackToList')}</Button>
+      <div className="text-center p-12">
+        <p className="text-[16px]">{t('bankStatementNotFound')}</p>
+        <Button variant="primary" className="mt-4" onClick={onBack}>{t('bankBackToList')}</Button>
       </div>
     );
   }
 
   if (vm.statement.status === 'mapping') {
     return (
-      <div className="nx-p-24">
+      <div className="p-6">
         <Button variant="ghost" onClick={onBack}>← {t('bankBackToList')}</Button>
-        <p className="nx-mt-16">{t('bankStatementMappingRequired')}</p>
+        <p className="mt-4">{t('bankStatementMappingRequired')}</p>
       </div>
     );
   }
@@ -76,7 +76,7 @@ export default function BankStatementDetailView({
         borderRadius: 0,
         border: 'none',
         borderBottom: vm.activeTab === id ? '3px solid var(--noorix-accent-blue)' : '3px solid transparent',
-        background: vm.activeTab === id ? 'rgba(37,99,235,0.08)' : 'transparent',
+        background: vm.activeTab === id ? 'var(--noorix-blue-8)' : 'transparent',
         color: vm.activeTab === id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
         fontWeight: vm.activeTab === id ? 700 : 500,
         padding: '13px 20px',
@@ -106,9 +106,9 @@ export default function BankStatementDetailView({
   );
 
   return (
-    <div className="nx-grid nx-gap-20">
+    <div className="grid gap-5">
       {/* ── رأس الصفحة: زر الرجوع + أدوات ── */}
-      <div className="nx-page-header nx-border-all nx-rounded-lg" style={{ padding: '14px 18px', background: 'var(--noorix-surface)', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+      <div className="nx-page-header border border-noorix-border rounded-xl py-[14px] px-[18px] bg-noorix-surface" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
         <Button onClick={onBack}>← {t('bankBackToList')}</Button>
         <div className="nx-toolbar">
           <Button
@@ -156,19 +156,17 @@ export default function BankStatementDetailView({
 
       {/* ── التبويبات ── */}
       <div
-        className="noorix-surface-card nx-overflow-hidden nx-border-all"
-        style={{ padding: 0 }}
+        className="noorix-surface-card overflow-hidden border border-noorix-border p-0"
       >
         <div
-          className="noorix-tab-bar nx-flex nx-border-b nx-bg-muted"
-          style={{ flexWrap: 'nowrap', overflowX: 'auto', gap: 0 }}
+          className="noorix-tab-bar flex flex-nowrap overflow-x-auto gap-0 border-b border-noorix-border bg-noorix-bg-muted"
         >
           {tabBtn('analysis', t('bankTabAnalysis'))}
           {tabBtn('transactions', t('bankTabTransactions'), stmt.transactions?.length)}
           {tabBtn('reconciliation', t('bankTabReconciliation'))}
           {tabBtn('sales', t('bankTabSalesCompare'))}
         </div>
-        <div className="nx-p-20">
+        <div className="p-5">
           {vm.activeTab === 'analysis' && (
             <BankStatementAnalysisCardsTab
               statement={stmt}
@@ -253,7 +251,7 @@ export default function BankStatementDetailView({
           </>
         }
       >
-        <p className="nx-mt-0">{t('bankConfirmRemoveCard')}</p>
+        <p className="mt-0">{t('bankConfirmRemoveCard')}</p>
       </Modal>
     </div>
   );

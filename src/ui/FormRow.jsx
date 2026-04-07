@@ -1,39 +1,32 @@
 /**
  * FormRow — مساعد تخطيط النماذج
- *
- * يعرض حقلين أو أكثر في صف واحد على الشاشات الكبيرة،
- * وعمود واحد على الجوال تلقائياً.
- *
- * الاستخدام:
- *   <FormRow>
- *     <Input label="الاسم الأول" ... />
- *     <Input label="الاسم الأخير" ... />
- *   </FormRow>
- *
- *   <FormRow cols={3}>
- *     <Input label="المدينة" ... />
- *     <Input label="الدولة" ... />
- *     <Input label="الرمز البريدي" ... />
- *   </FormRow>
+ * يعرض حقلين أو أكثر في صف على الشاشات الكبيرة، وعمود على الجوال.
  */
 import React from 'react';
+import { cn } from './cn';
 
-/**
- * @param {object} props
- * @param {1|2|3|4} [props.cols=2]
- * @param {'sm'|'md'|'lg'} [props.gap='md']
- * @param {string} [props.className]
- * @param {React.ReactNode} props.children
- */
+const COLS_CLASS = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 sm:grid-cols-2',
+  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+};
+
+const GAP_CLASS = {
+  sm: 'gap-2',
+  md: 'gap-3',
+  lg: 'gap-4',
+};
+
 export default function FormRow({ cols = 2, gap = 'md', className = '', children, ...rest }) {
   return (
     <div
-      className={[
-        'nx-form-row',
-        `nx-form-row--cols-${cols}`,
-        `nx-form-row--gap-${gap}`,
+      className={cn(
+        'grid',
+        COLS_CLASS[cols] ?? COLS_CLASS[2],
+        GAP_CLASS[gap]   ?? GAP_CLASS.md,
         className,
-      ].filter(Boolean).join(' ')}
+      )}
       {...rest}
     >
       {children}

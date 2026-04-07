@@ -1,14 +1,21 @@
 ---
-description: STRICT — Enforce Noorix UI system (src/ui). Block raw HTML, inline styles for layout/colors, and old noorix-btn-* classes. See ui-responsive-standards.mdc for breakpoints, Button size, mobile cards.
+description: STRICT — Enforce Noorix UI system (src/ui) with Tailwind CSS v4. Block raw HTML, inline color styles, and dead CSS classes. See ui-responsive-standards.mdc for breakpoints and Button sizing.
 globs: src/**/*.{jsx,tsx,js,ts}
 alwaysApply: true
 ---
 
-# Noorix UI System — قواعد صارمة (استثناءات محددة وموثّقة)
+# Noorix UI System — قواعد صارمة (Tailwind v4)
 
-## 🚨 المحظورات المطلقة (سبب رفض الكود)
+## المنظومة التقنية الحالية
+- **Tailwind CSS v4** عبر `@tailwindcss/vite` — تكوين في `vite.config.js`
+- **`@theme`** في `src/index.css` — يحتوي على الألوان والخطوط والأبعاد المخصصة
+- **`cn()`** من `src/ui/cn.js` — دمج آمن للـ classes (clsx + tailwind-merge)
+- **`src/ui/`** — مكتبة المكوّنات المركزية (Tailwind داخلياً)
+- **`src/index.css`** — متغيرات CSS + أنماط عالمية + أنماط المنظومة القديمة المتبقية
 
-### 1. العناصر الخام (Raw HTML) — ممنوع بالكامل
+## المحظورات المطلقة
+
+### 1. العناصر الخام — ممنوع بالكامل
 
 ```jsx
 // ❌ يُرفض فوراً
@@ -16,225 +23,162 @@ alwaysApply: true
 <input type="text|number|date|search|email|tel|url|password|month|time" ...>
 <select ...>
 
-// ✅ البديل الوحيد المقبول
+// ✅ البديل الوحيد
 import { Button, Input } from '../../ui';
 <Button variant="primary|danger|success|ghost|warning|raw">
 <Input type="text|number|date|select|search|...">
 ```
 
-**استثناءات موثّقة (عناصر أصلية مسموحة):**
+**استثناءات موثّقة:**
+- `checkbox` / `radio` داخل `<label>` مباشرة
+- `input type="file"` مخفي مرتبط بـ Button أو label
+- `Button.jsx` نفسه داخلياً يستخدم `<button>`
 
-- **`checkbox` / `radio`** داخل `<label className="nx-checkbox">` (أنماط الحقل في `ui.css` — يُفضّل تعديلات الحجم عبر `nx-checkbox--tight`، `nx-checkbox--cell-center`، `nx-checkbox--accent-green`، …).
-- **`input type="file"`** مخفي (`hidden` / `display:none` + `ref`) لاختيار ملف — مسموح خارج `Input` عند ربطه بـ `Button` أو `label.nx-file-label`.
-- **تنفيذ `Button` نفسه** في `src/ui/Button.jsx` يستخدم وسم `<button>` داخلياً — المصدر الوحيد لأزرار التطبيق هو **`Button` من `ui`**.
-
-**فحص CI اختياري:** `npm run ui:audit:strict` يفشل إن وُجد `<button>` خارج `ui/Button.jsx`.
-
-### 2. الـ Inline Styles للتخطيط والألوان — محظور تماماً
+### 2. Inline Styles للألوان — محظور تماماً
 
 ```jsx
-// ❌ يُرفض — تخطيط ثابت
-<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-<div style={{ padding: 16, borderRadius: 8 }}>
-<div style={{ fontSize: 13, fontWeight: 600 }}>
-<div style={{ color: 'var(--noorix-text-muted)' }}>
-<div style={{ background: 'var(--noorix-bg-muted)' }}>
-<div style={{ width: '100%', overflow: 'auto' }}>
+// ❌ مرفوض — ألوان ثابتة
+style={{ color: '#dc2626' }}
+style={{ background: '#2563eb' }}
+style={{ borderColor: '#16a34a' }}
 
-// ✅ البديل — استخدم classes من src/ui/ui.css
-<div className="nx-flex-center nx-gap-12">
-<div className="nx-p-16 nx-rounded">
-<div className="nx-text-base nx-font-600">
-<div className="nx-text-muted">
-<div className="nx-bg-muted">
-<div className="nx-w-full nx-overflow-auto">
+// ✅ استخدم Tailwind classes
+className="text-noorix-red"
+className="bg-noorix-blue"
+className="border-noorix-green"
 
-// ✅ مقبول — قيم ديناميكية محسوبة من state/props (انظر أيضاً «طبقة الوظائف» أدناه)
-style={{ width: `${progress}%` }}
-style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
-style={{ height: rowHeight * count }}
-style={{ color: item.dynamicColor }}     // من data
-style={{ top: menuY, left: menuX }}      // من DOM measurements
+// ✅ أو CSS variables إذا لا يوجد class مناسب
+style={{ color: 'var(--noorix-accent-red)' }}
+style={{ background: 'var(--noorix-accent-blue)' }}
+
+// ✅ مقبول — قيم ديناميكية من state/data
+style={{ color: item.dynamicColor }}
+style={{ background: `rgba(${r},${g},${b},0.1)` }}
 ```
 
-**طبقة الوظائف (Functional inline — ليست قرارات تصميم بصرية):** مسموحة عندما تخدم سلوك المكوّن (مودال، قائمة منسدلة، منطقة تمرير)، مع تفضيل إضافة class في `ui.css` إذا تكرّرت القيمة.
-
-- `zIndex` — طبقات فوق بعض (مع احترام `--nx-z-*` إن وُجدت)
-- `minWidth` / `maxWidth` / `minHeight` / `maxHeight` — حدود تخطيط للمكوّن نفسه (مثلاً عرض أدنى للقائمة، `maxHeight` لجسم المودال)
-- `transform` — حركة/موضع محسوب (انتقالات UI)
-- `transitionDuration` — عندما تكون القيمة ديناميكية من state
-
-**ممنوع** استخدام هذه الخصائص كبديل عن تخطيط الصفحة العام (صفوف، شبكات، هوامش) — هناك تبقى `nx-*` فقط.
-
-### 3. الكلاسات القديمة — محظور ذكرها
+### 3. Inline Styles للتخطيط — محظور تماماً
 
 ```jsx
-// ❌ dead code — تمت إزالتها من index.css
+// ❌ مرفوض
+style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+style={{ padding: 16, borderRadius: 8 }}
+
+// ✅ استخدم Tailwind
+className="flex items-center gap-3"
+className="p-4 rounded-lg"
+
+// ✅ مقبول — قيم ديناميكية أو وظيفية
+style={{ width: `${progress}%` }}
+style={{ height: rowHeight * count }}
+style={{ top: menuY, left: menuX }}
+style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+style={{ zIndex: 'var(--nx-z-menu, 2500)' }}
+```
+
+### 4. الكلاسات القديمة — محظور ذكرها في كود جديد
+
+```jsx
+// ❌ dead code — استخدمها قديماً
 className="noorix-btn-nav"
 className="noorix-btn-primary"
 className="noorix-btn-success"
 className="noorix-btn-danger"
 className="noorix-btn-ghost"
 className="noorix-btn"
-className="noorix-btn--primary"
 ```
 
-### 4. الجداول — SmartTable إلزامي لشاشات البيانات
+**الكلاسات المتبقية من المرحلة الانتقالية (مسموح حتى اكتمال الهجرة):**
+- `nx-cell-*` — أنماط خلايا الجدول
+- `nx-mc__*` — بطاقات الجوال
+- `noorix-surface-card` — يُستخدم في طباعة التقارير
+- `app-sidebar*`, `app-nav-*` — منظومة السايدبار
+
+### 5. الجداول — SmartTable إلزامي
 
 ```jsx
-// ❌ جداول HTML في شاشات بيانات: ترقيم، فرز، بحث، تحميل دفعات
-<table><thead><tr><th>...</th></tr></thead><tbody>...
+// ❌ جداول HTML في شاشات البيانات
+<table><thead>...
 
-// ✅ استخدم SmartTable
+// ✅ SmartTable
 import { SmartTable } from '../../ui';
 <SmartTable columns={cols} data={rows} total={total} page={page} onPageChange={setPage} />
 
-// ✅ استثناء: جدول HTML بسيط ثابت داخل كرت / ملخص (≤ 10 صفوف بيانات)
-//    أمثلة: تفصيل ضريبة، إجمالي فاتورة، مقارنة KPI قصيرة — بدون ترقيم/فرز خادم
-// ✅ استثناء: مستندات الطباعة (PDF/print)
+// ✅ استثناء: جدول بسيط ثابت ≤10 صفوف داخل كرت أو مستندات الطباعة
 ```
 
-### 5. النوافذ المنبثقة والألواح — ممنوع portal/overlay يدوي
+### 6. النوافذ — ممنوع portal/overlay يدوي
 
 ```jsx
-// ❌
-createPortal(<div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)' }}> ... </div>)
-<div className="modal-overlay"> ... </div>
+// ❌ ممنوع
+createPortal(<div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)' }}>...)
 
-// ✅ AdaptiveSheet — الافتراضي لنماذج العمل والمعالجات (سطح مكتب = Modal مركزي، ضيق = Drawer)
-//    نقطة القطع: max-width 900px — ثابت `ADAPTIVE_SHEET_BREAKPOINT_PX` في `src/ui/AdaptiveSheet.jsx`
+// ✅ AdaptiveSheet — للنماذج والمعالجات
 import { AdaptiveSheet } from '../../ui';
-<AdaptiveSheet open={open} onClose={onClose} title="العنوان" size="md|lg|xl|full|2xl" side="start|end" breakpointPx={900}>
-  {children}
-</AdaptiveSheet>
+<AdaptiveSheet open={open} onClose={onClose} title="العنوان" size="md|lg|xl|full|2xl">
 
-// ✅ Modal — مباشرة فقط للتأكيدات والحوارات القصيرة المركّزة (انظر الجدول أدناه)
+// ✅ Modal — للتأكيدات والحوارات القصيرة
 import { Modal } from '../../ui';
-<Modal open={open} onClose={onClose} title="العنوان" size="sm|md|lg|xl|2xl|full" variant="default|danger">
-  {children}
-</Modal>
+<Modal open={open} onClose={onClose} title="العنوان" size="sm|md|lg">
 
-// ✅ Drawer — نادراً: عندما تريد لوحاً جانبياً على كل أحجام الشاشة (بدون فرع Modal)
+// ✅ Drawer — لوح جانبي دائم بغض النظر عن العرض
 import { Drawer } from '../../ui';
-<Drawer open={open} onClose={onClose} title="العنوان" size="sm|md|lg|xl|full" side="start|end">
-  {children}
-</Drawer>
+<Drawer open={open} onClose={onClose} title="العنوان" size="md" side="start|end">
 ```
-
-**ممنوع** portal/overlay مخصّص (مركزي أو جانبي). في فرع **Drawer** (شاشة ضيقة): **`side="start"`** مع `dir="rtl"` يفتح من **يمين** الشاشة.
-
-### سياسة المشروع: `AdaptiveSheet` و`Modal` و`Drawer`
-
-| استخدم **`AdaptiveSheet`** | استخدم **`Modal` مباشرة** | استخدم **`Drawer` مباشرة** |
-|---------------------------|---------------------------|---------------------------|
-| نماذج إنشاء/تعديل، معالجات، استيراد/تصدير، تفاصيل طويلة | تأكيدات (حذف، إنهاء خدمة، …) | نادر: لوح جانبي دائماً بغض النظر عن العرض |
-| نفس المحتوى على 27″ (وسط) والجوال (جانب) | حوارات صغيرة مركّزة (تقويم، …) | — |
-| — | `closeOnBackdrop={false}`، `nx-modal--flush` | — |
-
-**قاعدة سريعة:** عمل المستخدم اليومي (نماذج، جداول، خطوات) → **`AdaptiveSheet`** مع `side="start"` (يؤثّر على فرع Drawer فقط). سؤال قصير أو خطر → **`Modal`**.
-
-`variant` يُمرَّر لفرع **Modal** فقط؛ **flush** عبر `className="nx-modal--flush"` على **Modal** عند الحاجة. على الشاشة الضيقة يُستخدم **Drawer** بدون `variant`.
-
-أسماء الملفات قد تبقى `*Modal.jsx`؛ **المهم أن الجذر البصري للنماذج يكون `AdaptiveSheet`** ما لم يُستثنَ صراحةً.
-
-### 6. قواعد استخدام المكوّنات (Semantic usage)
-
-الفوضى لا تأتي من CSS فقط — **معنى** الزر/الشارة يجب أن يكون متوقعاً عبر التطبيق.
-
-| المكوّن | الاستخدام المقبول |
-|---------|-------------------|
-| **Button `primary`** | إجراء رئيسي واحد **للوحة/القسم** (CTA واحد واضح) — ليس كل زر في الشريط |
-| **Button `danger`** | إجراءات تدميرية فقط (حذف، إلغاء نهائي، تفريغ) — مع تأكيد عند الخطر |
-| **Button `success`** | إتمام نجاح (حفظ، اعتماد، إغلاق دورة) — بحسب سياق الشاشة |
-| **Button `ghost`** | إجراءات ثانوية (إلغاء، رجوع، «المزيد» غير الحاسم) |
-| **Button `warning`** | تحذير لكن ليس بالضرورة تدمير (تعليق، إيقاف مؤقت) |
-| **Badge** | حالات وحالات فقط (حالة طلب، نوع، عدّاد مقروء) — ليس عنواناً بديلاً لنص عادي |
-| **Card** | تجميع محتوى مترابط — لا تكديس كرت داخل كرت بدون حاجة |
-
-عند الشك: **primary أقل = أوضح** للمستخدم.
 
 ---
 
-## ✅ مرجع الـ Utility Classes (src/ui/ui.css)
+## مرجع ألوان Tailwind المتاحة
 
-### Layout
-| Class | CSS |
-|-------|-----|
-| `nx-flex` | `display: flex` |
-| `nx-flex-center` | `display:flex; align-items:center` |
-| `nx-flex-between` | `display:flex; align-items:center; justify-content:space-between` |
-| `nx-flex-col` | `display:flex; flex-direction:column` |
-| `nx-flex-end` | `display:flex; align-items:center; justify-content:flex-end` |
-| `nx-flex-wrap` | `display:flex; flex-wrap:wrap` |
-| `nx-grid` | `display:grid` |
-| `nx-grid-2` | `display:grid; grid-template-columns:1fr 1fr` |
-| `nx-grid-3` | `display:grid; grid-template-columns:1fr 1fr 1fr` |
-| `nx-flex-1` | `flex:1; min-width:0` |
-| `nx-row-between` | flex + space-between + flex-wrap |
+```jsx
+// نصوص
+className="text-noorix-text"         // النص الأساسي
+className="text-noorix-muted"        // النص الثانوي
+className="text-noorix-blue"         // أزرق (links, accents)
+className="text-noorix-green"        // أخضر (نجاح)
+className="text-noorix-red"          // أحمر (خطر)
+className="text-noorix-amber"        // كهرماني (تحذير)
+className="text-noorix-violet"       // بنفسجي
+className="text-noorix-navy"         // كحلي داكن
 
-### Gap
-`nx-gap-4` `nx-gap-6` `nx-gap-8` `nx-gap-10` `nx-gap-12` `nx-gap-14` `nx-gap-16` `nx-gap-20` `nx-gap-24`
+// خلفيات
+className="bg-noorix-surface"        // سطح البطاقات
+className="bg-noorix-bg"             // خلفية الصفحة
+className="bg-noorix-bg-muted"       // خلفية خافتة
+className="bg-noorix-blue"           // أزرق
+className="bg-noorix-green"          // أخضر
 
-### Typography
-| Class | Value |
-|-------|-------|
-| `nx-text-xs` | font-size: 11px |
-| `nx-text-sm` | font-size: 12px |
-| `nx-text-base` | font-size: 13px |
-| `nx-text-md` | font-size: 14px |
-| `nx-text-lg` | font-size: 15px |
-| `nx-text-xl` | font-size: 16px |
-| `nx-text-2xl` | font-size: 18px |
-| `nx-text-3xl` | font-size: 20px |
-| `nx-font-500/600/700/800` | font-weight |
-| `nx-text-muted` | color: var(--noorix-text-muted) |
-| `nx-text-primary` | color: var(--noorix-text) |
-| `nx-text-center/end/start` | text-align |
-| `nx-truncate` | ellipsis overflow |
-| `nx-ltr` | direction: ltr |
-| `nx-uppercase` | text-transform: uppercase |
+// حدود
+className="border-noorix-border"     // الحد الافتراضي
+```
 
-### Spacing
-`nx-p-4/6/8/10/12/14/16/20/24`
-`nx-px-8/12/16` | `nx-py-4/6/8/12`
-`nx-m-0` | `nx-mt-0/4/6/8/10/12/16/20` | `nx-mb-0/4/6/8/12/16`
+---
 
-### Surface
-| Class | CSS |
-|-------|-----|
-| `nx-surface` | bg-surface + border + border-radius 12px |
-| `nx-surface-sm` | bg-surface + border + border-radius 8px |
-| `nx-bg-muted` | background: var(--noorix-bg-muted) |
-| `nx-bg-surface` | background: var(--noorix-bg-surface) |
-| `nx-border-all` | border: 1px solid var(--noorix-border) |
-| `nx-border-b/t` | border-bottom/top |
-| `nx-rounded` | border-radius: 8px |
-| `nx-rounded-lg` | border-radius: 12px |
+## مرجع Layout Tailwind
 
-### Misc
-`nx-w-full` | `nx-overflow-auto` | `nx-overflow-hidden` | `nx-cursor-pointer`
-`nx-ltr` | `nx-rtl` | `nx-select-none` | `nx-truncate` | `nx-nowrap`
+```jsx
+// تخطيط
+className="flex items-center gap-3"
+className="flex items-center justify-between"
+className="flex flex-col gap-4"
+className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+
+// شاشة كاملة
+className="flex flex-col gap-4 p-4 lg:p-6"
+
+// بطاقة سطح
+className="bg-noorix-surface border border-noorix-border rounded-xl shadow-sm"
+
+// حجم نصي
+className="text-[13px]"    // 13px — نص عادي
+className="text-[12px]"    // 12px — نص صغير
+className="text-[20px]"    // 20px — عنوان صفحة
+```
 
 ---
 
 ## الاستيراد الصحيح
 
 ```jsx
-import { Button, Input, Card, Badge, Modal, Drawer, AdaptiveSheet, Spinner, SmartTable, Divider, FormRow } from '../../ui';
-// أو حسب عمق الملف:
-import { Button, Input, Modal, AdaptiveSheet } from '../../../ui';
+import { Button, Input, Card, Badge, Modal, Drawer, AdaptiveSheet, Spinner, SmartTable, Divider, FormRow, cn } from '../../ui';
+// cn — دمج classes بأمان (clsx + tailwind-merge)
 ```
-
----
-
-## متى يُسمح بـ inline style؟ (ملخّص)
-
-1. **قيمة مئوية محسوبة**: `style={{ width: `${pct}%` }}`
-2. **أبعاد من state**: `style={{ height: chartHeight, width: chartWidth }}`
-3. **ألوان من البيانات**: `style={{ color: category.color }}`
-4. **إحداثيات من DOM**: `style={{ top: y, left: x }}` (قوائم منسدلة محسوبة)
-5. **CSS Grid الديناميكي**: `style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}`
-6. **طبقة الوظائف** (انظر قسم «Inline Styles» أعلاه): `zIndex`, `min/max` أبعاد للمكوّن، `transform`, `transitionDuration` ديناميكي
-7. **مستندات الطباعة** (print/PDF): أنماط دقيقة للطباعة
-
-**تخطيط الصفحة والألوان الثابتة عبر `style` = مرفوض.** ما عدا القائمة أعلاه.
