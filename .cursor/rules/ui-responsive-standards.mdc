@@ -21,9 +21,30 @@ alwaysApply: true
 // ✅ شبكة متجاوبة
 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-// ✅ حشو متجاوب
+// ✅ حشو داخلي لبطاقة أو عمود (ليس جذر الشاشة داخل app-main)
 <div className="p-4 lg:p-6">
 ```
+
+---
+
+## جذر شاشات الأقسام (داخل `app-main`) — إلزامي
+
+تحت `@media (max-width: 768px)` يوفّر `.app-main` هامشاً أفقياً (~16px). إذا أضاف جذر الشاشة `px-3` أو `p-4` يتضاعف الهامش ويضيق المحتوى.
+
+**النمط القياسي لجذر أي شاشة قسم رئيسية:**
+
+```jsx
+<div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+```
+
+| العرض | السلوك |
+|----|-----|
+| أقل من `md` (768px) | `px-0` — الاعتماد على حشو `app-main` فقط |
+| `md` فما فوق | `px-3` أفقياً |
+| `lg` | `px-6` أفقياً |
+| دائماً | `py-4` رأسياً للتنفس بين الهيدر والمحتوى |
+
+استخدم **`md:`** (وليس `sm:`) ليتماشى مع استعلام التطبيق لـ `.app-main`. لا تستخدم `p-4 lg:p-6` على جذر الشاشة الجديدة إلا لسبب موثّق (مثلاً شاشة خارج الإطار العام).
 
 ---
 
@@ -57,8 +78,8 @@ import { Card } from '../../ui';
 ## هيكل الشاشة القياسي
 
 ```jsx
-// ✅ شاشة كاملة مع رأس وجدول
-<div className="flex flex-col gap-4 p-4 lg:p-6">
+// ✅ شاشة كاملة مع رأس وجدول (انظر «جذر شاشات الأقسام» أعلاه)
+<div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
   {/* رأس */}
   <div className="flex flex-wrap items-center justify-between gap-3">
     <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('title')}</h1>

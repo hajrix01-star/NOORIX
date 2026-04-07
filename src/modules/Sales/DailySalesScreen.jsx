@@ -467,7 +467,7 @@ export default function DailySalesScreen() {
   ), [STATUS_MAP, userRole, t]);
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       {editingSummary && (
