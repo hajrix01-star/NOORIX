@@ -28,50 +28,69 @@ function fmtAxis(n) {
   return String(Math.round(n));
 }
 
-/* ── أيقونات SVG للكروت ── */
-function IconSales()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>; }
-function IconPurchases() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>; }
-function IconExpenses()  { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>; }
-function IconProfit()    { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>; }
+/* ألوان الشريط الجانبي والسباركلاين حسب نوع الكرت */
+const KPI_ACCENT = {
+  sales: '#185FA5',
+  grossProfit: '#3B6D11',
+  netProfit: '#854F0B',
+  purchases: '#888780',
+  expenses: '#A32D2D',
+};
 
-/* ── Sparkline SVG — منحنى سلس مع تظليل ── */
-function SparkLine({ data = [], color = '#2563eb' }) {
-  const nums = (data || []).map(v => Number(v || 0));
-  if (!nums.length || nums.every(v => v === 0)) {
-    /* منحنى فارغ لحجز المساحة */
-    return <svg viewBox="0 0 100 52" preserveAspectRatio="none" width="100%" height="52" className="block" />;
+const KPI_ACCENT_BAR = {
+  sales: 'bg-[#185FA5]',
+  grossProfit: 'bg-[#3B6D11]',
+  netProfit: 'bg-[#854F0B]',
+  purchases: 'bg-[#888780]',
+  expenses: 'bg-[#A32D2D]',
+};
+
+/* ── Sparkline — polyline + تعبئة شفافة؛ بدون بيانات: خط متقطع ── */
+function SparkLine({ data = [], color = '#185FA5' }) {
+  const W = 100;
+  const H = 36;
+  const pad = 3;
+  const nums = (data || []).map((v) => Number(v || 0));
+  const empty = !nums.length || nums.every((v) => v === 0);
+
+  if (empty) {
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="36" className="block">
+        <line
+          x1={pad}
+          y1={H / 2}
+          x2={W - pad}
+          y2={H / 2}
+          className="stroke-noorix-border"
+          strokeWidth="1"
+          strokeDasharray="5 5"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    );
   }
-  const max  = Math.max(...nums, 1);
-  const W = 100, H = 52, pad = 4;
+
+  const max = Math.max(...nums);
+  const min = Math.min(...nums);
+  const range = Math.max(max - min, 1e-9);
   const n = nums.length;
-  const xs = nums.map((_, i) => n === 1 ? W / 2 : (i / (n - 1)) * W);
-  const ys = nums.map(v => pad + (1 - v / max) * (H - pad * 2));
-
-  /* cubic bezier للحصول على منحنى سلس */
-  function smoothPath() {
-    if (n === 1) return `M ${xs[0]} ${ys[0]}`;
-    let d = `M ${xs[0]} ${ys[0]}`;
-    for (let i = 1; i < n; i++) {
-      const cpX = (xs[i - 1] + xs[i]) / 2;
-      d += ` C ${cpX} ${ys[i - 1]}, ${cpX} ${ys[i]}, ${xs[i]} ${ys[i]}`;
-    }
-    return d;
-  }
-
-  const linePath = smoothPath();
-  const areaPath = `${linePath} L ${xs[n-1]} ${H} L ${xs[0]} ${H} Z`;
-  const gradId   = `sp-${color.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const xs = nums.map((_, i) => (n === 1 ? W / 2 : pad + (i / (n - 1)) * (W - 2 * pad)));
+  const ys = nums.map((v) => pad + (1 - (v - min) / range) * (H - 2 * pad));
+  const points = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
+  const fillPoints = `${points} ${xs[n - 1]},${H} ${xs[0]},${H}`;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="52" className="block">
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor={color} stopOpacity="0.07"/>
-          <stop offset="100%" stopColor={color} stopOpacity="0"/>
-        </linearGradient>
-      </defs>
-      <path d={areaPath} fill={`url(#${gradId})`} />
-      <path d={linePath}  fill="none" stroke={color} strokeWidth="0.45" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="36" className="block">
+      <polygon points={fillPoints} fill={color} fillOpacity={0.08} />
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   );
 }
@@ -157,11 +176,11 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   /* ── تعريف الكروت ── */
   const cards = useMemo(() => [
-    { key: 'sales',       icon: <IconSales />,     label: monthName ? `${t('revenueGroup')} — ${monthName}` : t('annualSales'),       colorClass: 'nx-kpi-card--sales',     accent: 'var(--noorix-accent-green)',  badgeLabel: t('sectionToSalesRatio'), badgeValue: '100' },
-    { key: 'purchases',   icon: <IconPurchases />, label: monthName ? `${t('purchasesGroup')} — ${monthName}` : t('annualPurchases'), colorClass: 'nx-kpi-card--purchases', accent: 'var(--noorix-accent-blue)',   badgeLabel: t('purchasesToSalesRatio') },
-    { key: 'expenses',    icon: <IconExpenses />,  label: monthName ? `${t('expensesGroup')} — ${monthName}` : t('annualExpenses'),   colorClass: 'nx-kpi-card--expenses',  accent: 'var(--noorix-accent-amber)',  badgeLabel: t('sectionToSalesRatio') },
-    { key: 'grossProfit', icon: <IconProfit />,    label: t('annualGrossProfit'), colorClass: null, accent: null, badgeLabel: t('reportProfitMargin') },
-    { key: 'netProfit',   icon: <IconProfit />,    label: t('annualNetProfit'),   colorClass: null, accent: null, badgeLabel: t('reportProfitMargin') },
+    { key: 'sales',       label: monthName ? `${t('revenueGroup')} — ${monthName}` : t('annualSales'),       badgeLabel: t('sectionToSalesRatio') },
+    { key: 'purchases',   label: monthName ? `${t('purchasesGroup')} — ${monthName}` : t('annualPurchases'), badgeLabel: t('purchasesToSalesRatio') },
+    { key: 'expenses',    label: monthName ? `${t('expensesGroup')} — ${monthName}` : t('annualExpenses'),   badgeLabel: t('sectionToSalesRatio') },
+    { key: 'grossProfit', label: t('annualGrossProfit'), badgeLabel: t('reportProfitMargin') },
+    { key: 'netProfit',   label: t('annualNetProfit'),   badgeLabel: t('reportProfitMargin') },
   ], [monthName, t]);
 
   /* ── بيانات الرسم البياني للأداء (Recharts) ── */
@@ -247,8 +266,11 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       <div className="flex flex-col gap-6 p-6">
         <div className="nx-kpi-container">
           <div className="nx-kpi-grid">
-            {[1,2,3,4,5].map((i) => (
-              <div key={i} className="nx-kpi-card min-h-[130px] bg-noorix-bg-muted shadow-none bg-[length:200%_100%] animate-[shimmer_1.4s_ease_infinite]" />
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="relative min-h-[168px] rounded-xl border-[0.5px] border-noorix-border bg-noorix-surface p-4 shadow-none bg-[length:200%_100%] animate-[shimmer_1.4s_ease_infinite]"
+              />
             ))}
           </div>
         </div>
@@ -280,72 +302,84 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       <div className="nx-kpi-container">
       <div className="nx-kpi-grid">
         {cards.map((card) => {
-          const rawVal    = getCardValue(card.key);
-          const numVal    = Number(rawVal || 0);
-          const isProfit  = card.key === 'grossProfit' || card.key === 'netProfit';
-          const isSales   = card.key === 'sales';
-          /* النسبة: الربح → هامش الربح بالنسبة للمبيعات | غيره → نسبته من المبيعات */
-          const pct       = isSales ? null : getSectionPercentOfSales(card.key);
-          const pctNum    = pct != null ? Number(pct) : null;
+          const rawVal = getCardValue(card.key);
+          const isProfit = card.key === 'grossProfit' || card.key === 'netProfit';
+          const isSales = card.key === 'sales';
+          const pct = isSales ? null : getSectionPercentOfSales(card.key);
+          const pctNum = pct != null ? Number(pct) : null;
 
-          const colorClass = card.colorClass ?? (isProfit
-            ? (numVal >= 0 ? 'nx-kpi-card--profit' : 'nx-kpi-card--loss')
-            : 'nx-kpi-card--neutral');
-
-          /* لون sparkline */
-          const accentColor = card.accent || (isProfit
-            ? (numVal >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)')
-            : 'var(--noorix-accent-blue)');
-
+          const accentColor = KPI_ACCENT[card.key] || KPI_ACCENT.sales;
           const sparkData = getMonthlyData(card.key);
 
-          /*
-           * باج النسبة % مع السهم — لكل الكروت كالتصميم المرجعي:
-           * - مبيعات:   لا باج (هي الأساس 100%)
-           * - مشتريات: ↓ محايد (تستهلك X% من المبيعات)
-           * - مصاريف:  ↓ محايد (تستهلك X% من المبيعات)
-           * - ربح إجمالي/صافي: ↑ أخضر إذا موجب، ↓ أحمر إذا سالب
-           */
-          let pctClass = 'nx-kpi-card__pct--neutral';
-          let arrow    = '';
+          let badgeTone = 'neutral';
+          let arrow = '';
           if (isProfit && pctNum != null) {
-            pctClass = pctNum >= 0 ? 'nx-kpi-card__pct--up' : 'nx-kpi-card__pct--down';
-            arrow    = pctNum >= 0 ? '↑ ' : '↓ ';
+            if (pctNum > 0) {
+              badgeTone = 'positive';
+              arrow = '↑ ';
+            } else if (pctNum < 0) {
+              badgeTone = 'negative';
+              arrow = '↓ ';
+            } else {
+              badgeTone = 'zero';
+              arrow = '';
+            }
           } else if (!isSales && pctNum != null) {
-            /* مشتريات ومصاريف: سهم محايد للأسفل — تُشير لنسبة الاستهلاك */
-            pctClass = 'nx-kpi-card__pct--neutral';
-            arrow    = '↓ ';
+            badgeTone = 'zero';
+            arrow = '↓ ';
           }
 
-          return (
-            <div key={card.key} className={`nx-kpi-card ${colorClass}`}>
+          const badgeClass =
+            badgeTone === 'positive'
+              ? 'bg-[#eaf3de] text-[#3B6D11]'
+              : badgeTone === 'negative'
+                ? 'bg-[#FCEBEB] text-[#A32D2D]'
+                : 'bg-noorix-bg-muted text-noorix-muted';
 
-              {/* Sparkline في الأعلى — يمتد حتى حواف الكرت */}
-              <div className="nx-kpi-card__sparkline">
+          const periodLabel = filter?.label || String(year);
+          const currencySuffix = lang === 'ar' ? 'ر.س' : 'SAR';
+
+          return (
+            <div
+              key={card.key}
+              className="relative flex min-h-[168px] min-w-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-noorix-border bg-noorix-surface p-4 shadow-none"
+            >
+              <span
+                className={`pointer-events-none absolute right-0 top-0 h-full w-1 ${KPI_ACCENT_BAR[card.key] || KPI_ACCENT_BAR.sales}`}
+                aria-hidden
+              />
+
+              <div className="text-[12px] font-medium text-noorix-muted">{card.label}</div>
+
+              <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                <span
+                  dir="ltr"
+                  className="nx-font-numbers text-[22px] font-bold leading-tight tracking-[-0.5px] text-noorix-text text-start"
+                >
+                  {amountText(rawVal)}
+                </span>
+                <span className="text-[12px] font-medium text-noorix-muted">{currencySuffix}</span>
+              </div>
+
+              <div className="mt-3 min-h-[36px] w-full min-w-0 flex-1">
                 <SparkLine data={sparkData} color={accentColor} />
               </div>
 
-              {/* محتوى الكرت — له حشوه الخاص */}
-              <div className="nx-kpi-card__body">
-                {/* العنوان */}
-                <div className="nx-kpi-card__label">{card.label}</div>
-
-                {/* صف: ر.س + الرقم الكبير + باج % */}
-                <div className="nx-kpi-card__num-row">
-                  <span className="nx-kpi-card__sar">ر.س</span>
-                  <div className="nx-kpi-card__value">{amountText(rawVal)}</div>
-                  {!isSales && pctNum != null && (
-                    <span className={`nx-kpi-card__pct ${pctClass}`}>
-                      {arrow}{Math.abs(pctNum)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* تذييل الكرت: الفترة الزمنية | تسمية المؤشر */}
-              <div className="nx-kpi-card__footer">
-                <span className="nx-kpi-card__footer-label">{filter?.label || year}</span>
-                <span className="nx-kpi-card__footer-label">{card.badgeLabel}</span>
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-noorix-border pt-3" dir="ltr">
+                <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
+                {!isSales && pctNum != null ? (
+                  <span
+                    className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
+                    title={`${card.badgeLabel}: ${arrow}${Math.abs(pctNum)}%`}
+                  >
+                    {arrow}
+                    {Math.abs(pctNum)}%
+                  </span>
+                ) : (
+                  <span className="max-w-[min(100%,140px)] truncate text-end text-[11px] font-medium text-noorix-muted">
+                    {card.badgeLabel}
+                  </span>
+                )}
               </div>
             </div>
           );
