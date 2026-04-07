@@ -37,7 +37,7 @@ function TypeBadge({ type }) {
 /* ── checkbox مُنسَّق ── */
 function CB({ checked, indeterminate, onChange, ariaLabel }) {
   return (
-    <label className="nx-checkbox nx-p-4" style={{ justifyContent: 'center', minHeight: 36, minWidth: 36 }}>
+    <label className="nx-checkbox nx-checkbox--hit-36 nx-checkbox--accent-green nx-p-4">
       <input
         type="checkbox"
         checked={checked}
@@ -45,7 +45,6 @@ function CB({ checked, indeterminate, onChange, ariaLabel }) {
         onChange={(e) => onChange(e.target.checked)}
         aria-label={ariaLabel}
         className="nx-cursor-pointer"
-        style={{ width: 16, height: 16, accentColor: 'var(--noorix-accent-green)' }}
       />
     </label>
   );

@@ -132,21 +132,31 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
       {showAppearance && (
         <>
           <div className="um-section">
-            <button className="um-item" onClick={toggleTheme}>
-              <span className="um-item-icon">{theme === 'light' ? '◑' : '○'}</span>
+            <Button
+              variant="raw"
+              className="um-item"
+              onClick={toggleTheme}
+              icon={<span className="um-item-icon">{theme === 'light' ? '◑' : '○'}</span>}
+            >
               <span className="um-item-label">
                 {theme === 'light' ? t('darkMode') : t('lightMode')}
               </span>
-            </button>
-            <button className="um-item" onClick={toggleLanguage}>
-              <span className="um-item-icon um-lang-icon">{language === 'ar' ? 'EN' : 'ع'}</span>
+            </Button>
+            <Button
+              variant="raw"
+              className="um-item"
+              onClick={toggleLanguage}
+              icon={<span className="um-item-icon um-lang-icon">{language === 'ar' ? 'EN' : 'ع'}</span>}
+              iconEnd={(
+                <span className="um-lang-chip um-lang-chip--active">
+                  {language === 'ar' ? 'EN' : 'AR'}
+                </span>
+              )}
+            >
               <span className="um-item-label">
                 {language === 'ar' ? 'English' : 'العربية'}
               </span>
-              <span className="um-lang-chip um-lang-chip--active">
-                {language === 'ar' ? 'EN' : 'AR'}
-              </span>
-            </button>
+            </Button>
           </div>
           <div className="um-divider" />
         </>
@@ -154,36 +164,46 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
 
       {/* إجراءات الحساب */}
       <div className="um-section">
-        <button className="um-item um-item--disabled" disabled>
-          <span className="um-item-icon">○</span>
+        <Button
+          variant="raw"
+          className="um-item um-item--disabled"
+          disabled
+          icon={<span className="um-item-icon">○</span>}
+          iconEnd={<span className="um-badge">{t('comingSoon')}</span>}
+        >
           <span className="um-item-label">{t('profile')}</span>
-          <span className="um-badge">{t('comingSoon')}</span>
-        </button>
-        <button className="um-item"
-          onClick={() => { setOpen(false); setShowChangePassword(true); }}>
-          <span className="um-item-icon">⚿</span>
+        </Button>
+        <Button
+          variant="raw"
+          className="um-item"
+          onClick={() => { setOpen(false); setShowChangePassword(true); }}
+          icon={<span className="um-item-icon">⚿</span>}
+        >
           <span className="um-item-label">{t('changePassword')}</span>
-        </button>
+        </Button>
       </div>
 
       <div className="um-divider" />
 
       {/* تسجيل الخروج */}
       <div className="um-section um-section--last">
-        <button className="um-item um-item--danger"
-          onClick={() => { setOpen(false); onLogout(); }}>
-          <span className="um-item-icon">→</span>
+        <Button
+          variant="raw"
+          className="um-item um-item--danger"
+          onClick={() => { setOpen(false); onLogout(); }}
+          icon={<span className="um-item-icon">→</span>}
+        >
           <span className="um-item-label">{t('logout')}</span>
-        </button>
+        </Button>
       </div>
     </div>
   );
 
   return (
     <div className="um-wrapper">
-      {/* ── زر الأفاتار المضغوط ── */}
-      <button
+      <Button
         ref={btnRef}
+        variant="raw"
         type="button"
         className="um-trigger"
         onClick={() => setOpen((v) => !v)}
@@ -202,7 +222,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
         >
           <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-      </button>
+      </Button>
 
       {/* backdrop جوال */}
       {open && isMobile && createPortal(

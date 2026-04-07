@@ -18,12 +18,7 @@ function Cb({ checked, indeterminate, onChange, disabled }) {
         ref={(el) => { if (el) el.indeterminate = !!indeterminate; }}
         onChange={onChange}
         disabled={disabled}
-        style={{
-          width: 15, height: 15,
-          accentColor: 'var(--noorix-accent)',
-          cursor: disabled ? 'not-allowed' : 'pointer',
-          flexShrink: 0,
-        }}
+        className={disabled ? undefined : 'nx-cursor-pointer'}
       />
     </label>
   );

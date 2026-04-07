@@ -823,6 +823,12 @@ a { color: inherit; text-decoration: none; }
 }
 .um-section--last { padding-bottom: 7px; }
 
+/* قائمة المستخدم + زر موحّد: محتوى الزر يبقى مباشراً تحت .um-item / .um-trigger (flex) */
+.um-item.nx-btn .nx-btn__label,
+.um-trigger.nx-btn .nx-btn__label {
+  display: contents;
+}
+
 /* عنصر القائمة */
 .um-item {
   display: flex;

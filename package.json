@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ui:audit": "node scripts/ui-audit.mjs"
+    "ui:audit": "node scripts/ui-audit.mjs",
+    "ui:audit:strict": "node scripts/ui-audit.mjs --strict"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

@@ -22,6 +22,14 @@ import { Button, Input } from '../../ui';
 <Input type="text|number|date|select|search|...">
 ```
 
+**استثناءات موثّقة (عناصر أصلية مسموحة):**
+
+- **`checkbox` / `radio`** داخل `<label className="nx-checkbox">` (أنماط الحقل في `ui.css` — يُفضّل تعديلات الحجم عبر `nx-checkbox--tight`، `nx-checkbox--cell-center`، `nx-checkbox--accent-green`، …).
+- **`input type="file"`** مخفي (`hidden` / `display:none` + `ref`) لاختيار ملف — مسموح خارج `Input` عند ربطه بـ `Button` أو `label.nx-file-label`.
+- **تنفيذ `Button` نفسه** في `src/ui/Button.jsx` يستخدم وسم `<button>` داخلياً — المصدر الوحيد لأزرار التطبيق هو **`Button` من `ui`**.
+
+**فحص CI اختياري:** `npm run ui:audit:strict` يفشل إن وُجد `<button>` خارج `ui/Button.jsx`.
+
 ### 2. الـ Inline Styles للتخطيط والألوان — محظور تماماً
 
 ```jsx

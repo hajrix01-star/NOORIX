@@ -90,14 +90,13 @@ export default function TaxSettingsTab() {
           {/* مفتاح التفعيل */}
           <div className="nx-flex nx-flex-between nx-border-all nx-rounded-lg nx-bg-surface" style={{ padding: '12px 14px' }}>
             <label style={{ ...labelStyle, margin: 0, fontWeight: 600 }}>تفعيل ضريبة القيمة المضافة للمبيعات</label>
-            <label className="nx-checkbox nx-m-0">
+            <label className="nx-checkbox nx-m-0 nx-checkbox--tight nx-checkbox--accent-green">
               <input
                 type="checkbox"
                 checked={vatEnabled}
                 onChange={(e) => setVatEnabled(e.target.checked)}
-                style={{ width: 18, height: 18, accentColor: 'var(--noorix-accent-green)' }}
               />
-              <span className="nx-text-base nx-text-muted" style={{ marginRight: 8 }}>{vatEnabled ? 'مفعّل' : 'معطّل'}</span>
+              <span className="nx-text-base nx-text-muted">{vatEnabled ? 'مفعّل' : 'معطّل'}</span>
             </label>
           </div>
 
@@ -136,10 +135,10 @@ export default function TaxSettingsTab() {
           )}
 
           {updateMutation.isSuccess && (
-            <span className="nx-text-base" style={{ color: 'var(--noorix-accent-green)' }}>تم حفظ الإعدادات بنجاح.</span>
+            <span className="nx-text-base nx-text-green">تم حفظ الإعدادات بنجاح.</span>
           )}
           {updateMutation.isError && (
-            <span className="nx-text-base" style={{ color: 'var(--noorix-accent-red)' }}>{updateMutation.error?.message}</span>
+            <span className="nx-text-base nx-text-red">{updateMutation.error?.message}</span>
           )}
         </div>
       </div>

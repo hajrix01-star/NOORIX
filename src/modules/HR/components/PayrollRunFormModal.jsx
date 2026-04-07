@@ -524,23 +524,22 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 return (
                   <tr key={emp.id}>
                     <td>
-                      <label className="nx-checkbox" style={{ lineHeight: 1.45 }}>
+                      <label className="nx-checkbox nx-checkbox--tight">
                         <input
                           type="checkbox"
                           checked={included}
                           onChange={() => toggleInclude(emp)}
-                          style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
                           aria-label={t('employeeName')}
                         />
-                        <span style={{ fontWeight: included ? 600 : 400 }}>{employeeDisplayName(emp, lang)}</span>
+                        <span className={included ? 'nx-font-600' : 'nx-font-400'}>{employeeDisplayName(emp, lang)}</span>
                       </label>
                     </td>
                     {included ? (
                       <>
-                        <td className="nx-text-muted nx-text-sm" style={{ maxWidth: 160, lineHeight: 1.45 }} title={items[idx].advanceDates || ''}>
+                        <td className="nx-text-muted nx-text-sm nx-max-w-160 nx-line-145 nx-truncate" title={items[idx].advanceDates || ''}>
                           {items[idx].advanceDates || '—'}
                         </td>
-                        <td className="nx-font-600 nx-text-md nx-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(items[idx].grossSalary)}</td>
+                        <td className="nx-font-600 nx-text-md nx-nowrap nx-font-numbers">{hrFmt(items[idx].grossSalary)}</td>
                         <td>
                           <Input
                             type="number"
@@ -582,17 +581,16 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                           />
                         </td>
                         <td className="nx-text-center">
-                          <label className="nx-checkbox" style={{ justifyContent: 'center', padding: '6px 4px' }}>
+                          <label className="nx-checkbox nx-checkbox--cell-center">
                             <input
                               type="checkbox"
                               checked={!!items[idx].deferAdvances}
                               onChange={() => toggleDefer(idx)}
-                              style={{ width: 18, height: 18 }}
                               aria-label={t('payrollDeferAdvanceDeduct')}
                             />
                           </label>
                         </td>
-                        <td className="nx-font-800 nx-text-md nx-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(items[idx].netSalary)}</td>
+                        <td className="nx-font-800 nx-text-md nx-nowrap nx-font-numbers">{hrFmt(items[idx].netSalary)}</td>
                       </>
                     ) : (
                       <td colSpan={7} className="nx-text-muted nx-text-base">
