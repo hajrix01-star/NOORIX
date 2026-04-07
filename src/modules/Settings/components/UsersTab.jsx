@@ -8,7 +8,7 @@ import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import Toast from '../../../components/Toast';
 import SmartTable from '../../../components/common/SmartTable';
-import { Button, Badge, Input, Drawer } from '../../../ui';
+import { Button, Badge, Input, AdaptiveSheet } from '../../../ui';
 
 export default function UsersTab({ userRole, activeCompanies = [] }) {
   const { t } = useTranslation();
@@ -121,7 +121,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
         </div>
       )}
 
-      <Drawer
+      <AdaptiveSheet
         open={!!editing}
         onClose={() => !updateMutation.isPending && setEditing(null)}
         title={editing ? t('editUser', editing.email) : ''}
@@ -157,7 +157,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
             </div>
           </form>
         )}
-      </Drawer>
+      </AdaptiveSheet>
 
       <SmartTable
         columns={columns}

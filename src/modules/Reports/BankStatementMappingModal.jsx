@@ -9,7 +9,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementConfirmMapping, bankStatementGet, bankStatementSuggestHeaderMetadata } from '../../services/api';
-import { Button, Drawer, Input } from '../../ui';
+import { Button, AdaptiveSheet, Input } from '../../ui';
 import {
   autoDetectRows,
   autoDetectColumns,
@@ -225,7 +225,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
   };
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={!!statement}
       onClose={onClose}
       title={t('bankMapTitle')}
@@ -419,6 +419,6 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           </div>
         </div>
 
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

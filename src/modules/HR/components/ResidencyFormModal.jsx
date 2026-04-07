@@ -10,7 +10,7 @@ import { getEmployees } from '../../../services/api';
 import { createResidency, updateResidency, createInvoice } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'statusActive' },
@@ -118,7 +118,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
   };
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={isEdit ? t('editResidency') : t('addResidency')}
@@ -248,6 +248,6 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
           </div>
         )}
       </form>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

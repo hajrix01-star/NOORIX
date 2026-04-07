@@ -22,7 +22,7 @@ import {
 import Toast from '../../../components/Toast';
 import { useAuth } from '../../../context/AuthContext';
 import { useApp } from '../../../context/AppContext';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 function formatBackupDate(iso, lang) {
   if (!iso) return '—';
@@ -606,7 +606,7 @@ export default function BackupTab({ activeCompanies = [] }) {
         </div>
       </section>
 
-      <Drawer
+      <AdaptiveSheet
         open={!!importModal}
         onClose={() => !importMut.isPending && (setImportModal(null), setImportConfirmed(false))}
         title={t('backupImportNewCompany')}
@@ -677,9 +677,9 @@ export default function BackupTab({ activeCompanies = [] }) {
             {importMut.isPending ? t('loading') : t('backupImportRun')}
           </Button>
         </div>
-      </Drawer>
+      </AdaptiveSheet>
 
-      <Drawer
+      <AdaptiveSheet
         open={!!reportModal}
         onClose={() => setReportModal(null)}
         title={t('backupRestoreReport')}
@@ -779,9 +779,9 @@ export default function BackupTab({ activeCompanies = [] }) {
             </div>
           </>
         )}
-      </Drawer>
+      </AdaptiveSheet>
 
-      <Drawer
+      <AdaptiveSheet
         open={!!importReportModal}
         onClose={() => setImportReportModal(null)}
         title={t('backupImportReportTitle')}
@@ -876,7 +876,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             </div>
           </>
         )}
-      </Drawer>
+      </AdaptiveSheet>
 
       <Toast
         visible={toast.visible}

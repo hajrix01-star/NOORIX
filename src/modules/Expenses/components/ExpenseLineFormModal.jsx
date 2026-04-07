@@ -7,7 +7,7 @@ import { createExpenseLine, updateExpenseLine } from '../../../services/api';
 import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Drawer, Input } from '../../../ui';
+import { Button, AdaptiveSheet, Input } from '../../../ui';
 
 export default function ExpenseLineFormModal({ companyId, editing, onClose, onSaved }) {
   const { lang } = useTranslation();
@@ -120,7 +120,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
   );
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={editing ? 'تعديل بند مصروف' : 'إضافة بند مصروف'}
@@ -203,6 +203,6 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           rows={3}
         />
       </form>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

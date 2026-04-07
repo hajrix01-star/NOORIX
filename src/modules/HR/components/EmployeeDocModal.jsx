@@ -13,7 +13,7 @@ import {
   overtimePay,
   SAUDI_STANDARD_HOURS,
 } from '../utils/employeeSalaryMath';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ALLOWANCE_NAME_EN_MAP = {
@@ -242,7 +242,7 @@ function buildPrintWindow(title, html) {
 
 function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }) {
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={title}
@@ -260,7 +260,7 @@ function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }) {
       }
     >
       {children}
-    </Drawer>
+    </AdaptiveSheet>
   );
 }
 

@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import Toast from '../../../components/Toast';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 function Cb({ checked, indeterminate, onChange, disabled }) {
   return (
@@ -374,7 +374,7 @@ export default function RolesTab({ userRole, language }) {
       )}
 
       {/* نموذج إنشاء دور جديد */}
-      <Drawer
+      <AdaptiveSheet
         open={showForm}
         onClose={() => !createMutation.isPending && setShowForm(false)}
         title={isAr ? 'إنشاء دور جديد' : 'Create New Role'}
@@ -421,10 +421,10 @@ export default function RolesTab({ userRole, language }) {
             </Button>
           </div>
         </form>
-      </Drawer>
+      </AdaptiveSheet>
 
       {/* نافذة تعديل دور */}
-      <Drawer
+      <AdaptiveSheet
         open={!!editing}
         onClose={() => !updateMutation.isPending && setEditing(null)}
         title={editing ? (isAr ? `تعديل: ${editing.nameAr || editing.name}` : `Edit: ${editing.nameAr || editing.name}`) : ''}
@@ -498,7 +498,7 @@ export default function RolesTab({ userRole, language }) {
             </div>
           </form>
         )}
-      </Drawer>
+      </AdaptiveSheet>
     </div>
   );
 }

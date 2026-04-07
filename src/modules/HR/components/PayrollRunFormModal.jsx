@@ -13,7 +13,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { parseOvertimeWorkDaysPerMonth, totalSalary } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Drawer, Input } from '../../../ui';
+import { Button, AdaptiveSheet, Input } from '../../../ui';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -421,14 +421,14 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   if (isEditMode && isLoadingRun) {
     return (
-      <Drawer open={true} onClose={onClose} title={t('loading')} size="sm" side="start">
+      <AdaptiveSheet open={true} onClose={onClose} title={t('loading')} size="sm" side="start">
         {t('loading')}
-      </Drawer>
+      </AdaptiveSheet>
     );
   }
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={modalTitle}
@@ -621,6 +621,6 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           </div>
         )}
       </form>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

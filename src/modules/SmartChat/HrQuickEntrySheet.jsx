@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button, Drawer, Input } from '../../ui';
+import { Button, AdaptiveSheet, Input } from '../../ui';
 import { getEmployees, createLeave, createDeduction, createMovement, createCustomAllowance } from '../../services/api';
 import { createAdvance } from '../../services/financialApi';
 import { useVaults } from '../../hooks/useVaults';
@@ -393,7 +393,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
   );
 
   return (
-    <Drawer open={true} onClose={onClose} title={title} size="md" side="start" className="hr-quick-entry-drawer">
+    <AdaptiveSheet open={true} onClose={onClose} title={title} size="md" side="start" className="hr-quick-entry-drawer">
         <div
           dir={dir}
           style={{
@@ -598,6 +598,6 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
             </div>
           )}
         </div>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

@@ -29,7 +29,7 @@ import {
   createDailySalesSummary,
   getPaymentVaults,
 } from '../services/api';
-import { Button, Drawer } from '../ui';
+import { Button, AdaptiveSheet } from '../ui';
 
 // ─── Config per entity type ──────────────────────────────────────────────────
 
@@ -509,7 +509,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
   const errorsToShow = showAllErrors ? validationResults.filter((r) => !r.valid || r.warnings.length > 0) : validationResults.filter((r) => !r.valid || r.warnings.length > 0).slice(0, 10);
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={isOpen}
       onClose={() => { if (!importing) onClose(); }}
       title={`استيراد وتصدير — ${cfg.label}`}
@@ -740,6 +740,6 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           )}
         </div>
       )}
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

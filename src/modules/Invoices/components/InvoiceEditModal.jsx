@@ -7,7 +7,7 @@ import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { updateInvoice } from '../../../services/api';
 import { fmt } from '../../../utils/format';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClose }) {
   const { t } = useTranslation();
@@ -88,7 +88,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
   if (!invoice) return null;
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={t('editInvoice')}
@@ -176,6 +176,6 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
           placeholder={t('invoiceNotesPlaceholder')}
         />
       </div>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

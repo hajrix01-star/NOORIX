@@ -3,12 +3,12 @@
  */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 export function AddSizeModal({ visible, onClose, value, onChange, onAdd }) {
   const { t } = useTranslation();
   return (
-    <Drawer
+    <AdaptiveSheet
       open={visible}
       onClose={onClose}
       title={`+ ${t('ordersProductSizes')}`}
@@ -36,6 +36,6 @@ export function AddSizeModal({ visible, onClose, value, onChange, onAdd }) {
           placeholder="Small"
         />
       </div>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

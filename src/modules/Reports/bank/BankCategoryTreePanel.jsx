@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 import {
   bankStatementTreeCategoriesList,
   bankStatementTreeCategoryCreate,
@@ -156,7 +156,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
   const pending = createMut.isPending || updateMut.isPending;
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={open}
       onClose={onClose}
       size="lg"
@@ -298,7 +298,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
           ))}
         </div>
       </div>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }
 
@@ -717,7 +717,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
         t={t}
       />
 
-      <Drawer
+      <AdaptiveSheet
         open={showMigrate}
         onClose={() => !migrating && setShowMigrate(false)}
         title={t('bankTreeMigrateTitle')}
@@ -743,9 +743,9 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
             </div>
           ))}
         </div>
-      </Drawer>
+      </AdaptiveSheet>
 
-      <Drawer
+      <AdaptiveSheet
         open={showImportModal}
         onClose={() => !importBusy && setShowImportModal(false)}
         title={t('bankRulesImport')}
@@ -812,7 +812,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
             </label>
           </div>
         </div>
-      </Drawer>
+      </AdaptiveSheet>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { ProductSearchInput } from '../../../components/common/ProductSearchInput';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 export function OrderFormModal({
   companyId,
@@ -172,7 +172,7 @@ export function OrderFormModal({
   // شاشة النجاح بعد الحفظ
   if (savedOrder) {
     return (
-      <Drawer
+      <AdaptiveSheet
         open
         onClose={() => { resetForm(); onClose?.(); }}
         size="sm"
@@ -202,12 +202,12 @@ export function OrderFormModal({
             </div>
           </div>
         </div>
-      </Drawer>
+      </AdaptiveSheet>
     );
   }
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open
       onClose={onClose}
       title={isEdit ? t('ordersEditOrder') : t('ordersNewOrder')}
@@ -442,6 +442,6 @@ export function OrderFormModal({
           <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount, 2)} ﷼</div>
         </div>
       </div>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

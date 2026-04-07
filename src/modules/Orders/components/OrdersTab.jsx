@@ -21,7 +21,7 @@ import Toast from '../../../components/Toast';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
-import { Button, Badge, Drawer } from '../../../ui';
+import { Button, Badge, AdaptiveSheet } from '../../../ui';
 
 function buildWhatsAppText(order, t) {
   const lines = (order.items || []).map((it) => {
@@ -400,7 +400,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
       )}
 
       {viewingOrder && (
-        <Drawer
+        <AdaptiveSheet
           open={!!viewingOrder}
           onClose={() => setViewingOrder(null)}
           title={`${t('ordersViewOrder')} — ${viewingOrder.orderNumber}`}
@@ -470,7 +470,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
               </tfoot>
             </table>
           </div>
-        </Drawer>
+        </AdaptiveSheet>
       )}
     </div>
   );

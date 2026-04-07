@@ -9,7 +9,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
-import { Button, Drawer } from '../../../ui';
+import { Button, AdaptiveSheet } from '../../../ui';
 
 const KIND_LABELS = { fixed_expense: 'ثابت', expense: 'متغير' };
 
@@ -95,7 +95,7 @@ export default function ExpenseLineDetailModal({
     : (line?.nameAr || line?.nameEn || '—');
 
   return (
-    <Drawer open={true} onClose={onClose} title={modalTitle} size="xl" side="start" className="expense-line-detail-drawer">
+    <AdaptiveSheet open={true} onClose={onClose} title={modalTitle} size="xl" side="start" className="expense-line-detail-drawer">
       <div className="nx-flex nx-flex-wrap nx-gap-12 nx-text-base nx-text-muted nx-mb-16">
         <span>النوع: {KIND_LABELS[line?.kind] || line?.kind || '—'}</span>
         <span>الفئة: {line?.category?.nameAr || '—'}</span>
@@ -129,6 +129,6 @@ export default function ExpenseLineDetailModal({
         emptyMessage="لا توجد مدفوعات لهذا البند في الفترة المحددة."
         keyExtractor={(row) => row.id}
       />
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

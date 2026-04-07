@@ -10,7 +10,7 @@ import { getEmployees } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }) {
   const { t, lang } = useTranslation();
@@ -70,7 +70,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
     : (t('payAdvance') || 'صرف سلفة');
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={title}
@@ -135,6 +135,6 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
           placeholder={t('notes')}
         />
       </form>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

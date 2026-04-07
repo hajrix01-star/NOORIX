@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS, TYPE_BG } from '../constants/treasuryConstants';
 import { parseVaultType } from './VaultCard';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 const ICON_CHARS = ['ن','ب','ح','خ','م','ص','ر','ك','ع','و','س','ت','ا','A','B','C','D','E','F','G','H','$','%','#','@','&'];
 
@@ -50,7 +50,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
   const isCustom = form.type === 'custom';
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open
       onClose={() => !isSaving && onClose()}
       title={isEdit ? t('editVault', initial.nameAr) : t('addNewVault')}
@@ -230,6 +230,6 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           </Button>
         </div>
       </form>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

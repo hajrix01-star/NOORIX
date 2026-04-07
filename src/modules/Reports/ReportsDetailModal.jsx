@@ -1,12 +1,12 @@
 /**
- * ReportsDetailModal — لوح جانبي لتفاصيل البند في تقرير ربح وخسارة (Drawer موحّد)
+ * ReportsDetailModal — تفاصيل بند تقرير ربح وخسارة (AdaptiveSheet: مودال على العريض، لوح على الضيق)
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { amountText, moneyText, percentText, truncateText, PERCENT_COLOR } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
-import { Button, Drawer } from '../../ui';
+import { Button, AdaptiveSheet } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }) {
@@ -86,7 +86,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     );
 
   return (
-    <Drawer open={!!state} onClose={onClose} title={modalTitle} size="xl" side="start" className="reports-detail-drawer" footer={footerContent}>
+    <AdaptiveSheet open={!!state} onClose={onClose} title={modalTitle} size="xl" side="start" className="reports-detail-drawer" footer={footerContent}>
       {(isLoading || trendLoading) && (
         <div className="nx-p-24 nx-text-center nx-text-muted">{t('loading')}</div>
       )}
@@ -251,6 +251,6 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           )}
         </>
       )}
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

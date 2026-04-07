@@ -10,7 +10,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import Toast from '../../../components/Toast';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 const CHART_COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
 
@@ -61,7 +61,7 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
   const title = isProduct ? (product?.productNameAr || product?.nameAr || product?.productNameEn || product?.nameEn || productId) : (category?.nameAr || category?.nameEn || categoryId);
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open
       onClose={onClose}
       title={`${t('ordersPurchaseHistory')} — ${title}`}
@@ -97,7 +97,7 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
           </tbody>
         </table>
       )}
-    </Drawer>
+    </AdaptiveSheet>
   );
 }
 

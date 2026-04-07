@@ -18,7 +18,7 @@ import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Drawer, Input } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, Input } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
@@ -382,7 +382,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
   }
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={t('editAdvance')}
@@ -401,7 +401,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
         <Input type="date" label={t('advanceLoanDate')} value={date} onChange={(e) => setDate(e.target.value)} />
         <Input multiline rows={3} label="ملاحظات" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }
 
@@ -464,7 +464,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
   }
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={t('settleAdvance')}
@@ -500,6 +500,6 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
           </>
         )}
       </div>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

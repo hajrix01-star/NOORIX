@@ -93,34 +93,41 @@ import { SmartTable } from '../../ui';
 createPortal(<div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)' }}> ... </div>)
 <div className="modal-overlay"> ... </div>
 
-// ✅ Modal — حوارات مركزية محدودة (انظر «سياسة Modal vs Drawer» أدناه)
+// ✅ AdaptiveSheet — الافتراضي لنماذج العمل والمعالجات (سطح مكتب = Modal مركزي، ضيق = Drawer)
+//    نقطة القطع: max-width 900px — ثابت `ADAPTIVE_SHEET_BREAKPOINT_PX` في `src/ui/AdaptiveSheet.jsx`
+import { AdaptiveSheet } from '../../ui';
+<AdaptiveSheet open={open} onClose={onClose} title="العنوان" size="md|lg|xl|full|2xl" side="start|end" breakpointPx={900}>
+  {children}
+</AdaptiveSheet>
+
+// ✅ Modal — مباشرة فقط للتأكيدات والحوارات القصيرة المركّزة (انظر الجدول أدناه)
 import { Modal } from '../../ui';
-<Modal open={open} onClose={onClose} title="العنوان" size="md|lg|sm">
+<Modal open={open} onClose={onClose} title="العنوان" size="sm|md|lg|xl|2xl|full" variant="default|danger|flush">
   {children}
 </Modal>
 
-// ✅ Drawer — سطح العمل الافتراضي للنماذج والمعالجات — `src/ui/Drawer.jsx`
+// ✅ Drawer — نادراً: عندما تريد لوحاً جانبياً على كل أحجام الشاشة (بدون فرع Modal)
 import { Drawer } from '../../ui';
 <Drawer open={open} onClose={onClose} title="العنوان" size="sm|md|lg|xl|full" side="start|end">
   {children}
 </Drawer>
 ```
 
-**ممنوع** portal/overlay مخصّص (مركزي أو جانبي). **`side="start"`** في `dir="rtl"` يفتح من **يمين** الشاشة (بداية السطر المنطقية) — هذا هو الافتراضي المفضّل للواجهة العربية.
+**ممنوع** portal/overlay مخصّص (مركزي أو جانبي). في فرع **Drawer** (شاشة ضيقة): **`side="start"`** مع `dir="rtl"` يفتح من **يمين** الشاشة.
 
-### سياسة المشروع: `Modal` مقابل `Drawer`
+### سياسة المشروع: `AdaptiveSheet` و`Modal` و`Drawer`
 
-| استخدم **`Drawer`** | استخدم **`Modal`** |
-|---------------------|---------------------|
-| نماذج إنشاء/تعديل (موظف، فاتورة، طلب، مصروف، …) | تأكيدات (حذف، إنهاء خدمة، تبديل شركة، …) |
-| معالجات متعددة الخطوات (رفع كشف، ربط بنك، استيراد/تصدير) | حوارات صغيرة مركّزة (تقويم: أيام خاصة، …) |
-| تفاصيل سجل / معاينة طويلة تحتاج تمريراً عمودياً | سلوك خاص: `closeOnBackdrop={false}` (إغلاق صريح فقط) |
-| لوحات تحرير دفعية أو شاشات عمل عريضة | معاينة «ملاصقة للحافة» مع `className="nx-modal--flush"` أو ما يعادلها |
-| تغيير كلمة المرور وأي نموذج يشبه «صفحة عمل» | تقارير/طباعة مودال بحجم ثابت يعتمد على التمرير داخل المودال فقط عند الحاجة |
+| استخدم **`AdaptiveSheet`** | استخدم **`Modal` مباشرة** | استخدم **`Drawer` مباشرة** |
+|---------------------------|---------------------------|---------------------------|
+| نماذج إنشاء/تعديل، معالجات، استيراد/تصدير، تفاصيل طويلة | تأكيدات (حذف، إنهاء خدمة، …) | نادر: لوح جانبي دائماً بغض النظر عن العرض |
+| نفس المحتوى على 27″ (وسط) والجوال (جانب) | حوارات صغيرة مركّزة (تقويم، …) | — |
+| — | `closeOnBackdrop={false}`، `nx-modal--flush` | — |
 
-**قاعدة سريعة:** إذا كان المحتوى **نموذج عمل أو جدول أو معالج** → **`Drawer`** مع `side="start"` ما لم يوجد سبب تقني (الجدول الأيمن). إذا كان **سؤال نعم/لا أو جملة قصيرة** → **`Modal`** عادةً `size="sm"`.
+**قاعدة سريعة:** عمل المستخدم اليومي (نماذج، جداول، خطوات) → **`AdaptiveSheet`** مع `side="start"` (يؤثّر على فرع Drawer فقط). سؤال قصير أو خطر → **`Modal`**.
 
-أسماء الملفات قد تبقى `*Modal.jsx` لأسباب تاريخية؛ **المهم أن الجذر البصري يكون `Drawer` أو `Modal` حسب الجدول أعلاه.**
+`variant` و`flush` يُمرَّران لفرع **Modal** فقط؛ على الشاشة الضيقة يُستخدم **Drawer** بدون تلك الأنماط.
+
+أسماء الملفات قد تبقى `*Modal.jsx`؛ **المهم أن الجذر البصري للنماذج يكون `AdaptiveSheet`** ما لم يُستثنَ صراحةً.
 
 ### 6. قواعد استخدام المكوّنات (Semantic usage)
 
@@ -205,9 +212,9 @@ import { Drawer } from '../../ui';
 ## الاستيراد الصحيح
 
 ```jsx
-import { Button, Input, Card, Badge, Modal, Drawer, Spinner, SmartTable, Divider, FormRow } from '../../ui';
+import { Button, Input, Card, Badge, Modal, Drawer, AdaptiveSheet, Spinner, SmartTable, Divider, FormRow } from '../../ui';
 // أو حسب عمق الملف:
-import { Button, Input, Modal, Drawer } from '../../../ui';
+import { Button, Input, Modal, AdaptiveSheet } from '../../../ui';
 ```
 
 ---

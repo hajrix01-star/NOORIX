@@ -8,7 +8,7 @@ import { useApp } from '../../../context/AppContext';
 import { getEmployees } from '../../../services/api';
 import { createLeave } from '../../../services/api';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 const TYPE_MAP = {
   annual: 'leaveAnnual',
@@ -101,7 +101,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
   };
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={t('addLeave')}
@@ -181,6 +181,6 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
           </div>
         )}
       </form>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

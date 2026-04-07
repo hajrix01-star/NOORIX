@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
-import { Input, Button, Drawer } from '../../../ui';
+import { Input, Button, AdaptiveSheet } from '../../../ui';
 
 /* ── ثوابت ──────────────────────────────────────────────────────────── */
 const STATUS = {
@@ -135,7 +135,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
     : (invoice.supplier?.nameEn || invoice.supplier?.nameAr || '—');
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       size="xl"
@@ -212,7 +212,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
           )}
         </div>
       </div>
-    </Drawer>
+    </AdaptiveSheet>
   );
 }
 

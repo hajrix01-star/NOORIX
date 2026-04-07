@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 import {
   createOcrSupplier, updateOcrSupplier, deleteOcrSupplier, addSupplierAlias,
   bulkDeleteOcrSuppliers,
@@ -165,7 +165,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       )}
 
       {/* Alias drawer */}
-      <Drawer
+      <AdaptiveSheet
         open={!!viewing}
         onClose={() => setViewing(null)}
         size="md"
@@ -196,7 +196,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
             </div>
           </div>
         </div>
-      </Drawer>
+      </AdaptiveSheet>
     </div>
   );
 }

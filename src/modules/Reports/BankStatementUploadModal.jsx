@@ -5,7 +5,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementUpload } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
-import { Button, Drawer } from '../../ui';
+import { Button, AdaptiveSheet } from '../../ui';
 
 const STEPS = [
   { id: 'upload', labelKey: 'bankStatementStepUpload' },
@@ -83,7 +83,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
   };
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open
       onClose={onClose}
       title={t('bankStatementUploadTitle')}
@@ -179,6 +179,6 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           )}
         </div>
       )}
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

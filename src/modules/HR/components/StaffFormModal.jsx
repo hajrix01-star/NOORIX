@@ -14,7 +14,7 @@ import {
   mergeOvertimeWorkDaysIntoSchedule,
   DEFAULT_OVERTIME_WORK_DAYS,
 } from '../utils/employeeSalaryMath';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 const EMPTY = {
   name: '', nameEn: '', jobTitle: '', iqamaNumber: '',
@@ -162,7 +162,7 @@ export const StaffFormModal = memo(function StaffFormModal({
   }
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={isEdit ? t('editEmployee') : t('addEmployee')}
@@ -382,7 +382,7 @@ export const StaffFormModal = memo(function StaffFormModal({
           )}
         </div>
       </form>
-    </Drawer>
+    </AdaptiveSheet>
   );
 });
 

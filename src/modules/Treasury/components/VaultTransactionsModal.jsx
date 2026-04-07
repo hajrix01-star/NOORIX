@@ -11,7 +11,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
-import { Button, Drawer } from '../../../ui';
+import { Button, AdaptiveSheet } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
@@ -159,7 +159,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   const modalTitle = `${vault ? vaultDisplayName(vault, lang) : t('vaults')} — ${t('transactions')}${periodLabel ? ` (${periodLabel})` : ''}`;
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open
       onClose={onClose}
       title={modalTitle}
@@ -192,6 +192,6 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
         footerCells={footerCells}
         renderMobileCard={renderMobileCard}
       />
-    </Drawer>
+    </AdaptiveSheet>
   );
 }

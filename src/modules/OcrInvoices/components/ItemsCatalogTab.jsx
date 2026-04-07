@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Drawer } from '../../../ui';
+import { Button, Input, AdaptiveSheet } from '../../../ui';
 import {
   createOcrItem, updateOcrItem, deleteOcrItem, getItemPriceHistory, addItemAlias,
   findDuplicateItems, mergeOcrItems, bulkDeleteOcrItems,
@@ -251,7 +251,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
       )}
 
       {/* Item detail drawer */}
-      <Drawer
+      <AdaptiveSheet
         open={!!viewing}
         onClose={() => setViewing(null)}
         size="lg"
@@ -318,7 +318,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
             )}
           </div>
         </div>
-      </Drawer>
+      </AdaptiveSheet>
     </div>
   );
 }

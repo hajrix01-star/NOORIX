@@ -10,7 +10,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import SmartTable from '../../../components/common/SmartTable';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Badge, Button, Drawer } from '../../../ui';
+import { Badge, Button, AdaptiveSheet } from '../../../ui';
 
 const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
@@ -32,9 +32,9 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
 
   if (isLoading || !run) {
     return (
-      <Drawer open={true} onClose={onClose} title={t('loading')} size="sm" side="start">
+      <AdaptiveSheet open={true} onClose={onClose} title={t('loading')} size="sm" side="start">
         <p className="nx-m-0">{t('loading')}</p>
-      </Drawer>
+      </AdaptiveSheet>
     );
   }
 
@@ -159,7 +159,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   );
 
   return (
-    <Drawer
+    <AdaptiveSheet
       open={true}
       onClose={onClose}
       title={run.runNumber || '—'}
@@ -197,6 +197,6 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
       {run.notes && (
         <p className="nx-mt-16 nx-mb-0 nx-text-base nx-text-muted">{run.notes}</p>
       )}
-    </Drawer>
+    </AdaptiveSheet>
   );
 }
