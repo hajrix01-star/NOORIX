@@ -4,7 +4,7 @@ globs: src/**/*.{jsx,tsx,js,ts}
 alwaysApply: true
 ---
 
-# Noorix UI System — قواعد صارمة لا استثناءات
+# Noorix UI System — قواعد صارمة (استثناءات محددة وموثّقة)
 
 ## 🚨 المحظورات المطلقة (سبب رفض الكود)
 
@@ -41,13 +41,22 @@ import { Button, Input } from '../../ui';
 <div className="nx-bg-muted">
 <div className="nx-w-full nx-overflow-auto">
 
-// ✅ مقبول فقط — قيم ديناميكية محسوبة من state/props
+// ✅ مقبول — قيم ديناميكية محسوبة من state/props (انظر أيضاً «طبقة الوظائف» أدناه)
 style={{ width: `${progress}%` }}
 style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
 style={{ height: rowHeight * count }}
 style={{ color: item.dynamicColor }}     // من data
 style={{ top: menuY, left: menuX }}      // من DOM measurements
 ```
+
+**طبقة الوظائف (Functional inline — ليست قرارات تصميم بصرية):** مسموحة عندما تخدم سلوك المكوّن (مودال، قائمة منسدلة، منطقة تمرير)، مع تفضيل إضافة class في `ui.css` إذا تكرّرت القيمة.
+
+- `zIndex` — طبقات فوق بعض (مع احترام `--nx-z-*` إن وُجدت)
+- `minWidth` / `maxWidth` / `minHeight` / `maxHeight` — حدود تخطيط للمكوّن نفسه (مثلاً عرض أدنى للقائمة، `maxHeight` لجسم المودال)
+- `transform` — حركة/موضع محسوب (انتقالات UI)
+- `transitionDuration` — عندما تكون القيمة ديناميكية من state
+
+**ممنوع** استخدام هذه الخصائص كبديل عن تخطيط الصفحة العام (صفوف، شبكات، هوامش) — هناك تبقى `nx-*` فقط.
 
 ### 3. الكلاسات القديمة — محظور ذكرها
 
@@ -62,32 +71,52 @@ className="noorix-btn"
 className="noorix-btn--primary"
 ```
 
-### 4. الجداول اليدوية — ممنوع في شاشات البيانات
+### 4. الجداول — SmartTable إلزامي لشاشات البيانات
 
 ```jsx
-// ❌ في شاشات عرض البيانات
+// ❌ جداول HTML في شاشات بيانات: ترقيم، فرز، بحث، تحميل دفعات
 <table><thead><tr><th>...</th></tr></thead><tbody>...
 
 // ✅ استخدم SmartTable
 import { SmartTable } from '../../ui';
 <SmartTable columns={cols} data={rows} total={total} page={page} onPageChange={setPage} />
 
-// استثناء مقبول: مستندات الطباعة (PDF/print) — جداول HTML مسموح بها
+// ✅ استثناء: جدول HTML بسيط ثابت داخل كرت / ملخص (≤ 10 صفوف بيانات)
+//    أمثلة: تفصيل ضريبة، إجمالي فاتورة، مقارنة KPI قصيرة — بدون ترقيم/فرز خادم
+// ✅ استثناء: مستندات الطباعة (PDF/print)
 ```
 
-### 5. النوافذ المنبثقة خارج Modal.jsx — ممنوع
+### 5. النوافذ المنبثقة والألواح — ممنوع portal/overlay يدوي
 
 ```jsx
 // ❌
 createPortal(<div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)' }}> ... </div>)
 <div className="modal-overlay"> ... </div>
 
-// ✅
+// ✅ نوافذ حوارية مركزية
 import { Modal } from '../../ui';
 <Modal open={open} onClose={onClose} title="العنوان" size="md|lg|sm">
   {children}
 </Modal>
 ```
+
+**الألواح الجانبية (drawer / side panel):** ليست بديلاً عن `Modal` المركزي. حالياً لا يوجد `Drawer` موحّد في `src/ui` — **ممنوع** بناء overlay جانبي مخصّص بـ portal؛ عند الحاجة (تفاصيل سجل، معاينة فاتورة، سجل نشاط) يُضاف مكوّن **`Drawer`** (أو امتداد رسمي) في `src/ui` بنفس منظومة z-index وتركيز لوحة المفاتيح وARIA مثل `Modal`.
+
+### 6. قواعد استخدام المكوّنات (Semantic usage)
+
+الفوضى لا تأتي من CSS فقط — **معنى** الزر/الشارة يجب أن يكون متوقعاً عبر التطبيق.
+
+| المكوّن | الاستخدام المقبول |
+|---------|-------------------|
+| **Button `primary`** | إجراء رئيسي واحد **للوحة/القسم** (CTA واحد واضح) — ليس كل زر في الشريط |
+| **Button `danger`** | إجراءات تدميرية فقط (حذف، إلغاء نهائي، تفريغ) — مع تأكيد عند الخطر |
+| **Button `success`** | إتمام نجاح (حفظ، اعتماد، إغلاق دورة) — بحسب سياق الشاشة |
+| **Button `ghost`** | إجراءات ثانوية (إلغاء، رجوع، «المزيد» غير الحاسم) |
+| **Button `warning`** | تحذير لكن ليس بالضرورة تدمير (تعليق، إيقاف مؤقت) |
+| **Badge** | حالات وحالات فقط (حالة طلب، نوع، عدّاد مقروء) — ليس عنواناً بديلاً لنص عادي |
+| **Card** | تجميع محتوى مترابط — لا تكديس كرت داخل كرت بدون حاجة |
+
+عند الشك: **primary أقل = أوضح** للمستخدم.
 
 ---
 
@@ -163,13 +192,14 @@ import { Button, Input, Modal } from '../../../ui';
 
 ---
 
-## متى يُسمح بـ inline style؟ (الحالات الاستثنائية الوحيدة)
+## متى يُسمح بـ inline style؟ (ملخّص)
 
 1. **قيمة مئوية محسوبة**: `style={{ width: `${pct}%` }}`
 2. **أبعاد من state**: `style={{ height: chartHeight, width: chartWidth }}`
 3. **ألوان من البيانات**: `style={{ color: category.color }}`
-4. **إحداثيات من DOM**: `style={{ top: y, left: x }}` (للقوائم المنسدلة المُحسوبة)
+4. **إحداثيات من DOM**: `style={{ top: y, left: x }}` (قوائم منسدلة محسوبة)
 5. **CSS Grid الديناميكي**: `style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}`
-6. **مستندات الطباعة** (print/PDF templates): أنماط دقيقة للطباعة مقبولة
+6. **طبقة الوظائف** (انظر §2): `zIndex`, `min/max` أبعاد للمكوّن، `transform`, `transitionDuration` ديناميكي
+7. **مستندات الطباعة** (print/PDF): أنماط دقيقة للطباعة
 
-**أي شيء خارج هذه الحالات = كود خاطئ يجب رفضه.**
+**تخطيط الصفحة والألوان الثابتة عبر `style` = مرفوض.** ما عدا القائمة أعلاه.
