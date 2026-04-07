@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AppSidebar — القائمة الجانبية الرئيسية
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -255,7 +255,7 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                         onClick={() => handleCompanySelect(c.id)}
                         className="w-full flex items-center gap-2 px-3.5 py-2.5 text-start border-b border-noorix-border last:border-b-0 transition-colors hover:bg-noorix-bg-muted"
                         style={{
-                          background: isActive ? 'rgba(37,99,235,0.08)' : 'transparent',
+                          background: isActive ? 'var(--noorix-blue-8)' : 'transparent',
                           fontWeight: isActive ? 700 : 500,
                           color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text)',
                           fontSize: 13,

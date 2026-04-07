@@ -619,7 +619,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           style={{
             padding: '10px 14px',
             marginBottom: 14,
-            background: 'rgba(220,38,38,0.08)',
+            background: 'var(--noorix-red-8)',
             border: '1px solid rgba(220,38,38,0.45)',
             borderRadius: 6,
             color: 'var(--noorix-accent-red)',

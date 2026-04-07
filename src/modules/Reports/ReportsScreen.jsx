@@ -210,7 +210,7 @@ export default function ReportsScreen() {
           )}
 
           {error && (
-            <div className="noorix-surface-card p-5 text-noorix-red" style={{ background: 'rgba(239,68,68,0.08)' }}>
+            <div className="noorix-surface-card p-5 text-noorix-red" style={{ background: 'var(--noorix-red-8)' }}>
               {error.message}
             </div>
           )}
@@ -244,10 +244,10 @@ export default function ReportsScreen() {
                       <tr>
                         <th style={{ textAlign: 'right', padding: isMobile ? '6px 8px' : '8px 12px', borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: 'var(--noorix-bg-surface)', zIndex: 2, fontSize: isMobile ? 11 : 13, fontWeight: 700, fontFamily: 'var(--noorix-font-primary)', color: 'var(--noorix-text)', width: isMobile ? 120 : 200, minWidth: isMobile ? 120 : 200, maxWidth: isMobile ? 120 : 300 }}>{t('reportItem')}</th>
                         {selectedMonthNumber && (
-                          <th style={{ textAlign: 'center', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'rgba(37,99,235,0.06)' }}>{(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}</th>
+                          <th style={{ textAlign: 'center', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'var(--noorix-blue-6)' }}>{(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}</th>
                         )}
                         {!isMobile && (report?.months ?? []).map((month) => (
-                          <th key={month.index} style={{ textAlign: 'center', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', whiteSpace: 'nowrap', background: selectedMonthNumber === month.index ? 'rgba(37,99,235,0.10)' : undefined }}>{month.label}</th>
+                          <th key={month.index} style={{ textAlign: 'center', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', whiteSpace: 'nowrap', background: selectedMonthNumber === month.index ? 'var(--noorix-blue-10)' : undefined }}>{month.label}</th>
                         ))}
                         <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'rgba(248,250,252,1)', borderInlineStart: '2px solid rgba(15,23,42,0.12)', fontWeight: 800 }}>{t('reportAnnualTotal')}</th>
                       </tr>
@@ -327,7 +327,7 @@ export default function ReportsScreen() {
                           </td>
 
                           {selectedMonthNumber && (
-                            <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: `${row.groupKey === 'purchases' ? 'rgba(239,68,68,0.07)' : row.groupKey === 'expenses' ? 'rgba(220,38,38,0.07)' : 'rgba(37,99,235,0.04)'}`, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(getContextAmount(row, selectedMonthNumber) || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit') }}>
+                            <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: `${row.groupKey === 'purchases' ? 'var(--noorix-red-7)' : row.groupKey === 'expenses' ? 'rgba(220,38,38,0.07)' : 'var(--noorix-blue-4)'}`, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(getContextAmount(row, selectedMonthNumber) || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit') }}>
                               <Button
                                 onClick={() => setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: row.rowType === 'item' })}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'block', width: '100%', padding: 0 }}
@@ -339,7 +339,7 @@ export default function ReportsScreen() {
                           )}
 
                           {!isMobile && (row.months ?? []).map((value, index) => (
-                            <td key={`${row.groupKey}-${index}`} style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: selectedMonthNumber === index + 1 ? 'rgba(37,99,235,0.06)' : undefined }}>
+                            <td key={`${row.groupKey}-${index}`} style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: selectedMonthNumber === index + 1 ? 'var(--noorix-blue-6)' : undefined }}>
                               <Button
                                 onClick={() => setDetailState({ month: index + 1, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: row.rowType === 'item' })}
                                 style={{

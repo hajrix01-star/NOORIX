@@ -328,7 +328,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                     key={o.id}
                     className="border-b border-noorix-border"
                     style={{ background: rowBg, transition: 'background 0.12s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(37,99,235,0.05)'; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--noorix-blue-5)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = rowBg; }}
                   >
                     <td className="nx-cell-num nx-cell-num--blue text-center whitespace-nowrap" style={{ padding: '11px 14px', borderInlineEnd: '1px solid var(--noorix-border)' }}>
@@ -373,7 +373,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                 })}
               </tbody>
               <tfoot>
-                <tr style={{ background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-accent-blue, #2563eb)' }}>
+                <tr style={{ background: 'var(--noorix-blue-6)', borderTop: '2px solid var(--noorix-accent-blue, #2563eb)' }}>
                   <td colSpan={5} className="font-bold text-center" style={{ padding: '11px 14px' }}>{t('ordersFilteredTotal')}</td>
                   <td className="nx-cell-num nx-cell-num--blue font-extrabold text-center text-[14px]" style={{ padding: '11px 14px' }}>{fmt(filteredTotal, 2)} ﷼</td>
                   <td colSpan={2} className="noorix-print-hide" style={{ padding: '11px 14px' }} />

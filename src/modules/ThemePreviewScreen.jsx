@@ -20,7 +20,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
     6: { borderRadius: 14, border: '2px solid transparent', background: 'linear-gradient(var(--noorix-bg-surface), var(--noorix-bg-surface)) padding-box, linear-gradient(135deg, #16a34a, #2563eb) border-box', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
     7: { borderRadius: 16, border: '1px solid var(--noorix-border)', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' },
     8: { borderRadius: 4, border: '1px solid var(--noorix-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' },
-    9: { borderRadius: 16, border: '1px solid rgba(37,99,235,0.2)', boxShadow: '0 2px 12px rgba(37,99,235,0.08), inset 0 1px 0 rgba(255,255,255,0.5)' },
+    9: { borderRadius: 16, border: '1px solid var(--noorix-blue-20)', boxShadow: '0 2px 12px var(--noorix-blue-8), inset 0 1px 0 rgba(255,255,255,0.5)' },
     10: { borderRadius: 12, border: '2px solid var(--noorix-border)', boxShadow: 'inset 0 0 0 1px var(--noorix-border-muted)' },
   };
 
@@ -48,7 +48,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
         <div className="text-[12px] text-noorix-muted mt-1">{desc}</div>
       </div>
       <div className="flex gap-2 mt-3">
-        <span className="text-[11px] font-semibold text-noorix-green" style={{ padding: '4px 8px', background: 'rgba(22,163,74,0.1)', borderRadius: 6 }}>12,500 ﷼</span>
+        <span className="text-[11px] font-semibold text-noorix-green" style={{ padding: '4px 8px', background: 'var(--noorix-green-10)', borderRadius: 6 }}>12,500 ﷼</span>
         <span className="text-[11px] bg-noorix-bg-muted text-noorix-muted" style={{ padding: '4px 8px', borderRadius: 6 }}>مثال</span>
       </div>
     </div>

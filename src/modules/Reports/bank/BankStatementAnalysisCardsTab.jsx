@@ -39,7 +39,7 @@ const BAR_CHART_TOOLTIP_STYLE = {
 
 const COLORS = [
   'var(--noorix-accent-blue)', 'var(--noorix-accent-green)', '#ca8a04', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)',
-  '#0891b2', '#db2777', '#4f46e5', '#ea580c', '#84cc16',
+  '#0891b2', '#db2777', 'var(--noorix-accent-violet)', '#ea580c', '#84cc16',
 ];
 
 const RED_PIE_TINTS = ['var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--color-danger-bg)', '#f87171'];

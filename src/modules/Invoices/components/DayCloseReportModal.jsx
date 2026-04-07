@@ -109,7 +109,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
         .day-close-report .dc-kpi-card__sub { font-size: 10px; color: var(--dc-muted); margin-top: 4px; }
         .day-close-report .dc-kpi-card--in { border-color: rgba(22,163,74,0.35); background: rgba(22,163,74,0.06); }
         .day-close-report .dc-kpi-card--out { border-color: rgba(220,38,38,0.25); background: rgba(220,38,38,0.04); }
-        .day-close-report .dc-kpi-card--cash { border-color: rgba(37,99,235,0.3); background: rgba(37,99,235,0.05); }
+        .day-close-report .dc-kpi-card--cash { border-color: rgba(37,99,235,0.3); background: var(--noorix-blue-5); }
         .day-close-report .dc-kpi-card--bal { border-color: rgba(124,58,237,0.28); background: rgba(124,58,237,0.05); }
         .day-close-report .dc-inline-stats {
           display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; margin-top: 4px;
@@ -221,10 +221,10 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
             <div className="grid gap-3.5">
               <div className="day-close-screen-only flex gap-2" style={{ justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', paddingBottom: 8, borderBottom: '1px solid #e2e8f0' }}>
                 <div>
-                  <div className="text-[11px]" style={{ color: '#64748b' }}>{t('dayCloseReportDate')}</div>
+                  <div className="text-[11px]" style={{ color: 'var(--noorix-text-muted)' }}>{t('dayCloseReportDate')}</div>
                   <div className="text-[15px] font-extrabold">{reportDateLabel}</div>
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', maxWidth: 340, textAlign: 'right', lineHeight: 1.45 }}>
+                <div style={{ fontSize: 10, color: 'var(--noorix-text-muted-2)', maxWidth: 340, textAlign: 'right', lineHeight: 1.45 }}>
                   {t('dayCloseVaultBalanceNote')}
                 </div>
               </div>

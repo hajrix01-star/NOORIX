@@ -27,8 +27,8 @@ const TYPE_MAP = {
 
 const STATUS_MAP = {
   pending: { bg: 'rgba(245,158,11,0.1)', color: 'var(--color-noorix-amber)', labelKey: 'statusPending' },
-  approved: { bg: 'rgba(22,163,74,0.1)', color: 'var(--noorix-accent-green)', labelKey: 'statusApproved' },
-  rejected: { bg: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)', labelKey: 'statusRejected' },
+  approved: { bg: 'var(--noorix-green-10)', color: 'var(--noorix-accent-green)', labelKey: 'statusApproved' },
+  rejected: { bg: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)', labelKey: 'statusRejected' },
 };
 
 const statusColorMap = { pending: 'amber', approved: 'green', rejected: 'red' };

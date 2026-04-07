@@ -1,10 +1,14 @@
-/**
+﻿/**
  * ui.css — نظام مكوّنات نووريكس الذري
  * يتضمن: Button | Input | Card | Badge | Modal | Spinner | Divider | FormRow | Table
  * ─────────────────────────────────────
  * مبني فوق CSS Variables الموجودة في index.css
  * كل قسم مُعلَّق بوضوح ويمكن تعديله من مكان واحد
+ *
+ * [Tailwind Layer] جميع قواعد هذا الملف ضمن @layer components
+ * يعني Tailwind utilities يمكنها تجاوزها بشكل صحيح
  */
+@layer components {
 
 /* ═══════════════════════════════════════════════════════════
    0. Z-Index System — نظام الطبقات الموحّد
@@ -116,7 +120,7 @@
 .nx-btn:hover:not(:disabled) {
   background: var(--btn-default-hover);
   border-color: var(--noorix-border);
-  box-shadow: 0 1px 4px rgba(10,31,68,0.1), 0 2px 8px rgba(10,31,68,0.06);
+  box-shadow: 0 1px 4px var(--noorix-navy-10), 0 2px 8px rgba(10,31,68,0.06);
 }
 .nx-btn:active:not(:disabled)  { transform: translateY(1px); }
 .nx-btn:disabled                { opacity: 0.45; cursor: not-allowed; }
@@ -286,7 +290,7 @@
 
 .nx-input__field:focus {
   border-color: var(--noorix-accent-blue);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  box-shadow: 0 0 0 3px var(--noorix-blue-10);
 }
 
 .nx-input__field:disabled,
@@ -307,7 +311,7 @@
   border-color: var(--noorix-accent-red, #dc2626);
 }
 .nx-input--has-error .nx-input__field:focus {
-  box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+  box-shadow: 0 0 0 3px var(--noorix-red-10);
 }
 
 /* — Select ── */
@@ -1479,7 +1483,7 @@
   white-space: nowrap;
 }
 
-.nx-pill--blue { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+.nx-pill--blue { background: color-mix(in srgb, var(--noorix-accent-blue) 10%, transparent); color: var(--noorix-accent-blue); }
 .nx-pill--sm   { font-size: 11px; padding: 2px 8px; }
 
 /* Modal flush — يُزيل الـ padding من داخل الـ Modal لمحتوى يملأ كامل العرض */
@@ -1573,7 +1577,7 @@
 }
 
 .nx-vault-icon-btn:hover:not(:disabled) {
-  background: rgba(37,99,235,0.08);
+  background: var(--noorix-blue-8);
   border-color: var(--noorix-accent-blue);
 }
 
@@ -1791,7 +1795,7 @@
 }
 
 .nx-supplier-option[aria-selected="true"] {
-  background: rgba(37,99,235,0.08);
+  background: var(--noorix-blue-8);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1907,7 +1911,7 @@
   transition: box-shadow 200ms, transform 200ms;
 }
 .nx-kpi-card:hover {
-  box-shadow: 0 2px 8px rgba(10,31,68,0.06), 0 8px 28px rgba(10,31,68,0.1);
+  box-shadow: 0 2px 8px rgba(10,31,68,0.06), 0 8px 28px var(--noorix-navy-10);
   transform: translateY(-1px);
 }
 
@@ -1931,7 +1935,7 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--kpi-accent-bg, rgba(37,99,235,0.08));
+  background: var(--kpi-accent-bg, var(--noorix-blue-8));
   color: var(--kpi-accent, #2563eb);
   flex-shrink: 0;
   margin-bottom: 14px;
@@ -1970,7 +1974,7 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  background: var(--kpi-accent-bg, rgba(37,99,235,0.08));
+  background: var(--kpi-accent-bg, var(--noorix-blue-8));
   color: var(--kpi-accent, #2563eb);
   width: fit-content;
 }
@@ -1992,28 +1996,28 @@
 
 /* ── ألوان محددة مسبقاً ── */
 .nx-kpi-card--sales {
-  --kpi-accent:    #16a34a;
-  --kpi-accent-bg: rgba(22,163,74,0.08);
+  --kpi-accent:    var(--noorix-accent-green);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-green) 8%, transparent);
 }
 .nx-kpi-card--purchases {
-  --kpi-accent:    #dc2626;
-  --kpi-accent-bg: rgba(220,38,38,0.08);
+  --kpi-accent:    var(--noorix-accent-red);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-red) 8%, transparent);
 }
 .nx-kpi-card--expenses {
-  --kpi-accent:    #ea580c;
-  --kpi-accent-bg: rgba(234,88,12,0.08);
+  --kpi-accent:    var(--noorix-accent-amber);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-amber) 8%, transparent);
 }
 .nx-kpi-card--profit {
-  --kpi-accent:    #2563eb;
-  --kpi-accent-bg: rgba(37,99,235,0.08);
+  --kpi-accent:    var(--noorix-accent-blue);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-blue) 8%, transparent);
 }
 .nx-kpi-card--loss {
-  --kpi-accent:    #dc2626;
-  --kpi-accent-bg: rgba(220,38,38,0.08);
+  --kpi-accent:    var(--noorix-accent-red);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-red) 8%, transparent);
 }
 .nx-kpi-card--neutral {
-  --kpi-accent:    #6366f1;
-  --kpi-accent-bg: rgba(99,102,241,0.08);
+  --kpi-accent:    var(--noorix-accent-violet);
+  --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-violet) 8%, transparent);
 }
 
 /* شبكة كروت KPI */
@@ -2278,3 +2282,5 @@
   flex-shrink: 0;
   display: inline-block;
 }
+
+} /* end @layer components */

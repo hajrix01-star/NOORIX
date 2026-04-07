@@ -16,12 +16,12 @@ const STRIPE_COLOR = {
 };
 
 const STAT_COLOR = {
-  blue:   { accent: 'var(--noorix-accent-blue)', bg: 'rgba(37,99,235,0.08)'  },
-  green:  { accent: 'var(--noorix-accent-green)', bg: 'rgba(22,163,74,0.08)'  },
-  red:    { accent: 'var(--noorix-accent-red)', bg: 'rgba(220,38,38,0.08)'   },
-  amber:  { accent: 'var(--noorix-accent-amber)', bg: 'rgba(217,119,6,0.08)'   },
-  violet: { accent: 'var(--noorix-accent-violet)', bg: 'rgba(99,102,241,0.08)'  },
-  gray:   { accent: 'var(--noorix-text-muted)', bg: 'rgba(100,116,139,0.08)' },
+  blue:   { accent: 'var(--noorix-accent-blue)', bg: 'var(--noorix-blue-8)'  },
+  green:  { accent: 'var(--noorix-accent-green)', bg: 'var(--noorix-green-8)'  },
+  red:    { accent: 'var(--noorix-accent-red)', bg: 'var(--noorix-red-8)'   },
+  amber:  { accent: 'var(--noorix-accent-amber)', bg: 'var(--noorix-amber-8)'   },
+  violet: { accent: 'var(--noorix-accent-violet)', bg: 'var(--noorix-violet-8)'  },
+  gray:   { accent: 'var(--noorix-text-muted)', bg: 'var(--noorix-muted-8)' },
 };
 
 export function SurfaceCard({ padding = 'md', className = '', children, onClick, ...rest }) {

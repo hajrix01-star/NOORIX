@@ -76,7 +76,7 @@ export default function BankStatementDetailView({
         borderRadius: 0,
         border: 'none',
         borderBottom: vm.activeTab === id ? '3px solid var(--noorix-accent-blue)' : '3px solid transparent',
-        background: vm.activeTab === id ? 'rgba(37,99,235,0.08)' : 'transparent',
+        background: vm.activeTab === id ? 'var(--noorix-blue-8)' : 'transparent',
         color: vm.activeTab === id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
         fontWeight: vm.activeTab === id ? 700 : 500,
         padding: '13px 20px',

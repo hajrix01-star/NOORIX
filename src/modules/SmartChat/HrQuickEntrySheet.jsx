@@ -432,7 +432,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
             <div
               className="mb-4 p-3 rounded-lg text-[14px]"
               style={{
-                background: 'rgba(220,38,38,0.08)',
+                background: 'var(--noorix-red-8)',
                 color: 'var(--noorix-accent-red)',
               }}
             >

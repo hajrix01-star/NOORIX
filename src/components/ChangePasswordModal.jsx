@@ -130,7 +130,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
             )}
           </div>
           {error && (
-            <div className="p-2.5 rounded-lg text-[13px]" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
+            <div className="p-2.5 rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
               {error}
             </div>
           )}

@@ -123,7 +123,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
         <div
           className="p-3 mb-4 rounded-lg text-[13px]"
           style={{
-            background: 'rgba(239,68,68,0.1)',
+            background: 'var(--noorix-red-10)',
             color: 'var(--noorix-error)',
           }}
         >
@@ -141,7 +141,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           style={{
             border: `2px dashed ${isDragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
             padding: 40,
-            background: isDragging ? 'rgba(37,99,235,0.05)' : 'var(--noorix-bg-muted)',
+            background: isDragging ? 'var(--noorix-blue-5)' : 'var(--noorix-bg-muted)',
           }}
         >
           <div className="mb-2" style={{ fontSize: 36 }}></div>

@@ -256,7 +256,7 @@ export default function BankStatementTransactionsFullTab({
                     style={{
                       borderBottom: '1px solid var(--noorix-border)',
                       background: isSelected
-                        ? 'rgba(37,99,235,0.06)'
+                        ? 'var(--noorix-blue-6)'
                         : rowIdx % 2 === 0
                         ? 'transparent'
                         : 'var(--noorix-bg-muted)',

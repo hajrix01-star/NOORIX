@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LoginScreen — شاشة تسجيل الدخول
  */
 import React, { useState } from 'react';
@@ -60,8 +60,8 @@ export default function LoginScreen() {
       className="min-h-screen flex items-center justify-center px-4 py-8"
       style={{
         background: `
-          radial-gradient(circle at 20% 20%, rgba(37,99,235,0.10) 0%, transparent 50%),
-          radial-gradient(circle at 80% 80%, rgba(22,163,74,0.08) 0%, transparent 50%),
+          radial-gradient(circle at 20% 20%, var(--noorix-blue-10) 0%, transparent 50%),
+          radial-gradient(circle at 80% 80%, var(--noorix-green-8) 0%, transparent 50%),
           var(--noorix-bg-muted, #f1f5f9)
         `,
       }}

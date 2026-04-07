@@ -12,7 +12,7 @@ import { fmt } from '../../utils/format';
 import { CARD_BORDER_RADIUS } from '../../utils/cardStyles';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 
-const COLORS = ['var(--noorix-accent-green)', 'var(--noorix-accent-blue)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-violet)', 'var(--noorix-accent-red)', '#0891b2', '#4f46e5', 'var(--noorix-accent-green)'];
+const COLORS = ['var(--noorix-accent-green)', 'var(--noorix-accent-blue)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-violet)', 'var(--noorix-accent-red)', '#0891b2', 'var(--noorix-accent-violet)', 'var(--noorix-accent-green)'];
 
 function formatAxisValue(n) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
@@ -251,7 +251,7 @@ export default function OwnerDashboardScreen() {
       )}
 
       {isError && (
-        <div className="noorix-surface-card p-5" style={{ color: 'var(--noorix-accent-red)', background: 'rgba(239,68,68,0.08)' }}>{error?.message || t('loading')}</div>
+        <div className="noorix-surface-card p-5" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-8)' }}>{error?.message || t('loading')}</div>
       )}
 
       {!isLoading && !isError && idsToFetch.length > 0 && (

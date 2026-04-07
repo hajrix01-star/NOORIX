@@ -11,8 +11,8 @@ import { splitTaxFromTotal } from '../../../utils/math-engine';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 const CHANNEL_COLORS = {
-  cash: { bg: 'rgba(22,163,74,0.08)', border: 'var(--noorix-accent-green)', icon: '💵' },
-  bank: { bg: 'rgba(37,99,235,0.08)', border: 'var(--noorix-accent-blue)', icon: '🏦' },
+  cash: { bg: 'var(--noorix-green-8)', border: 'var(--noorix-accent-green)', icon: '💵' },
+  bank: { bg: 'var(--noorix-blue-8)', border: 'var(--noorix-accent-blue)', icon: '🏦' },
   app:  { bg: 'rgba(124,58,237,0.08)', border: 'var(--noorix-accent-violet)', icon: '📱' },
 };
 
@@ -124,7 +124,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       }
     >
       {error && (
-        <div className="rounded-lg text-[13px] mb-4 p-2.5 text-noorix-red" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid var(--noorix-accent-red)' }}>
+        <div className="rounded-lg text-[13px] mb-4 p-2.5 text-noorix-red" style={{ background: 'var(--noorix-red-10)', border: '1px solid var(--noorix-accent-red)' }}>
           {error}
         </div>
       )}
@@ -142,7 +142,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
             جاري تحميل قنوات البيع...
           </div>
         ) : salesChannelsError ? (
-          <div className="p-4 text-center text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-red)', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10 }}>
+          <div className="p-4 text-center text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-20)', borderRadius: 10 }}>
             {salesChannelsError}
           </div>
           ) : mergedSalesChannels.length === 0 ? (
@@ -188,7 +188,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       </div>
 
       <div className="grid gap-2.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
-        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)' }}>
+        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-green-10)', border: '1px solid rgba(22,163,74,0.3)' }}>
           <div className="text-[11px] text-noorix-green">الإجمالي</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)} ﷼</div>
         </div>
@@ -204,7 +204,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
             </div>
           </>
         )}
-        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.3)' }}>
+        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-blue-10)', border: '1px solid rgba(37,99,235,0.3)' }}>
           <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>العملاء</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-blue)' }}>{customerCount || 0}</div>
         </div>

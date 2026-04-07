@@ -608,8 +608,8 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           <div
             className="text-[13px] font-semibold mt-3 rounded-lg p-3"
             style={{
-              background: 'rgba(239,68,68,0.12)',
-              border: '1px solid rgba(239,68,68,0.25)',
+              background: 'var(--noorix-red-12)',
+              border: '1px solid var(--noorix-red-25)',
               color: 'var(--noorix-accent-red)',
               flexShrink: 0,
             }}

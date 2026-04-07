@@ -50,7 +50,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
   return (
     <div
       className="noorix-surface-card grid gap-3.5 border border-noorix-border"
-      style={{ padding: '14px 16px', border: '1px solid rgba(37,99,235,0.15)', background: 'linear-gradient(135deg, rgba(37,99,235,0.04) 0%, var(--noorix-bg-surface) 48%)' }}
+      style={{ padding: '14px 16px', border: '1px solid var(--noorix-blue-15)', background: 'linear-gradient(135deg, var(--noorix-blue-4) 0%, var(--noorix-bg-surface) 48%)' }}
     >
       <div className="flex flex items-center justify-between flex flex-wrap gap-3">
         <div className="text-[14px] font-extrabold">{t('periodAnalyticsTitle')}</div>

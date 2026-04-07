@@ -188,7 +188,7 @@ export const BatchRow = memo(function BatchRow({
           style={{
             padding: '6px 2px', borderRadius: 5,
             border: `1px solid ${row.isTaxable === false ? 'var(--noorix-text-muted-2)' : 'var(--noorix-accent-amber)'}`,
-            background: row.isTaxable === false ? 'var(--noorix-bg-page)' : 'rgba(217,119,6,0.08)',
+            background: row.isTaxable === false ? 'var(--noorix-bg-page)' : 'var(--noorix-amber-8)',
             color: row.isTaxable === false ? 'var(--noorix-text-muted)' : 'var(--noorix-accent-amber)',
           }}
         >

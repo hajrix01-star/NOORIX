@@ -446,7 +446,7 @@ export default function InvoicesListScreen() {
           {(urlExtra.categoryId || urlExtra.expenseLineId || urlExtra.kind) && (
             <div
             className="noorix-surface-card flex items-center justify-between flex flex-wrap gap-3 text-[12px]"
-            style={{ padding: '10px 14px', border: '1px dashed rgba(37,99,235,0.35)', background: 'rgba(37,99,235,0.04)' }}
+            style={{ padding: '10px 14px', border: '1px dashed var(--noorix-blue-35)', background: 'var(--noorix-blue-4)' }}
             >
               <span className="nx-cell-muted">{t('invoicesDrillBanner')}</span>
               <Button size="sm" onClick={() => { setUrlExtra({ kind: '', categoryId: '', expenseLineId: '' }); setPage(1); }}>

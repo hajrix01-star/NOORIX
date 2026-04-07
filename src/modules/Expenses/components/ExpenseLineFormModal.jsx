@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ExpenseLineFormModal — نموذج إنشاء/تعديل بند مصروف (هاتف 1، كهرب 1، إيجار محل)
  */
 import React, { useState, useEffect } from 'react';
@@ -131,7 +131,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
     >
       <form id="expense-line-form-modal" onSubmit={handleSubmit}>
         {error && (
-          <div style={{ padding: 12, marginBottom: 16, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: 'var(--noorix-accent-red)', fontSize: 13 }}>
+          <div style={{ padding: 12, marginBottom: 16, background: 'var(--noorix-red-10)', borderRadius: 8, color: 'var(--noorix-accent-red)', fontSize: 13 }}>
             {error}
           </div>
         )}

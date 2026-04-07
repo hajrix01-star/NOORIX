@@ -174,7 +174,7 @@ export function SalesEntryModal({
             {t('loading')}
           </div>
         ) : salesChannelsError ? (
-          <div className="p-4 text-center text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-red)', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10 }}>
+          <div className="p-4 text-center text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-20)', borderRadius: 10 }}>
             {salesChannelsError}
           </div>
         ) : salesChannels.length === 0 ? (

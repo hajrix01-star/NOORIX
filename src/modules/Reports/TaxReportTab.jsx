@@ -146,13 +146,13 @@ export default function TaxReportTab() {
 <table><thead><tr><th>${(t('reportItem') || '').replace(/</g, '&lt;')}</th><th>${(lang === 'ar' ? 'المبلغ (ر.س)' : 'Amount (SAR)').replace(/</g, '&lt;')}</th><th>${(lang === 'ar' ? 'التعديلات' : 'Adjustments').replace(/</g, '&lt;')}</th><th>${(lang === 'ar' ? 'ضريبة القيمة المضافة' : 'VAT').replace(/</g, '&lt;')}</th></tr></thead>
 <tbody><tr><td colspan="4" style="background:rgba(22,163,74,0.15);font-weight:700">${(lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)').replace(/</g, '&lt;')}</td></tr>${outRows}
 <tr><td colspan="4" style="background:rgba(220,38,38,0.15);font-weight:700">${(lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)').replace(/</g, '&lt;')}</td></tr>${inRows}
-<tr><td colspan="4" style="background:rgba(37,99,235,0.15);font-weight:700">${(lang === 'ar' ? 'الملخص' : 'Summary').replace(/</g, '&lt;')}</td></tr>
+<tr><td colspan="4" style="background:var(--noorix-blue-15);font-weight:700">${(lang === 'ar' ? 'الملخص' : 'Summary').replace(/</g, '&lt;')}</td></tr>
 <tr><td>${(lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(outputTotal, 2)} ر.س</td></tr>
 <tr><td>${(lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(inputTotal, 2)} ر.س</td></tr>
 <tr><td>${(lang === 'ar' ? 'صافي الضريبة' : 'Net VAT').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(netVat, 2)} ر.س</td></tr>
 <tr><td>${(lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(priorAdj, 2)}</td></tr>
 <tr><td>${(lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(balanceCarried, 2)}</td></tr>
-<tr style="background:rgba(37,99,235,0.2);font-weight:800"><td>${(lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(netPayable, 2)} ر.س</td></tr>
+<tr style="background:var(--noorix-blue-20);font-weight:800"><td>${(lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(netPayable, 2)} ر.س</td></tr>
 </tbody></table></body></html>`;
     const w = window.open('', '_blank');
     if (w) {
@@ -329,7 +329,7 @@ export default function TaxReportTab() {
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} className="font-bold text-noorix-text" style={{ padding: '10px 12px', background: 'rgba(37,99,235,0.06)' }}>
+                  <td colSpan={4} className="font-bold text-noorix-text" style={{ padding: '10px 12px', background: 'var(--noorix-blue-6)' }}>
                     {lang === 'ar' ? 'الملخص' : 'Summary'}
                   </td>
                 </tr>
@@ -357,7 +357,7 @@ export default function TaxReportTab() {
                     <Input type="text" inputMode="decimal" value={balanceCarried || ''} onChange={(e) => updateRow('balance_carried', null, e.target.value)} placeholder="0" />
                   </td>
                 </tr>
-                <tr style={{ background: 'rgba(37,99,235,0.08)', borderTop: '2px solid var(--noorix-accent-blue)' }}>
+                <tr style={{ background: 'var(--noorix-blue-8)', borderTop: '2px solid var(--noorix-accent-blue)' }}>
                   <td className="font-extrabold" style={{ padding: '12px 12px' }}>{lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td>
                   <td colSpan={3} className="text-end nx-font-numbers font-extrabold" style={{ padding: '12px 12px', color: netPayable >= 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-accent-green)' }}>
                     {fmt(netPayable, 2)} ر.س {netPayable >= 0 ? (lang === 'ar' ? '(مستحقة)' : '(payable)') : (lang === 'ar' ? '(مطالب بها)' : '(refundable)')}

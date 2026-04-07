@@ -90,7 +90,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
                 {isAr ? 'القسم' : 'Module'}
               </th>
               <th style={{ ...thStyle, width: 44, textAlign: 'center',
-                background: 'rgba(37,99,235,0.07)', borderInline: '1px solid var(--noorix-border)' }}>
+                background: 'var(--noorix-blue-7)', borderInline: '1px solid var(--noorix-border)' }}>
                 {isAr ? 'الكل' : 'All'}
               </th>
               {levelKeys.map((lvl) => (
@@ -120,7 +120,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
                   <td style={{
                     ...tdStyle, textAlign: 'center',
                     background: full
-                      ? 'rgba(37,99,235,0.06)'
+                      ? 'var(--noorix-blue-6)'
                       : partial ? 'rgba(245,158,11,0.06)' : undefined,
                     borderInline: '1px solid var(--noorix-border)',
                   }}>

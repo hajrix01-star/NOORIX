@@ -88,7 +88,7 @@ const S = {
     border: `2px dashed ${dragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
     borderRadius: 12, padding: '28px 20px',
     textAlign: 'center', cursor: 'pointer',
-    background: dragging ? 'rgba(37,99,235,0.06)' : 'var(--noorix-bg)',
+    background: dragging ? 'var(--noorix-blue-6)' : 'var(--noorix-bg)',
     transition: 'all 0.18s ease',
     color: 'var(--noorix-text-muted)',
   }),
@@ -96,7 +96,7 @@ const S = {
     display: 'grid', gridTemplateColumns: '56px 1fr',
     gap: 8, alignItems: 'start',
     padding: '6px 10px', borderRadius: 8,
-    background: 'rgba(239,68,68,0.07)', fontSize: 13,
+    background: 'var(--noorix-red-7)', fontSize: 13,
   },
   warnRow: {
     display: 'grid', gridTemplateColumns: '56px 1fr',
@@ -185,7 +185,7 @@ function ImportPhaseSteps({ phase, importing }) {
             fontWeight: active === s.n ? 800 : 500,
             color: active === s.n ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
             padding: '4px 8px',
-            background: active === s.n ? 'rgba(37,99,235,0.1)' : 'transparent',
+            background: active === s.n ? 'var(--noorix-blue-10)' : 'transparent',
           }}>
             {s.n}. {s.label}
           </span>
@@ -226,7 +226,7 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
                 ? (r.warnings.length ? r.warnings.join('؛ ') : '—')
                 : r.errors.join('؛ ');
               return (
-                <tr key={r.rowNum} style={{ background: ok ? 'transparent' : 'rgba(239,68,68,0.06)' }}>
+                <tr key={r.rowNum} style={{ background: ok ? 'transparent' : 'var(--noorix-red-6)' }}>
                   <td className="border-b border-noorix-border" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{r.rowNum}</td>
                   <td className="border-b border-noorix-border truncate" style={{ padding: '7px 10px', maxWidth: 160 }}>{name}</td>
                   <td className="border-b border-noorix-border whitespace-nowrap" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{jd}</td>
@@ -628,7 +628,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                   {errorsToShow.map((r) => (
                     <div key={r.rowNum}>
                       {r.errors.map((msg, j) => (
-                        <div key={j} className="grid gap-2 rounded-lg text-[13px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'rgba(239,68,68,0.07)' }}>
+                        <div key={j} className="grid gap-2 rounded-lg text-[13px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'var(--noorix-red-7)' }}>
                           <span className="font-bold text-noorix-red">صف {r.rowNum}</span>
                           <span className="text-noorix-red">✗ {msg}</span>
                         </div>
@@ -716,7 +716,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               {progress.errors.length > 0 && (
                 <div className="flex flex-col" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
                   {progress.errors.slice(0, 20).map((e, i) => (
-                    <div key={i} className="grid gap-2 rounded-lg text-[13px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'rgba(239,68,68,0.07)' }}>
+                    <div key={i} className="grid gap-2 rounded-lg text-[13px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'var(--noorix-red-7)' }}>
                       <span className="font-bold text-noorix-red">صف {e.rowNum}</span>
                       <span className="text-noorix-red">✗ {e.message}</span>
                     </div>

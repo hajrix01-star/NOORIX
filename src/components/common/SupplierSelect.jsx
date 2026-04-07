@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SupplierSelect — بحث + قائمة منسدلة تُعرض عبر Portal لتجاوز overflow:hidden في جداول ERP
  */
 import React, {
@@ -196,7 +196,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => selectSupplier(s)}
                 className="nx-supplier-option"
-                style={isSelected ? { background: 'rgba(37,99,235,0.08)' } : undefined}
+                style={isSelected ? { background: 'var(--noorix-blue-8)' } : undefined}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {supplierLabel(s, lang)}
@@ -224,7 +224,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => selectSupplier(s)}
                 className="nx-supplier-option"
-                style={isSelected ? { background: 'rgba(37,99,235,0.08)' } : undefined}
+                style={isSelected ? { background: 'var(--noorix-blue-8)' } : undefined}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {supplierLabel(s, lang)}

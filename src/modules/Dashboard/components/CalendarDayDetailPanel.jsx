@@ -46,7 +46,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
         )}
       </div>
       <div className="flex flex flex-wrap gap-3">
-        <div className="rounded-lg flex-1 min-w-0" style={{ padding: 10, background: 'rgba(37,99,235,0.08)', minWidth: 90 }}>
+        <div className="rounded-lg flex-1 min-w-0" style={{ padding: 10, background: 'var(--noorix-blue-8)', minWidth: 90 }}>
           <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('dashboardSalesTarget')}</div>
           <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget, 2) : '—'} ﷼</div>
         </div>

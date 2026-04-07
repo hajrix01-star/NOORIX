@@ -104,7 +104,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
             <Button
               className="nx-vault-type-btn"
               onClick={() => set('type', 'custom')}
-              style={isCustom ? { border: '2px solid #64748b', background: 'rgba(100,116,139,0.1)', color: 'var(--noorix-text-muted)' } : undefined}
+              style={isCustom ? { border: '2px solid #64748b', background: 'var(--noorix-muted-10)', color: 'var(--noorix-text-muted)' } : undefined}
             >
               <span className="font-extrabold" style={{ fontSize: 18 }}>{form.customEmoji || 'خ'}</span>
               <span>{t('vaultTypeCustom') || 'مخصص'}</span>
@@ -216,7 +216,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         />
 
           {saveError && (
-          <div className="rounded-lg text-[13px] py-2 px-3 text-noorix-red" style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)' }}>
+          <div className="rounded-lg text-[13px] py-2 px-3 text-noorix-red" style={{ background: 'var(--noorix-red-8)', border: '1px solid rgba(220,38,38,0.2)' }}>
             {saveError}
           </div>
         )}

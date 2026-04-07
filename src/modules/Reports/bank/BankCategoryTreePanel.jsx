@@ -233,8 +233,8 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                 padding: 12,
                 marginBottom: 8,
                 borderRadius: 10,
-                border: activeClassIdx === idx ? '2px solid rgba(37,99,235,0.45)' : '1px solid var(--noorix-border)',
-                background: activeClassIdx === idx ? 'rgba(37,99,235,0.06)' : 'var(--noorix-bg-muted)',
+                border: activeClassIdx === idx ? '2px solid var(--noorix-blue-45)' : '1px solid var(--noorix-border)',
+                background: activeClassIdx === idx ? 'var(--noorix-blue-6)' : 'var(--noorix-bg-muted)',
               }}
             >
               <div className="flex gap-2 mb-2">
@@ -344,7 +344,7 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
                   padding: '2px 8px',
                   borderRadius: 6,
                   border: '1px solid var(--noorix-border)',
-                  background: category.transactionSide === 'debit' ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.08)',
+                  background: category.transactionSide === 'debit' ? 'var(--noorix-red-8)' : 'var(--noorix-green-8)',
                 }}
               >
                 {sideInfo.icon} {t(sideInfo.labelKey)}

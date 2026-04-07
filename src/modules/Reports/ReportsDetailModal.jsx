@@ -92,7 +92,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
       )}
 
       {error && (
-        <div className="p-4 rounded-xl text-noorix-red" style={{ background: 'rgba(239,68,68,0.08)' }}>
+        <div className="p-4 rounded-xl text-noorix-red" style={{ background: 'var(--noorix-red-8)' }}>
           {error.message}
         </div>
       )}
@@ -175,8 +175,8 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     className="rounded-xl"
                     style={{
                       padding: 8,
-                      background: state?.month === point.month ? 'rgba(37,99,235,0.10)' : 'var(--noorix-bg-muted)',
-                      border: state?.month === point.month ? '1px solid rgba(37,99,235,0.28)' : '1px solid var(--noorix-border)',
+                      background: state?.month === point.month ? 'var(--noorix-blue-10)' : 'var(--noorix-bg-muted)',
+                      border: state?.month === point.month ? '1px solid var(--noorix-blue-28)' : '1px solid var(--noorix-border)',
                     }}
                   >
                     <div className="text-[11px] text-noorix-muted mb-1.5">{point.label}</div>

@@ -104,7 +104,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
   return (
     <div className="grid gap-6">
       {isError && (
-        <div className="p-3 rounded-lg text-[13px]" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid var(--noorix-accent-red)' }}>
+        <div className="p-3 rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', border: '1px solid var(--noorix-accent-red)' }}>
           لا يمكن الاتصال بالسيرفر.
           <Button onClick={() => refetch()} style={{ marginRight: 8, fontSize: 12 }}>إعادة المحاولة</Button>
         </div>
@@ -269,11 +269,11 @@ export default function CompaniesTab({ onCompanyCreated }) {
                 </div>
               </div>
 
-              {updateMutation.isError && <p className="m-0 text-[13px] rounded-lg" style={{ color: 'var(--noorix-accent-red)', padding: '8px 12px', background: 'rgba(239,68,68,0.08)' }}>{updateMutation.error?.message}</p>}
+              {updateMutation.isError && <p className="m-0 text-[13px] rounded-lg" style={{ color: 'var(--noorix-accent-red)', padding: '8px 12px', background: 'var(--noorix-red-8)' }}>{updateMutation.error?.message}</p>}
             </form>
 
             {/* قسم الخطر */}
-            <div className="rounded-xl" style={{ marginTop: 24, padding: 14, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <div className="rounded-xl" style={{ marginTop: 24, padding: 14, background: 'rgba(239,68,68,0.05)', border: '1px solid var(--noorix-red-20)' }}>
               <div className="text-[13px] font-bold mb-3" style={{ color: 'var(--noorix-accent-red)' }}>⚠ منطقة الخطر</div>
               <div className="grid gap-2.5">
                 <div>

@@ -154,7 +154,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   /* ── حالة: خطأ ── */
   if (error) {
     return (
-      <div className="p-5 m-4 rounded-xl text-noorix-red" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+      <div className="p-5 m-4 rounded-xl text-noorix-red" style={{ background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-20)' }}>
         {error.message}
       </div>
     );

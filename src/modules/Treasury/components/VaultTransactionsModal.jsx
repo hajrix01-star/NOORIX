@@ -103,7 +103,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     const rows = items.map((r) =>
       `<tr><td>${(r.documentNumber || r.referenceId || '—').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(r.transactionDate).replace(/</g, '&lt;')}</td><td>${(r.referenceType || '—').replace(/</g, '&lt;')}</td><td style="text-align:right;font-family:Cairo">${r.debit != null ? fmt(r.debit, 2) : '—'}</td><td style="text-align:right;font-family:Cairo">${r.credit != null ? fmt(r.credit, 2) : '—'}</td></tr>`,
     ).join('');
-    const totalRow = `<tr style="font-weight:700;background:rgba(37,99,235,0.08)"><td colspan="3">${t('total').replace(/</g, '&lt;')}</td><td style="text-align:right;font-family:Cairo">${fmt(totalDebit, 2)}</td><td style="text-align:right;font-family:Cairo">${fmt(totalCredit, 2)}</td></tr>`;
+    const totalRow = `<tr style="font-weight:700;background:var(--noorix-blue-8)"><td colspan="3">${t('total').replace(/</g, '&lt;')}</td><td style="text-align:right;font-family:Cairo">${fmt(totalDebit, 2)}</td><td style="text-align:right;font-family:Cairo">${fmt(totalCredit, 2)}</td></tr>`;
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('transactions') || '').replace(/</g, '&lt;')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd;text-align:right}th{background:#2563eb;color:#fff;font-weight:700}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}@media print{body{padding:0}}</style></head><body>
@@ -148,9 +148,9 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
 
   const footerCells = items.length > 0 ? (
     <>
-      <td colSpan={4} className="font-bold p-2.5" style={{ background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{t('total')}</td>
-      <td className="font-bold text-end p-2.5 text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)', background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalDebit, 2)}</td>
-      <td className="font-bold text-end p-2.5 text-noorix-red" style={{ fontFamily: 'var(--noorix-font-numbers)', background: 'rgba(37,99,235,0.06)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalCredit, 2)}</td>
+      <td colSpan={4} className="font-bold p-2.5" style={{ background: 'var(--noorix-blue-6)', borderTop: '2px solid var(--noorix-border)' }}>{t('total')}</td>
+      <td className="font-bold text-end p-2.5 text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)', background: 'var(--noorix-blue-6)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalDebit, 2)}</td>
+      <td className="font-bold text-end p-2.5 text-noorix-red" style={{ fontFamily: 'var(--noorix-font-numbers)', background: 'var(--noorix-blue-6)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalCredit, 2)}</td>
     </>
   ) : null;
 

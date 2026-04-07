@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ReportsLayout — إطار التقارير مع قائمة فرعية شجرية
  * يعرض: التقرير العام | الضريبي | تحليل كشف الحسابات
  */
@@ -32,7 +32,7 @@ export default function ReportsLayout() {
                 borderRadius: 0,
                 border: 'none',
                 borderBottom: isActive ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
-                background: isActive ? 'rgba(37,99,235,0.07)' : 'transparent',
+                background: isActive ? 'var(--noorix-blue-7)' : 'transparent',
                 color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
                 fontWeight: isActive ? 700 : 500,
                 whiteSpace: 'nowrap',

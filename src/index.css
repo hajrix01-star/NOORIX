@@ -1,4 +1,4 @@
-/* Noorix Theme */
+﻿/* Noorix Theme */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
@@ -113,6 +113,40 @@
   --noorix-accent-amber:  #d97706;
   --noorix-accent-rose:   #e11d48;
   --noorix-accent-red:    #dc2626;
+  /* Alpha tints — استخدمها بدلاً من rgba(R,G,B,X) المشفرة مباشرة */
+  --noorix-blue-4:   color-mix(in srgb, var(--noorix-accent-blue)   4%, transparent);
+  --noorix-blue-5:   color-mix(in srgb, var(--noorix-accent-blue)   5%, transparent);
+  --noorix-blue-6:   color-mix(in srgb, var(--noorix-accent-blue)   6%, transparent);
+  --noorix-blue-7:   color-mix(in srgb, var(--noorix-accent-blue)   7%, transparent);
+  --noorix-blue-8:   color-mix(in srgb, var(--noorix-accent-blue)   8%, transparent);
+  --noorix-blue-10:  color-mix(in srgb, var(--noorix-accent-blue)  10%, transparent);
+  --noorix-blue-12:  color-mix(in srgb, var(--noorix-accent-blue)  12%, transparent);
+  --noorix-blue-15:  color-mix(in srgb, var(--noorix-accent-blue)  15%, transparent);
+  --noorix-blue-18:  color-mix(in srgb, var(--noorix-accent-blue)  18%, transparent);
+  --noorix-blue-20:  color-mix(in srgb, var(--noorix-accent-blue)  20%, transparent);
+  --noorix-blue-28:  color-mix(in srgb, var(--noorix-accent-blue)  28%, transparent);
+  --noorix-blue-35:  color-mix(in srgb, var(--noorix-accent-blue)  35%, transparent);
+  --noorix-blue-45:  color-mix(in srgb, var(--noorix-accent-blue)  45%, transparent);
+  --noorix-red-6:    color-mix(in srgb, var(--noorix-accent-red)    6%, transparent);
+  --noorix-red-7:    color-mix(in srgb, var(--noorix-accent-red)    7%, transparent);
+  --noorix-red-8:    color-mix(in srgb, var(--noorix-accent-red)    8%, transparent);
+  --noorix-red-10:   color-mix(in srgb, var(--noorix-accent-red)   10%, transparent);
+  --noorix-red-12:   color-mix(in srgb, var(--noorix-accent-red)   12%, transparent);
+  --noorix-red-20:   color-mix(in srgb, var(--noorix-accent-red)   20%, transparent);
+  --noorix-red-25:   color-mix(in srgb, var(--noorix-accent-red)   25%, transparent);
+  --noorix-amber-8:  color-mix(in srgb, var(--noorix-accent-amber)  8%, transparent);
+  --noorix-amber-12: color-mix(in srgb, var(--noorix-accent-amber) 12%, transparent);
+  --noorix-amber-18: color-mix(in srgb, var(--noorix-accent-amber) 18%, transparent);
+  --noorix-muted-8:   color-mix(in srgb, var(--noorix-text-muted)    8%, transparent);
+  --noorix-muted-10:  color-mix(in srgb, var(--noorix-text-muted)   10%, transparent);
+  --noorix-muted-12:  color-mix(in srgb, var(--noorix-text-muted)   12%, transparent);
+  --noorix-muted-20:  color-mix(in srgb, var(--noorix-text-muted)   20%, transparent);
+  --noorix-green-8:   color-mix(in srgb, var(--noorix-accent-green)  8%, transparent);
+  --noorix-green-10:  color-mix(in srgb, var(--noorix-accent-green) 10%, transparent);
+  --noorix-violet-8:  color-mix(in srgb, var(--noorix-accent-violet) 8%, transparent);
+  --noorix-violet-10: color-mix(in srgb, var(--noorix-accent-violet)10%, transparent);
+  --noorix-sky-10:    color-mix(in srgb, var(--noorix-accent-sky)   10%, transparent);
+  --noorix-navy-10:   color-mix(in srgb, var(--noorix-navy)         10%, transparent);
   /* أزرار */
   --btn-default-bg:     #ffffff;
   --btn-default-border: #c8d4e3;
@@ -131,7 +165,7 @@
   --noorix-font-numbers: 'Cairo',system-ui,sans-serif;
   --noorix-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(10,31,68,0.07);
   --noorix-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-  --noorix-shadow-md: 0 4px 20px rgba(10,31,68,0.1);
+  --noorix-shadow-md: 0 4px 20px var(--noorix-navy-10);
   --noorix-shadow-lg: 0 8px 32px rgba(10,31,68,0.14);
   --noorix-radius-xs: 6px;
   --noorix-radius-sm: 8px;
@@ -773,7 +807,7 @@ a { color: inherit; text-decoration: none; }
   background: var(--noorix-bg-modal, #fff);
   border: 1px solid var(--noorix-border);
   border-radius: 14px;
-  box-shadow: 0 4px 20px rgba(10,31,68,0.1), 0 16px 48px rgba(10,31,68,0.16);
+  box-shadow: 0 4px 20px var(--noorix-navy-10), 0 16px 48px rgba(10,31,68,0.16);
   overflow: hidden;
   overflow-y: auto;
   animation: fadeSlideDown 0.15s cubic-bezier(0.34,1.1,0.64,1);
@@ -889,7 +923,7 @@ a { color: inherit; text-decoration: none; }
 .um-item--danger {
   color: var(--noorix-accent-red);
 }
-.um-item--danger:hover { background: rgba(239,68,68,0.08); }
+.um-item--danger:hover { background: var(--noorix-red-8); }
 
 .um-item-icon {
   font-size: 14px;
@@ -926,7 +960,7 @@ a { color: inherit; text-decoration: none; }
   color: var(--noorix-text-muted);
 }
 .um-lang-chip--active {
-  background: rgba(37,99,235,0.1);
+  background: var(--noorix-blue-10);
   color: var(--noorix-accent-blue);
 }
 
@@ -1120,8 +1154,8 @@ html[data-card-style="9"] .noorix-table-frame,
 html[data-card-style="9"] .noorix-exec-card,
 html[data-card-style="9"] .noorix-stat-card {
   border-radius: 16px;
-  border: 1px solid rgba(37,99,235,0.2);
-  box-shadow: 0 2px 12px rgba(37,99,235,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+  border: 1px solid var(--noorix-blue-20);
+  box-shadow: 0 2px 12px var(--noorix-blue-8), inset 0 1px 0 rgba(255,255,255,0.5);
 }
 /* 10. حدود مزدوجة — Double Outline */
 html[data-card-style="10"] .noorix-surface-card,
@@ -1135,7 +1169,7 @@ html[data-card-style="10"] .noorix-stat-card {
 
 /* ========== تقارير — hover على الصفوف ========== */
 .report-table-row:hover td {
-  background: #f8fafc !important;
+  background: var(--noorix-bg-muted) !important;
   transition: background 0.15s ease;
 }
 
@@ -1620,8 +1654,8 @@ html[data-card-style="10"] .noorix-stat-card {
   align-items: center;
   justify-content: center;
 }
-.noorix-exec-card--inbound  .noorix-exec-card__icon { background: rgba(22,163,74,0.1);  color: #16a34a; }
-.noorix-exec-card--outbound .noorix-exec-card__icon { background: rgba(37,99,235,0.1);  color: #2563eb; }
+.noorix-exec-card--inbound  .noorix-exec-card__icon { background: color-mix(in srgb, var(--noorix-accent-green) 10%, transparent); color: var(--noorix-accent-green); }
+.noorix-exec-card--outbound .noorix-exec-card__icon { background: color-mix(in srgb, var(--noorix-accent-blue)  10%, transparent); color: var(--noorix-accent-blue);  }
 .noorix-exec-card__title {
   font-size: 11px;
   font-weight: 700;
@@ -1761,7 +1795,7 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--noorix-accent-blue) !important;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  box-shadow: 0 0 0 3px var(--noorix-blue-12);
 }
 
 /* ========== استجابة الجوال — NOORIX UI MANIFESTO ========== */
@@ -2487,7 +2521,7 @@ input:focus, select:focus, textarea:focus {
 .ndfb-fields input[type="date"]:focus,
 .ndfb-fields select:focus {
   border-color: var(--noorix-accent-blue) !important;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1) !important;
+  box-shadow: 0 0 0 3px var(--noorix-blue-10) !important;
 }
 
 /* شارة النطاق */
@@ -2497,8 +2531,8 @@ input:focus, select:focus, textarea:focus {
   gap: 5px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(37,99,235,0.08);
-  border: 1px solid rgba(37,99,235,0.18);
+  background: var(--noorix-blue-8);
+  border: 1px solid var(--noorix-blue-18);
   color: var(--noorix-accent-blue);
   font-size: 13px;
   font-weight: 600;
@@ -2819,13 +2853,13 @@ input:focus, select:focus, textarea:focus {
     padding: 12px 24px;
     border-radius: 16px;
     border: none;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid) 100%);
     color: #fff;
     font-size: 15px;
     font-weight: 700;
     font-family: var(--noorix-font-primary);
     cursor: pointer;
-    box-shadow: 0 8px 28px rgba(37,99,235,0.35);
+    box-shadow: 0 8px 28px var(--noorix-blue-35);
     align-items: center;
     justify-content: center;
     gap: 8px;
@@ -3281,7 +3315,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 .ocr-stat-card:hover {
   border-color: var(--noorix-accent-blue);
-  box-shadow: 0 2px 12px rgba(37,99,235,0.08);
+  box-shadow: 0 2px 12px var(--noorix-blue-8);
 }
 .ocr-stat-num   { font-size: 22px; font-weight: 800; color: var(--noorix-text); line-height: 1; }
 .ocr-stat-label { font-size: 11px; color: var(--noorix-text-muted); }
@@ -3647,9 +3681,9 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 
 /* ── Status badges ── */
 .status-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 5px; }
-.status--pending   { background: rgba(245,158,11,0.12); color: #b45309; }
-.status--confirmed { background: rgba(22,163,74,0.12);  color: #15803d; }
-.status--rejected  { background: rgba(220,38,38,0.12);  color: #b91c1c; }
+.status--pending   { background: color-mix(in srgb, var(--noorix-accent-amber) 12%, transparent); color: var(--noorix-accent-amber); }
+.status--confirmed { background: color-mix(in srgb, var(--noorix-accent-green) 12%, transparent); color: var(--noorix-accent-green); }
+.status--rejected  { background: color-mix(in srgb, var(--noorix-accent-red)   12%, transparent); color: var(--noorix-accent-red);   }
 
 /* ═══════════════════════════════════════════════════════════════════
    Invoice Detail Modal
@@ -3922,7 +3956,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 .ocr-upload-zone--active {
   border-color: var(--noorix-accent-blue);
-  background: rgba(37,99,235,0.04);
+  background: var(--noorix-blue-4);
 }
 .ocr-upload-icon {
   font-size: 32px;
@@ -4152,7 +4186,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(239,68,68,0.08);
+  background: var(--noorix-red-8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4199,7 +4233,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   font-weight: 700;
   padding: 3px 8px;
   border-radius: 5px;
-  background: rgba(239,68,68,0.08);
+  background: var(--noorix-red-8);
   color: var(--noorix-accent-red);
   flex-shrink: 0;
 }

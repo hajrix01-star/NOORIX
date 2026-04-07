@@ -22,8 +22,8 @@ import { Button, Badge, Input } from '../../../ui';
 const PAGE_SIZE = 50;
 
 const STATUS_MAP = {
-  draft: { bg: 'rgba(100,116,139,0.1)', color: 'var(--noorix-text-muted)', labelKey: 'payrollDraft' },
-  completed: { bg: 'rgba(22,163,74,0.1)', color: 'var(--noorix-accent-green)', labelKey: 'payrollPaid' },
+  draft: { bg: 'var(--noorix-muted-10)', color: 'var(--noorix-text-muted)', labelKey: 'payrollDraft' },
+  completed: { bg: 'var(--noorix-green-10)', color: 'var(--noorix-accent-green)', labelKey: 'payrollPaid' },
 };
 
 const statusColorMap = { draft: 'gray', completed: 'green' };

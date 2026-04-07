@@ -76,7 +76,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
       }
     >
       {error && (
-        <div className="rounded-lg text-[13px] p-3 mb-3" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
+        <div className="rounded-lg text-[13px] p-3 mb-3" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
           {error}
         </div>
       )}

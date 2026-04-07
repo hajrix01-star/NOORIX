@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LeaveFormModal — إضافة إجازة جديدة
  */
 import React, { useState } from 'react';
@@ -176,7 +176,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
         />
 
         {error && (
-          <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: 'var(--noorix-accent-red)', fontSize: 13 }}>
+          <div style={{ marginBottom: 12, padding: 10, background: 'var(--noorix-red-10)', borderRadius: 8, color: 'var(--noorix-accent-red)', fontSize: 13 }}>
             {error}
           </div>
         )}

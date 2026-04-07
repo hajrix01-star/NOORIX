@@ -67,7 +67,7 @@ export default function AppBrandingTab() {
     <div className="grid" style={{ gap: 28, maxWidth: 620 }}>
 
       {/* ── توضيح المستويات الثلاثة ──────────────────────────────────────── */}
-      <div className="rounded-xl text-[12px] text-noorix-muted grid gap-1.5" style={{ padding: 14, background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)' }}>
+      <div className="rounded-xl text-[12px] text-noorix-muted grid gap-1.5" style={{ padding: 14, background: 'var(--noorix-blue-6)', border: '1px solid var(--noorix-blue-15)' }}>
         <div className="font-bold text-noorix-text" style={{ marginBottom: 2 }}>ℹ️ كيف تعمل الهويات؟</div>
         <div>• <strong>هوية التطبيق (هنا)</strong>: الاسم والشعار العام للنظام — يظهر في تبويب المتصفح، أيقونة PWA، وأعلى الشريط الجانبي.</div>
         <div>• <strong>شعار الشركة</strong> (إدارة الشركات): يظهر بجانب اسم الشركة النشطة في الشريط الجانبي وفي الفواتير والتقارير. لا يؤثر على أيقونة المتصفح.</div>
@@ -255,7 +255,7 @@ export default function AppBrandingTab() {
       </div>
 
       {/* ── ملاحظة PWA ────────────────────────────────────────────────────── */}
-      <div className="rounded-xl text-[13px] text-noorix-muted p-3.5" style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', lineHeight: 1.7 }}>
+      <div className="rounded-xl text-[13px] text-noorix-muted p-3.5" style={{ background: 'var(--noorix-blue-6)', border: '1px solid var(--noorix-blue-15)', lineHeight: 1.7 }}>
         <strong style={{ color: 'var(--noorix-accent-blue)' }}>ℹ ملاحظة PWA:</strong>
         <br />
         التغييرات تُطبَّق فوراً على تبويب المتصفح والأيقونة. إذا كان التطبيق مثبّتاً على الجوال، قد تحتاج لإضافته مجدداً للحصول على الأيقونة المحدّثة.

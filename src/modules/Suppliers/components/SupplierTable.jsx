@@ -97,7 +97,7 @@ export const SupplierTable = memo(function SupplierTable({
 
   /* ── شريط الحذف الجماعي ── */
   const BulkBar = hasSelection ? (
-    <div className="flex items-center flex flex-wrap gap-3 px-4 py-2" style={{ background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)' }}>
+    <div className="flex items-center flex flex-wrap gap-3 px-4 py-2" style={{ background: 'var(--noorix-red-7)', borderBottom: '1px solid var(--noorix-red-20)' }}>
       <span className="text-[13px] font-bold flex-1 min-w-0" style={{ color: 'var(--noorix-accent-red)' }}>
         تم تحديد {selectedIds.size} {selectedIds.size === 1 ? 'مورد' : 'موردين'}
       </span>
