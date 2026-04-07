@@ -1917,12 +1917,18 @@
   flex-direction: column;
   gap: 0;
   min-width: 0;
-  box-shadow: 0 1px 3px rgba(10,31,68,0.04), 0 4px 14px rgba(10,31,68,0.06);
-  transition: box-shadow 200ms, transform 200ms;
+  box-shadow:
+    0 1px 2px rgba(15,23,42,0.06),
+    0 3px 8px rgba(15,23,42,0.08),
+    0 8px 20px rgba(15,23,42,0.06);
+  transition: box-shadow 220ms ease, transform 220ms ease;
 }
 .nx-kpi-card:hover {
-  box-shadow: 0 2px 8px rgba(10,31,68,0.06), 0 8px 28px var(--noorix-navy-10);
-  transform: translateY(-1px);
+  box-shadow:
+    0 2px 4px rgba(15,23,42,0.08),
+    0 6px 16px rgba(15,23,42,0.12),
+    0 16px 32px rgba(15,23,42,0.08);
+  transform: translateY(-2px);
 }
 
 /* عنوان الكرت — أعلى الكرت */
