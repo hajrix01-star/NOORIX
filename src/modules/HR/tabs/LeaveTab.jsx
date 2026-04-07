@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LeaveTab — الإجازات (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
@@ -84,9 +84,9 @@ export default function LeaveTab() {
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
-      render: (v) => <span className="nx-font-600 nx-text-base">{v || '—'}</span> },
+      render: (v) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
     { key: 'leaveType', label: t('leaveType'), sortable: true, width: 130, minWidth: 120,
-      render: (v) => <span className="nx-text-base">{t(TYPE_MAP[v] || 'leaveOther')}</span> },
+      render: (v) => <span className="text-[13px]">{t(TYPE_MAP[v] || 'leaveOther')}</span> },
     { key: 'startDate', label: t('startDate'), sortable: true, width: 120, minWidth: 115,
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'endDate', label: t('endDate'), sortable: true, width: 120, minWidth: 115,
@@ -123,29 +123,29 @@ export default function LeaveTab() {
     const ss = statusStyles[row.status] || { label: row.status };
     return (
       <div>
-        <div className="nx-flex-between nx-flex-wrap nx-mb-4">
-          <span className="nx-font-700 nx-text-md">{row.employeeName}</span>
+        <div className="flex items-center justify-between flex flex-wrap mb-1">
+          <span className="font-bold text-[14px]">{row.employeeName}</span>
           <Badge color={statusColorMap[row.status] || 'gray'} size="sm" style={{ flexShrink: 0 }}>{ss.label}</Badge>
         </div>
-        <div className="nx-text-base nx-text-muted nx-mb-8">
+        <div className="text-[13px] text-noorix-muted mb-2">
           {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
         </div>
-        <div className="nx-grid-3 nx-gap-6 nx-rounded nx-bg-muted nx-mb-10" style={{ padding: '8px 10px' }}>
+        <div className="grid grid-cols-3 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5" style={{ padding: '8px 10px' }}>
           <div>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('startDate')}</div>
-            <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.startDate)}</div>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('startDate')}</div>
+            <div className="text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.startDate)}</div>
           </div>
           <div>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('endDate')}</div>
-            <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.endDate)}</div>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('endDate')}</div>
+            <div className="text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.endDate)}</div>
           </div>
           <div>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('daysCount')}</div>
-            <div className="nx-text-md nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.daysCount ?? '—'}</div>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('daysCount')}</div>
+            <div className="text-[14px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.daysCount ?? '—'}</div>
           </div>
         </div>
         {row.status === 'pending' && (
-          <div className="nx-flex-end nx-gap-8">
+          <div className="flex items-center justify-end gap-2">
             <Button variant="success" size="sm" onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'approved' })}>{t('statusApproved')}</Button>
             <Button variant="danger" size="sm" onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'rejected' })}>{t('statusRejected')}</Button>
           </div>
@@ -159,13 +159,13 @@ export default function LeaveTab() {
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-toolbar">
-        <label className="nx-text-base nx-font-600">{t('dateFilterYear')}</label>
+        <label className="text-[13px] font-semibold">{t('dateFilterYear')}</label>
         <Input type="select" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
           {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
             <option key={y} value={y}>{y}</option>
           ))}
         </Input>
-        <div className="nx-flex nx-gap-8 nx-flex-1">
+        <div className="flex gap-2 flex-1 min-w-0">
           <Button onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>{t('exportExcel')}</Button>
         </div>
         <Button variant="primary" onClick={() => setShowAdd(true)}>

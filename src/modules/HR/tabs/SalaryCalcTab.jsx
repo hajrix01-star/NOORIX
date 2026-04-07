@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SalaryCalcTab — حاسبة الرواتب (عكسية + ديناميكية)
  *
  * مراجع قانونية:
@@ -275,10 +275,10 @@ export default function SalaryCalcTab() {
   }
 
   return (
-    <div className="noorix-surface-card nx-p-24" style={{ maxWidth: 520 }}>
-      <h3 className="nx-text-2xl nx-m-0 nx-mb-20">{t('hrTabSalaryCalc')}</h3>
+    <div className="noorix-surface-card p-6" style={{ maxWidth: 520 }}>
+      <h3 className="text-[18px] m-0 mb-5">{t('hrTabSalaryCalc')}</h3>
 
-      <div className="nx-mb-16">
+      <div className="mb-4">
         <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)}>
           <option value="">— {t('salaryCalcSelectOrEnter') || 'اختر أو أدخل يدوياً'} —</option>
           {employees.map((e) => (
@@ -290,7 +290,7 @@ export default function SalaryCalcTab() {
         </Input>
       </div>
 
-      <div className="nx-mb-16">
+      <div className="mb-4">
         <Input
           type="number"
           label={t('salaryCalcGross')}
@@ -301,7 +301,7 @@ export default function SalaryCalcTab() {
         />
       </div>
 
-      <FormRow className="nx-mb-16">
+      <FormRow className="mb-4">
         <div>
           <Input
             type="number"
@@ -322,24 +322,24 @@ export default function SalaryCalcTab() {
             value={daysPerMonth}
             onChange={(e) => setDaysPerMonth(e.target.value)}
           />
-          <div className="nx-text-xs nx-text-muted nx-mt-6" style={{ lineHeight: 1.45 }}>
+          <div className="text-[11px] text-noorix-muted mt-1.5" style={{ lineHeight: 1.45 }}>
             {t('salaryCalcOvertimeWorkDaysHint')}
           </div>
         </div>
       </FormRow>
 
-      <div className="nx-grid nx-gap-12 nx-mb-16" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+      <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         <Input type="number" step="0.01" min="0" label={t('housingAllowance')} value={housingAllowance} onChange={(e) => setHousingAllowance(e.target.value)} />
         <Input type="number" step="0.01" min="0" label={t('transportAllowance')} value={transportAllowance} onChange={(e) => setTransportAllowance(e.target.value)} />
         <Input type="number" step="0.01" min="0" label={t('otherAllowance')} value={otherAllowance} onChange={(e) => setOtherAllowance(e.target.value)} />
       </div>
 
-      <FormRow className="nx-mb-20">
+      <FormRow className="mb-5">
         <Input type="number" min="0" label={t('salaryCalcVacationDays')} value={vacationDays} onChange={(e) => setVacationDays(e.target.value)} />
         <Input type="number" label="ساعات الأوفر تايم اليومية" value={overtimeHoursPerDay} readOnly style={{ background: 'var(--noorix-bg-muted)' }} />
       </FormRow>
 
-      <div className="noorix-result-panel nx-mb-20">
+      <div className="noorix-result-panel mb-5">
         <div className="noorix-result-panel__stripe" />
         <div className="noorix-result-panel__body">
           {[
@@ -372,13 +372,13 @@ export default function SalaryCalcTab() {
       </div>
 
       {emp && (
-          <div className="nx-border-all nx-rounded-lg nx-overflow-hidden nx-mb-20">
-          <div className="nx-border-b nx-font-700" style={{ padding: '10px 12px' }}>
+          <div className="border border-noorix-border rounded-xl overflow-hidden mb-5">
+          <div className="border-b border-noorix-border font-bold" style={{ padding: '10px 12px' }}>
             تفاصيل بدلات الموظف
           </div>
-          <div className="nx-grid">
+          <div className="grid">
             {employeeAllowanceRows.length === 0 ? (
-              <div className="nx-p-12 nx-text-muted nx-text-sm">لا توجد بدلات مسجلة لهذا الموظف.</div>
+              <div className="p-3 text-noorix-muted text-[12px]">لا توجد بدلات مسجلة لهذا الموظف.</div>
             ) : employeeAllowanceRows.map((row, idx) => (
               <div
                 key={`${row.label}-${idx}`}
@@ -391,7 +391,7 @@ export default function SalaryCalcTab() {
                 }}
               >
                 <div>{row.label}</div>
-                <div className="nx-font-600" style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{hrFmt(row.amount)}</div>
+                <div className="font-semibold" style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{hrFmt(row.amount)}</div>
               </div>
             ))}
           </div>
@@ -403,14 +403,14 @@ export default function SalaryCalcTab() {
           variant="primary"
           onClick={handleUpdateSalary}
           disabled={updateMutation.isPending || basic.lte(0) || inverseWarning}
-          className="nx-w-full nx-p-12 nx-font-700"
+          className="w-full p-3 font-bold"
         >
           {updateMutation.isPending ? t('saving') : (t('salaryCalcUpdateEmployee') || 'تحديث الراتب للموظف')}
         </Button>
       )}
       <Button
         onClick={handlePrint}
-        className="nx-w-full nx-p-10 nx-mt-8"
+        className="w-full p-2.5 mt-2"
       >
         {t('printCalc')}
       </Button>

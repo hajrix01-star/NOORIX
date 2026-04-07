@@ -1,4 +1,4 @@
-/**
+﻿/**
  * InvoiceEditModal — نافذة تعديل الفاتورة
  */
 import React, { useState, useEffect } from 'react';
@@ -106,19 +106,19 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
         </>
       }
     >
-      <div className="invoice-edit-modal-body nx-flex nx-flex-col nx-gap-14">
-        <p className="nx-text-sm nx-text-muted nx-m-0 nx-mb-4">
+      <div className="invoice-edit-modal-body flex flex flex-col gap-3.5">
+        <p className="text-[12px] text-noorix-muted m-0 mb-1">
           {invoice.supplierInvoiceNumber || invoice.invoiceNumber}
         </p>
 
         {error && (
-          <div className="nx-p-10 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
+          <div className="p-2.5 rounded-lg text-[13px]" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
             {error}
           </div>
         )}
 
         <div>
-          <label className="nx-text-sm nx-font-600 nx-mb-4" style={{ display: 'block' }}>{t('supplier')}</label>
+          <label className="text-[12px] font-semibold mb-1" style={{ display: 'block' }}>{t('supplier')}</label>
           <SupplierSelect
             suppliers={suppliers}
             value={form.supplierId}
@@ -156,7 +156,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
             style={{ fontFamily: 'var(--noorix-font-numbers)' }}
           />
           {form.totalAmount && parseFloat(form.totalAmount) > 0 && (
-            <div className="nx-text-sm nx-text-muted nx-mt-4">
+            <div className="text-[12px] text-noorix-muted mt-1">
               {t('netShort')}: {form.netAmount} | {t('tax')}: {form.taxAmount}
             </div>
           )}

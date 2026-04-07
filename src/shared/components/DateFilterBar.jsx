@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DateFilterBar — شريط فلترة التواريخ المركزي
  * يدعم: اختيار شهر / يوم محدد / نطاق تاريخين
  * يرسل startDate/endDate كـ ISO strings بالمنطقة الزمنية السعودية (UTC+3)
@@ -108,16 +108,16 @@ export default function DateFilterBar({ filter }) {
 
         {mode === 'range' && (
           <>
-            <div className="nx-flex nx-flex-center nx-gap-6">
-              <span className="nx-text-xs nx-text-muted nx-nowrap">{t('dateFilterFrom')}</span>
+            <div className="flex flex items-center gap-1.5">
+              <span className="text-[11px] text-noorix-muted whitespace-nowrap">{t('dateFilterFrom')}</span>
               <Input
                 type="date"
                 value={rangeStart}
                 onChange={(e) => setRangeStart(e.target.value)}
               />
             </div>
-            <div className="nx-flex nx-flex-center nx-gap-6">
-              <span className="nx-text-xs nx-text-muted nx-nowrap">{t('dateFilterTo')}</span>
+            <div className="flex flex items-center gap-1.5">
+              <span className="text-[11px] text-noorix-muted whitespace-nowrap">{t('dateFilterTo')}</span>
               <Input
                 type="date"
                 value={rangeEnd}

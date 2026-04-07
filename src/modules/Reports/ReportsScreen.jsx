@@ -114,15 +114,15 @@ export default function ReportsScreen() {
   }
 
   return (
-    <div className="nx-flex-col nx-gap-16">
+    <div className="flex flex-col gap-4">
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
-      <div className="nx-flex-col nx-gap-16">
+      <div className="flex flex-col gap-4">
       <div className="nx-page-header">
-        <div className="nx-flex-1" style={{ minWidth: 0 }}>
-          <h2 className="nx-font-700 nx-m-0 nx-text-2xl">{t('reportGeneral')}</h2>
+        <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
+          <h2 className="font-bold m-0 text-[18px]">{t('reportGeneral')}</h2>
         </div>
-        <div className="nx-flex-center nx-flex-wrap nx-gap-8" style={{ flex: '0 1 auto' }}>
+        <div className="flex items-center flex flex-wrap gap-2" style={{ flex: '0 1 auto' }}>
           <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </Input>
@@ -141,16 +141,16 @@ export default function ReportsScreen() {
       </div>
 
       {!activeCompanyId && (
-        <div className="noorix-surface-card nx-p-20 nx-text-center nx-text-muted">
+        <div className="noorix-surface-card p-5 text-center text-noorix-muted">
           {t('pleaseSelectCompany')}
         </div>
       )}
 
       {activeCompanyId && (
         <>
-          <div className="noorix-surface-card nx-p-16 nx-text-muted nx-text-base">
+          <div className="noorix-surface-card p-4 text-noorix-muted text-[13px]">
             {t('reportClickHint')}
-            {selectedMonthNumber && <div className="nx-mt-8">{t('reportFocusedMonthDesc')}</div>}
+            {selectedMonthNumber && <div className="mt-2">{t('reportFocusedMonthDesc')}</div>}
           </div>
 
           <PeriodAnalyticsStrip
@@ -161,7 +161,7 @@ export default function ReportsScreen() {
           />
 
           {report && (
-            <div className="nx-grid nx-gap-12 nx-mt-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+            <div className="grid gap-3 mt-1" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
               {[
                 { key: 'sales', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('revenueGroup')}` : t('annualSales') },
                 { key: 'purchases', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('purchasesGroup')}` : t('annualPurchases') },
@@ -186,7 +186,7 @@ export default function ReportsScreen() {
                     }}
                   >
                     <div style={{ height: 3, background: accent }} />
-                    <div className="nx-p-16 nx-bg-surface">
+                    <div className="p-4 bg-noorix-surface">
                       <div style={{ fontSize: 12, color: accent, marginBottom: 8, fontWeight: 700 }}>{card.label}</div>
                       <div style={{ fontSize: 24, fontWeight: 900, color: accent, fontFamily: 'var(--noorix-font-numbers)' }}>
                         {moneyText(getCardValue(card.key))}
@@ -204,26 +204,26 @@ export default function ReportsScreen() {
           )}
 
           {isLoading && (
-            <div className="noorix-surface-card nx-text-center nx-text-muted nx-p-24">
+            <div className="noorix-surface-card text-center text-noorix-muted p-6">
               {t('loading')}
             </div>
           )}
 
           {error && (
-            <div className="noorix-surface-card nx-p-20 nx-text-expense" style={{ background: 'rgba(239,68,68,0.08)' }}>
+            <div className="noorix-surface-card p-5 text-noorix-red" style={{ background: 'rgba(239,68,68,0.08)' }}>
               {error.message}
             </div>
           )}
 
           {!isLoading && !error && report && flatRows.length === 0 && (
-            <div className="noorix-surface-card nx-text-center nx-text-muted nx-p-24">
+            <div className="noorix-surface-card text-center text-noorix-muted p-6">
               {t('reportNoData')}
             </div>
           )}
 
           {!isLoading && !error && report && visibleRows.length > 0 && (
             <div style={{ maxWidth: 'min(100%, 1400px)', margin: '0 auto' }}>
-              <div className="noorix-surface-card nx-overflow-hidden nx-rounded-lg" style={{ padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+              <div className="noorix-surface-card overflow-hidden rounded-xl" style={{ padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 {isMobile && (
                   <div className="nx-tab-bar" style={{ overflowX: 'auto', flexWrap: 'nowrap', borderBottom: '1px solid var(--noorix-border)' }}>
                     <Button type="button" className={`nx-tab-btn${!selectedMonth ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth('')}>{t('allMonths')}</Button>

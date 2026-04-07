@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ThemePreviewScreen — معاينة الثيم واختيار أشكال الكروت
  * 10 أشكال احترافية للكروت — اختيار واحد لتطبيقه على النظام كاملاً
  */
@@ -28,7 +28,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
 
   return (
     <div
-      className="nx-bg-surface nx-p-20 nx-flex nx-flex-col nx-cursor-pointer"
+      className="bg-noorix-surface p-5 flex flex flex-col cursor-pointer"
       style={{
         minHeight: 140,
         justifyContent: 'space-between',
@@ -43,13 +43,13 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(styleId); }}
     >
       <div>
-        <div className="nx-text-xs nx-font-700 nx-text-muted nx-mb-4" style={{ letterSpacing: '0.05em' }}>#{styleId}</div>
-        <div className="nx-text-lg nx-font-700 nx-text-primary">{name}</div>
-        <div className="nx-text-sm nx-text-muted nx-mt-4">{desc}</div>
+        <div className="text-[11px] font-bold text-noorix-muted mb-1" style={{ letterSpacing: '0.05em' }}>#{styleId}</div>
+        <div className="text-[15px] font-bold text-noorix-text">{name}</div>
+        <div className="text-[12px] text-noorix-muted mt-1">{desc}</div>
       </div>
-      <div className="nx-flex nx-gap-8 nx-mt-12">
-        <span className="nx-text-xs nx-font-600 nx-text-income" style={{ padding: '4px 8px', background: 'rgba(22,163,74,0.1)', borderRadius: 6 }}>12,500 ﷼</span>
-        <span className="nx-text-xs nx-bg-muted nx-text-muted" style={{ padding: '4px 8px', borderRadius: 6 }}>مثال</span>
+      <div className="flex gap-2 mt-3">
+        <span className="text-[11px] font-semibold text-noorix-green" style={{ padding: '4px 8px', background: 'rgba(22,163,74,0.1)', borderRadius: 6 }}>12,500 ﷼</span>
+        <span className="text-[11px] bg-noorix-bg-muted text-noorix-muted" style={{ padding: '4px 8px', borderRadius: 6 }}>مثال</span>
       </div>
     </div>
   );
@@ -69,10 +69,10 @@ export default function ThemePreviewScreen() {
   };
 
   return (
-    <div className="nx-p-24" style={{ maxWidth: 1200 }}>
+    <div className="p-6" style={{ maxWidth: 1200 }}>
       <div style={{ marginBottom: 24 }}>
-        <h1 className="nx-font-800 nx-m-0" style={{ fontSize: 22 }}>{t('themePreview')}</h1>
-        <p className="nx-mt-8 nx-text-muted nx-text-md">
+        <h1 className="font-extrabold m-0" style={{ fontSize: 22 }}>{t('themePreview')}</h1>
+        <p className="mt-2 text-noorix-muted text-[14px]">
           {lang === 'ar' ? 'اختر شكلاً للكروت لتطبيقه على النظام كاملاً. اضغط على أي كرت لتحديده.' : 'Select a card style to apply across the entire system. Click any card to select it.'}
         </p>
       </div>
@@ -93,8 +93,8 @@ export default function ThemePreviewScreen() {
         ))}
       </div>
 
-      <div className="nx-p-16 nx-bg-muted nx-rounded-lg nx-text-base nx-text-muted" style={{ marginTop: 24 }}>
-        <strong className="nx-text-primary">
+      <div className="p-4 bg-noorix-bg-muted rounded-xl text-[13px] text-noorix-muted" style={{ marginTop: 24 }}>
+        <strong className="text-noorix-text">
           {lang === 'ar' ? `الشكل المحدد حاليًا: #${currentStyle}` : `Current selection: #${currentStyle}`}
         </strong>
         {' — '}

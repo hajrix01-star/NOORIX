@@ -281,7 +281,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
 
   if (!companyId) {
     return (
-      <div className="noorix-surface-card nx-text-center nx-text-muted nx-p-24">
+      <div className="noorix-surface-card text-center text-noorix-muted p-6">
         {t('pleaseSelectCompany')}
       </div>
     );
@@ -291,7 +291,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     <div className="noorix-calendar-layout">
       {/* ── التقويم ── */}
       <div
-        className="noorix-calendar-card nx-surface nx-overflow-hidden nx-p-16 nx-w-full"
+        className="noorix-calendar-card nx-surface overflow-hidden p-4 w-full"
         style={{
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
           maxWidth: 760,
@@ -299,8 +299,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           boxSizing: 'border-box',
         }}
       >
-        <div className="nx-flex-between nx-flex-wrap nx-gap-8 nx-mb-12">
-          <div className="nx-text-base nx-font-700" style={{ color: CARD_COLORS.sales.accent }}>
+        <div className="flex items-center justify-between flex flex-wrap gap-2 mb-3">
+          <div className="text-[13px] font-bold" style={{ color: CARD_COLORS.sales.accent }}>
             {t('dashboardCalendar')} — {monthLabel} {year}
           </div>
           <div className="nx-toolbar">
@@ -316,8 +316,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         </div>
 
         {showTargetsPanel && (
-          <div className="nx-p-12 nx-mb-12 nx-bg-muted nx-rounded nx-text-sm">
-            <div className="nx-font-700 nx-mb-8">{t('dashboardTargetOverall')}</div>
+          <div className="p-3 mb-3 bg-noorix-bg-muted rounded-lg text-[12px]">
+            <div className="font-bold mb-2">{t('dashboardTargetOverall')}</div>
             {editingTarget ? (
               <div className="flex items-center gap-8" style={{ marginBottom: 10 }}>
                 <Input
@@ -338,11 +338,11 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                 <Button onClick={() => { setTargetInput(targets.overall != null ? String(targets.overall) : ''); setEditingTarget(true); }}>{t('edit')}</Button>
               </div>
             )}
-            <div className="nx-font-700 nx-mb-6">{t('dashboardTargetByDay')}</div>
-            <div className="nx-flex-wrap nx-gap-8" key={`targets-${targetsVersion}`}>
+            <div className="font-bold mb-1.5">{t('dashboardTargetByDay')}</div>
+            <div className="flex flex-wrap gap-2" key={`targets-${targetsVersion}`}>
               {DOW_KEYS.map((dow) => (
                 <div key={dow} className="flex items-center gap-4">
-                  <span className="nx-text-xs" style={{ minWidth: 50 }}>{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
+                  <span className="text-[11px]" style={{ minWidth: 50 }}>{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
                   <Input
                     type="number"
                     min="0"
@@ -359,17 +359,17 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         )}
 
         {isSelectionMode && (
-          <div className="nx-mb-8" style={{ fontSize: 10, color: 'var(--noorix-accent-blue)' }}>{t('dashboardSelectDaysHint')}</div>
+          <div className="mb-2" style={{ fontSize: 10, color: 'var(--noorix-accent-blue)' }}>{t('dashboardSelectDaysHint')}</div>
         )}
 
         {isLoading ? (
-          <div className="nx-text-center nx-text-muted nx-text-base" style={{ padding: 32 }}>{t('loading')}</div>
+          <div className="text-center text-noorix-muted text-[13px]" style={{ padding: 32 }}>{t('loading')}</div>
         ) : (
           <div className="noorix-calendar-grid-scroll">
             <div className="noorix-calendar-grid-scroll-inner">
-          <div className="nx-grid nx-gap-6" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
             {[0,1,2,3,4,5,6].map((d) => (
-              <div key={d} className="nx-text-sm nx-font-700 nx-text-muted nx-text-center" style={{ padding: '6px 0' }}>{lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}</div>
+              <div key={d} className="text-[12px] font-bold text-noorix-muted text-center" style={{ padding: '6px 0' }}>{lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}</div>
             ))}
             {(() => {
               const firstDow = new Date(year, month - 1, 1).getDay();
@@ -424,7 +424,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     }}
                     title={`${dateStr}: ${fmt(amount, 2)} ﷼${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget, 2)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
                   >
-                    <span className="nx-text-sm nx-font-700 nx-text-primary">{day}</span>
+                    <span className="text-[12px] font-bold text-noorix-text">{day}</span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
                     {achieved && <span style={{ fontSize: 8, color: 'var(--noorix-accent-green)' }}>✓</span>}
                     {hasNote && <span style={{ fontSize: 8, color: 'var(--noorix-accent-blue)', width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-blue)', display: 'inline-block' }} />}
@@ -441,8 +441,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         )}
 
         {isSelectionMode && selectedDatesSorted.length > 0 && (
-          <div className="nx-mt-12 nx-rounded nx-p-10" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>
-            <div className="nx-text-xs nx-font-700 nx-mb-6">{t('dashboardSelectedDays')}: {selectedDatesSorted.length}</div>
+          <div className="mt-3 rounded-lg p-2.5" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>
+            <div className="text-[11px] font-bold mb-1.5">{t('dashboardSelectedDays')}: {selectedDatesSorted.length}</div>
             <div className="nx-toolbar">
               <Button variant="primary" onClick={() => setShowAddSpecialModal(true)}>
                 + {t('dashboardAddAsSpecialDays')}
@@ -452,9 +452,9 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           </div>
         )}
 
-        <div className="nx-mt-16 nx-p-12 nx-bg-muted nx-rounded nx-text-xs">
-          <div className="nx-font-700 nx-mb-8 nx-text-primary">{lang === 'ar' ? 'دليل الألوان' : 'Color legend'}</div>
-          <div className="nx-flex-col nx-gap-6">
+        <div className="mt-4 p-3 bg-noorix-bg-muted rounded-lg text-[11px]">
+          <div className="font-bold mb-2 text-noorix-text">{lang === 'ar' ? 'دليل الألوان' : 'Color legend'}</div>
+          <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--noorix-border)', border: '1px solid var(--noorix-border)', flexShrink: 0 }} />
               <span>{t('dashboardLegendGray')}</span>
@@ -481,7 +481,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             </div>
           </div>
           {targets.overall != null && (
-            <div className="nx-text-muted nx-mt-8 nx-border-t" style={{ paddingTop: 8, fontSize: 10 }}>
+            <div className="text-noorix-muted mt-2 border-t border-noorix-border" style={{ paddingTop: 8, fontSize: 10 }}>
               {t('dashboardSalesTarget')}: {fmt(targets.overall, 2)} ﷼
             </div>
           )}
@@ -518,7 +518,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           title={t('dashboardAddAsSpecialDays')}
           size="sm"
         >
-          <p className="nx-text-sm nx-text-muted nx-mb-12 nx-m-0">
+          <p className="text-[12px] text-noorix-muted mb-3 m-0">
             {selectedDatesSorted[0]} — {selectedDatesSorted[selectedDatesSorted.length - 1]} ({selectedDatesSorted.length} {lang === 'ar' ? 'أيام' : 'days'})
           </p>
           <Input
@@ -526,7 +526,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             onChange={(e) => setNewSpecialName(e.target.value)}
             placeholder={t('dashboardSpecialDayName')}
           />
-          <div className="nx-flex-end nx-gap-8 nx-mt-16">
+          <div className="flex items-center justify-end gap-2 mt-4">
             <Button onClick={() => { setShowAddSpecialModal(false); setNewSpecialName(''); }}>{t('cancel')}</Button>
             <Button variant="primary" onClick={handleAddSelectedAsSpecial}>{t('save')}</Button>
           </div>

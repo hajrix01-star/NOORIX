@@ -18,13 +18,13 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
   const m = maxVal > 0 ? maxVal : 1;
   const getLabel = (r) => r[labelKey] || r.productNameEn || r.categoryNameEn || '—';
   return (
-    <div className="nx-flex-col nx-gap-6">
+    <div className="flex flex-col gap-1.5">
       {data.slice(0, 10).map((r, i) => (
         <div key={i} className="flex items-center gap-8">
-          <span className="nx-text-sm nx-truncate" style={{ minWidth: 80 }} title={getLabel(r)}>
+          <span className="text-[12px] truncate" style={{ minWidth: 80 }} title={getLabel(r)}>
             {getLabel(r)}
           </span>
-          <div className="nx-flex-1 nx-bg-muted nx-overflow-hidden" style={{ height: 20, borderRadius: 4 }}>
+          <div className="flex-1 min-w-0 bg-noorix-bg-muted overflow-hidden" style={{ height: 20, borderRadius: 4 }}>
             <div
               style={{
                 width: `${Math.min(100, (Number(r[valueKey]) / m) * 100)}%`,
@@ -35,7 +35,7 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
               }}
             />
           </div>
-          <span className="nx-text-sm" style={{ fontFamily: 'var(--noorix-font-numbers)', minWidth: 60, textAlign: 'left' }}>
+          <span className="text-[12px]" style={{ fontFamily: 'var(--noorix-font-numbers)', minWidth: 60, textAlign: 'left' }}>
             {fmt(r[valueKey], 2)}
           </span>
         </div>
@@ -70,23 +70,23 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
       className="orders-purchase-history-drawer"
     >
       {isLoading ? (
-        <div className="nx-text-center nx-text-muted" style={{ padding: 40 }}>{t('loading')}</div>
+        <div className="text-center text-noorix-muted" style={{ padding: 40 }}>{t('loading')}</div>
       ) : history.length === 0 ? (
-        <div className="nx-text-center nx-text-muted" style={{ padding: 40 }}>{t('ordersNoPurchaseHistory')}</div>
+        <div className="text-center text-noorix-muted" style={{ padding: 40 }}>{t('ordersNoPurchaseHistory')}</div>
       ) : (
-        <table className="nx-w-full" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+        <table className="w-full" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-              <th className="nx-font-700" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('orderNumber')}</th>
-              <th className="nx-font-700" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('orderDate')}</th>
-              <th className="nx-font-700" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('quantity')}</th>
-              <th className="nx-font-700" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('unitPrice')}</th>
-              <th className="nx-font-700" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('total')}</th>
+              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('orderNumber')}</th>
+              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('orderDate')}</th>
+              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('quantity')}</th>
+              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('unitPrice')}</th>
+              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('total')}</th>
             </tr>
           </thead>
           <tbody>
             {history.map((h, i) => (
-              <tr key={i} className="nx-border-b">
+              <tr key={i} className="border-b border-noorix-border">
                 <td style={{ padding: '8px 10px' }}>{h.orderNumber}</td>
                 <td style={{ padding: '8px 10px' }}>{formatSaudiDate(h.orderDate)}</td>
                 <td style={{ padding: '8px 10px' }} className="nx-cell-num">{fmt(h.quantity, 2)}</td>
@@ -192,34 +192,34 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
       </div>
 
       {/* كروت الإجمالي */}
-      <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
-        <div className="nx-bg-muted nx-rounded-lg nx-border-all" style={{ padding: '14px 16px' }}>
-          <div className="nx-text-xs nx-text-muted nx-mb-4">{t('ordersTotalItems')}</div>
-          <div className="nx-text-2xl nx-font-800" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{filtered.length}</div>
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border" style={{ padding: '14px 16px' }}>
+          <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalItems')}</div>
+          <div className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{filtered.length}</div>
         </div>
-        <div className="nx-bg-muted nx-rounded-lg nx-border-all" style={{ padding: '14px 16px' }}>
-          <div className="nx-text-xs nx-text-muted nx-mb-4">{t('ordersTotalQuantity')}</div>
-          <div className="nx-text-2xl nx-font-800" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity, 2)}</div>
+        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border" style={{ padding: '14px 16px' }}>
+          <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalQuantity')}</div>
+          <div className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity, 2)}</div>
         </div>
-        <div className="nx-bg-muted nx-rounded-lg nx-border-all" style={{ padding: '14px 16px' }}>
-          <div className="nx-text-xs nx-text-muted nx-mb-4">{t('ordersTotalAmount')}</div>
-          <div className="nx-text-2xl nx-font-800 nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} ﷼</div>
+        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border" style={{ padding: '14px 16px' }}>
+          <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalAmount')}</div>
+          <div className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} ﷼</div>
         </div>
       </div>
 
       {/* رسم بياني */}
       {filtered.length > 0 && (
-        <div className="noorix-surface-card nx-p-20">
-          <div className="nx-text-base nx-font-700 nx-mb-16 nx-text-muted">
+        <div className="noorix-surface-card p-5">
+          <div className="text-[13px] font-bold mb-4 text-noorix-muted">
             {filterMode === 'top' ? t('ordersChartTop') : filterMode === 'bottom' ? t('ordersChartBottom') : t('ordersChartAll')}
           </div>
-          <div className="nx-grid nx-gap-24" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+          <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
             <div>
-              <div className="nx-text-sm nx-mb-8 nx-text-muted">{t('ordersChartByAmount')}</div>
+              <div className="text-[12px] mb-2 text-noorix-muted">{t('ordersChartByAmount')}</div>
               <BarChart data={filtered} maxVal={maxAmount} labelKey="productNameAr" valueKey="amount" color="#2563eb" />
             </div>
             <div>
-              <div className="nx-text-sm nx-mb-8 nx-text-muted">{t('ordersChartByOrders')}</div>
+              <div className="text-[12px] mb-2 text-noorix-muted">{t('ordersChartByOrders')}</div>
               <BarChart data={filtered} maxVal={Math.max(...filtered.map((r) => r.orderCount ?? 0), 1)} labelKey="productNameAr" valueKey="orderCount" color="#16a34a" />
             </div>
           </div>
@@ -227,33 +227,33 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
       )}
 
       {/* جدول */}
-      <div className="noorix-surface-card nx-overflow-auto">
+      <div className="noorix-surface-card overflow-auto">
         {isLoading ? (
-          <div className="nx-text-center nx-text-muted" style={{ padding: 40 }}>{t('loading')}</div>
+          <div className="text-center text-noorix-muted" style={{ padding: 40 }}>{t('loading')}</div>
         ) : filtered.length === 0 ? (
-          <div className="nx-text-center nx-text-muted" style={{ padding: 40 }}>{t('ordersNoItemsInPeriod')}</div>
+          <div className="text-center text-noorix-muted" style={{ padding: 40 }}>{t('ordersNoItemsInPeriod')}</div>
         ) : (
-            <div className="nx-overflow-auto">
-            <table className="nx-w-full" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+            <div className="overflow-auto">
+            <table className="w-full" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('product')}</th>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('category')}</th>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('unit')}</th>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('quantity')}</th>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('total')}</th>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('ordersOrderCount')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('product')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('category')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('unit')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('quantity')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('total')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('ordersOrderCount')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.productId} className="nx-border-b">
+                  <tr key={r.productId} className="border-b border-noorix-border">
                     <td style={{ padding: '10px 12px' }}>
                       <Button
                         variant="ghost"
                         type="button"
                         onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })}
-                        className="nx-cursor-pointer nx-text-base nx-font-600"
+                        className="cursor-pointer text-[13px] font-semibold"
                         style={{ background: 'none', border: 'none', color: 'var(--noorix-accent-blue)', textDecoration: 'underline' }}
                       >
                         {r.productNameAr || r.productNameEn || '—'}
@@ -265,7 +265,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
                           variant="ghost"
                           type="button"
                           onClick={() => setHistoryModal({ category: { id: r.categoryId, nameAr: r.categoryNameAr, nameEn: r.categoryNameEn } })}
-                          className="nx-cursor-pointer nx-text-base"
+                          className="cursor-pointer text-[13px]"
                           style={{ background: 'none', border: 'none', color: 'var(--noorix-accent-blue)', textDecoration: 'underline' }}
                         >
                           {r.categoryNameAr || r.categoryNameEn || '—'}

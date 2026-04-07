@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ReportsDetailModal — تفاصيل بند تقرير ربح وخسارة (AdaptiveSheet: مودال على العريض، لوح على الضيق)
  */
 import React, { useEffect, useMemo, useState } from 'react';
@@ -81,107 +81,107 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     </Button>
     ) : (
       state?.itemKey?.startsWith('account:') || state?.groupKey === 'grossProfit' || state?.groupKey === 'netProfit' ? (
-        <span className="nx-text-sm nx-text-muted">{t('reportDrillNoLink')}</span>
+        <span className="text-[12px] text-noorix-muted">{t('reportDrillNoLink')}</span>
       ) : null
     );
 
   return (
     <AdaptiveSheet open={!!state} onClose={onClose} title={modalTitle} size="xl" side="start" className="reports-detail-drawer" footer={footerContent}>
       {(isLoading || trendLoading) && (
-        <div className="nx-p-24 nx-text-center nx-text-muted">{t('loading')}</div>
+        <div className="p-6 text-center text-noorix-muted">{t('loading')}</div>
       )}
 
       {error && (
-        <div className="nx-p-16 nx-rounded-lg nx-text-expense" style={{ background: 'rgba(239,68,68,0.08)' }}>
+        <div className="p-4 rounded-xl text-noorix-red" style={{ background: 'rgba(239,68,68,0.08)' }}>
           {error.message}
         </div>
       )}
 
       {!isLoading && !error && data && (
         <>
-          <div className="nx-grid nx-gap-12 nx-mb-16" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
-            <div className="noorix-surface-card nx-p-14">
-              <div className="nx-text-sm nx-text-muted">{data.month ? t('selectedMonth') : t('reportBreakdown')}</div>
-              <div className="nx-mt-6 nx-font-numbers nx-font-800 nx-text-3xl">{moneyText(data.contextAmount)}</div>
+          <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
+            <div className="noorix-surface-card p-3.5">
+              <div className="text-[12px] text-noorix-muted">{data.month ? t('selectedMonth') : t('reportBreakdown')}</div>
+              <div className="mt-1.5 nx-font-numbers font-extrabold text-[20px]">{moneyText(data.contextAmount)}</div>
             </div>
             {data.kind === 'invoices' && (
               <>
-                <div className="noorix-surface-card nx-p-14">
-                  <div className="nx-text-sm nx-text-muted">{t('reportAnnualTotal')}</div>
-                  <div className="nx-mt-6 nx-font-numbers nx-font-800 nx-text-3xl">{moneyText(data.annualAmount)}</div>
+                <div className="noorix-surface-card p-3.5">
+                  <div className="text-[12px] text-noorix-muted">{t('reportAnnualTotal')}</div>
+                  <div className="mt-1.5 nx-font-numbers font-extrabold text-[20px]">{moneyText(data.annualAmount)}</div>
                 </div>
-                <div className="noorix-surface-card nx-p-14">
-                  <div className="nx-text-sm nx-text-muted">{t('reportSalesShare')}</div>
-                  <div className="nx-mt-6 nx-font-numbers nx-font-800 nx-text-3xl">{percentText(data.contextPercentOfSales)}</div>
+                <div className="noorix-surface-card p-3.5">
+                  <div className="text-[12px] text-noorix-muted">{t('reportSalesShare')}</div>
+                  <div className="mt-1.5 nx-font-numbers font-extrabold text-[20px]">{percentText(data.contextPercentOfSales)}</div>
                 </div>
-                <div className="noorix-surface-card nx-p-14">
-                  <div className="nx-text-sm nx-text-muted">{t('reportInvoicesCount')}</div>
-                  <div className="nx-mt-6 nx-font-numbers nx-font-800 nx-text-3xl">{Number(data.invoiceCount || 0).toLocaleString('en')}</div>
+                <div className="noorix-surface-card p-3.5">
+                  <div className="text-[12px] text-noorix-muted">{t('reportInvoicesCount')}</div>
+                  <div className="mt-1.5 nx-font-numbers font-extrabold text-[20px]">{Number(data.invoiceCount || 0).toLocaleString('en')}</div>
                 </div>
               </>
             )}
           </div>
 
           {state?.showTrend && trend && (
-            <div className="noorix-surface-card nx-p-16 nx-mb-16">
-              <div className="nx-flex-between nx-gap-12 nx-mb-12 nx-flex-wrap">
+            <div className="noorix-surface-card p-4 mb-4">
+              <div className="flex items-center justify-between gap-3 mb-3 flex flex-wrap">
                 <div>
-                  <div className="nx-text-md nx-font-800">{t('reportTrend')}</div>
-                  <div className="nx-mt-4 nx-text-muted nx-text-sm">{t('reportTimeline')}</div>
+                  <div className="text-[14px] font-extrabold">{t('reportTrend')}</div>
+                  <div className="mt-1 text-noorix-muted text-[12px]">{t('reportTimeline')}</div>
                 </div>
-                <div className="nx-text-sm nx-text-muted">
+                <div className="text-[12px] text-noorix-muted">
                   {t('reportSalesShare')}: <strong className="nx-font-numbers">{percentText(trend.percentOfSalesYear)}</strong>
                 </div>
               </div>
-              <div className="nx-grid nx-gap-10 nx-mb-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-                <div className="nx-border-all nx-rounded-lg nx-px-12 nx-py-8">
-                  <div className="nx-text-xs nx-text-muted">{t('reportMonthlyAverage')}</div>
-                  <div className="nx-mt-4 nx-font-800 nx-font-numbers">{moneyText(averageAmount)}</div>
+              <div className="grid gap-2.5 mb-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+                <div className="border border-noorix-border rounded-xl px-3 py-2">
+                  <div className="text-[11px] text-noorix-muted">{t('reportMonthlyAverage')}</div>
+                  <div className="mt-1 font-extrabold nx-font-numbers">{moneyText(averageAmount)}</div>
                 </div>
-                <div className="nx-border-all nx-rounded-lg nx-px-12 nx-py-8">
-                  <div className="nx-text-xs nx-text-muted">{t('reportTopMonth')}</div>
-                  <div className="nx-mt-4 nx-font-800">{peakPoint?.label || '—'}</div>
-                  <div className="nx-text-sm nx-font-numbers nx-text-muted nx-mt-4">{moneyText(peakPoint?.amount)}</div>
+                <div className="border border-noorix-border rounded-xl px-3 py-2">
+                  <div className="text-[11px] text-noorix-muted">{t('reportTopMonth')}</div>
+                  <div className="mt-1 font-extrabold">{peakPoint?.label || '—'}</div>
+                  <div className="text-[12px] nx-font-numbers text-noorix-muted mt-1">{moneyText(peakPoint?.amount)}</div>
                 </div>
-                <div className="nx-border-all nx-rounded-lg nx-px-12 nx-py-8">
-                  <div className="nx-text-xs nx-text-muted">{t('selectedMonth')}</div>
-                  <div className="nx-mt-4 nx-font-800">{data?.monthLabel || t('allMonths')}</div>
-                  <div className="nx-text-sm nx-font-numbers nx-text-muted nx-mt-4">{moneyText(data?.contextAmount)}</div>
+                <div className="border border-noorix-border rounded-xl px-3 py-2">
+                  <div className="text-[11px] text-noorix-muted">{t('selectedMonth')}</div>
+                  <div className="mt-1 font-extrabold">{data?.monthLabel || t('allMonths')}</div>
+                  <div className="text-[12px] nx-font-numbers text-noorix-muted mt-1">{moneyText(data?.contextAmount)}</div>
                 </div>
               </div>
-              <div className="nx-grid nx-gap-8 nx-mb-16">
+              <div className="grid gap-2 mb-4">
                 {(trend.points || []).map((point) => {
                   const amount = Number(point.amount || 0);
                   const width = `${(Math.abs(amount) / maxAmount) * 100}%`;
                   return (
-                    <div key={point.month} className="nx-grid nx-gap-10" style={{ gridTemplateColumns: '52px 1fr 120px 78px', alignItems: 'center' }}>
-                      <div className="nx-text-sm nx-text-muted">{point.label}</div>
-                      <div className="nx-bg-muted nx-overflow-hidden nx-rounded-full" style={{ height: 12 }}>
-                        <div className="nx-h-full nx-rounded-full" style={{ width, background: amount >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }} />
+                    <div key={point.month} className="grid gap-2.5" style={{ gridTemplateColumns: '52px 1fr 120px 78px', alignItems: 'center' }}>
+                      <div className="text-[12px] text-noorix-muted">{point.label}</div>
+                      <div className="bg-noorix-bg-muted overflow-hidden rounded-full" style={{ height: 12 }}>
+                        <div className="h-full rounded-full" style={{ width, background: amount >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }} />
                       </div>
-                      <div className="nx-text-end nx-font-numbers nx-font-700">{moneyText(point.amount)}</div>
-                      <div className="nx-text-end nx-font-numbers nx-text-sm" style={{ color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>
+                      <div className="text-end nx-font-numbers font-bold">{moneyText(point.amount)}</div>
+                      <div className="text-end nx-font-numbers text-[12px]" style={{ color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>
                     </div>
                   );
                 })}
               </div>
               <div
-                className="reports-detail-timeline-grid nx-grid nx-gap-8"
+                className="reports-detail-timeline-grid grid gap-2"
                 style={{ gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(120px, 1fr))' : 'repeat(12, minmax(62px, 1fr))' }}
               >
                 {(trend.points || []).map((point) => (
                   <div
                     key={`timeline-${point.month}`}
-                    className="nx-rounded-lg"
+                    className="rounded-xl"
                     style={{
                       padding: 8,
                       background: state?.month === point.month ? 'rgba(37,99,235,0.10)' : 'var(--noorix-bg-muted)',
                       border: state?.month === point.month ? '1px solid rgba(37,99,235,0.28)' : '1px solid var(--noorix-border)',
                     }}
                   >
-                    <div className="nx-text-xs nx-text-muted nx-mb-6">{point.label}</div>
-                    <div className="nx-text-base nx-font-800 nx-font-numbers">{amountText(point.amount)}</div>
-                    <div className="nx-text-xs nx-mt-4" style={{ color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>
+                    <div className="text-[11px] text-noorix-muted mb-1.5">{point.label}</div>
+                    <div className="text-[13px] font-extrabold nx-font-numbers">{amountText(point.amount)}</div>
+                    <div className="text-[11px] mt-1" style={{ color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>
                   </div>
                 ))}
               </div>
@@ -189,30 +189,30 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           )}
 
           {data.kind === 'derived' && (
-            <div className="reports-detail-derived-list nx-grid nx-gap-10">
+            <div className="reports-detail-derived-list grid gap-2.5">
               {(data.items || []).map((item) => (
                 <div
                   key={item.key}
-                  className="reports-detail-derived-item nx-flex-between nx-border-all nx-rounded-lg nx-px-12 nx-py-8"
+                  className="reports-detail-derived-item flex items-center justify-between border border-noorix-border rounded-xl px-3 py-2"
                 >
-                  <div className="nx-font-700">{lang === 'en' ? item.labelEn : item.labelAr}</div>
-                  <div className="nx-font-numbers nx-font-800">{moneyText(item.amount)}</div>
+                  <div className="font-bold">{lang === 'en' ? item.labelEn : item.labelAr}</div>
+                  <div className="nx-font-numbers font-extrabold">{moneyText(item.amount)}</div>
                 </div>
               ))}
             </div>
           )}
 
           {data.kind === 'invoices' && (
-            <div className="nx-w-full" style={{ maxWidth: 1200, margin: '0 auto' }}>
-              <div className="noorix-surface-card nx-overflow-hidden nx-rounded-lg" style={{ padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+            <div className="w-full" style={{ maxWidth: 1200, margin: '0 auto' }}>
+              <div className="noorix-surface-card overflow-hidden rounded-xl" style={{ padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 <div className="nx-section-header">
                   <div>
-                    <div className="nx-text-base nx-font-800">{t('reportSmartSummary')}</div>
-                    <div className="nx-mt-4 nx-text-sm nx-text-muted">
+                    <div className="text-[13px] font-extrabold">{t('reportSmartSummary')}</div>
+                    <div className="mt-1 text-[12px] text-noorix-muted">
                       {t('reportShowingLatest', Math.min(data.items?.length || 0, 8), data.items?.length || 0)}
                     </div>
                   </div>
-                  <div className="nx-text-sm nx-text-muted">
+                  <div className="text-[12px] text-noorix-muted">
                     {t('reportAnnualTotal')}: <strong className="nx-font-numbers">{moneyText(data.annualAmount)}</strong>
                   </div>
                 </div>
@@ -221,26 +221,26 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     { key: 'transactionDate', label: t('transactionDate'),
                       render: (v) => String(v || '').slice(0, 10) },
                     { key: 'invoiceNumber', label: t('reportInvoiceNumber'),
-                      render: (_, item) => <span className="nx-font-700">{item.summaryNumber || item.invoiceNumber || '—'}</span> },
+                      render: (_, item) => <span className="font-bold">{item.summaryNumber || item.invoiceNumber || '—'}</span> },
                     { key: 'supplier', label: t('reportSourceOrSupplier'),
                       render: (_, item) => (
                         <div>
-                          <div className="nx-font-600 nx-truncate" title={(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}>
+                          <div className="font-semibold truncate" title={(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}>
                             {(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}
                           </div>
                           {item.channelNames?.length > 0 && (
-                            <div className="nx-text-xs nx-text-muted nx-mt-4">
+                            <div className="text-[11px] text-noorix-muted mt-1">
                               {item.channelNames.slice(0, 2).map((channel) => lang === 'en' ? (channel.nameEn || channel.nameAr) : (channel.nameAr || channel.nameEn)).join(' | ')}
                             </div>
                           )}
                         </div>
                       ) },
                     { key: 'netAmount', label: t('reportNetAmount'), numeric: true,
-                      render: (v) => <span className="nx-font-numbers nx-font-700">{amountText(v)}</span> },
+                      render: (v) => <span className="nx-font-numbers font-bold">{amountText(v)}</span> },
                     { key: 'percentOfSales', label: t('reportSalesShare'),
                       render: (_, item) => <span className="nx-font-numbers" style={{ color: PERCENT_COLOR }}>{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
                     { key: 'notes', label: t('notes'),
-                      render: (v) => <span className="nx-text-muted nx-truncate">{truncateText(v)}</span> },
+                      render: (v) => <span className="text-noorix-muted truncate">{truncateText(v)}</span> },
                   ]}
                   data={(data.items || []).slice(0, 8)}
                   keyExtractor={(item) => item.id}

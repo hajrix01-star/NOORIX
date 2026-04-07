@@ -1,4 +1,4 @@
-/**
+﻿/**
  * InvoicesListScreen — قائمة الفواتير
  * يعتمد على: useInvoices | SmartTable | DateFilterBar | format | saudiDate
  */
@@ -45,25 +45,25 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
       {/* هيدر بـ gradient */}
       <div className="flex items-center justify-between" style={{ background: 'linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%)', padding: '16px 20px' }}>
         <div>
-          <div className="nx-text-xs" style={{ color: 'rgba(255,255,255,0.75)', marginBottom: 3 }}>{t('invoicesTitle')}</div>
-          <h3 className="nx-m-0 nx-font-700" style={{ color: 'var(--noorix-navy-text, #fff)', fontSize: 17 }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
+          <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.75)', marginBottom: 3 }}>{t('invoicesTitle')}</div>
+          <h3 className="m-0 font-bold" style={{ color: 'var(--noorix-navy-text, #fff)', fontSize: 17 }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
         </div>
         <Button className="nx-gradient-close-btn" onClick={onClose}>
           {t('close')}
         </Button>
       </div>
       {/* حقول التفاصيل */}
-      <div className="nx-grid-2 nx-gap-10 nx-p-20">
+      <div className="grid grid-cols-2 gap-2.5 p-5">
         {fields.map(({ label, value, highlight, bold }) => (
-          <div key={label} className="nx-bg-muted" style={{ padding: '10px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+          <div key={label} className="bg-noorix-bg-muted" style={{ padding: '10px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
             <div style={{ fontSize: 14, fontWeight: bold ? 700 : 600, color: highlight || 'var(--noorix-text)', fontFamily: 'var(--noorix-font-numbers)' }}>{value}</div>
           </div>
         ))}
         {invoice.notes && (
-          <div className="nx-bg-muted" style={{ gridColumn: '1 / -1', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('notes')}</div>
-            <div className="nx-text-base nx-text-primary">{invoice.notes}</div>
+          <div className="bg-noorix-bg-muted" style={{ gridColumn: '1 / -1', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('notes')}</div>
+            <div className="text-[13px] text-noorix-text">{invoice.notes}</div>
           </div>
         )}
       </div>
@@ -255,8 +255,8 @@ export default function InvoicesListScreen() {
 
   const footerCells = (
     <>
-      <td colSpan={6} className="nx-tfoot-label nx-text-sm">
-        {t('totalInvoices', serverAll.count)} {total > PAGE_SIZE && <span className="nx-text-xs" style={{ opacity: 0.65 }}>({t('allPages')})</span>}
+      <td colSpan={6} className="nx-tfoot-label text-[12px]">
+        {t('totalInvoices', serverAll.count)} {total > PAGE_SIZE && <span className="text-[11px]" style={{ opacity: 0.65 }}>({t('allPages')})</span>}
       </td>
       <td className="nx-tfoot-num nx-cell-num--green">{fmt(Number(serverAll.net), 2)}</td>
       <td className="nx-tfoot-num nx-cell-num--amber">{fmt(Number(serverAll.tax), 2)}</td>
@@ -268,7 +268,7 @@ export default function InvoicesListScreen() {
   const renderMobileCard = useCallback((row) => (
     <div>
       <div className="nx-mc__header">
-        <span className="nx-cell-num nx-cell-accent nx-text-md">
+        <span className="nx-cell-num nx-cell-accent text-[14px]">
           {row.invoiceNumber || '—'}
         </span>
         <div className="nx-mc__meta">
@@ -276,7 +276,7 @@ export default function InvoicesListScreen() {
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
       </div>
-      <div className="flex items-center gap-8 nx-text-base nx-mb-8">
+      <div className="flex items-center gap-8 text-[13px] mb-2">
         <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
         {row.supplierName && <span className="nx-cell-muted">{row.supplierName}</span>}
       </div>
@@ -287,11 +287,11 @@ export default function InvoicesListScreen() {
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('net')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--green nx-text-base">{fmt(row.netAmount, 2)}</div>
+          <div className="nx-mc__stat-value nx-cell-num--green text-[13px]">{fmt(row.netAmount, 2)}</div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('tax')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--amber nx-text-base">{fmt(row.taxAmount, 2)}</div>
+          <div className="nx-mc__stat-value nx-cell-num--amber text-[13px]">{fmt(row.taxAmount, 2)}</div>
         </div>
       </div>
       <div className="nx-mc__actions">
@@ -445,7 +445,7 @@ export default function InvoicesListScreen() {
           </div>
           {(urlExtra.categoryId || urlExtra.expenseLineId || urlExtra.kind) && (
             <div
-            className="noorix-surface-card nx-flex-between nx-flex-wrap nx-gap-12 nx-text-sm"
+            className="noorix-surface-card flex items-center justify-between flex flex-wrap gap-3 text-[12px]"
             style={{ padding: '10px 14px', border: '1px dashed rgba(37,99,235,0.35)', background: 'rgba(37,99,235,0.04)' }}
             >
               <span className="nx-cell-muted">{t('invoicesDrillBanner')}</span>

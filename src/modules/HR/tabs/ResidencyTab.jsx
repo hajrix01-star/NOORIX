@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ResidencyTab — الإقامات (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
@@ -78,7 +78,7 @@ export default function ResidencyTab() {
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 170,
-      render: (v) => <span className="nx-font-600 nx-text-base">{v || '—'}</span> },
+      render: (v) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
     { key: 'iqamaNumber', label: t('iqamaNumber'), sortable: true, width: 150, minWidth: 140,
       render: (v) => <span className="nx-cell-num">{v || '—'}</span> },
     { key: 'issueDate', label: t('startDate'), sortable: true, width: 120, minWidth: 115,
@@ -134,27 +134,27 @@ export default function ResidencyTab() {
         : t('statusActive');
     return (
       <div>
-        <div className="nx-flex-between nx-flex-wrap nx-mb-4">
-          <span className="nx-font-700 nx-text-md">{row.employeeName}</span>
+        <div className="flex items-center justify-between flex flex-wrap mb-1">
+          <span className="font-bold text-[14px]">{row.employeeName}</span>
           <Badge color={statusColorMap[row.status] || 'blue'} size="sm" style={{ flexShrink: 0 }}>{statusLabel}</Badge>
         </div>
         {row.iqamaNumber && (
-          <div className="nx-text-sm nx-text-muted nx-mb-8" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.iqamaNumber}</div>
+          <div className="text-[12px] text-noorix-muted mb-2" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.iqamaNumber}</div>
         )}
-        <div className="nx-grid-2 nx-gap-6 nx-rounded nx-bg-muted nx-mb-10" style={{ padding: '8px 10px' }}>
+        <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5" style={{ padding: '8px 10px' }}>
           <div>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('startDate')}</div>
-            <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.issueDate)}</div>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('startDate')}</div>
+            <div className="text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.issueDate)}</div>
           </div>
           <div>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('expiryDate')}</div>
-            <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)', color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('expiryDate')}</div>
+            <div className="text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)', color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}>
               {formatSaudiDate(row.expiryDate)}
               {soon && <span style={{ marginRight: 4, fontSize: 10, background: 'rgba(245,158,11,0.2)', padding: '1px 5px', borderRadius: 4 }}>⚠</span>}
             </div>
           </div>
         </div>
-        <div className="nx-flex-end">
+        <div className="flex items-center justify-end">
           <HRActionsCell row={row} type="residency" onEdit={() => setEditingResidency(row)} onDelete={() => { if (window.confirm(t('deleteResidencyConfirm'))) deleteMutation.mutate(row.id); }} />
         </div>
       </div>
@@ -167,11 +167,11 @@ export default function ResidencyTab() {
 
       <div className="nx-toolbar">
         {expiringCount > 0 && (
-          <span className="nx-rounded nx-text-base nx-font-600 nx-px-12 nx-py-6" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--color-noorix-amber)' }}>
+          <span className="rounded-lg text-[13px] font-semibold px-3 py-1.5" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--color-noorix-amber)' }}>
             {t('residencyExpiringSoon')}: {expiringCount}
           </span>
         )}
-        <div className="nx-flex nx-gap-8 nx-flex-1">
+        <div className="flex gap-2 flex-1 min-w-0">
           <Button onClick={() => exportToExcel(exportData, 'residencies.xlsx')}>{t('exportExcel')}</Button>
         </div>
         <Button variant="primary" onClick={() => setShowAdd(true)}>

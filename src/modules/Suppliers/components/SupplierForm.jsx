@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SupplierForm — نموذج إضافة مورد جديد.
  * Props: companyId, categories (flat), onSave(body), isSaving, onCancel
  */
@@ -37,7 +37,7 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
 
   return (
     <Card>
-      <h4 className="nx-text-md nx-mt-0 nx-mb-16">{t('newSupplier')}</h4>
+      <h4 className="text-[14px] mt-0 mb-4">{t('newSupplier')}</h4>
       <form onSubmit={handleSubmit}>
         <FormRow cols={2}>
           <Input

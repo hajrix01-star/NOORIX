@@ -53,7 +53,7 @@ export default function BankStatementSummaryCards({ statement, t }) {
 
   return (
     <div
-      className="nx-grid nx-gap-12"
+      className="grid gap-3"
       style={{
         gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
       }}
@@ -61,14 +61,14 @@ export default function BankStatementSummaryCards({ statement, t }) {
       {cards.map((c, i) => (
         <div
           key={i}
-          className="noorix-surface-card nx-flex-col nx-gap-4"
+          className="noorix-surface-card flex flex-col gap-1"
           style={{
             padding: 14,
           }}
         >
-          <div className="nx-text-xs nx-text-muted nx-font-600" style={{ marginBottom: 2 }}>{c.title}</div>
+          <div className="text-[11px] text-noorix-muted font-semibold" style={{ marginBottom: 2 }}>{c.title}</div>
           <div
-            className="nx-font-800 nx-ltr nx-text-primary"
+            className="font-extrabold nx-ltr text-noorix-text"
             style={{
               fontSize: c.value?.length > 14 ? 14 : 17,
               textAlign: 'right',
@@ -78,10 +78,10 @@ export default function BankStatementSummaryCards({ statement, t }) {
             {c.value}
           </div>
           {c.sub ? (
-            <div className="nx-text-xs nx-text-muted" style={{ marginTop: 2 }}>{c.sub}</div>
+            <div className="text-[11px] text-noorix-muted" style={{ marginTop: 2 }}>{c.sub}</div>
           ) : null}
           <div
-            className="nx-mt-8"
+            className="mt-2"
             style={{
               height: 3,
               borderRadius: 2,

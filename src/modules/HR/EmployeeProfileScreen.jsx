@@ -1,4 +1,4 @@
-/**
+﻿/**
  * EmployeeProfileScreen — صفحة ملف الموظف الموسعة (جداول احترافية)
  */
 import React, { useState } from 'react';
@@ -244,10 +244,10 @@ export default function EmployeeProfileScreen() {
     }
   };
 
-  if (isLoading) return <div className="nx-p-24">{t('loading')}</div>;
+  if (isLoading) return <div className="p-6">{t('loading')}</div>;
   if (error || !employee) {
     return (
-      <div className="nx-p-24 nx-grid nx-gap-12">
+      <div className="p-6 grid gap-3">
         <p className="nx-cell-muted">{t('noEmployees')}</p>
         <div><Button onClick={() => navigate('/hr')}>← العودة للقائمة</Button></div>
       </div>
@@ -306,7 +306,7 @@ export default function EmployeeProfileScreen() {
   })();
 
   return (
-    <div className="nx-screen nx-p-24">
+    <div className="flex flex-col gap-4 p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-page-header employee-profile-header-bar">
@@ -328,20 +328,20 @@ export default function EmployeeProfileScreen() {
 
       <div className="employee-profile-layout">
       {/* معلومات أساسية */}
-      <div className="noorix-surface-card nx-p-24">
-        <h1 className="nx-page-title nx-mb-16">{employeeDisplayName(employee, lang)}</h1>
-        <p className="nx-cell-muted nx-m-0">{employee.jobTitle || '—'}</p>
-        <p className="nx-text-base nx-mt-8 nx-mb-0">{t('employeeSerial')}: {employee.employeeSerial || '—'}</p>
-        <p className="nx-text-base nx-mt-4 nx-mb-0">{t('joinDate')}: {formatSaudiDate(employee.joinDate)}</p>
-        <div className="nx-mt-10">
+      <div className="noorix-surface-card p-6">
+        <h1 className="nx-page-title mb-4">{employeeDisplayName(employee, lang)}</h1>
+        <p className="nx-cell-muted m-0">{employee.jobTitle || '—'}</p>
+        <p className="text-[13px] mt-2 mb-0">{t('employeeSerial')}: {employee.employeeSerial || '—'}</p>
+        <p className="text-[13px] mt-1 mb-0">{t('joinDate')}: {formatSaudiDate(employee.joinDate)}</p>
+        <div className="mt-2.5">
           <Badge {...Badge.fromStatus(employee.status, EMP_STATUS_MAP)} />
         </div>
       </div>
 
       {/* تفاصيل الراتب */}
-      <div className="noorix-surface-card nx-p-24">
-        <h2 className="nx-text-2xl nx-font-700 nx-text-primary nx-mb-16">{t('totalSalary')}</h2>
-        <div className="nx-border-all nx-rounded-lg nx-overflow-hidden">
+      <div className="noorix-surface-card p-6">
+        <h2 className="text-[18px] font-bold text-noorix-text mb-4">{t('totalSalary')}</h2>
+        <div className="border border-noorix-border rounded-xl overflow-hidden">
           {salaryRows.map((row, idx) => (
             <div
               key={`${row.label}-${idx}`}
@@ -357,7 +357,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* السجل المالي */}
-      <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden employee-profile-layout__wide">
+      <div className="noorix-surface-card noorix-table-frame overflow-hidden employee-profile-layout__wide">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('financialRecord') || 'السجل المالي'}</span>
           <span className="nx-pill nx-pill--blue nx-pill--sm">{financialRecords.length}</span>
@@ -386,7 +386,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* الإجازات */}
-      <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden">
+      <div className="noorix-surface-card noorix-table-frame overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('hrTabLeave')}</span>
           <span className="nx-pill nx-pill--blue nx-pill--sm">{leaves.length}</span>
@@ -412,7 +412,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* السلفيات */}
-      <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden">
+      <div className="noorix-surface-card noorix-table-frame overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('advancesList')}</span>
           <span className="nx-pill nx-pill--blue nx-pill--sm">{advances.length}</span>
@@ -436,7 +436,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* الإقامات */}
-      <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden">
+      <div className="noorix-surface-card noorix-table-frame overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('hrTabResidency')}</span>
           <span className="nx-pill nx-pill--blue nx-pill--sm">{residencies.length}</span>
@@ -461,7 +461,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* المستندات */}
-      <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden">
+      <div className="noorix-surface-card noorix-table-frame overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('addDocument')}</span>
           <div className="nx-section-header__actions">

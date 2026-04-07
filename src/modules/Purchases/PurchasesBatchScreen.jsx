@@ -185,34 +185,34 @@ export default function PurchasesBatchScreen() {
     /* رقم الدفعة — ضيق، محتوى ثابت مثل INV-0001 */
     { key: 'batchId', label: t('batchId'), sortable: true, shrink: true,
       render: (v) => (
-        <span className="nx-font-700 nx-nowrap" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v}</span>
+        <span className="font-bold whitespace-nowrap" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v}</span>
       )},
     /* التاريخ — ضيق، نص ثابت */
     { key: 'transactionDate', label: t('transactionDate'), sortable: true, shrink: true,
       render: (v) => (
-        <span className="nx-text-sm nx-text-muted nx-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(v)}</span>
+        <span className="text-[12px] text-noorix-muted whitespace-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(v)}</span>
       )},
     /* عدد الفواتير — ضيق جداً */
     { key: 'invoiceCount', label: t('invoiceCount'), numeric: true, sortable: true, shrink: true,
       render: (v) => (
-        <span className="nx-font-700" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span>
+        <span className="font-bold" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span>
       )},
     /* المورد — minWidth يضمن عدم انهيار العمود مع table-layout:auto */
     { key: 'supplierNames', label: t('supplier'), sortable: true, minWidth: 160,
       render: (v) => (
-        <span className="nx-truncate" style={{ display: 'block', minWidth: 0 }}>{v || '—'}</span>
+        <span className="truncate" style={{ display: 'block', minWidth: 0 }}>{v || '—'}</span>
       )},
     { key: 'vaultName', label: t('vault'), sortable: true, shrink: true, minWidth: 120,
       render: (v) => (
-        <span className="nx-truncate" style={{ display: 'block', minWidth: 0, maxWidth: 200 }}>{v || '—'}</span>
+        <span className="truncate" style={{ display: 'block', minWidth: 0, maxWidth: 200 }}>{v || '—'}</span>
       )},
     /* الأعمدة المالية — ضيقة، محاذاة يمين */
     { key: 'netAmount',   label: t('net'),   numeric: true, sortable: true, shrink: true,
-      render: (v) => <span className="nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+      render: (v) => <span className="text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
     { key: 'taxAmount',   label: t('tax'),   numeric: true, sortable: true, shrink: true,
-      render: (v) => <span className="nx-text-warn" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+      render: (v) => <span className="text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
     { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, shrink: true,
-      render: (v) => <span className="nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+      render: (v) => <span className="font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
     /* الحالة — شارة ضيقة */
     { key: 'status', label: t('statusLabel'), shrink: true,
       render: (v) => <Badge {...Badge.fromStatus(v, statusBadgeMap)} size="sm" /> },
@@ -221,7 +221,7 @@ export default function PurchasesBatchScreen() {
       render: (_, row) => {
         const canCancel = row.status === 'active' || row.status === 'partial';
         return (
-          <div className="noorix-actions-row nx-flex-wrap" style={{ justifyContent: 'center', maxWidth: 280 }}>
+          <div className="noorix-actions-row flex flex-wrap" style={{ justifyContent: 'center', maxWidth: 280 }}>
             <Button
               size="sm"
               onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
@@ -253,33 +253,33 @@ export default function PurchasesBatchScreen() {
     const canCancel = row.status === 'active' || row.status === 'partial';
     return (
       <div>
-        <div className="nx-flex nx-mb-4" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <span className="nx-font-700 nx-text-md" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{row.batchId}</span>
+        <div className="flex mb-1" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <span className="font-bold text-[14px]" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{row.batchId}</span>
           <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
         </div>
-        <div className="nx-flex nx-gap-10 nx-text-sm nx-text-muted nx-mb-6">
+        <div className="flex gap-2.5 text-[12px] text-noorix-muted mb-1.5">
           <span>{formatSaudiDate(row.transactionDate)}</span>
-          {row.invoiceCount > 0 && <span className="nx-font-700" style={{ color: 'var(--noorix-accent-blue)' }}>{row.invoiceCount} {t('invoices')}</span>}
+          {row.invoiceCount > 0 && <span className="font-bold" style={{ color: 'var(--noorix-accent-blue)' }}>{row.invoiceCount} {t('invoices')}</span>}
         </div>
-        {row.supplierNames && <div className="nx-text-base nx-mb-4 nx-truncate">{row.supplierNames}</div>}
-        <div className="nx-text-sm nx-mb-8 nx-text-muted nx-truncate">
+        {row.supplierNames && <div className="text-[13px] mb-1 truncate">{row.supplierNames}</div>}
+        <div className="text-[12px] mb-2 text-noorix-muted truncate">
           {t('vault')}: {row.vaultName || '—'}
         </div>
-        <div className="nx-grid-3 nx-rounded nx-gap-6" style={{ background: 'var(--noorix-bg-page)', padding: '8px 10px', marginBottom: 10 }}>
+        <div className="grid grid-cols-3 rounded-lg gap-1.5" style={{ background: 'var(--noorix-bg-page)', padding: '8px 10px', marginBottom: 10 }}>
           <div>
-            <div className="nx-text-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('net')}</div>
-            <div className="nx-text-base nx-text-income nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.netAmount)}</div>
+            <div className="text-noorix-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('net')}</div>
+            <div className="text-[13px] text-noorix-green font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.netAmount)}</div>
           </div>
           <div>
-            <div className="nx-text-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('tax')}</div>
-            <div className="nx-text-base nx-text-warn" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.taxAmount)}</div>
+            <div className="text-noorix-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('tax')}</div>
+            <div className="text-[13px] text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.taxAmount)}</div>
           </div>
           <div>
-            <div className="nx-text-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('total')}</div>
-            <div className="nx-text-md nx-font-800" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmount)}</div>
+            <div className="text-noorix-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('total')}</div>
+            <div className="text-[14px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmount)}</div>
           </div>
         </div>
-        <div className="nx-flex nx-gap-6 nx-flex-wrap" style={{ justifyContent: 'flex-end' }}>
+        <div className="flex gap-1.5 flex flex-wrap" style={{ justifyContent: 'flex-end' }}>
           <Button size="sm" onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId}>{t('print')}</Button>
           <Button size="sm" onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId}>✎ {t('edit')}</Button>
           {canCancel && <Button size="sm" variant="danger" onClick={() => handleCancelBatch(row)} disabled={batchActionLoading === row.batchId}>× {t('cancel')}</Button>}
@@ -291,12 +291,12 @@ export default function PurchasesBatchScreen() {
   /* صف التذييل: # + batchId + تاريخ + عدد + مورد + خزنة + صافي + ضريبة + إجمالي + حالة + إجراءات = 11 عموداً */
   const batchesFooterCells = (
     <>
-      <td colSpan={6} className="nx-text-sm nx-text-muted" style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+      <td colSpan={6} className="text-[12px] text-noorix-muted" style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
         {t('totalBatches', activeOnly.length) || `الإجمالي (${activeOnly.length} دفعة)`}
       </td>
-      <td className="nx-text-income nx-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{fmt(totalNet, 2)}</td>
-      <td className="nx-text-warn nx-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{fmt(totalTax, 2)}</td>
-      <td className="nx-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-accent-violet)', fontWeight: 900, textAlign: 'right' }}>{fmt(totalAmount, 2)}</td>
+      <td className="text-noorix-green whitespace-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{fmt(totalNet, 2)}</td>
+      <td className="text-noorix-amber whitespace-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{fmt(totalTax, 2)}</td>
+      <td className="whitespace-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-accent-violet)', fontWeight: 900, textAlign: 'right' }}>{fmt(totalAmount, 2)}</td>
       <td colSpan={2} style={{ padding: '8px 10px' }} />
     </>
   );
@@ -398,7 +398,7 @@ export default function PurchasesBatchScreen() {
   const hasCompany = !!companyId;
 
   return (
-    <div className="nx-flex-col nx-gap-20 nx-w-full">
+    <div className="flex flex-col gap-5 w-full">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       {/* ── الهيدر ── */}
@@ -410,7 +410,7 @@ export default function PurchasesBatchScreen() {
 
       {/* ── التبويبات ── */}
       {hasCompany && (
-        <div className="noorix-tab-bar nx-flex nx-gap-4" style={{ borderBottom: '2px solid var(--noorix-border)', paddingBottom: 0 }}>
+        <div className="noorix-tab-bar flex gap-1" style={{ borderBottom: '2px solid var(--noorix-border)', paddingBottom: 0 }}>
           {getTabs(t).map((tab) => (
             <Button
               key={tab.id}
@@ -430,18 +430,18 @@ export default function PurchasesBatchScreen() {
       )}
 
       {!hasCompany && (
-        <div className="noorix-surface-card nx-text-center nx-text-muted nx-text-md nx-p-24">
+        <div className="noorix-surface-card text-center text-noorix-muted text-[14px] p-6">
           {t('pleaseSelectCompany')}
         </div>
       )}
 
       {/* ── تبويب: إدخال دفعة جديدة ── */}
       {activeTab === 'entry' && hasCompany && (
-        <div className="noorix-surface-card nx-rounded-lg" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <div className="noorix-surface-card rounded-xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           {/* شريط الأدوات */}
-          <div className="batch-purchases-entry-toolbar nx-border-b nx-bg-page">
+          <div className="batch-purchases-entry-toolbar border-b border-noorix-border bg-noorix-bg">
             <div className="batch-purchases-entry-toolbar__control">
-              <label className="nx-text-sm nx-font-700 nx-text-muted nx-nowrap" htmlFor="batch-purchase-date">{t('transactionDateLabel')}</label>
+              <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-date">{t('transactionDateLabel')}</label>
               <Input
                 id="batch-purchase-date"
                 type="date"
@@ -451,7 +451,7 @@ export default function PurchasesBatchScreen() {
               />
             </div>
             <div className="batch-purchases-entry-toolbar__control">
-              <label className="nx-text-sm nx-font-700 nx-text-muted nx-nowrap" htmlFor="batch-purchase-vault">{t('batchPurchasesPayVault')}</label>
+              <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-vault">{t('batchPurchasesPayVault')}</label>
               <Input
                 id="batch-purchase-vault"
                 type="select"
@@ -465,7 +465,7 @@ export default function PurchasesBatchScreen() {
               </Input>
             </div>
             <div className="batch-purchases-entry-toolbar__shortcuts">
-              <span className="nx-text-sm nx-font-700 nx-text-muted nx-nowrap">{t('shortcuts')}</span>
+              <span className="text-[12px] font-bold text-noorix-muted whitespace-nowrap">{t('shortcuts')}</span>
               {bookmarkedSuppliers.length > 0 ? (
                 bookmarkedSuppliers.map((s) => (
                   <Button
@@ -474,27 +474,27 @@ export default function PurchasesBatchScreen() {
                     variant="ghost"
                     size="sm"
                     onClick={() => addBookmarked(s.id)}
-                    className="batch-purchases-shortcut-chip nx-border-all nx-nowrap"
+                    className="batch-purchases-shortcut-chip border border-noorix-border whitespace-nowrap"
                   >
                     {(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}
                   </Button>
                 ))
               ) : (
-                <span className="nx-text-sm nx-text-muted">{t('selectSupplierBookmark')}</span>
+                <span className="text-[12px] text-noorix-muted">{t('selectSupplierBookmark')}</span>
               )}
             </div>
           </div>
 
           {!vaultsLoading && activeVaults.length === 0 && (
-            <div className="nx-text-base nx-border-b" style={{ padding: '10px 16px', color: 'var(--noorix-accent-amber)', background: 'rgba(245,158,11,0.12)' }}>
+            <div className="text-[13px] border-b border-noorix-border" style={{ padding: '10px 16px', color: 'var(--noorix-accent-amber)', background: 'rgba(245,158,11,0.12)' }}>
               {t('batchPurchasesNoVaults')}
             </div>
           )}
 
           {/* جدول الإدخال */}
           <div style={{ padding: '0 12px 16px' }}>
-              <div className="noorix-surface-card noorix-table-frame batch-purchases-table nx-w-full">
-              <table className="noorix-table nx-w-full" style={{ tableLayout: 'fixed', minWidth: 900 }}>
+              <div className="noorix-surface-card noorix-table-frame batch-purchases-table w-full">
+              <table className="noorix-table w-full" style={{ tableLayout: 'fixed', minWidth: 900 }}>
                 <colgroup><col style={{ width: '3%' }} /><col style={{ width: '20%' }} /><col style={{ width: '11%' }} /><col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '11%' }} /><col style={{ width: '5%' }} /><col style={{ width: '14%' }} /><col style={{ width: '3%' }} /></colgroup>
                 <thead>
                   <tr>
@@ -511,7 +511,7 @@ export default function PurchasesBatchScreen() {
                       { label: t('notes'),                 align: 'right'  },
                       { label: '',                         align: 'center' },
                     ].map(({ label, align, title }, i) => (
-                      <th key={i} title={title} className="nx-text-xs nx-font-700 nx-text-muted nx-overflow-hidden nx-nowrap" style={{ padding: '8px 6px', textAlign: align }}>{label}</th>
+                      <th key={i} title={title} className="text-[11px] font-bold text-noorix-muted overflow-hidden whitespace-nowrap" style={{ padding: '8px 6px', textAlign: align }}>{label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -535,7 +535,7 @@ export default function PurchasesBatchScreen() {
 
             <Button
               onClick={addRow}
-              className="nx-mt-12"
+              className="mt-3"
             >
               {t('addRow')}
             </Button>
@@ -548,7 +548,7 @@ export default function PurchasesBatchScreen() {
             />
 
             {/* أزرار الإجراءات */}
-            <div className="nx-toolbar nx-mt-20">
+            <div className="nx-toolbar mt-5">
               <Button
                 variant="primary"
                 disabled={saveMutation.isPending || summary.count === 0 || !batchVaultId || activeVaults.length === 0}
@@ -569,7 +569,7 @@ export default function PurchasesBatchScreen() {
 
       {/* ── تبويب: الدفعات المحفوظة — جدول مثل الفواتير ── */}
       {activeTab === 'history' && hasCompany && (
-        <div className="nx-flex-col nx-gap-20">
+        <div className="flex flex-col gap-5">
           <DateFilterBar filter={dateFilter} />
 
           <SmartTable
@@ -591,7 +591,7 @@ export default function PurchasesBatchScreen() {
             title={t('tabSavedBatches')}
             badge={
               <>
-                <span className="nx-text-sm nx-text-muted">— {dateFilter.label}</span>
+                <span className="text-[12px] text-noorix-muted">— {dateFilter.label}</span>
                 <Badge color="blue" size="sm">{t('batchCount', displayedTotal)}</Badge>
               </>
             }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AdvancesTab — السلفيات (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
@@ -103,7 +103,7 @@ export default function AdvancesTab() {
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
       render: (v, row) => (
-        <span className="nx-font-600 nx-text-base" style={{
+        <span className="font-semibold text-[13px]" style={{
           color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
         }}
@@ -123,7 +123,7 @@ export default function AdvancesTab() {
       ) },
     { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
       render: (v, row) => (
-        <span className="nx-text-sm" style={{
+        <span className="text-[12px]" style={{
           color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'var(--noorix-text-muted)',
           whiteSpace: 'nowrap',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
@@ -186,10 +186,10 @@ export default function AdvancesTab() {
 
   const footerCells = (
     <>
-      <td colSpan={2} className="nx-text-sm nx-text-muted nx-font-600 nx-py-6 nx-px-12">
+      <td colSpan={2} className="text-[12px] text-noorix-muted font-semibold py-1.5 px-3">
         {t('advancesList')} ({allFilteredData.length}) — {t('advanceOutstanding')}: {outstandingCount}
       </td>
-      <td className="nx-text-base nx-text-end nx-py-6 nx-px-12 nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900 }}>
+      <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900 }}>
         {hrFmt(totalAmount.toNumber())}
       </td>
       <td colSpan={1} />
@@ -219,8 +219,8 @@ export default function AdvancesTab() {
     const settled = row.settlementStatus === 'settled';
     return (
       <div>
-        <div className="nx-flex-between nx-flex-wrap nx-mb-4">
-          <span className="nx-font-700 nx-text-lg" style={{ textDecoration: settled ? 'line-through' : 'none', color: settled ? 'var(--noorix-accent-red)' : 'var(--noorix-text)' }}>
+        <div className="flex items-center justify-between flex flex-wrap mb-1">
+          <span className="font-bold text-[15px]" style={{ textDecoration: settled ? 'line-through' : 'none', color: settled ? 'var(--noorix-accent-red)' : 'var(--noorix-text)' }}>
             {row.employeeName}
           </span>
           <Badge
@@ -231,22 +231,22 @@ export default function AdvancesTab() {
             {sLabel}
           </Badge>
         </div>
-        <div className="nx-text-xs nx-text-muted nx-mb-8">{formatSaudiDate(row.transactionDate)}</div>
-        <div className="nx-grid-3 nx-rounded nx-gap-6 nx-bg-muted nx-mb-10" style={{ padding: '8px 10px' }}>
+        <div className="text-[11px] text-noorix-muted mb-2">{formatSaudiDate(row.transactionDate)}</div>
+        <div className="grid grid-cols-3 rounded-lg gap-1.5 bg-noorix-bg-muted mb-2.5" style={{ padding: '8px 10px' }}>
           <div>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('advanceAmount')}</div>
-            <div className="nx-text-md nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.totalAmountNum)}</div>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('advanceAmount')}</div>
+            <div className="text-[14px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.totalAmountNum)}</div>
           </div>
           <div>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('advanceSettledAmount')}</div>
-            <div className="nx-text-base nx-text-income" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.settledAmountNum)}</div>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('advanceSettledAmount')}</div>
+            <div className="text-[13px] text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.settledAmountNum)}</div>
           </div>
           <div>
-            <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('advanceRemainingAmount')}</div>
-            <div className="nx-text-base" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.remainingAmount)}</div>
+            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('advanceRemainingAmount')}</div>
+            <div className="text-[13px]" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.remainingAmount)}</div>
           </div>
         </div>
-        <div className="nx-flex-end">
+        <div className="flex items-center justify-end">
           <HRActionsCell
             row={row}
             onEdit={() => setEditingAdvance(row)}
@@ -262,7 +262,7 @@ export default function AdvancesTab() {
     <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="nx-toolbar nx-mb-8 nx-flex-end">
+      <div className="nx-toolbar mb-2 flex items-center justify-end">
         <Input type="select" value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
           <option value="">{t('advancesFilterEmployee')} — {t('advancesFilterAll')}</option>
           {employeeOptions.map((name) => (
@@ -396,7 +396,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
         </>
       }
     >
-      <div className="nx-grid nx-gap-10">
+      <div className="grid gap-2.5">
         <Input type="number" label={t('advanceAmount')} min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
         <Input type="date" label={t('advanceLoanDate')} value={date} onChange={(e) => setDate(e.target.value)} />
         <Input multiline rows={3} label="ملاحظات" value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -478,8 +478,8 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
         </>
       }
     >
-      <div className="nx-text-base nx-mb-8">{t('advanceRemainingAmount')}: <strong>{hrFmt(remaining)}</strong></div>
-      <div className="nx-grid nx-gap-10">
+      <div className="text-[13px] mb-2">{t('advanceRemainingAmount')}: <strong>{hrFmt(remaining)}</strong></div>
+      <div className="grid gap-2.5">
         <Input type="select" label="نوع التسوية" value={settlementType} onChange={(e) => setSettlementType(e.target.value)}>
           <option value="full">{t('settlementFull')}</option>
           <option value="partial">{t('settlementPartial')}</option>

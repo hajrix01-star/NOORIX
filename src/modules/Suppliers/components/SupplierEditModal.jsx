@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SupplierEditModal — نافذة تعديل المورد.
  * Props: supplier, flatCategories, onSave(body), onClose, isSaving
  */
@@ -109,7 +109,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
             })}
           </Input>
         </FormRow>
-        <div className="nx-toolbar nx-flex-end" style={{ marginTop: 14 }}>
+        <div className="nx-toolbar flex items-center justify-end" style={{ marginTop: 14 }}>
           <Button type="button" onClick={onClose}>{t('cancel')}</Button>
           <Button type="submit" variant="primary" disabled={isSaving || !form.nameAr.trim()}>
             {isSaving ? t('saving') : t('saveChanges')}

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HrQuickEntrySheet — إدخال سريع من المحادثة (سلفة، إجازة، خصم، زيادة/بدلة)
  * نافذة احترافية: بطاقة مركزية، حقول منسقة، دعم RTL، مناسب للجوال 100%.
  */
@@ -34,8 +34,8 @@ function invalidateHrQueries(qc, companyId) {
 
 function Field({ id, label, children, error }) {
   return (
-    <div className="nx-mb-16">
-      <label htmlFor={id} className="nx-text-base nx-font-600 nx-mb-6" style={{ display: 'block' }}>
+    <div className="mb-4">
+      <label htmlFor={id} className="text-[13px] font-semibold mb-1.5" style={{ display: 'block' }}>
         {label}
       </label>
       {children}
@@ -402,12 +402,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
           }}
         >
           {confirmStep && pendingData && (
-            <div className="nx-flex nx-flex-col nx-gap-20">
-              <div className="nx-text-md nx-font-600 nx-text-muted">{t('confirmSaveTitle')}</div>
-              <div className="nx-p-16 nx-rounded-lg nx-bg-muted nx-text-lg" style={{ lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+            <div className="flex flex flex-col gap-5">
+              <div className="text-[14px] font-semibold text-noorix-muted">{t('confirmSaveTitle')}</div>
+              <div className="p-4 rounded-xl bg-noorix-bg-muted text-[15px]" style={{ lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                 {isAr ? pendingData.report?.textAr : pendingData.report?.textEn}
               </div>
-              <div className="nx-flex nx-gap-12">
+              <div className="flex gap-3">
                 <Button onClick={() => setConfirmStep(false)} style={{ flex: 1, minHeight: 50 }}>
                   {isAr ? 'رجوع' : 'Back'}
                 </Button>
@@ -423,14 +423,14 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
             </div>
           )}
           {!confirmStep && dataLoading && (
-            <div className="nx-text-center nx-p-24 nx-text-muted">
+            <div className="text-center p-6 text-noorix-muted">
               {isAr ? 'جاري التحميل...' : 'Loading...'}
             </div>
           )}
 
           {!confirmStep && formError && (
             <div
-              className="nx-mb-16 nx-p-12 nx-rounded nx-text-md"
+              className="mb-4 p-3 rounded-lg text-[14px]"
               style={{
                 background: 'rgba(220,38,38,0.08)',
                 color: 'var(--noorix-accent-red)',
@@ -471,7 +471,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
               <Field id="adv-notes" label={t('notes')}>
                 <Input id="adv-notes" type="text" value={advNotes} onChange={(e) => setAdvNotes(e.target.value)} placeholder={isAr ? 'سبب أو تفاصيل' : 'Reason or details'} />
               </Field>
-              <div className="nx-flex nx-gap-12 nx-mt-20">
+              <div className="flex gap-3 mt-5">
                 <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>
                   {t('cancel')}
                 </Button>
@@ -494,7 +494,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                   ))}
                 </Input>
               </Field>
-              <div className="nx-grid-2 nx-gap-12 nx-mb-16">
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <Field id="lv-start" label={t('startDate')}>
                   <Input id="lv-start" type="date" value={lvStart} onChange={(e) => setLvStart(e.target.value)} style={{ direction: 'ltr' }} lang="en" required />
                 </Field>
@@ -508,7 +508,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
               <Field id="lv-notes" label={t('notes')}>
                 <Input id="lv-notes" type="text" value={lvNotes} onChange={(e) => setLvNotes(e.target.value)} />
               </Field>
-              <div className="nx-flex nx-gap-12 nx-mt-20">
+              <div className="flex gap-3 mt-5">
                 <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
                 <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : t('add')}</Button>
               </div>
@@ -536,7 +536,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
               <Field id="dd-notes" label={t('notes')}>
                 <Input id="dd-notes" type="text" value={ddNotes} onChange={(e) => setDdNotes(e.target.value)} placeholder={isAr ? 'السبب' : 'Reason'} />
               </Field>
-              <div className="nx-flex nx-gap-12 nx-mt-20">
+              <div className="flex gap-3 mt-5">
                 <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
                 <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50, fontSize: 15 }}>{submitting ? t('saving') : (isAr ? 'حفظ الخصم' : 'Save deduction')}</Button>
               </div>
@@ -545,7 +545,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
 
           {!confirmStep && !dataLoading && mode === 'increase' && (
             <div>
-              <div className="nx-flex nx-gap-8 nx-mb-16">
+              <div className="flex gap-2 mb-4">
                 {segmentBtn('movement', isAr ? t('chatMovementSection') : 'Promotion / raise')}
                 {segmentBtn('allowance', isAr ? t('chatAllowanceSection') : 'Allowance')}
               </div>
@@ -575,7 +575,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                   <Field id="mv-notes" label={t('notes')}>
                     <Input id="mv-notes" type="text" value={mvNotes} onChange={(e) => setMvNotes(e.target.value)} />
                   </Field>
-                  <div className="nx-flex nx-gap-12 nx-mt-20">
+                  <div className="flex gap-3 mt-5">
                     <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
                     <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ' : 'Save')}</Button>
                   </div>
@@ -589,7 +589,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
                   <Field id="al-amt" label={t('customAllowanceAmount')}>
                     <Input id="al-amt" type="number" inputMode="decimal" step="0.01" min="0" value={alAmount} onChange={(e) => setAlAmount(e.target.value)} />
                   </Field>
-                  <div className="nx-flex nx-gap-12 nx-mt-20">
+                  <div className="flex gap-3 mt-5">
                     <Button onClick={onClose} style={{ flex: 1, minHeight: 50 }}>{t('cancel')}</Button>
                     <Button type="submit" variant="primary" disabled={submitting} style={{ flex: 1, minHeight: 50 }}>{submitting ? t('saving') : (isAr ? 'حفظ البدلة' : 'Save allowance')}</Button>
                   </div>

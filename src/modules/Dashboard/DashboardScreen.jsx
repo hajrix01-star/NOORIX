@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DashboardScreen — لوحة التحكم الرئيسية
  */
 import React, { useState, useMemo } from 'react';
@@ -48,7 +48,7 @@ export default function DashboardScreen() {
   }), [year, selectedMonthNumber]);
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6 nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6 flex flex-col gap-4">
       {/* هيدر */}
       <div className="flex flex-wrap items-start justify-between gap-3 nx-page-header">
         <div>

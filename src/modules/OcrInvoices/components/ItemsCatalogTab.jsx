@@ -11,16 +11,16 @@ function ItemForm({ initial = {}, onSave, onCancel, loading }) {
   const [form, setForm] = useState({ nameAr: '', nameEn: '', category: '', unitType: '', notes: '', ...initial });
   const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   return (
-    <div className="nx-grid nx-gap-12">
+    <div className="grid gap-3">
       <Input placeholder={`${t('ocrItemNameAr')} *`} value={form.nameAr} onChange={f('nameAr')} />
       <Input placeholder={t('ocrItemNameEn')} value={form.nameEn} onChange={f('nameEn')} />
       <Input placeholder={t('ocrItemCategory')} value={form.category} onChange={f('category')} />
       <Input placeholder={t('ocrItemUnit')} value={form.unitType} onChange={f('unitType')} />
-      <div className="nx-flex nx-gap-8">
-        <Button onClick={() => onSave(form)} disabled={loading || !form.nameAr} variant="primary" className="nx-flex-1">
+      <div className="flex gap-2">
+        <Button onClick={() => onSave(form)} disabled={loading || !form.nameAr} variant="primary" className="flex-1 min-w-0">
           {loading ? '...' : t('ocrSave')}
         </Button>
-        <Button onClick={onCancel} className="nx-flex-1">{t('ocrCancel')}</Button>
+        <Button onClick={onCancel} className="flex-1 min-w-0">{t('ocrCancel')}</Button>
       </div>
     </div>
   );
@@ -136,7 +136,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
   return (
     <div dir={dir}>
       {/* Toolbar */}
-      <div className="inv-toolbar nx-mb-16">
+      <div className="inv-toolbar mb-4">
         <label className="nx-checkbox inv-select-all-wrap">
           <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(filtered.map(i => i.id)))} className="inv-toolbar-checkbox" />
           <span className="inv-select-all-label">
@@ -164,9 +164,9 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
 
       {/* Duplicate groups */}
       {dupGroups !== null && (
-        <div className="nx-rounded-lg nx-bg-surface nx-mb-16 nx-p-16 nx-border-all">
-          <div className="nx-flex-between nx-mb-12">
-            <div className="nx-font-600 nx-text-md nx-text-primary">
+        <div className="rounded-xl bg-noorix-surface mb-4 p-4 border border-noorix-border">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-semibold text-[14px] text-noorix-text">
               {dupGroups.length === 0
                 ? (isAr ? 'لا توجد أصناف مكررة — الكتالوج نظيف' : 'No duplicates found')
                 : (isAr ? `${dupGroups.length} مجموعة مكررة محتملة` : `${dupGroups.length} potential duplicate groups`)}
@@ -174,19 +174,19 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
             <Button className="modal-close-btn" onClick={() => setDupGroups(null)} style={{ width: 28, height: 28 }}>✕</Button>
           </div>
           {dupGroups.map((group, gi) => (
-            <div key={gi} className="nx-mb-10 nx-rounded nx-border-all nx-overflow-hidden">
-              <div className="nx-bg-muted nx-text-sm nx-text-muted nx-font-600" style={{ padding: '8px 14px' }}>
+            <div key={gi} className="mb-2.5 rounded-lg border border-noorix-border overflow-hidden">
+              <div className="bg-noorix-bg-muted text-[12px] text-noorix-muted font-semibold" style={{ padding: '8px 14px' }}>
                 {isAr ? `تشابه ${Math.round(group.score * 100)}%` : `${Math.round(group.score * 100)}% match`}
               </div>
-              <div className="nx-flex nx-flex-wrap">
+              <div className="flex flex flex-wrap">
                 {group.items.map((item, ii) => (
                   <div key={item.id} style={{
                     flex: '1 1 200px', padding: '12px 14px',
                     borderInlineEnd: ii < group.items.length - 1 ? '1px solid var(--noorix-border)' : 'none',
                   }}>
-                    <div className="nx-font-600 nx-text-base nx-mb-4">{item.nameAr}</div>
-                    {item.nameEn && <div className="nx-text-sm nx-text-muted nx-mb-4">{item.nameEn}</div>}
-                    <div className="nx-text-xs nx-text-muted nx-mb-8">
+                    <div className="font-semibold text-[13px] mb-1">{item.nameAr}</div>
+                    {item.nameEn && <div className="text-[12px] text-noorix-muted mb-1">{item.nameEn}</div>}
+                    <div className="text-[11px] text-noorix-muted mb-2">
                       {item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'} · {item._count?.lines || 0} {isAr ? 'سطر' : 'lines'}
                     </div>
                     {group.items.filter((o) => o.id !== item.id).map((other) => (
@@ -204,8 +204,8 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
       )}
 
       {adding && (
-        <div className="nx-rounded-lg nx-bg-surface nx-mb-16 nx-p-20 nx-border-all">
-          <div className="nx-font-600 nx-mb-12 nx-text-md">{t('ocrAddItem')}</div>
+        <div className="rounded-xl bg-noorix-surface mb-4 p-5 border border-noorix-border">
+          <div className="font-semibold mb-3 text-[14px]">{t('ocrAddItem')}</div>
           <ItemForm onSave={handleCreate} onCancel={() => setAdding(false)} loading={saving} />
         </div>
       )}
@@ -220,7 +220,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
           {filtered.map((item) => (
             <div key={item.id}>
               {editing?.id === item.id ? (
-                <div className="nx-bg-surface nx-p-16 nx-rounded nx-border-all">
+                <div className="bg-noorix-surface p-4 rounded-lg border border-noorix-border">
                   <ItemForm initial={item} onSave={handleUpdate} onCancel={() => setEditing(null)} loading={saving} />
                 </div>
               ) : (
@@ -231,7 +231,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                       onChange={() => {}} className="ocr-catalog-checkbox" />
                   </label>
                   <div className="ocr-catalog-avatar">{(item.nameAr || item.nameEn || '?')[0]}</div>
-                  <div className="ocr-catalog-name nx-flex-1">
+                  <div className="ocr-catalog-name flex-1 min-w-0">
                     <div className="ocr-catalog-name-primary">{isAr ? item.nameAr : (item.nameEn || item.nameAr)}</div>
                     {item.nameEn && item.nameAr && <div className="ocr-catalog-name-secondary">{isAr ? item.nameEn : item.nameAr}</div>}
                   </div>
@@ -239,7 +239,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                     {item.category && <span className="ocr-catalog-badge">{item.category}</span>}
                     <span className="ocr-catalog-badge">{item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'}</span>
                   </div>
-                  <div className="nx-flex nx-gap-4" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-1" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
                     <Button onClick={() => setEditing(item)} size="sm">{t('ocrEdit')}</Button>
                     <Button onClick={() => handleDelete(item.id)} size="sm" variant="danger">{t('ocrDelete')}</Button>
                   </div>
@@ -261,26 +261,26 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
       >
         <div dir={dir}>
           {lowestPrice != null && (
-            <p className="nx-text-sm nx-font-600 nx-mt-0 nx-mb-12" style={{ color: 'var(--noorix-accent-green)' }}>
+            <p className="text-[12px] font-semibold mt-0 mb-3" style={{ color: 'var(--noorix-accent-green)' }}>
               {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
             </p>
           )}
 
           <div className="modal-body">
             {/* Aliases */}
-            <div className="nx-font-600 nx-text-base nx-mb-6">{t('ocrAliases')}</div>
+            <div className="font-semibold text-[13px] mb-1.5">{t('ocrAliases')}</div>
             {(viewing?.aliases || []).length === 0 && (
               <div className="text-noorix-muted text-[13px]">{isAr ? 'لا توجد مرادفات بعد' : 'No aliases yet'}</div>
             )}
-            <div className="nx-flex nx-flex-wrap nx-gap-4 nx-mb-16">
+            <div className="flex flex flex-wrap gap-1 mb-4">
               {(viewing?.aliases || []).map((a) => (
-                <span key={a.id} className="nx-rounded nx-bg-muted nx-text-sm" style={{ padding: '3px 10px' }}>
-                  {a.alias} <span className="nx-text-muted" style={{ fontSize: 10 }}>({a.language})</span>
+                <span key={a.id} className="rounded-lg bg-noorix-bg-muted text-[12px]" style={{ padding: '3px 10px' }}>
+                  {a.alias} <span className="text-noorix-muted" style={{ fontSize: 10 }}>({a.language})</span>
                 </span>
               ))}
             </div>
-            <div className="nx-flex nx-gap-8 nx-mb-16">
-              <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="nx-flex-1" />
+            <div className="flex gap-2 mb-4">
+              <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="flex-1 min-w-0" />
               <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
                 <option value="ar">AR</option>
                 <option value="en">EN</option>
@@ -289,7 +289,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
             </div>
 
             {/* Price history */}
-            <div className="nx-font-600 nx-text-base nx-mb-8">{t('ocrPriceHistory')}</div>
+            <div className="font-semibold text-[13px] mb-2">{t('ocrPriceHistory')}</div>
             {historyLoading ? (
               <div className="ocr-loading" style={{ padding: 30 }}>
                 <div className="ocr-spinner" />
@@ -297,18 +297,18 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
             ) : priceHistory.length === 0 ? (
               <div className="text-noorix-muted text-[13px]">{isAr ? 'لا يوجد تاريخ أسعار بعد' : 'No price history yet'}</div>
             ) : (
-              <div className="nx-flex-col nx-gap-4">
+              <div className="flex flex-col gap-1">
                 {priceHistory.map((h) => {
                   const isLowest = Number(h.price) === lowestPrice;
                   return (
-                    <div key={h.id} className="nx-flex-between nx-rounded" style={{ padding: '10px 14px', background: isLowest ? 'rgba(22,163,74,0.06)' : 'var(--noorix-bg-muted)' }}>
+                    <div key={h.id} className="flex items-center justify-between rounded-lg" style={{ padding: '10px 14px', background: isLowest ? 'rgba(22,163,74,0.06)' : 'var(--noorix-bg-muted)' }}>
                       <div>
-                        <div className="nx-font-600 nx-text-base">{h.supplier?.nameAr || '—'}</div>
-                        <div className="nx-text-sm nx-text-muted">
+                        <div className="font-semibold text-[13px]">{h.supplier?.nameAr || '—'}</div>
+                        <div className="text-[12px] text-noorix-muted">
                           {new Date(h.invoiceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                         </div>
                       </div>
-                      <div className="nx-font-700 nx-text-lg" style={{ color: isLowest ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>
+                      <div className="font-bold text-[15px]" style={{ color: isLowest ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>
                         {Number(h.price).toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
                       </div>
                     </div>

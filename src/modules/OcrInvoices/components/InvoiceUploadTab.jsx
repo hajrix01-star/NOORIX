@@ -185,7 +185,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
   const dir = isAr ? 'rtl' : 'ltr';
 
   return (
-    <div className="nx-flex-col nx-gap-20" dir={dir}>
+    <div className="flex flex-col gap-5" dir={dir}>
 
       {/* Upload zone */}
       {!preview && (
@@ -204,26 +204,26 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
       )}
 
       {preview && (
-        <div className="nx-flex nx-flex-wrap" style={{ gap: 18, alignItems: 'start' }}>
-          <div className="nx-p-16 nx-rounded-lg nx-bg-surface nx-border-all" style={{ flex: '1 1 280px', minWidth: 0 }}>
-            <div className="nx-flex-between nx-mb-12">
-              <span className="nx-font-600 nx-text-md">{isAr ? 'صورة الفاتورة' : 'Invoice Image'}</span>
+        <div className="flex flex flex-wrap" style={{ gap: 18, alignItems: 'start' }}>
+          <div className="p-4 rounded-xl bg-noorix-surface border border-noorix-border" style={{ flex: '1 1 280px', minWidth: 0 }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-semibold text-[14px]">{isAr ? 'صورة الفاتورة' : 'Invoice Image'}</span>
               <Button className="modal-close-btn" style={{ width: 28, height: 28 }}
                 onClick={() => { setPreview(null); setBase64(null); setExtracted(null); setError(null); setEditItems(null); }}>✕</Button>
             </div>
-            <img src={preview} alt="invoice" className="nx-w-full nx-rounded" style={{ maxHeight: 500, objectFit: 'contain' }} />
-            <div className="nx-mt-12 nx-flex nx-gap-8 nx-flex-wrap">
+            <img src={preview} alt="invoice" className="w-full rounded-lg" style={{ maxHeight: 500, objectFit: 'contain' }} />
+            <div className="mt-3 flex gap-2 flex flex-wrap">
               {!extracted && (
-                <Button onClick={handleExtract} disabled={loading} variant="primary" className="nx-flex-1">
+                <Button onClick={handleExtract} disabled={loading} variant="primary" className="flex-1 min-w-0">
                   {loading ? t('ocrExtracting') : t('ocrExtract')}
                 </Button>
               )}
               {extracted && (
                 <>
-                  <Button onClick={handleSave} disabled={saving || success} variant="primary" className="nx-flex-1">
+                  <Button onClick={handleSave} disabled={saving || success} variant="primary" className="flex-1 min-w-0">
                     {saving ? t('ocrSaving') : success ? t('ocrSaved') : t('ocrSaveInvoice')}
                   </Button>
-                  <Button onClick={handleExtract} disabled={loading} className="nx-flex-1">
+                  <Button onClick={handleExtract} disabled={loading} className="flex-1 min-w-0">
                     {loading ? t('ocrExtracting') : (isAr ? 'إعادة استخراج' : 'Re-extract')}
                   </Button>
                 </>
@@ -234,9 +234,9 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
           {extracted && (
             <div className="flex flex-col" style={{ gap: 14, flex: '1 1 280px', minWidth: 0 }}>
 
-              <div className="nx-p-16 nx-rounded-lg nx-bg-surface nx-border-all">
-                <div className="nx-font-600 nx-text-md nx-mb-12">{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>
-                <div className="nx-grid nx-gap-8">
+              <div className="p-4 rounded-xl bg-noorix-surface border border-noorix-border">
+                <div className="font-semibold text-[14px] mb-3">{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>
+                <div className="grid gap-2">
                   <FieldRow label={t('ocrSupplierField')} value={extracted.supplier?.name} confidence={extracted.supplier?.confidence} match={extracted.supplierMatch} />
                   <FieldRow label={t('ocrVatNumber')} value={extracted.vatNumber?.value} confidence={extracted.vatNumber?.confidence} />
                   <FieldRow label={t('ocrInvoiceNumber')} value={extracted.invoiceNumber?.value} confidence={extracted.invoiceNumber?.confidence} />
@@ -244,23 +244,23 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                 </div>
 
                 {(extracted.subtotalAmount?.value || extracted.vatAmount?.value || extracted.totalAmount?.value) && (
-                  <div className="nx-mt-12 nx-rounded nx-overflow-hidden nx-border-all">
+                  <div className="mt-3 rounded-lg overflow-hidden border border-noorix-border">
                     {extracted.subtotalAmount?.value && (
-                      <div className="nx-flex-between nx-bg-muted nx-border-b nx-py-8 nx-px-12">
-                        <span className="nx-text-base nx-text-muted">{isAr ? 'المجموع قبل الضريبة' : 'Subtotal'}</span>
-                        <span className="nx-text-base nx-font-600">{extracted.subtotalAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
+                      <div className="flex items-center justify-between bg-noorix-bg-muted border-b border-noorix-border py-2 px-3">
+                        <span className="text-[13px] text-noorix-muted">{isAr ? 'المجموع قبل الضريبة' : 'Subtotal'}</span>
+                        <span className="text-[13px] font-semibold">{extracted.subtotalAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
                     )}
                     {extracted.vatAmount?.value && (
-                      <div className="nx-flex-between nx-border-b nx-py-8 nx-px-12">
-                        <span className="nx-text-base nx-text-muted">{isAr ? 'ضريبة القيمة المضافة' : 'VAT (15%)'}</span>
-                        <span className="nx-text-base nx-font-600" style={{ color: 'var(--noorix-accent-amber)' }}>{extracted.vatAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
+                      <div className="flex items-center justify-between border-b border-noorix-border py-2 px-3">
+                        <span className="text-[13px] text-noorix-muted">{isAr ? 'ضريبة القيمة المضافة' : 'VAT (15%)'}</span>
+                        <span className="text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-amber)' }}>{extracted.vatAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
                     )}
                     {extracted.totalAmount?.value && (
-                      <div className="nx-flex-between nx-bg-muted" style={{ padding: '10px 12px' }}>
-                        <span className="nx-text-base nx-font-700">{isAr ? 'الإجمالي شامل الضريبة' : 'Total (inc. VAT)'}</span>
-                        <span className="nx-text-base nx-font-700">{extracted.totalAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
+                      <div className="flex items-center justify-between bg-noorix-bg-muted" style={{ padding: '10px 12px' }}>
+                        <span className="text-[13px] font-bold">{isAr ? 'الإجمالي شامل الضريبة' : 'Total (inc. VAT)'}</span>
+                        <span className="text-[13px] font-bold">{extracted.totalAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
                     )}
                   </div>
@@ -268,28 +268,28 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
               </div>
 
               {warningCount > 0 && (
-                <div className="flex items-center gap-8 nx-text-base nx-rounded" style={{
+                <div className="flex items-center gap-8 text-[13px] rounded-lg" style={{
                   padding: '10px 14px',
                   background: 'rgba(245,158,11,0.08)',
                   border: '1px solid rgba(245,158,11,0.25)',
                 }}>
                   <div>
-                    <div className="nx-font-600" style={{ color: 'var(--noorix-accent-amber)' }}>
+                    <div className="font-semibold" style={{ color: 'var(--noorix-accent-amber)' }}>
                       {warningCount} {isAr ? 'تحذير — راجع الأرقام قبل الحفظ' : 'warning(s) — review before saving'}
                     </div>
                     {extracted.invoiceTotalWarning && (
-                      <div className="nx-text-sm" style={{ color: 'var(--noorix-accent-amber)', marginTop: 2 }}>{extracted.invoiceTotalWarning}</div>
+                      <div className="text-[12px]" style={{ color: 'var(--noorix-accent-amber)', marginTop: 2 }}>{extracted.invoiceTotalWarning}</div>
                     )}
                   </div>
                 </div>
               )}
 
               {activeItems.length > 0 && (
-                <div className="nx-p-16 nx-rounded-lg nx-bg-surface nx-border-all">
-                  <div className="nx-font-600 nx-text-md nx-mb-12">
+                <div className="p-4 rounded-xl bg-noorix-surface border border-noorix-border">
+                  <div className="font-semibold text-[14px] mb-3">
                     {t('ocrItems')} ({activeItems.length})
                   </div>
-                  <div className="nx-flex-col nx-gap-8">
+                  <div className="flex flex-col gap-2">
                     {activeItems.map((item, i) => (
                       <ItemRow
                         key={i}
@@ -310,7 +310,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
       )}
 
       {error && (
-        <div className="nx-text-base nx-rounded" style={{ padding: '12px 16px', background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)', color: 'var(--noorix-accent-red)' }}>
+        <div className="text-[13px] rounded-lg" style={{ padding: '12px 16px', background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)', color: 'var(--noorix-accent-red)' }}>
           {error}
         </div>
       )}
@@ -320,12 +320,12 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
 function FieldRow({ label, value, confidence, match }) {
   return (
-    <div className="nx-flex nx-gap-8 nx-border-b" style={{ alignItems: 'flex-start', padding: '6px 0' }}>
-      <span className="nx-text-base nx-text-muted" style={{ minWidth: 100 }}>{label}</span>
-      <div className="nx-flex-1">
-        <span className="nx-text-md nx-font-600 nx-text-primary">{value || '—'}</span>
+    <div className="flex gap-2 border-b border-noorix-border" style={{ alignItems: 'flex-start', padding: '6px 0' }}>
+      <span className="text-[13px] text-noorix-muted" style={{ minWidth: 100 }}>{label}</span>
+      <div className="flex-1 min-w-0">
+        <span className="text-[14px] font-semibold text-noorix-text">{value || '—'}</span>
         {match && (
-          <div className="nx-text-xs" style={{ marginTop: 2 }}>
+          <div className="text-[11px]" style={{ marginTop: 2 }}>
             <span style={{
               padding: '2px 6px', borderRadius: 4,
               background: match.status === 'auto' ? '#dcfce7' : '#fef3c7',
@@ -337,7 +337,7 @@ function FieldRow({ label, value, confidence, match }) {
         )}
       </div>
       {confidence !== undefined && (
-        <span className="nx-text-xs nx-font-700" style={{ color: CONFIDENCE_COLOR(confidence) }}>
+        <span className="text-[11px] font-bold" style={{ color: CONFIDENCE_COLOR(confidence) }}>
           {Math.round(confidence * 100)}%
         </span>
       )}
@@ -381,11 +381,11 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
       border: `1px solid ${hasMathWarn ? 'rgba(245,158,11,0.4)' : 'var(--noorix-border)'}`,
     }}>
       {/* رأس الصنف */}
-      <div className="nx-flex nx-gap-8 nx-flex-wrap nx-mb-8" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div className="nx-flex-1">
-          <div className="nx-font-600 nx-text-md">{displayName}</div>
+      <div className="flex gap-2 flex flex-wrap mb-2" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-[14px]">{displayName}</div>
           {sizeLabel && (
-            <span className="nx-text-xs nx-font-600 nx-bg-muted nx-text-muted" style={{
+            <span className="text-[11px] font-semibold bg-noorix-bg-muted text-noorix-muted" style={{
               display: 'inline-block', marginTop: 3,
               padding: '2px 8px', borderRadius: 4,
             }}>
@@ -393,16 +393,16 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
             </span>
           )}
           {item.name && item.name !== displayName && (
-            <div className="nx-text-xs nx-text-muted" style={{ marginTop: 2 }}>OCR: {item.name}</div>
+            <div className="text-[11px] text-noorix-muted" style={{ marginTop: 2 }}>OCR: {item.name}</div>
           )}
           {match && (
-            <div className="nx-text-xs nx-text-muted" style={{ marginTop: 2 }}>
+            <div className="text-[11px] text-noorix-muted" style={{ marginTop: 2 }}>
               ↳ {match.nameAr}{match.nameEn ? ` / ${match.nameEn}` : ''}
               {match.hasSizes && <span style={{ marginInlineStart: 4, color: 'var(--noorix-accent-violet)' }}>• متعدد الأحجام</span>}
             </div>
           )}
         </div>
-        <span className="nx-text-xs nx-font-700" style={{
+        <span className="text-[11px] font-bold" style={{
           padding: '3px 8px', borderRadius: 6, flexShrink: 0,
           background: statusInfo.bg, color: statusInfo.color,
         }}>
@@ -413,21 +413,21 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
       {/* حقول الكمية والسعر والإجمالي — قابلة للتعديل */}
       <div className="flex items-center gap-10" style={{ flexWrap: 'wrap' }}>
         <div className="flex flex-col" style={{ alignItems: 'center', gap: 2 }}>
-          <span className="nx-text-muted" style={{ fontSize: 10 }}>الكمية</span>
+          <span className="text-noorix-muted" style={{ fontSize: 10 }}>الكمية</span>
           <EditableNumber value={item.quantity} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'quantity', v)} />
         </div>
         <span className="text-noorix-muted text-[13px]" style={{ alignSelf: 'flex-end', marginBottom: 4 }}>×</span>
         <div className="flex flex-col" style={{ alignItems: 'center', gap: 2 }}>
-          <span className="nx-text-muted" style={{ fontSize: 10 }}>السعر</span>
+          <span className="text-noorix-muted" style={{ fontSize: 10 }}>السعر</span>
           <EditableNumber value={item.unitPrice} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'unitPrice', v)} />
         </div>
         <span className="text-noorix-muted text-[13px]" style={{ alignSelf: 'flex-end', marginBottom: 4 }}>=</span>
         <div className="flex flex-col" style={{ alignItems: 'center', gap: 2 }}>
-          <span className="nx-text-muted" style={{ fontSize: 10 }}>الإجمالي</span>
+          <span className="text-noorix-muted" style={{ fontSize: 10 }}>الإجمالي</span>
           <EditableNumber value={item.totalPrice} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'totalPrice', v)} />
         </div>
         {item.confidence != null && (
-          <span className="nx-text-xs" style={{ color: CONFIDENCE_COLOR(item.confidence), alignSelf: 'flex-end', marginBottom: 4 }}>
+          <span className="text-[11px]" style={{ color: CONFIDENCE_COLOR(item.confidence), alignSelf: 'flex-end', marginBottom: 4 }}>
             {Math.round(item.confidence * 100)}%
           </span>
         )}
@@ -435,11 +435,11 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
 
       {/* تحذير رياضي */}
       {hasMathWarn && (
-        <div className="nx-flex-between nx-gap-8 nx-mt-8 nx-rounded" style={{
+        <div className="flex items-center justify-between gap-2 mt-2 rounded-lg" style={{
           padding: '6px 10px',
           background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
         }}>
-          <div className="nx-text-sm" style={{ color: 'var(--noorix-accent-amber)' }}>
+          <div className="text-[12px]" style={{ color: 'var(--noorix-accent-amber)' }}>
             {item.mathWarning.message}
           </div>
           {(item.mathWarning.suggestedQuantity !== undefined || item.mathWarning.suggestedUnitPrice !== undefined) && (
@@ -457,7 +457,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
 
       {/* تحذير السعر */}
       {hasPriceWarn && (
-        <div className="nx-text-sm nx-rounded" style={{
+        <div className="text-[12px] rounded-lg" style={{
           marginTop: 6, padding: '6px 10px',
           background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
           color: 'var(--noorix-accent-blue)',

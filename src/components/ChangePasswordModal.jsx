@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ChangePasswordModal — نافذة تغيير كلمة المرور
  */
 import React, { useState } from 'react';
@@ -76,7 +76,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
   return (
     <AdaptiveSheet open={true} onClose={onClose} title={t('changePassword')} size="sm" side="start" className="change-password-drawer">
       <form onSubmit={handleSubmit}>
-        <div className="nx-flex nx-flex-col nx-gap-16">
+        <div className="flex flex flex-col gap-4">
           <Input
             type="password"
             label={t('changePasswordCurrent') || 'كلمة المرور الحالية'}
@@ -95,8 +95,8 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               autoComplete="new-password"
             />
             {newPassword && (
-              <div className="nx-mt-8">
-                <div className="nx-flex nx-gap-4 nx-mb-4">
+              <div className="mt-2">
+                <div className="flex gap-1 mb-1">
                   {[1, 2, 3, 4].map((level) => (
                     <div
                       key={level}
@@ -110,7 +110,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
                     />
                   ))}
                 </div>
-                <span className="nx-text-xs" style={{ color: strengthColor }}>{strengthLabel}</span>
+                <span className="text-[11px]" style={{ color: strengthColor }}>{strengthLabel}</span>
               </div>
             )}
           </div>
@@ -124,17 +124,17 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               autoComplete="new-password"
             />
             {confirmPassword && confirmPassword !== newPassword && (
-              <span className="nx-text-xs nx-mt-4" style={{ color: 'var(--noorix-accent-red)', display: 'block' }}>
+              <span className="text-[11px] mt-1" style={{ color: 'var(--noorix-accent-red)', display: 'block' }}>
                 كلمتا المرور غير متطابقتين
               </span>
             )}
           </div>
           {error && (
-            <div className="nx-p-10 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
+            <div className="p-2.5 rounded-lg text-[13px]" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
               {error}
             </div>
           )}
-          <div className="nx-flex nx-flex-end nx-gap-10">
+          <div className="flex flex items-center justify-end gap-2.5">
             <Button type="button" onClick={onClose}>
               {t('cancel')}
             </Button>

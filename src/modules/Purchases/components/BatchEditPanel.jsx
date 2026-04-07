@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BatchEditPanel — عرض دفعة وتعديل/حذف فواتيرها
  */
 import React, { useState } from 'react';
@@ -76,11 +76,11 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
       }
     >
       {error && (
-        <div className="nx-rounded nx-text-base nx-p-12 nx-mb-12" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
+        <div className="rounded-lg text-[13px] p-3 mb-3" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
           {error}
         </div>
       )}
-      <div className="noorix-table-frame nx-overflow-auto">
+      <div className="noorix-table-frame overflow-auto">
         <table className="noorix-table">
           <thead>
             <tr style={{ background: 'var(--noorix-bg-page)', borderBottom: '2px solid var(--noorix-border)' }}>
@@ -95,7 +95,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
           <tbody>
             {invoices.map((inv, i) => (
               <tr key={inv.id || i} style={{ borderBottom: '1px solid var(--noorix-border)', opacity: inv.status === 'cancelled' ? 0.5 : 1, background: inv.status === 'cancelled' ? 'var(--noorix-bg-page)' : 'transparent' }}>
-                <td className="nx-text-center nx-text-muted nx-font-600" style={{ padding: 6 }}>{i + 1}</td>
+                <td className="text-center text-noorix-muted font-semibold" style={{ padding: 6 }}>{i + 1}</td>
                 <td style={{ padding: 6 }}>
                   {inv.status === 'cancelled' ? (
                     <span className="nx-cell-muted">{(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}</span>
@@ -156,7 +156,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                 </td>
                 <td style={{ padding: 6 }}>
                   {inv.status === 'cancelled' ? (
-                    <span className="nx-text-sm nx-font-600" style={{ color: 'var(--noorix-accent-red)' }}>{t('cancelled')}</span>
+                    <span className="text-[12px] font-semibold" style={{ color: 'var(--noorix-accent-red)' }}>{t('cancelled')}</span>
                   ) : (
                     <Button
                       size="sm"

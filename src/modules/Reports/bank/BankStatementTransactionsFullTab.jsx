@@ -81,10 +81,10 @@ export default function BankStatementTransactionsFullTab({
     filteredTransactions.every((tx) => selectedTxIds.has(getTxKey(tx)));
 
   return (
-    <div className="nx-grid nx-gap-14">
+    <div className="grid gap-3.5">
       {/* ── شريط الفلاتر ── */}
       <div
-        className="nx-grid nx-gap-10 nx-bg-muted nx-rounded-lg nx-p-12 nx-border-all"
+        className="grid gap-2.5 bg-noorix-bg-muted rounded-xl p-3 border border-noorix-border"
         style={{
           gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
         }}
@@ -146,7 +146,7 @@ export default function BankStatementTransactionsFullTab({
 
         {/* إحصاء */}
         <div
-          className="flex items-center gap-10 nx-text-sm nx-rounded nx-px-12 nx-py-4 nx-bg-surface nx-border-all"
+          className="flex items-center gap-10 text-[12px] rounded-lg px-3 py-1 bg-noorix-surface border border-noorix-border"
         >
           <span style={{ color: 'var(--noorix-text-muted)' }}>النتائج:</span>
           <span style={{ fontWeight: 700 }}>{filteredTransactions.length}</span>
@@ -170,9 +170,9 @@ export default function BankStatementTransactionsFullTab({
 
       {/* ── إضافة فئة جديدة ── */}
       <div
-        className="nx-flex-center nx-flex-wrap nx-gap-8 nx-bg-muted nx-rounded nx-border-all nx-px-12 nx-py-8"
+        className="flex items-center flex flex-wrap gap-2 bg-noorix-bg-muted rounded-lg border border-noorix-border px-3 py-2"
       >
-        <span className="nx-text-sm nx-font-600 nx-text-muted">
+        <span className="text-[12px] font-semibold text-noorix-muted">
           {t('bankStatementAddCategory')}:
         </span>
         <Input
@@ -193,11 +193,11 @@ export default function BankStatementTransactionsFullTab({
       </div>
 
       {/* ── الجدول ── */}
-      <div className="nx-overflow-auto nx-rounded-lg nx-border-all" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+      <div className="overflow-auto rounded-xl border border-noorix-border" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 780 }}>
           <thead>
             <tr
-              className="nx-bg-muted"
+              className="bg-noorix-bg-muted"
               style={{
                 borderBottom: '2px solid var(--noorix-border)',
               }}
@@ -238,7 +238,7 @@ export default function BankStatementTransactionsFullTab({
           <tbody>
             {filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan={8} className="nx-text-center nx-text-muted" style={{ padding: 32 }}>
+                <td colSpan={8} className="text-center text-noorix-muted" style={{ padding: 32 }}>
                   لا توجد عمليات تطابق الفلاتر المحددة.
                 </td>
               </tr>
@@ -282,7 +282,7 @@ export default function BankStatementTransactionsFullTab({
                     {/* الوصف */}
                     <td style={{ padding: '8px 10px', maxWidth: 280 }}>
                       <div
-                        className="nx-overflow-hidden nx-text-sm"
+                        className="overflow-hidden text-[12px]"
                         style={{
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -296,7 +296,7 @@ export default function BankStatementTransactionsFullTab({
                     {/* الفئة */}
                     <td style={{ padding: '8px 10px' }}>
                       {editingTxId === tx.id ? (
-                        <div className="nx-flex-col nx-gap-4">
+                        <div className="flex flex-col gap-1">
                           <Input
                             type="select"
                             value={editingCategory}
@@ -307,7 +307,7 @@ export default function BankStatementTransactionsFullTab({
                               <option key={c.id} value={c.id}>{c.label}</option>
                             ))}
                           </Input>
-                          <div className="nx-flex nx-gap-4">
+                          <div className="flex gap-1">
                             <Button
                               variant="primary"
                               size="sm"
@@ -385,7 +385,7 @@ export default function BankStatementTransactionsFullTab({
                     {/* الملاحظة */}
                     <td style={{ padding: '8px 10px' }}>
                       {editingNoteId === tx.id ? (
-                        <div className="nx-flex-col nx-gap-4">
+                        <div className="flex flex-col gap-1">
                           <Input
                             value={editingNote}
                             onChange={(e) => setEditingNote(e.target.value)}
@@ -397,7 +397,7 @@ export default function BankStatementTransactionsFullTab({
                               width: 150,
                             }}
                           />
-                          <div className="nx-flex nx-gap-4">
+                          <div className="flex gap-1">
                             <Button variant="primary" size="sm" disabled={updateNoteMutation.isPending} onClick={() => handleNoteChange(tx.id)}>
                               {t('save')}
                             </Button>
@@ -424,7 +424,7 @@ export default function BankStatementTransactionsFullTab({
           </tbody>
           <tfoot>
             <tr
-              className="nx-bg-muted nx-font-800"
+              className="bg-noorix-bg-muted font-extrabold"
               style={{
                 borderTop: '2px solid var(--noorix-border)',
               }}

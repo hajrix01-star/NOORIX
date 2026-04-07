@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ItemsManageTab — تبويبة إدارة الأصناف والفئات
  * إعادة بناء مع قوائم منسدلة للأحجام والتغليف + خيار إضافة جديد
  */
@@ -426,7 +426,7 @@ export function ItemsManageTab({ companyId }) {
       <AddSizeModal visible={addSizeModal} onClose={() => setAddSizeModal(false)} value={newSize} onChange={setNewSize} onAdd={handleAddSize} />
       <AddPackagingModal visible={addPackagingModal} onClose={() => setAddPackagingModal(false)} value={newPackaging} onChange={setNewPackaging} onAdd={handleAddPackaging} />
 
-      <div className="nx-flex nx-gap-8 nx-border-b">
+      <div className="flex gap-2 border-b border-noorix-border">
         <Button
           type="button"
           onClick={() => setActiveSubTab('products')}
@@ -456,11 +456,11 @@ export function ItemsManageTab({ companyId }) {
       </div>
 
       {activeSubTab === 'products' && (
-        <div className="nx-grid nx-gap-20">
-          <div className="noorix-surface-card nx-p-20">
-            <div className="nx-flex nx-gap-12 nx-mb-12 nx-flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <h4 className="nx-m-0 nx-text-lg">+ {t('ordersAddProduct')}</h4>
-              <div className="nx-flex-col nx-gap-8" style={{ alignItems: 'flex-end' }}>
+        <div className="grid gap-5">
+          <div className="noorix-surface-card p-5">
+            <div className="flex gap-3 mb-3 flex flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <h4 className="m-0 text-[15px]">+ {t('ordersAddProduct')}</h4>
+              <div className="flex flex-col gap-2" style={{ alignItems: 'flex-end' }}>
                 <div className="nx-toolbar" style={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   <OrdersImportHelpTrigger t={t} variant="products" />
                   <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} style={{ display: 'none' }} />
@@ -473,13 +473,13 @@ export function ItemsManageTab({ companyId }) {
                   <Button onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>{t('import')}</Button>
                   <Button onClick={handleExportProducts} disabled={products.length === 0}>{t('exportExcel')}</Button>
                 </div>
-                <p className="nx-m-0 nx-text-xs nx-text-muted nx-text-end" style={{ maxWidth: 560, lineHeight: 1.45 }}>
+                <p className="m-0 text-[11px] text-noorix-muted text-end" style={{ maxWidth: 560, lineHeight: 1.45 }}>
                   {t('ordersPresetCatalogHint')}
                 </p>
               </div>
             </div>
-            <div className="nx-grid nx-gap-16">
-              <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+            <div className="grid gap-4">
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
                 <Input
                   label={`${t('productNameAr')} *`}
                   value={newProduct.nameAr}
@@ -505,27 +505,27 @@ export function ItemsManageTab({ companyId }) {
                 </Input>
               </div>
               <div>
-                <div className="nx-flex-between nx-mb-8">
-                  <label className="nx-text-sm nx-text-muted">{t('ordersProductVariants')}</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[12px] text-noorix-muted">{t('ordersProductVariants')}</label>
                   <Button size="sm" onClick={addVariantToProduct}>+ {t('ordersAddVariant')}</Button>
                 </div>
-                <div className="nx-rounded nx-border-all nx-overflow-auto">
-                  <table className="nx-w-full nx-text-sm" style={{ borderCollapse: 'collapse' }}>
+                <div className="rounded-lg border border-noorix-border overflow-auto">
+                  <table className="w-full text-[12px]" style={{ borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr className="nx-bg-muted nx-border-b">
-                        <th className="nx-font-600" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('ordersProductSize')}</th>
-                        <th className="nx-font-600" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('ordersProductPackaging')}</th>
-                        <th className="nx-font-600" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('unit')}</th>
-                        <th className="nx-font-600" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('ordersVariantPrice')}</th>
+                      <tr className="bg-noorix-bg-muted border-b border-noorix-border">
+                        <th className="font-semibold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('ordersProductSize')}</th>
+                        <th className="font-semibold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('ordersProductPackaging')}</th>
+                        <th className="font-semibold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('unit')}</th>
+                        <th className="font-semibold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('ordersVariantPrice')}</th>
                         <th style={{ width: 40, padding: '8px 4px' }} />
                       </tr>
                     </thead>
                     <tbody>
                       {(newProduct.variants || []).map((v, idx) => (
-                        <tr key={idx} className="nx-border-b">
+                        <tr key={idx} className="border-b border-noorix-border">
                           <td style={{ padding: '6px 8px' }}>
-                            <div className="nx-flex nx-gap-4">
-                              <Input type="select" value={v.size} onChange={(e) => updateNewProductVariant(idx, 'size', e.target.value)} className="nx-flex-1">
+                            <div className="flex gap-1">
+                              <Input type="select" value={v.size} onChange={(e) => updateNewProductVariant(idx, 'size', e.target.value)} className="flex-1 min-w-0">
                                 <option value="">—</option>
                                 {sizesOptions.map((s) => (
                                   <option key={s.ar} value={s.ar}>{s.ar}</option>
@@ -535,8 +535,8 @@ export function ItemsManageTab({ companyId }) {
                             </div>
                           </td>
                           <td style={{ padding: '6px 8px' }}>
-                            <div className="nx-flex nx-gap-4">
-                              <Input type="select" value={v.packaging} onChange={(e) => updateNewProductVariant(idx, 'packaging', e.target.value)} className="nx-flex-1">
+                            <div className="flex gap-1">
+                              <Input type="select" value={v.packaging} onChange={(e) => updateNewProductVariant(idx, 'packaging', e.target.value)} className="flex-1 min-w-0">
                                 <option value="">—</option>
                                 {packagingOptions.map((s) => (
                                   <option key={s.ar} value={s.ar}>{s.ar}</option>
@@ -573,7 +573,7 @@ export function ItemsManageTab({ companyId }) {
             </div>
           </div>
 
-          <div className="noorix-surface-card nx-overflow-auto">
+          <div className="noorix-surface-card overflow-auto">
             <div className="nx-section-header" style={{ justifyContent: 'flex-end' }}>
               <Input
                 type="search"
@@ -584,14 +584,14 @@ export function ItemsManageTab({ companyId }) {
                 style={{ maxWidth: 320 }}
               />
             </div>
-            <table className="nx-w-full nx-text-base" style={{ borderCollapse: 'collapse' }}>
+            <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('productNameAr')}</th>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('productNameEn')}</th>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('category')}</th>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('ordersProductVariants')}</th>
-                  <th className="nx-text-center nx-font-700" style={{ padding: '10px 12px' }}>{t('actions')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('productNameAr')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('productNameEn')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('category')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('ordersProductVariants')}</th>
+                  <th className="text-center font-bold" style={{ padding: '10px 12px' }}>{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -601,22 +601,22 @@ export function ItemsManageTab({ companyId }) {
                     ? variants.map((v) => `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0, 2)}`).join(' | ')
                     : (p.lastPrice ? fmt(p.lastPrice, 2) + ' (افتراضي)' : '—');
                   return (
-                  <tr key={p.id} className="nx-border-b">
+                  <tr key={p.id} className="border-b border-noorix-border">
                     {editingProduct?.id === p.id ? (
                       <>
                         <td style={{ padding: '8px 12px' }} colSpan={5}>
-                          <div className="nx-grid nx-gap-12">
-                            <div className="nx-flex-wrap nx-gap-12">
+                          <div className="grid gap-3">
+                            <div className="flex flex-wrap gap-3">
                               <div style={{ minWidth: 140 }}>
-                                <label className="nx-text-xs nx-text-muted">{t('productNameAr')}</label>
+                                <label className="text-[11px] text-noorix-muted">{t('productNameAr')}</label>
                                 <Input type="text" value={editingProduct.nameAr} onChange={(e) => setEditingProduct((x) => ({ ...x, nameAr: e.target.value }))} />
                               </div>
                               <div style={{ minWidth: 140 }}>
-                                <label className="nx-text-xs nx-text-muted">{t('productNameEn')}</label>
+                                <label className="text-[11px] text-noorix-muted">{t('productNameEn')}</label>
                                 <Input type="text" value={editingProduct.nameEn || ''} onChange={(e) => setEditingProduct((x) => ({ ...x, nameEn: e.target.value }))} />
                               </div>
                               <div style={{ minWidth: 120 }}>
-                                <label className="nx-text-xs nx-text-muted">{t('category')}</label>
+                                <label className="text-[11px] text-noorix-muted">{t('category')}</label>
                                 <Input type="select" value={editingProduct.categoryId || ''} onChange={(e) => setEditingProduct((x) => ({ ...x, categoryId: e.target.value }))}>
                                   <option value="">—</option>
                                   {categories.map((c) => (
@@ -626,14 +626,14 @@ export function ItemsManageTab({ companyId }) {
                               </div>
                             </div>
                             <div>
-                              <div className="nx-flex-between nx-mb-6">
-                                <label className="nx-text-xs nx-text-muted">{t('ordersProductVariants')}</label>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <label className="text-[11px] text-noorix-muted">{t('ordersProductVariants')}</label>
                                 <Button size="sm" onClick={() => setEditingProduct((x) => ({ ...x, variants: [...(x.variants || []), { size: '', packaging: '', unit: 'piece', lastPrice: '' }] }))}>+ {t('ordersAddVariant')}</Button>
                               </div>
-                              <div className="nx-border-all nx-overflow-auto" style={{ borderRadius: 6 }}>
-                                <table className="nx-w-full nx-text-xs" style={{ borderCollapse: 'collapse' }}>
+                              <div className="border border-noorix-border overflow-auto" style={{ borderRadius: 6 }}>
+                                <table className="w-full text-[11px]" style={{ borderCollapse: 'collapse' }}>
                                   <thead>
-                                    <tr className="nx-bg-muted">
+                                    <tr className="bg-noorix-bg-muted">
                                       <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('ordersProductSize')}</th>
                                       <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('ordersProductPackaging')}</th>
                                       <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('unit')}</th>
@@ -693,7 +693,7 @@ export function ItemsManageTab({ companyId }) {
                         <td className="nx-cell-muted" style={{ padding: '10px 12px' }}>{p.nameEn || '—'}</td>
                         <td className="nx-cell-muted" style={{ padding: '10px 12px' }}>{p.category?.nameAr || p.category?.nameEn || '—'}</td>
                         <td className="nx-cell-ellipsis nx-cell-muted" style={{ padding: '10px 12px', fontSize: 12, maxWidth: 280 }} title={variantsSummary}>{variantsSummary}</td>
-                        <td className="nx-text-center" style={{ padding: '10px 12px' }}>
+                        <td className="text-center" style={{ padding: '10px 12px' }}>
                           <Button size="sm" onClick={() => setEditingProduct({ id: p.id, nameAr: p.nameAr, nameEn: p.nameEn || '', categoryId: p.categoryId || '', variants: variants.length > 0 ? variants.map((v) => ({ size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', lastPrice: v.lastPrice ? String(v.lastPrice) : '' })) : [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }] })}>{t('edit')}</Button>
                         </td>
                       </>
@@ -704,21 +704,21 @@ export function ItemsManageTab({ companyId }) {
               </tbody>
             </table>
             {products.length === 0 && (
-              <div className="nx-text-center nx-text-muted" style={{ padding: 30 }}>{t('ordersNoProductsYet')}</div>
+              <div className="text-center text-noorix-muted" style={{ padding: 30 }}>{t('ordersNoProductsYet')}</div>
             )}
             {products.length > 0 && filteredProducts.length === 0 && (
-              <div className="nx-text-center nx-text-muted" style={{ padding: 30 }}>{t('ordersNoSearchResults')}</div>
+              <div className="text-center text-noorix-muted" style={{ padding: 30 }}>{t('ordersNoSearchResults')}</div>
             )}
           </div>
         </div>
       )}
 
       {activeSubTab === 'categories' && (
-        <div className="nx-grid nx-gap-20">
-          <div className="noorix-surface-card nx-p-20">
-            <div className="nx-flex nx-gap-12 nx-mb-12 nx-flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <h4 className="nx-m-0 nx-text-lg">+ {t('ordersAddCategory')}</h4>
-              <div className="nx-flex-col nx-gap-8" style={{ alignItems: 'flex-end' }}>
+        <div className="grid gap-5">
+          <div className="noorix-surface-card p-5">
+            <div className="flex gap-3 mb-3 flex flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <h4 className="m-0 text-[15px]">+ {t('ordersAddCategory')}</h4>
+              <div className="flex flex-col gap-2" style={{ alignItems: 'flex-end' }}>
                 <div className="nx-toolbar" style={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   <OrdersImportHelpTrigger t={t} variant="categories" />
                   <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} style={{ display: 'none' }} />
@@ -730,7 +730,7 @@ export function ItemsManageTab({ companyId }) {
                 </div>
               </div>
             </div>
-              <div className="nx-flex nx-gap-12 nx-flex-wrap" style={{ alignItems: 'flex-end' }}>
+              <div className="flex gap-3 flex flex-wrap" style={{ alignItems: 'flex-end' }}>
               <div style={{ minWidth: 180 }}>
                 <Input
                   label={`${t('categoryNameAr')} *`}
@@ -753,7 +753,7 @@ export function ItemsManageTab({ companyId }) {
             </div>
           </div>
 
-          <div className="noorix-surface-card nx-overflow-auto">
+          <div className="noorix-surface-card overflow-auto">
             <div className="nx-section-header" style={{ justifyContent: 'flex-end' }}>
               <Input
                 type="search"
@@ -764,17 +764,17 @@ export function ItemsManageTab({ companyId }) {
                 style={{ maxWidth: 320 }}
               />
             </div>
-            <table className="nx-w-full nx-text-base" style={{ borderCollapse: 'collapse' }}>
+            <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('categoryNameAr')}</th>
-                  <th className="nx-font-700" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('categoryNameEn')}</th>
-                  <th className="nx-text-center nx-font-700" style={{ padding: '10px 12px' }}>{t('actions')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('categoryNameAr')}</th>
+                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('categoryNameEn')}</th>
+                  <th className="text-center font-bold" style={{ padding: '10px 12px' }}>{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCategories.map((c) => (
-                  <tr key={c.id} className="nx-border-b">
+                  <tr key={c.id} className="border-b border-noorix-border">
                     {editingCategory?.id === c.id ? (
                       <>
                         <td style={{ padding: '8px 12px' }}>
@@ -783,7 +783,7 @@ export function ItemsManageTab({ companyId }) {
                         <td style={{ padding: '8px 12px' }}>
                           <Input type="text" value={editingCategory.nameEn || ''} onChange={(e) => setEditingCategory((x) => ({ ...x, nameEn: e.target.value }))} placeholder={t('categoryNameEn')} />
                         </td>
-                        <td className="nx-text-center" style={{ padding: '8px 12px' }}>
+                        <td className="text-center" style={{ padding: '8px 12px' }}>
                           <div className="nx-toolbar" style={{ justifyContent: 'center' }}>
                             <Button size="sm" onClick={handleUpdateCategory}>{t('save')}</Button>
                             <Button size="sm" onClick={() => setEditingCategory(null)}>{t('cancel')}</Button>
@@ -794,7 +794,7 @@ export function ItemsManageTab({ companyId }) {
                       <>
                         <td style={{ padding: '10px 12px' }}>{c.nameAr || '—'}</td>
                         <td className="nx-cell-muted" style={{ padding: '10px 12px' }}>{c.nameEn || '—'}</td>
-                        <td className="nx-text-center" style={{ padding: '10px 12px' }}>
+                        <td className="text-center" style={{ padding: '10px 12px' }}>
                           <Button size="sm" onClick={() => setEditingCategory({ id: c.id, nameAr: c.nameAr, nameEn: c.nameEn || '' })}>{t('edit')}</Button>
                         </td>
                       </>
@@ -804,10 +804,10 @@ export function ItemsManageTab({ companyId }) {
               </tbody>
             </table>
             {categories.length === 0 && (
-              <div className="nx-text-center nx-text-muted" style={{ padding: 30 }}>{t('ordersNoCategoriesYet')}</div>
+              <div className="text-center text-noorix-muted" style={{ padding: 30 }}>{t('ordersNoCategoriesYet')}</div>
             )}
             {categories.length > 0 && filteredCategories.length === 0 && (
-              <div className="nx-text-center nx-text-muted" style={{ padding: 30 }}>{t('ordersNoSearchResults')}</div>
+              <div className="text-center text-noorix-muted" style={{ padding: 30 }}>{t('ordersNoSearchResults')}</div>
             )}
           </div>
         </div>

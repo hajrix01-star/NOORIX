@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HRMainScreen — الشاشة الرئيسية للموارد البشرية
  */
 import React, { useState } from 'react';
@@ -70,8 +70,8 @@ export default function HRMainScreen() {
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
         </div>
         {companyId && (
-          <div className="nx-flex nx-flex-wrap nx-gap-8">
-            <div className="noorix-stat-card noorix-stat-card--green nx-px-16 nx-py-8" style={{ minWidth: 110 }}>
+          <div className="flex flex flex-wrap gap-2">
+            <div className="noorix-stat-card noorix-stat-card--green px-4 py-2" style={{ minWidth: 110 }}>
               <div className="noorix-stat-card__stripe" />
               <div className="noorix-stat-card__body">
                 <div className="noorix-stat-card__label">{t('hrStatsActive')}</div>
@@ -79,7 +79,7 @@ export default function HRMainScreen() {
               </div>
             </div>
             {expiringCount > 0 && (
-              <div className="noorix-stat-card noorix-stat-card--amber nx-px-16 nx-py-8" style={{ minWidth: 130 }}>
+              <div className="noorix-stat-card noorix-stat-card--amber px-4 py-2" style={{ minWidth: 130 }}>
                 <div className="noorix-stat-card__stripe" />
                 <div className="noorix-stat-card__body">
                   <div className="noorix-stat-card__label">{t('hrStatsResidencyExpiring')}</div>
@@ -92,7 +92,7 @@ export default function HRMainScreen() {
       </div>
 
       {/* ── شريط التبويبات — مستقل خارج البطاقة لضمان التمرير الأفقي ── */}
-      <div className="nx-bg-surface nx-rounded-lg nx-border-all nx-p-4 nx-overflow-auto" style={{
+      <div className="bg-noorix-surface rounded-xl border border-noorix-border p-1 overflow-auto" style={{
         overflowY: 'visible',
         WebkitOverflowScrolling: 'touch',
         scrollbarWidth: 'none',
@@ -114,7 +114,7 @@ export default function HRMainScreen() {
       </div>
 
       {/* ── محتوى التبويب ── */}
-      <div className="noorix-surface-card nx-p-20" style={{ minHeight: 200 }}>
+      <div className="noorix-surface-card p-5" style={{ minHeight: 200 }}>
         {activeTab === 'employees' && <StaffListScreen embedded />}
         {activeTab === 'payroll'   && <PayrollTab />}
         {activeTab === 'leave'     && <LeaveTab />}

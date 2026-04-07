@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SmartChatScreen — المحادثة الذكية
  * نسق مرجعي: أوامر مجمّعة، إدخال، نوافذ مركزية، تخزين محلي مع فلتر.
  */
@@ -83,7 +83,7 @@ function ReportCard({ text, isAr, createdAt }) {
 
   return (
     <div
-      className="nx-bg-surface nx-text-primary nx-text-lg"
+      className="bg-noorix-surface text-noorix-text text-[15px]"
       style={{
         padding: '16px 20px',
         borderRadius: 14,
@@ -95,7 +95,7 @@ function ReportCard({ text, isAr, createdAt }) {
       }}
     >
       {rows.length > 0 ? (
-        <div className="nx-grid" style={{ gridTemplateColumns: 'auto 1fr', gap: '8px 16px', alignItems: 'baseline', direction: isAr ? 'rtl' : 'ltr' }}>
+        <div className="grid" style={{ gridTemplateColumns: 'auto 1fr', gap: '8px 16px', alignItems: 'baseline', direction: isAr ? 'rtl' : 'ltr' }}>
           {rows.map((line, i) => {
             const colonIdx = line.indexOf(':');
             const hasLabel = colonIdx > 0 && colonIdx < 50;
@@ -107,7 +107,7 @@ function ReportCard({ text, isAr, createdAt }) {
               <React.Fragment key={i}>
                 {label ? (
                   <>
-                    <span className="nx-text-base nx-text-muted nx-font-600">
+                    <span className="text-[13px] text-noorix-muted font-semibold">
                       {label}:
                     </span>
                     <span style={valueStyle}>{value}</span>
@@ -123,7 +123,7 @@ function ReportCard({ text, isAr, createdAt }) {
         <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
       )}
       {createdAt && (
-        <div className="nx-text-sm nx-text-muted nx-border-t nx-ltr" style={{ marginTop: 14, paddingTop: 12 }}>
+        <div className="text-[12px] text-noorix-muted border-t border-noorix-border nx-ltr" style={{ marginTop: 14, paddingTop: 12 }}>
           {new Date(createdAt).toLocaleString('en', { dateStyle: 'short', timeStyle: 'short' })}
         </div>
       )}
@@ -390,7 +390,7 @@ export default function SmartChatScreen() {
   return (
     <div className="noorix-smart-chat-root">
       {!activeCompanyId && (
-        <div className="noorix-surface-card nx-text-center nx-text-muted nx-p-24" style={{ margin: 16 }}>
+        <div className="noorix-surface-card text-center text-noorix-muted p-6" style={{ margin: 16 }}>
           {t('pleaseSelectCompany')}
         </div>
       )}
@@ -459,13 +459,13 @@ export default function SmartChatScreen() {
           )}
           {displayedMessages.length === 0 && (
             dateFilter ? (
-              <div className="nx-text-muted nx-text-md nx-text-center nx-p-24">
+              <div className="text-noorix-muted text-[14px] text-center p-6">
                 {t('chatNoMessagesOnDate')}
               </div>
             ) : (
-              <div className="nx-flex-1 nx-flex-col nx-text-muted nx-text-center nx-gap-16" style={{ justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+              <div className="flex-1 min-w-0 flex flex-col text-noorix-muted text-center gap-4" style={{ justifyContent: 'center', alignItems: 'center', padding: 32 }}>
                 <div style={{ fontSize: 48, opacity: 0.25 }}></div>
-                <div className="nx-text-lg" style={{ maxWidth: 360, lineHeight: 1.7, opacity: 0.7 }}>
+                <div className="text-[15px]" style={{ maxWidth: 360, lineHeight: 1.7, opacity: 0.7 }}>
                   {isAr
                     ? 'استخدم «الأوامر» لإدخال البيانات، أو «أسئلة جاهزة» للاستفسار، أو اكتب سؤالك مباشرة.'
                     : 'Use Commands to enter data, Suggested for queries, or type your question below.'}
@@ -495,7 +495,7 @@ export default function SmartChatScreen() {
           ))}
           {loading && (
             <div className={`noorix-chat-msg-row noorix-chat-msg-row--assistant`}>
-              <div className="nx-bg-muted nx-text-md nx-text-muted nx-gap-8" style={{ padding: '12px 18px', borderRadius: 18, display: 'inline-flex', alignItems: 'center' }}>
+              <div className="bg-noorix-bg-muted text-[14px] text-noorix-muted gap-2" style={{ padding: '12px 18px', borderRadius: 18, display: 'inline-flex', alignItems: 'center' }}>
                 <span className="noorix-chat-spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(100,116,139,0.3)', borderTopColor: 'var(--noorix-text-muted)' }} />
                 {isAr ? 'جاري البحث...' : 'Searching...'}
               </div>
@@ -532,9 +532,9 @@ export default function SmartChatScreen() {
 
       {faqOpen && (
         <AdaptiveSheet open={true} onClose={() => setFaqOpen(false)} title={isAr ? 'أسئلة جاهزة' : 'Suggested questions'} size="md" side="start" className="smartchat-faq-drawer">
-          <div className="nx-flex-col nx-gap-8">
+          <div className="flex flex-col gap-2">
             {visibleFaqQuestions.map((q, i) => (
-              <Button key={i} className="nx-w-full nx-text-lg" style={{ textAlign: isAr ? 'right' : 'left', justifyContent: 'flex-start', padding: '14px 16px' }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
+              <Button key={i} className="w-full text-[15px]" style={{ textAlign: isAr ? 'right' : 'left', justifyContent: 'flex-start', padding: '14px 16px' }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
                 {isAr ? q.ar : q.en}
               </Button>
             ))}
@@ -594,9 +594,9 @@ export default function SmartChatScreen() {
       {expenseMode === 'editLine' && activeCompanyId && (
         expenseEditLine === undefined ? (
           <AdaptiveSheet open={true} onClose={() => setExpenseMode(null)} title={t('chatEditFixedExpense')} size="sm" side="start" className="smartchat-expense-pick-drawer">
-            <div className="nx-flex-col nx-gap-8">
+            <div className="flex flex-col gap-2">
               {expenseLines.filter((l) => l.isActive !== false).map((line) => (
-                <Button key={line.id} className="nx-w-full" style={{ textAlign: isAr ? 'right' : 'left', justifyContent: 'flex-start', padding: '12px 14px' }} onClick={() => setExpenseEditLine(line)}>
+                <Button key={line.id} className="w-full" style={{ textAlign: isAr ? 'right' : 'left', justifyContent: 'flex-start', padding: '12px 14px' }} onClick={() => setExpenseEditLine(line)}>
                   {line.nameAr || line.nameEn || line.name || '—'}
                 </Button>
               ))}

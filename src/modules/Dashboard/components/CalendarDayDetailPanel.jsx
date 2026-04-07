@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CalendarDayDetailPanel — تفاصيل مبيعات يوم بجانب التقويم + ملاحظة اليوم
  */
 import React, { useState, useEffect } from 'react';
@@ -38,21 +38,21 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
   if (!dateStr) return null;
 
   return (
-    <div className="nx-flex nx-flex-col nx-gap-12 nx-p-16 nx-bg-surface nx-border-all nx-rounded" style={{ flex: '0 0 280px', minWidth: 260 }}>
-      <div className="nx-flex nx-flex-between">
-        <h4 className="nx-m-0 nx-text-lg nx-font-700">{formatSaudiDate(dateStr)}</h4>
+    <div className="flex flex flex-col gap-3 p-4 bg-noorix-surface border border-noorix-border rounded-lg" style={{ flex: '0 0 280px', minWidth: 260 }}>
+      <div className="flex flex items-center justify-between">
+        <h4 className="m-0 text-[15px] font-bold">{formatSaudiDate(dateStr)}</h4>
         {onPrint && (
           <Button variant="primary" onClick={onPrint}>{t('print')}</Button>
         )}
       </div>
-      <div className="nx-flex nx-flex-wrap nx-gap-12">
-        <div className="nx-rounded nx-flex-1" style={{ padding: 10, background: 'rgba(37,99,235,0.08)', minWidth: 90 }}>
-          <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('dashboardSalesTarget')}</div>
-          <div className="nx-text-xl nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget, 2) : '—'} ﷼</div>
+      <div className="flex flex flex-wrap gap-3">
+        <div className="rounded-lg flex-1 min-w-0" style={{ padding: 10, background: 'rgba(37,99,235,0.08)', minWidth: 90 }}>
+          <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('dashboardSalesTarget')}</div>
+          <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget, 2) : '—'} ﷼</div>
         </div>
-        <div className="nx-rounded nx-flex-1" style={{ padding: 10, background: achieved ? 'rgba(22,163,74,0.12)' : 'var(--noorix-bg-muted)', minWidth: 90 }}>
-          <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('total')}</div>
-          <div className="nx-text-xl nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>{fmt(totalAmount, 2)} ﷼ {achieved && '✓'}</div>
+        <div className="rounded-lg flex-1 min-w-0" style={{ padding: 10, background: achieved ? 'rgba(22,163,74,0.12)' : 'var(--noorix-bg-muted)', minWidth: 90 }}>
+          <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('total')}</div>
+          <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>{fmt(totalAmount, 2)} ﷼ {achieved && '✓'}</div>
         </div>
       </div>
 
@@ -70,11 +70,11 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
         {isSavingNote && <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>…</span>}
       </div>
 
-      <div className="nx-text-sm nx-font-600">{t('salesChannels')} / {t('summaryNumber')}</div>
-      <div className="nx-flex-1 nx-overflow-auto nx-border-all nx-rounded" style={{ minHeight: 100 }}>
-        <table className="nx-w-full" style={{ borderCollapse: 'collapse', fontSize: 12 }}>
+      <div className="text-[12px] font-semibold">{t('salesChannels')} / {t('summaryNumber')}</div>
+      <div className="flex-1 min-w-0 overflow-auto border border-noorix-border rounded-lg" style={{ minHeight: 100 }}>
+        <table className="w-full" style={{ borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
-            <tr className="nx-bg-muted">
+            <tr className="bg-noorix-bg-muted">
               <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('summaryNumber')}</th>
               <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('salesChannels')}</th>
               <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('customers')}</th>
@@ -83,15 +83,15 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
           </thead>
           <tbody>
             {daySummaries.length === 0 ? (
-              <tr><td colSpan={4} className="nx-p-16 nx-text-center nx-text-muted nx-text-xs">{t('noDataInPeriod')}</td></tr>
+              <tr><td colSpan={4} className="p-4 text-center text-noorix-muted text-[11px]">{t('noDataInPeriod')}</td></tr>
             ) : daySummaries.map((s) => {
               const chText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount || 0, 2)}`).join(' | ');
               return (
-                <tr key={s.id} className="nx-border-t">
+                <tr key={s.id} className="border-t border-noorix-border">
                   <td style={{ padding: '6px 8px' }}>{s.summaryNumber || '—'}</td>
                   <td className="nx-cell-ellipsis" style={{ padding: '6px 8px' }} title={chText || ''}>{chText || '—'}</td>
                   <td className="nx-cell-num" style={{ padding: '6px 8px' }}>{s.customerCount ?? 0}</td>
-                  <td className="nx-cell-num nx-font-600 nx-text-income" style={{ padding: '6px 8px' }}>{fmt(Number(s.totalAmount || 0), 2)}</td>
+                  <td className="nx-cell-num font-semibold text-noorix-green" style={{ padding: '6px 8px' }}>{fmt(Number(s.totalAmount || 0), 2)}</td>
                 </tr>
               );
             })}

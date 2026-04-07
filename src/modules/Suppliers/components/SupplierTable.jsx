@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SupplierTable — جدول عرض الموردين مع تحديد متعدد وحذف جماعي.
  * Props: suppliers, flatCategories, onEdit, onDelete,
  *        selectedIds (Set), onSelectChange(id,bool), onSelectAll(bool),
@@ -37,14 +37,14 @@ function TypeBadge({ type }) {
 /* ── checkbox مُنسَّق ── */
 function CB({ checked, indeterminate, onChange, ariaLabel }) {
   return (
-    <label className="nx-checkbox nx-checkbox--hit-36 nx-checkbox--accent-green nx-p-4">
+    <label className="nx-checkbox nx-checkbox--hit-36 nx-checkbox--accent-green p-1">
       <input
         type="checkbox"
         checked={checked}
         ref={(el) => { if (el) el.indeterminate = !!indeterminate; }}
         onChange={(e) => onChange(e.target.checked)}
         aria-label={ariaLabel}
-        className="nx-cursor-pointer"
+        className="cursor-pointer"
       />
     </label>
   );
@@ -53,7 +53,7 @@ function CB({ checked, indeterminate, onChange, ariaLabel }) {
 /* ── أزرار الإجراء ── */
 function ActionBtns({ onEdit, onDelete, t }) {
   return (
-    <div className="nx-flex-end nx-gap-6 nx-nowrap">
+    <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
       <Button size="sm" onClick={onEdit}>✎ {t('edit')}</Button>
       <Button size="sm" variant="danger" onClick={onDelete}>× {t('delete')}</Button>
     </div>
@@ -88,17 +88,17 @@ export const SupplierTable = memo(function SupplierTable({
 
   if (suppliers.length === 0) {
     return (
-      <div className="nx-text-center nx-text-muted nx-p-20 nx-rounded-lg" style={{ border: '2px dashed var(--noorix-border)' }}>
-        <div className="nx-mb-8 nx-text-muted nx-text-3xl">—</div>
-        <p className="nx-m-0 nx-text-base">{t('noSuppliers')}</p>
+      <div className="text-center text-noorix-muted p-5 rounded-xl" style={{ border: '2px dashed var(--noorix-border)' }}>
+        <div className="mb-2 text-noorix-muted text-[20px]">—</div>
+        <p className="m-0 text-[13px]">{t('noSuppliers')}</p>
       </div>
     );
   }
 
   /* ── شريط الحذف الجماعي ── */
   const BulkBar = hasSelection ? (
-    <div className="nx-flex-center nx-flex-wrap nx-gap-12 nx-px-16 nx-py-8" style={{ background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)' }}>
-      <span className="nx-text-base nx-font-700 nx-flex-1" style={{ color: 'var(--noorix-accent-red)' }}>
+    <div className="flex items-center flex flex-wrap gap-3 px-4 py-2" style={{ background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)' }}>
+      <span className="text-[13px] font-bold flex-1 min-w-0" style={{ color: 'var(--noorix-accent-red)' }}>
         تم تحديد {selectedIds.size} {selectedIds.size === 1 ? 'مورد' : 'موردين'}
       </span>
       <Button variant="danger" onClick={() => onBulkDelete?.()}>حذف المحددين</Button>
@@ -111,14 +111,14 @@ export const SupplierTable = memo(function SupplierTable({
     return (
       <div className="noorix-surface-card" style={{ overflow: 'hidden' }}>
         {/* رأس: عدد + تحديد الكل */}
-          <div className="flex items-center gap-8 nx-px-16 nx-py-8 nx-border-b">
+          <div className="flex items-center gap-8 px-4 py-2 border-b border-noorix-border">
           <CB
             checked={allSelected}
             indeterminate={someSelected}
             onChange={(v) => onSelectAll?.(v)}
             ariaLabel="تحديد الكل"
           />
-          <span className="nx-text-sm nx-text-muted nx-flex-1">
+          <span className="text-[12px] text-noorix-muted flex-1 min-w-0">
             {t('supplierCount', suppliers.length)}
           </span>
         </div>
@@ -133,29 +133,29 @@ export const SupplierTable = memo(function SupplierTable({
             return (
               <div
                 key={s.id}
-                  className="nx-px-16 nx-py-12 nx-border-b"
+                  className="px-4 py-3 border-b border-noorix-border"
                   style={{ background: checked ? 'rgba(22,163,74,0.04)' : 'transparent' }}
               >
-                <div className="nx-flex nx-gap-8" style={{ alignItems: 'flex-start' }}>
+                <div className="flex gap-2" style={{ alignItems: 'flex-start' }}>
                   {/* checkbox */}
                   <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
-                  <div className="nx-flex-1">
-                    <div className="nx-flex nx-mb-4" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex mb-1" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
-                        <div className="nx-font-700 nx-text-md">{sName(s, lang)}</div>
+                        <div className="font-bold text-[14px]">{sName(s, lang)}</div>
                         {s.nameEn && s.nameAr && lang !== 'en' && <div className="nx-cell-muted">{s.nameEn}</div>}
                         {s.nameAr && lang === 'en' && <div className="nx-cell-muted">{s.nameAr}</div>}
                       </div>
                       <TypeBadge type={s.supplierType || 'purchases'} />
                     </div>
                     {(s.phone || s.taxNumber) && (
-                      <div className="nx-flex nx-gap-12 nx-text-sm nx-text-muted nx-mb-4">
+                      <div className="flex gap-3 text-[12px] text-noorix-muted mb-1">
                         {s.phone && <span>{s.phone}</span>}
                         {s.taxNumber && <span className="nx-cell-num">{s.taxNumber}</span>}
                       </div>
                     )}
                     {cat && (
-                      <div className="nx-mb-8">
+                      <div className="mb-2">
                         <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
                           {icon && <span>{icon}</span>}{cat.nameAr}
                         </Badge>
@@ -185,10 +185,10 @@ export const SupplierTable = memo(function SupplierTable({
   ];
 
   return (
-    <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden">
+    <div className="noorix-surface-card noorix-table-frame overflow-hidden">
       {/* رأس: عدد */}
-      <div className="flex items-center gap-8 nx-text-sm nx-text-muted nx-px-16 nx-py-8 nx-border-b">
-        <span className="nx-flex-1">{t('supplierCount', suppliers.length)}</span>
+      <div className="flex items-center gap-8 text-[12px] text-noorix-muted px-4 py-2 border-b border-noorix-border">
+        <span className="flex-1 min-w-0">{t('supplierCount', suppliers.length)}</span>
       </div>
 
       {BulkBar}
@@ -207,7 +207,7 @@ export const SupplierTable = memo(function SupplierTable({
                 />
               </th>
               {headers.slice(1).map((h) => (
-                <th key={h.label} className="nx-font-700 nx-text-sm" style={{ padding: '9px 12px' }}>{h.label}</th>
+                <th key={h.label} className="font-bold text-[12px]" style={{ padding: '9px 12px' }}>{h.label}</th>
               ))}
             </tr>
           </thead>
@@ -224,14 +224,14 @@ export const SupplierTable = memo(function SupplierTable({
                   <td style={{ padding: '4px 4px 4px 12px' }}>
                     <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
                   </td>
-                  <td className="nx-font-700" style={{ padding: '9px 12px' }}>{sName(s, lang)}</td>
+                  <td className="font-bold" style={{ padding: '9px 12px' }}>{sName(s, lang)}</td>
                   <td style={{ padding: '9px 12px' }} className="nx-cell-muted">{lang === 'en' ? (s.nameAr || '—') : (s.nameEn || '—')}</td>
                   <td style={{ padding: '9px 12px' }} className="nx-cell-num">{s.taxNumber || '—'}</td>
-                  <td className="nx-text-sm" style={{ padding: '9px 12px' }}>{s.phone || '—'}</td>
-                  <td className="nx-text-sm" style={{ padding: '9px 12px' }}>
+                  <td className="text-[12px]" style={{ padding: '9px 12px' }}>{s.phone || '—'}</td>
+                  <td className="text-[12px]" style={{ padding: '9px 12px' }}>
                     {cat ? (
                       <span className="flex items-center gap-6">
-                        {icon && <span className="nx-text-md">{icon}</span>}
+                        {icon && <span className="text-[14px]">{icon}</span>}
                         <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
                           {cat.nameAr}
                           {cat.account?.code && <span style={{ marginRight: 4, opacity: 0.7 }}>[{cat.account.code}]</span>}

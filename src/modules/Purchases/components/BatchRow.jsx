@@ -77,14 +77,14 @@ export const BatchRow = memo(function BatchRow({
   return (
     <tr style={{ borderBottom: '1px solid var(--noorix-border)' }}>
       {/* # */}
-      <td className="nx-text-center nx-text-xs nx-text-muted nx-font-600" style={cp}>
+      <td className="text-center text-[11px] text-noorix-muted font-semibold" style={cp}>
         {index + 1}
       </td>
 
       {/* المورد + bookmark */}
       <td style={{ ...cp }}>
         <div className="flex items-center gap-4">
-          <div className="nx-flex-1" style={{ minWidth: 0 }}>
+          <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
             <SupplierSelect
               suppliers={suppliers}
               value={row.supplierId}
@@ -98,7 +98,7 @@ export const BatchRow = memo(function BatchRow({
               type="button"
               onClick={() => onBookmark(row.supplierId)}
               title={bookmarkedIds.includes(row.supplierId) ? t('removeFromShortcuts') : t('addToShortcuts')}
-              className="nx-text-md"
+              className="text-[14px]"
               style={{
                 width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6,
                 background: bookmarkedIds.includes(row.supplierId) ? 'rgba(245,158,11,0.15)' : 'var(--noorix-bg-page)',
@@ -117,7 +117,7 @@ export const BatchRow = memo(function BatchRow({
           value={row.invoiceNumber}
           onChange={(e) => onUpdate(index, 'invoiceNumber', e.target.value)}
           placeholder={t('invoiceNumberPlaceholder')}
-          className="nx-text-center nx-w-full"
+          className="text-center w-full"
           style={inputSm}
         />
       </td>
@@ -129,14 +129,14 @@ export const BatchRow = memo(function BatchRow({
           value={row.totalInclusive}
           onChange={(e) => onUpdate(index, 'totalInclusive', e.target.value)}
           placeholder="0"
-          className="nx-font-700 nx-text-base nx-w-full"
+          className="font-bold text-[13px] w-full"
           style={{ ...inputSm, textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)' }}
         />
       </td>
 
       {/* صافي / ضريبة — خلية واحدة، سطران */}
-      <td className="nx-text-xs" style={{ ...cp, fontFamily: 'var(--noorix-font-numbers)', lineHeight: 1.5 }}>
-        <div className="nx-text-muted">{net || '—'}</div>
+      <td className="text-[11px]" style={{ ...cp, fontFamily: 'var(--noorix-font-numbers)', lineHeight: 1.5 }}>
+        <div className="text-noorix-muted">{net || '—'}</div>
         <div style={{ color: 'var(--noorix-accent-amber)' }}>{tax || '—'}</div>
       </td>
 
@@ -147,7 +147,7 @@ export const BatchRow = memo(function BatchRow({
           dir="ltr"
           value={row.invoiceDate}
           onChange={(e) => onUpdate(index, 'invoiceDate', e.target.value)}
-          className="nx-text-center nx-w-full"
+          className="text-center w-full"
           style={inputSm}
         />
       </td>
@@ -180,11 +180,11 @@ export const BatchRow = memo(function BatchRow({
       </td>
 
       {/* زر الضريبة */}
-      <td className="nx-text-center" style={cp}>
+      <td className="text-center" style={cp}>
         <Button
           type="button"
           onClick={() => onUpdate(index, 'isTaxable', row.isTaxable !== false ? false : true)}
-          className="nx-w-full nx-text-xs nx-font-700"
+          className="w-full text-[11px] font-bold"
           style={{
             padding: '6px 2px', borderRadius: 5,
             border: `1px solid ${row.isTaxable === false ? 'var(--noorix-text-muted-2)' : 'var(--noorix-accent-amber)'}`,
@@ -202,19 +202,19 @@ export const BatchRow = memo(function BatchRow({
           value={row.notes || ''}
           onChange={(e) => onUpdate(index, 'notes', e.target.value)}
           placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? 'اسم الخدمة*' : '...'}
-          className="nx-w-full"
+          className="w-full"
           style={inputSm}
           title={!row.supplierId ? (t('notesRequiredForNoSupplier') || 'مطلوب بدون مورد') : ''}
         />
       </td>
 
       {/* حذف */}
-      <td className="nx-text-center" style={cp}>
+      <td className="text-center" style={cp}>
         <Button
           type="button"
           variant="danger"
           onClick={() => onRemove(index)}
-          className="nx-flex-center nx-text-lg"
+          className="flex items-center text-[15px]"
           style={{
             width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6,
             justifyContent: 'center', margin: '0 auto',

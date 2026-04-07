@@ -1816,225 +1816,23 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   21. Utility Classes — بديل الـ Inline Styles
-   مكتبة شاملة لإلغاء style={{ ... }} في مكونات النظام
+   21. Legacy Utility — ما تبقى (الباقي نُقل إلى Tailwind)
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Flex Layout ─────────────────────────────────── */
-.nx-flex           { display: flex; }
-.nx-flex-col       { display: flex; flex-direction: column; }
-.nx-flex-center    { display: flex; align-items: center; }
-.nx-flex-between   { display: flex; align-items: center; justify-content: space-between; }
-.nx-flex-end       { display: flex; align-items: center; justify-content: flex-end; }
-.nx-flex-start     { display: flex; align-items: flex-start; }
-.nx-flex-wrap      { display: flex; flex-wrap: wrap; }
-.nx-flex-col-center { display: flex; flex-direction: column; align-items: center; }
-.nx-inline-flex    { display: inline-flex; align-items: center; }
-.nx-flex-1         { flex: 1; min-width: 0; }
-.nx-flex-shrink-0  { flex-shrink: 0; }
-.nx-items-start    { align-items: flex-start; }
-.nx-items-end      { align-items: flex-end; }
-.nx-justify-center { justify-content: center; }
-.nx-justify-end    { justify-content: flex-end; }
-
-/* ── Grid Layout ─────────────────────────────────── */
-.nx-grid           { display: grid; }
-.nx-grid-2         { display: grid; grid-template-columns: 1fr 1fr; }
-.nx-grid-3         { display: grid; grid-template-columns: 1fr 1fr 1fr; }
-.nx-grid-4         { display: grid; grid-template-columns: repeat(4, 1fr); }
-.nx-grid-auto      { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-
-/* ── Gap ─────────────────────────────────────────── */
-.nx-gap-2  { gap: 2px; }
-.nx-gap-4  { gap: 4px; }
-.nx-gap-6  { gap: 6px; }
-.nx-gap-7  { gap: 7px; }
-.nx-gap-8  { gap: 8px; }
-.nx-gap-10 { gap: 10px; }
-.nx-gap-12 { gap: 12px; }
-.nx-gap-14 { gap: 14px; }
-.nx-gap-16 { gap: 16px; }
-.nx-gap-20 { gap: 20px; }
-.nx-gap-24 { gap: 24px; }
-
-/* ── Padding ─────────────────────────────────────── */
-.nx-p-4  { padding: 4px; }
-.nx-p-6  { padding: 6px; }
-.nx-p-8  { padding: 8px; }
-.nx-p-10 { padding: 10px; }
-.nx-p-12 { padding: 12px; }
-.nx-p-14 { padding: 14px; }
-.nx-p-16 { padding: 16px; }
-.nx-p-20 { padding: 20px; }
-.nx-p-24 { padding: 24px; }
-.nx-px-8  { padding-inline: 8px; }
-.nx-px-12 { padding-inline: 12px; }
-.nx-px-16 { padding-inline: 16px; }
-.nx-py-4  { padding-block: 4px; }
-.nx-py-6  { padding-block: 6px; }
-.nx-py-8  { padding-block: 8px; }
-.nx-py-12 { padding-block: 12px; }
-
-/* ── Margin ─────────────────────────────────────── */
-.nx-m-0  { margin: 0; }
-.nx-mt-0 { margin-top: 0; }
-.nx-mt-4 { margin-top: 4px; }
-.nx-mt-6 { margin-top: 6px; }
-.nx-mt-8 { margin-top: 8px; }
-.nx-mt-10 { margin-top: 10px; }
-.nx-mt-12 { margin-top: 12px; }
-.nx-mt-16 { margin-top: 16px; }
-.nx-mt-20 { margin-top: 20px; }
-.nx-mb-0 { margin-bottom: 0; }
-.nx-mb-4 { margin-bottom: 4px; }
-.nx-mb-6 { margin-bottom: 6px; }
-.nx-mb-8 { margin-bottom: 8px; }
-.nx-mb-12 { margin-bottom: 12px; }
-.nx-mb-16 { margin-bottom: 16px; }
-
-/* ── Typography ─────────────────────────────────── */
-.nx-text-xs   { font-size: 11px; }
-.nx-text-2xs  { font-size: 10px; }
-.nx-text-sm   { font-size: 12px; }
-.nx-text-base { font-size: 13px; }
-.nx-text-md   { font-size: 14px; }
-.nx-text-lg   { font-size: 15px; }
-.nx-text-xl   { font-size: 16px; }
-.nx-text-2xl  { font-size: 18px; }
-.nx-text-3xl  { font-size: 20px; }
-
-.nx-font-400 { font-weight: 400; }
-.nx-font-500 { font-weight: 500; }
-.nx-font-600 { font-weight: 600; }
-.nx-font-700 { font-weight: 700; }
-.nx-font-800 { font-weight: 800; }
-
-.nx-text-muted   { color: var(--noorix-text-muted); }
-.nx-text-primary { color: var(--noorix-text); }
-.nx-text-blue    { color: var(--noorix-accent-blue); }
-.nx-text-green   { color: var(--noorix-accent-green); }
-.nx-text-red     { color: var(--noorix-accent-red); }
-.nx-text-orange  { color: var(--noorix-accent-amber); }
-.nx-text-center  { text-align: center; }
-.nx-text-end     { text-align: end; }
-.nx-text-start   { text-align: start; }
-.nx-uppercase    { text-transform: uppercase; letter-spacing: 0.05em; }
-.nx-nowrap       { white-space: nowrap; }
-.nx-truncate     { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nx-font-numbers { font-family: var(--noorix-font-numbers); }
-
-/* ── Surface / Card ─────────────────────────────── */
-.nx-surface    { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 12px; }
-.nx-surface-sm { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 8px; }
-.nx-bg-muted   { background: var(--noorix-bg-muted); }
-.nx-bg-surface { background: var(--noorix-bg-surface); }
-.nx-bg-page    { background: var(--noorix-bg-page); }
-.nx-border-b   { border-bottom: 1px solid var(--noorix-border); }
-.nx-border-t   { border-top: 1px solid var(--noorix-border); }
-.nx-border-all { border: 1px solid var(--noorix-border); }
-.nx-rounded    { border-radius: 8px; }
-.nx-rounded-lg { border-radius: 12px; }
-.nx-rounded-xl { border-radius: 16px; }
-.nx-rounded-full { border-radius: 999px; }
-
-/* ── Dimensions ─────────────────────────────────── */
-.nx-w-full    { width: 100%; }
-.nx-w-auto    { width: auto; }
-.nx-min-w-0   { min-width: 0; }
-.nx-h-full    { height: 100%; }
-.nx-max-w-sm  { max-width: 400px; }
-.nx-max-w-md  { max-width: 560px; }
-.nx-max-w-lg  { max-width: 720px; }
-
-/* ── Overflow / Scroll ───────────────────────────── */
-.nx-overflow-auto    { overflow: auto; }
-.nx-overflow-hidden  { overflow: hidden; }
-.nx-overflow-x-auto  { overflow-x: auto; }
-.nx-scroll-x         { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-.nx-scroll-x::-webkit-scrollbar { display: none; }
-
-/* ── Position ────────────────────────────────────── */
-.nx-relative { position: relative; }
-.nx-absolute { position: absolute; }
-
-/* ── Direction ───────────────────────────────────── */
+/* ── Direction (no Tailwind equivalent) ──────────── */
 .nx-ltr  { direction: ltr; unicode-bidi: isolate; }
 .nx-rtl  { direction: rtl; unicode-bidi: isolate; }
 
-/* ── Misc ────────────────────────────────────────── */
-.nx-cursor-pointer { cursor: pointer; }
-.nx-select-none    { user-select: none; }
-.nx-opacity-50     { opacity: 0.5; }
-.nx-sr-only        { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
-.nx-no-wrap        { white-space: nowrap; }
-.nx-break-all      { word-break: break-all; }
-.nx-line-clamp-2   { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* ── Surface / Card (compound, kept as component) ── */
+.nx-surface    { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 12px; }
+.nx-surface-sm { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 8px; }
 
-/* ── Common Compound Patterns ────────────────────── */
-/* شريط أدوات مع عنوان + أزرار */
-.nx-row-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-/* حاوية مكدسة عمودياً بفجوة موحدة */
-.nx-stack-12 { display: flex; flex-direction: column; gap: 12px; }
-.nx-stack-16 { display: flex; flex-direction: column; gap: 16px; }
-.nx-stack-20 { display: flex; flex-direction: column; gap: 20px; }
-/* بطاقة حالة (رقم + ملصق) */
-.nx-stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  text-align: center;
-}
-/* رأس قسم مع خط سفلي */
-.nx-section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--noorix-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--noorix-border);
-  margin-bottom: 12px;
-}
-/* عنصر قائمة اختيار (dropdown/listbox item) */
-.nx-list-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--noorix-text);
-  transition: background 120ms;
-}
-.nx-list-option:hover { background: var(--noorix-bg-muted); }
-.nx-list-option--active { background: rgba(37,99,235,0.08); color: var(--noorix-accent-blue); font-weight: 600; }
+/* ── Scrollable X (complex, keep) ───────────────── */
+.nx-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.nx-scroll-x::-webkit-scrollbar { display: none; }
 
-/* ── Semantic Colors — ألوان دلالية مالية ─────────── */
-/* الإيرادات والإيداعات (أخضر) */
-.nx-text-income   { color: var(--noorix-accent-green); }
-.nx-bg-income     { background: rgba(22,163,74,0.08); }
-.nx-border-income { border-color: var(--noorix-accent-green); }
-
-/* المصروفات والسحوبات (أحمر) */
-.nx-text-expense  { color: var(--noorix-accent-red); }
-.nx-bg-expense    { background: rgba(220,38,38,0.08); }
-.nx-border-expense { border-color: var(--noorix-accent-red); }
-
-/* تحذير/معلق (كهرماني) */
-.nx-text-warn     { color: var(--noorix-accent-amber); }
-.nx-bg-warn       { background: rgba(217,119,6,0.08); }
-
-/* معلومة/رابط (أزرق) */
-.nx-text-info     { color: var(--noorix-accent-blue); }
-.nx-bg-info       { background: rgba(37,99,235,0.08); }
+/* ── Font numbers (custom font, keep) ──────────── */
+.nx-font-numbers { font-family: var(--noorix-font-numbers); }
 
 /* ── Number Display — أرقام مالية ───────────────── */
 /* رقم مالي LTR */

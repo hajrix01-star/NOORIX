@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DashboardOverviewTab — نظرة عامة: كروت KPI + رسم بياني للمبيعات
  * تصميم نظيف احترافي — بدون فواتير قادمة أو مستحقة
  */
@@ -132,7 +132,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   /* ── حالة: لا شركة مختارة ── */
   if (!companyId) {
     return (
-      <div className="nx-p-32 nx-text-center nx-text-muted">
+      <div className="p-8 text-center text-noorix-muted">
         {t('pleaseSelectCompany')}
       </div>
     );
@@ -141,8 +141,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   /* ── حالة: تحميل ── */
   if (isLoading) {
     return (
-      <div className="nx-p-32 nx-text-center nx-text-muted">
-        <div className="nx-kpi-grid nx-mb-24">
+      <div className="p-8 text-center text-noorix-muted">
+        <div className="nx-kpi-grid mb-6">
           {[1,2,3,4,5].map((i) => (
             <div key={i} className="nx-kpi-card" style={{ minHeight: 120, background: 'var(--noorix-bg-muted)', boxShadow: 'none', animation: 'shimmer 1.4s ease infinite', backgroundSize: '200% 100%' }} />
           ))}
@@ -154,7 +154,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   /* ── حالة: خطأ ── */
   if (error) {
     return (
-      <div className="nx-p-20 nx-m-16 nx-rounded-lg nx-text-expense" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+      <div className="p-5 m-4 rounded-xl text-noorix-red" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
         {error.message}
       </div>
     );
@@ -163,7 +163,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const chartTotal = chartData.reduce((s, p) => s + p.amount, 0);
 
   return (
-    <div className="nx-flex nx-flex-col nx-gap-24">
+    <div className="flex flex flex-col gap-6">
 
       {/* شريط التحليلات */}
       <PeriodAnalyticsStrip
@@ -204,19 +204,19 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       </div>
 
       {/* ── الرسم البياني للمبيعات ── */}
-      <div className="noorix-surface-card nx-p-24">
+      <div className="noorix-surface-card p-6">
         {/* رأس الرسم */}
-        <div className="nx-row-between nx-flex-wrap nx-gap-8 nx-mb-20">
+        <div className="flex items-center justify-between gap-2 flex-wrap flex flex-wrap gap-2 mb-5">
           <div>
-            <div className="nx-text-base nx-font-700">
+            <div className="text-[13px] font-bold">
               {t('dashboardSalesTimeline')}
             </div>
-            <div className="nx-text-sm nx-text-muted nx-mt-2">
+            <div className="text-[12px] text-noorix-muted mt-0.5">
               {filter?.label || year} — {isDailyChart ? t('reportMonthTotal') : t('reportAnnualTotal')}
             </div>
           </div>
           <div
-            className="nx-text-lg nx-font-900 nx-font-numbers"
+            className="text-[15px] font-black nx-font-numbers"
             style={{ color: CARD_COLORS.sales.accent, direction: 'ltr' }}
           >
             {fmt(chartTotal, 2)} ﷼
@@ -225,9 +225,9 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
         {/* الرسم */}
         {chartData.length === 0 || chartTotal === 0 ? (
-          <div className="nx-flex nx-flex-col nx-flex-center nx-text-muted nx-gap-10" style={{ minHeight: 200 }}>
+          <div className="flex flex flex-col flex items-center text-noorix-muted gap-2.5" style={{ minHeight: 200 }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            <div className="nx-text-sm">{t('noDataInPeriod')}</div>
+            <div className="text-[12px]">{t('noDataInPeriod')}</div>
           </div>
         ) : (
           <div style={{ position: 'relative' }}>
@@ -235,14 +235,14 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
               {/* محور Y */}
               <div style={{ flexShrink: 0, width: 48, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 24 }}>
                 {[...yAxisTicks].reverse().map((tick) => (
-                  <div key={tick} className="nx-text-muted nx-font-600" style={{ fontSize: 10, fontFamily: 'var(--noorix-font-numbers)' }}>
+                  <div key={tick} className="text-noorix-muted font-semibold" style={{ fontSize: 10, fontFamily: 'var(--noorix-font-numbers)' }}>
                     {formatAxisValue(tick)}
                   </div>
                 ))}
               </div>
 
               {/* منطقة الأعمدة */}
-              <div className="nx-flex-1" style={{ position: 'relative', overflow: 'hidden' }}>
+              <div className="flex-1 min-w-0" style={{ position: 'relative', overflow: 'hidden' }}>
                 {/* خطوط الشبكة */}
                 <div style={{ position: 'absolute', inset: '0 0 24px 0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
                   {yAxisTicks.map((_, i) => (
@@ -260,7 +260,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                     return (
                       <div
                         key={pKey}
-                        className="nx-flex-1 nx-flex nx-flex-col"
+                        className="flex-1 min-w-0 flex flex flex-col"
                         style={{ alignItems: 'center', minWidth: 0, position: 'relative' }}
                         onMouseEnter={() => setHoveredPoint(pKey)}
                         onMouseLeave={() => setHoveredPoint(null)}
@@ -295,7 +295,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                         </div>
                         {/* ملصق المحور X */}
                         {(chartData.length <= 12 || pKey % Math.ceil(chartData.length / 12) === 0) && (
-                          <div className="nx-text-muted nx-font-600" style={{ fontSize: 9, marginTop: 4, whiteSpace: 'nowrap' }}>
+                          <div className="text-noorix-muted font-semibold" style={{ fontSize: 9, marginTop: 4, whiteSpace: 'nowrap' }}>
                             {point.label}
                           </div>
                         )}

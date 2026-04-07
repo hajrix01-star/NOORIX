@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Button } from '../../ui';
@@ -52,7 +52,7 @@ export default function OcrInvoicesScreen() {
   const itemsCount    = itemsData?.length     || 0;
 
   return (
-    <div className="nx-screen ocr-screen" dir={dir}>
+    <div className="flex flex-col gap-4 ocr-screen" dir={dir}>
 
       {/* ── Header ── */}
       <div className="ocr-header">

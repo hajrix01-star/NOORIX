@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TaxSettingsTab — إعدادات الضريبة للشركة النشطة
  * تفعيل ضريبة القيمة المضافة للمبيعات ونسبة الضريبة (%)
  */
@@ -61,42 +61,42 @@ export default function TaxSettingsTab() {
 
   if (!activeCompanyId) {
     return (
-      <div className="nx-text-center nx-text-muted" style={{ padding: 32 }}>
-        <div className="nx-mb-12" style={{ fontSize: 40 }}>—</div>
-        <p className="nx-text-md nx-m-0">يجب اختيار شركة أولاً من القائمة العلوية.</p>
+      <div className="text-center text-noorix-muted" style={{ padding: 32 }}>
+        <div className="mb-3" style={{ fontSize: 40 }}>—</div>
+        <p className="text-[14px] m-0">يجب اختيار شركة أولاً من القائمة العلوية.</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="nx-text-center nx-text-muted" style={{ padding: 32 }}>
+      <div className="text-center text-noorix-muted" style={{ padding: 32 }}>
         جاري التحميل...
       </div>
     );
   }
 
   return (
-    <div className="nx-grid nx-gap-24" style={{ maxWidth: 480 }}>
+    <div className="grid gap-6" style={{ maxWidth: 480 }}>
       <div>
-        <h3 className="nx-text-2xl" style={{ margin: '0 0 8px' }}>إعدادات الضريبة</h3>
-        <p className="nx-text-base nx-text-muted nx-m-0">
+        <h3 className="text-[18px]" style={{ margin: '0 0 8px' }}>إعدادات الضريبة</h3>
+        <p className="text-[13px] text-noorix-muted m-0">
           تفعيل ضريبة القيمة المضافة للمبيعات ونسبة الضريبة المستخدمة في الحسابات.
         </p>
       </div>
 
-      <div className="noorix-surface-card nx-p-20 nx-rounded-lg">
-        <div className="nx-flex nx-flex-col nx-gap-12">
+      <div className="noorix-surface-card p-5 rounded-xl">
+        <div className="flex flex flex-col gap-3">
           {/* مفتاح التفعيل */}
-          <div className="nx-flex nx-flex-between nx-border-all nx-rounded-lg nx-bg-surface" style={{ padding: '12px 14px' }}>
+          <div className="flex flex items-center justify-between border border-noorix-border rounded-xl bg-noorix-surface" style={{ padding: '12px 14px' }}>
             <label style={{ ...labelStyle, margin: 0, fontWeight: 600 }}>تفعيل ضريبة القيمة المضافة للمبيعات</label>
-            <label className="nx-checkbox nx-m-0 nx-checkbox--tight nx-checkbox--accent-green">
+            <label className="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green">
               <input
                 type="checkbox"
                 checked={vatEnabled}
                 onChange={(e) => setVatEnabled(e.target.checked)}
               />
-              <span className="nx-text-base nx-text-muted">{vatEnabled ? 'مفعّل' : 'معطّل'}</span>
+              <span className="text-[13px] text-noorix-muted">{vatEnabled ? 'مفعّل' : 'معطّل'}</span>
             </label>
           </div>
 
@@ -111,13 +111,13 @@ export default function TaxSettingsTab() {
               value={vatRate}
               onChange={(e) => setVatRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
             />
-            <p className="nx-text-sm nx-text-muted" style={{ margin: '6px 0 0' }}>
+            <p className="text-[12px] text-noorix-muted" style={{ margin: '6px 0 0' }}>
               القيمة الافتراضية 15% (ZATCA / السعودية)
             </p>
           </div>
 
           {hasChanges && (
-            <div className="nx-rounded-lg nx-text-base" style={{ padding: '10px 14px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.35)', color: 'var(--noorix-text-default)', lineHeight: 1.6 }}>
+            <div className="rounded-xl text-[13px]" style={{ padding: '10px 14px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.35)', color: 'var(--noorix-text-default)', lineHeight: 1.6 }}>
               <strong>⚠️ تنبيه مهم:</strong> تغيير إعدادات الضريبة سيُطبَّق على <strong>الفواتير والمعاملات الجديدة فقط</strong>. الفواتير والسجلات المحفوظة مسبقاً لن تتأثر بهذا التغيير ولن تُعاد حسابها تلقائياً.
             </div>
           )}
@@ -135,10 +135,10 @@ export default function TaxSettingsTab() {
           )}
 
           {updateMutation.isSuccess && (
-            <span className="nx-text-base nx-text-green">تم حفظ الإعدادات بنجاح.</span>
+            <span className="text-[13px] text-noorix-green">تم حفظ الإعدادات بنجاح.</span>
           )}
           {updateMutation.isError && (
-            <span className="nx-text-base nx-text-red">{updateMutation.error?.message}</span>
+            <span className="text-[13px] text-noorix-red">{updateMutation.error?.message}</span>
           )}
         </div>
       </div>

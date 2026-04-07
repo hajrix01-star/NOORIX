@@ -118,9 +118,9 @@ function ProgressBar({ pct }) {
 
 function StatBadge({ count, label, color }) {
   return (
-    <div className="nx-text-center" style={{ padding: '10px 20px', borderRadius: 10, background: color + '14', border: `1px solid ${color}30`, minWidth: 90 }}>
+    <div className="text-center" style={{ padding: '10px 20px', borderRadius: 10, background: color + '14', border: `1px solid ${color}30`, minWidth: 90 }}>
       <div style={{ fontSize: 26, fontWeight: 900, color, fontFamily: 'var(--noorix-font-numbers)' }}>{count}</div>
-      <div className="nx-text-sm nx-text-muted" style={{ marginTop: 2 }}>{label}</div>
+      <div className="text-[12px] text-noorix-muted" style={{ marginTop: 2 }}>{label}</div>
     </div>
   );
 }
@@ -174,14 +174,14 @@ function ImportPhaseSteps({ phase, importing }) {
   else if (phase === 'done') active = 5;
 
   return (
-    <div className="flex items-center gap-6 nx-rounded-lg nx-flex-wrap nx-border-all" style={{
+    <div className="flex items-center gap-6 rounded-xl flex flex-wrap border border-noorix-border" style={{
       padding: '12px 14px',
       background: 'var(--noorix-bg)', marginBottom: 4,
     }}>
       {steps.map((s, i) => (
         <React.Fragment key={s.n}>
-          {i > 0 && <span className="nx-text-muted nx-text-sm nx-select-none">→</span>}
-          <span className="nx-text-sm nx-rounded nx-nowrap" style={{
+          {i > 0 && <span className="text-noorix-muted text-[12px] select-none">→</span>}
+          <span className="text-[12px] rounded-lg whitespace-nowrap" style={{
             fontWeight: active === s.n ? 800 : 500,
             color: active === s.n ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
             padding: '4px 8px',
@@ -199,16 +199,16 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
   const maxRows = 150;
   const slice = validationResults.slice(0, maxRows);
   return (
-    <div className="nx-mt-12 nx-overflow-hidden nx-rounded nx-border-all">
-      <div className="nx-bg-muted nx-text-sm nx-font-700 nx-text-muted nx-py-8 nx-px-12 nx-border-b">
+    <div className="mt-3 overflow-hidden rounded-lg border border-noorix-border">
+      <div className="bg-noorix-bg-muted text-[12px] font-bold text-noorix-muted py-2 px-3 border-b border-noorix-border">
         معاينة البيانات (أول {Math.min(slice.length, maxRows)} صفاً من أصل {validationResults.length})
       </div>
-      <div className="nx-overflow-auto" style={{ maxHeight: 280 }}>
-        <table className="nx-w-full nx-text-sm" style={{ borderCollapse: 'collapse' }}>
+      <div className="overflow-auto" style={{ maxHeight: 280 }}>
+        <table className="w-full text-[12px]" style={{ borderCollapse: 'collapse' }}>
           <thead>
-            <tr className="nx-bg-surface" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+            <tr className="bg-noorix-surface" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
               {['#', 'الاسم', 'تاريخ الالتحاق', 'الراتب الأساسي', 'الحالة', 'ملاحظات'].map((h) => (
-                <th key={h} className="nx-border-b nx-nowrap" style={{ padding: '8px 10px', textAlign: 'right' }}>{h}</th>
+                <th key={h} className="border-b border-noorix-border whitespace-nowrap" style={{ padding: '8px 10px', textAlign: 'right' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -227,14 +227,14 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
                 : r.errors.join('؛ ');
               return (
                 <tr key={r.rowNum} style={{ background: ok ? 'transparent' : 'rgba(239,68,68,0.06)' }}>
-                  <td className="nx-border-b" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{r.rowNum}</td>
-                  <td className="nx-border-b nx-truncate" style={{ padding: '7px 10px', maxWidth: 160 }}>{name}</td>
-                  <td className="nx-border-b nx-nowrap" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{jd}</td>
-                  <td className="nx-border-b" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{sal}</td>
-                  <td className="nx-border-b nx-font-700" style={{ padding: '7px 10px', color: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }}>
+                  <td className="border-b border-noorix-border" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{r.rowNum}</td>
+                  <td className="border-b border-noorix-border truncate" style={{ padding: '7px 10px', maxWidth: 160 }}>{name}</td>
+                  <td className="border-b border-noorix-border whitespace-nowrap" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{jd}</td>
+                  <td className="border-b border-noorix-border" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{sal}</td>
+                  <td className="border-b border-noorix-border font-bold" style={{ padding: '7px 10px', color: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }}>
                     {ok ? '✓ صالح' : '✗ خطأ'}
                   </td>
-                  <td className="nx-border-b nx-text-muted nx-truncate" style={{ padding: '7px 10px', maxWidth: 220 }} title={note}>{note}</td>
+                  <td className="border-b border-noorix-border text-noorix-muted truncate" style={{ padding: '7px 10px', maxWidth: 220 }} title={note}>{note}</td>
                 </tr>
               );
             })}
@@ -242,7 +242,7 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
         </table>
       </div>
       {validationResults.length > maxRows && (
-        <div className="nx-text-xs nx-text-muted nx-py-6 nx-px-12 nx-border-t">
+        <div className="text-[11px] text-noorix-muted py-1.5 px-3 border-t border-noorix-border">
           … و {validationResults.length - maxRows} صفاً إضافياً (كلها مضمّنة في الاستيراد عند نجاح الفحص)
         </div>
       )}
@@ -519,11 +519,11 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       closeOnBackdrop={!importing}
     >
       {lookupsLoading && (
-        <p className="nx-text-sm nx-text-muted" style={{ margin: '0 0 12px' }}>جارٍ تحميل بيانات النظام…</p>
+        <p className="text-[12px] text-noorix-muted" style={{ margin: '0 0 12px' }}>جارٍ تحميل بيانات النظام…</p>
       )}
 
       {/* Tabs */}
-      <div className="nx-tab-bar nx-mb-16">
+      <div className="nx-tab-bar mb-4">
         <Button type="button" className={`nx-tab-btn${activeTab === 'import' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('import')}>استيراد</Button>
         {exportFetcher && (
           <Button type="button" className={`nx-tab-btn${activeTab === 'export' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('export')}>تصدير</Button>
@@ -532,20 +532,20 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
       {/* ── EXPORT TAB ─────────────────────────────────────────────── */}
       {activeTab === 'export' && (
-        <div className="nx-flex-col nx-gap-16">
-          <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-10">
-            <p className="nx-m-0 nx-text-md nx-text-muted" style={{ lineHeight: 1.6 }}>
+        <div className="flex flex-col gap-4">
+          <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-2.5">
+            <p className="m-0 text-[14px] text-noorix-muted" style={{ lineHeight: 1.6 }}>
               يتم جلب السجلات من الخادم ثم تنزيل ملف Excel باسم يتضمن تاريخ اليوم. استخدم الفلاتر في الشاشة الرئيسية (عند توفرها) لتحديد نطاق القائمة قبل التصدير.
             </p>
             {entityType === 'employees' && (
-              <div className="nx-mt-4">
-                <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8 nx-mt-0" style={{ letterSpacing: 0.5 }}>أعمدة ملف الموظفين</p>
-                <p className="nx-m-0 nx-text-sm nx-text-muted" style={{ lineHeight: 1.65 }}>
+              <div className="mt-1">
+                <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2 mt-0" style={{ letterSpacing: 0.5 }}>أعمدة ملف الموظفين</p>
+                <p className="m-0 text-[12px] text-noorix-muted" style={{ lineHeight: 1.65 }}>
                   {EMPLOYEE_EXPORT_COLUMNS_AR.join(' · ')}
                 </p>
               </div>
             )}
-            <div className="nx-flex nx-gap-10 nx-flex-wrap">
+            <div className="flex gap-2.5 flex flex-wrap">
               <Button variant="primary" onClick={handleExport} disabled={exporting} loading={exporting}>
                 {exporting ? 'جارٍ التصدير…' : 'تنزيل Excel'}
               </Button>
@@ -560,9 +560,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           <ImportPhaseSteps phase={phase} importing={importing} />
 
           {phase !== 'done' && !importing && (
-            <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-12">
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>الخطوة 1 — تحميل القالب</p>
-              <p className="nx-m-0 nx-text-base nx-text-muted" style={{ lineHeight: 1.6 }}>
+            <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" style={{ letterSpacing: 0.5 }}>الخطوة 1 — تحميل القالب</p>
+              <p className="m-0 text-[13px] text-noorix-muted" style={{ lineHeight: 1.6 }}>
                 حمّل قالب Excel الجاهز، افتحه في Excel أو Google Sheets، أضف بياناتك ثم احفظه.
                 {entityType === 'invoices' && ' أسماء الموردين والصناديق يجب أن تتطابق مع الأسماء المسجلة في النظام.'}
                 {entityType === 'sales' && ' أعمدة القنوات تتطابق مع أسماء الصناديق في نظامك.'}
@@ -575,8 +575,8 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           )}
 
           {phase !== 'done' && !importing && (
-            <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-12">
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>الخطوة 2 — رفع الملف</p>
+            <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" style={{ letterSpacing: 0.5 }}>الخطوة 2 — رفع الملف</p>
               <div
                 style={S.dropzone(dragging)}
                 onClick={() => fileInputRef.current?.click()}
@@ -584,11 +584,11 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 onDragLeave={() => setDragging(false)}
                 onDrop={handleDrop}
               >
-                <div className="nx-mb-8" style={{ fontSize: 36 }}></div>
-                <div className="nx-text-md nx-font-600 nx-mb-4">
+                <div className="mb-2" style={{ fontSize: 36 }}></div>
+                <div className="text-[14px] font-semibold mb-1">
                   {phase === 'parsing' ? 'جارٍ قراءة الملف…' : 'اسحب ملف Excel هنا أو انقر للاختيار'}
                 </div>
-                <div className="nx-text-sm nx-text-muted">xlsx / xls / csv</div>
+                <div className="text-[12px] text-noorix-muted">xlsx / xls / csv</div>
               </div>
               <input
                 ref={fileInputRef}
@@ -598,7 +598,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 onChange={(e) => handleFile(e.target.files?.[0])}
               />
               {parsedRows.length > 0 && (
-                <div className="nx-text-base nx-text-muted">
+                <div className="text-[13px] text-noorix-muted">
                   ✓ تم قراءة <strong>{parsedRows.length}</strong> صف من الملف
                   {phase !== 'done' && (
                     <Button variant="ghost" size="sm" style={{ marginRight: 12 }} onClick={() => fileInputRef.current?.click()}>
@@ -611,9 +611,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           )}
 
           {phase === 'validated' && !importing && (
-            <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-12">
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>الخطوة 3 — نتائج الفحص والمعاينة</p>
-              <div className="nx-flex-wrap nx-gap-12">
+            <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" style={{ letterSpacing: 0.5 }}>الخطوة 3 — نتائج الفحص والمعاينة</p>
+              <div className="flex flex-wrap gap-3">
                 <StatBadge count={validCount} label="صف صحيح" color="#16a34a" />
                 {errorCount > 0 && <StatBadge count={errorCount} label="بها أخطاء" color="var(--noorix-accent-red)" />}
                 {warnCount > 0 && <StatBadge count={warnCount} label="تحذيرات" color="#f59e0b" />}
@@ -624,18 +624,18 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               )}
 
               {(errorCount > 0 || warnCount > 0) && (
-                <div className="nx-flex-col nx-gap-6" style={{ maxHeight: 280, overflowY: 'auto' }}>
+                <div className="flex flex-col gap-1.5" style={{ maxHeight: 280, overflowY: 'auto' }}>
                   {errorsToShow.map((r) => (
                     <div key={r.rowNum}>
                       {r.errors.map((msg, j) => (
-                        <div key={j} className="nx-grid nx-gap-8 nx-rounded nx-text-base" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'rgba(239,68,68,0.07)' }}>
-                          <span className="nx-font-700 nx-text-expense">صف {r.rowNum}</span>
-                          <span className="nx-text-expense">✗ {msg}</span>
+                        <div key={j} className="grid gap-2 rounded-lg text-[13px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'rgba(239,68,68,0.07)' }}>
+                          <span className="font-bold text-noorix-red">صف {r.rowNum}</span>
+                          <span className="text-noorix-red">✗ {msg}</span>
                         </div>
                       ))}
                       {r.warnings.map((msg, j) => (
-                        <div key={`w${j}`} className="nx-grid nx-gap-8 nx-rounded nx-text-sm" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
-                          <span className="nx-font-700 nx-text-warn">صف {r.rowNum}</span>
+                        <div key={`w${j}`} className="grid gap-2 rounded-lg text-[12px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
+                          <span className="font-bold text-noorix-amber">صف {r.rowNum}</span>
                           <span style={{ color: 'var(--noorix-accent-amber)' }}>⚠ {msg}</span>
                         </div>
                       ))}
@@ -653,7 +653,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               )}
 
               {validCount === 0 ? (
-                <div className="nx-text-md nx-text-expense nx-font-600">
+                <div className="text-[14px] text-noorix-red font-semibold">
                   لا توجد صفوف صحيحة للاستيراد. يرجى مراجعة الأخطاء وإعادة رفع الملف.
                 </div>
               ) : (
@@ -665,14 +665,14 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           )}
 
           {importing && (
-            <div className="nx-rounded-lg nx-border-all nx-p-16 nx-flex-col nx-gap-12">
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>جارٍ الاستيراد…</p>
+            <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" style={{ letterSpacing: 0.5 }}>جارٍ الاستيراد…</p>
               <ProgressBar pct={pct} />
-              <div className="nx-flex-between nx-text-base nx-text-muted">
+              <div className="flex items-center justify-between text-[13px] text-noorix-muted">
                 <span>{progress.current} / {progress.total} صف</span>
                 <span>{pct}%</span>
               </div>
-              <div className="nx-flex-wrap nx-gap-12">
+              <div className="flex flex-wrap gap-3">
                 <StatBadge count={progress.succeeded} label="نجح" color="#16a34a" />
                 {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
@@ -686,9 +686,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           )}
 
           {phase === 'done' && !importing && (
-            <div className="nx-rounded-lg nx-p-16 nx-flex-col nx-gap-12" style={{ border: `1px solid ${progress.failed === 0 ? 'var(--noorix-accent-green)' : 'var(--color-noorix-amber)'}40` }}>
-              <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>نتائج الاستيراد</p>
-              <div className="nx-flex-wrap nx-gap-12">
+            <div className="rounded-xl p-4 flex flex-col gap-3" style={{ border: `1px solid ${progress.failed === 0 ? 'var(--noorix-accent-green)' : 'var(--color-noorix-amber)'}40` }}>
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" style={{ letterSpacing: 0.5 }}>نتائج الاستيراد</p>
+              <div className="flex flex-wrap gap-3">
                 <StatBadge count={progress.succeeded} label="تم بنجاح" color="#16a34a" />
                 {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
@@ -697,15 +697,15 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               </div>
 
               {(progress.warnings || []).length > 0 && (
-                <div className="nx-flex-col nx-mt-8" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
+                <div className="flex flex-col mt-2" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
                   {(progress.warnings || []).slice(0, 20).map((w, i) => (
-                    <div key={i} className="nx-grid nx-gap-8 nx-rounded nx-text-sm" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
-                      <span className="nx-font-700 nx-text-warn">صف {w.rowNum}</span>
+                    <div key={i} className="grid gap-2 rounded-lg text-[12px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
+                      <span className="font-bold text-noorix-amber">صف {w.rowNum}</span>
                       <span style={{ color: 'var(--noorix-accent-amber)' }}>⚠ {w.message}</span>
                     </div>
                   ))}
                   {(progress.warnings || []).length > 20 && (
-                    <span className="nx-text-sm nx-text-muted">… و {(progress.warnings || []).length - 20} تحذير آخر</span>
+                    <span className="text-[12px] text-noorix-muted">… و {(progress.warnings || []).length - 20} تحذير آخر</span>
                   )}
                   <Button variant="ghost" size="sm" style={{ alignSelf: 'flex-start' }} onClick={handleDownloadWarningsReport}>
                     تحميل تقرير التحذيرات
@@ -716,13 +716,13 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               {progress.errors.length > 0 && (
                 <div className="flex flex-col" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
                   {progress.errors.slice(0, 20).map((e, i) => (
-                    <div key={i} className="nx-grid nx-gap-8 nx-rounded nx-text-base" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'rgba(239,68,68,0.07)' }}>
-                      <span className="nx-font-700 nx-text-expense">صف {e.rowNum}</span>
-                      <span className="nx-text-expense">✗ {e.message}</span>
+                    <div key={i} className="grid gap-2 rounded-lg text-[13px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'rgba(239,68,68,0.07)' }}>
+                      <span className="font-bold text-noorix-red">صف {e.rowNum}</span>
+                      <span className="text-noorix-red">✗ {e.message}</span>
                     </div>
                   ))}
                   {progress.errors.length > 20 && (
-                    <span className="nx-text-sm nx-text-muted">… و {progress.errors.length - 20} خطأ آخر</span>
+                    <span className="text-[12px] text-noorix-muted">… و {progress.errors.length - 20} خطأ آخر</span>
                   )}
                   <Button variant="ghost" size="sm" style={{ alignSelf: 'flex-start' }} onClick={handleDownloadErrorReport}>
                     تحميل تقرير الأخطاء
@@ -730,7 +730,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 </div>
               )}
 
-              <div className="nx-flex nx-gap-10">
+              <div className="flex gap-2.5">
                 <Button variant="primary" onClick={onClose}>إغلاق</Button>
                 <Button onClick={() => { setPhase('idle'); setParsedRows([]); setValidationResults([]); setProgress({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [], warnings: [] }); }}>
                   استيراد ملف آخر

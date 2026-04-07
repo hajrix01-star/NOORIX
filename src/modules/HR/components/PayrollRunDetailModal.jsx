@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PayrollRunDetailModal — عرض تفاصيل مسيرة الراتب (جدول احترافي)
  */
 import React from 'react';
@@ -33,7 +33,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   if (isLoading || !run) {
     return (
       <AdaptiveSheet open={true} onClose={onClose} title={t('loading')} size="sm" side="start">
-        <p className="nx-m-0">{t('loading')}</p>
+        <p className="m-0">{t('loading')}</p>
       </AdaptiveSheet>
     );
   }
@@ -153,8 +153,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
 
   const footerCells = (
     <>
-      <td colSpan={8} className="nx-text-base nx-font-700 nx-text-muted" style={{ padding: '8px 12px' }}>{t('payrollTotalAfterDeductions')}</td>
-      <td className="nx-text-md" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900, color: 'var(--noorix-accent-green)', textAlign: 'right' }}>{hrFmt(totalNet)}</td>
+      <td colSpan={8} className="text-[13px] font-bold text-noorix-muted" style={{ padding: '8px 12px' }}>{t('payrollTotalAfterDeductions')}</td>
+      <td className="text-[14px]" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900, color: 'var(--noorix-accent-green)', textAlign: 'right' }}>{hrFmt(totalNet)}</td>
     </>
   );
 
@@ -173,8 +173,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
         </>
       }
     >
-      <div className="nx-mb-16">
-        <p className="nx-text-base nx-text-muted nx-m-0 nx-mb-8">
+      <div className="mb-4">
+        <p className="text-[13px] text-noorix-muted m-0 mb-2">
           {formatSaudiDate(run.payrollMonth)} — {items.length} {t('employeesList')}
         </p>
         <Badge color={statusInfo.badgeColor}>{t(statusInfo.labelKey)}</Badge>
@@ -195,7 +195,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
       />
 
       {run.notes && (
-        <p className="nx-mt-16 nx-mb-0 nx-text-base nx-text-muted">{run.notes}</p>
+        <p className="mt-4 mb-0 text-[13px] text-noorix-muted">{run.notes}</p>
       )}
     </AdaptiveSheet>
   );

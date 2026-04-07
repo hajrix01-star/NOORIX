@@ -38,7 +38,7 @@ export default function ExpenseLineList({
       render: (v, row) => (
         <Button
           variant="ghost"
-          className="expense-line-name-btn nx-font-600"
+          className="expense-line-name-btn font-semibold"
           onClick={() => onLineClick(row)}
           style={{ padding: 0, color: 'var(--noorix-accent-blue)', textAlign: 'inherit', fontSize: 'inherit' }}
         >
@@ -89,7 +89,7 @@ export default function ExpenseLineList({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <Button
             variant="ghost"
-            className="expense-line-name-btn nx-font-700 nx-text-md nx-text-start"
+            className="expense-line-name-btn font-bold text-[14px] text-start"
             onClick={() => onLineClick(row)}
             style={{ padding: 0, color: 'var(--noorix-accent-blue)' }}
           >
@@ -97,12 +97,12 @@ export default function ExpenseLineList({
           </Button>
           <Badge {...Badge.fromStatus(row.kind, KIND_STATUS_MAP)} size="sm" />
         </div>
-        <div className="nx-text-sm nx-text-muted nx-mb-8 nx-flex nx-flex-wrap nx-gap-10">
+        <div className="text-[12px] text-noorix-muted mb-2 flex flex flex-wrap gap-2.5">
           {row.categoryName && row.categoryName !== '—' && <span>{row.categoryName}</span>}
           {row.supplierName && row.supplierName !== '—' && <span>{row.supplierName}</span>}
           {row.serviceNumber && <span className="nx-cell-num">#{row.serviceNumber}</span>}
         </div>
-        <div className="nx-flex nx-gap-8" style={{ justifyContent: 'flex-end' }}>
+        <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
           <Button size="sm" onClick={() => onEditLine?.(row)}>تعديل</Button>
           <Button size="sm" variant="danger" onClick={() => onDeleteLine?.(row)}>حذف</Button>
         </div>
@@ -130,7 +130,7 @@ export default function ExpenseLineList({
 
   return (
     <div>
-      <div className="nx-toolbar nx-mb-16">
+      <div className="nx-toolbar mb-4">
         <Input
           type="select"
           value={filterKind}
