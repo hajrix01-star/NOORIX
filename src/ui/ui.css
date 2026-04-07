@@ -828,6 +828,7 @@
 .nx-drawer--sm   { width: min(100vw, 320px); }
 .nx-drawer--md   { width: min(100vw, 400px); }
 .nx-drawer--lg   { width: min(100vw, 560px); }
+.nx-drawer--xl   { width: min(100vw, 920px); }
 .nx-drawer--full {
   width: 100vw;
   border-radius: 0;
@@ -911,6 +912,7 @@
 
 .nx-drawer__body {
   flex: 1;
+  overflow-x: auto;
   overflow-y: auto;
   padding: 18px;
   min-height: 0;

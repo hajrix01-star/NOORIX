@@ -13,7 +13,7 @@ import Button from './Button';
  * @param {boolean} props.open
  * @param {()=>void} props.onClose
  * @param {string} [props.title]
- * @param {'sm'|'md'|'lg'|'full'} [props.size='md']
+ * @param {'sm'|'md'|'lg'|'xl'|'full'} [props.size='md'] — xl يوازي عرض المودال الكبير (تقارير/جداول)
  * @param {'start'|'end'} [props.side='start'] — بداية/نهاية السطر (مناسب لـ RTL)
  * @param {React.ReactNode} [props.footer]
  * @param {boolean} [props.closeOnBackdrop=true]

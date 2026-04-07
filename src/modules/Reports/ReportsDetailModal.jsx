@@ -1,5 +1,5 @@
 /**
- * ReportsDetailModal — نافذة تفاصيل البند في تقرير ربح وخسارة
+ * ReportsDetailModal — لوح جانبي لتفاصيل البند في تقرير ربح وخسارة (Drawer موحّد)
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -86,7 +86,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     );
 
   return (
-    <Modal open={!!state} onClose={onClose} title={modalTitle} size="xl" footer={footerContent}>
+    <Drawer open={!!state} onClose={onClose} title={modalTitle} size="xl" side="start" className="reports-detail-drawer" footer={footerContent}>
       {(isLoading || trendLoading) && (
         <div className="nx-p-24 nx-text-center nx-text-muted">{t('loading')}</div>
       )}
@@ -251,6 +251,6 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           )}
         </>
       )}
-    </Modal>
+    </Drawer>
   );
 }
