@@ -50,7 +50,7 @@ export default function OrdersScreen() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('ordersTitle')}</h1>
       </div>

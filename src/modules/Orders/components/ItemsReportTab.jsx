@@ -162,7 +162,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
