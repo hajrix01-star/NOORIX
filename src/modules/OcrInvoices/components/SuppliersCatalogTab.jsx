@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 import {
   createOcrSupplier, updateOcrSupplier, deleteOcrSupplier, addSupplierAlias,
   bulkDeleteOcrSuppliers,
@@ -164,16 +164,17 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         </div>
       )}
 
-      {/* Alias modal */}
-      <Modal open={!!viewing} onClose={() => setViewing(null)} size="sm" hideClose>
+      {/* Alias drawer */}
+      <Drawer
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        size="md"
+        side="start"
+        title={viewing?.nameAr || ''}
+        className="ocr-supplier-aliases-drawer"
+      >
         <div dir={dir}>
-          <div className="modal-head">
-            <div>
-              <div className="modal-title">{viewing?.nameAr}</div>
-              <div className="modal-sub">{t('ocrAliases')}</div>
-            </div>
-            <Button className="modal-close-btn" onClick={() => setViewing(null)}>✕</Button>
-          </div>
+          <p className="nx-text-sm nx-text-muted nx-mt-0 nx-mb-12">{t('ocrAliases')}</p>
           <div className="modal-body">
             {(viewing?.aliases || []).length === 0 && (
               <div className="nx-text-muted nx-text-base">{isAr ? 'لا توجد أسماء بديلة بعد' : 'No aliases yet'}</div>
@@ -195,7 +196,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
             </div>
           </div>
         </div>
-      </Modal>
+      </Drawer>
     </div>
   );
 }

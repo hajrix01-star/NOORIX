@@ -10,7 +10,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import SmartTable from '../../../components/common/SmartTable';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Badge, Button, Modal } from '../../../ui';
+import { Badge, Button, Drawer } from '../../../ui';
 
 const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
@@ -32,9 +32,9 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
 
   if (isLoading || !run) {
     return (
-      <Modal open={true} onClose={onClose} title={t('loading')} size="sm">
-        <p>{t('loading')}</p>
-      </Modal>
+      <Drawer open={true} onClose={onClose} title={t('loading')} size="sm" side="start">
+        <p className="nx-m-0">{t('loading')}</p>
+      </Drawer>
     );
   }
 
@@ -159,11 +159,13 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   );
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={run.runNumber || '—'}
       size="xl"
+      side="start"
+      className="payroll-run-detail-drawer"
       footer={
         <>
           <Button onClick={handlePrint}>{t('printPayroll')}</Button>
@@ -195,6 +197,6 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
       {run.notes && (
         <p className="nx-mt-16 nx-mb-0 nx-text-base nx-text-muted">{run.notes}</p>
       )}
-    </Modal>
+    </Drawer>
   );
 }

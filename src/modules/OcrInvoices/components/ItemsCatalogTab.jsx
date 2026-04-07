@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 import {
   createOcrItem, updateOcrItem, deleteOcrItem, getItemPriceHistory, addItemAlias,
   findDuplicateItems, mergeOcrItems, bulkDeleteOcrItems,
@@ -250,20 +250,21 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
         </div>
       )}
 
-      {/* Item detail modal */}
-      <Modal open={!!viewing} onClose={() => setViewing(null)} size="md" hideClose>
+      {/* Item detail drawer */}
+      <Drawer
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        size="lg"
+        side="start"
+        title={viewing?.nameAr || ''}
+        className="ocr-item-detail-drawer"
+      >
         <div dir={dir}>
-          <div className="modal-head">
-            <div>
-              <div className="modal-title">{viewing?.nameAr}</div>
-                  {lowestPrice != null && (
-                  <div className="modal-sub nx-font-600" style={{ color: '#15803d' }}>
-                  {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
-                </div>
-              )}
-            </div>
-            <Button className="modal-close-btn" onClick={() => setViewing(null)}>✕</Button>
-          </div>
+          {lowestPrice != null && (
+            <p className="nx-text-sm nx-font-600 nx-mt-0 nx-mb-12" style={{ color: '#15803d' }}>
+              {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
+            </p>
+          )}
 
           <div className="modal-body">
             {/* Aliases */}
@@ -317,7 +318,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
             )}
           </div>
         </div>
-      </Modal>
+      </Drawer>
     </div>
   );
 }

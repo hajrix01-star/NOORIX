@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
-import { Input, Button, Modal } from '../../../ui';
+import { Input, Button, Drawer } from '../../../ui';
 
 /* ── ثوابت ──────────────────────────────────────────────────────────── */
 const STATUS = {
@@ -135,20 +135,20 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
     : (invoice.supplier?.nameEn || invoice.supplier?.nameAr || '—');
 
   return (
-    <Modal open={true} onClose={onClose} size="lg" hideClose>
+    <Drawer
+      open={true}
+      onClose={onClose}
+      size="xl"
+      side="start"
+      title={isAr ? 'تفاصيل الفاتورة' : 'Invoice Details'}
+      className="ocr-invoice-detail-drawer"
+    >
       <div dir={dir}>
-        {/* رأس */}
-        <div className="modal-head">
-          <div>
-            <div className="modal-title">{isAr ? 'تفاصيل الفاتورة' : 'Invoice Details'}</div>
-            <div className="modal-sub">{supplierName}</div>
-          </div>
-          <div className="nx-flex-center nx-gap-8">
-            <span className={`status-badge ${statusInfo.bgCls}`}>
-              {isAr ? statusInfo.ar : statusInfo.en}
-            </span>
-            <Button className="modal-close-btn" onClick={onClose}>✕</Button>
-          </div>
+        <div className="nx-flex-between nx-flex-wrap nx-gap-8 nx-mb-12">
+          <p className="nx-text-sm nx-text-muted nx-m-0">{supplierName}</p>
+          <span className={`status-badge ${statusInfo.bgCls}`}>
+            {isAr ? statusInfo.ar : statusInfo.en}
+          </span>
         </div>
 
         <div className="modal-body">
@@ -212,7 +212,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
           )}
         </div>
       </div>
-    </Modal>
+    </Drawer>
   );
 }
 
