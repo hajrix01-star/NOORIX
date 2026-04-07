@@ -143,7 +143,7 @@ export function SalesEntryModal({
       open={true}
       onClose={onClose}
       title={t('dailySummaryInput')}
-      size="xl"
+      size="md"
       side="start"
       className="sales-entry-drawer"
       footer={
@@ -160,7 +160,7 @@ export function SalesEntryModal({
         </>
       }
     >
-      <div className="grid gap-3.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+      <div className="grid grid-cols-3 gap-2.5 mb-4">
         <Input type="date" label={t('transactionDate')} value={txDate} onChange={(e) => setTxDate(e.target.value)} />
         <Input type="number" min="0" label={t('customerCount')} required value={customerCount} onChange={(e) => setCustomerCount(e.target.value)} placeholder="0" />
         <Input type="number" min="0" step="0.01" label={t('cashOnHand')} value={cashOnHand} onChange={(e) => setCashOnHand(e.target.value)} placeholder="0.00" />
@@ -186,7 +186,7 @@ export function SalesEntryModal({
               const amt = channelAmounts[v.id] || '';
               return (
                 <div key={v.id} className="flex flex-col gap-1">
-                  <label className="text-[12px] font-semibold text-noorix-muted">{vaultDisplayName(v, lang)}</label>
+                  <label className="text-[12px] font-semibold text-noorix-muted nx-truncate" title={vaultDisplayName(v, lang)}>{vaultDisplayName(v, lang)}</label>
                   <Input
                     type="number"
                     min="0"
@@ -194,8 +194,7 @@ export function SalesEntryModal({
                     value={amt}
                     onChange={(e) => setChannelAmounts((p) => ({ ...p, [v.id]: e.target.value }))}
                     placeholder="0.00"
-                    className="w-full rounded-lg text-[14px] bg-noorix-surface text-noorix-text py-2 px-[10px] text-right"
-                    style={{ fontFamily: 'var(--noorix-font-numbers)', border: '1px solid var(--noorix-border)' }}
+                    style={{ fontFamily: 'var(--noorix-font-numbers)' }}
                   />
                 </div>
               );

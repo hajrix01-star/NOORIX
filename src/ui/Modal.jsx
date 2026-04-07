@@ -81,6 +81,7 @@ export default function Modal({
         tabIndex={-1}
         className={cn(
           'relative z-[2001] w-full flex flex-col overflow-hidden',
+          'nx-modal',
           'bg-white border border-[rgba(200,215,235,0.8)] rounded-[18px]',
           'shadow-[0_0_0_1px_rgba(200,215,235,0.7),0_4px_16px_rgba(10,31,68,0.08),0_20px_60px_rgba(10,31,68,0.18)]',
           'max-h-[min(92vh,860px)]',

@@ -1543,18 +1543,13 @@ html[data-card-style="10"] .noorix-stat-card {
     animation: slideUp 0.25s ease-out;
   }
 }
-/* قنوات البيع — على الديسك توب 3 أعمدة، على الجوال 2 */
+/* قنوات البيع — شبكة مرنة ملمومة (~6 أرقام لكل حقل) */
 .sales-channels-grid {
-  grid-template-columns: repeat(2, 1fr) !important;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
 }
-@media (max-width: 420px) {
+@media (max-width: 380px) {
   .sales-channels-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-@media (min-width: 600px) {
-  .sales-channels-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 @keyframes slideUp {

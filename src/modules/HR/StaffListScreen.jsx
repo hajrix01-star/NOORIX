@@ -168,7 +168,16 @@ export default function StaffListScreen({ embedded }) {
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
       render: (v) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={v || ''}>{v || '—'}</span> },
     { key: 'name', label: t('employeeName'), sortable: true, minWidth: 170,
-      render: (_, row) => <span className="nx-cell-bold text-[13px]">{employeeDisplayName(row, lang)}</span> },
+      render: (_, row) => (
+        <Button
+          variant="raw"
+          size="auto"
+          className="nx-cell-bold text-[13px] text-noorix-blue hover:underline cursor-pointer p-0 bg-transparent text-start"
+          onClick={() => navigate(`/hr/employee/${row.id}`)}
+        >
+          {employeeDisplayName(row, lang)}
+        </Button>
+      ) },
     { key: 'jobTitle', label: t('jobTitle'), sortable: true, minWidth: 150,
       render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125, minWidth: 120,
@@ -197,7 +206,6 @@ export default function StaffListScreen({ embedded }) {
       render: (_, row) => (
         <HRActionsCell
           row={row}
-          onView={() => navigate(`/hr/employee/${row.id}`)}
           onEdit={() => setEditingEmployee(row)}
           onAdvance={row.status === 'active' ? () => setAdvanceEmployee(row) : undefined}
           onTerminate={row.status !== 'terminated' && row.status !== 'archived'
@@ -370,7 +378,14 @@ export default function StaffListScreen({ embedded }) {
         <span className="nx-cell-num nx-cell-muted-sm">{row.employeeSerial || '—'}</span>
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
       </div>
-      <div className="nx-mc__name">{employeeDisplayName(row, lang)}</div>
+      <Button
+        variant="raw"
+        size="auto"
+        className="nx-mc__name text-noorix-blue font-bold text-[14px] hover:underline cursor-pointer p-0 bg-transparent text-start"
+        onClick={() => navigate(`/hr/employee/${row.id}`)}
+      >
+        {employeeDisplayName(row, lang)}
+      </Button>
       {row.jobTitle && <div className="nx-mc__subtitle">{row.jobTitle}</div>}
       <div className="nx-mc__grid nx-mc__grid--2">
         <div>
@@ -385,7 +400,6 @@ export default function StaffListScreen({ embedded }) {
       <div className="nx-mc__actions">
         <HRActionsCell
           row={row}
-          onView={() => navigate(`/hr/employee/${row.id}`)}
           onEdit={() => setEditingEmployee(row)}
           onAdvance={row.status === 'active' ? () => setAdvanceEmployee(row) : undefined}
           onTerminate={row.status !== 'terminated' && row.status !== 'archived'
