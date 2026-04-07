@@ -1851,6 +1851,23 @@ html[data-card-style="10"] .noorix-stat-card {
   border-color: var(--noorix-accent-blue);
 }
 
+/* صف فلاتر يتمرّر أفقياً (فواتير وغيرها) */
+.noorix-exec-filters--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.noorix-exec-filters--scroll::-webkit-scrollbar {
+  display: none;
+}
+.noorix-exec-filters--scroll .noorix-exec-filters__select {
+  flex-shrink: 0;
+  width: auto;
+  min-width: 130px;
+}
+
 /* ========== حقول الإدخال — rounded-sm احترافي ========== */
 input, select, textarea {
   font-family: var(--noorix-font-primary);
@@ -2799,9 +2816,9 @@ input:focus, select:focus, textarea:focus {
   .noorix-exec-card__stat { border-left: none; padding-left: 0; padding-right: 0; flex-direction: row; justify-content: space-between; align-items: center; }
   .noorix-exec-card__stat:last-child { border-left: none; }
 
-  /* Exec Filters — full-width selects on mobile */
-  .noorix-exec-filters { flex-direction: column; align-items: stretch; }
-  .noorix-exec-filters__select { min-width: 0; width: 100%; }
+  /* Exec Filters — عمودي على الجوال إلا وضع التمرير الأفقي */
+  .noorix-exec-filters:not(.noorix-exec-filters--scroll) { flex-direction: column; align-items: stretch; }
+  .noorix-exec-filters:not(.noorix-exec-filters--scroll) .noorix-exec-filters__select { min-width: 0; width: 100%; }
 
   /* Exec Card Grid — single column on mobile */
   .noorix-exec-card-grid { grid-template-columns: 1fr; }
@@ -4141,10 +4158,32 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   /* ─── شريط التبويبات ─── */
   .nx-tab-bar {
     display: flex;
+    flex-wrap: nowrap;
     gap: 0;
     border-bottom: 1px solid var(--noorix-border);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .nx-tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* غلاف تبويبات: تلاشي خفيف عند الحافة (مؤشر تمرير على الجوال) */
+  .nx-tab-bar-fade-wrap {
+    position: relative;
+  }
+  .nx-tab-bar-fade-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    inset-inline-end: 0;
+    width: 1.75rem;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(to left, var(--noorix-bg-surface), transparent);
   }
   .nx-tab-btn {
     flex-shrink: 0;

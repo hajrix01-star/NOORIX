@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
 import { Input, Button, AdaptiveSheet } from '../../../ui';
+import { formatSaudiDate } from '../../../utils/saudiDate';
 
 /* ── ثوابت ──────────────────────────────────────────────────────────── */
 const STATUS = {
@@ -12,7 +13,7 @@ const STATUS = {
 };
 
 const fmt    = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
 
 /* ═══════════════════════════════════════════════════════════════════════
    عارض الصورة الاحترافي — تكبير + تصغير متعدد + تدوير + سحب

@@ -412,7 +412,7 @@ export default function StaffListScreen({ embedded }) {
   ), [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete]);
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
       {!embedded && (
         <div>
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
@@ -447,17 +447,18 @@ export default function StaffListScreen({ embedded }) {
             }}
           />
 
-          <div className="nx-page-header mb-2">
-            <div className="nx-toolbar flex-1 min-w-0">
-              <Button size="sm" onClick={() => setViewMode('active')}>{t('activeEmployeesList')}</Button>
-              <Button size="sm" onClick={() => setViewMode('terminated')}>{t('terminatedEmployeesList')}</Button>
-              <Button size="sm" onClick={() => setViewMode('archived')}>{t('archivedEmployeesList')}</Button>
+          <div className="nx-page-header mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-2 flex-1 min-w-0">
+              <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => setViewMode('active')}>{t('activeEmployeesList')}</Button>
+              <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => setViewMode('terminated')}>{t('terminatedEmployeesList')}</Button>
+              <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => setViewMode('archived')}>{t('archivedEmployeesList')}</Button>
               <Button
                 size="sm"
+                className="whitespace-nowrap shrink-0"
                 icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
                 onClick={() => setShowImportExport(true)}
               >
-                استيراد / تصدير
+                {t('importExportLabel')}
               </Button>
             </div>
             <Button variant="primary" onClick={() => { setEditingEmployee(null); setShowForm(true); }}>

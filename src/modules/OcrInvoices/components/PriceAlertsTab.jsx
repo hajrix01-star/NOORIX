@@ -2,9 +2,10 @@
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { bulkDeletePriceHistory } from '../services/ocrApi';
+import { formatSaudiDate } from '../../../utils/saudiDate';
 
 const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
 
 function MiniImageViewer({ src }) {
   const [rotation, setRotation] = useState(0);

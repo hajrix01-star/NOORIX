@@ -130,7 +130,7 @@ export default function TreasuryScreen() {
   );
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type}
         onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
@@ -150,7 +150,7 @@ export default function TreasuryScreen() {
             {t('showArchived')}
           </label>
           <Button variant="primary" onClick={() => { setShowAddForm(true); setSaveError(''); }}>
-            + {t('addVault')}
+            {t('addVaultBtn')}
           </Button>
         </div>
       </div>

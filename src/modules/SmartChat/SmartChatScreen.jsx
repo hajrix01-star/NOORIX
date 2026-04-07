@@ -18,6 +18,7 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { loadChat, saveChat, filterByDate } from './chatStorage';
 import './SmartChatScreen.css';
 import { Button, AdaptiveSheet, Input } from '../../ui';
+import { formatSaudiDateTime } from '../../utils/saudiDate';
 
 function SendIcon() {
   return (
@@ -112,7 +113,7 @@ function ReportCard({ text, isAr, createdAt }) {
       )}
       {createdAt && (
         <div className="text-[12px] text-noorix-muted border-t border-noorix-border nx-ltr mt-[14px] pt-3">
-          {new Date(createdAt).toLocaleString('en', { dateStyle: 'short', timeStyle: 'short' })}
+          {formatSaudiDateTime(createdAt)}
         </div>
       )}
     </div>

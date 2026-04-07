@@ -38,9 +38,8 @@ export default function ExpenseLineList({
       render: (v, row) => (
         <Button
           variant="ghost"
-          className="expense-line-name-btn font-semibold"
+          className="expense-line-name-btn font-semibold p-0 text-noorix-blue"
           onClick={() => onLineClick(row)}
-          className="p-0 text-noorix-blue"
         >
           {v || row.nameEn || '—'}
         </Button>
@@ -89,9 +88,8 @@ export default function ExpenseLineList({
         <div className="flex justify-between items-start mb-2">
           <Button
             variant="ghost"
-            className="expense-line-name-btn font-bold text-[14px] text-start"
+            className="expense-line-name-btn font-bold text-[14px] text-start p-0 text-noorix-blue"
             onClick={() => onLineClick(row)}
-            className="p-0 text-noorix-blue"
           >
             {row.nameAr || row.nameEn || '—'}
           </Button>
@@ -114,9 +112,10 @@ export default function ExpenseLineList({
     const rows = tableData.map((r) =>
       `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${(KIND_LABELS[r.kind]?.label || r.kind).replace(/</g, '&lt;')}</td><td>${(r.categoryName || '—').replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td></tr>`,
     ).join('');
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>بنود المصاريف</title>
+    const printTitle = String(t('expenseLinesPrintTitle') || '').replace(/</g, '&lt;');
+    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${printTitle}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;color:#1a1a1a;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}@media print{body{padding:0}}</style></head><body>
-<div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px"><h1 style="margin:0;font-size:20px">بنود المصاريف</h1></div>
+<div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px"><h1 style="margin:0;font-size:20px">${printTitle}</h1></div>
 <table><thead><tr><th>اسم البند</th><th>النوع</th><th>الفئة</th><th>المورد</th><th>رقم الخدمة</th></tr></thead><tbody>${rows || '<tr><td colspan="5">لا توجد بيانات</td></tr>'}</tbody></table>
 </body></html>`;
     const w = window.open('', '_blank');
@@ -130,25 +129,25 @@ export default function ExpenseLineList({
 
   return (
     <div>
-      <div className="nx-toolbar mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <Input
           type="select"
           value={filterKind}
           onChange={(e) => onFilterKindChange(e.target.value)}
         >
-          <option value="">{t('allTypes') || 'كل الأنواع'}</option>
-          <option value="fixed_expense">{t('fixedExpense') || 'ثابت'}</option>
-          <option value="expense">{t('variableExpense') || 'متغير'}</option>
+          <option value="">{t('allTypes')}</option>
+          <option value="fixed_expense">{t('fixedExpense')}</option>
+          <option value="expense">{t('variableExpense')}</option>
         </Input>
-        <Button variant="primary" onClick={onCreateLine}>
-          + {t('addExpenseLine') || 'إضافة بند مصروف'}
+        <Button variant="primary" className="whitespace-nowrap shrink-0" onClick={onCreateLine}>
+          {t('addExpenseLine')}
         </Button>
-        <Button onClick={onRefresh}>
-          {t('refresh') || 'تحديث'}
+        <Button className="whitespace-nowrap shrink-0" onClick={onRefresh}>
+          {t('refresh')}
         </Button>
-        <Button onClick={handlePrint} disabled={!tableData.length}>{t('print') || 'طباعة'}</Button>
-        <Button onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>Excel</Button>
-        <Button onClick={() => exportTableToPdf({ data: exportData, title: 'بنود المصاريف', filename: 'expense-lines.pdf' })} disabled={!tableData.length}>PDF</Button>
+        <Button className="whitespace-nowrap shrink-0" onClick={handlePrint} disabled={!tableData.length}>{t('print')}</Button>
+        <Button className="whitespace-nowrap shrink-0" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>{t('exportExcel')}</Button>
+        <Button className="whitespace-nowrap shrink-0" onClick={() => exportTableToPdf({ data: exportData, title: t('expenseLinesPrintTitle'), filename: 'expense-lines.pdf' })} disabled={!tableData.length}>{t('exportPdf')}</Button>
       </div>
 
       <SmartTable
@@ -157,7 +156,7 @@ export default function ExpenseLineList({
         showRowNumbers
         rowNumberWidth="1%"
         isLoading={isLoading}
-        emptyMessage="لا توجد بنود مصاريف. أضف بنداً جديداً للبدء."
+        emptyMessage={t('expenseLinesEmptyState')}
         keyExtractor={(row) => row.id}
         renderMobileCard={renderMobileCard}
       />

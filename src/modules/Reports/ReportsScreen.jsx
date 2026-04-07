@@ -114,7 +114,7 @@ export default function ReportsScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
       <div className="flex flex-col gap-4">
@@ -225,11 +225,13 @@ export default function ReportsScreen() {
             <div className="max-w-[min(100%,1400px)] mx-auto">
               <div className="noorix-surface-card overflow-hidden rounded-xl p-0" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 {isMobile && (
-                  <div className="nx-tab-bar overflow-x-auto flex-nowrap border-b border-noorix-border">
-                    <Button type="button" className={`nx-tab-btn${!selectedMonth ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth('')}>{t('allMonths')}</Button>
-                    {(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN).map((name, index) => (
-                      <Button key={index} type="button" className={`nx-tab-btn${selectedMonthNumber === index + 1 ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth(String(index + 1))}>{name}</Button>
-                    ))}
+                  <div className="relative nx-tab-bar-fade-wrap">
+                    <div className="nx-tab-bar border-b border-noorix-border">
+                      <Button type="button" className={`nx-tab-btn${!selectedMonth ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth('')}>{t('allMonths')}</Button>
+                      {(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN).map((name, index) => (
+                        <Button key={index} type="button" className={`nx-tab-btn${selectedMonthNumber === index + 1 ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth(String(index + 1))}>{name}</Button>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <div style={{ overflowX: 'auto' }}>

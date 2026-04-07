@@ -16,6 +16,7 @@ import {
   countDataRowsFrom,
   extractDateFromCell,
 } from './bank/bankMappingAutoDetect';
+import { formatSaudiDate } from '../../utils/saudiDate';
 
 /** مطابق COLUMN_TYPES في Base44 (بدون amount) */
 const COLUMN_FIELD_DEFS = [
@@ -220,7 +221,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
   };
 
   const formatCell = (cell) => {
-    if (cell instanceof Date) return cell.toLocaleDateString('en-CA');
+    if (cell instanceof Date) return formatSaudiDate(cell);
     return String(cell ?? '').slice(0, 48);
   };
 

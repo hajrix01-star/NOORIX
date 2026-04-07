@@ -2,15 +2,16 @@
  * اكتشاف تلقائي لصف العناوين والأعمدة — منقول من BankColumnMapper.jsx (Base44)
  * نفس الكلمات المفتاحية ونفس ترتيب المنطق.
  */
+import { formatSaudiDateISO } from '../../../utils/saudiDate';
 
 export function extractDateFromCell(val) {
   if (!val) return '';
   if (val instanceof Date) {
-    return val.toLocaleDateString('en-CA');
+    return formatSaudiDateISO(val);
   }
   if (typeof val === 'number' && val > 40000 && val < 50000) {
     const d = new Date((val - 25569) * 86400 * 1000);
-    return d.toLocaleDateString('en-CA');
+    return formatSaudiDateISO(d);
   }
   const str = String(val).trim();
   const m1 = str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);

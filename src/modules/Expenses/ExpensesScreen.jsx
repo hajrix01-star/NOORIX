@@ -85,12 +85,13 @@ export default function ExpensesScreen() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>
       </div>
 
       <div className="noorix-surface-card overflow-hidden p-0">
+        <div className="relative nx-tab-bar-fade-wrap">
         <div className="nx-tab-bar">
           {TABS.map((tab) => (
             <Button
@@ -102,6 +103,7 @@ export default function ExpensesScreen() {
               {tab.icon} {t(tab.labelKey)}
             </Button>
           ))}
+        </div>
         </div>
         <div className="nx-tab-content">
 

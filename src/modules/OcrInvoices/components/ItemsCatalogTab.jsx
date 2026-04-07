@@ -5,6 +5,7 @@ import {
   createOcrItem, updateOcrItem, deleteOcrItem, getItemPriceHistory, addItemAlias,
   findDuplicateItems, mergeOcrItems, bulkDeleteOcrItems,
 } from '../services/ocrApi';
+import { formatSaudiDate } from '../../../utils/saudiDate';
 
 function ItemForm({ initial = {}, onSave, onCancel, loading }) {
   const { t } = useTranslation();
@@ -304,7 +305,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                       <div>
                         <div className="font-semibold text-[13px]">{h.supplier?.nameAr || '—'}</div>
                         <div className="text-[12px] text-noorix-muted">
-                          {new Date(h.invoiceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          {formatSaudiDate(h.invoiceDate)}
                         </div>
                       </div>
                       <div className="font-bold text-[15px]" style={{ color: isLowest ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>

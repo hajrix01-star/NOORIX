@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStatementTemplateDelete } from '../../../services/api';
 import { Button, Modal } from '../../../ui';
+import { formatSaudiDate } from '../../../utils/saudiDate';
 
 const COL_LABEL_KEYS = {
   date: 'bankTplColDate',
@@ -101,7 +102,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
       <div className="grid gap-3">
         {sorted.map((tpl) => {
           const cols = columnsToBadges(tpl.columnsJson, t);
-          const lastUsed = tpl.lastUsedAt ? new Date(tpl.lastUsedAt).toLocaleDateString('en-GB') : null;
+          const lastUsed = tpl.lastUsedAt ? formatSaudiDate(tpl.lastUsedAt) : null;
           return (
             <div
               key={tpl.id}

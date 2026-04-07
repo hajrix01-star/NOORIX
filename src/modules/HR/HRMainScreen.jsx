@@ -62,16 +62,16 @@ export default function HRMainScreen() {
   }).length;
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
 
-      {/* ── ترويسة الصفحة ── */}
-      <div className="nx-page-header">
-        <div>
+      {/* ── ترويسة الصفحة — على الجوال: العنوان ثم الكروت بعرض تلقائي ── */}
+      <div className="nx-page-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
         </div>
         {companyId && (
-          <div className="flex flex flex-wrap gap-2">
-            <div className="noorix-stat-card noorix-stat-card--green px-4 py-2 min-w-[110px]">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
+            <div className="noorix-stat-card noorix-stat-card--green px-4 py-2 w-auto min-w-[140px] shrink-0">
               <div className="noorix-stat-card__stripe" />
               <div className="noorix-stat-card__body">
                 <div className="noorix-stat-card__label">{t('hrStatsActive')}</div>
@@ -79,7 +79,7 @@ export default function HRMainScreen() {
               </div>
             </div>
             {expiringCount > 0 && (
-              <div className="noorix-stat-card noorix-stat-card--amber px-4 py-2 min-w-[130px]">
+              <div className="noorix-stat-card noorix-stat-card--amber px-4 py-2 w-auto min-w-[140px] shrink-0">
                 <div className="noorix-stat-card__stripe" />
                 <div className="noorix-stat-card__body">
                   <div className="noorix-stat-card__label">{t('hrStatsResidencyExpiring')}</div>
@@ -92,8 +92,8 @@ export default function HRMainScreen() {
       </div>
 
       {/* ── شريط التبويبات — مستقل خارج البطاقة لضمان التمرير الأفقي ── */}
-      <div className="bg-noorix-surface rounded-xl border border-noorix-border p-1 overflow-x-auto overflow-y-visible [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none]">
-        <div className="flex gap-[2px] w-max min-w-full">
+      <div className="relative nx-tab-bar-fade-wrap bg-noorix-surface rounded-xl border border-noorix-border p-1">
+        <div className="flex gap-[2px] w-max min-w-full flex-nowrap overflow-x-auto overflow-y-visible [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((tab) => (
             <Button
               key={tab.id}

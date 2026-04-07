@@ -23,11 +23,12 @@ import Toast from '../../../components/Toast';
 import { useAuth } from '../../../context/AuthContext';
 import { useApp } from '../../../context/AppContext';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { formatSaudiDate, formatSaudiDateTime } from '../../../utils/saudiDate';
 
-function formatBackupDate(iso, lang) {
+function formatBackupDate(iso) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString('en-GB');
+    return formatSaudiDateTime(iso);
   } catch {
     return String(iso);
   }
@@ -49,11 +50,7 @@ function defaultImportCompanyName(j, t, lang) {
   let dateStr = '—';
   if (raw) {
     try {
-      dateStr = new Date(raw).toLocaleDateString('en-GB', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
+      dateStr = formatSaudiDate(raw);
     } catch {
       dateStr = String(raw);
     }
@@ -509,7 +506,7 @@ export default function BackupTab({ activeCompanies = [] }) {
         <div className="backup-job-list">
           {jobs.map((j) => {
             const metaParts = [
-              new Date(j.createdAt).toLocaleString('en-GB'),
+              formatSaudiDateTime(j.createdAt),
               j.sizeBytes != null ? formatFileSize(j.sizeBytes) : '',
               j.durationMs != null ? `${j.durationMs} ms` : '',
               j.externalUploaded ? t('backupExternalOk') : j.externalError ? t('backupExternalPending') : '',

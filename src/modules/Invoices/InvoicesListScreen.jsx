@@ -11,7 +11,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useInvoices }    from '../../hooks/useInvoices';
 import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
-import { formatSaudiDateISO } from '../../utils/saudiDate';
+import { formatSaudiDate, formatSaudiDateISO } from '../../utils/saudiDate';
 import { updateInvoice, getInvoices, deleteInvoice } from '../../services/api';
 import { Badge, Button, Modal, Input } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
@@ -28,7 +28,7 @@ const PAGE_SIZE = 50;
 /* ══ نافذة عرض الفاتورة (قراءة فقط) ══════════════════════════════════════════ */
 function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
   if (!invoice) return null;
-  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+  const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
   const supplierName = (lang === 'en' ? invoice.supplier?.nameEn || invoice.supplier?.nameAr : invoice.supplier?.nameAr || invoice.supplier?.nameEn) || '—';
   const fields = [
     { label: t('invoiceNumber'),   value: invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—' },
@@ -317,7 +317,7 @@ export default function InvoicesListScreen() {
   ), [KIND_MAP, STATUS_MAP, userRole, companyId, queryClient, t]);
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('invoicesTitle')}</h1>
@@ -453,7 +453,8 @@ export default function InvoicesListScreen() {
               </Button>
             </div>
           )}
-          <div className="noorix-exec-filters">
+          <div className="relative nx-tab-bar-fade-wrap">
+          <div className="noorix-exec-filters noorix-exec-filters--scroll">
             <Button
               size="sm"
               icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>}
@@ -466,7 +467,7 @@ export default function InvoicesListScreen() {
               icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
               onClick={() => setShowImportExport(true)}
             >
-              استيراد / تصدير
+              {t('importExportLabel')}
             </Button>
             <Button
               size="sm"
@@ -504,6 +505,7 @@ export default function InvoicesListScreen() {
                 <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id}</option>
               ))}
             </Input>
+          </div>
           </div>
           {/* ── عرض الفاتورة (قراءة فقط) ── */}
         {viewingInvoice && (

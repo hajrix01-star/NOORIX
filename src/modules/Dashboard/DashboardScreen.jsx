@@ -48,7 +48,7 @@ export default function DashboardScreen() {
   }), [year, selectedMonthNumber]);
 
   return (
-      <div className="flex flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
       {/* هيدر */}
       <div className="flex flex-wrap items-start justify-between gap-3 nx-page-header">
         <div>
@@ -75,7 +75,8 @@ export default function DashboardScreen() {
       {/* بطاقة التبويبات */}
       <div className="bg-noorix-surface border border-noorix-border rounded-xl shadow-sm overflow-hidden noorix-surface-card">
         {/* شريط التبويبات */}
-        <div className="flex border-b border-noorix-border overflow-x-auto nx-tab-bar">
+        <div className="relative nx-tab-bar-fade-wrap">
+        <div className="flex border-b border-noorix-border nx-tab-bar">
           {DASHBOARD_TABS.map((tab) => (
             <Button
               key={tab.id}
@@ -91,6 +92,7 @@ export default function DashboardScreen() {
               {t(tab.labelKey)}
             </Button>
           ))}
+        </div>
         </div>
 
         <div className="p-4 nx-tab-content">
