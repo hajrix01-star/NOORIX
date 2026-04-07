@@ -1919,19 +1919,19 @@
   gap: 0;
   min-width: 0;
   box-shadow:
-    inset 0 6px 28px -8px var(--kpi-accent, #2563eb), /* توهج نيوني داخلي قوي */
-    0 1px 2px rgba(15,23,42,0.06),
-    0 3px 8px rgba(15,23,42,0.08),
-    0 8px 20px rgba(15,23,42,0.06);
+    inset 0 6px 28px -8px var(--kpi-accent, #2563eb), /* توهج نيوني داخلي */
+    0 1px 3px rgba(15,23,42,0.08),
+    0 4px 10px rgba(15,23,42,0.10),
+    0 10px 24px rgba(15,23,42,0.08);
   transition: box-shadow 220ms ease, transform 220ms ease;
 }
 .nx-kpi-card:hover {
   box-shadow:
-    inset 0 8px 36px -8px var(--kpi-accent, #2563eb), /* توهج نيوني أقوى عند التحويم */
-    0 2px 4px rgba(15,23,42,0.08),
-    0 6px 16px rgba(15,23,42,0.12),
-    0 16px 32px rgba(15,23,42,0.08);
-  transform: translateY(-2px);
+    inset 0 8px 36px -8px var(--kpi-accent, #2563eb),
+    0 2px 6px rgba(15,23,42,0.10),
+    0 8px 20px rgba(15,23,42,0.14),
+    0 20px 40px rgba(15,23,42,0.10);
+  transform: translateY(-3px);
 }
 
 /* عنوان الكرت — أعلى الكرت */
@@ -2140,14 +2140,19 @@
   gap: 12px;
 }
 
-/* ≥ 960px من عرض الحاوية: 5 أعمدة */
-@container kpi-section (min-width: 960px) {
-  .nx-kpi-grid { grid-template-columns: repeat(5, 1fr); gap: 14px; }
+/* ≥ 1100px من عرض الحاوية: 5 أعمدة (شاشات كبيرة جداً ≥ 1400px viewport) */
+@container kpi-section (min-width: 1100px) {
+  .nx-kpi-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; }
 }
 
-/* 640px – 959px: 3 أعمدة */
-@container kpi-section (min-width: 640px) and (max-width: 959px) {
-  .nx-kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+/* 700px – 1099px: 3 أعمدة — أوسع وأجمل على معظم الشاشات */
+@container kpi-section (min-width: 700px) and (max-width: 1099px) {
+  .nx-kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+}
+
+/* 640px – 699px: 3 أعمدة ضيقة */
+@container kpi-section (min-width: 640px) and (max-width: 699px) {
+  .nx-kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
 }
 
 /* 380px – 639px: عمودان */
