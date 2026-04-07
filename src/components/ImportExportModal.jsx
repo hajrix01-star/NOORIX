@@ -12,7 +12,7 @@
  *   1. exportFetcher() is called ? returns pre-formatted row objects
  *   2. Exported to Excel with entity-appropriate filename
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { importFromExcel, exportToExcel } from '../utils/exportUtils';
 import {
   downloadInvoiceTemplate,
@@ -29,7 +29,8 @@ import {
   createDailySalesSummary,
   getPaymentVaults,
 } from '../services/api';
-import { Button, AdaptiveSheet } from '../ui';
+import { Button, AdaptiveSheet, ScreenTabs } from '../ui';
+import { useTranslation } from '../i18n/useTranslation';
 
 // ??? Config per entity type ??????????????????????????????????????????????????
 
@@ -265,7 +266,14 @@ const EMPLOYEE_EXPORT_COLUMNS_AR = [
  * }} props
  */
 export default function ImportExportModal({ isOpen, onClose, entityType, companyId, exportFetcher, onImportSuccess }) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('import');
+
+  const sheetTabItems = useMemo(() => {
+    const items = [{ id: 'import', label: t('importDrawerTab') }];
+    if (exportFetcher) items.push({ id: 'export', label: t('exportDrawerTab') });
+    return items;
+  }, [exportFetcher, t]);
 
   const [lookups, setLookups] = useState({ suppliers: [], vaults: [], categories: [], expenseLines: [] });
   const [lookupsLoading, setLookupsLoading] = useState(false);
@@ -320,6 +328,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       setProgress({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [], warnings: [] });
       setShowAllErrors(false);
       abortRef.current = false;
+      setActiveTab('import');
     }
   }, [isOpen]);
 
@@ -519,13 +528,14 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
         <p className="text-[12px] text-noorix-muted mb-3">???? ????? ?????? ???????</p>
       )}
 
-      {/* Tabs */}
-      <div className="nx-tab-bar mb-4">
-        <Button type="button" className={`nx-tab-btn${activeTab === 'import' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('import')}>???????</Button>
-        {exportFetcher && (
-          <Button type="button" className={`nx-tab-btn${activeTab === 'export' ? ' nx-tab-btn--active' : ''}`} onClick={() => setActiveTab('export')}>?????</Button>
-        )}
-      </div>
+      <ScreenTabs
+        variant="underline"
+        fadeWrap={false}
+        className="mb-4"
+        items={sheetTabItems}
+        value={activeTab}
+        onChange={setActiveTab}
+      />
 
       {/* ?? EXPORT TAB ??????????????????????????????????????????????? */}
       {activeTab === 'export' && (

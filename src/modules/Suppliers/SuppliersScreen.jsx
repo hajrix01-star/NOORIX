@@ -2,10 +2,10 @@
  * SuppliersScreen — الموردين والتصنيفات
  * تبويبتان: موردين | تصنيفات
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button } from '../../ui';
+import { ScreenTabs } from '../../ui';
 import { SuppliersTab } from './components/SuppliersTab';
 import { CategoriesTab } from './components/CategoriesTab';
 
@@ -20,8 +20,13 @@ export default function SuppliersScreen() {
   const companyId = activeCompanyId ?? '';
   const [activeTab, setActiveTab] = useState('suppliers');
 
+  const supplierTabItems = useMemo(
+    () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
+    [t],
+  );
+
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('suppliersAndCategoriesTitle')}</h1>
       </div>
@@ -34,18 +39,12 @@ export default function SuppliersScreen() {
 
       {companyId && (
         <>
-          <div className="nx-tab-bar">
-            {TABS.map((tab) => (
-              <Button
-                key={tab.id}
-                type="button"
-                className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {t(tab.labelKey)}
-              </Button>
-            ))}
-          </div>
+          <ScreenTabs
+            variant="underline"
+            items={supplierTabItems}
+            value={activeTab}
+            onChange={setActiveTab}
+          />
 
           {activeTab === 'suppliers'  && <SuppliersTab  companyId={companyId} />}
           {activeTab === 'categories' && <CategoriesTab companyId={companyId} />}

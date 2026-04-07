@@ -21,6 +21,7 @@ export { useAdaptiveSheetNarrow, ADAPTIVE_SHEET_BREAKPOINT_PX } from './Adaptive
 export { default as Spinner   } from './Spinner';
 export { default as Divider   } from './Divider';
 export { default as FormRow   } from './FormRow';
+export { default as ScreenTabs } from './ScreenTabs';
 
 /**
  * SmartTable — الجدول الذكي المركزي

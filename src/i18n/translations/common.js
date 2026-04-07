@@ -68,6 +68,8 @@ export default {
   password: { ar: 'كلمة المرور', en: 'Password' },
   pleaseSelectCompany: { ar: 'اختر شركة من القائمة الجانبية.', en: 'Select a company from the sidebar.' },
   importExportLabel: { ar: 'استيراد / تصدير', en: 'Import / Export' },
+  importDrawerTab: { ar: 'استيراد', en: 'Import' },
+  exportDrawerTab: { ar: 'تصدير', en: 'Export' },
   pleaseSelectCompanyVaults: { ar: 'اختر شركة من القائمة الجانبية لتفعيل الخزائن.', en: 'Select a company from the sidebar to enable vaults.' },
   loginWelcome: { ar: 'مرحباً بعودتك', en: 'Welcome back' },
   loginSubtitle: { ar: 'سجّل دخولك للمتابعة', en: 'Sign in to continue' },

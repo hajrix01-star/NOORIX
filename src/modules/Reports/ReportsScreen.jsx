@@ -9,7 +9,7 @@ import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
 import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
-import { Button, Input } from '../../ui';
+import { Button, Input, ScreenTabs } from '../../ui';
 import {
   EN_MONTHS,
   CARD_COLORS,
@@ -55,6 +55,14 @@ export default function ReportsScreen() {
   const exportRows = useMemo(() => buildExportRows(report, lang, t, selectedMonth ? Number(selectedMonth) : null), [report, lang, t, selectedMonth]);
   const yearOptions = useMemo(() => Array.from({ length: 6 }, (_, index) => currentYear - index), [currentYear]);
   const selectedMonthNumber = selectedMonth ? Number(selectedMonth) : null;
+
+  const mobileMonthTabItems = useMemo(() => {
+    const names = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+    return [
+      { id: '', label: t('allMonths') },
+      ...names.map((name, i) => ({ id: String(i + 1), label: name })),
+    ];
+  }, [t, lang]);
 
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 700);
   useEffect(() => {
@@ -225,14 +233,13 @@ export default function ReportsScreen() {
             <div className="max-w-[min(100%,1400px)] mx-auto">
               <div className="noorix-surface-card overflow-hidden rounded-xl p-0" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 {isMobile && (
-                  <div className="relative nx-tab-bar-fade-wrap">
-                    <div className="nx-tab-bar border-b border-noorix-border">
-                      <Button type="button" className={`nx-tab-btn${!selectedMonth ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth('')}>{t('allMonths')}</Button>
-                      {(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN).map((name, index) => (
-                        <Button key={index} type="button" className={`nx-tab-btn${selectedMonthNumber === index + 1 ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth(String(index + 1))}>{name}</Button>
-                      ))}
-                    </div>
-                  </div>
+                  <ScreenTabs
+                    variant="underline"
+                    items={mobileMonthTabItems}
+                    value={selectedMonth}
+                    onChange={setSelectedMonth}
+                    barClassName="border-b border-noorix-border"
+                  />
                 )}
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', minWidth: isMobile ? (selectedMonthNumber ? 300 : 220) : (selectedMonthNumber ? 1280 : 1200), borderCollapse: 'collapse', tableLayout: isMobile ? 'auto' : 'fixed' }}>

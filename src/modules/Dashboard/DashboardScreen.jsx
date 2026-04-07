@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Input, Button } from '../../ui';
+import { Input, ScreenTabs } from '../../ui';
 import DashboardOverviewTab from './components/DashboardOverviewTab';
 import DashboardCalendarTab from './components/DashboardCalendarTab';
 import DashboardSpecialDaysTab from './components/DashboardSpecialDaysTab';
@@ -47,6 +47,11 @@ export default function DashboardScreen() {
       : `${year}`,
   }), [year, selectedMonthNumber]);
 
+  const dashboardTabItems = useMemo(
+    () => DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
+    [t],
+  );
+
   return (
       <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
       {/* هيدر */}
@@ -75,25 +80,12 @@ export default function DashboardScreen() {
       {/* بطاقة التبويبات */}
       <div className="bg-noorix-surface border border-noorix-border rounded-xl shadow-sm overflow-hidden noorix-surface-card">
         {/* شريط التبويبات */}
-        <div className="relative nx-tab-bar-fade-wrap">
-        <div className="flex border-b border-noorix-border nx-tab-bar">
-          {DASHBOARD_TABS.map((tab) => (
-            <Button
-              key={tab.id}
-              variant="raw"
-              size="auto"
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-noorix-blue text-noorix-blue'
-                  : 'border-transparent text-noorix-muted hover:text-noorix-text'
-              } nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
-            >
-              {t(tab.labelKey)}
-            </Button>
-          ))}
-        </div>
-        </div>
+        <ScreenTabs
+          variant="underline"
+          items={dashboardTabItems}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
 
         <div className="p-4 nx-tab-content">
           {activeTab === 'overview'    && <DashboardOverviewTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}

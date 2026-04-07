@@ -2,7 +2,7 @@
  * ExpensesScreen — المصاريف الثابتة والمتغيرة
  * 4 تبويبات: أصناف المصاريف، تسجيل مصروف، إدخال جماعي، سجل المدفوعات
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
@@ -15,7 +15,7 @@ import { useCategories } from '../../hooks/useCategories';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
-import { Button } from '../../ui';
+import { Button, ScreenTabs } from '../../ui';
 import Toast from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
@@ -84,6 +84,11 @@ export default function ExpensesScreen() {
     showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
   };
 
+  const expenseTabItems = useMemo(
+    () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
+    [t],
+  );
+
   return (
     <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
       <div>
@@ -91,20 +96,12 @@ export default function ExpensesScreen() {
       </div>
 
       <div className="noorix-surface-card overflow-hidden p-0">
-        <div className="relative nx-tab-bar-fade-wrap">
-        <div className="nx-tab-bar">
-          {TABS.map((tab) => (
-            <Button
-              key={tab.id}
-              type="button"
-              className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.icon} {t(tab.labelKey)}
-            </Button>
-          ))}
-        </div>
-        </div>
+        <ScreenTabs
+          variant="underline"
+          items={expenseTabItems}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
         <div className="nx-tab-content">
 
       {activeTab === 'lines' && (

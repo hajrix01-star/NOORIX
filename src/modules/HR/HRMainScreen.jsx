@@ -1,11 +1,11 @@
 ﻿/**
  * HRMainScreen — الشاشة الرئيسية للموارد البشرية
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
-import { Button } from '../../ui';
+import { ScreenTabs } from '../../ui';
 import { getEmployees, getResidencies } from '../../services/api';
 import StaffListScreen from './StaffListScreen';
 import PayrollTab from './tabs/PayrollTab';
@@ -61,6 +61,11 @@ export default function HRMainScreen() {
     return diff >= 0 && diff <= EXPIRY_DAYS;
   }).length;
 
+  const hrTabItems = useMemo(
+    () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
+    [t],
+  );
+
   return (
     <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
 
@@ -91,22 +96,13 @@ export default function HRMainScreen() {
         )}
       </div>
 
-      {/* ── شريط التبويبات — مستقل خارج البطاقة لضمان التمرير الأفقي ── */}
-      <div className="relative nx-tab-bar-fade-wrap bg-noorix-surface rounded-xl border border-noorix-border p-1">
-        <div className="flex gap-[2px] w-max min-w-full flex-nowrap overflow-x-auto overflow-y-visible [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {TABS.map((tab) => (
-            <Button
-              key={tab.id}
-              type="button"
-              className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-              style={activeTab === tab.id ? { background: 'var(--noorix-accent-green)', color: 'white' } : undefined}
-            >
-              {t(tab.labelKey)}
-            </Button>
-          ))}
-        </div>
-      </div>
+      {/* ── شريط التبويبات — segmented + تمرير أفقي على الجوال ── */}
+      <ScreenTabs
+        variant="segmented"
+        items={hrTabItems}
+        value={activeTab}
+        onChange={setActiveTab}
+      />
 
       {/* ── محتوى التبويب ── */}
       <div className="noorix-surface-card p-5 min-h-[200px]">
