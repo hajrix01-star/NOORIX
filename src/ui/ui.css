@@ -2113,23 +2113,30 @@
   --kpi-accent-bg: color-mix(in srgb, var(--noorix-accent-violet) 8%, transparent);
 }
 
-/* شبكة كروت KPI */
+/* شبكة كروت KPI — عدد أعمدة ثابت لكل breakpoint */
 .nx-kpi-grid {
   display: grid;
-  /* كل كرت يأخذ مساحته بشكل متساوٍ مع حد أدنى 200px — يتكيف تلقائياً مع عدد الكروت وعرض الشاشة */
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(5, 1fr); /* سطح مكتب: 5 كروت متساوية دائماً */
+  gap: 14px;
 }
 
-/* تابلت: عمودان أو ثلاثة بحد أدنى 200px */
-@media (min-width: 641px) and (max-width: 1023px) {
+/* تابلت كبير (1024px – 1280px): 3 أعمدة إذا الشريط الجانبي ضيّق المساحة */
+@media (min-width: 1024px) and (max-width: 1280px) {
   .nx-kpi-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
   }
 }
 
-/* جوال (≤640px): عمودان بمساحة متساوية */
+/* تابلت (641px – 1023px): 3 أعمدة */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .nx-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+/* جوال (≤640px): عمودان */
 @media (max-width: 640px) {
   .nx-kpi-grid {
     grid-template-columns: 1fr 1fr;
@@ -2138,20 +2145,26 @@
   .nx-kpi-card {
     --kpi-px: 14px;
     --kpi-pt: 14px;
-    --kpi-sp: 48px;
+    --kpi-sp: 44px;
   }
-  .nx-kpi-card__value    { font-size: 18px; }
-  .nx-kpi-card__label    { font-size: 11px; margin-bottom: 8px; }
-  .nx-kpi-card__num-row  { gap: 4px; margin-bottom: 10px; }
-  .nx-kpi-card__footer   { padding: 4px var(--kpi-px) 6px; }
+  .nx-kpi-card__value   { font-size: 17px; }
+  .nx-kpi-card__label   { font-size: 11px; margin-bottom: 8px; }
+  .nx-kpi-card__num-row { gap: 4px; margin-bottom: 10px; }
+  .nx-kpi-card__footer  { padding: 4px var(--kpi-px) 6px; }
 }
 
-/* جوال صغير جداً (≤380px): عمود واحد */
+/* جوال صغير (≤380px): عمود واحد */
 @media (max-width: 380px) {
   .nx-kpi-grid {
     grid-template-columns: 1fr;
   }
+  .nx-kpi-card {
+    --kpi-px: 16px;
+    --kpi-pt: 16px;
+    --kpi-sp: 50px;
+  }
   .nx-kpi-card__value { font-size: 20px; }
+  .nx-kpi-card__label { font-size: 12px; }
 }
 
 /* ═══════════════════════════════════════════════════════════
