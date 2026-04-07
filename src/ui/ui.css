@@ -1125,7 +1125,7 @@
 }
 
 .nx-table thead th {
-  padding: 7px 12px;
+  padding: 10px 16px;
   font-size: 12px;
   font-weight: 700;
   color: var(--noorix-text);
@@ -1166,7 +1166,7 @@
 }
 
 .nx-table tbody td {
-  padding: 7px 12px;
+  padding: 10px 16px;
   font-size: 14px;
   font-weight: 500;
   color: var(--noorix-text);
@@ -1910,6 +1910,7 @@
   position: relative;
   background: var(--noorix-bg-surface, #fff);
   border: 1px solid var(--noorix-border, #dde3ec);
+  border-top: 3px solid var(--kpi-accent, #2563eb); /* خط نيوني علوي */
   border-radius: 8px;
   padding: var(--kpi-pt) var(--kpi-px) 0;
   overflow: hidden;
@@ -1918,6 +1919,7 @@
   gap: 0;
   min-width: 0;
   box-shadow:
+    inset 0 4px 16px -6px var(--kpi-accent, #2563eb), /* توهج نيوني داخلي */
     0 1px 2px rgba(15,23,42,0.06),
     0 3px 8px rgba(15,23,42,0.08),
     0 8px 20px rgba(15,23,42,0.06);
@@ -1925,6 +1927,7 @@
 }
 .nx-kpi-card:hover {
   box-shadow:
+    inset 0 4px 20px -6px var(--kpi-accent, #2563eb), /* توهج أقوى عند التحويم */
     0 2px 4px rgba(15,23,42,0.08),
     0 6px 16px rgba(15,23,42,0.12),
     0 16px 32px rgba(15,23,42,0.08);
