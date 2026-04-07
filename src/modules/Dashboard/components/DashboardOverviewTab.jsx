@@ -2,7 +2,7 @@
  * DashboardOverviewTab — نظرة عامة: كروت KPI + رسم بياني للأداء + توزيع القنوات
  * تصميم 2026 — sparklines، Recharts AreaChart، PieChart
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   ResponsiveContainer, AreaChart, Area,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
@@ -241,10 +241,26 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     );
   }
 
-  const salesSeries    = t('annualSales');
-  const purchSeries    = t('annualPurchases');
-  const expSeries      = t('annualExpenses');
-  const isAnnualChart  = !selectedMonth;
+  const salesSeries   = t('annualSales');
+  const purchSeries   = t('annualPurchases');
+  const expSeries     = t('annualExpenses');
+  const isAnnualChart = !selectedMonth;
+
+  /* ── حالة إخفاء/إظهار الخطوط ── */
+  const [hiddenSeries, setHiddenSeries] = useState(new Set());
+  const toggleSeries = useCallback((key) => {
+    setHiddenSeries((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }, []);
+
+  const SERIES = useMemo(() => [
+    { key: salesSeries,  label: t('annualSales'),     color: '#16a34a', gradId: 'gradSales', disabled: false },
+    { key: purchSeries,  label: t('annualPurchases'),  color: '#2563eb', gradId: 'gradPurch', disabled: !isAnnualChart },
+    { key: expSeries,    label: t('annualExpenses'),   color: '#d97706', gradId: 'gradExp',   disabled: !isAnnualChart },
+  ], [salesSeries, purchSeries, expSeries, isAnnualChart, t]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -323,56 +339,89 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
         {/* تحليل الأداء الشهري */}
         <div className="noorix-surface-card p-5">
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          {/* رأس: العنوان + الإجمالي + أزرار Toggle */}
+          <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
             <div>
               <div className="text-[14px] font-bold text-noorix-text">{t('dashboardSalesTimeline')}</div>
               <div className="text-[12px] text-noorix-muted mt-0.5">
-                {filter?.label || year}
-                {selectedMonth ? ` — ${monthName}` : ''}
+                {filter?.label || year}{selectedMonth ? ` — ${monthName}` : ''}
               </div>
             </div>
-            <div className="flex items-end gap-1.5">
-              <span className="text-[18px] font-black nx-font-numbers" style={{ color: 'var(--noorix-accent-green)', direction: 'ltr' }}>
-                {fmt(perfTotal, 0)}
-              </span>
-              <span className="nx-kpi-card__sar mb-0.5">SR</span>
+            {/* أزرار إخفاء/إظهار الخطوط */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {SERIES.map((s) => {
+                const hidden   = hiddenSeries.has(s.key);
+                const disabled = s.disabled;
+                return (
+                  <button
+                    key={s.key}
+                    onClick={() => !disabled && toggleSeries(s.key)}
+                    title={disabled ? (lang === 'ar' ? 'بيانات يومية غير متاحة' : 'Daily data unavailable') : undefined}
+                    style={{
+                      borderColor: s.color,
+                      color:       hidden || disabled ? 'var(--noorix-text-muted)' : s.color,
+                      background:  hidden || disabled ? 'transparent' : `${s.color}14`,
+                      opacity:     disabled ? 0.4 : 1,
+                      cursor:      disabled ? 'not-allowed' : 'pointer',
+                    }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-600 rounded border transition-all duration-150 select-none"
+                  >
+                    <span
+                      className="inline-block w-3 h-0.5 rounded-full flex-shrink-0"
+                      style={{ background: hidden || disabled ? 'var(--noorix-border)' : s.color }}
+                    />
+                    {s.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
+          {/* الرسم البياني */}
           {performanceData.length === 0 || perfTotal === 0 ? (
-            <div className="flex flex-col items-center justify-center text-noorix-muted gap-2 h-[200px]">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <div className="flex flex-col items-center justify-center text-noorix-muted gap-2 h-[220px]">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
               <div className="text-[12px]">{t('noDataInPeriod')}</div>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={performanceData} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="gradSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#16a34a" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0.02}/>
-                  </linearGradient>
-                  {isAnnualChart && <>
-                    <linearGradient id="gradPurch" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0.02}/>
+                  {SERIES.map((s) => (
+                    <linearGradient key={s.gradId} id={s.gradId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor={s.color} stopOpacity={0.22}/>
+                      <stop offset="95%" stopColor={s.color} stopOpacity={0.02}/>
                     </linearGradient>
-                    <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#d97706" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#d97706" stopOpacity={0.02}/>
-                    </linearGradient>
-                  </>}
+                  ))}
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" opacity={0.6} />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-primary)' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }} axisLine={false} tickLine={false} width={46} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-primary)' }}
+                  axisLine={false} tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={fmtAxis}
+                  tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
+                  axisLine={false} tickLine={false} width={46}
+                />
                 <Tooltip content={<ChartTooltip />} />
-                {isAnnualChart && <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />}
-                <Area type="monotone" dataKey={salesSeries}  stroke="#16a34a" strokeWidth={2} fill="url(#gradSales)" dot={false} activeDot={{ r: 4 }} />
-                {isAnnualChart && <>
-                  <Area type="monotone" dataKey={purchSeries} stroke="#2563eb" strokeWidth={2} fill="url(#gradPurch)" dot={false} activeDot={{ r: 4 }} />
-                  <Area type="monotone" dataKey={expSeries}   stroke="#d97706" strokeWidth={2} fill="url(#gradExp)"   dot={false} activeDot={{ r: 4 }} />
-                </>}
+                {SERIES.map((s) => (
+                  !hiddenSeries.has(s.key) && !s.disabled && (
+                    <Area
+                      key={s.key}
+                      type="monotone"
+                      dataKey={s.key}
+                      stroke={s.color}
+                      strokeWidth={2}
+                      fill={`url(#${s.gradId})`}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  )
+                ))}
               </AreaChart>
             </ResponsiveContainer>
           )}
