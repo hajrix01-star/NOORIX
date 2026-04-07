@@ -100,7 +100,7 @@ export default function HRMainScreen() {
               type="button"
               className={`nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
-              style={activeTab === tab.id ? { background: 'var(--noorix-accent-green)', color: '#fff' } : undefined}
+              style={activeTab === tab.id ? { background: 'var(--noorix-accent-green)', color: 'white' } : undefined}
             >
               {t(tab.labelKey)}
             </Button>

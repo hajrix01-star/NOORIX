@@ -53,7 +53,7 @@ export const HRActionsCell = memo(function HRActionsCell({
   if (onArchive) items.push({ key: 'archive', label: t('archiveEmployee'), fn: onArchive, color: 'var(--noorix-text-muted)' });
   if (onRestore) items.push({ key: 'restore', label: t('restoreEmployee'), fn: onRestore, color: 'var(--noorix-accent-green)' });
   if (onDelete) items.push({ key: 'delete', label: t('delete'), fn: onDelete, color: 'var(--noorix-accent-red)' });
-  if (onPermanentDelete) items.push({ key: 'permdelete', label: t('deleteEmployeePermanent'), fn: onPermanentDelete, color: '#7f1d1d' });
+  if (onPermanentDelete) items.push({ key: 'permdelete', label: t('deleteEmployeePermanent'), fn: onPermanentDelete, color: 'var(--noorix-accent-red-dark)' });
 
   useEffect(() => {
     if (open && btnRef.current) {

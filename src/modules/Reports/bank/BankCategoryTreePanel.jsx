@@ -317,17 +317,10 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
           <div className="flex items-center flex flex-wrap gap-2 mb-2">
             {index != null ? (
               <span
+                className="text-[11px] font-extrabold w-[26px] h-[26px] rounded-full inline-flex items-center justify-center"
                 style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  color: '#fff',
-                  background: 'linear-gradient(135deg,#1e3a5f,#0a1628)',
-                  width: 26,
-                  height: 26,
-                  borderRadius: '50%',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  color: 'white',
+                  background: 'linear-gradient(135deg,var(--noorix-navy-light),var(--noorix-navy))',
                 }}
               >
                 {index}

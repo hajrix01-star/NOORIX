@@ -148,7 +148,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
               }}
             >
               <div style={{
-                position: 'absolute', top: 2, width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 2, width: 18, height: 18, borderRadius: '50%', background: 'white',
                 transition: 'right 200ms, left 200ms',
                 ...(form.isSalesChannel ? { right: 2, left: 'auto' } : { left: 2, right: 'auto' }),
                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
@@ -175,7 +175,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
               }}
             >
               <div style={{
-                position: 'absolute', top: 2, width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 2, width: 18, height: 18, borderRadius: '50%', background: 'white',
                 transition: 'right 200ms, left 200ms',
                 ...(form.showAsPaymentMethod ? { right: 2, left: 'auto' } : { left: 2, right: 'auto' }),
                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',

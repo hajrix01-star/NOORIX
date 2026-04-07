@@ -307,11 +307,10 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                     <th
                       key={label}
                       className={`${i === 7 ? 'noorix-print-hide' : ''} text-center whitespace-nowrap font-bold`.trim()}
+                      className="py-[11px] px-[14px] text-[12px] tracking-[0.02em]"
                       style={{
-                        padding: '11px 14px', fontSize: 12,
-                        color: '#fff',
+                        color: 'white',
                         borderInlineEnd: i < 7 ? '1px solid rgba(255,255,255,0.15)' : 'none',
-                        letterSpacing: '0.02em',
                       }}
                     >{label}</th>
                   ))}
