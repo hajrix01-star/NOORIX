@@ -869,7 +869,7 @@ a { color: inherit; text-decoration: none; }
 .um-dropdown {
   background: var(--noorix-bg-modal, #fff);
   border: 1px solid var(--noorix-border);
-  border-radius: 14px;
+  border-radius: 6px;
   box-shadow: 0 4px 20px var(--noorix-navy-10), 0 16px 48px rgba(10,31,68,0.16);
   overflow: hidden;
   overflow-y: auto;
@@ -1093,14 +1093,14 @@ a { color: inherit; text-decoration: none; }
 
 /* ========== بطاقات ========== */
 .noorix-surface-card {
-  border-radius: 16px;
+  border-radius: 8px;
   background-color: var(--noorix-bg-surface);
   border: 1px solid var(--noorix-border);
   box-shadow: 0 1px 3px rgba(10,31,68,0.04), 0 4px 16px rgba(10,31,68,0.06);
   transition: box-shadow var(--noorix-transition), transform var(--noorix-transition);
 }
 @media (max-width: 640px) {
-  .noorix-surface-card { border-radius: 14px; }
+  .noorix-surface-card { border-radius: 8px; }
   /* كثافة الجوال: كروت بحشو nx-p-* داخل المحتوى الرئيسي */
   .app-main .noorix-surface-card.nx-p-24 { padding: 14px 12px; }
   .app-main .noorix-surface-card.nx-p-20 { padding: 12px 10px; }

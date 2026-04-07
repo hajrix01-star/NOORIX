@@ -95,7 +95,7 @@
   font-size: 14px;
 
   /* مظهر */
-  border-radius: 9px;
+  border-radius: 4px;
   border: 1px solid var(--btn-default-border);
   background: var(--btn-default-bg);
   color: var(--btn-default-text);
@@ -206,7 +206,7 @@
   min-height: 30px;
   padding: 4px 12px;
   font-size: 12px;
-  border-radius: 7px;
+  border-radius: 4px;
   gap: 5px;
 }
 
@@ -214,7 +214,7 @@
   min-height: 48px;
   padding: 12px 24px;
   font-size: 15px;
-  border-radius: 10px;
+  border-radius: 4px;
   gap: 8px;
 }
 
@@ -278,7 +278,7 @@
   font-size: 14px;
   font-family: var(--noorix-font-primary);
   border: 1.5px solid var(--noorix-border);
-  border-radius: 8px;
+  border-radius: 4px;
   background: var(--noorix-bg-surface);
   color: var(--noorix-text);
   transition: border-color 150ms, box-shadow 150ms;
@@ -339,8 +339,8 @@
 }
 
 /* — Sizes ── */
-.nx-input__field--sm  { padding: 6px 10px; font-size: 13px; min-height: 32px; border-radius: 6px; }
-.nx-input__field--lg  { padding: 12px 16px; font-size: 15px; min-height: 48px; border-radius: 10px; }
+.nx-input__field--sm  { padding: 6px 10px; font-size: 13px; min-height: 32px; border-radius: 4px; }
+.nx-input__field--lg  { padding: 12px 16px; font-size: 15px; min-height: 48px; border-radius: 4px; }
 
 /* — Prefix / Suffix wrapper ── */
 .nx-input__wrapper {
@@ -365,21 +365,21 @@
 }
 
 .nx-input__prefix {
-  border-radius: 8px 0 0 8px;
+  border-radius: 4px 0 0 4px;
   border-inline-end: none;
 }
 [dir='rtl'] .nx-input__prefix {
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 4px 4px 0;
   border-inline-end: 1.5px solid var(--noorix-border);
   border-inline-start: none;
 }
 
 .nx-input__suffix {
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 4px 4px 0;
   border-inline-start: none;
 }
 [dir='rtl'] .nx-input__suffix {
-  border-radius: 8px 0 0 8px;
+  border-radius: 4px 0 0 4px;
   border-inline-start: 1.5px solid var(--noorix-border);
   border-inline-end: none;
 }
@@ -1477,7 +1477,7 @@
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -1525,7 +1525,7 @@
   justify-content: center;
   gap: 4px;
   padding: 10px 6px;
-  border-radius: 10px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
   border: 2px solid var(--noorix-border);
@@ -1654,7 +1654,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px dashed var(--noorix-border);
   background: var(--noorix-bg-muted);
   font-size: 13px;
@@ -1702,7 +1702,7 @@
   border: none;
   cursor: pointer;
   padding: 6px;
-  border-radius: 8px;
+  border-radius: 4px;
   color: var(--noorix-text-muted);
   transition: background 120ms, color 120ms;
   min-height: unset;
@@ -1721,7 +1721,7 @@
   height: 28px;
   min-width: 30px;
   min-height: 28px;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--noorix-text-muted);
@@ -1752,7 +1752,7 @@
   max-height: 220px;
   overflow-y: auto;
   padding: 6px;
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--noorix-bg-surface);
   color: var(--noorix-text);
   border: 1px solid var(--noorix-border);
@@ -1766,7 +1766,7 @@
   font-size: 13px;
   font-weight: 500;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   white-space: nowrap;
   min-height: unset;
   justify-content: flex-start;
@@ -1831,8 +1831,8 @@
 .nx-rtl  { direction: rtl; unicode-bidi: isolate; }
 
 /* ── Surface / Card (compound, kept as component) ── */
-.nx-surface    { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 12px; }
-.nx-surface-sm { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 8px; }
+.nx-surface    { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 8px; }
+.nx-surface-sm { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 6px; }
 
 /* ── Scrollable X (complex, keep) ───────────────── */
 .nx-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -1904,7 +1904,7 @@
   position: relative;
   background: var(--noorix-bg-surface, #fff);
   border: 1px solid var(--noorix-border, #dde3ec);
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 20px 22px 18px;
   overflow: hidden;
   display: flex;
@@ -1937,7 +1937,7 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--kpi-accent-bg, var(--noorix-blue-8));
   color: var(--kpi-accent, #2563eb);
   flex-shrink: 0;
@@ -1974,7 +1974,7 @@
   gap: 3px;
   margin-top: 10px;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
   background: var(--kpi-accent-bg, var(--noorix-blue-8));
@@ -1996,6 +1996,42 @@
   color: var(--noorix-text-muted);
   margin-top: 8px;
 }
+
+/* ── Sparkline — خط بياني صغير أسفل الكرت ── */
+.nx-kpi-card__sparkline {
+  height: 42px;
+  margin-top: 12px;
+  margin-inline: -22px;
+  margin-bottom: -18px;
+  overflow: hidden;
+}
+
+/* ── SR label — وسم العملة الصغير بجانب الرقم ── */
+.nx-kpi-card__sar {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--noorix-text-muted);
+  letter-spacing: 0.5px;
+  align-self: flex-end;
+  margin-bottom: 3px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--noorix-bg-muted);
+  line-height: 1;
+}
+
+/* ── change badge — نسبة التغيير مع سهم ── */
+.nx-kpi-card__change {
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.nx-kpi-card__change--up   { color: var(--noorix-accent-green); }
+.nx-kpi-card__change--down { color: var(--noorix-accent-red); }
+.nx-kpi-card__change--flat { color: var(--noorix-text-muted); }
 
 /* ── ألوان محددة مسبقاً ── */
 .nx-kpi-card--sales {

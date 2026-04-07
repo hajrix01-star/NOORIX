@@ -174,7 +174,7 @@ export default function AppHeader({
                   ref={coDropMenuRef}
                   role="listbox"
                   aria-label={t('activeCompany')}
-                  className="fixed bg-noorix-surface rounded-xl border border-noorix-border overflow-y-auto"
+                  className="fixed bg-noorix-surface rounded border border-noorix-border overflow-y-auto"
                   style={{
                     zIndex: 9999,
                     top: coDropPos.top,

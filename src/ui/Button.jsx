@@ -18,9 +18,9 @@ const VARIANT = {
 };
 
 const SIZE = {
-  sm:   'h-7 px-3 text-[12px] gap-1.5 rounded-md',
-  md:   'h-9 px-4 text-[13px] gap-2   rounded-lg',
-  lg:   'h-11 px-6 text-[14px] gap-2  rounded-lg',
+  sm:   'h-7 px-3 text-[12px] gap-1.5 rounded',
+  md:   'h-9 px-4 text-[13px] gap-2   rounded',
+  lg:   'h-11 px-6 text-[14px] gap-2  rounded',
   auto: '',
 };
 

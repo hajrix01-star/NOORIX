@@ -1,16 +1,20 @@
 ﻿/**
- * DashboardOverviewTab — نظرة عامة: كروت KPI + رسم بياني للمبيعات
- * تصميم نظيف احترافي — بدون فواتير قادمة أو مستحقة
+ * DashboardOverviewTab — نظرة عامة: كروت KPI + رسم بياني للأداء + توزيع القنوات
+ * تصميم 2026 — sparklines، Recharts AreaChart، PieChart
  */
 import React, { useMemo, useState } from 'react';
+import {
+  ResponsiveContainer, AreaChart, Area,
+  XAxis, YAxis, Tooltip, CartesianGrid, Legend,
+  PieChart, Pie, Cell,
+} from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { PERMISSIONS } from '../../../constants/permissions';
 import { useReportsGeneralProfitLoss } from '../../../hooks/useReports';
 import PeriodAnalyticsStrip from '../../Reports/PeriodAnalyticsStrip';
 import { useSales } from '../../../hooks/useSales';
-import { CARD_COLORS } from '../../../utils/cardStyles';
-import { EN_MONTHS, moneyText } from '../../../modules/Reports/reportHelpers';
+import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
 
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -18,32 +22,96 @@ const MONTH_NAMES_EN = ['January','February','March','April','May','June','July'
 
 function lastDayOfMonth(year, month) { return new Date(year, month, 0).getDate(); }
 function ymd(y, m, d) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
-function formatAxisValue(n) {
+function fmtAxis(n) {
   if (n >= 1e6) return `${(n/1e6).toFixed(1)}M`;
   if (n >= 1e3) return `${(n/1e3).toFixed(0)}K`;
   return String(Math.round(n));
 }
 
 /* ── أيقونات SVG للكروت ── */
-function IconSales()     { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>; }
-function IconPurchases() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>; }
-function IconExpenses()  { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>; }
-function IconProfit()    { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>; }
+function IconSales()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>; }
+function IconPurchases() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>; }
+function IconExpenses()  { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>; }
+function IconProfit()    { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>; }
+
+/* ── Sparkline SVG ── */
+function SparkLine({ data = [], color = '#2563eb' }) {
+  const nums = (data || []).map(v => Number(v || 0));
+  if (!nums.length || nums.every(v => v === 0)) return null;
+  const max = Math.max(...nums, 1);
+  const W = 100, H = 40;
+  const xs = nums.map((_, i) => nums.length === 1 ? 50 : (i / (nums.length - 1)) * W);
+  const ys = nums.map(v => H - (v / max) * H * 0.88 + 2);
+  const pts = nums.map((_, i) => `${xs[i]},${ys[i]}`).join(' ');
+  const last = nums.length - 1;
+  const areaD = `M ${xs[0]} ${ys[0]} ${nums.slice(1).map((_, i) => `L ${xs[i+1]} ${ys[i+1]}`).join(' ')} L ${xs[last]} ${H} L ${xs[0]} ${H} Z`;
+  const gradId = `sp-${color.replace(/[#(),.]/g, '')}`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="42" className="block">
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.22"/>
+          <stop offset="100%" stopColor={color} stopOpacity="0.02"/>
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill={`url(#${gradId})`} />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+/* ── Custom Recharts Tooltip ── */
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', borderRadius: 6, padding: '8px 12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: 12, minWidth: 140 }}>
+      <div style={{ fontWeight: 700, marginBottom: 5, color: 'var(--noorix-text)', fontSize: 11 }}>{label}</div>
+      {payload.map((p) => (
+        <div key={p.dataKey} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: p.color, fontWeight: 600, marginTop: 2 }}>
+          <span>{p.name}</span>
+          <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(p.value, 0)} SR</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PieTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0];
+  return (
+    <div style={{ background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', borderRadius: 6, padding: '7px 11px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: 12 }}>
+      <div style={{ fontWeight: 700, color: p.payload.fill }}>{p.name}</div>
+      <div style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, color: 'var(--noorix-text)' }}>{fmt(p.value, 0)} SR</div>
+      <div style={{ color: 'var(--noorix-text-muted)', fontSize: 11 }}>{p.payload.pct}%</div>
+    </div>
+  );
+}
+
+const PIE_COLORS = ['#2563eb','#16a34a','#d97706','#7c3aed','#db2777','#0891b2','#ea580c','#65a30d'];
 
 export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }) {
   const { t, lang } = useTranslation();
-  const { companies, userPermissions } = useApp();
+  const { userPermissions } = useApp();
   const canPeriodAnalytics = (userPermissions || []).includes(PERMISSIONS.REPORTS_READ);
   const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
 
-  const month   = selectedMonth ? Number(selectedMonth) : 1;
-  const lastDay = lastDayOfMonth(year, month);
-  const dailyStart = selectedMonth ? ymd(year, month, 1) : null;
+  const month    = selectedMonth ? Number(selectedMonth) : 1;
+  const lastDay  = lastDayOfMonth(year, month);
+  const dailyStart = selectedMonth ? ymd(year, month, 1)      : null;
   const dailyEnd   = selectedMonth ? ymd(year, month, lastDay) : null;
+
+  /* ── بيانات التقويم اليومية ── */
   const { summaries: dailySummaries } = useSales({
     companyId, startDate: dailyStart, endDate: dailyEnd, enabled: !!selectedMonth,
   });
 
+  /* ── بيانات السنة الكاملة لتوزيع القنوات ── */
+  const yearStart = `${year}-01-01`;
+  const yearEnd   = `${year}-12-31`;
+  const { summaries: yearSummaries } = useSales({ companyId, startDate: yearStart, endDate: yearEnd });
+
+  /* ── دوال القيم ── */
   function getCardValue(key) {
     if (!report) return '0';
     if (!selectedMonth) return report.cards?.[key] || '0';
@@ -59,37 +127,13 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     return ((Number(getCardValue(key) || 0) / sales) * 100).toFixed(1);
   }
 
-  const salesTimeline = useMemo(() => {
-    const sg = report?.groups?.find((r) => r.key === 'sales');
-    if (!sg?.months?.length) return [];
-    return (sg.months || []).map((val, i) => ({
-      month: i + 1, label: EN_MONTHS[i], amount: Number(val || 0),
-    }));
-  }, [report]);
-
-  const dailyTimeline = useMemo(() => {
-    if (!selectedMonth) return [];
-    const byDay = new Map();
-    (dailySummaries || []).forEach((s) => {
-      const d = String(s.transactionDate || '').slice(0, 10);
-      const dayNum = parseInt(d.slice(8, 10), 10);
-      byDay.set(dayNum, (byDay.get(dayNum) || 0) + Number(s.totalAmount || 0));
-    });
-    const points = [];
-    for (let d = 1; d <= lastDay; d++)
-      points.push({ day: d, label: String(d), amount: byDay.get(d) || 0 });
-    return points;
-  }, [selectedMonth, dailySummaries, lastDay]);
-
-  const chartData    = selectedMonth ? dailyTimeline : salesTimeline;
-  const isDailyChart = !!selectedMonth;
-  const maxSales     = useMemo(() => Math.max(1, ...chartData.map((p) => p.amount)), [chartData]);
-  const [hoveredPoint, setHoveredPoint] = useState(null);
-  const yAxisTicks   = useMemo(() => {
-    if (maxSales <= 0) return [0, 1];
-    const step = Math.max(1, Math.ceil(maxSales / 4));
-    return Array.from({ length: 5 }, (_, i) => step * i);
-  }, [maxSales]);
+  /* ── sparkline data لكل بطاقة ── */
+  function getMonthlyData(key) {
+    if (!report) return [];
+    if (key === 'grossProfit' || key === 'netProfit')
+      return report.summaryRows?.find((r) => r.key === key)?.months || [];
+    return report.groups?.find((r) => r.key === key)?.months || [];
+  }
 
   const monthName = selectedMonth
     ? (lang === 'ar' ? MONTH_NAMES_AR[selectedMonth - 1] : MONTH_NAMES_EN[selectedMonth - 1])
@@ -97,54 +141,75 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   /* ── تعريف الكروت ── */
   const cards = useMemo(() => [
-    {
-      key: 'sales', icon: <IconSales />,
-      label: monthName ? `${t('revenueGroup')} — ${monthName}` : t('annualSales'),
-      colorClass: 'nx-kpi-card--sales',
-      badgeLabel: t('sectionToSalesRatio'), badgeValue: '100',
-    },
-    {
-      key: 'purchases', icon: <IconPurchases />,
-      label: monthName ? `${t('purchasesGroup')} — ${monthName}` : t('annualPurchases'),
-      colorClass: 'nx-kpi-card--purchases',
-      badgeLabel: t('purchasesToSalesRatio'),
-    },
-    {
-      key: 'expenses', icon: <IconExpenses />,
-      label: monthName ? `${t('expensesGroup')} — ${monthName}` : t('annualExpenses'),
-      colorClass: 'nx-kpi-card--expenses',
-      badgeLabel: t('sectionToSalesRatio'),
-    },
-    {
-      key: 'grossProfit', icon: <IconProfit />,
-      label: t('annualGrossProfit'),
-      colorClass: null,  /* يُحدَّد ديناميكياً */
-      badgeLabel: t('reportProfitMargin'),
-    },
-    {
-      key: 'netProfit', icon: <IconProfit />,
-      label: t('annualNetProfit'),
-      colorClass: null,
-      badgeLabel: t('reportProfitMargin'),
-    },
+    { key: 'sales',       icon: <IconSales />,     label: monthName ? `${t('revenueGroup')} — ${monthName}` : t('annualSales'),       colorClass: 'nx-kpi-card--sales',     accent: 'var(--noorix-accent-green)',  badgeLabel: t('sectionToSalesRatio'), badgeValue: '100' },
+    { key: 'purchases',   icon: <IconPurchases />, label: monthName ? `${t('purchasesGroup')} — ${monthName}` : t('annualPurchases'), colorClass: 'nx-kpi-card--purchases', accent: 'var(--noorix-accent-blue)',   badgeLabel: t('purchasesToSalesRatio') },
+    { key: 'expenses',    icon: <IconExpenses />,  label: monthName ? `${t('expensesGroup')} — ${monthName}` : t('annualExpenses'),   colorClass: 'nx-kpi-card--expenses',  accent: 'var(--noorix-accent-amber)',  badgeLabel: t('sectionToSalesRatio') },
+    { key: 'grossProfit', icon: <IconProfit />,    label: t('annualGrossProfit'), colorClass: null, accent: null, badgeLabel: t('reportProfitMargin') },
+    { key: 'netProfit',   icon: <IconProfit />,    label: t('annualNetProfit'),   colorClass: null, accent: null, badgeLabel: t('reportProfitMargin') },
   ], [monthName, t]);
 
-  /* ── حالة: لا شركة مختارة ── */
-  if (!companyId) {
-    return (
-      <div className="p-8 text-center text-noorix-muted">
-        {t('pleaseSelectCompany')}
-      </div>
+  /* ── بيانات الرسم البياني للأداء (Recharts) ── */
+  const performanceData = useMemo(() => {
+    if (selectedMonth) {
+      /* عرض يومي للشهر المختار */
+      const byDay = new Map();
+      (dailySummaries || []).forEach((s) => {
+        const d = String(s.transactionDate || '').slice(0, 10);
+        const dayNum = parseInt(d.slice(8, 10), 10);
+        byDay.set(dayNum, (byDay.get(dayNum) || 0) + Number(s.totalAmount || 0));
+      });
+      return Array.from({ length: lastDay }, (_, i) => ({
+        label: String(i + 1),
+        [t('annualSales')]: byDay.get(i + 1) || 0,
+      }));
+    }
+    /* عرض سنوي */
+    const sg = report?.groups?.find((r) => r.key === 'sales');
+    const pg = report?.groups?.find((r) => r.key === 'purchases');
+    const eg = report?.groups?.find((r) => r.key === 'expenses');
+    return EN_MONTHS.map((lbl, i) => ({
+      label: lang === 'ar' ? MONTH_NAMES_AR[i] : lbl,
+      [t('annualSales')]:     Number(sg?.months?.[i] || 0),
+      [t('annualPurchases')]: Number(pg?.months?.[i] || 0),
+      [t('annualExpenses')]:  Number(eg?.months?.[i] || 0),
+    }));
+  }, [report, selectedMonth, dailySummaries, lastDay, lang, t]);
+
+  /* ── بيانات توزيع القنوات ── */
+  const channelData = useMemo(() => {
+    const src = selectedMonth ? (dailySummaries || []) : (yearSummaries || []);
+    const map = {};
+    src.forEach((s) =>
+      (s.channels || []).forEach((ch) => {
+        const name = lang === 'ar'
+          ? (ch.vault?.nameAr || ch.vault?.nameEn || '—')
+          : (ch.vault?.nameEn || ch.vault?.nameAr || '—');
+        map[name] = (map[name] || 0) + Number(ch.amount || 0);
+      })
     );
+    const total = Object.values(map).reduce((s, v) => s + v, 0) || 1;
+    return Object.entries(map)
+      .map(([name, value]) => ({ name, value, pct: ((value / total) * 100).toFixed(1) }))
+      .sort((a, b) => b.value - a.value);
+  }, [yearSummaries, dailySummaries, selectedMonth, lang]);
+
+  const perfTotal = useMemo(() =>
+    performanceData.reduce((s, p) => s + Number(p[t('annualSales')] || 0), 0),
+    [performanceData, t]
+  );
+
+  /* ── حالة: لا شركة ── */
+  if (!companyId) {
+    return <div className="p-8 text-center text-noorix-muted">{t('pleaseSelectCompany')}</div>;
   }
 
   /* ── حالة: تحميل ── */
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-noorix-muted">
-        <div className="nx-kpi-grid mb-6">
+      <div className="flex flex-col gap-6 p-6">
+        <div className="nx-kpi-grid">
           {[1,2,3,4,5].map((i) => (
-            <div key={i} className="nx-kpi-card min-h-[120px] bg-noorix-bg-muted shadow-none bg-[length:200%_100%] animate-[shimmer_1.4s_ease_infinite]" />
+            <div key={i} className="nx-kpi-card min-h-[130px] bg-noorix-bg-muted shadow-none bg-[length:200%_100%] animate-[shimmer_1.4s_ease_infinite]" />
           ))}
         </div>
       </div>
@@ -154,16 +219,19 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   /* ── حالة: خطأ ── */
   if (error) {
     return (
-      <div className="p-5 m-4 rounded-xl text-noorix-red bg-noorix-red/5 border border-noorix-red/20">
+      <div className="p-5 m-4 rounded text-noorix-red bg-noorix-red/5 border border-noorix-red/20">
         {error.message}
       </div>
     );
   }
 
-  const chartTotal = chartData.reduce((s, p) => s + p.amount, 0);
+  const salesSeries    = t('annualSales');
+  const purchSeries    = t('annualPurchases');
+  const expSeries      = t('annualExpenses');
+  const isAnnualChart  = !selectedMonth;
 
   return (
-    <div className="flex flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
 
       {/* شريط التحليلات */}
       <PeriodAnalyticsStrip
@@ -176,133 +244,148 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       {/* ── كروت KPI ── */}
       <div className="nx-kpi-grid">
         {cards.map((card) => {
-          const rawVal  = getCardValue(card.key);
-          const numVal  = Number(rawVal || 0);
-          const pct     = card.key === 'sales' ? card.badgeValue : getSectionPercentOfSales(card.key);
+          const rawVal   = getCardValue(card.key);
+          const numVal   = Number(rawVal || 0);
+          const pct      = card.key === 'sales' ? card.badgeValue : getSectionPercentOfSales(card.key);
           const isProfit = card.key === 'grossProfit' || card.key === 'netProfit';
           const colorClass = card.colorClass ?? (isProfit
             ? (numVal >= 0 ? 'nx-kpi-card--profit' : 'nx-kpi-card--loss')
             : 'nx-kpi-card--neutral');
+          const sparkData  = getMonthlyData(card.key);
+          const accentColor = card.accent || (isProfit
+            ? (numVal >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)')
+            : 'var(--noorix-accent-blue)');
 
           return (
             <div key={card.key} className={`nx-kpi-card ${colorClass}`}>
-              {/* أيقونة */}
-              <div className="nx-kpi-card__icon">{card.icon}</div>
-              {/* عنوان */}
-              <div className="nx-kpi-card__label">{card.label}</div>
-              {/* القيمة */}
-              <div className="nx-kpi-card__value">{moneyText(rawVal)}</div>
-              {/* نسبة مئوية */}
+              {/* صف: أيقونة + عنوان */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="nx-kpi-card__icon">{card.icon}</div>
+                <div className="nx-kpi-card__label flex-1 min-w-0">{card.label}</div>
+              </div>
+              {/* القيمة + SR */}
+              <div className="flex items-end gap-1.5">
+                <div className="nx-kpi-card__value">{amountText(rawVal)}</div>
+                <span className="nx-kpi-card__sar">SR</span>
+              </div>
+              {/* نسبة % */}
               {pct != null && (
-                <span className="nx-kpi-card__badge">
+                <span className="nx-kpi-card__badge mt-2">
                   {card.badgeLabel}: {pct}%
                 </span>
+              )}
+              {/* Sparkline */}
+              {sparkData.length > 0 && !selectedMonth && (
+                <div className="nx-kpi-card__sparkline">
+                  <SparkLine data={sparkData} color={accentColor} />
+                </div>
               )}
             </div>
           );
         })}
       </div>
 
-      {/* ── الرسم البياني للمبيعات ── */}
-      <div className="noorix-surface-card p-6">
-        {/* رأس الرسم */}
-        <div className="flex items-center justify-between gap-2 flex-wrap flex flex-wrap gap-2 mb-5">
-          <div>
-            <div className="text-[13px] font-bold">
-              {t('dashboardSalesTimeline')}
+      {/* ── الرسوم البيانية: الأداء الشهري + توزيع القنوات ── */}
+      <div className="grid gap-5" style={{ gridTemplateColumns: channelData.length > 0 ? '1fr 340px' : '1fr' }}>
+
+        {/* تحليل الأداء الشهري */}
+        <div className="noorix-surface-card p-5">
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+            <div>
+              <div className="text-[14px] font-bold text-noorix-text">{t('dashboardSalesTimeline')}</div>
+              <div className="text-[12px] text-noorix-muted mt-0.5">
+                {filter?.label || year}
+                {selectedMonth ? ` — ${monthName}` : ''}
+              </div>
             </div>
-            <div className="text-[12px] text-noorix-muted mt-0.5">
-              {filter?.label || year} — {isDailyChart ? t('reportMonthTotal') : t('reportAnnualTotal')}
+            <div className="flex items-end gap-1.5">
+              <span className="text-[18px] font-black nx-font-numbers" style={{ color: 'var(--noorix-accent-green)', direction: 'ltr' }}>
+                {fmt(perfTotal, 0)}
+              </span>
+              <span className="nx-kpi-card__sar mb-0.5">SR</span>
             </div>
           </div>
-          <div
-            className="text-[15px] font-black nx-font-numbers"
-            style={{ color: CARD_COLORS.sales.accent, direction: 'ltr' }}
-          >
-            {fmt(chartTotal, 2)} <span className="text-[13px] font-medium text-noorix-muted">SAR</span>
-          </div>
+
+          {performanceData.length === 0 || perfTotal === 0 ? (
+            <div className="flex flex-col items-center justify-center text-noorix-muted gap-2 h-[200px]">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <div className="text-[12px]">{t('noDataInPeriod')}</div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={performanceData} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradSales" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#16a34a" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0.02}/>
+                  </linearGradient>
+                  {isAnnualChart && <>
+                    <linearGradient id="gradPurch" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0.02}/>
+                    </linearGradient>
+                    <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#d97706" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#d97706" stopOpacity={0.02}/>
+                    </linearGradient>
+                  </>}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" opacity={0.6} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-primary)' }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }} axisLine={false} tickLine={false} width={46} />
+                <Tooltip content={<ChartTooltip />} />
+                {isAnnualChart && <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />}
+                <Area type="monotone" dataKey={salesSeries}  stroke="#16a34a" strokeWidth={2} fill="url(#gradSales)" dot={false} activeDot={{ r: 4 }} />
+                {isAnnualChart && <>
+                  <Area type="monotone" dataKey={purchSeries} stroke="#2563eb" strokeWidth={2} fill="url(#gradPurch)" dot={false} activeDot={{ r: 4 }} />
+                  <Area type="monotone" dataKey={expSeries}   stroke="#d97706" strokeWidth={2} fill="url(#gradExp)"   dot={false} activeDot={{ r: 4 }} />
+                </>}
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
-        {/* الرسم */}
-        {chartData.length === 0 || chartTotal === 0 ? (
-          <div className="flex flex-col items-center text-noorix-muted gap-2.5 min-h-[200px]">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            <div className="text-[12px]">{t('noDataInPeriod')}</div>
-          </div>
-        ) : (
-          <div className="relative">
-            <div className="flex gap-0 min-h-[200px]">
-              {/* محور Y */}
-              <div className="shrink-0 w-12 flex flex-col justify-between pt-1 pb-6">
-                {[...yAxisTicks].reverse().map((tick) => (
-                  <div key={tick} className="text-noorix-muted font-semibold text-[10px] nx-font-numbers">
-                    {formatAxisValue(tick)}
-                  </div>
-                ))}
-              </div>
+        {/* توزيع المبيعات حسب القنوات */}
+        {channelData.length > 0 && (
+          <div className="noorix-surface-card p-5 flex flex-col">
+            <div className="text-[14px] font-bold text-noorix-text mb-1">{t('reportChannels')}</div>
+            <div className="text-[12px] text-noorix-muted mb-4">
+              {selectedMonth ? monthName : year}
+            </div>
 
-              {/* منطقة الأعمدة */}
-              <div className="flex-1 min-w-0 relative overflow-hidden">
-                {/* خطوط الشبكة */}
-                <div className="absolute flex flex-col justify-between pointer-events-none inset-x-0 top-0 bottom-6">
-                  {yAxisTicks.map((_, i) => (
-                    <div key={i} className="h-px opacity-50 bg-noorix-border" />
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie
+                  data={channelData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={52}
+                  outerRadius={82}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {channelData.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
-                </div>
+                </Pie>
+                <Tooltip content={<PieTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
 
-                {/* الأعمدة */}
-                <div className="flex items-end h-[180px] pb-6" style={{ gap: chartData.length > 20 ? 2 : 4 }}>
-                  {chartData.map((point) => {
-                    const barH  = maxSales > 0 ? (point.amount / maxSales) * 100 : 0;
-                    const pKey  = point.month ?? point.day;
-                    const isHov = hoveredPoint === pKey;
-                    const hasVal = point.amount > 0;
-                    return (
-                      <div
-                        key={pKey}
-                        className="flex-1 min-w-0 flex flex-col items-center relative"
-                        onMouseEnter={() => setHoveredPoint(pKey)}
-                        onMouseLeave={() => setHoveredPoint(null)}
-                      >
-                        {/* Tooltip */}
-                        {isHov && hasVal && (
-                          <div style={{
-                            position: 'absolute', bottom: '100%', left: '50%',
-                            transform: 'translate(-50%, -6px)',
-                            background: 'var(--noorix-navy-95)', color: 'white',
-                            padding: '6px 10px', borderRadius: 8,
-                            fontSize: 11, fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700,
-                            whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                            zIndex: 10, pointerEvents: 'none',
-                          }}>
-                            {point.label} — {fmt(point.amount, 2)} SAR
-                          </div>
-                        )}
-                        {/* العمود */}
-                        <div className="w-full h-full flex items-end justify-center">
-                          <div style={{
-                            width: chartData.length > 20 ? '80%' : '65%',
-                            height: `${Math.max(barH, hasVal ? 2 : 0)}%`,
-                            minHeight: hasVal ? 3 : 0,
-                            background: isHov
-                              ? 'linear-gradient(180deg, #22c55e 0%, #15803d 100%)'
-                              : 'linear-gradient(180deg, rgba(34,197,94,0.85) 0%, #16a34a 100%)',
-                            borderRadius: '5px 5px 0 0',
-                            transition: 'height 0.3s ease, background 0.15s',
-                            boxShadow: isHov ? '0 -2px 10px rgba(22,163,74,0.4)' : 'none',
-                          }} />
-                        </div>
-                        {/* ملصق المحور X */}
-                        {(chartData.length <= 12 || pKey % Math.ceil(chartData.length / 12) === 0) && (
-                          <div className="text-noorix-muted font-semibold text-[9px] mt-1 whitespace-nowrap">
-                            {point.label}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+            {/* قائمة القنوات */}
+            <div className="flex flex-col gap-1.5 mt-3">
+              {channelData.slice(0, 5).map((ch, i) => (
+                <div key={ch.name} className="flex items-center justify-between gap-2 text-[12px]">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span className="text-noorix-text truncate">{ch.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="nx-font-numbers font-bold text-noorix-text">{fmt(ch.value, 0)}</span>
+                    <span className="text-noorix-muted">({ch.pct}%)</span>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         )}
