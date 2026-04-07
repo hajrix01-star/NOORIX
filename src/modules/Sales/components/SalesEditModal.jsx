@@ -136,17 +136,17 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       </div>
 
       <div className="mb-4">
-        <label className="text-[13px] font-bold mb-2" style={{ display: 'block' }}>قنوات البيع</label>
+        <label className="text-[13px] font-bold mb-2 block">قنوات البيع</label>
         {salesChannelsLoading ? (
-          <div className="p-4 text-center text-noorix-muted text-[13px]" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
+          <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px]" style={{ border: '2px dashed var(--noorix-border)' }}>
             جاري تحميل قنوات البيع...
           </div>
         ) : salesChannelsError ? (
-          <div className="p-4 text-center text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-20)', borderRadius: 10 }}>
+          <div className="p-4 text-center text-[13px] font-semibold rounded-[10px]" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-20)' }}>
             {salesChannelsError}
           </div>
           ) : mergedSalesChannels.length === 0 ? (
-          <div className="p-4 text-center text-noorix-muted text-[13px]" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
+          <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px]" style={{ border: '2px dashed var(--noorix-border)' }}>
             لا توجد قنوات بيع مفعّلة.
           </div>
         ) : (
@@ -155,13 +155,13 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
               const c = CHANNEL_COLORS[v.type] || CHANNEL_COLORS.cash;
               const amt = channelAmounts[v.id] ?? '';
               return (
-                <div key={v.id} style={{ padding: '10px 12px', borderRadius: 10, background: c.bg, border: `1px solid ${c.border}44` }}>
+                <div key={v.id} className="py-[10px] px-3 rounded-[10px]" style={{ background: c.bg, border: `1px solid ${c.border}44` }}>
                   <div className="flex items-center gap-6 mb-1.5">
                     <span className="text-[16px]">{c.icon}</span>
                     <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
                       <div className="font-bold text-[12px]">{vaultDisplayName(v, lang)}</div>
                       {v.isLegacyDisabled && (
-                        <div className="font-bold" style={{ marginTop: 2, fontSize: 10, color: 'var(--noorix-accent-amber)' }}>
+                        <div className="font-bold mt-[2px] text-[10px]" style={{ color: 'var(--noorix-accent-amber)' }}>
                           قناة قديمة غير مفعلة حالياً
                         </div>
                       )}
@@ -174,7 +174,8 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
                     value={amt}
                     onChange={(e) => setChannelAmounts((p) => ({ ...p, [v.id]: e.target.value }))}
                     placeholder="0.00"
-                    style={{ width: '100%', padding: '6px 8px', borderRadius: 7, fontSize: 15, fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', border: `1px solid ${c.border}55`, background: v.isLegacyDisabled ? 'var(--noorix-bg-muted)' : 'var(--noorix-bg-surface)', color: 'var(--noorix-text)', boxSizing: 'border-box' }}
+                    className="w-full py-1.5 px-2 rounded-[7px] text-[15px] font-extrabold text-right"
+                    style={{ fontFamily: 'var(--noorix-font-numbers)', border: `1px solid ${c.border}55`, background: v.isLegacyDisabled ? 'var(--noorix-bg-muted)' : 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}
                   />
                 </div>
               );
@@ -188,29 +189,29 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       </div>
 
       <div className="grid gap-2.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
-        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-green-10)', border: '1px solid var(--noorix-green-30)' }}>
+        <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-green-10)', border: '1px solid var(--noorix-green-30)' }}>
           <div className="text-[11px] text-noorix-green">الإجمالي</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)} ﷼</div>
+          <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)} ﷼</div>
         </div>
         {vatEnabled && totalAmount.gt(0) && (
           <>
-            <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-sky-10)', border: '1px solid var(--noorix-sky-30)' }}>
+            <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-sky-10)', border: '1px solid var(--noorix-sky-30)' }}>
               <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>الصافي</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-sky)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)} ﷼</div>
+              <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-sky)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)} ﷼</div>
             </div>
-            <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-yellow-10)', border: '1px solid var(--noorix-yellow-30)' }}>
+            <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-yellow-10)', border: '1px solid var(--noorix-yellow-30)' }}>
               <div className="text-[11px]" style={{ color: 'var(--color-noorix-amber)' }}>الضريبة</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--color-noorix-amber)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)} ﷼</div>
+              <div className="text-[18px] font-black" style={{ color: 'var(--color-noorix-amber)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)} ﷼</div>
             </div>
           </>
         )}
-        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-blue-10)', border: '1px solid var(--noorix-blue-30)' }}>
+        <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-blue-10)', border: '1px solid var(--noorix-blue-30)' }}>
           <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>العملاء</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-blue)' }}>{customerCount || 0}</div>
+          <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-blue)' }}>{customerCount || 0}</div>
         </div>
-        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-violet-10)', border: '1px solid var(--noorix-violet-30)' }}>
+        <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-violet-10)', border: '1px solid var(--noorix-violet-30)' }}>
           <div className="text-[11px]" style={{ color: 'var(--noorix-accent-violet)' }}>معدل الطلب</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-violet)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} ﷼</div>
+          <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-violet)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} ﷼</div>
         </div>
       </div>
     </AdaptiveSheet>

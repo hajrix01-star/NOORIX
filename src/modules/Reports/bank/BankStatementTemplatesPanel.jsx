@@ -76,7 +76,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
   if (!companyId) return null;
 
   return (
-    <div className="p-4" style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div className="p-4 max-w-[800px] mx-auto">
       <div
         className="rounded-lg p-3.5 mb-4"
         style={{
@@ -84,15 +84,15 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
           border: '1px solid rgba(37, 99, 235, 0.25)',
         }}
       >
-        <div className="font-bold text-[15px]" style={{ color: 'var(--noorix-accent-blue)', marginBottom: 6 }}>{t('bankTemplatesIntroTitle')}</div>
-        <p className="m-0 text-[13px]" style={{ color: 'var(--noorix-accent-blue)', lineHeight: 1.5 }}>{t('bankTemplatesIntroBody')}</p>
+        <div className="font-bold text-[15px] mb-1.5" style={{ color: 'var(--noorix-accent-blue)' }}>{t('bankTemplatesIntroTitle')}</div>
+        <p className="m-0 text-[13px] leading-[1.5]" style={{ color: 'var(--noorix-accent-blue)' }}>{t('bankTemplatesIntroBody')}</p>
       </div>
 
-      {isLoading ? <p style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}…</p> : null}
+      {isLoading ? <p className="text-noorix-muted">{t('loading')}…</p> : null}
 
       {!isLoading && !list.length ? (
         <div className="text-center text-noorix-muted p-6">
-          <div className="mb-3 text-[20px]" style={{ opacity: 0.4 }}></div>
+          <div className="mb-3 text-[20px] opacity-40"></div>
           <p className="m-0 font-semibold">{t('bankTemplatesEmptyTitle')}</p>
           <p className="text-[13px] m-0 mt-2">{t('bankTemplatesEmptySubtitle')}</p>
         </div>
@@ -108,12 +108,12 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
               className="noorix-surface-card p-4"
               style={{ opacity: tpl.isActive ? 1 : 0.6 }}
             >
-                <div className="flex gap-3 flex flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div className="flex flex-wrap gap-3 justify-between items-start">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center flex flex-wrap gap-2 mb-2.5">
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{tpl.bankName || t('bankTemplatesUnspecifiedBank')}</h3>
+                    <h3 className="m-0 text-[17px] font-extrabold">{tpl.bankName || t('bankTemplatesUnspecifiedBank')}</h3>
                     {tpl.customerName ? (
-                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1px solid var(--noorix-border)' }}>{tpl.customerName}</span>
+                      <span className="text-[11px] py-px px-2 rounded-md border border-noorix-border">{tpl.customerName}</span>
                     ) : null}
                     <span
                       style={{
@@ -146,13 +146,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                       {cols.map((c) => (
                         <span
                           key={c.key}
-                          style={{
-                            fontSize: 11,
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            background: 'var(--noorix-bg-muted)',
-                            border: '1px solid var(--noorix-border)',
-                          }}
+                          className="text-[11px] py-px px-2 rounded-md bg-noorix-bg-muted border border-noorix-border"
                         >
                           {c.label}: {c.index}
                         </span>

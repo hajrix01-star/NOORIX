@@ -143,7 +143,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
   return (
     <div className="grid gap-2.5">
       {/* ── شريط الأدوات ── */}
-      <div className="flex items-center flex flex-wrap gap-2 bg-noorix-bg-muted rounded-lg border border-noorix-border" style={{ padding: '10px 14px' }}>
+      <div className="flex items-center flex-wrap gap-2 bg-noorix-bg-muted rounded-lg border border-noorix-border py-[10px] px-[14px]">
         <Button onClick={handleDownloadTemplate}>تنزيل النموذج</Button>
 
         <Button
@@ -156,7 +156,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
         </Button>
         <input
           ref={fileRef} type="file" accept=".csv,text/csv"
-          style={{ display: 'none' }} onChange={handleFileChange}
+          className="hidden" onChange={handleFileChange}
         />
 
         <Button
@@ -170,11 +170,9 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
 
       {/* ── نتيجة الاستيراد ── */}
       {result && (
-        <div style={{
-          padding: '10px 14px', borderRadius: 10,
+        <div className="py-[10px] px-[14px] rounded-[10px] text-[13px]" style={{
           background: result.failed === 0 ? 'var(--noorix-green-7)' : 'var(--noorix-yellow-7)',
           border: `1px solid ${result.failed === 0 ? 'var(--noorix-green-25)' : 'var(--noorix-yellow-35)'}`,
-          fontSize: 13,
         }}>
           <div className="font-bold" style={{ marginBottom: result.errors.length ? 6 : 0 }}>
             {result.failed === 0
@@ -182,7 +180,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
               : `تم استيراد ${result.success} بنجاح — فشل ${result.failed}`}
           </div>
           {result.errors.length > 0 && (
-            <ul className="m-0" style={{ padding: 'revert', fontSize: 12, color: 'var(--noorix-accent-red)', maxHeight: 120, overflowY: 'auto' }}>
+            <ul className="m-0 text-[12px] max-h-[120px] overflow-y-auto ps-5 text-noorix-red list-disc">
               {result.errors.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
           )}
@@ -190,8 +188,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
             variant="ghost"
             type="button"
             onClick={() => setResult(null)}
-            className="mt-2 cursor-pointer text-noorix-muted"
-            style={{ fontSize: 11, background: 'none', border: 'none' }}
+            className="mt-2 cursor-pointer text-noorix-muted text-[11px]"
           >
             إخفاء
           </Button>

@@ -437,7 +437,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       className="payroll-run-form-drawer"
       footer={
         <>
-          <div className="font-extrabold" style={{ fontSize: 'clamp(15px, 2.4vw, 17px)', fontFamily: 'var(--noorix-font-numbers)' }}>
+          <div className="font-extrabold nx-font-numbers text-[clamp(15px,2.4vw,17px)]">
             {t('payrollTotal')}: {hrFmt(totalNet)}
           </div>
           <div className="flex gap-2.5 flex flex-wrap">
@@ -448,8 +448,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
               variant="primary"
               onClick={handleSubmit}
               disabled={submitting || items.length === 0 || alreadyExists}
-              className="font-bold"
-              style={{ minWidth: 120 }}
+              className="font-bold min-w-[120px]"
             >
               {primaryLabel}
             </Button>
@@ -458,13 +457,13 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       }
     >
       <form className="prfm-modal-form" onSubmit={handleSubmit}>
-        <div style={{ padding: '4px 0 12px' }}>
-          <p className="text-[13px] text-noorix-muted" style={{ margin: '0 0 14px', lineHeight: 1.6, maxWidth: '72ch' }}>
+        <div className="pt-1 pb-3">
+          <p className="text-[13px] text-noorix-muted m-0 mb-[14px] leading-[1.6] max-w-[72ch]">
             {t('payrollGrossFixedPackageHint')}
           </p>
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)' }}>
+          <div className="grid gap-4 [grid-template-columns:minmax(0,1fr)_minmax(0,1.2fr)]">
             <div>
-              <label className="text-[12px] font-semibold text-noorix-muted mb-1.5" style={{ display: 'block' }}>{t('payrollMonth')}</label>
+              <label className="text-[12px] font-semibold text-noorix-muted mb-1.5 block">{t('payrollMonth')}</label>
               <Input
                 type="month"
                 className="prfm-modal-field"
@@ -472,13 +471,13 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 onChange={(e) => setPayrollMonth(e.target.value ? `${e.target.value}-01` : defaultMonth)}
               />
               {alreadyExists && (
-                <span className="text-[12px] font-semibold mt-1.5" style={{ color: 'var(--noorix-accent-amber)', display: 'block' }}>
+                <span className="text-[12px] font-semibold mt-1.5 block text-noorix-amber">
                   {t('payrollMonthExists') || 'مسيرة لهذا الشهر موجودة'}
                 </span>
               )}
             </div>
             <div>
-              <label className="text-[12px] font-semibold text-noorix-muted mb-1.5" style={{ display: 'block' }}>{t('notes')}</label>
+              <label className="text-[12px] font-semibold text-noorix-muted mb-1.5 block">{t('notes')}</label>
               <Input
                 type="text"
                 className="prfm-modal-field"
@@ -490,13 +489,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           </div>
         </div>
 
-        <div
-          className="flex items-center justify-between gap-2.5 flex flex-wrap"
-          style={{
-            padding: '14px 0 10px',
-            flexShrink: 0,
-          }}
-        >
+        <div className="flex items-center justify-between gap-2.5 flex-wrap pt-[14px] pb-[10px] shrink-0">
           <span className="text-[14px] font-bold">{t('employeesList')} ({items.length})</span>
           <Button type="button" onClick={isEditMode ? loadEditingItems : initItems}>
             {t('refresh') || 'تحديث'}
@@ -507,7 +500,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           <table>
             <thead>
               <tr>
-                <th style={{ minWidth: 200 }}>{t('employeeName')}</th>
+                <th className="min-w-[200px]">{t('employeeName')}</th>
                 <th>{t('payrollAdvanceDates')}</th>
                 <th>{t('grossSalary')}</th>
                 <th>{t('payrollAllowances')}</th>
@@ -606,13 +599,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
         {error && (
           <div
-            className="text-[13px] font-semibold mt-3 rounded-lg p-3"
-            style={{
-              background: 'var(--noorix-red-12)',
-              border: '1px solid var(--noorix-red-25)',
-              color: 'var(--noorix-accent-red)',
-              flexShrink: 0,
-            }}
+            className="text-[13px] font-semibold mt-3 rounded-lg p-3 shrink-0 bg-noorix-red/15 border border-noorix-red/25 text-noorix-red"
             role="alert"
           >
             {error}

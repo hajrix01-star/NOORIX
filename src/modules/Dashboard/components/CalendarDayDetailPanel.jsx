@@ -38,7 +38,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
   if (!dateStr) return null;
 
   return (
-    <div className="flex flex flex-col gap-3 p-4 bg-noorix-surface border border-noorix-border rounded-lg" style={{ flex: '0 0 280px', minWidth: 260 }}>
+    <div className="flex flex-col gap-3 p-4 bg-noorix-surface border border-noorix-border rounded-lg flex-[0_0_280px] min-w-[260px]">
       <div className="flex flex items-center justify-between">
         <h4 className="m-0 text-[15px] font-bold">{formatSaudiDate(dateStr)}</h4>
         {onPrint && (
@@ -46,12 +46,12 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
         )}
       </div>
       <div className="flex flex flex-wrap gap-3">
-        <div className="rounded-lg flex-1 min-w-0" style={{ padding: 10, background: 'var(--noorix-blue-8)', minWidth: 90 }}>
-          <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('dashboardSalesTarget')}</div>
+        <div className="rounded-lg flex-1 min-w-[90px] p-[10px]" style={{ background: 'var(--noorix-blue-8)' }}>
+          <div className="text-noorix-muted mb-1 text-[10px]">{t('dashboardSalesTarget')}</div>
           <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget, 2) : '—'} ﷼</div>
         </div>
-        <div className="rounded-lg flex-1 min-w-0" style={{ padding: 10, background: achieved ? 'var(--noorix-green-12)' : 'var(--noorix-bg-muted)', minWidth: 90 }}>
-          <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('total')}</div>
+        <div className="rounded-lg flex-1 min-w-[90px] p-[10px]" style={{ background: achieved ? 'var(--noorix-green-12)' : 'var(--noorix-bg-muted)' }}>
+          <div className="text-noorix-muted mb-1 text-[10px]">{t('total')}</div>
           <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>{fmt(totalAmount, 2)} ﷼ {achieved && '✓'}</div>
         </div>
       </div>
@@ -67,18 +67,18 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
           placeholder={t('dashboardDayNotePlaceholder')}
           rows={2}
         />
-        {isSavingNote && <span style={{ fontSize: 10, color: 'var(--noorix-text-muted)' }}>…</span>}
+        {isSavingNote && <span className="text-[10px] text-noorix-muted">…</span>}
       </div>
 
       <div className="text-[12px] font-semibold">{t('salesChannels')} / {t('summaryNumber')}</div>
-      <div className="flex-1 min-w-0 overflow-auto border border-noorix-border rounded-lg" style={{ minHeight: 100 }}>
-        <table className="w-full" style={{ borderCollapse: 'collapse', fontSize: 12 }}>
+      <div className="flex-1 min-w-0 overflow-auto border border-noorix-border rounded-lg min-h-[100px]">
+        <table className="w-full border-collapse text-[12px]">
           <thead>
             <tr className="bg-noorix-bg-muted">
-              <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('summaryNumber')}</th>
-              <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('salesChannels')}</th>
-              <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('customers')}</th>
-              <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{t('total')}</th>
+              <th className="py-1.5 px-2 text-right font-bold">{t('summaryNumber')}</th>
+              <th className="py-1.5 px-2 text-right font-bold">{t('salesChannels')}</th>
+              <th className="py-1.5 px-2 text-right font-bold">{t('customers')}</th>
+              <th className="py-1.5 px-2 text-right font-bold">{t('total')}</th>
             </tr>
           </thead>
           <tbody>
@@ -88,10 +88,10 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
               const chText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount || 0, 2)}`).join(' | ');
               return (
                 <tr key={s.id} className="border-t border-noorix-border">
-                  <td style={{ padding: '6px 8px' }}>{s.summaryNumber || '—'}</td>
-                  <td className="nx-cell-ellipsis" style={{ padding: '6px 8px' }} title={chText || ''}>{chText || '—'}</td>
-                  <td className="nx-cell-num" style={{ padding: '6px 8px' }}>{s.customerCount ?? 0}</td>
-                  <td className="nx-cell-num font-semibold text-noorix-green" style={{ padding: '6px 8px' }}>{fmt(Number(s.totalAmount || 0), 2)}</td>
+                  <td className="py-1.5 px-2">{s.summaryNumber || '—'}</td>
+                  <td className="nx-cell-ellipsis py-1.5 px-2" title={chText || ''}>{chText || '—'}</td>
+                  <td className="nx-cell-num py-1.5 px-2">{s.customerCount ?? 0}</td>
+                  <td className="nx-cell-num font-semibold text-noorix-green py-1.5 px-2">{fmt(Number(s.totalAmount || 0), 2)}</td>
                 </tr>
               );
             })}

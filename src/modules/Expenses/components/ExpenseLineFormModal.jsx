@@ -131,7 +131,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
     >
       <form id="expense-line-form-modal" onSubmit={handleSubmit}>
         {error && (
-          <div style={{ padding: 12, marginBottom: 16, background: 'var(--noorix-red-10)', borderRadius: 8, color: 'var(--noorix-accent-red)', fontSize: 13 }}>
+          <div className="p-3 mb-4 rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
             {error}
           </div>
         )}

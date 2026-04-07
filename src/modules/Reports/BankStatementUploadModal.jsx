@@ -108,10 +108,8 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
         {STEPS.map((s, i) => (
           <div
             key={s.id}
-            className="flex-1 min-w-0"
+            className="flex-1 min-w-0 h-1 rounded-sm"
             style={{
-              height: 4,
-              borderRadius: 2,
               background: i <= step ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
             }}
             title={t(s.labelKey)}
@@ -137,14 +135,13 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
-          className="rounded-xl text-center cursor-pointer"
+          className="rounded-xl text-center cursor-pointer p-10"
           style={{
             border: `2px dashed ${isDragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
-            padding: 40,
             background: isDragging ? 'var(--noorix-blue-5)' : 'var(--noorix-bg-muted)',
           }}
         >
-          <div className="mb-2" style={{ fontSize: 36 }}></div>
+          <div className="mb-2 text-[36px]"></div>
           <div className="text-[15px] font-semibold text-noorix-text">
             {t('bankStatementDragDrop')}
           </div>
@@ -156,8 +153,8 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
       ) : (
         <div className="grid gap-3">
           <div className="flex items-center gap-12 p-3 bg-noorix-bg-muted rounded-lg">
-            <span style={{ fontSize: 24 }}></span>
-            <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
+            <span className="text-[24px]"></span>
+            <div className="flex-1 min-w-0">
               <div className="font-semibold text-noorix-text">{file.name}</div>
               <div className="text-[12px] text-noorix-muted">
                 {raw?.length ?? 0} صف • {step >= 4 ? t('bankStatementStepDone') : STEPS[step] && t(STEPS[step].labelKey)}

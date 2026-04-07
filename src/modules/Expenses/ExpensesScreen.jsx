@@ -90,7 +90,7 @@ export default function ExpensesScreen() {
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>
       </div>
 
-      <div className="noorix-surface-card overflow-hidden" style={{ padding: 0 }}>
+      <div className="noorix-surface-card overflow-hidden p-0">
         <div className="nx-tab-bar">
           {TABS.map((tab) => (
             <Button

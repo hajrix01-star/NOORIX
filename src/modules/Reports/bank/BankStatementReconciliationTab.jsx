@@ -20,12 +20,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
 
   return (
     <div className="grid gap-4">
-      <div
-        className="grid gap-3"
-        style={{
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-        }}
-      >
+      <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
         <div className="noorix-surface-card p-3.5">
           <div className="text-[12px] text-noorix-muted">{t('bankReconDepositsComputed')}</div>
           <div className="text-[18px] font-extrabold nx-ltr text-end">
@@ -59,10 +54,10 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
         }}
       >
         <strong>{t('bankReconAggregateCheck')}</strong>
-        <p className="text-[14px]" style={{ margin: '8px 0 0' }}>
+        <p className="text-[14px] mt-2 mb-0">
           {okAgg ? t('bankReconAggregateOk') : t('bankReconAggregateDiff')}
           {!okAgg && (
-            <span className="nx-ltr text-[12px] mt-1.5" style={{ display: 'block' }}>
+            <span className="nx-ltr text-[12px] mt-1.5 block">
               Δ dep {fmt(balanceVerification.depositsDiff)} / Δ wdr {fmt(balanceVerification.withdrawalsDiff)}
             </span>
           )}
@@ -76,7 +71,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
         }}
       >
         <strong>{t('bankReconBalanceSequence')}</strong>
-        <p className="text-[14px]" style={{ margin: '8px 0 0' }}>
+        <p className="text-[14px] mt-2 mb-0">
           {okSeq ? t('bankReconSequenceOk') : t('bankReconSequenceIssues')}
         </p>
         {!okSeq && balanceVerification.balanceErrors?.length ? (
@@ -93,27 +88,22 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
       {(reconciliationStats || reconLoading) && (
         <div className="grid gap-3">
           <h3 className="m-0 text-[15px]">{t('bankReconSystemSection')}</h3>
-          <div
-            className="grid gap-3"
-            style={{
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            }}
-          >
+          <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]">
             <div className="noorix-surface-card p-3.5">
               <div className="text-[12px] text-noorix-muted">{t('bankReconSalesBankTotal')}</div>
-              <div className="font-extrabold nx-ltr text-end" style={{ fontSize: 17 }}>
+              <div className="font-extrabold nx-ltr text-end text-[17px]">
                 {reconLoading ? '…' : fmt(reconciliationStats?.sales_bank_total ?? 0)}
               </div>
             </div>
             <div className="noorix-surface-card p-3.5">
               <div className="text-[12px] text-noorix-muted">{t('bankReconCashDeposits')}</div>
-              <div className="font-extrabold nx-ltr text-end" style={{ fontSize: 17 }}>
+              <div className="font-extrabold nx-ltr text-end text-[17px]">
                 {reconLoading ? '…' : fmt(reconciliationStats?.cash_deposits_total ?? 0)}
               </div>
             </div>
             <div className="noorix-surface-card p-3.5">
               <div className="text-[12px] text-noorix-muted">{t('bankReconExpectedCredits')}</div>
-              <div className="font-extrabold nx-ltr text-end" style={{ fontSize: 17, color: 'var(--noorix-accent-blue)' }}>
+              <div className="font-extrabold nx-ltr text-end text-[17px] text-noorix-blue">
                 {reconLoading ? '…' : fmt(reconciliationStats?.expected_credits ?? 0)}
               </div>
             </div>

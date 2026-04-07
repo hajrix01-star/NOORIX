@@ -123,9 +123,8 @@ export default function AdvancesTab() {
       ) },
     { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
       render: (v, row) => (
-        <span className="text-[12px]" style={{
+        <span className="text-[12px] whitespace-nowrap" style={{
           color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'var(--noorix-text-muted)',
-          whiteSpace: 'nowrap',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
         }}
         >
@@ -155,6 +154,7 @@ export default function AdvancesTab() {
         <Badge
           color={statusColorMap[row.settlementStatus] || 'amber'}
           size="sm"
+          className="shrink-0"
           style={{ textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none' }}
         >
           {row.settlementStatus === 'cancelled'
@@ -189,7 +189,7 @@ export default function AdvancesTab() {
       <td colSpan={2} className="text-[12px] text-noorix-muted font-semibold py-1.5 px-3">
         {t('advancesList')} ({allFilteredData.length}) — {t('advanceOutstanding')}: {outstandingCount}
       </td>
-      <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900 }}>
+      <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers">
         {hrFmt(totalAmount.toNumber())}
       </td>
       <td colSpan={1} />
@@ -226,24 +226,25 @@ export default function AdvancesTab() {
           <Badge
             color={statusColorMap[row.settlementStatus] || 'amber'}
             size="sm"
-            style={{ flexShrink: 0, textDecoration: settled ? 'line-through' : 'none' }}
+            className="shrink-0"
+            style={{ textDecoration: settled ? 'line-through' : 'none' }}
           >
             {sLabel}
           </Badge>
         </div>
         <div className="text-[11px] text-noorix-muted mb-2">{formatSaudiDate(row.transactionDate)}</div>
-        <div className="grid grid-cols-3 rounded-lg gap-1.5 bg-noorix-bg-muted mb-2.5" style={{ padding: '8px 10px' }}>
+        <div className="grid grid-cols-3 rounded-lg gap-1.5 bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('advanceAmount')}</div>
-            <div className="text-[14px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.totalAmountNum)}</div>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('advanceAmount')}</div>
+            <div className="text-[14px] font-bold nx-font-numbers">{hrFmt(row.totalAmountNum)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('advanceSettledAmount')}</div>
-            <div className="text-[13px] text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.settledAmountNum)}</div>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('advanceSettledAmount')}</div>
+            <div className="text-[13px] text-noorix-green nx-font-numbers">{hrFmt(row.settledAmountNum)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('advanceRemainingAmount')}</div>
-            <div className="text-[13px]" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.remainingAmount)}</div>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('advanceRemainingAmount')}</div>
+            <div className="text-[13px] nx-font-numbers" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>{hrFmt(row.remainingAmount)}</div>
           </div>
         </div>
         <div className="flex items-center justify-end">

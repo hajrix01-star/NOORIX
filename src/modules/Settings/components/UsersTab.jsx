@@ -92,17 +92,17 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
       </div>
 
       {showForm && (
-        <div className="noorix-surface-card p-5" style={{ borderRadius: 14 }}>
-          <h4 className="text-[14px]" style={{ margin: '0 0 16px' }}>{t('newUser')}</h4>
+        <div className="noorix-surface-card p-5 rounded-[14px]">
+          <h4 className="text-[14px] m-0 mb-4">{t('newUser')}</h4>
           <form onSubmit={(e) => { e.preventDefault(); if (!form.email?.trim() || !form.password?.trim()) return; createMutation.mutate({ email: form.email.trim(), password: form.password, nameAr: form.nameAr?.trim(), nameEn: form.nameEn?.trim(), roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c) => c.id) }); }}>
-            <div className="grid gap-3" style={{ marginBottom: 14, maxWidth: 400 }}>
+            <div className="grid gap-3 mb-[14px] max-w-[400px]">
               <Input type="email" label={`${t('email')} *`} value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} required />
               <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} required />
               <Input type="text" label={t('nameAr')} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} />
               <Input type="select" label={t('role')} value={form.roleName} onChange={(e) => setForm((p) => ({ ...p, roleName: e.target.value }))}>
                 {roles.map((r) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
               </Input>
-              <div><label className="text-[12px] font-semibold mb-1" style={{ display: 'block' }}>{t('companies')}</label>
+              <div><label className="text-[12px] font-semibold mb-1 block">{t('companies')}</label>
                 <div className="flex flex-col gap-1.5">
                   {activeCompanies.map((c) => (
                     <label key={c.id} className="nx-checkbox">
@@ -131,13 +131,13 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
       >
         {editing && (
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
-            <div className="grid gap-3" style={{ marginBottom: 14 }}>
+            <div className="grid gap-3 mb-[14px]">
               <Input type="email" label={t('email')} value={editing.email} disabled />
               <Input type="text" label={t('nameAr')} value={editing.nameAr} onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))} />
               <Input type="select" label={t('role')} value={editing.roleName} onChange={(e) => setEditing((p) => ({ ...p, roleName: e.target.value }))}>
                 {roles.map((r) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
               </Input>
-              <div><label className="text-[12px] font-semibold mb-1" style={{ display: 'block' }}>{t('companies')}</label>
+              <div><label className="text-[12px] font-semibold mb-1 block">{t('companies')}</label>
                 {activeCompanies.map((c) => (
                   <label key={c.id} className="nx-checkbox mb-1">
                     <input type="checkbox" checked={editing.companyIds.includes(c.id)} onChange={(e) => setEditing((p) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id) => id !== c.id) }))} />
@@ -178,7 +178,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
                 {row.isActive ? t('active') : t('archived')}
               </Badge>
             </div>
-            <div className="nx-cell-muted nx-ltr" style={{ textAlign: 'right' }}>{row.email || '—'}</div>
+            <div className="nx-cell-muted nx-ltr text-right">{row.email || '—'}</div>
             <div className="flex items-center justify-between gap-2">
               <span className="nx-cell-muted">{row.role?.nameAr || row.role?.name || '—'}</span>
               <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button>

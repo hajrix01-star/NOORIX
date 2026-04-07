@@ -45,8 +45,8 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
       {/* هيدر بـ gradient */}
       <div className="flex items-center justify-between" style={{ background: 'linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%)', padding: '16px 20px' }}>
         <div>
-          <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.75)', marginBottom: 3 }}>{t('invoicesTitle')}</div>
-          <h3 className="m-0 font-bold" style={{ color: 'var(--noorix-navy-text, #fff)', fontSize: 17 }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
+          <div className="text-[11px] mb-[3px]" style={{ color: 'rgba(255,255,255,0.75)' }}>{t('invoicesTitle')}</div>
+          <h3 className="m-0 font-bold text-[17px]" style={{ color: 'var(--noorix-navy-text)' }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
         </div>
         <Button className="nx-gradient-close-btn" onClick={onClose}>
           {t('close')}

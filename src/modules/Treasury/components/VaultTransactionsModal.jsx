@@ -122,25 +122,25 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     { key: 'documentNumber', label: t('documentNumber'), render: (_, r) => <span className="nx-cell-num">{r.documentNumber || r.referenceId || '—'}</span> },
     { key: 'transactionDate', label: t('date'), render: (v) => <span className="text-[12px]">{formatSaudiDate(v)}</span> },
     { key: 'referenceType', label: t('type'), render: (v) => <span className="text-[12px]">{v || '—'}</span> },
-    { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <span className="text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> : <span>—</span> },
-    { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <span className="text-noorix-red" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> : <span>—</span> },
+    { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <span className="text-noorix-green nx-font-numbers">{fmt(v)}</span> : <span>—</span> },
+    { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <span className="text-noorix-red nx-font-numbers">{fmt(v)}</span> : <span>—</span> },
   ];
 
   const renderMobileCard = useCallback((row) => (
     <div>
       <div className="flex flex items-center justify-between mb-1">
-        <span className="font-bold text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.documentNumber || row.referenceId || '—'}</span>
+        <span className="font-bold text-[13px] nx-font-numbers">{row.documentNumber || row.referenceId || '—'}</span>
         <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
       </div>
       {row.referenceType && <div className="text-[12px] text-noorix-muted mb-2">{row.referenceType}</div>}
-      <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted" style={{ padding: '8px 10px' }}>
+      <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted py-2 px-[10px]">
         <div>
-          <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('debit')}</div>
-          <div className="text-[14px] font-bold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.debit != null ? fmt(row.debit) : '—'}</div>
+          <div className="text-noorix-muted mb-1 text-[10px]">{t('debit')}</div>
+          <div className="text-[14px] font-bold text-noorix-green nx-font-numbers">{row.debit != null ? fmt(row.debit) : '—'}</div>
         </div>
         <div>
-          <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('credit')}</div>
-          <div className="text-[14px] font-bold text-noorix-red" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.credit != null ? fmt(row.credit) : '—'}</div>
+          <div className="text-noorix-muted mb-1 text-[10px]">{t('credit')}</div>
+          <div className="text-[14px] font-bold text-noorix-red nx-font-numbers">{row.credit != null ? fmt(row.credit) : '—'}</div>
         </div>
       </div>
     </div>
@@ -148,9 +148,9 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
 
   const footerCells = items.length > 0 ? (
     <>
-      <td colSpan={4} className="font-bold p-2.5" style={{ background: 'var(--noorix-blue-6)', borderTop: '2px solid var(--noorix-border)' }}>{t('total')}</td>
-      <td className="font-bold text-end p-2.5 text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)', background: 'var(--noorix-blue-6)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalDebit, 2)}</td>
-      <td className="font-bold text-end p-2.5 text-noorix-red" style={{ fontFamily: 'var(--noorix-font-numbers)', background: 'var(--noorix-blue-6)', borderTop: '2px solid var(--noorix-border)' }}>{fmt(totalCredit, 2)}</td>
+      <td colSpan={4} className="font-bold p-2.5 bg-noorix-blue/6 border-t-2 border-noorix-border">{t('total')}</td>
+      <td className="font-bold text-end p-2.5 text-noorix-green nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border">{fmt(totalDebit, 2)}</td>
+      <td className="font-bold text-end p-2.5 text-noorix-red nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border">{fmt(totalCredit, 2)}</td>
     </>
   ) : null;
 
@@ -173,7 +173,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
       </div>
 
       {isPaginatedTotal && (
-        <div className="text-[12px] text-noorix-muted bg-noorix-surface border border-noorix-border rounded-lg mb-3 px-3 py-1.5" style={{ lineHeight: 1.5 }}>
+        <div className="text-[12px] text-noorix-muted bg-noorix-surface border border-noorix-border rounded-lg mb-3 px-3 py-1.5 leading-[1.5]">
           ℹ️ المجموع الظاهر في الأسفل يعكس إجمالي حركات الفترة بأكملها ({data?.total?.toLocaleString('en')} حركة)، وليس مجموع الصفحة الحالية فقط. للاطلاع على جميع الحركات استخدم تصدير Excel.
         </div>
       )}

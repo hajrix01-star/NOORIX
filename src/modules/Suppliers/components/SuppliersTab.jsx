@@ -157,7 +157,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
 
       {/* ── الجدول ── */}
       {isLoading
-        ? <p style={{ color: 'var(--noorix-text-muted)', fontSize: 13 }}>{t('loading')}</p>
+        ? <p className="text-noorix-muted text-[13px]">{t('loading')}</p>
         : (
           <SupplierTable
             suppliers={suppliers}

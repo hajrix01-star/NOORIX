@@ -2,7 +2,7 @@
  * Button — مكوّن الزر الموحّد لنظام نووريكس
  *
  * variants: default | primary | success | danger | warning | ghost | raw
- * sizes:    sm | md | lg
+ * sizes:    sm | md | lg | auto (no size classes — full layout via className)
  */
 import React, { forwardRef } from 'react';
 import { cn } from './cn';
@@ -18,9 +18,10 @@ const VARIANT = {
 };
 
 const SIZE = {
-  sm: 'h-7 px-3 text-[12px] gap-1.5 rounded-md',
-  md: 'h-9 px-4 text-[13px] gap-2   rounded-lg',
-  lg: 'h-11 px-6 text-[14px] gap-2  rounded-lg',
+  sm:   'h-7 px-3 text-[12px] gap-1.5 rounded-md',
+  md:   'h-9 px-4 text-[13px] gap-2   rounded-lg',
+  lg:   'h-11 px-6 text-[14px] gap-2  rounded-lg',
+  auto: '',
 };
 
 const BASE = 'inline-flex items-center justify-center font-medium font-cairo cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-noorix-blue focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none';

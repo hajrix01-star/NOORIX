@@ -53,13 +53,13 @@ export default function AISettingsTab() {
   };
 
   return (
-    <div className="grid gap-6" style={{ maxWidth: 560 }}>
+    <div className="grid gap-6 max-w-[560px]">
       {/* ─── العنوان والوصف ─── */}
       <div>
         <h2 className="text-[18px] font-bold m-0">
           {lang === 'ar' ? 'المحادثة الذكية — Gemini' : 'Smart Chat — Gemini'}
         </h2>
-        <p className="text-[13px] text-noorix-muted" style={{ margin: '8px 0 0', lineHeight: 1.5 }}>
+        <p className="text-[13px] text-noorix-muted mt-2 mb-0 leading-[1.5]">
           {lang === 'ar'
             ? 'يُستخدم Gemini لفهم أسئلتك الطبيعية في المحادثة الذكية. المفتاح يُعرّف في backend/.env ولا يُعرض هنا.'
             : 'Gemini is used to understand natural language in Smart Chat. The API key is set in backend/.env and is not displayed here.'}
@@ -72,7 +72,7 @@ export default function AISettingsTab() {
         style={{ background: 'var(--noorix-bg)' }}
       >
         {/* شريط الحالة: أونلاين / أوفلاين */}
-        <div className="flex flex items-center justify-between flex flex-wrap gap-3 border-b border-noorix-border mb-5" style={{ paddingBottom: 16 }}>
+        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-noorix-border mb-5 pb-4">
           <div className="flex gap-2.5">
             <span
               style={{
@@ -160,7 +160,7 @@ export default function AISettingsTab() {
 
 function DiagnosticRow({ label, value, ok, pending }) {
   return (
-    <div className="flex flex items-center justify-between gap-3 border border-noorix-border rounded-lg" style={{ padding: '10px 12px', background: 'var(--noorix-surface)' }}>
+    <div className="flex items-center justify-between gap-3 border border-noorix-border rounded-lg py-[10px] px-3" style={{ background: 'var(--noorix-surface)' }}>
       <span className="text-[13px] font-medium text-noorix-muted">{label}</span>
       <div className="flex gap-2">
         <span
@@ -173,12 +173,8 @@ function DiagnosticRow({ label, value, ok, pending }) {
         </span>
         {!pending && (
           <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
-            }}
+            className="w-[6px] h-[6px] rounded-full"
+            style={{ background: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }}
           />
         )}
       </div>

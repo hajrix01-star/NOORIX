@@ -86,7 +86,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
 
   if (isLoading) {
     return (
-      <div className="noorix-surface-card text-center text-noorix-muted" style={{ padding: 40 }}>
+      <div className="noorix-surface-card text-center text-noorix-muted p-10">
         {t('loading')}
       </div>
     );
@@ -94,8 +94,8 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
 
   if (yearTotal === 0) {
     return (
-      <div className="rounded-xl border border-noorix-border bg-noorix-surface text-center text-noorix-muted" style={{ padding: 48, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-        <div className="mb-3" style={{ fontSize: 40, opacity: 0.25 }}></div>
+      <div className="rounded-xl border border-noorix-border bg-noorix-surface text-center text-noorix-muted p-12" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div className="mb-3 text-[40px] opacity-25"></div>
         <div className="text-[14px]">{t('noDataInPeriod')}</div>
       </div>
     );
@@ -103,19 +103,19 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
 
   return (
     <div className="flex flex flex-col gap-6">
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         <div className="nx-surface overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-          <div style={{ height: 3, background: CARD_COLORS.sales.accent }} />
+          <div className="h-[3px]" style={{ background: CARD_COLORS.sales.accent }} />
           <div className="p-4 bg-noorix-surface">
             <div className="text-[12px] font-bold mb-2" style={{ color: CARD_COLORS.sales.accent }}>{t('dashboardAppSalesRatio')}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: CARD_COLORS.sales.accent, fontFamily: 'var(--noorix-font-numbers)' }}>
+            <div className="text-[28px] font-black nx-font-numbers" style={{ color: CARD_COLORS.sales.accent }}>
               {fmt(appPercent, 1)}%
             </div>
             <div className="text-[12px] text-noorix-muted mt-1.5">
               {fmt(yearApp, 2)} ﷼ / {fmt(yearTotal, 2)} ﷼
             </div>
             {yearApp === 0 && (
-              <div className="mt-2 text-[11px] font-semibold" style={{ color: 'var(--color-noorix-amber)' }}>
+              <div className="mt-2 text-[11px] font-semibold text-noorix-amber">
                 {t('dashboardNoAppSales')}
               </div>
             )}
@@ -130,9 +130,9 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
             {appByChannel.map((ch) => {
               const pct = yearTotal > 0 ? (ch.app / yearTotal) * 100 : 0;
               return (
-                <div key={ch.name} className="flex items-center justify-between bg-noorix-bg-muted rounded-lg" style={{ padding: '10px 14px' }}>
+                <div key={ch.name} className="flex items-center justify-between bg-noorix-bg-muted rounded-lg py-[10px] px-[14px]">
                   <span className="font-semibold">{ch.name}</span>
-                  <span style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, color: CARD_COLORS.sales.accent }}>{fmt(pct, 1)}%</span>
+                  <span className="nx-font-numbers font-bold" style={{ color: CARD_COLORS.sales.accent }}>{fmt(pct, 1)}%</span>
                 </div>
               );
             })}
@@ -142,14 +142,14 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
 
       <div className="nx-surface overflow-hidden p-5" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
         <div className="text-[14px] font-bold mb-4" style={{ color: CARD_COLORS.sales.accent }}>{t('dashboardAppSalesChart')}</div>
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(12, minmax(36px, 1fr))', alignItems: 'end', minHeight: 100, minWidth: 360 }}>
+          <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+          <div className="grid gap-2 items-end min-h-[100px] min-w-[360px] [grid-template-columns:repeat(12,minmax(36px,1fr))]">
             {chartData.map((point) => {
               const barHeight = `${Math.max(0, (point.percent / maxPercent) * 100)}%`;
               return (
-                <div key={point.month} className="flex flex flex-col gap-1.5" style={{ alignItems: 'center' }}>
+                <div key={point.month} className="flex flex-col gap-1.5 items-center">
                   <div className="text-[11px] text-noorix-muted font-semibold">{point.label}</div>
-                  <div className="w-full bg-noorix-bg-muted rounded-lg overflow-hidden" style={{ height: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                  <div className="w-full bg-noorix-bg-muted rounded-lg overflow-hidden h-[60px] flex items-end justify-center">
                     <div
                       style={{
                         width: '70%',
@@ -161,7 +161,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
                       }}
                     />
                   </div>
-                  <div style={{ fontSize: 10, fontFamily: 'var(--noorix-font-numbers)', fontWeight: 600, color: CARD_COLORS.sales.accent }}>
+                  <div className="text-[10px] font-semibold nx-font-numbers" style={{ color: CARD_COLORS.sales.accent }}>
                     {fmt(point.percent, 1)}%
                   </div>
                 </div>

@@ -6,7 +6,6 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { getCompany, updateCompany } from '../../../services/api';
-import { labelStyle } from '../constants/settingsConstants';
 import { Button, Input } from '../../../ui';
 
 export default function TaxSettingsTab() {
@@ -61,8 +60,8 @@ export default function TaxSettingsTab() {
 
   if (!activeCompanyId) {
     return (
-      <div className="text-center text-noorix-muted" style={{ padding: 32 }}>
-        <div className="mb-3" style={{ fontSize: 40 }}>—</div>
+      <div className="text-center text-noorix-muted p-8">
+        <div className="mb-3 text-[40px]">—</div>
         <p className="text-[14px] m-0">يجب اختيار شركة أولاً من القائمة العلوية.</p>
       </div>
     );
@@ -70,16 +69,16 @@ export default function TaxSettingsTab() {
 
   if (isLoading) {
     return (
-      <div className="text-center text-noorix-muted" style={{ padding: 32 }}>
+      <div className="text-center text-noorix-muted p-8">
         جاري التحميل...
       </div>
     );
   }
 
   return (
-    <div className="grid gap-6" style={{ maxWidth: 480 }}>
+    <div className="grid gap-6 max-w-[480px]">
       <div>
-        <h3 className="text-[18px]" style={{ margin: '0 0 8px' }}>إعدادات الضريبة</h3>
+        <h3 className="text-[18px] m-0 mb-2">إعدادات الضريبة</h3>
         <p className="text-[13px] text-noorix-muted m-0">
           تفعيل ضريبة القيمة المضافة للمبيعات ونسبة الضريبة المستخدمة في الحسابات.
         </p>
@@ -88,8 +87,8 @@ export default function TaxSettingsTab() {
       <div className="noorix-surface-card p-5 rounded-xl">
         <div className="flex flex flex-col gap-3">
           {/* مفتاح التفعيل */}
-          <div className="flex flex items-center justify-between border border-noorix-border rounded-xl bg-noorix-surface" style={{ padding: '12px 14px' }}>
-            <label style={{ ...labelStyle, margin: 0, fontWeight: 600 }}>تفعيل ضريبة القيمة المضافة للمبيعات</label>
+          <div className="flex items-center justify-between border border-noorix-border rounded-xl bg-noorix-surface py-3 px-[14px]">
+            <label className="block text-[14px] font-semibold m-0">تفعيل ضريبة القيمة المضافة للمبيعات</label>
             <label className="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green">
               <input
                 type="checkbox"
@@ -111,13 +110,13 @@ export default function TaxSettingsTab() {
               value={vatRate}
               onChange={(e) => setVatRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
             />
-            <p className="text-[12px] text-noorix-muted" style={{ margin: '6px 0 0' }}>
+            <p className="text-[12px] text-noorix-muted mt-1.5 mb-0">
               القيمة الافتراضية 15% (ZATCA / السعودية)
             </p>
           </div>
 
           {hasChanges && (
-            <div className="rounded-xl text-[13px]" style={{ padding: '10px 14px', background: 'var(--noorix-yellow-8)', border: '1px solid var(--noorix-yellow-35)', color: 'var(--noorix-text-default)', lineHeight: 1.6 }}>
+            <div className="rounded-xl text-[13px] py-[10px] px-[14px] leading-[1.6] bg-noorix-amber/10 border border-noorix-amber/35 text-noorix-text">
               <strong>⚠️ تنبيه مهم:</strong> تغيير إعدادات الضريبة سيُطبَّق على <strong>الفواتير والمعاملات الجديدة فقط</strong>. الفواتير والسجلات المحفوظة مسبقاً لن تتأثر بهذا التغيير ولن تُعاد حسابها تلقائياً.
             </div>
           )}
@@ -128,7 +127,7 @@ export default function TaxSettingsTab() {
               variant="primary"
               onClick={handleSave}
               disabled={updateMutation.isPending}
-              style={{ alignSelf: 'flex-start' }}
+              className="self-start"
             >
               {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
             </Button>

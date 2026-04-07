@@ -100,12 +100,9 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
                   {[1, 2, 3, 4].map((level) => (
                     <div
                       key={level}
+                      className="flex-1 h-1 rounded transition-[background] duration-200"
                       style={{
-                        flex: 1,
-                        height: 4,
-                        borderRadius: 4,
                         background: strength >= level ? strengthColor : 'var(--noorix-border)',
-                        transition: 'background 0.2s',
                       }}
                     />
                   ))}
@@ -124,7 +121,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               autoComplete="new-password"
             />
             {confirmPassword && confirmPassword !== newPassword && (
-              <span className="text-[11px] mt-1" style={{ color: 'var(--noorix-accent-red)', display: 'block' }}>
+              <span className="text-[11px] mt-1 block" style={{ color: 'var(--noorix-accent-red)' }}>
                 كلمتا المرور غير متطابقتين
               </span>
             )}

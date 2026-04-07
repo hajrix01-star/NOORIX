@@ -52,41 +52,27 @@ export default function BankStatementSummaryCards({ statement, t }) {
   ];
 
   return (
-    <div
-      className="grid gap-3"
-      style={{
-        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-      }}
-    >
+    <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
       {cards.map((c, i) => (
         <div
           key={i}
-          className="noorix-surface-card flex flex-col gap-1"
-          style={{
-            padding: 14,
-          }}
+          className="noorix-surface-card flex flex-col gap-1 p-[14px]"
         >
-          <div className="text-[11px] text-noorix-muted font-semibold" style={{ marginBottom: 2 }}>{c.title}</div>
+          <div className="text-[11px] text-noorix-muted font-semibold mb-0.5">{c.title}</div>
           <div
-            className="font-extrabold nx-ltr text-noorix-text"
+            className="font-extrabold nx-ltr text-noorix-text text-right break-words"
             style={{
               fontSize: c.value?.length > 14 ? 14 : 17,
-              textAlign: 'right',
-              wordBreak: 'break-word',
             }}
           >
             {c.value}
           </div>
           {c.sub ? (
-            <div className="text-[11px] text-noorix-muted" style={{ marginTop: 2 }}>{c.sub}</div>
+            <div className="text-[11px] text-noorix-muted mt-0.5">{c.sub}</div>
           ) : null}
           <div
-            className="mt-2"
-            style={{
-              height: 3,
-              borderRadius: 2,
-              background: c.accent,
-            }}
+            className="mt-2 h-[3px] rounded-sm"
+            style={{ background: c.accent }}
           />
         </div>
       ))}

@@ -49,17 +49,17 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
 
   return (
     <div
-      className="noorix-surface-card grid gap-3.5 border border-noorix-border"
-      style={{ padding: '14px 16px', border: '1px solid var(--noorix-blue-15)', background: 'linear-gradient(135deg, var(--noorix-blue-4) 0%, var(--noorix-bg-surface) 48%)' }}
+      className="noorix-surface-card grid gap-3.5 border border-noorix-border py-[14px] px-4"
+      style={{ border: '1px solid var(--noorix-blue-15)', background: 'linear-gradient(135deg, var(--noorix-blue-4) 0%, var(--noorix-bg-surface) 48%)' }}
     >
       <div className="flex flex items-center justify-between flex flex-wrap gap-3">
         <div className="text-[14px] font-extrabold">{t('periodAnalyticsTitle')}</div>
         <div className="text-[12px] text-noorix-muted">{from} — {to}</div>
       </div>
       {isLoading && <div className="text-[13px] text-noorix-muted">{t('loading')}</div>}
-      {isError && <div className="text-[13px]" style={{ color: 'var(--noorix-error)' }}>{t('loadDataFailed')}</div>}
+      {isError && <div className="text-[13px] text-noorix-red">{t('loadDataFailed')}</div>}
       {!isLoading && !isError && data && (
-        <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+        <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
           <div>
             <div className="text-[12px] text-noorix-muted mb-2">{t('periodAnalyticsByKind')}</div>
             <div className="flex flex flex-col gap-1.5">
@@ -72,12 +72,11 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                     const q = row.kind === 'sale' ? { from, to } : { from, to, kind: row.kind };
                     navigate(`${path}?${drillToSearchParams(q)}`);
                   }}
-                  className="flex flex items-center justify-between w-full text-[12px]"
-                  style={{ textAlign: 'start' }}
+                  className="flex items-center justify-between w-full text-[12px] text-start"
                 >
                   <span className="font-bold">{kindLabel(t, row.kind)}</span>
-                  <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-accent-blue)' }}>
-                    {fmt(row.total, 0)} <small style={{ opacity: 0.7 }}>({row.count})</small>
+                  <span className="nx-font-numbers text-noorix-blue">
+                    {fmt(row.total, 0)} <small className="opacity-70">({row.count})</small>
                   </span>
                 </Button>
               ))}
@@ -95,14 +94,13 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                   onClick={() =>
                     navigate(`/invoices?${drillToSearchParams({ from, to, supplierId: s.supplierId })}`)
                   }
-                  className="flex flex items-center justify-between w-full text-[12px]"
-                  style={{ textAlign: 'start' }}
+                  className="flex items-center justify-between w-full text-[12px] text-start"
                 >
-                  <span className="font-semibold truncate" style={{ maxWidth: '58%' }} title={lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}>
+                  <span className="font-semibold truncate max-w-[58%]" title={lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}>
                     {lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}
                   </span>
-                  <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-accent-red)', flexShrink: 0 }}>
-                    {fmt(Number(s.totalAmount || 0), 0)} <small style={{ opacity: 0.7 }}>({s.invoiceCount})</small>
+                  <span className="shrink-0 nx-font-numbers text-noorix-red">
+                    {fmt(Number(s.totalAmount || 0), 0)} <small className="opacity-70">({s.invoiceCount})</small>
                   </span>
                 </Button>
               ))}

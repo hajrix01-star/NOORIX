@@ -171,17 +171,16 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                 ? (isAr ? 'لا توجد أصناف مكررة — الكتالوج نظيف' : 'No duplicates found')
                 : (isAr ? `${dupGroups.length} مجموعة مكررة محتملة` : `${dupGroups.length} potential duplicate groups`)}
             </div>
-            <Button className="modal-close-btn" onClick={() => setDupGroups(null)} style={{ width: 28, height: 28 }}>✕</Button>
+            <Button className="modal-close-btn w-7 h-7" onClick={() => setDupGroups(null)}>✕</Button>
           </div>
           {dupGroups.map((group, gi) => (
             <div key={gi} className="mb-2.5 rounded-lg border border-noorix-border overflow-hidden">
-              <div className="bg-noorix-bg-muted text-[12px] text-noorix-muted font-semibold" style={{ padding: '8px 14px' }}>
+              <div className="bg-noorix-bg-muted text-[12px] text-noorix-muted font-semibold py-2 px-[14px]">
                 {isAr ? `تشابه ${Math.round(group.score * 100)}%` : `${Math.round(group.score * 100)}% match`}
               </div>
               <div className="flex flex flex-wrap">
                 {group.items.map((item, ii) => (
-                  <div key={item.id} style={{
-                    flex: '1 1 200px', padding: '12px 14px',
+                  <div key={item.id} className="py-3 px-[14px] flex-[1_1_200px]" style={{
                     borderInlineEnd: ii < group.items.length - 1 ? '1px solid var(--noorix-border)' : 'none',
                   }}>
                     <div className="font-semibold text-[13px] mb-1">{item.nameAr}</div>
@@ -235,11 +234,11 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                     <div className="ocr-catalog-name-primary">{isAr ? item.nameAr : (item.nameEn || item.nameAr)}</div>
                     {item.nameEn && item.nameAr && <div className="ocr-catalog-name-secondary">{isAr ? item.nameEn : item.nameAr}</div>}
                   </div>
-                  <div className="flex items-center gap-6" style={{ flexShrink: 0 }}>
+                  <div className="flex items-center gap-6 shrink-0">
                     {item.category && <span className="ocr-catalog-badge">{item.category}</span>}
                     <span className="ocr-catalog-badge">{item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'}</span>
                   </div>
-                  <div className="flex gap-1" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <Button onClick={() => setEditing(item)} size="sm">{t('ocrEdit')}</Button>
                     <Button onClick={() => handleDelete(item.id)} size="sm" variant="danger">{t('ocrDelete')}</Button>
                   </div>
@@ -274,8 +273,8 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
             )}
             <div className="flex flex flex-wrap gap-1 mb-4">
               {(viewing?.aliases || []).map((a) => (
-                <span key={a.id} className="rounded-lg bg-noorix-bg-muted text-[12px]" style={{ padding: '3px 10px' }}>
-                  {a.alias} <span className="text-noorix-muted" style={{ fontSize: 10 }}>({a.language})</span>
+                <span key={a.id} className="rounded-lg bg-noorix-bg-muted text-[12px] py-[3px] px-[10px]">
+                  {a.alias} <span className="text-noorix-muted text-[10px]">({a.language})</span>
                 </span>
               ))}
             </div>
@@ -291,7 +290,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
             {/* Price history */}
             <div className="font-semibold text-[13px] mb-2">{t('ocrPriceHistory')}</div>
             {historyLoading ? (
-              <div className="ocr-loading" style={{ padding: 30 }}>
+              <div className="ocr-loading p-[30px]">
                 <div className="ocr-spinner" />
               </div>
             ) : priceHistory.length === 0 ? (
@@ -301,7 +300,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                 {priceHistory.map((h) => {
                   const isLowest = Number(h.price) === lowestPrice;
                   return (
-                    <div key={h.id} className="flex items-center justify-between rounded-lg" style={{ padding: '10px 14px', background: isLowest ? 'var(--noorix-green-6)' : 'var(--noorix-bg-muted)' }}>
+                    <div key={h.id} className="flex items-center justify-between rounded-lg py-[10px] px-[14px]" style={{ background: isLowest ? 'var(--noorix-green-6)' : 'var(--noorix-bg-muted)' }}>
                       <div>
                         <div className="font-semibold text-[13px]">{h.supplier?.nameAr || '—'}</div>
                         <div className="text-[12px] text-noorix-muted">

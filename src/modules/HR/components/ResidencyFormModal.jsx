@@ -243,7 +243,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
         />
 
         {error && (
-          <div className="mb-3 rounded-lg text-[13px]" style={{ padding: 10, background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
+          <div className="mb-3 rounded-lg text-[13px] p-[10px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
             {error}
           </div>
         )}

@@ -25,7 +25,7 @@ export function OrdersImportHelpTrigger({ t, variant }) {
   return (
     <div
       ref={wrapRef}
-      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+      className="relative inline-flex items-center"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -38,10 +38,8 @@ export function OrdersImportHelpTrigger({ t, variant }) {
           e.stopPropagation();
           setPinned((p) => !p);
         }}
-        className="text-[12px] font-semibold"
+        className="text-[12px] font-semibold py-1.5 px-3 rounded-full"
         style={{
-          padding: '6px 12px',
-          borderRadius: 999,
           border: '1px solid var(--noorix-border)',
           background: pinned ? 'var(--noorix-green-12)' : 'var(--noorix-bg-muted)',
         }}
@@ -52,42 +50,37 @@ export function OrdersImportHelpTrigger({ t, variant }) {
         <div
           role="region"
           aria-label={title}
-          className="noorix-print-hide text-[12px] text-noorix-text bg-noorix-surface rounded-xl"
+          className="noorix-print-hide text-[12px] text-noorix-text bg-noorix-surface rounded-xl absolute overflow-y-auto py-[14px] px-4 leading-[1.65] text-start"
           style={{
-            position: 'absolute',
             top: 'calc(100% + 8px)',
             insetInlineEnd: 0,
             width: 'min(420px, calc(100vw - 24px))',
             maxHeight: 'min(440px, 72vh)',
-            overflowY: 'auto',
             zIndex: 50,
-            padding: '14px 16px',
             border: '1px solid var(--noorix-border)',
             boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-            lineHeight: 1.65,
-            textAlign: 'start',
           }}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div className="font-extrabold text-[13px]" style={{ marginBottom: 10 }}>{title}</div>
-          <p className="text-[11px] text-noorix-muted" style={{ margin: '0 0 8px' }}>{t('ordersImportHelpHoverHint')}</p>
+          <div className="font-extrabold text-[13px] mb-[10px]">{title}</div>
+          <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('ordersImportHelpHoverHint')}</p>
           {variant === 'products' ? (
             <>
-              <p style={{ margin: '0 0 10px' }}>{t('ordersImportWorkbookNote')}</p>
-              <p style={{ margin: '0 0 10px' }}>{t('ordersImportTemplateHintProducts')}</p>
-              <ul className="m-0" style={{ paddingInlineStart: 18 }}>
-                <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep1')}</li>
-                <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep2')}</li>
-                <li style={{ marginBottom: 6 }}>{t('ordersImportProductsStep3')}</li>
+              <p className="m-0 mb-[10px]">{t('ordersImportWorkbookNote')}</p>
+              <p className="m-0 mb-[10px]">{t('ordersImportTemplateHintProducts')}</p>
+              <ul className="m-0 ps-[18px]">
+                <li className="mb-1.5">{t('ordersImportProductsStep1')}</li>
+                <li className="mb-1.5">{t('ordersImportProductsStep2')}</li>
+                <li className="mb-1.5">{t('ordersImportProductsStep3')}</li>
               </ul>
-              <p className="text-[11px] text-noorix-muted" style={{ margin: '10px 0 0' }}>{t('ordersPresetCatalogHint')}</p>
+              <p className="text-[11px] text-noorix-muted mt-[10px] mb-0">{t('ordersPresetCatalogHint')}</p>
             </>
           ) : (
             <>
-              <p style={{ margin: '0 0 10px' }}>{t('ordersImportWorkbookNote')}</p>
-              <p style={{ margin: '0 0 10px' }}>{t('ordersImportTemplateHintCategories')}</p>
-              <ul className="m-0" style={{ paddingInlineStart: 18 }}>
-                <li style={{ marginBottom: 6 }}>{t('ordersImportCategoriesStep1')}</li>
+              <p className="m-0 mb-[10px]">{t('ordersImportWorkbookNote')}</p>
+              <p className="m-0 mb-[10px]">{t('ordersImportTemplateHintCategories')}</p>
+              <ul className="m-0 ps-[18px]">
+                <li className="mb-1.5">{t('ordersImportCategoriesStep1')}</li>
                 <li>{t('ordersImportCategoriesStep2')}</li>
               </ul>
             </>

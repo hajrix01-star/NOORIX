@@ -173,7 +173,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       ),
     },
     { key: 'net', label: 'الصافي', numeric: true, render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v)}</span> },
-    { key: 'tax', label: 'الضريبة', numeric: true, render: (v) => <span className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(v)}</span> },
+    { key: 'tax', label: 'الضريبة', numeric: true, render: (v) => <span className="nx-cell-num text-noorix-amber">{fmt(v)}</span> },
     {
       key: 'notes',
       label: 'ملاحظات',
@@ -200,14 +200,14 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
 
   return (
     <div>
-      <div className="flex flex flex-wrap gap-3 mb-4" style={{ alignItems: 'flex-end' }}>
+      <div className="flex flex-wrap gap-3 mb-4 items-end">
         <Input
           label="تاريخ العملية"
           type="date"
           value={batchDate}
           onChange={(e) => setBatchDate(e.target.value)}
         />
-        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+        <div className="flex-[1_1_160px] min-w-0">
           <Input
             label="الخزينة *"
             type="select"

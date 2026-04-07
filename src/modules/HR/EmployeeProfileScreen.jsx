@@ -465,7 +465,7 @@ export default function EmployeeProfileScreen() {
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('addDocument')}</span>
           <div className="nx-section-header__actions">
-            <input ref={docFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={handleUploadDoc} />
+            <input ref={docFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" className="hidden" onChange={handleUploadDoc} />
             <Button size="sm" disabled={uploading} loading={uploading} onClick={() => docFileRef.current?.click()}>
               {uploading ? t('saving') : t('uploadFile')}
             </Button>

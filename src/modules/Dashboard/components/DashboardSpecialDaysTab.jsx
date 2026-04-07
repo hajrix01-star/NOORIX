@@ -82,7 +82,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   }
 
   return (
-    <div style={{ maxWidth: 560 }}>
+    <div className="max-w-[560px]">
       <div className="mb-5">
         <h3 className="m-0 text-[16px] font-bold">{t('dashboardSpecialDays')} — {monthLabel} {year}</h3>
         <p className="mt-1.5 text-[13px] text-noorix-muted">{t('dashboardSpecialDaysDesc')}</p>
@@ -92,11 +92,11 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         <div className="p-5 mb-5 bg-noorix-bg-muted border border-noorix-border rounded-lg">
           <div className="font-bold mb-3">{t('dashboardSpecialDaysFromTo')}</div>
           <div className="flex flex flex-col gap-3">
-            <div className="flex flex flex-wrap gap-3" style={{ alignItems: 'flex-start' }}>
-              <div className="flex-1 min-w-0" style={{ minWidth: 140 }}>
+            <div className="flex flex-wrap gap-3 items-start">
+              <div className="flex-1 min-w-[140px]">
                 <Input type="date" label={t('dateFilterFrom')} value={newFrom} onChange={(e) => setNewFrom(e.target.value)} />
               </div>
-              <div className="flex-1 min-w-0" style={{ minWidth: 140 }}>
+              <div className="flex-1 min-w-[140px]">
                 <Input type="date" label={t('dateFilterTo')} value={newTo} onChange={(e) => setNewTo(e.target.value)} />
               </div>
             </div>
@@ -123,7 +123,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
       <div className="flex flex flex-col gap-2.5">
         {specialDaysList.map((sp) => (
           <div key={sp.id} className="flex items-center gap-12 p-3.5 bg-noorix-surface border border-noorix-border rounded-lg">
-            <div style={{ width: 12, height: 12, borderRadius: 6, background: sp.color || '#8b5cf6', flexShrink: 0 }} />
+            <div className="w-3 h-3 rounded-md shrink-0" style={{ background: sp.color || '#8b5cf6' }} />
             {editingId === sp.id ? (
               <>
                 <Input
@@ -145,7 +145,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
           </div>
         ))}
         {specialDaysList.length === 0 && !showForm && (
-          <div className="text-center text-noorix-muted text-[13px]" style={{ padding: 32, border: '1px dashed var(--noorix-border)', borderRadius: 10 }}>
+          <div className="text-center text-noorix-muted text-[13px] p-8 rounded-[10px] border border-dashed border-noorix-border">
             {t('dashboardNoSpecialDays')}
           </div>
         )}

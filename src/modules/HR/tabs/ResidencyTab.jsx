@@ -87,10 +87,10 @@ export default function ResidencyTab() {
       render: (v, row) => {
         const soon = isExpiringSoon(v);
         return (
-          <span style={{ fontSize: 12, color: soon ? 'var(--color-noorix-amber)' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined, whiteSpace: 'nowrap' }}>
+          <span className="text-[12px] whitespace-nowrap" style={{ color: soon ? 'var(--color-noorix-amber)' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined }}>
             {formatSaudiDate(v)}
             {soon && (
-              <span style={{ marginRight: 6, fontSize: 10, background: 'var(--noorix-yellow-20)', padding: '2px 6px', borderRadius: 4 }}>
+              <span className="me-1.5 text-[10px] py-px px-1.5 rounded bg-noorix-amber/20">
                 {t('residencyExpiringSoon')}
               </span>
             )}
@@ -136,21 +136,21 @@ export default function ResidencyTab() {
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="font-bold text-[14px]">{row.employeeName}</span>
-          <Badge color={statusColorMap[row.status] || 'blue'} size="sm" style={{ flexShrink: 0 }}>{statusLabel}</Badge>
+          <Badge color={statusColorMap[row.status] || 'blue'} size="sm" className="shrink-0">{statusLabel}</Badge>
         </div>
         {row.iqamaNumber && (
-          <div className="text-[12px] text-noorix-muted mb-2" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.iqamaNumber}</div>
+          <div className="text-[12px] text-noorix-muted mb-2 nx-font-numbers">{row.iqamaNumber}</div>
         )}
-        <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5" style={{ padding: '8px 10px' }}>
+        <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('startDate')}</div>
-            <div className="text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.issueDate)}</div>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('startDate')}</div>
+            <div className="text-[13px] nx-font-numbers">{formatSaudiDate(row.issueDate)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('expiryDate')}</div>
-            <div className="text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)', color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('expiryDate')}</div>
+            <div className="text-[13px] nx-font-numbers" style={{ color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}>
               {formatSaudiDate(row.expiryDate)}
-              {soon && <span style={{ marginRight: 4, fontSize: 10, background: 'var(--noorix-yellow-20)', padding: '1px 5px', borderRadius: 4 }}>⚠</span>}
+              {soon && <span className="mr-1 text-[10px] px-1 py-px rounded bg-noorix-amber/20">⚠</span>}
             </div>
           </div>
         </div>
@@ -167,7 +167,7 @@ export default function ResidencyTab() {
 
       <div className="nx-toolbar">
         {expiringCount > 0 && (
-          <span className="rounded-lg text-[13px] font-semibold px-3 py-1.5" style={{ background: 'var(--noorix-yellow-15)', color: 'var(--color-noorix-amber)' }}>
+          <span className="rounded-lg text-[13px] font-semibold px-3 py-1.5 bg-noorix-amber/15 text-noorix-amber">
             {t('residencyExpiringSoon')}: {expiringCount}
           </span>
         )}

@@ -236,7 +236,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
         <div className="flex flex flex-wrap flex items-center justify-between gap-3 w-full">
           <div>
             {!canConfirm ? (
-              <div className="flex gap-1.5 text-[13px]" style={{ alignItems: 'center', color: 'var(--noorix-accent-amber)' }}>
+              <div className="flex gap-1.5 text-[13px] items-center" style={{ color: 'var(--noorix-accent-amber)' }}>
                 <span>⚠</span>
                 <span>{t('bankMapRequiredWarningStrict')}</span>
               </div>
@@ -261,20 +261,20 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           }}
         >
           <div className="flex items-center flex flex-wrap gap-2 mb-2.5">
-            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--noorix-accent-blue)' }}>{t('bankMapStatementInfo')}</span>
+            <span className="font-bold text-[13px]" style={{ color: 'var(--noorix-accent-blue)' }}>{t('bankMapStatementInfo')}</span>
             {aiHeaderLoading ? (
-              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'color-mix(in srgb, var(--noorix-accent-blue) 12%, var(--noorix-bg-surface))', color: 'var(--noorix-accent-blue)' }}>
+              <span className="text-[11px] py-px px-2 rounded-md" style={{ background: 'color-mix(in srgb, var(--noorix-accent-blue) 12%, var(--noorix-bg-surface))', color: 'var(--noorix-accent-blue)' }}>
                 {t('bankMapAiReading')}
               </span>
             ) : null}
-            <span style={{ marginInlineStart: 'auto', fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
+            <span className="ms-auto text-[11px] py-px px-2 rounded-md border border-noorix-border" style={{ background: 'var(--noorix-bg-surface)' }}>
               {totalDataRows} {t('bankMapOperationsCount')}
             </span>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
+            <span className="text-[11px] py-px px-2 rounded-md border border-noorix-border" style={{ background: 'var(--noorix-bg-surface)' }}>
               {t('bankMapHeaderRowBadge', String(headerRow + 1))}
             </span>
             {isAutoDetected ? (
-              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'color-mix(in srgb, var(--noorix-accent-green) 12%, var(--noorix-bg-surface))', color: 'var(--noorix-accent-green)' }}>
+              <span className="text-[11px] py-px px-2 rounded-md" style={{ background: 'color-mix(in srgb, var(--noorix-accent-green) 12%, var(--noorix-bg-surface))', color: 'var(--noorix-accent-green)' }}>
                 ✓ {t('bankMapColumnsDetected')}
               </span>
             ) : null}
@@ -311,9 +311,8 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
 
         {!Object.values(columnMapping).some((v) => typeof v === 'number' && v >= 0) && raw.length > 0 ? (
           <div
-            className="rounded-lg text-[13px] mb-3"
+            className="rounded-lg text-[13px] mb-3 p-[10px]"
             style={{
-              padding: 10,
               background: 'var(--noorix-yellow-12)',
               border: '1px solid var(--noorix-yellow-35)',
             }}
@@ -322,7 +321,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           </div>
         ) : null}
 
-        <div className="border border-noorix-border rounded-lg p-3.5" style={{ marginBottom: 14 }}>
+        <div className="border border-noorix-border rounded-lg p-3.5 mb-[14px]">
           <div className="text-[14px] font-bold mb-2.5">{t('bankStatementMapColumns')}</div>
           <div
             className="grid gap-3"
@@ -337,7 +336,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
                     {t(col.labelKey)}
                     {col.required ? <span style={{ color: 'var(--noorix-error)' }}> *</span> : null}
                   </span>
-                  {columnMapping[col.key] >= 0 ? <span style={{ color: 'var(--noorix-accent-green)' }}>✓</span> : null}
+                  {columnMapping[col.key] >= 0 ? <span className="text-noorix-green">✓</span> : null}
                 </label>
                 <Input
                   type="select"
@@ -359,27 +358,22 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
         <div className="border border-noorix-border rounded-lg overflow-hidden mb-4">
           <div className="bg-noorix-bg-muted border-b border-noorix-border font-semibold text-[13px] px-3 py-2">
             {t('bankMapPreviewTitle')}{' '}
-            <span style={{ fontWeight: 400, color: 'var(--noorix-text-muted)', fontSize: 12 }}>{t('bankMapPreviewHint')}</span>
+            <span className="font-normal text-[12px]" style={{ color: 'var(--noorix-text-muted)' }}>{t('bankMapPreviewHint')}</span>
           </div>
-          <div className="overflow-auto" style={{ maxHeight: 300 }}>
-            <table style={{ width: '100%', minWidth: previewTableMinWidth, borderCollapse: 'collapse', fontSize: 12 }}>
+          <div className="overflow-auto max-h-[300px]">
+            <table className="w-full border-collapse text-[12px]" style={{ minWidth: previewTableMinWidth }}>
               <thead>
                 <tr style={{ background: 'var(--noorix-bg-muted)' }}>
-                  <th style={{ padding: '8px 6px', width: 36 }}>#</th>
+                  <th className="py-2 px-1.5 w-9">#</th>
                   {headers.map((h) => {
                     const badge = getColumnBadge(h.index);
                     return (
-                      <th key={h.index} style={{ padding: '8px 6px', textAlign: 'start', verticalAlign: 'top', minWidth: 100 }}>
-                        <div style={{ fontWeight: 600 }}>{h.label}</div>
+                      <th key={h.index} className="py-2 px-1.5 text-start align-top min-w-[100px]">
+                        <div className="font-semibold">{h.label}</div>
                         {badge ? (
                           <div
+                            className="mt-1 text-[10px] font-bold py-px px-1.5 rounded inline-block"
                             style={{
-                              marginTop: 4,
-                              fontSize: 10,
-                              fontWeight: 700,
-                              padding: '2px 6px',
-                              borderRadius: 4,
-                              display: 'inline-block',
                               background: badge.badgeBg,
                               color: badge.badgeColor,
                             }}
@@ -395,15 +389,14 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
               <tbody>
                 {previewRows.map((row, rowIdx) => (
                   <tr key={rowIdx} style={{ borderTop: '1px solid var(--noorix-border)' }}>
-                    <td style={{ padding: '6px', color: 'var(--noorix-text-muted)' }}>{rowIdx + 1}</td>
+                    <td className="p-1.5 text-noorix-muted">{rowIdx + 1}</td>
                     {headers.map((h) => {
                       const badge = getColumnBadge(h.index);
                       return (
                         <td
                           key={h.index}
+                          className="p-1.5 max-w-[140px]"
                           style={{
-                            padding: '6px',
-                            maxWidth: 140,
                             fontWeight: badge ? 600 : 400,
                             background: badge ? badge.badgeBg.replace('0.15', '0.06').replace('0.18', '0.08') : undefined,
                           }}

@@ -28,10 +28,8 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
 
   return (
     <div
-      className="bg-noorix-surface p-5 flex flex flex-col cursor-pointer"
+      className="bg-noorix-surface p-5 flex flex-col cursor-pointer min-h-[140px] justify-between"
       style={{
-        minHeight: 140,
-        justifyContent: 'space-between',
         transition: 'all 0.2s ease',
         outline: isSelected ? '2px solid var(--noorix-accent-blue)' : 'none',
         outlineOffset: 2,
@@ -43,13 +41,13 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(styleId); }}
     >
       <div>
-        <div className="text-[11px] font-bold text-noorix-muted mb-1" style={{ letterSpacing: '0.05em' }}>#{styleId}</div>
+        <div className="text-[11px] font-bold text-noorix-muted mb-1 tracking-[0.05em]">#{styleId}</div>
         <div className="text-[15px] font-bold text-noorix-text">{name}</div>
         <div className="text-[12px] text-noorix-muted mt-1">{desc}</div>
       </div>
       <div className="flex gap-2 mt-3">
-        <span className="text-[11px] font-semibold text-noorix-green" style={{ padding: '4px 8px', background: 'var(--noorix-green-10)', borderRadius: 6 }}>12,500 ﷼</span>
-        <span className="text-[11px] bg-noorix-bg-muted text-noorix-muted" style={{ padding: '4px 8px', borderRadius: 6 }}>مثال</span>
+        <span className="text-[11px] font-semibold text-noorix-green py-1 px-2 rounded-md" style={{ background: 'var(--noorix-green-10)' }}>12,500 ﷼</span>
+        <span className="text-[11px] bg-noorix-bg-muted text-noorix-muted py-1 px-2 rounded-md">مثال</span>
       </div>
     </div>
   );
@@ -69,15 +67,15 @@ export default function ThemePreviewScreen() {
   };
 
   return (
-    <div className="p-6" style={{ maxWidth: 1200 }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 className="font-extrabold m-0" style={{ fontSize: 22 }}>{t('themePreview')}</h1>
+    <div className="p-6 max-w-[1200px]">
+      <div className="mb-6">
+        <h1 className="font-extrabold m-0 text-[22px]">{t('themePreview')}</h1>
         <p className="mt-2 text-noorix-muted text-[14px]">
           {lang === 'ar' ? 'اختر شكلاً للكروت لتطبيقه على النظام كاملاً. اضغط على أي كرت لتحديده.' : 'Select a card style to apply across the entire system. Click any card to select it.'}
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
+      <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
         {CARD_STYLES.map((item) => (
           <CardPreview
             key={item.id}
@@ -93,7 +91,7 @@ export default function ThemePreviewScreen() {
         ))}
       </div>
 
-      <div className="p-4 bg-noorix-bg-muted rounded-xl text-[13px] text-noorix-muted" style={{ marginTop: 24 }}>
+      <div className="p-4 bg-noorix-bg-muted rounded-xl text-[13px] text-noorix-muted mt-6">
         <strong className="text-noorix-text">
           {lang === 'ar' ? `الشكل المحدد حاليًا: #${currentStyle}` : `Current selection: #${currentStyle}`}
         </strong>

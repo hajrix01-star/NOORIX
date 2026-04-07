@@ -75,18 +75,17 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod
   return (
     <div
       ref={ref}
-      style={{ position: 'relative', zIndex: 10 }}
+      className="relative"
+      style={{ zIndex: 10 }}
       onClick={(e) => e.stopPropagation()}
     >
       <Button
         type="button"
-        className="vault-card-menu-btn"
+        className="vault-card-menu-btn w-9 h-9 rounded-[10px] shrink-0"
         onClick={(e) => { e.stopPropagation(); setOpen((p) => !p); }}
         onTouchStart={(e) => e.stopPropagation()}
         style={{
-          width: 36, height: 36, borderRadius: 10,
           background: open ? 'var(--noorix-bg-muted)' : 'transparent',
-          flexShrink: 0,
         }}
         title={t('actions')}
       >
@@ -97,14 +96,12 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod
 
       {open && (
         <div
-          className="bg-noorix-surface border border-noorix-border rounded-xl"
+          className="bg-noorix-surface border border-noorix-border rounded-xl absolute py-1.5 min-w-[160px] max-w-[220px]"
           style={{
-            position: 'absolute',
             top: 'calc(100% + 4px)',
             ...(isRtl ? { left: 0 } : { right: 0 }),
             boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
-            minWidth: 160, width: 'max-content', maxWidth: 220,
-            padding: '6px 0',
+            width: 'max-content',
             direction: isRtl ? 'rtl' : 'ltr',
             zIndex: 100,
           }}
@@ -113,12 +110,11 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod
             <Button
               key={label}
               variant="ghost"
-              className="vault-card-action-item w-full text-[13px]"
+              className="vault-card-action-item w-full text-[13px] block py-[10px] px-4 whitespace-nowrap"
               onClick={action}
               style={{
-                display: 'block',
                 textAlign: isRtl ? 'right' : 'left',
-                padding: '10px 16px', color, whiteSpace: 'nowrap',
+                color,
               }}
             >
               {label}
@@ -153,42 +149,36 @@ const VaultCard = memo(function VaultCard({
     /* لا overflow:hidden هنا — ضروري حتى تبرز قائمة الإجراءات (position:absolute) */
     <div
       onClick={() => onClick(vault)}
-      className="flex flex-col bg-noorix-surface cursor-pointer border border-noorix-border"
+      className="flex flex-col bg-noorix-surface cursor-pointer border border-noorix-border rounded-[14px] relative"
       style={{
-        borderRadius: 14,
         opacity: isArchived ? 0.65 : 1,
         boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         transition: 'box-shadow 150ms',
-        position: 'relative',
       }}
       onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.13)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
     >
       {/* شريط لوني علوي — نستخدم border-radius للزوايا بدل overflow:hidden */}
-      <div style={{
-        height: 3,
+      <div className="h-[3px] rounded-t-[14px]" style={{
         background: isArchived ? 'var(--noorix-border)' : accentColor,
-        borderRadius: '14px 14px 0 0',
       }} />
 
       {/* هيدر الكرت */}
-      <div className="flex items-center justify-between gap-2.5" style={{ padding: '14px 16px 12px' }}>
-        <div className="flex items-center gap-10" style={{ minWidth: 0 }}>
-          <div className="flex items-center" style={{
-            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+      <div className="flex items-center justify-between gap-2.5 pt-[14px] px-4 pb-3">
+        <div className="flex items-center gap-10 min-w-0">
+          <div className="flex items-center justify-center w-[38px] h-[38px] rounded-[10px] shrink-0" style={{
             background: isArchived ? 'var(--noorix-bg-muted)' : accentColor + '14',
             color: isArchived ? 'var(--noorix-text-muted)' : accentColor,
-            justifyContent: 'center',
           }}>
             {isCustom
-              ? <span style={{ fontSize: 20, lineHeight: 1 }}>{customEmoji}</span>
+              ? <span className="text-[20px] leading-none">{customEmoji}</span>
               : (ICONS[vault.type] || ICONS.bank)}
           </div>
-          <div style={{ minWidth: 0 }}>
+          <div className="min-w-0">
             <div className="font-bold text-[14px] truncate">
               {displayName}
             </div>
-            <div className="text-[11px] text-noorix-muted" style={{ marginTop: 1 }}>
+            <div className="text-[11px] text-noorix-muted mt-px">
               {subName}
             </div>
           </div>
@@ -198,26 +188,25 @@ const VaultCard = memo(function VaultCard({
       </div>
 
       {/* الرصيد */}
-      <div className="text-center" style={{ padding: '2px 16px 16px' }}>
-        <div className="text-[11px] text-noorix-muted mb-1 uppercase tracking-[0.05em]" style={{ letterSpacing: '0.04em' }}>
+      <div className="text-center pt-[2px] px-4 pb-4">
+        <div className="text-[11px] text-noorix-muted mb-1 uppercase tracking-[0.04em]">
           {t('balance')}
         </div>
-        <div className="font-extrabold" style={{
-          fontSize: 26, fontFamily: 'var(--noorix-font-numbers)',
+        <div className="font-extrabold text-[26px] tracking-[-0.5px]" style={{
+          fontFamily: 'var(--noorix-font-numbers)',
           color: balance < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
-          letterSpacing: '-0.5px',
         }}>
           {balance < 0 ? '−' : ''}{fmt(Math.abs(balance), 2)}
-          <span className="text-[14px] font-semibold text-noorix-muted" style={{ marginRight: 4 }}>﷼</span>
+          <span className="text-[14px] font-semibold text-noorix-muted mr-1">﷼</span>
         </div>
       </div>
 
-      <div style={{ margin: '0 16px', height: 1, background: 'var(--noorix-border)' }} />
+      <div className="mx-4 h-px" style={{ background: 'var(--noorix-border)' }} />
 
       {/* وارد / صادر */}
       <div className="grid grid-cols-2 gap-2 py-3 px-4">
         <div>
-          <div className="flex items-center gap-4 text-noorix-muted" style={{ fontSize: 10, marginBottom: 3 }}>
+          <div className="flex items-center gap-4 text-noorix-muted text-[10px] mb-[3px]">
             <svg viewBox="0 0 12 12" fill="none" stroke="#16a34a" strokeWidth="2" width="10" height="10">
               <path d="M6 10V2M2 6l4-4 4 4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -227,14 +216,14 @@ const VaultCard = memo(function VaultCard({
             {fmt(totalIn, 2)} <span className="font-normal text-noorix-muted text-[11px]">﷼</span>
           </div>
         </div>
-        <div style={{ textAlign: 'left', borderRight: '1px solid var(--noorix-border)', paddingRight: 8 }}>
-          <div className="flex items-center gap-4 text-noorix-muted" style={{ fontSize: 10, marginBottom: 3, justifyContent: 'flex-end' }}>
+        <div className="text-left pr-2" style={{ borderRight: '1px solid var(--noorix-border)' }}>
+          <div className="flex items-center gap-4 text-noorix-muted text-[10px] mb-[3px] justify-end">
             {t('outbound')}
             <svg viewBox="0 0 12 12" fill="none" stroke="var(--noorix-accent-red)" strokeWidth="2" width="10" height="10">
               <path d="M6 2v8M2 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <div className="text-[13px] font-bold text-noorix-text" style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>
+          <div className="text-[13px] font-bold text-noorix-text text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
             {fmt(totalOut, 2)} <span className="font-normal text-noorix-muted text-[11px]">﷼</span>
           </div>
         </div>

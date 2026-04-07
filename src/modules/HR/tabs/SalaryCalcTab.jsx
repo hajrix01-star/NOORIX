@@ -275,7 +275,7 @@ export default function SalaryCalcTab() {
   }
 
   return (
-    <div className="noorix-surface-card p-6" style={{ maxWidth: 520 }}>
+    <div className="noorix-surface-card p-6 max-w-[520px]">
       <h3 className="text-[18px] m-0 mb-5">{t('hrTabSalaryCalc')}</h3>
 
       <div className="mb-4">
@@ -322,13 +322,13 @@ export default function SalaryCalcTab() {
             value={daysPerMonth}
             onChange={(e) => setDaysPerMonth(e.target.value)}
           />
-          <div className="text-[11px] text-noorix-muted mt-1.5" style={{ lineHeight: 1.45 }}>
+          <div className="text-[11px] text-noorix-muted mt-1.5 leading-[1.45]">
             {t('salaryCalcOvertimeWorkDaysHint')}
           </div>
         </div>
       </FormRow>
 
-      <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+      <div className="grid gap-3 mb-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         <Input type="number" step="0.01" min="0" label={t('housingAllowance')} value={housingAllowance} onChange={(e) => setHousingAllowance(e.target.value)} />
         <Input type="number" step="0.01" min="0" label={t('transportAllowance')} value={transportAllowance} onChange={(e) => setTransportAllowance(e.target.value)} />
         <Input type="number" step="0.01" min="0" label={t('otherAllowance')} value={otherAllowance} onChange={(e) => setOtherAllowance(e.target.value)} />
@@ -336,7 +336,7 @@ export default function SalaryCalcTab() {
 
       <FormRow className="mb-5">
         <Input type="number" min="0" label={t('salaryCalcVacationDays')} value={vacationDays} onChange={(e) => setVacationDays(e.target.value)} />
-        <Input type="number" label="ساعات الأوفر تايم اليومية" value={overtimeHoursPerDay} readOnly style={{ background: 'var(--noorix-bg-muted)' }} />
+        <Input type="number" label="ساعات الأوفر تايم اليومية" value={overtimeHoursPerDay} readOnly className="bg-noorix-bg-muted" />
       </FormRow>
 
       <div className="noorix-result-panel mb-5">
@@ -373,7 +373,7 @@ export default function SalaryCalcTab() {
 
       {emp && (
           <div className="border border-noorix-border rounded-xl overflow-hidden mb-5">
-          <div className="border-b border-noorix-border font-bold" style={{ padding: '10px 12px' }}>
+          <div className="border-b border-noorix-border font-bold py-[10px] px-3">
             تفاصيل بدلات الموظف
           </div>
           <div className="grid">
@@ -382,16 +382,13 @@ export default function SalaryCalcTab() {
             ) : employeeAllowanceRows.map((row, idx) => (
               <div
                 key={`${row.label}-${idx}`}
+                className="grid gap-3 py-[10px] px-3 [grid-template-columns:1.2fr_1fr]"
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1.2fr 1fr',
-                  gap: 12,
-                  padding: '10px 12px',
                   borderBottom: idx === employeeAllowanceRows.length - 1 ? 'none' : '1px solid var(--noorix-border)',
                 }}
               >
                 <div>{row.label}</div>
-                <div className="font-semibold" style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{hrFmt(row.amount)}</div>
+                <div className="font-semibold text-right nx-font-numbers">{hrFmt(row.amount)}</div>
               </div>
             ))}
           </div>

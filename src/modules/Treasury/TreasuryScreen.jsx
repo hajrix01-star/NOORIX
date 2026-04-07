@@ -123,10 +123,8 @@ export default function TreasuryScreen() {
   const totalIn  = useMemo(() => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'totalIn').toNumber(),  [vaultsList]);
   const totalOut = useMemo(() => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'totalOut').toNumber(), [vaultsList]);
 
-  const gridColStyle = { gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))' };
-
   const SectionLabel = ({ label }) => (
-    <div className="text-[11px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2.5" style={{ letterSpacing: '0.06em' }}>
+    <div className="text-[11px] font-bold text-noorix-muted uppercase tracking-[0.06em] mb-2.5">
       {label}
     </div>
   );
@@ -138,10 +136,10 @@ export default function TreasuryScreen() {
 
       {/* هيدر */}
       <div className="nx-page-header">
-        <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
+          <div className="flex-1 min-w-0">
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('vaults')}</h1>
           {hasCompany && isFetching && !isLoading && (
-            <p className="text-[12px] font-semibold mt-2" style={{ margin: 0, color: 'var(--noorix-accent-blue)' }}>
+            <p className="text-[12px] font-semibold mt-2 m-0 text-noorix-blue">
               {t('vaultsSyncing')}
             </p>
           )}
@@ -166,7 +164,7 @@ export default function TreasuryScreen() {
       )}
 
       {hasCompany && isLoading && (
-        <div className="text-noorix-muted text-[13px] text-center" style={{ padding: 40 }}>
+        <div className="text-noorix-muted text-[13px] text-center p-10">
           {t('loading')}
         </div>
       )}
@@ -175,8 +173,8 @@ export default function TreasuryScreen() {
         <>
           {/* ── بطاقة الملخص الإجمالي (للشهر/الفترة المحددة) ── */}
           {vaultsList.length > 0 && (
-            <div className="grid rounded-xl bg-noorix-surface overflow-hidden border border-noorix-border" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 0 }}>
-              <div className="text-[11px] text-noorix-muted border-b border-noorix-border" style={{ gridColumn: '1 / -1', padding: '8px 20px' }}>
+            <div className="grid gap-0 rounded-xl bg-noorix-surface overflow-hidden border border-noorix-border [grid-template-columns:repeat(auto-fit,minmax(120px,1fr))]">
+              <div className="text-[11px] text-noorix-muted border-b border-noorix-border py-2 px-5 col-span-full">
                 {dateFilter?.label || t('allMonths')}
               </div>
               {[
@@ -185,10 +183,10 @@ export default function TreasuryScreen() {
                 { label: t('outbound'),     value: totalOut,     color: 'var(--noorix-text)', sign: '' },
               ].map(({ label, value, color, sign }, i) => (
                 <div key={label} className="text-center p-4" style={{ borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none' }}>
-                  <div className="text-[11px] text-noorix-muted mb-1.5" style={{ letterSpacing: '0.03em' }}>{label}</div>
-                  <div className="font-extrabold" style={{ fontSize: 20, fontFamily: 'var(--noorix-font-numbers)', color }}>
+                  <div className="text-[11px] text-noorix-muted mb-1.5 tracking-[0.03em]">{label}</div>
+                  <div className="font-extrabold text-[20px] nx-font-numbers" style={{ color }}>
                     {sign}{fmt(Math.abs(value))}
-                    <span className="text-[12px] font-medium text-noorix-muted" style={{ marginRight: 3 }}>﷼</span>
+                    <span className="text-[12px] font-medium text-noorix-muted me-[3px]">﷼</span>
                   </div>
                 </div>
               ))}
@@ -199,7 +197,7 @@ export default function TreasuryScreen() {
           {salesChannels.length > 0 && (
             <section>
               <SectionLabel label={t('salesChannelsEnabled', salesChannels.length)} />
-              <div className="grid gap-3.5" style={gridColStyle}>
+              <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
                 {salesChannels.map((v) => (
                   <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
                 ))}
@@ -211,7 +209,7 @@ export default function TreasuryScreen() {
           {otherVaults.length > 0 && (
             <section>
               <SectionLabel label={t('otherVaults', otherVaults.length)} />
-              <div className="grid gap-3.5" style={gridColStyle}>
+              <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
                 {otherVaults.map((v) => (
                   <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
                 ))}
@@ -223,7 +221,7 @@ export default function TreasuryScreen() {
           {includeArchived && archivedVaults.length > 0 && (
             <section>
               <SectionLabel label={t('archivedVaults', archivedVaults.length)} />
-              <div className="grid gap-3.5" style={gridColStyle}>
+              <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
                 {archivedVaults.map((v) => (
                   <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
                 ))}
@@ -233,8 +231,8 @@ export default function TreasuryScreen() {
 
           {/* ── فارغة ── */}
           {vaultsList.length === 0 && (
-            <div className="noorix-surface-card text-center p-6" style={{ border: '2px dashed var(--noorix-border)' }}>
-              <div className="flex items-center bg-noorix-bg-muted" style={{ width: 56, height: 56, borderRadius: 16, justifyContent: 'center', margin: '0 auto 14px' }}>
+            <div className="noorix-surface-card text-center p-6 border-2 border-dashed border-noorix-border">
+              <div className="flex items-center justify-center bg-noorix-bg-muted w-14 h-14 rounded-[16px] mx-auto mb-[14px]">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--noorix-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
                   <rect x="2" y="6" width="20" height="12" rx="2"/>
                   <circle cx="12" cy="12" r="2.5"/>

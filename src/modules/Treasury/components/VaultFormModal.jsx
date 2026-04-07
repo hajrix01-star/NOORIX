@@ -82,8 +82,8 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
 
         {/* النوع */}
         <div>
-          <label className="text-[13px] font-semibold mb-1.5" style={{ display: 'block' }}>{t('vaultType')}</label>
-          <div className="vault-type-grid grid gap-2" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <label className="text-[13px] font-semibold mb-1.5 block">{t('vaultType')}</label>
+          <div className="vault-type-grid grid grid-cols-4 gap-2">
             {VAULT_TYPES.map((vt) => (
               <Button
                 key={vt.value}
@@ -106,14 +106,14 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
               onClick={() => set('type', 'custom')}
               style={isCustom ? { border: '2px solid #64748b', background: 'var(--noorix-muted-10)', color: 'var(--noorix-text-muted)' } : undefined}
             >
-              <span className="font-extrabold" style={{ fontSize: 18 }}>{form.customEmoji || 'خ'}</span>
+              <span className="font-extrabold text-[18px]">{form.customEmoji || 'خ'}</span>
               <span>{t('vaultTypeCustom') || 'مخصص'}</span>
             </Button>
           </div>
 
           {/* منتقي رمز مخصص */}
           {isCustom && (
-            <div className="bg-noorix-bg-muted rounded-xl mt-2.5 border border-noorix-border" style={{ padding: 14 }}>
+            <div className="bg-noorix-bg-muted rounded-xl mt-2.5 border border-noorix-border p-[14px]">
               <div className="text-[12px] font-bold mb-2 text-noorix-muted">
                 اختر رمز الخزينة
               </div>
@@ -183,10 +183,10 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
             </div>
             <span className="font-bold text-[13px]">{t('showAsPaymentMethodLabel')}</span>
             {!form.showAsPaymentMethod && (
-              <span className="text-[12px] font-semibold" style={{ color: 'var(--noorix-accent-amber)' }}>{t('hiddenFromSalesPurchasesShort')}</span>
+              <span className="text-[12px] font-semibold text-noorix-amber">{t('hiddenFromSalesPurchasesShort')}</span>
             )}
           </label>
-          <p className="text-[12px] text-noorix-muted mt-2" style={{ margin: 0, lineHeight: 1.45 }}>
+          <p className="text-[12px] text-noorix-muted mt-2 m-0 leading-[1.45]">
             {t('showAsPaymentMethodHint')}
           </p>
           <div className="mt-3">
@@ -216,7 +216,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         />
 
           {saveError && (
-          <div className="rounded-lg text-[13px] py-2 px-3 text-noorix-red" style={{ background: 'var(--noorix-red-8)', border: '1px solid var(--noorix-red-20)' }}>
+          <div className="rounded-lg text-[13px] py-2 px-3 text-noorix-red bg-noorix-red/10 border border-noorix-red/20">
             {saveError}
           </div>
         )}

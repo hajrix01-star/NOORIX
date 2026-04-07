@@ -84,7 +84,7 @@ export const BatchRow = memo(function BatchRow({
       {/* المورد + bookmark */}
       <td style={{ ...cp }}>
         <div className="flex items-center gap-4">
-          <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
+          <div className="flex-1 min-w-0">
             <SupplierSelect
               suppliers={suppliers}
               value={row.supplierId}
@@ -98,12 +98,10 @@ export const BatchRow = memo(function BatchRow({
               type="button"
               onClick={() => onBookmark(row.supplierId)}
               title={bookmarkedIds.includes(row.supplierId) ? t('removeFromShortcuts') : t('addToShortcuts')}
-              className="text-[14px]"
-              style={{
-                width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6,
-                background: bookmarkedIds.includes(row.supplierId) ? 'var(--noorix-yellow-15)' : 'var(--noorix-bg-page)',
-                flexShrink: 0,
-              }}
+            className="text-[14px] w-8 h-8 min-w-8 min-h-8 rounded-md shrink-0"
+            style={{
+              background: bookmarkedIds.includes(row.supplierId) ? 'var(--noorix-yellow-15)' : 'var(--noorix-bg-page)',
+            }}
             >
               {bookmarkedIds.includes(row.supplierId) ? '★' : '☆'}
             </Button>
@@ -214,11 +212,7 @@ export const BatchRow = memo(function BatchRow({
           type="button"
           variant="danger"
           onClick={() => onRemove(index)}
-          className="flex items-center text-[15px]"
-          style={{
-            width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6,
-            justifyContent: 'center', margin: '0 auto',
-          }}
+          className="flex items-center justify-center text-[15px] w-8 h-8 min-w-8 min-h-8 rounded-md mx-auto"
           title={t('delete')}
         >
           ×

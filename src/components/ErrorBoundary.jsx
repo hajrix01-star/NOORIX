@@ -33,22 +33,21 @@ export class ErrorBoundary extends React.Component {
       return (
         <div
           role="alert"
-          className="flex flex-col items-center text-center p-6"
-          style={{ minHeight: '60vh', fontFamily: 'var(--noorix-font-arabic), sans-serif', direction: 'rtl' }}
+          className="flex flex-col items-center text-center p-6 min-h-[60vh] [font-family:var(--noorix-font-arabic),sans-serif]"
+          style={{ direction: 'rtl' }}
         >
           <div
-            className="noorix-surface-card p-5 rounded-xl border border-noorix-border"
-            style={{ maxWidth: 420 }}
+            className="noorix-surface-card p-5 rounded-xl border border-noorix-border max-w-[420px]"
           >
             <div className="text-[20px] mb-3">⚠️</div>
-            <h2 className="m-0 text-[16px] text-noorix-text" style={{ marginBottom: 8 }}>
+            <h2 className="m-0 text-[16px] text-noorix-text mb-2">
               حدث خطأ غير متوقع
             </h2>
-            <p className="m-0 text-noorix-muted text-[14px]" style={{ marginBottom: 20 }}>
+            <p className="m-0 text-noorix-muted text-[14px] mb-5">
               نعتذر عن الإزعاج. يمكنك تحديث الصفحة والمحاولة مرة أخرى.
             </p>
             {this.state.error?.message && (
-              <pre className="text-[12px] nx-ltr overflow-auto rounded-lg mb-3" style={{ padding: 12, background: 'rgba(0,0,0,0.05)', marginBottom: 16, maxHeight: 120 }}>
+              <pre className="text-[12px] nx-ltr overflow-auto rounded-lg mb-4 p-3 max-h-[120px] bg-black/5">
                 {this.state.error.message}
               </pre>
             )}

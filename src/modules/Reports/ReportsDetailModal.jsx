@@ -4,7 +4,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
-import { amountText, moneyText, percentText, truncateText, PERCENT_COLOR } from './reportHelpers';
+import { amountText, moneyText, percentText, truncateText } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button, AdaptiveSheet } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
@@ -92,14 +92,14 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
       )}
 
       {error && (
-        <div className="p-4 rounded-xl text-noorix-red" style={{ background: 'var(--noorix-red-8)' }}>
+        <div className="p-4 rounded-xl text-noorix-red bg-noorix-red/10">
           {error.message}
         </div>
       )}
 
       {!isLoading && !error && data && (
         <>
-          <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
+          <div className="grid gap-3 mb-4 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
             <div className="noorix-surface-card p-3.5">
               <div className="text-[12px] text-noorix-muted">{data.month ? t('selectedMonth') : t('reportBreakdown')}</div>
               <div className="mt-1.5 nx-font-numbers font-extrabold text-[20px]">{moneyText(data.contextAmount)}</div>
@@ -133,7 +133,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   {t('reportSalesShare')}: <strong className="nx-font-numbers">{percentText(trend.percentOfSalesYear)}</strong>
                 </div>
               </div>
-              <div className="grid gap-2.5 mb-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+              <div className="grid gap-2.5 mb-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
                 <div className="border border-noorix-border rounded-xl px-3 py-2">
                   <div className="text-[11px] text-noorix-muted">{t('reportMonthlyAverage')}</div>
                   <div className="mt-1 font-extrabold nx-font-numbers">{moneyText(averageAmount)}</div>
@@ -154,13 +154,13 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   const amount = Number(point.amount || 0);
                   const width = `${(Math.abs(amount) / maxAmount) * 100}%`;
                   return (
-                    <div key={point.month} className="grid gap-2.5" style={{ gridTemplateColumns: '52px 1fr 120px 78px', alignItems: 'center' }}>
+                    <div key={point.month} className="grid gap-2.5 items-center [grid-template-columns:52px_1fr_120px_78px]">
                       <div className="text-[12px] text-noorix-muted">{point.label}</div>
-                      <div className="bg-noorix-bg-muted overflow-hidden rounded-full" style={{ height: 12 }}>
+                      <div className="bg-noorix-bg-muted overflow-hidden rounded-full h-3">
                         <div className="h-full rounded-full" style={{ width, background: amount >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }} />
                       </div>
                       <div className="text-end nx-font-numbers font-bold">{moneyText(point.amount)}</div>
-                      <div className="text-end nx-font-numbers text-[12px]" style={{ color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>
+                      <div className="text-end nx-font-numbers text-[12px] text-teal-600">{percentText(point.percentOfSales)}</div>
                     </div>
                   );
                 })}
@@ -172,16 +172,15 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                 {(trend.points || []).map((point) => (
                   <div
                     key={`timeline-${point.month}`}
-                    className="rounded-xl"
+                    className="rounded-xl p-2"
                     style={{
-                      padding: 8,
                       background: state?.month === point.month ? 'var(--noorix-blue-10)' : 'var(--noorix-bg-muted)',
                       border: state?.month === point.month ? '1px solid var(--noorix-blue-28)' : '1px solid var(--noorix-border)',
                     }}
                   >
                     <div className="text-[11px] text-noorix-muted mb-1.5">{point.label}</div>
                     <div className="text-[13px] font-extrabold nx-font-numbers">{amountText(point.amount)}</div>
-                    <div className="text-[11px] mt-1" style={{ color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>
+                    <div className="text-[11px] mt-1 text-teal-600">{percentText(point.percentOfSales)}</div>
                   </div>
                 ))}
               </div>
@@ -203,8 +202,8 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           )}
 
           {data.kind === 'invoices' && (
-            <div className="w-full" style={{ maxWidth: 1200, margin: '0 auto' }}>
-              <div className="noorix-surface-card overflow-hidden rounded-xl" style={{ padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+            <div className="w-full max-w-[1200px] mx-auto">
+              <div className="noorix-surface-card overflow-hidden rounded-xl p-0" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 <div className="nx-section-header">
                   <div>
                     <div className="text-[13px] font-extrabold">{t('reportSmartSummary')}</div>
@@ -238,7 +237,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     { key: 'netAmount', label: t('reportNetAmount'), numeric: true,
                       render: (v) => <span className="nx-font-numbers font-bold">{amountText(v)}</span> },
                     { key: 'percentOfSales', label: t('reportSalesShare'),
-                      render: (_, item) => <span className="nx-font-numbers" style={{ color: PERCENT_COLOR }}>{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
+                      render: (_, item) => <span className="nx-font-numbers text-teal-600">{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
                     { key: 'notes', label: t('notes'),
                       render: (v) => <span className="text-noorix-muted truncate">{truncateText(v)}</span> },
                   ]}

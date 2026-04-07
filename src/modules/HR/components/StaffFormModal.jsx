@@ -179,7 +179,7 @@ export const StaffFormModal = memo(function StaffFormModal({
       }
     >
       <form onSubmit={handleSubmit}>
-        <div className="staff-form-names-grid grid grid-cols-2 gap-3" style={{ marginBottom: 14 }}>
+        <div className="staff-form-names-grid grid grid-cols-2 gap-3 mb-[14px]">
           <Input
             label={`${t('employeeName')} *`}
             value={form.name}
@@ -267,7 +267,7 @@ export const StaffFormModal = memo(function StaffFormModal({
               value={overtimeWorkDays}
               onChange={(e) => setOvertimeWorkDays(e.target.value)}
             />
-            <div className="text-[11px] text-noorix-muted mt-1" style={{ lineHeight: 1.45 }}>
+            <div className="text-[11px] text-noorix-muted mt-1 leading-[1.45]">
               {t('overtimeWorkDaysHelp')}
             </div>
           </div>
@@ -286,7 +286,7 @@ export const StaffFormModal = memo(function StaffFormModal({
           )}
         </div>
         {isEdit && form.status === 'terminated' && (
-          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: 14 }}>
+          <div className="grid gap-3 mb-[14px] [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
             <div>
               <Input
                 type="select"
@@ -323,18 +323,18 @@ export const StaffFormModal = memo(function StaffFormModal({
             />
           </div>
         )}
-        <div style={{ marginBottom: 14 }}>
+        <div className="mb-[14px]">
           <Input
             multiline
             label={t('notes')}
             value={form.notes}
             onChange={(e) => set('notes', e.target.value)}
             rows={2}
-            style={{ resize: 'vertical' }}
+            className="resize-y"
           />
         </div>
-        <div className="border border-noorix-border rounded-xl p-3.5" style={{ marginBottom: 18 }}>
-          <div className="flex flex items-center justify-between flex flex-wrap gap-2" style={{ marginBottom: 10 }}>
+        <div className="border border-noorix-border rounded-xl p-3.5 mb-[18px]">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-[10px]">
             <strong className="text-[13px]">{t('customAllowances')}</strong>
             <Button type="button" size="sm" onClick={() => addAllowanceRow()}>
               {t('addCustomAllowance')}
@@ -357,7 +357,7 @@ export const StaffFormModal = memo(function StaffFormModal({
           )}
           <div className="grid gap-2">
             {customAllowances.map((row) => (
-              <div key={row.rowId} className="grid gap-2" style={{ gridTemplateColumns: '1.4fr 1fr auto', alignItems: 'end' }}>
+              <div key={row.rowId} className="grid gap-2 items-end [grid-template-columns:1.4fr_1fr_auto]">
                 <Input
                   label={t('customAllowanceName')}
                   value={row.nameAr}
@@ -378,7 +378,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             ))}
           </div>
           {allowanceError && (
-            <div className="mt-2.5 text-[12px]" style={{ color: 'var(--noorix-accent-red)' }}>{allowanceError}</div>
+            <div className="mt-2.5 text-[12px] text-noorix-red">{allowanceError}</div>
           )}
         </div>
       </form>

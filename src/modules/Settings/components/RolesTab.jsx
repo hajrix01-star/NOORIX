@@ -80,7 +80,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
       </div>
 
       <div className="overflow-auto rounded-lg border border-noorix-border">
-        <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse' }}>
+        <table className="w-full text-[13px] border-collapse">
           <thead>
             <tr style={{
               background: 'var(--noorix-bg-page)',
@@ -113,7 +113,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
                   transition: 'background 0.1s',
                 }}>
                   <td style={{ ...tdStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                    <span style={{ marginInlineEnd: 5, fontSize: 14 }}>{mod.icon}</span>
+                    <span className="me-[5px] text-[14px]">{mod.icon}</span>
                     {isAr ? mod.labelAr : mod.labelEn}
                   </td>
 
@@ -260,10 +260,10 @@ export default function RolesTab({ userRole, language }) {
 
   function renderPermissionBadges(perms) {
     if (!Array.isArray(perms) || perms.length === 0) {
-      return <span style={{ color: 'var(--noorix-text-danger)', fontSize: 11 }}>{isAr ? 'بدون صلاحيات' : 'No permissions'}</span>;
+      return <span className="text-[11px]" style={{ color: 'var(--noorix-text-danger)' }}>{isAr ? 'بدون صلاحيات' : 'No permissions'}</span>;
     }
     if (perms.length >= allPermCount && allPermCount > 0) {
-      return <span style={{ color: 'var(--noorix-accent)', fontSize: 11, fontWeight: 700 }}>{isAr ? 'كل الصلاحيات' : 'Full access'}</span>;
+      return <span className="text-[11px] font-bold" style={{ color: 'var(--noorix-accent)' }}>{isAr ? 'كل الصلاحيات' : 'Full access'}</span>;
     }
     const activeModules = modules.filter((m) =>
       Object.values(m.permissions).some((p) => perms.includes(p))
@@ -271,17 +271,15 @@ export default function RolesTab({ userRole, language }) {
     return (
       <div className="flex flex-wrap gap-1">
         {activeModules.slice(0, 5).map((m) => (
-          <span key={m.key} className="rounded-xl font-semibold" style={{
+          <span key={m.key} className="rounded-xl font-semibold py-px px-2 text-[10px] whitespace-nowrap" style={{
             background: 'var(--noorix-accent-soft, var(--noorix-blue-10))',
             color: 'var(--noorix-accent)',
-            padding: '2px 8px', fontSize: 10,
-            whiteSpace: 'nowrap',
           }}>
             {m.icon} {isAr ? m.labelAr : m.labelEn}
           </span>
         ))}
         {activeModules.length > 5 && (
-          <span className="text-noorix-muted" style={{ fontSize: 10 }}>
+          <span className="text-noorix-muted text-[10px]">
             +{activeModules.length - 5}
           </span>
         )}
@@ -311,34 +309,31 @@ export default function RolesTab({ userRole, language }) {
       </div>
 
       {isLoading ? (
-        <div className="text-center text-noorix-muted" style={{ padding: 40 }}>
+        <div className="text-center text-noorix-muted p-10">
           {t('loading')}
         </div>
       ) : (
         <div className="grid gap-3">
           {roles.map((role) => (
-            <div key={role.id} className="noorix-surface-card p-4 rounded-xl cursor-pointer border border-noorix-border" style={{
-              transition: 'box-shadow 0.15s',
-            }}
+            <div key={role.id} className="noorix-surface-card p-4 rounded-xl cursor-pointer border border-noorix-border transition-shadow duration-150"
               onClick={() => openEdit(role)}
               onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
             >
-              <div className="flex gap-3 flex flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div className="flex-1 min-w-0" style={{ minWidth: 200 }}>
+              <div className="flex gap-3 flex-wrap justify-between items-start">
+                <div className="flex-1 min-w-0 min-w-[200px]">
                   <div className="flex items-center gap-8 mb-1">
                     <span className="text-[15px] font-bold">{role.nameAr || role.name}</span>
                     {role.isSystem && (
-                      <span className="rounded-lg font-bold" style={{
-                        background: 'var(--noorix-text-muted)', color: '#fff',
-                        padding: '1px 8px', fontSize: 9,
+                      <span className="rounded-lg font-bold py-px px-2 text-[9px] text-white" style={{
+                        background: 'var(--noorix-text-muted)',
                       }}>
                         {isAr ? 'نظام' : 'System'}
                       </span>
                     )}
                   </div>
                   {role.description && (
-                    <div className="text-[12px] text-noorix-muted" style={{ marginBottom: 6 }}>
+                    <div className="text-[12px] text-noorix-muted mb-1.5">
                       {role.description}
                     </div>
                   )}
@@ -388,7 +383,7 @@ export default function RolesTab({ userRole, language }) {
           });
         }}>
           <div className="grid gap-3 mb-4">
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+            <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
               <Input type="text" label={isAr ? 'اسم الدور (إنجليزي) *' : 'Role Name (EN) *'} value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="warehouse_manager" required />
               <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} placeholder="مدير المستودع" />
             </div>
@@ -441,16 +436,15 @@ export default function RolesTab({ userRole, language }) {
           }}>
             {editing.isSystem && (
               <div className="mb-3">
-                <span className="rounded-lg font-bold" style={{
-                  background: 'var(--noorix-text-muted)', color: '#fff',
-                  padding: '2px 10px', fontSize: 10,
+                <span className="rounded-lg font-bold py-px px-[10px] text-[10px] text-white" style={{
+                  background: 'var(--noorix-text-muted)',
                 }}>
                   {isAr ? 'دور نظام' : 'System role'}
                 </span>
               </div>
             )}
             <div className="grid gap-3 mb-4">
-              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+              <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
                 <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={editing.nameAr} onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))} />
                 <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={editing.description} onChange={(e) => setEditing((p) => ({ ...p, description: e.target.value }))} />
               </div>
@@ -479,7 +473,7 @@ export default function RolesTab({ userRole, language }) {
                 <Button
                   type="button"
                   variant="danger"
-                  style={{ marginInlineStart: 'auto' }}
+                  className="ms-auto"
                   onClick={() => {
                     const msg = isAr
                       ? `هل تريد حذف الدور "${editing.nameAr || editing.name}"؟`

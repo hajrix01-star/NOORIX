@@ -100,9 +100,8 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   const columns = useMemo(() => [
     { key: 'nameAr', label: t('nameAr'), align: 'right', render: (v, row) => (
       <span
+        className="block text-right"
         style={{
-          display: 'block',
-          textAlign: 'right',
           fontWeight: row._level === 0 ? 700 : 500,
           paddingRight: row._level === 1 ? 32 : 0,
         }}
@@ -118,7 +117,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
     ) },
     { key: 'parent', label: t('parentCategory'), render: (_, row) => <span className="text-[12px]">{row._parentName || '—'}</span> },
     { key: 'actions', label: t('actions'), render: (_, row) => (
-      <span style={{ display: 'inline-flex', gap: 6 }}>
+      <span className="inline-flex gap-1.5">
         <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button>
         <Button size="sm" variant="danger" onClick={() => handleDelete(row)}>{t('delete')}</Button>
       </span>
@@ -139,7 +138,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
         <Card>
           <h4 className="text-[14px] m-0 mb-4">{editing ? t('editCategory') : t('newCategory')}</h4>
           <form onSubmit={handleSave}>
-            <FormRow cols={2} style={{ marginBottom: 14 }}>
+            <FormRow cols={2} className="mb-3.5">
               <Input
                 type="text"
                 label={`${t('nameAr')} *`}
@@ -170,7 +169,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
                 placeholder=""
               />
             </FormRow>
-            <div style={{ marginBottom: 14 }}>
+            <div className="mb-[14px]">
               <Input
                 type="select"
                 label={t('parentCategory')}

@@ -151,8 +151,8 @@ export default function PayrollTab() {
   const footerCells = (
     <>
       <td colSpan={2} className="text-[12px] text-noorix-muted font-semibold py-1.5 px-3">{t('payrollTotal')} ({allFilteredData.length})</td>
-      <td className="text-[13px] text-end py-1.5 px-3" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(allFilteredData.reduce((s, r) => s + (r.grossTotal ?? 0), 0))}</td>
-      <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900 }}>{hrFmt(totalNet)}</td>
+      <td className="text-[13px] text-end py-1.5 px-3 nx-font-numbers">{hrFmt(allFilteredData.reduce((s, r) => s + (r.grossTotal ?? 0), 0))}</td>
+      <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers">{hrFmt(totalNet)}</td>
       <td colSpan={2} />
     </>
   );
@@ -171,17 +171,17 @@ export default function PayrollTab() {
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="nx-cell-num nx-cell-accent text-[14px]">{row.runNumber}</span>
-          <Badge color={statusColorMap[row.status] || 'gray'} size="sm" style={{ flexShrink: 0 }}>{ss.label}</Badge>
+          <Badge color={statusColorMap[row.status] || 'gray'} size="sm" className="shrink-0">{ss.label}</Badge>
         </div>
         {row.month && <div className="nx-cell-muted mb-2">{row.month}</div>}
-          <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5" style={{ padding: '8px 10px' }}>
+          <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('payrollGross')}</div>
-            <div className="text-[14px]" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.grossTotal)}</div>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('payrollGross')}</div>
+            <div className="text-[14px] nx-font-numbers">{hrFmt(row.grossTotal)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('payrollNet')}</div>
-            <div className="text-[15px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.netTotal)}</div>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('payrollNet')}</div>
+            <div className="text-[15px] font-extrabold text-noorix-green nx-font-numbers">{hrFmt(row.netTotal)}</div>
           </div>
         </div>
         <div className="flex flex items-center justify-end">

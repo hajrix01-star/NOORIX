@@ -64,20 +64,20 @@ export default function BankStatementPieDrilldownModal({
     >
       <div className="text-[12px] text-noorix-muted mb-3 flex items-center flex flex-wrap gap-4">
         <span className="flex items-center gap-6">
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-text-muted)', display: 'inline-block' }} />
+          <span className="w-[6px] h-[6px] rounded-full inline-block bg-noorix-muted" />
           {t('bankStatementTransactions')}: <strong className="text-noorix-text">{rows.length}</strong>
         </span>
         <span className="flex items-center gap-6">
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-red)', display: 'inline-block' }} />
-          {t('bankStatementColDebit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: 'var(--noorix-accent-red)' }}>{fmt(totals.debit)}</strong>
+          <span className="w-[6px] h-[6px] rounded-full inline-block bg-noorix-red" />
+          {t('bankStatementColDebit')}: <strong className="nx-ltr inline-block text-noorix-red">{fmt(totals.debit)}</strong>
         </span>
         <span className="flex items-center gap-6">
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-green)', display: 'inline-block' }} />
-          {t('bankStatementColCredit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: 'var(--noorix-accent-green)' }}>{fmt(totals.credit)}</strong>
+          <span className="w-[6px] h-[6px] rounded-full inline-block bg-noorix-green" />
+          {t('bankStatementColCredit')}: <strong className="nx-ltr inline-block text-noorix-green">{fmt(totals.credit)}</strong>
         </span>
       </div>
 
-      <div className="overflow-auto" style={{ maxHeight: 'min(60vh, 540px)' }}>
+      <div className="overflow-auto max-h-[min(60vh,540px)]">
         <SmartTable
           columns={[
             { key: 'txDate', label: t('bankStatementDate'),

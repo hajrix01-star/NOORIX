@@ -108,7 +108,7 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
   );
 
   return (
-    <div style={{ position: 'relative', display: 'inline-flex' }}>
+    <div className="relative inline-flex">
       <Button
         ref={btnRef}
         aria-label={t('actions')}

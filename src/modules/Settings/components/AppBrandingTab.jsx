@@ -1,5 +1,5 @@
 ﻿/**
- * AppBrandingTab — إعدادات هوية التطبيق بدعم ثنائي اللغة (عربي / إنجليزي).
+ * AppBrandingTab ? ??????? ???? ??????? ???? ????? ????? (???? / ???????).
  */
 import React, { useState, useRef } from 'react';
 import { Button, Input } from '../../../ui';
@@ -10,14 +10,7 @@ import {
   saveBranding,
 } from '../../../utils/appBranding';
 
-const sectionTitle = {
-  fontSize: 13,
-  fontWeight: 700,
-  color: 'var(--noorix-text)',
-  marginBottom: 12,
-  paddingBottom: 8,
-  borderBottom: '1px solid var(--noorix-border)',
-};
+const SECTION_TITLE_CLS = 'text-[13px] font-bold text-noorix-text mb-3 pb-2 border-b border-noorix-border';
 
 export default function AppBrandingTab() {
   const [nameAr,      setNameAr]      = useState(getBrandNameAr);
@@ -54,9 +47,9 @@ export default function AppBrandingTab() {
 
   const handleReset = () => {
     saveBranding({ nameAr: '', nameEn: '', taglineAr: '', taglineEn: '', logoUrl: '', color: '', loginDomain: '' });
-    setNameAr('نووريكس');
+    setNameAr('???????');
     setNameEn('Noorix');
-    setTaglineAr('نظام إدارة متكامل');
+    setTaglineAr('???? ????? ??????');
     setTaglineEn('Business Management System');
     setLogoUrl('');
     setColor('var(--noorix-navy)');
@@ -64,60 +57,55 @@ export default function AppBrandingTab() {
   };
 
   return (
-    <div className="grid" style={{ gap: 28, maxWidth: 620 }}>
+    <div className="grid gap-7 max-w-[620px]">
 
-      {/* ── توضيح المستويات الثلاثة ──────────────────────────────────────── */}
-      <div className="rounded-xl text-[12px] text-noorix-muted grid gap-1.5" style={{ padding: 14, background: 'var(--noorix-blue-6)', border: '1px solid var(--noorix-blue-15)' }}>
-        <div className="font-bold text-noorix-text" style={{ marginBottom: 2 }}>ℹ️ كيف تعمل الهويات؟</div>
-        <div>• <strong>هوية التطبيق (هنا)</strong>: الاسم والشعار العام للنظام — يظهر في تبويب المتصفح، أيقونة PWA، وأعلى الشريط الجانبي.</div>
-        <div>• <strong>شعار الشركة</strong> (إدارة الشركات): يظهر بجانب اسم الشركة النشطة في الشريط الجانبي وفي الفواتير والتقارير. لا يؤثر على أيقونة المتصفح.</div>
-        <div>• <strong>إذا لم تضع شعار للتطبيق</strong>، يظهر الحرف الأول من اسم التطبيق كأيقونة في الشريط.</div>
+      {/* ?? ????? ????????? ??????? ???????????????????????????????????????? */}
+      <div className="rounded-xl text-[12px] text-noorix-muted grid gap-1.5 p-[14px] bg-[var(--noorix-blue-6)] border border-[var(--noorix-blue-15)]">
+        <div className="font-bold text-noorix-text mb-0.5">?? ??? ???? ???????</div>
+        <div>? <strong>???? ??????? (???)</strong>: ????? ??????? ????? ?????? ? ???? ?? ????? ??????? ?????? PWA? ????? ?????? ???????.</div>
+        <div>? <strong>???? ??????</strong> (????? ???????): ???? ????? ??? ?????? ?????? ?? ?????? ??????? ??? ???????? ?????????. ?? ???? ??? ?????? ???????.</div>
+        <div>? <strong>??? ?? ??? ???? ???????</strong>? ???? ????? ????? ?? ??? ??????? ??????? ?? ??????.</div>
       </div>
 
-      {/* ── معاينة ────────────────────────────────────────────────────────── */}
-      <div className="p-5 bg-noorix-bg-muted" style={{ borderRadius: 16, border: '1px solid var(--noorix-border)' }}>
-        <div className="text-[11px] font-bold text-noorix-muted" style={{ marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-          معاينة مباشرة
+      {/* ?? ?????? ?????????????????????????????????????????????????????????? */}
+      <div className="p-5 bg-noorix-bg-muted rounded-2xl border border-noorix-border">
+        <div className="text-[11px] font-bold text-noorix-muted mb-[14px] uppercase tracking-[0.8px]">
+          ?????? ??????
         </div>
         <div className="flex items-center flex flex-wrap gap-4">
-          {/* أيقونة */}
-          <div className="overflow-hidden" style={{
-            width: 56, height: 56, borderRadius: 14, flexShrink: 0,
-            background: color,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
-          }}>
+          {/* ?????? */}
+          <div className="overflow-hidden w-14 h-14 rounded-[14px] shrink-0 flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.18)]" style={{ background: color }}>
             {logoUrl
-              ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <span className="font-extrabold" style={{ fontSize: 22, color: '#fff' }}>{nameAr?.[0] || 'ن'}</span>
+              ? <img src={logoUrl} alt="" className="w-full h-full object-cover" />
+              : <span className="font-extrabold text-[22px] text-white">{nameAr?.[0] || '?'}</span>
             }
           </div>
-          {/* نصوص */}
-          <div className="grid gap-1 flex-1 min-w-0" style={{ minWidth: 0 }}>
-            <div className="flex gap-2.5 flex flex-wrap" style={{ alignItems: 'baseline' }}>
-              <span className="text-[16px] font-extrabold text-noorix-text" style={{ direction: 'rtl' }}>{nameAr || 'نووريكس'}</span>
-              <span className="text-[12px] text-noorix-muted">·</span>
+          {/* ???? */}
+          <div className="grid gap-1 flex-1 min-w-0">
+            <div className="flex gap-2.5 flex flex-wrap items-baseline">
+              <span className="text-[16px] font-extrabold text-noorix-text" style={{ direction: 'rtl' }}>{nameAr || '???????'}</span>
+              <span className="text-[12px] text-noorix-muted">?</span>
               <span className="text-[13px] font-semibold text-noorix-text nx-ltr">{nameEn || 'Noorix'}</span>
             </div>
           <div className="flex flex flex-wrap gap-2">
-            <span className="text-[12px] text-noorix-muted" style={{ direction: 'rtl' }}>{taglineAr || 'الجملة بالعربي'}</span>
-              <span className="text-[12px] text-noorix-muted">·</span>
+            <span className="text-[12px] text-noorix-muted" style={{ direction: 'rtl' }}>{taglineAr || '?????? ???????'}</span>
+              <span className="text-[12px] text-noorix-muted">?</span>
               <span className="text-[12px] text-noorix-muted" style={{ direction: 'ltr' }}>{taglineEn || 'English tagline'}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── الاسم ─────────────────────────────────────────────────────────── */}
+      {/* ?? ????? ??????????????????????????????????????????????????????????? */}
       <div>
-        <div style={sectionTitle}>اسم التطبيق</div>
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))' }}>
+        <div className={SECTION_TITLE_CLS}>??? ???????</div>
+        <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(180px,100%),1fr))]">
           <Input
             type="text"
-            label="بالعربي"
+            label="???????"
             value={nameAr}
             onChange={(e) => setNameAr(e.target.value)}
-            placeholder="نووريكس"
+            placeholder="???????"
             maxLength={40}
           />
           <Input
@@ -130,20 +118,20 @@ export default function AppBrandingTab() {
           />
         </div>
         <div className="text-[11px] text-noorix-muted mt-1.5">
-          يظهر في تبويب المتصفح وأعلى القائمة الجانبية حسب لغة التطبيق
+          ???? ?? ????? ??????? ????? ??????? ???????? ??? ??? ???????
         </div>
       </div>
 
-      {/* ── الجملة التعريفية ──────────────────────────────────────────────── */}
+      {/* ?? ?????? ????????? ???????????????????????????????????????????????? */}
       <div>
-        <div style={sectionTitle}>الجملة التعريفية (تحت الاسم)</div>
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))' }}>
+        <div className={SECTION_TITLE_CLS}>?????? ????????? (??? ?????)</div>
+        <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(180px,100%),1fr))]">
           <Input
             type="text"
-            label="بالعربي"
+            label="???????"
             value={taglineAr}
             onChange={(e) => setTaglineAr(e.target.value)}
-            placeholder="نظام إدارة متكامل"
+            placeholder="???? ????? ??????"
             maxLength={60}
           />
           <Input
@@ -156,22 +144,18 @@ export default function AppBrandingTab() {
           />
         </div>
         <div className="text-[11px] text-noorix-muted mt-1.5">
-          تظهر أسفل الاسم في القائمة الجانبية وفي تذييلها
+          ???? ???? ????? ?? ??????? ???????? ??? ???????
         </div>
       </div>
 
-      {/* ── الشعار ────────────────────────────────────────────────────────── */}
+      {/* ?? ?????? ?????????????????????????????????????????????????????????? */}
       <div>
-        <div style={sectionTitle}>شعار التطبيق (الأيقونة)</div>
-        <div className="flex gap-3.5" style={{ alignItems: 'flex-start' }}>
-          <div className="flex items-center bg-noorix-bg-muted overflow-hidden" style={{
-            width: 72, height: 72, borderRadius: 16, flexShrink: 0,
-            border: '2px dashed var(--noorix-border)',
-            justifyContent: 'center',
-          }}>
+        <div className={SECTION_TITLE_CLS}>???? ??????? (????????)</div>
+        <div className="flex gap-3.5 items-start">
+          <div className="flex items-center justify-center bg-noorix-bg-muted overflow-hidden w-[72px] h-[72px] rounded-2xl shrink-0 border-2 border-dashed border-noorix-border">
             {logoUrl
-              ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <span className="text-noorix-muted" style={{ fontSize: 28 }}>—</span>
+              ? <img src={logoUrl} alt="" className="w-full h-full object-cover" />
+              : <span className="text-noorix-muted text-[28px]">?</span>
             }
           </div>
           <div className="flex-1 min-w-0 grid gap-2">
@@ -179,86 +163,81 @@ export default function AppBrandingTab() {
               type="url"
               value={logoUrl}
               onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://رابط-الشعار.com/logo.png"
+              placeholder="https://????-??????.com/logo.png"
             />
             <Button type="button" onClick={() => fileRef.current?.click()}>
-              رفع صورة من الجهاز
+              ??? ???? ?? ??????
             </Button>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
             {logoUrl && (
               <Button type="button" variant="danger" onClick={() => setLogoUrl('')}>
-                ✕ إزالة الشعار
+                ? ????? ??????
               </Button>
             )}
           </div>
         </div>
         <div className="text-[11px] text-noorix-muted mt-2">
-          مقاس مقترح: 512×512 بكسل. يستخدم نفس الشعار لكلا اللغتين.
+          ???? ?????: 512?512 ????. ?????? ??? ?????? ???? ???????.
         </div>
       </div>
 
-      {/* ── دومين تسجيل الدخول ────────────────────────────────────────────── */}
+      {/* ?? ????? ????? ?????? ?????????????????????????????????????????????? */}
       <div>
-        <div style={sectionTitle}>دومين النظام (يظهر كتلميح في صفحة الدخول)</div>
-        <div className="flex items-center" style={{ gap: 0, maxWidth: 320 }}>
-          <span className="bg-noorix-bg-muted text-[13px] text-noorix-muted nx-ltr" style={{
-            padding: '10px 12px',
-            border: '1px solid var(--noorix-border)', borderRadius: '10px 0 0 10px',
-            flexShrink: 0,
-          }}>@</span>
+        <div className={SECTION_TITLE_CLS}>????? ?????? (???? ?????? ?? ???? ??????)</div>
+        <div className="flex items-center gap-0 max-w-[320px]">
+          <span className="bg-noorix-bg-muted text-[13px] text-noorix-muted nx-ltr py-[10px] px-3 border border-noorix-border rounded-s-[10px] shrink-0">@</span>
           <Input
             type="text"
             value={loginDomain}
             onChange={(e) => setLoginDomain(e.target.value.replace(/^@/, '').replace(/\s/g, ''))}
             placeholder="noorix.sa"
-            style={{ borderRadius: '0 10px 10px 0', borderLeft: 'none', direction: 'ltr', textAlign: 'left' }}
+            className="rounded-e-[10px] rounded-s-none border-s-0 ltr text-left"
             maxLength={60}
           />
         </div>
         <div className="text-[11px] text-noorix-muted mt-1.5">
-          يظهر كتلميح في خانة البريد الإلكتروني بصفحة الدخول. لا يغير الإيميلات المسجّلة فعلياً.
+          ???? ?????? ?? ???? ?????? ?????????? ????? ??????. ?? ???? ????????? ???????? ??????.
         </div>
       </div>
 
-      {/* ── لون الهوية ────────────────────────────────────────────────────── */}
+      {/* ?? ??? ?????? ?????????????????????????????????????????????????????? */}
       <div>
-        <div style={sectionTitle}>لون هوية التطبيق</div>
+        <div className={SECTION_TITLE_CLS}>??? ???? ???????</div>
         <div className="flex items-center flex flex-wrap gap-2.5">
           <Input
             type="color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            className="cursor-pointer bg-noorix-surface"
-            style={{ width: 48, height: 42, padding: 3, borderRadius: 10, border: '1px solid var(--noorix-border)', flexShrink: 0 }}
+            className="cursor-pointer bg-noorix-surface w-12 h-[42px] p-[3px] rounded-[10px] border border-noorix-border shrink-0"
           />
           <Input
             type="text"
             value={color}
             onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
             className="text-[13px]"
-            style={{ width: 100, minWidth: 0, fontFamily: 'monospace' }}
+            className="w-[100px] min-w-0 font-mono"
             placeholder="#0a1f44"
             maxLength={7}
           />
-          <span className="text-[12px] text-noorix-muted" style={{ flexShrink: 1 }}>يظهر في شريط العنوان على Android والـ PWA</span>
+          <span className="text-[12px] text-noorix-muted" className="shrink">???? ?? ???? ??????? ??? Android ???? PWA</span>
         </div>
       </div>
 
-      {/* ── أزرار ─────────────────────────────────────────────────────────── */}
+      {/* ?? ????? ??????????????????????????????????????????????????????????? */}
       <div className="nx-toolbar">
         <Button type="button" variant="primary" onClick={handleSave}>
-          {saved ? '✓ تم الحفظ' : 'حفظ وتطبيق'}
+          {saved ? '? ?? ?????' : '??? ??????'}
         </Button>
         <Button type="button" onClick={handleReset}>
-          إعادة الضبط الافتراضي
+          ????? ????? ?????????
         </Button>
       </div>
 
-      {/* ── ملاحظة PWA ────────────────────────────────────────────────────── */}
-      <div className="rounded-xl text-[13px] text-noorix-muted p-3.5" style={{ background: 'var(--noorix-blue-6)', border: '1px solid var(--noorix-blue-15)', lineHeight: 1.7 }}>
-        <strong style={{ color: 'var(--noorix-accent-blue)' }}>ℹ ملاحظة PWA:</strong>
+      {/* ?? ?????? PWA ?????????????????????????????????????????????????????? */}
+      <div className="rounded-xl text-[13px] text-noorix-muted p-3.5 bg-[var(--noorix-blue-6)] border border-[var(--noorix-blue-15)] leading-[1.7]">
+        <strong className="text-noorix-blue">? ?????? PWA:</strong>
         <br />
-        التغييرات تُطبَّق فوراً على تبويب المتصفح والأيقونة. إذا كان التطبيق مثبّتاً على الجوال، قد تحتاج لإضافته مجدداً للحصول على الأيقونة المحدّثة.
+        ????????? ??????? ????? ??? ????? ??????? ?????????. ??? ??? ??????? ??????? ??? ?????? ?? ????? ??????? ?????? ?????? ??? ???????? ????????.
       </div>
     </div>
   );

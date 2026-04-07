@@ -144,10 +144,8 @@ export function ProductSearchInput({
     }
   }
 
-  const inputPadding = compact ? { padding: '6px 10px', minHeight: 36, fontSize: 14 } : {};
-
   return (
-    <div ref={containerRef} style={{ position: 'relative', ...style }}>
+    <div ref={containerRef} className="relative" style={style}>
       <Input
         ref={inputRef}
         type="text"
@@ -164,35 +162,31 @@ export function ProductSearchInput({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         autoComplete="off"
-        style={inputPadding}
+        className={compact ? 'py-1.5 px-2.5 min-h-9 text-[14px]' : undefined}
       />
       {open &&
         dropdownRect &&
         createPortal(
           <div
             data-product-search-dropdown
+            className="fixed max-h-[280px] overflow-y-auto overflow-x-hidden rounded-lg bg-noorix-surface border border-noorix-border"
             style={{
-              position: 'fixed',
               top: dropdownRect.top,
               left: dropdownRect.left,
               width: dropdownRect.width,
-              maxHeight: 280,
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              background: 'var(--noorix-bg-surface)',
-              border: '1px solid var(--noorix-border)',
-              borderRadius: 8,
               boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
               zIndex: 10001,
             }}
           >
             {loading ? (
-              <div style={{ padding: 16, color: 'var(--noorix-text-muted)', fontSize: 13, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <span style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid var(--noorix-border)', borderTopColor: 'var(--noorix-accent-blue)', borderRadius: '50%', animation: 'noorix-spin 0.8s linear infinite', flexShrink: 0 }} />
+              <div className="p-4 text-noorix-muted text-[13px] text-center flex items-center justify-center gap-2">
+                <span
+                  className="inline-block w-4 h-4 rounded-full shrink-0 border-2 border-noorix-border border-t-noorix-blue animate-[noorix-spin_0.8s_linear_infinite]"
+                />
                 {t('loading') || 'جاري التحميل...'}
               </div>
             ) : filtered.length === 0 ? (
-              <div style={{ padding: 16, color: 'var(--noorix-text-muted)', fontSize: 13, textAlign: 'center' }}>
+              <div className="p-4 text-noorix-muted text-[13px] text-center">
                 {t('ordersNoSearchResults') || 'لا توجد نتائج'}
               </div>
             ) : (
@@ -212,26 +206,19 @@ export function ProductSearchInput({
                       e.preventDefault();
                       selectProduct(p);
                     }}
+                    className="py-[10px] px-[14px] cursor-pointer flex justify-between items-center gap-3 flex-nowrap min-w-0"
                     style={{
-                      padding: '10px 14px',
-                      cursor: 'pointer',
                       borderBottom: i < filtered.length - 1 ? '1px solid var(--noorix-border)' : 'none',
                       background: isHighlight ? 'var(--noorix-bg-muted)' : 'transparent',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: 12,
-                      flexWrap: 'nowrap',
-                      minWidth: 0,
                     }}
                   >
-                    <span style={{ fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span className="font-medium flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
                       {p.nameAr || p.nameEn || p.id}
                     </span>
                     {(variantLabel || lastPrice > 0) && (
-                      <span style={{ fontSize: 12, color: 'var(--noorix-text-muted)', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                      <span className="text-[12px] shrink-0 whitespace-nowrap text-noorix-muted">
                         {variantLabel && <span>{variantLabel} — </span>}
-                        <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(lastPrice, 2)} ﷼</span>
+                        <span className="nx-font-numbers">{fmt(lastPrice, 2)} ﷼</span>
                       </span>
                     )}
                   </div>

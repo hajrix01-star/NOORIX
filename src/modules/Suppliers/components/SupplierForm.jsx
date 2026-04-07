@@ -92,7 +92,7 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
             })}
           </Input>
         </FormRow>
-        <div className="nx-toolbar" style={{ marginTop: 14 }}>
+        <div className="nx-toolbar mt-[14px]">
           <Button type="submit" variant="primary" disabled={isSaving || !form.nameAr.trim()}>
             {isSaving ? t('saving') : t('saveSupplier')}
           </Button>

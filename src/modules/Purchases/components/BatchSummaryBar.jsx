@@ -9,7 +9,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 export const BatchSummaryBar = memo(function BatchSummaryBar({ count, net, tax, total }) {
   const { t } = useTranslation();
   return (
-    <div className="noorix-summary-bar noorix-summary-bar--4" style={{ marginTop: 16 }}>
+    <div className="noorix-summary-bar noorix-summary-bar--4 mt-4">
       <div className="noorix-summary-bar__item">
         <div className="noorix-summary-bar__label">{t('validInvoices')}</div>
         <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{count}</div>

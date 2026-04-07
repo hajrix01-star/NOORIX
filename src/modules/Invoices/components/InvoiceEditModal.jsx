@@ -118,7 +118,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
         )}
 
         <div>
-          <label className="text-[12px] font-semibold mb-1" style={{ display: 'block' }}>{t('supplier')}</label>
+          <label className="text-[12px] font-semibold mb-1 block">{t('supplier')}</label>
           <SupplierSelect
             suppliers={suppliers}
             value={form.supplierId}

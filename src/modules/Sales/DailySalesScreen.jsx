@@ -300,7 +300,7 @@ export default function DailySalesScreen() {
       <td colSpan={3} className="nx-tfoot-label">
         {t('totalSummaries', activeOnly.length)}
         {listTotal > PAGE_SIZE ? (
-          <span className="nx-cell-muted-sm" style={{ marginInlineEnd: 6 }}> (إجمالي الصفحة الحالية)</span>
+          <span className="nx-cell-muted-sm me-1.5"> (إجمالي الصفحة الحالية)</span>
         ) : null}
       </td>
       <td className="nx-tfoot-num nx-cell-num--blue">{totalCustomers.toLocaleString('en')}</td>

@@ -77,9 +77,10 @@ export default function DashboardScreen() {
         {/* شريط التبويبات */}
         <div className="flex border-b border-noorix-border overflow-x-auto nx-tab-bar">
           {DASHBOARD_TABS.map((tab) => (
-            <button
+            <Button
               key={tab.id}
-              type="button"
+              variant="raw"
+              size="auto"
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === tab.id
@@ -88,7 +89,7 @@ export default function DashboardScreen() {
               } nx-tab-btn${activeTab === tab.id ? ' nx-tab-btn--active' : ''}`}
             >
               {t(tab.labelKey)}
-            </button>
+            </Button>
           ))}
         </div>
 

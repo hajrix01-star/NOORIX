@@ -144,13 +144,14 @@ export default function LoginScreen() {
                     dir="ltr"
                     className={isEnglish ? 'pe-20' : 'ps-20'}
                   />
-                  <button
-                    type="button"
+                  <Button
+                    variant="raw"
+                    size="sm"
                     onClick={() => setShowPassword((v) => !v)}
-                    className={`absolute ${isEnglish ? 'end-2.5' : 'start-2.5'} top-1/2 -translate-y-1/2 px-2 h-7 text-[12px] font-bold text-noorix-muted hover:text-noorix-text rounded-md hover:bg-noorix-bg-muted transition-colors`}
+                    className={`absolute ${isEnglish ? 'end-2.5' : 'start-2.5'} top-1/2 -translate-y-1/2 px-2 font-bold text-noorix-muted hover:text-noorix-text hover:bg-noorix-bg-muted`}
                   >
                     {showPassword ? t('hidePassword') : t('showPassword')}
-                  </button>
+                  </Button>
                 </div>
               </div>
 

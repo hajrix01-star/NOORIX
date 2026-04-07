@@ -96,7 +96,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     { key: 'netAmount', label: 'الصافي', numeric: true,
       render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v)}</span> },
     { key: 'taxAmount', label: 'الضريبة', numeric: true,
-      render: (v) => <span className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(v)}</span> },
+      render: (v) => <span className="nx-cell-num text-noorix-amber">{fmt(v)}</span> },
     { key: 'totalAmount', label: 'الإجمالي', numeric: true,
       render: (v) => <span className="nx-cell-num font-bold">{fmt(v)}</span> },
   ];
@@ -148,7 +148,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
               <div className="flex items-center justify-between p-4 rounded-lg mt-3 gap-3" style={{ background: 'var(--noorix-bg-page)', flexWrap: 'wrap' }}>
                 <span className="text-[14px] text-noorix-muted">عدد السجلات: <strong>{activeItems.length}</strong></span>
                 <span className="text-[14px]">الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
-                <span className="text-[14px]">الضريبة: <strong className="nx-cell-num" style={{ color: 'var(--noorix-color-amber, #d97706)' }}>{fmt(totalTax)}</strong></span>
+                <span className="text-[14px]">الضريبة: <strong className="nx-cell-num text-noorix-amber">{fmt(totalTax)}</strong></span>
                 <span className="nx-cell-num text-[16px] font-bold">الإجمالي: {fmt(totalAmount)} ر.س</span>
               </div>
             ) : null

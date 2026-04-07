@@ -125,23 +125,23 @@ export default function LeaveTab() {
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="font-bold text-[14px]">{row.employeeName}</span>
-          <Badge color={statusColorMap[row.status] || 'gray'} size="sm" style={{ flexShrink: 0 }}>{ss.label}</Badge>
+          <Badge color={statusColorMap[row.status] || 'gray'} size="sm" className="shrink-0">{ss.label}</Badge>
         </div>
         <div className="text-[13px] text-noorix-muted mb-2">
           {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
         </div>
-        <div className="grid grid-cols-3 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5" style={{ padding: '8px 10px' }}>
+        <div className="grid grid-cols-3 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('startDate')}</div>
-            <div className="text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.startDate)}</div>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('startDate')}</div>
+            <div className="text-[13px] nx-font-numbers">{formatSaudiDate(row.startDate)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('endDate')}</div>
-            <div className="text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(row.endDate)}</div>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('endDate')}</div>
+            <div className="text-[13px] nx-font-numbers">{formatSaudiDate(row.endDate)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('daysCount')}</div>
-            <div className="text-[14px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.daysCount ?? '—'}</div>
+            <div className="text-noorix-muted mb-1 text-[10px]">{t('daysCount')}</div>
+            <div className="text-[14px] font-bold nx-font-numbers">{row.daysCount ?? '—'}</div>
           </div>
         </div>
         {row.status === 'pending' && (

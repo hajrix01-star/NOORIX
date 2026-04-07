@@ -182,7 +182,7 @@ export default function BankStatementAnalysisScreen() {
       <div className="nx-page-header">
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('reportBankStatementAnalysis')}</h1>
         <Button variant="primary" onClick={() => setShowUpload(true)}>
-          <span aria-hidden style={{ fontSize: 18, lineHeight: 1, opacity: 0.95 }}>＋</span>
+          <span aria-hidden className="text-[18px] leading-none opacity-[0.95]">＋</span>
           {t('bankStatementUploadNew')}
         </Button>
       </div>
@@ -201,9 +201,8 @@ export default function BankStatementAnalysisScreen() {
           ].map((c, i) => (
             <div
               key={i}
-              className="noorix-surface-card"
+              className="noorix-surface-card p-[14px]"
               style={{
-                padding: 14,
                 borderLeft: `4px solid ${
                   c.tone === 'blue' ? 'var(--noorix-accent-blue)' : c.tone === 'green' ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)'
                 }`,
@@ -216,7 +215,7 @@ export default function BankStatementAnalysisScreen() {
         </div>
       )}
 
-      <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="noorix-surface-card p-0 overflow-hidden">
         <div className="noorix-bank-tab-row" role="tablist">
           {TABS.map((tab) => (
             <Button
@@ -237,12 +236,8 @@ export default function BankStatementAnalysisScreen() {
             <>
               {!summaryLoading && statements.length > 0 && completedStatements.length === 0 && (
                 <div
-                  style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                  gap: 12,
-                  marginBottom: 20,
-                  }}
+                  className="grid gap-3 mb-5"
+                  style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
                 >
                   {[
                     { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.data?.statementCount ?? 0, f: (v) => String(v) },
@@ -252,12 +247,7 @@ export default function BankStatementAnalysisScreen() {
                   ].map((c) => (
                     <div
                       key={c.key}
-                      style={{
-                        padding: 14,
-                        borderRadius: 10,
-                        background: 'var(--noorix-bg-muted)',
-                        border: '1px solid var(--noorix-border)',
-                      }}
+                      className="p-[14px] rounded-[10px] bg-noorix-bg-muted border border-noorix-border"
                     >
                       <div className="text-[11px] text-noorix-muted mb-1">{t(c.labelKey)}</div>
                       <div className="text-[18px] font-bold">{c.f(c.value)}</div>
@@ -268,17 +258,14 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length === 0 && (
                 <div
-                  className="text-center bg-noorix-bg-muted rounded-xl"
-                  style={{
-                    padding: '48px 24px',
-                    border: '1px dashed var(--noorix-border)',
-                  }}
+                  className="text-center bg-noorix-bg-muted rounded-xl py-12 px-6"
+                  style={{ border: '1px dashed var(--noorix-border)' }}
                 >
-                  <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}></div>
+                  <div className="text-[48px] mb-3 opacity-50"></div>
                   <div className="text-[16px] font-semibold mb-1.5">{t('bankStatementEmptyTitle')}</div>
                   <div className="text-[13px] text-noorix-muted mb-4">{t('bankStatementEmptyDesc')}</div>
                   <Button variant="primary" onClick={() => setShowUpload(true)}>
-                    <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>＋</span>
+                    <span aria-hidden className="text-[18px] leading-none">＋</span>
                     {t('bankStatementUploadNew')}
                   </Button>
                 </div>
@@ -286,7 +273,7 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length > 0 && (
                 <>
-                  <div className="flex flex flex-wrap gap-3 mb-4" style={{ alignItems: 'center' }}>
+                  <div className="flex flex-wrap gap-3 mb-4 items-center">
                     <Input
                       type="select"
                       value={filterMonth}
@@ -329,12 +316,12 @@ export default function BankStatementAnalysisScreen() {
                           tabIndex={0}
                           onClick={() => handleSelectStatement(stmt)}
                           onKeyDown={(e) => e.key === 'Enter' && handleSelectStatement(stmt)}
-                          className="flex gap-4 p-3.5 border border-noorix-border rounded-lg cursor-pointer"
-                          style={{ alignItems: 'center', background: 'var(--noorix-bg)' }}
+                          className="flex gap-4 p-3.5 border border-noorix-border rounded-lg cursor-pointer items-center"
+                          style={{ background: 'var(--noorix-bg)' }}
                         >
-                          <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
-                            <div className="flex gap-2" style={{ alignItems: 'center', marginBottom: 4 }}>
-                              <span style={{ fontWeight: 600 }}>{stmt.companyName || stmt.fileName || 'كشف'}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex gap-2 items-center mb-1">
+                              <span className="font-semibold">{stmt.companyName || stmt.fileName || 'كشف'}</span>
                               <Badge color={statusColor} size="sm">
                                 {stmt.status === 'mapping' ? t('bankStatementStatusMapping') : t('bankStatementStatusCompleted')}
                               </Badge>

@@ -166,22 +166,18 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
         <div
           ref={menuRef}
           role="listbox"
+          className="fixed overflow-y-auto rounded-[10px] border border-noorix-border bg-noorix-surface"
           style={{
-            position: 'fixed',
             zIndex: 10060,
             top: menuPos.top,
             left: menuPos.left,
             width: menuPos.width,
             maxHeight: menuPos.maxHeight,
-            overflowY: 'auto',
-            borderRadius: 10,
-            border: '1px solid var(--noorix-border)',
-            background: 'var(--noorix-bg-surface)',
             boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
           }}
         >
           {topSuppliers.length > 0 && (
-            <div style={{ padding: '8px 12px 6px', fontSize: 11, fontWeight: 700, color: 'var(--noorix-text-muted)', background: 'var(--noorix-bg-page)', borderBottom: '1px solid var(--noorix-border)' }}>
+            <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-muted bg-noorix-bg border-b border-noorix-border">
               الموردون الأكثر طلباً
             </div>
           )}
@@ -198,18 +194,18 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
                 className="nx-supplier-option"
                 style={isSelected ? { background: 'var(--noorix-blue-8)' } : undefined}
               >
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                   {supplierLabel(s, lang)}
                 </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                  {isBookmarked ? <span style={{ color: 'var(--color-noorix-amber)' }}>★</span> : null}
-                  <span style={{ color: 'var(--noorix-accent-blue)', fontSize: 11 }}>الأكثر</span>
+                <span className="inline-flex items-center gap-1.5 shrink-0">
+                  {isBookmarked ? <span className="text-noorix-amber">★</span> : null}
+                  <span className="text-[11px] text-noorix-blue">الأكثر</span>
                 </span>
               </Button>
             );
           })}
           {topSuppliers.length > 0 && remainingSuppliers.length > 0 && (
-            <div style={{ padding: '8px 12px 6px', fontSize: 11, fontWeight: 700, color: 'var(--noorix-text-muted)', background: 'var(--noorix-bg-page)', borderBottom: '1px solid var(--noorix-border)' }}>
+            <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-muted bg-noorix-bg border-b border-noorix-border">
               جميع الموردين
             </div>
           )}
@@ -226,14 +222,14 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
                 className="nx-supplier-option"
                 style={isSelected ? { background: 'var(--noorix-blue-8)' } : undefined}
               >
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                   {supplierLabel(s, lang)}
                 </span>
-                {isBookmarked ? <span style={{ color: 'var(--color-noorix-amber)', flexShrink: 0 }}>★</span> : null}
+                {isBookmarked ? <span className="shrink-0 text-noorix-amber">★</span> : null}
               </Button>
             );
           }) : (
-            <div style={{ padding: '10px 12px', fontSize: 13, color: 'var(--noorix-text-muted)' }}>
+            <div className="py-[10px] px-3 text-[13px] text-noorix-muted">
               {suppliers.length ? 'لا يوجد مورد مطابق' : 'لا يوجد موردون متاحون حالياً'}
             </div>
           )}
@@ -243,7 +239,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
     : null;
 
   return (
-    <div style={{ position: 'relative' }} ref={anchorRef}>
+    <div className="relative" ref={anchorRef}>
       <Input
         value={query}
         onFocus={() => { setOpen(true); }}
@@ -258,19 +254,11 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
         autoComplete="off"
         aria-expanded={open}
         aria-haspopup="listbox"
-        style={{ paddingInlineEnd: 36 }}
+        className="pe-9"
       />
       <span
         aria-hidden
-        style={{
-          position: 'absolute',
-          insetInlineEnd: 12,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          color: 'var(--noorix-text-muted)',
-          fontSize: 12,
-          pointerEvents: 'none',
-        }}
+        className="pointer-events-none absolute top-1/2 -translate-y-1/2 end-3 text-noorix-muted text-[12px]"
       >
         ▼
       </span>

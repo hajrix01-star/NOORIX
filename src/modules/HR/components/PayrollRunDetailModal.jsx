@@ -153,8 +153,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
 
   const footerCells = (
     <>
-      <td colSpan={8} className="text-[13px] font-bold text-noorix-muted" style={{ padding: '8px 12px' }}>{t('payrollTotalAfterDeductions')}</td>
-      <td className="text-[14px]" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)', fontWeight: 900, color: 'var(--noorix-accent-green)', textAlign: 'right' }}>{hrFmt(totalNet)}</td>
+      <td colSpan={8} className="text-[13px] font-bold text-noorix-muted py-2 px-3">{t('payrollTotalAfterDeductions')}</td>
+      <td className="text-[14px] py-2 px-3 font-black text-right nx-font-numbers text-noorix-green">{hrFmt(totalNet)}</td>
     </>
   );
 

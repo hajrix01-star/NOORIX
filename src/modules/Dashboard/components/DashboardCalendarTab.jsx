@@ -291,12 +291,9 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     <div className="noorix-calendar-layout">
       {/* ── التقويم ── */}
       <div
-        className="noorix-calendar-card nx-surface overflow-hidden p-4 w-full"
+        className="noorix-calendar-card nx-surface overflow-hidden p-4 w-full max-w-[760px] min-w-0"
         style={{
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          maxWidth: 760,
-          minWidth: 0,
-          boxSizing: 'border-box',
         }}
       >
         <div className="flex items-center justify-between flex flex-wrap gap-2 mb-3">
@@ -319,7 +316,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           <div className="p-3 mb-3 bg-noorix-bg-muted rounded-lg text-[12px]">
             <div className="font-bold mb-2">{t('dashboardTargetOverall')}</div>
             {editingTarget ? (
-              <div className="flex items-center gap-8" style={{ marginBottom: 10 }}>
+              <div className="flex items-center gap-8 mb-[10px]">
                 <Input
                   type="number"
                   min="0"
@@ -327,13 +324,13 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                   value={targetInput}
                   onChange={(e) => setTargetInput(e.target.value)}
                   placeholder={t('dashboardSalesTarget')}
-                  style={{ width: 120 }}
+                  className="w-[120px]"
                 />
                 <Button variant="primary" onClick={handleSaveOverallTarget}>{t('save')}</Button>
                 <Button onClick={() => { setEditingTarget(false); setTargetInput(''); }}>{t('cancel')}</Button>
               </div>
             ) : (
-              <div className="flex items-center gap-8" style={{ marginBottom: 10 }}>
+              <div className="flex items-center gap-8 mb-[10px]">
                 <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{targets.overall != null ? fmt(targets.overall, 2) : '—'} ﷼</span>
                 <Button onClick={() => { setTargetInput(targets.overall != null ? String(targets.overall) : ''); setEditingTarget(true); }}>{t('edit')}</Button>
               </div>
@@ -342,7 +339,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             <div className="flex flex-wrap gap-2" key={`targets-${targetsVersion}`}>
               {DOW_KEYS.map((dow) => (
                 <div key={dow} className="flex items-center gap-4">
-                  <span className="text-[11px]" style={{ minWidth: 50 }}>{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
+                  <span className="text-[11px] min-w-[50px]">{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
                   <Input
                     type="number"
                     min="0"
@@ -350,7 +347,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     placeholder="—"
                     defaultValue={targets.byDow[dow] ?? ''}
                     onBlur={(e) => handleSaveDowTarget(dow, e.target.value)}
-                    style={{ width: 70 }}
+                    className="w-[70px]"
                   />
                 </div>
               ))}
@@ -359,17 +356,17 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         )}
 
         {isSelectionMode && (
-          <div className="mb-2" style={{ fontSize: 10, color: 'var(--noorix-accent-blue)' }}>{t('dashboardSelectDaysHint')}</div>
+          <div className="mb-2 text-[10px]" style={{ color: 'var(--noorix-accent-blue)' }}>{t('dashboardSelectDaysHint')}</div>
         )}
 
         {isLoading ? (
-          <div className="text-center text-noorix-muted text-[13px]" style={{ padding: 32 }}>{t('loading')}</div>
+          <div className="text-center text-noorix-muted text-[13px] p-8">{t('loading')}</div>
         ) : (
           <div className="noorix-calendar-grid-scroll">
             <div className="noorix-calendar-grid-scroll-inner">
-          <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
+          <div className="grid gap-1.5 grid-cols-7">
             {[0,1,2,3,4,5,6].map((d) => (
-              <div key={d} className="text-[12px] font-bold text-noorix-muted text-center" style={{ padding: '6px 0' }}>{lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}</div>
+              <div key={d} className="text-[12px] font-bold text-noorix-muted text-center py-1.5">{lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}</div>
             ))}
             {(() => {
               const firstDow = new Date(year, month - 1, 1).getDay();
@@ -408,28 +405,19 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     tabIndex={0}
                     onClick={(e) => handleDayClick(item, e.shiftKey)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleDayClick(item, e.shiftKey); }}
+                    className="aspect-square rounded-md flex flex-col items-center justify-center p-[2px] min-h-12 cursor-pointer relative"
                     style={{
-                      aspectRatio: '1',
-                      borderRadius: 6,
                       background: bg,
                       border: isSelected ? '2px solid var(--noorix-accent-blue)' : selectedDay?.dateStr === dateStr ? '2px solid var(--noorix-accent-blue)' : achieved ? '2px solid #16a34a' : special ? `2px solid ${specialColor}` : '1px solid var(--noorix-border)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: 2,
-                      minHeight: 48,
-                      cursor: 'pointer',
-                      position: 'relative',
                     }}
                     title={`${dateStr}: ${fmt(amount, 2)} ﷼${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget, 2)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
                   >
                     <span className="text-[12px] font-bold text-noorix-text">{day}</span>
-                    <span style={{ fontSize: 11, fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
-                    {achieved && <span style={{ fontSize: 8, color: 'var(--noorix-accent-green)' }}>✓</span>}
-                    {hasNote && <span style={{ fontSize: 8, color: 'var(--noorix-accent-blue)', width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-blue)', display: 'inline-block' }} />}
+                    <span className="text-[11px]" style={{ fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
+                    {achieved && <span className="text-[8px]" style={{ color: 'var(--noorix-accent-green)' }}>✓</span>}
+                    {hasNote && <span className="text-[8px] w-[6px] h-[6px] rounded-full inline-block" style={{ color: 'var(--noorix-accent-blue)', background: 'var(--noorix-accent-blue)' }} />}
                     {special && specialColor && (
-                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: specialColor, borderRadius: '0 0 6px 6px' }} />
+                      <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-md" style={{ background: specialColor }} />
                     )}
                   </div>
                 );
@@ -456,32 +444,32 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           <div className="font-bold mb-2 text-noorix-text">{lang === 'ar' ? 'دليل الألوان' : 'Color legend'}</div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-8">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--noorix-border)', border: '1px solid var(--noorix-border)', flexShrink: 0 }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--noorix-border)', border: '1px solid var(--noorix-border)' }} />
               <span>{t('dashboardLegendGray')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgb(220, 38, 38)', flexShrink: 0 }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'rgb(220, 38, 38)' }} />
               <span>{t('dashboardLegendRed')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgb(234, 179, 8)', flexShrink: 0 }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'rgb(234, 179, 8)' }} />
               <span>{t('dashboardLegendYellow')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgb(22, 163, 74)', flexShrink: 0 }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'rgb(22, 163, 74)' }} />
               <span>{t('dashboardLegendGreen')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--noorix-green-50)', flexShrink: 0 }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--noorix-green-50)' }} />
               <span>{t('dashboardLegendGreenNoTarget')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--noorix-violet-50)', flexShrink: 0 }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--noorix-violet-50)' }} />
               <span>{t('dashboardLegendSpecial')}</span>
             </div>
           </div>
           {targets.overall != null && (
-            <div className="text-noorix-muted mt-2 border-t border-noorix-border" style={{ paddingTop: 8, fontSize: 10 }}>
+            <div className="text-noorix-muted mt-2 border-t border-noorix-border pt-2 text-[10px]">
               {t('dashboardSalesTarget')}: {fmt(targets.overall, 2)} ﷼
             </div>
           )}
@@ -489,7 +477,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
       </div>
 
       {/* ── تفاصيل اليوم + ملاحظة ── */}
-      <div className="noorix-calendar-side" style={{ minWidth: 260 }}>
+      <div className="noorix-calendar-side min-w-[260px]">
         {selectedDay && (
           <CalendarDayDetailPanel
             dateStr={selectedDay.dateStr}

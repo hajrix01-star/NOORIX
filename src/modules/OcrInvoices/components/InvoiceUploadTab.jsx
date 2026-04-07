@@ -199,19 +199,19 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
           <div className="ocr-upload-icon">↑</div>
           <div className="ocr-upload-text">{t('ocrDragDrop')}</div>
           <div className="ocr-upload-hint">{t('ocrSupportedFormats')}</div>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => readFile(e.target.files[0])} />
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files[0])} />
         </div>
       )}
 
       {preview && (
-        <div className="flex flex flex-wrap" style={{ gap: 18, alignItems: 'start' }}>
-          <div className="p-4 rounded-xl bg-noorix-surface border border-noorix-border" style={{ flex: '1 1 280px', minWidth: 0 }}>
+        <div className="flex flex flex-wrap gap-[18px] items-start">
+          <div className="p-4 rounded-xl bg-noorix-surface border border-noorix-border flex-[1_1_280px] min-w-0">
             <div className="flex items-center justify-between mb-3">
               <span className="font-semibold text-[14px]">{isAr ? 'صورة الفاتورة' : 'Invoice Image'}</span>
-              <Button className="modal-close-btn" style={{ width: 28, height: 28 }}
+              <Button className="modal-close-btn w-7 h-7"
                 onClick={() => { setPreview(null); setBase64(null); setExtracted(null); setError(null); setEditItems(null); }}>✕</Button>
             </div>
-            <img src={preview} alt="invoice" className="w-full rounded-lg" style={{ maxHeight: 500, objectFit: 'contain' }} />
+            <img src={preview} alt="invoice" className="w-full rounded-lg max-h-[500px] object-contain" />
             <div className="mt-3 flex gap-2 flex flex-wrap">
               {!extracted && (
                 <Button onClick={handleExtract} disabled={loading} variant="primary" className="flex-1 min-w-0">
@@ -232,7 +232,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
           </div>
 
           {extracted && (
-            <div className="flex flex-col" style={{ gap: 14, flex: '1 1 280px', minWidth: 0 }}>
+            <div className="flex flex-col gap-[14px] flex-[1_1_280px] min-w-0">
 
               <div className="p-4 rounded-xl bg-noorix-surface border border-noorix-border">
                 <div className="font-semibold text-[14px] mb-3">{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>
@@ -258,7 +258,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                       </div>
                     )}
                     {extracted.totalAmount?.value && (
-                      <div className="flex items-center justify-between bg-noorix-bg-muted" style={{ padding: '10px 12px' }}>
+                      <div className="flex items-center justify-between bg-noorix-bg-muted py-[10px] px-3">
                         <span className="text-[13px] font-bold">{isAr ? 'الإجمالي شامل الضريبة' : 'Total (inc. VAT)'}</span>
                         <span className="text-[13px] font-bold">{extracted.totalAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
@@ -268,8 +268,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
               </div>
 
               {warningCount > 0 && (
-                <div className="flex items-center gap-8 text-[13px] rounded-lg" style={{
-                  padding: '10px 14px',
+                <div className="flex items-center gap-8 text-[13px] rounded-lg py-[10px] px-[14px]" style={{
                   background: 'var(--noorix-yellow-8)',
                   border: '1px solid var(--noorix-yellow-25)',
                 }}>
@@ -278,7 +277,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                       {warningCount} {isAr ? 'تحذير — راجع الأرقام قبل الحفظ' : 'warning(s) — review before saving'}
                     </div>
                     {extracted.invoiceTotalWarning && (
-                      <div className="text-[12px]" style={{ color: 'var(--noorix-accent-amber)', marginTop: 2 }}>{extracted.invoiceTotalWarning}</div>
+                      <div className="text-[12px] mt-[2px]" style={{ color: 'var(--noorix-accent-amber)' }}>{extracted.invoiceTotalWarning}</div>
                     )}
                   </div>
                 </div>
@@ -310,7 +309,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
       )}
 
       {error && (
-        <div className="text-[13px] rounded-lg" style={{ padding: '12px 16px', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-15)', color: 'var(--noorix-accent-red)' }}>
+        <div className="text-[13px] rounded-lg py-3 px-4" style={{ background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-15)', color: 'var(--noorix-accent-red)' }}>
           {error}
         </div>
       )}
@@ -320,14 +319,13 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
 function FieldRow({ label, value, confidence, match }) {
   return (
-    <div className="flex gap-2 border-b border-noorix-border" style={{ alignItems: 'flex-start', padding: '6px 0' }}>
-      <span className="text-[13px] text-noorix-muted" style={{ minWidth: 100 }}>{label}</span>
+    <div className="flex gap-2 border-b border-noorix-border items-start py-1.5">
+      <span className="text-[13px] text-noorix-muted min-w-[100px]">{label}</span>
       <div className="flex-1 min-w-0">
         <span className="text-[14px] font-semibold text-noorix-text">{value || '—'}</span>
         {match && (
-          <div className="text-[11px]" style={{ marginTop: 2 }}>
-            <span style={{
-              padding: '2px 6px', borderRadius: 4,
+          <div className="text-[11px] mt-[2px]">
+            <span className="py-px px-1.5 rounded" style={{
               background: match.status === 'auto' ? '#dcfce7' : '#fef3c7',
               color: match.status === 'auto' ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-amber)',
             }}>
@@ -353,12 +351,11 @@ function EditableNumber({ value, onChange, warn }) {
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
       step="any"
+      className="w-[72px] py-[3px] px-1.5 rounded-md text-[13px] font-bold text-center"
       style={{
-        width: 72, padding: '3px 6px', borderRadius: 6, fontSize: 13, fontWeight: 700,
         border: `1px solid ${warn ? 'var(--color-noorix-amber)' : 'var(--noorix-border)'}`,
         background: warn ? 'var(--noorix-yellow-8)' : 'var(--noorix-bg-surface)',
         color: 'var(--noorix-text)', outline: 'none', fontFamily: 'inherit',
-        textAlign: 'center',
       }}
     />
   );
@@ -374,36 +371,30 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
   const sizeLabel = item.size ? `${item.size}${item.sizeUnit || ''}` : null;
 
   return (
-    <div style={{
-      padding: '10px 12px',
-      borderRadius: 10,
+    <div className="py-[10px] px-3 rounded-[10px]" style={{
       background: hasMathWarn ? 'var(--noorix-yellow-6)' : 'var(--noorix-bg-surface)',
       border: `1px solid ${hasMathWarn ? 'var(--noorix-yellow-40)' : 'var(--noorix-border)'}`,
     }}>
       {/* رأس الصنف */}
-      <div className="flex gap-2 flex flex-wrap mb-2" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="flex gap-2 flex flex-wrap mb-2 justify-between items-start">
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-[14px]">{displayName}</div>
           {sizeLabel && (
-            <span className="text-[11px] font-semibold bg-noorix-bg-muted text-noorix-muted" style={{
-              display: 'inline-block', marginTop: 3,
-              padding: '2px 8px', borderRadius: 4,
-            }}>
+            <span className="text-[11px] font-semibold bg-noorix-bg-muted text-noorix-muted inline-block mt-[3px] py-px px-2 rounded">
               {sizeLabel}
             </span>
           )}
           {item.name && item.name !== displayName && (
-            <div className="text-[11px] text-noorix-muted" style={{ marginTop: 2 }}>OCR: {item.name}</div>
+            <div className="text-[11px] text-noorix-muted mt-[2px]">OCR: {item.name}</div>
           )}
           {match && (
-            <div className="text-[11px] text-noorix-muted" style={{ marginTop: 2 }}>
+            <div className="text-[11px] text-noorix-muted mt-[2px]">
               ↳ {match.nameAr}{match.nameEn ? ` / ${match.nameEn}` : ''}
-              {match.hasSizes && <span style={{ marginInlineStart: 4, color: 'var(--noorix-accent-violet)' }}>• متعدد الأحجام</span>}
+              {match.hasSizes && <span className="ms-1" style={{ color: 'var(--noorix-accent-violet)' }}>• متعدد الأحجام</span>}
             </div>
           )}
         </div>
-        <span className="text-[11px] font-bold" style={{
-          padding: '3px 8px', borderRadius: 6, flexShrink: 0,
+        <span className="text-[11px] font-bold py-[3px] px-2 rounded-md shrink-0" style={{
           background: statusInfo.bg, color: statusInfo.color,
         }}>
           {language === 'ar' ? statusInfo.label.ar : statusInfo.label.en}
@@ -411,23 +402,23 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
       </div>
 
       {/* حقول الكمية والسعر والإجمالي — قابلة للتعديل */}
-      <div className="flex items-center gap-10" style={{ flexWrap: 'wrap' }}>
-        <div className="flex flex-col" style={{ alignItems: 'center', gap: 2 }}>
-          <span className="text-noorix-muted" style={{ fontSize: 10 }}>الكمية</span>
+      <div className="flex items-center gap-10 flex-wrap">
+        <div className="flex flex-col items-center gap-[2px]">
+          <span className="text-noorix-muted text-[10px]">الكمية</span>
           <EditableNumber value={item.quantity} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'quantity', v)} />
         </div>
-        <span className="text-noorix-muted text-[13px]" style={{ alignSelf: 'flex-end', marginBottom: 4 }}>×</span>
-        <div className="flex flex-col" style={{ alignItems: 'center', gap: 2 }}>
-          <span className="text-noorix-muted" style={{ fontSize: 10 }}>السعر</span>
+        <span className="text-noorix-muted text-[13px] self-end mb-1">×</span>
+        <div className="flex flex-col items-center gap-[2px]">
+          <span className="text-noorix-muted text-[10px]">السعر</span>
           <EditableNumber value={item.unitPrice} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'unitPrice', v)} />
         </div>
-        <span className="text-noorix-muted text-[13px]" style={{ alignSelf: 'flex-end', marginBottom: 4 }}>=</span>
-        <div className="flex flex-col" style={{ alignItems: 'center', gap: 2 }}>
-          <span className="text-noorix-muted" style={{ fontSize: 10 }}>الإجمالي</span>
+        <span className="text-noorix-muted text-[13px] self-end mb-1">=</span>
+        <div className="flex flex-col items-center gap-[2px]">
+          <span className="text-noorix-muted text-[10px]">الإجمالي</span>
           <EditableNumber value={item.totalPrice} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'totalPrice', v)} />
         </div>
         {item.confidence != null && (
-          <span className="text-[11px]" style={{ color: CONFIDENCE_COLOR(item.confidence), alignSelf: 'flex-end', marginBottom: 4 }}>
+          <span className="text-[11px] self-end mb-1" style={{ color: CONFIDENCE_COLOR(item.confidence) }}>
             {Math.round(item.confidence * 100)}%
           </span>
         )}
@@ -435,8 +426,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
 
       {/* تحذير رياضي */}
       {hasMathWarn && (
-        <div className="flex items-center justify-between gap-2 mt-2 rounded-lg" style={{
-          padding: '6px 10px',
+        <div className="flex items-center justify-between gap-2 mt-2 rounded-lg py-1.5 px-[10px]" style={{
           background: 'var(--noorix-yellow-12)', border: '1px solid var(--noorix-yellow-30)',
         }}>
           <div className="text-[12px]" style={{ color: 'var(--noorix-accent-amber)' }}>
@@ -447,7 +437,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
               variant="primary"
               size="sm"
               onClick={() => onApplySuggestion(index)}
-              style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+              className="whitespace-nowrap shrink-0"
             >
               تصحيح تلقائي
             </Button>
@@ -457,8 +447,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
 
       {/* تحذير السعر */}
       {hasPriceWarn && (
-        <div className="text-[12px] rounded-lg" style={{
-          marginTop: 6, padding: '6px 10px',
+        <div className="text-[12px] rounded-lg mt-1.5 py-1.5 px-[10px]" style={{
           background: 'var(--noorix-blue-8)', border: '1px solid var(--noorix-blue-25)',
           color: 'var(--noorix-accent-blue)',
         }}>

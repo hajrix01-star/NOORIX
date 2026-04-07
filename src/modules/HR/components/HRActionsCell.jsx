@@ -85,7 +85,7 @@ export const HRActionsCell = memo(function HRActionsCell({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  if (items.length === 0) return <span style={{ color: 'var(--noorix-text-muted)', fontSize: 12 }}>—</span>;
+  if (items.length === 0) return <span className="text-[12px] text-noorix-muted">—</span>;
 
   const close = () => setOpen(false);
   const run = (fn) => { close(); fn?.(row); };
@@ -115,7 +115,7 @@ export const HRActionsCell = memo(function HRActionsCell({
   );
 
   return (
-    <div style={{ position: 'relative', display: 'inline-flex' }}>
+    <div className="relative inline-flex">
       <Button
         ref={btnRef}
         aria-label={t('actions')}

@@ -10,7 +10,7 @@ function MiniImageViewer({ src }) {
   const [rotation, setRotation] = useState(0);
   const [zoomed,   setZoomed]   = useState(false);
   if (!src) return (
-    <div className="flex items-center bg-noorix-bg-muted rounded-lg text-noorix-muted text-[13px]" style={{ height: 100, justifyContent: 'center' }}>
+    <div className="flex items-center bg-noorix-bg-muted rounded-lg text-noorix-muted text-[13px] h-[100px] justify-center">
       {'\u2014'}
     </div>
   );
@@ -20,7 +20,7 @@ function MiniImageViewer({ src }) {
         <img src={src} alt="" className="w-full cursor-pointer" style={{ objectFit: 'contain', display: 'block', transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s' }}
           onClick={() => setZoomed((z) => !z)} />
       </div>
-      <div className="flex gap-1" style={{ padding: '5px 8px', borderTop: '1px solid var(--noorix-border)' }}>
+      <div className="flex gap-1 py-[5px] px-2 border-t border-noorix-border">
         <Button className="lb-btn" onClick={() => setRotation((r) => (r + 90) % 360)}>↺</Button>
         <Button className="lb-btn" onClick={() => setZoomed((z) => !z)}>{zoomed ? '−' : '+'}</Button>
       </div>
@@ -41,15 +41,15 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
           <div className="compare-modal-grid">
             {/* Latest (higher) */}
             <div className="compare-invoice-card">
-              <div className="compare-invoice-label" style={{ color: 'var(--noorix-accent-red)' }}>
+              <div className="compare-invoice-label text-noorix-red">
                 {isAr ? 'السعر الأخير' : 'Latest Price'}
               </div>
               {latestInvoice?.imageUrl && (
                 <MiniImageViewer src={latestInvoice.imageUrl} />
               )}
               <div className="compare-invoice-meta mt-2.5">
-                <div className="font-extrabold" style={{ fontSize: 22, color: 'var(--noorix-accent-red)' }}>
-                  {fmtNum(alert.latestPrice)} <span className="text-[12px]" style={{ fontWeight: 400 }}>{isAr ? 'ريال' : 'SAR'}</span>
+                <div className="font-extrabold text-[22px] text-noorix-red">
+                  {fmtNum(alert.latestPrice)} <span className="text-[12px] font-normal">{isAr ? 'ريال' : 'SAR'}</span>
                 </div>
                 <div className="text-[12px] text-noorix-muted">{alert.latestSupplier}</div>
                 <div className="text-[12px] text-noorix-muted">{fmtDate(alert.latestInvoiceDate)}</div>
@@ -58,15 +58,15 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
 
             {/* Best */}
             <div className="compare-invoice-card">
-              <div className="compare-invoice-label" style={{ color: 'var(--noorix-accent-green)' }}>
+              <div className="compare-invoice-label text-noorix-green">
                 {isAr ? 'أفضل سعر' : 'Best Price'}
               </div>
               {lowestInvoice?.imageUrl && (
                 <MiniImageViewer src={lowestInvoice.imageUrl} />
               )}
               <div className="compare-invoice-meta mt-2.5">
-                <div className="font-extrabold" style={{ fontSize: 22, color: 'var(--noorix-accent-green)' }}>
-                  {fmtNum(alert.lowestPrice)} <span className="text-[12px]" style={{ fontWeight: 400 }}>{isAr ? 'ريال' : 'SAR'}</span>
+                <div className="font-extrabold text-[22px] text-noorix-green">
+                  {fmtNum(alert.lowestPrice)} <span className="text-[12px] font-normal">{isAr ? 'ريال' : 'SAR'}</span>
                 </div>
                 <div className="text-[12px] text-noorix-muted">{alert.lowestSupplier}</div>
                 <div className="text-[12px] text-noorix-muted">{fmtDate(alert.lowestInvoiceDate)}</div>
@@ -74,8 +74,8 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
             </div>
           </div>
 
-          <div className="rounded-lg" style={{ padding: '12px 14px', background: 'var(--noorix-green-5)', border: '1px solid var(--noorix-border)' }}>
-            <div className="font-semibold text-[13px]" style={{ color: 'var(--noorix-accent-green)', marginBottom: 2 }}>
+          <div className="rounded-lg py-3 px-[14px] bg-noorix-green/5 border border-noorix-border">
+            <div className="font-semibold text-[13px] text-noorix-green mb-[2px]">
               {isAr ? 'التوفير المحتمل' : 'Potential Savings'}: {fmtNum(saving)} {isAr ? 'ريال / وحدة' : 'SAR/unit'}
             </div>
             <div className="text-[12px] text-noorix-muted">
@@ -154,7 +154,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
   );
 
   return (
-    <div dir={dir} className="flex flex-col" style={{ gap: 18 }}>
+    <div dir={dir} className="flex flex-col gap-[18px]">
 
       {/* Stats */}
       <div className="ocr-alerts-stats">
@@ -241,7 +241,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
                   <div className="ocr-alert-title">{alert.itemName}</div>
                   <div className="ocr-alert-detail">
                     {alert.latestSupplier} · {fmtDate(alert.latestInvoiceDate)}
-                    {saving > 0 && <span className="font-semibold" style={{ color: 'var(--noorix-accent-green)', marginInlineStart: 8 }}>
+                    {saving > 0 && <span className="font-semibold text-noorix-green ms-2">
                       {isAr ? `توفير ${fmtNum(saving)}` : `Save ${fmtNum(saving)}`}
                     </span>}
                   </div>
@@ -268,7 +268,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
 
       {dismissed.size > 0 && (
       <Button onClick={() => { setDismissed(new Set()); try { localStorage.removeItem('noorix-dismissed-alerts'); } catch {} }}
-        style={{ alignSelf: 'center' }}>
+        className="self-center">
         {isAr ? `إظهار ${dismissed.size} تنبيه مخفي` : `Show ${dismissed.size} dismissed`}
       </Button>
       )}

@@ -21,10 +21,10 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
     <div className="flex flex-col gap-1.5">
       {data.slice(0, 10).map((r, i) => (
         <div key={i} className="flex items-center gap-8">
-          <span className="text-[12px] truncate" style={{ minWidth: 80 }} title={getLabel(r)}>
+          <span className="text-[12px] truncate min-w-[80px]" title={getLabel(r)}>
             {getLabel(r)}
           </span>
-          <div className="flex-1 min-w-0 bg-noorix-bg-muted overflow-hidden" style={{ height: 20, borderRadius: 4 }}>
+          <div className="flex-1 min-w-0 bg-noorix-bg-muted overflow-hidden h-5 rounded">
             <div
               style={{
                 width: `${Math.min(100, (Number(r[valueKey]) / m) * 100)}%`,
@@ -35,7 +35,7 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
               }}
             />
           </div>
-          <span className="text-[12px]" style={{ fontFamily: 'var(--noorix-font-numbers)', minWidth: 60, textAlign: 'left' }}>
+          <span className="text-[12px] min-w-[60px] text-left" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
             {fmt(r[valueKey], 2)}
           </span>
         </div>
@@ -70,28 +70,28 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
       className="orders-purchase-history-drawer"
     >
       {isLoading ? (
-        <div className="text-center text-noorix-muted" style={{ padding: 40 }}>{t('loading')}</div>
+        <div className="text-center text-noorix-muted p-10">{t('loading')}</div>
       ) : history.length === 0 ? (
-        <div className="text-center text-noorix-muted" style={{ padding: 40 }}>{t('ordersNoPurchaseHistory')}</div>
+        <div className="text-center text-noorix-muted p-10">{t('ordersNoPurchaseHistory')}</div>
       ) : (
-        <table className="w-full" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+        <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('orderNumber')}</th>
-              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('orderDate')}</th>
-              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('quantity')}</th>
-              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('unitPrice')}</th>
-              <th className="font-bold" style={{ textAlign: 'right', padding: '8px 10px' }}>{t('total')}</th>
+              <th className="font-bold text-right py-2 px-[10px]">{t('orderNumber')}</th>
+              <th className="font-bold text-right py-2 px-[10px]">{t('orderDate')}</th>
+              <th className="font-bold text-right py-2 px-[10px]">{t('quantity')}</th>
+              <th className="font-bold text-right py-2 px-[10px]">{t('unitPrice')}</th>
+              <th className="font-bold text-right py-2 px-[10px]">{t('total')}</th>
             </tr>
           </thead>
           <tbody>
             {history.map((h, i) => (
               <tr key={i} className="border-b border-noorix-border">
-                <td style={{ padding: '8px 10px' }}>{h.orderNumber}</td>
-                <td style={{ padding: '8px 10px' }}>{formatSaudiDate(h.orderDate)}</td>
-                <td style={{ padding: '8px 10px' }} className="nx-cell-num">{fmt(h.quantity, 2)}</td>
-                <td style={{ padding: '8px 10px' }} className="nx-cell-num">{fmt(h.unitPrice, 2)}</td>
-                <td style={{ padding: '8px 10px' }} className="nx-cell-num nx-cell-num--green">{fmt(h.amount, 2)} ﷼</td>
+                <td className="py-2 px-[10px]">{h.orderNumber}</td>
+                <td className="py-2 px-[10px]">{formatSaudiDate(h.orderDate)}</td>
+                <td className="py-2 px-[10px] nx-cell-num">{fmt(h.quantity, 2)}</td>
+                <td className="py-2 px-[10px] nx-cell-num">{fmt(h.unitPrice, 2)}</td>
+                <td className="py-2 px-[10px] nx-cell-num nx-cell-num--green">{fmt(h.amount, 2)} ﷼</td>
               </tr>
             ))}
           </tbody>
@@ -182,7 +182,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
               max={50}
               value={filterCount}
               onChange={(e) => setFilterCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 5)))}
-              style={{ width: 80 }}
+              className="w-[80px]"
             />
           )}
           <Button type="button" className="noorix-print-hide" onClick={() => window.print()} disabled={filtered.length === 0}>{t('print')}</Button>
@@ -193,15 +193,15 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
 
       {/* كروت الإجمالي */}
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
-        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border" style={{ padding: '14px 16px' }}>
+        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
           <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalItems')}</div>
           <div className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{filtered.length}</div>
         </div>
-        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border" style={{ padding: '14px 16px' }}>
+        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
           <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalQuantity')}</div>
           <div className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity, 2)}</div>
         </div>
-        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border" style={{ padding: '14px 16px' }}>
+        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
           <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalAmount')}</div>
           <div className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} ﷼</div>
         </div>
@@ -229,26 +229,26 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
       {/* جدول */}
       <div className="noorix-surface-card overflow-auto">
         {isLoading ? (
-          <div className="text-center text-noorix-muted" style={{ padding: 40 }}>{t('loading')}</div>
+          <div className="text-center text-noorix-muted p-10">{t('loading')}</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center text-noorix-muted" style={{ padding: 40 }}>{t('ordersNoItemsInPeriod')}</div>
+          <div className="text-center text-noorix-muted p-10">{t('ordersNoItemsInPeriod')}</div>
         ) : (
             <div className="overflow-auto">
-            <table className="w-full" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+            <table className="w-full border-collapse text-[13px]">
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('product')}</th>
-                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('category')}</th>
-                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('unit')}</th>
-                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('quantity')}</th>
-                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('total')}</th>
-                  <th className="font-bold" style={{ textAlign: 'right', padding: '10px 12px' }}>{t('ordersOrderCount')}</th>
+                  <th className="font-bold text-right py-[10px] px-3">{t('product')}</th>
+                  <th className="font-bold text-right py-[10px] px-3">{t('category')}</th>
+                  <th className="font-bold text-right py-[10px] px-3">{t('unit')}</th>
+                  <th className="font-bold text-right py-[10px] px-3">{t('quantity')}</th>
+                  <th className="font-bold text-right py-[10px] px-3">{t('total')}</th>
+                  <th className="font-bold text-right py-[10px] px-3">{t('ordersOrderCount')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
                   <tr key={r.productId} className="border-b border-noorix-border">
-                    <td style={{ padding: '10px 12px' }}>
+                    <td className="py-[10px] px-3">
                       <Button
                         variant="ghost"
                         type="button"
@@ -259,7 +259,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
                         {r.productNameAr || r.productNameEn || '—'}
                       </Button>
                     </td>
-                    <td style={{ padding: '10px 12px' }}>
+                    <td className="py-[10px] px-3">
                       {r.categoryId ? (
                         <Button
                           variant="ghost"
@@ -274,10 +274,10 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
                         <span className="nx-cell-muted">—</span>
                       )}
                     </td>
-                    <td className="nx-cell-muted" style={{ padding: '10px 12px' }}>{r.unit || '—'}</td>
-                    <td className="nx-cell-num" style={{ padding: '10px 12px' }}>{fmt(r.quantity ?? 0, 2)}</td>
-                    <td className="nx-cell-num nx-cell-num--green" style={{ padding: '10px 12px' }}>{fmt(r.amount ?? 0, 2)} ﷼</td>
-                    <td className="nx-cell-num" style={{ padding: '10px 12px' }}>{r.orderCount ?? 0}</td>
+                    <td className="nx-cell-muted py-[10px] px-3">{r.unit || '—'}</td>
+                    <td className="nx-cell-num py-[10px] px-3">{fmt(r.quantity ?? 0, 2)}</td>
+                    <td className="nx-cell-num nx-cell-num--green py-[10px] px-3">{fmt(r.amount ?? 0, 2)} ﷼</td>
+                    <td className="nx-cell-num py-[10px] px-3">{r.orderCount ?? 0}</td>
                   </tr>
                 ))}
               </tbody>

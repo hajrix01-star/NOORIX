@@ -189,9 +189,10 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
           {/* مبدّل الشركة */}
           <div className="w-full mt-2">
             <div className="relative">
-              <button
+              <Button
+                variant="raw"
+                size="auto"
                 ref={coDropBtnRef}
-                type="button"
                 onClick={showCompanySwitcher ? () => { updateCoDropPos(); setCoDropOpen((v) => !v); } : undefined}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] min-h-[44px] transition-colors"
                 style={{
@@ -227,7 +228,7 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                     <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
-              </button>
+              </Button>
 
               {showCompanySwitcher && coDropOpen && createPortal(
                 <div
@@ -247,23 +248,23 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                     const cName = lang === 'en' ? (c.nameEn || c.nameAr) : (c.nameAr || c.nameEn) || c.id;
                     const isActive = c.id === activeCompany;
                     return (
-                      <button
+                      <Button
                         key={c.id}
-                        type="button"
+                        variant="raw"
+                        size="auto"
                         role="option"
                         aria-selected={isActive}
                         onClick={() => handleCompanySelect(c.id)}
-                        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-start border-b border-noorix-border last:border-b-0 transition-colors hover:bg-noorix-bg-muted"
+                        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-[13px] text-start border-b border-noorix-border last:border-b-0 transition-colors hover:bg-noorix-bg-muted"
                         style={{
                           background: isActive ? 'var(--noorix-blue-8)' : 'transparent',
                           fontWeight: isActive ? 700 : 500,
                           color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text)',
-                          fontSize: 13,
                         }}
                       >
                         {isActive && <span className="text-[10px]">✓</span>}
                         {cName}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>,

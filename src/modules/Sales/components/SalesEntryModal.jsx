@@ -112,24 +112,23 @@ export function SalesEntryModal({
         }
       >
         <div className="text-center">
-          <div className="mb-3" style={{ fontSize: 48 }}>✅</div>
+          <div className="mb-3 text-[48px]">✅</div>
           <p className="text-[14px] text-noorix-muted m-0 mb-4">
             {t('summaryNumber')}: <strong style={{ color: 'var(--noorix-accent-blue)' }}>{savedSummary.summaryNumber}</strong>
           </p>
-          <div className="flex flex flex-wrap gap-4 mb-5" style={{ justifyContent: 'center' }}>
+          <div className="flex flex-wrap gap-4 mb-5 justify-center">
             <div className="text-center">
               <div className="text-[11px] text-noorix-muted">{t('total')}</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedSummary.totalAmount, 2)} ﷼</div>
+              <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedSummary.totalAmount, 2)} ﷼</div>
             </div>
             <div className="text-center">
               <div className="text-[11px] text-noorix-muted">{t('customers')}</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-blue)' }}>{savedSummary.customerCount}</div>
+              <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-blue)' }}>{savedSummary.customerCount}</div>
             </div>
           </div>
           <Button
             variant="success"
-            className="w-full"
-            style={{ maxWidth: 280 }}
+            className="w-full max-w-[280px]"
             onClick={() => onWhatsApp?.(savedSummary)}
           >
             {t('sendWhatsApp')} — {t('salesDailySummary')}
@@ -168,17 +167,17 @@ export function SalesEntryModal({
       </div>
 
       <div className="mb-4">
-        <label className="text-[13px] font-bold mb-2" style={{ display: 'block' }}>{t('salesChannels')}</label>
+        <label className="text-[13px] font-bold mb-2 block">{t('salesChannels')}</label>
         {salesChannelsLoading ? (
-          <div className="p-4 text-center text-noorix-muted text-[13px]" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
+          <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px]" style={{ border: '2px dashed var(--noorix-border)' }}>
             {t('loading')}
           </div>
         ) : salesChannelsError ? (
-          <div className="p-4 text-center text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-20)', borderRadius: 10 }}>
+          <div className="p-4 text-center text-[13px] font-semibold rounded-[10px]" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-20)' }}>
             {salesChannelsError}
           </div>
         ) : salesChannels.length === 0 ? (
-          <div className="p-4 text-center text-noorix-muted text-[13px]" style={{ border: '2px dashed var(--noorix-border)', borderRadius: 10 }}>
+          <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px]" style={{ border: '2px dashed var(--noorix-border)' }}>
             {t('noSalesChannels')}
           </div>
         ) : (
@@ -195,8 +194,8 @@ export function SalesEntryModal({
                     value={amt}
                     onChange={(e) => setChannelAmounts((p) => ({ ...p, [v.id]: e.target.value }))}
                     placeholder="0.00"
-                    className="w-full rounded-lg text-[14px] bg-noorix-surface text-noorix-text"
-                    style={{ boxSizing: 'border-box', padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right', border: '1px solid var(--noorix-border)' }}
+                    className="w-full rounded-lg text-[14px] bg-noorix-surface text-noorix-text py-2 px-[10px] text-right"
+                    style={{ fontFamily: 'var(--noorix-font-numbers)', border: '1px solid var(--noorix-border)' }}
                   />
                 </div>
               );

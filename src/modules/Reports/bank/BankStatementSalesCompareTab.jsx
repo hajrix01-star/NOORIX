@@ -69,10 +69,8 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
         <div className="noorix-surface-card p-4">
           <div className="text-[12px] text-noorix-muted">{t('bankSalesDifference')}</div>
           <div
-            className="font-extrabold nx-ltr"
+            className="font-extrabold nx-ltr text-[20px] text-right"
             style={{
-              fontSize: 20,
-              textAlign: 'right',
               color: reconLoading ? 'var(--noorix-text-muted)' : Math.abs(diff) < 1 ? 'var(--noorix-accent-green)' : '#ca8a04',
             }}
           >
