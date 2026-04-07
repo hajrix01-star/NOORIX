@@ -102,7 +102,7 @@ import { AdaptiveSheet } from '../../ui';
 
 // ✅ Modal — مباشرة فقط للتأكيدات والحوارات القصيرة المركّزة (انظر الجدول أدناه)
 import { Modal } from '../../ui';
-<Modal open={open} onClose={onClose} title="العنوان" size="sm|md|lg|xl|2xl|full" variant="default|danger|flush">
+<Modal open={open} onClose={onClose} title="العنوان" size="sm|md|lg|xl|2xl|full" variant="default|danger">
   {children}
 </Modal>
 
@@ -125,7 +125,7 @@ import { Drawer } from '../../ui';
 
 **قاعدة سريعة:** عمل المستخدم اليومي (نماذج، جداول، خطوات) → **`AdaptiveSheet`** مع `side="start"` (يؤثّر على فرع Drawer فقط). سؤال قصير أو خطر → **`Modal`**.
 
-`variant` و`flush` يُمرَّران لفرع **Modal** فقط؛ على الشاشة الضيقة يُستخدم **Drawer** بدون تلك الأنماط.
+`variant` يُمرَّر لفرع **Modal** فقط؛ **flush** عبر `className="nx-modal--flush"` على **Modal** عند الحاجة. على الشاشة الضيقة يُستخدم **Drawer** بدون `variant`.
 
 أسماء الملفات قد تبقى `*Modal.jsx`؛ **المهم أن الجذر البصري للنماذج يكون `AdaptiveSheet`** ما لم يُستثنَ صراحةً.
 

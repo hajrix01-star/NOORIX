@@ -41,7 +41,7 @@ function drawerSizeFromProp(size) {
  * @param {()=>void} props.onClose
  * @param {string} [props.title]
  * @param {'sm'|'md'|'lg'|'xl'|'2xl'|'full'} [props.size='md']
- * @param {'default'|'danger'|'flush'} [props.variant='default'] — يُطبَّق على فرع Modal فقط
+ * @param {'default'|'danger'} [props.variant='default'] — يُطبَّق على فرع Modal فقط (`flush` عبر className على Modal إن لزم)
  * @param {React.ReactNode} [props.footer]
  * @param {boolean} [props.closeOnBackdrop=true]
  * @param {boolean} [props.hideClose=false]
