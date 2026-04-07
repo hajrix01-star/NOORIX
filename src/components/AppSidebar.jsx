@@ -1,14 +1,13 @@
 ﻿/**
  * AppSidebar — القائمة الجانبية الرئيسية
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
-import { Button, Modal } from '../ui';
+import { Button } from '../ui';
 import {
   IconCrown,
   IconGrid,
@@ -53,7 +52,7 @@ const SIDEBAR_LINKS = [
   { to: '/theme-preview', labelKey: 'themePreview', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
 ];
 
-export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCompany, companies, userRole, userPermissions, showCompanySwitcher }) {
+export default function AppSidebar({ isOpen, onClose, userRole, userPermissions }) {
   const { t, lang } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -86,60 +85,6 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
     return () => window.removeEventListener('noorix:branding-changed', refresh);
   }, [lang]);
 
-  const [pendingCompany, setPendingCompany] = useState(null);
-  const pendingCo = pendingCompany ? companies.find((c) => c.id === pendingCompany) : null;
-  const pendingName = pendingCo
-    ? (lang === 'en' ? pendingCo.nameEn || pendingCo.nameAr : pendingCo.nameAr || pendingCo.nameEn) || '—'
-    : '';
-
-  const handleCompanySelect = (newId) => {
-    if (newId && newId !== activeCompany) {
-      setPendingCompany(newId);
-    }
-    setCoDropOpen(false);
-  };
-
-  const [coDropOpen, setCoDropOpen] = useState(false);
-  const coDropBtnRef = useRef(null);
-  const coDropMenuRef = useRef(null);
-  const [coDropPos, setCoDropPos] = useState({ top: 0, left: 0, width: 220 });
-
-  const updateCoDropPos = useCallback(() => {
-    const el = coDropBtnRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    setCoDropPos({ top: r.bottom + 4, left: r.left, width: Math.max(r.width, 200) });
-  }, []);
-
-  useEffect(() => {
-    if (!coDropOpen) return undefined;
-    updateCoDropPos();
-    const handleClose = () => setCoDropOpen(false);
-    const onMouseDown = (e) => {
-      if (!coDropBtnRef.current?.contains(e.target) && !coDropMenuRef.current?.contains(e.target)) {
-        setCoDropOpen(false);
-      }
-    };
-    window.addEventListener('resize', handleClose);
-    window.addEventListener('scroll', handleClose, true);
-    document.addEventListener('mousedown', onMouseDown);
-    return () => {
-      window.removeEventListener('resize', handleClose);
-      window.removeEventListener('scroll', handleClose, true);
-      document.removeEventListener('mousedown', onMouseDown);
-    };
-  }, [coDropOpen, updateCoDropPos]);
-
-  const confirmSwitch = () => {
-    if (pendingCompany) {
-      setActiveCompany(pendingCompany);
-      setPendingCompany(null);
-      onClose();
-    }
-  };
-
-  const cancelSwitch = () => setPendingCompany(null);
-
   const handleReportsParentClick = () => {
     if (reportsOpen) {
       setReportsOpen(false);
@@ -149,12 +94,6 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
       onClose();
     }
   };
-
-  const activeCo = companies.find((c) => c.id === activeCompany) || companies[0];
-  const coName = lang === 'en'
-    ? (activeCo?.nameEn || activeCo?.nameAr || '—')
-    : (activeCo?.nameAr || activeCo?.nameEn || '—');
-  const initial = coName[0] || '?';
 
   return (
     <>
@@ -184,93 +123,6 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                 ✕
               </Button>
             )}
-          </div>
-
-          {/* مبدّل الشركة */}
-          <div className="w-full mt-2">
-            <div className="relative">
-              <Button
-                variant="raw"
-                size="auto"
-                ref={coDropBtnRef}
-                onClick={showCompanySwitcher ? () => { updateCoDropPos(); setCoDropOpen((v) => !v); } : undefined}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] min-h-[44px] transition-colors"
-                style={{
-                  background: 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  cursor: showCompanySwitcher ? 'pointer' : 'default',
-                }}
-              >
-                <div
-                  className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-white font-extrabold text-[13px] shrink-0 overflow-hidden"
-                  style={{
-                    background: activeCo?.logoUrl
-                      ? 'transparent'
-                      : 'linear-gradient(135deg, var(--noorix-blue-90) 0%, var(--noorix-green-50) 100%)',
-                  }}
-                >
-                  {activeCo?.logoUrl
-                    ? <img src={activeCo.logoUrl} alt={coName} className="w-full h-full object-cover" />
-                    : initial
-                  }
-                </div>
-                <div className="flex-1 text-start min-w-0">
-                  <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{t('activeCompany')}</div>
-                  <div className="text-[13px] font-bold truncate" style={{ color: 'rgba(255,255,255,0.92)' }}>{coName}</div>
-                </div>
-                {showCompanySwitcher && (
-                  <svg
-                    viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"
-                    width="14" height="14"
-                    className="shrink-0 transition-transform duration-150"
-                    style={{ transform: coDropOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                  >
-                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </Button>
-
-              {showCompanySwitcher && coDropOpen && createPortal(
-                <div
-                  ref={coDropMenuRef}
-                  role="listbox"
-                  className="fixed bg-noorix-surface rounded-[10px] border border-noorix-border overflow-y-auto"
-                  style={{
-                    zIndex: 99999,
-                    top: coDropPos.top,
-                    left: coDropPos.left,
-                    width: coDropPos.width,
-                    maxHeight: 240,
-                    boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
-                  }}
-                >
-                  {companies.map((c) => {
-                    const cName = lang === 'en' ? (c.nameEn || c.nameAr) : (c.nameAr || c.nameEn) || c.id;
-                    const isActive = c.id === activeCompany;
-                    return (
-                      <Button
-                        key={c.id}
-                        variant="raw"
-                        size="auto"
-                        role="option"
-                        aria-selected={isActive}
-                        onClick={() => handleCompanySelect(c.id)}
-                        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-[13px] text-start border-b border-noorix-border last:border-b-0 transition-colors hover:bg-noorix-bg-muted"
-                        style={{
-                          background: isActive ? 'var(--noorix-blue-8)' : 'transparent',
-                          fontWeight: isActive ? 700 : 500,
-                          color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text)',
-                        }}
-                      >
-                        {isActive && <span className="text-[10px]">✓</span>}
-                        {cName}
-                      </Button>
-                    );
-                  })}
-                </div>,
-                document.body,
-              )}
-            </div>
           </div>
         </div>
 
@@ -338,25 +190,6 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
       </aside>
 
       {isOpen && <div className="app-sidebar-backdrop" onClick={onClose} />}
-
-      {/* نافذة تأكيد تبديل الشركة */}
-      <Modal
-        open={!!pendingCompany}
-        onClose={cancelSwitch}
-        size="sm"
-        title={t('switchCompanyConfirmTitle')}
-        footer={
-          <>
-            <Button variant="ghost" onClick={cancelSwitch}>{t('cancel')}</Button>
-            <Button variant="primary" onClick={confirmSwitch}>{t('switchCompanyConfirmBtn')}</Button>
-          </>
-        }
-      >
-        <div className="text-center mb-2 text-[36px]"></div>
-        <p className="m-0 text-[14px] text-noorix-text leading-relaxed">
-          {t('switchCompanyConfirmBody')} <strong>{pendingName}</strong>؟
-        </p>
-      </Modal>
     </>
   );
 }

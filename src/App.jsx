@@ -290,12 +290,8 @@ export default function App() {
         <AppSidebar
           isOpen={isSidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          activeCompany={activeCompany}
-          setActiveCompany={setActiveCompany}
-          companies={companies}
           userRole={user?.role}
           userPermissions={user?.permissions}
-          showCompanySwitcher={showCompanySwitcher}
         />
         <div className={`app-main${serverDown ? ' pt-[38px]' : ''}`}>
           <AppHeader
@@ -308,6 +304,10 @@ export default function App() {
             user={user}
             onLogout={handleLogout}
             activeCompany={companies?.find((c) => c.id === activeCompany) || null}
+            companies={companies}
+            activeCompanyId={activeCompany}
+            setActiveCompany={setActiveCompany}
+            showCompanySwitcher={showCompanySwitcher}
           />
         <main className="app-main__content">
           <React.Suspense fallback={<LoadingFallback />}>

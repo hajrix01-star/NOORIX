@@ -195,7 +195,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
         ref={btnRef}
         variant="raw"
         type="button"
-        className="um-trigger"
+        className="um-trigger flex items-center gap-2 px-2.5 h-9 rounded-lg transition-colors hover:bg-noorix-bg-muted"
         onClick={() => setOpen((v) => !v)}
         title={displayName}
         aria-expanded={open}
@@ -206,8 +206,13 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
         <span className="um-avatar" style={{ borderColor: roleColor }}>
           {initials}
         </span>
+        {/* الاسم — يظهر من الشاشة المتوسطة فصاعداً */}
+        <span className="hidden md:flex flex-col items-start leading-none gap-0.5 max-w-[120px]">
+          <span className="text-[12px] font-semibold text-noorix-text truncate w-full">{displayName}</span>
+          <span className="text-[10px] truncate w-full" style={{ color: roleColor }}>{roleLabel}</span>
+        </span>
         <svg
-          className={`um-chevron${open ? ' um-chevron--open' : ''}`}
+          className={`um-chevron hidden sm:block${open ? ' um-chevron--open' : ''}`}
           width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"
         >
           <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
