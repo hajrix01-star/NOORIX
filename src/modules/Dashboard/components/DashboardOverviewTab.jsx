@@ -219,7 +219,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
             className="text-[15px] font-black nx-font-numbers"
             style={{ color: CARD_COLORS.sales.accent, direction: 'ltr' }}
           >
-            {fmt(chartTotal, 2)} ﷼
+            {fmt(chartTotal, 2)} <span className="text-[13px] font-medium text-noorix-muted">SAR</span>
           </div>
         </div>
 
@@ -275,7 +275,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                             whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
                             zIndex: 10, pointerEvents: 'none',
                           }}>
-                            {point.label} — {fmt(point.amount, 2)} ﷼
+                            {point.label} — {fmt(point.amount, 2)} SAR
                           </div>
                         )}
                         {/* العمود */}

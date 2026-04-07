@@ -29,7 +29,7 @@ export function amountText(value) {
 
 export function moneyText(value) {
   const text = amountText(value);
-  return text === '-' ? '-' : `${text} ﷼`;
+  return text === '-' ? '-' : `${text} SAR`;
 }
 
 export function percentText(value) {
