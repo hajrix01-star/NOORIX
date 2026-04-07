@@ -1898,14 +1898,14 @@
 .nx-inline-ltr { display: inline-block; direction: ltr; }
 
 /* ═══════════════════════════════════════════════════════════
-   KPI Card — كرت المؤشر الرئيسي (نظيف احترافي)
+   KPI Card — كرت المؤشر الرئيسي 2026
    ═══════════════════════════════════════════════════════════ */
 .nx-kpi-card {
   position: relative;
   background: var(--noorix-bg-surface, #fff);
   border: 1px solid var(--noorix-border, #dde3ec);
   border-radius: 8px;
-  padding: 20px 22px 18px;
+  padding: 16px 18px 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1918,68 +1918,100 @@
   transform: translateY(-1px);
 }
 
-/* الخط الجانبي المُلوَّن — يسار في RTL، يمين في LTR */
-.nx-kpi-card::before {
-  content: '';
-  position: absolute;
-  top: 16px;
-  bottom: 16px;
-  inset-inline-end: 0;
-  width: 3px;
-  border-radius: 3px 0 0 3px;
-  background: var(--kpi-accent, #2563eb);
-}
-
-/* أيقونة الكرت (مربع ملون) */
-.nx-kpi-card__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  background: var(--kpi-accent-bg, var(--noorix-blue-8));
-  color: var(--kpi-accent, #2563eb);
-  flex-shrink: 0;
-  margin-bottom: 14px;
-}
-
-/* عنوان الكرت */
+/* عنوان الكرت — أعلى الكرت */
 .nx-kpi-card__label {
   font-size: 12px;
   font-weight: 600;
   color: var(--noorix-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+  line-height: 1.3;
+  text-align: start;
+  margin-bottom: 10px;
+}
+
+/* صف الرقم: ر.س + القيمة الكبيرة + باج % */
+.nx-kpi-card__num-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+/* وسم العملة ر.س */
+.nx-kpi-card__sar {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--noorix-text-muted);
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-bottom: 2px;
   line-height: 1;
 }
 
 /* القيمة الرئيسية (الرقم الكبير) */
 .nx-kpi-card__value {
-  font-size: 26px;
-  font-weight: 900;
+  font-size: 22px;
+  font-weight: 800;
   font-family: var(--noorix-font-numbers);
   color: var(--noorix-text);
   direction: ltr;
   text-align: start;
   line-height: 1.1;
   letter-spacing: -0.5px;
+  flex: 1;
+  min-width: 0;
 }
 
-/* باج النسبة */
-.nx-kpi-card__badge {
+/* باج التغيير % مع سهم */
+.nx-kpi-card__pct {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  margin-top: 10px;
-  padding: 3px 8px;
+  gap: 2px;
+  padding: 3px 7px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
-  background: var(--kpi-accent-bg, var(--noorix-blue-8));
-  color: var(--kpi-accent, #2563eb);
-  width: fit-content;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 3px;
+}
+.nx-kpi-card__pct--up {
+  background: rgba(22,163,74,0.10);
+  color: var(--noorix-accent-green);
+}
+.nx-kpi-card__pct--down {
+  background: rgba(220,38,38,0.10);
+  color: var(--noorix-accent-red);
+}
+.nx-kpi-card__pct--neutral {
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text-muted);
+}
+
+/* Sparkline — يمتد حتى حواف الكرت أفقياً */
+.nx-kpi-card__sparkline {
+  margin-inline: -18px;
+  height: 52px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* تذييل الكرت: تسميتان صغيرتان */
+.nx-kpi-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 18px 8px;
+  margin-inline: -18px;
+  background: rgba(0,0,0,0.018);
+  border-top: 1px solid var(--noorix-border);
+}
+.nx-kpi-card__footer-label {
+  font-size: 10px;
+  color: var(--noorix-text-muted);
+  font-weight: 500;
 }
 
 /* الفاصل الأفقي الخفيف */
@@ -1996,6 +2028,10 @@
   color: var(--noorix-text-muted);
   margin-top: 8px;
 }
+
+/* (قديم — للتوافق مع شاشات أخرى) */
+.nx-kpi-card__icon { display: none; }
+.nx-kpi-card__badge { display: none; }
 
 /* ── Sparkline — خط بياني صغير أسفل الكرت ── */
 .nx-kpi-card__sparkline {
