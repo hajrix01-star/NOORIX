@@ -83,7 +83,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         {/* النوع */}
         <div>
           <label className="text-[13px] font-semibold mb-1.5 block">{t('vaultType')}</label>
-          <div className="vault-type-grid grid grid-cols-4 gap-2">
+          <div className="vault-type-grid grid grid-cols-3 gap-2">
             {VAULT_TYPES.map((vt) => (
               <Button
                 key={vt.value}

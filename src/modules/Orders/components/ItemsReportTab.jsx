@@ -74,7 +74,8 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
       ) : history.length === 0 ? (
         <div className="text-center text-noorix-muted p-10">{t('ordersNoPurchaseHistory')}</div>
       ) : (
-        <table className="w-full border-collapse text-[13px]">
+        <div className="overflow-x-auto -mx-1">
+        <table className="w-full border-collapse text-[13px] min-w-[420px]">
           <thead>
             <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
               <th className="font-bold text-right py-2 px-[10px]">{t('orderNumber')}</th>
@@ -96,6 +97,7 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </AdaptiveSheet>
   );

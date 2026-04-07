@@ -1887,6 +1887,8 @@ input:focus, select:focus, textarea:focus {
   .noorix-table-frame {
     max-width: 100%;
     width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   /* السايدبار: overlay ثابت على الجوال */
   .app-sidebar {

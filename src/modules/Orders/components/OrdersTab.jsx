@@ -438,8 +438,8 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           </div>
 
           <div className="text-[16px] font-bold mb-3">{t('orderItems')}</div>
-          <div className="border border-noorix-border overflow-hidden rounded-[10px]">
-            <table className="w-full border-collapse text-[13px]">
+          <div className="border border-noorix-border overflow-x-auto rounded-[10px]">
+            <table className="w-full border-collapse text-[13px] min-w-[480px]">
               <thead>
                 <tr className="bg-noorix-bg-muted border-b-2 border-noorix-border">
                   <th className="text-end font-bold py-3 px-4">#</th>

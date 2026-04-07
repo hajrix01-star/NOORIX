@@ -160,7 +160,7 @@ export function SalesEntryModal({
         </>
       }
     >
-      <div className="grid grid-cols-3 gap-2.5 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
         <Input type="date" label={t('transactionDate')} value={txDate} onChange={(e) => setTxDate(e.target.value)} />
         <Input type="number" min="0" label={t('customerCount')} required value={customerCount} onChange={(e) => setCustomerCount(e.target.value)} placeholder="0" />
         <Input type="number" min="0" step="0.01" label={t('cashOnHand')} value={cashOnHand} onChange={(e) => setCashOnHand(e.target.value)} placeholder="0.00" />

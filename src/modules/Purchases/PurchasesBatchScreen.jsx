@@ -493,7 +493,7 @@ export default function PurchasesBatchScreen() {
 
           {/* جدول الإدخال */}
           <div className="px-3 pb-4">
-              <div className="noorix-surface-card noorix-table-frame batch-purchases-table w-full">
+              <div className="noorix-surface-card noorix-table-frame batch-purchases-table w-full overflow-x-auto">
               <table className="noorix-table w-full table-fixed min-w-[900px]">
                 <colgroup><col style={{ width: '3%' }} /><col style={{ width: '20%' }} /><col style={{ width: '11%' }} /><col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '11%' }} /><col style={{ width: '5%' }} /><col style={{ width: '14%' }} /><col style={{ width: '3%' }} /></colgroup>
                 <thead>
