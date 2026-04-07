@@ -834,7 +834,7 @@ a { color: inherit; text-decoration: none; }
   outline-offset: 2px;
 }
 
-/* دائرة الأفاتار */
+/* دائرة الأفاتار — أيقونة شخص (بدون أحرف) */
 .um-avatar {
   width: 34px;
   height: 34px;
@@ -844,12 +844,20 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
-  color: #fff;
   flex-shrink: 0;
-  line-height: 1;
+  line-height: 0;
   transition: border-color 150ms;
+}
+.um-avatar-icon {
+  width: 18px;
+  height: 18px;
+  color: #fff;
+  opacity: 0.95;
+  flex-shrink: 0;
+}
+.um-avatar-icon--lg {
+  width: 22px;
+  height: 22px;
 }
 .um-trigger:hover .um-avatar {
   border-color: var(--role-color, #2563eb);
@@ -892,10 +900,8 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: 800;
-  color: #fff;
   flex-shrink: 0;
+  line-height: 0;
 }
 .um-header-info {
   flex: 1;

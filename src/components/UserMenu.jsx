@@ -19,12 +19,13 @@ const ROLE_COLORS = {
   cashier:     'var(--noorix-accent-green)',
 };
 
-function getInitials(user) {
-  const name = user?.nameAr || user?.nameEn || user?.email || '';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return parts[0][0] + parts[1][0];
-  if (parts[0]?.length >= 2) return parts[0].slice(0, 2);
-  return 'N';
+/** أيقونة مستخدم (رأس + أكتاف) — بدون أحرف */
+function UserSilhouetteIcon({ className = '' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+    </svg>
+  );
 }
 
 const MENU_WIDTH  = 240;
@@ -89,7 +90,6 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
   const role         = (user?.role || '').toLowerCase();
   const roleLabel    = ROLE_KEYS[role] ? t(ROLE_KEYS[role]) : role;
   const roleColor    = ROLE_COLORS[role] || 'var(--noorix-accent-green)';
-  const initials     = getInitials(user);
   const displayName  = user?.nameAr || user?.nameEn || user?.email || t('userDefault');
   const email        = user?.email || '';
   const isMobile     = typeof window !== 'undefined' && window.innerWidth <= 768;
@@ -114,7 +114,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
       {/* رأس القائمة — معلومات المستخدم */}
       <div className="um-header">
         <div className="um-avatar-lg" style={{ borderColor: roleColor }}>
-          {initials}
+          <UserSilhouetteIcon className="um-avatar-icon um-avatar-icon--lg" />
         </div>
         <div className="um-header-info">
           <div className="um-name">{displayName}</div>
@@ -204,7 +204,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
         style={{ '--role-color': roleColor }}
       >
         <span className="um-avatar" style={{ borderColor: roleColor }}>
-          {initials}
+          <UserSilhouetteIcon className="um-avatar-icon" />
         </span>
         {/* الاسم — يظهر من الشاشة المتوسطة فصاعداً */}
         <span className="hidden md:flex flex-col items-start leading-none gap-0.5 max-w-[120px]">
