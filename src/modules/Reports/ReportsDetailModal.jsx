@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { amountText, moneyText, percentText, truncateText, PERCENT_COLOR } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
-import { Button, Modal } from '../../ui';
+import { Button, Drawer } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }) {

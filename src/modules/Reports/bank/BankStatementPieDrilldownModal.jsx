@@ -4,7 +4,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { fmt } from '../../../utils/format';
 import { getTxKey, FALLBACK_CATEGORIES } from './bankAnalysisUtils';
-import { Button, Modal, Input } from '../../../ui';
+import { Button, Drawer, Input } from '../../../ui';
 import SmartTable from '../../../components/common/SmartTable';
 
 export default function BankStatementPieDrilldownModal({
@@ -53,11 +53,13 @@ export default function BankStatementPieDrilldownModal({
   }, [rows]);
 
   return (
-    <Modal
+    <Drawer
       open={open && !!categoryName}
       onClose={onClose}
       title={categoryName}
       size="full"
+      side="start"
+      className="bank-pie-drilldown-drawer"
       footer={<Button onClick={onClose}>{t('close') || 'إغلاق'}</Button>}
     >
       <div className="nx-text-sm nx-text-muted nx-mb-12 nx-flex-center nx-flex-wrap nx-gap-16">
@@ -143,6 +145,6 @@ export default function BankStatementPieDrilldownModal({
           emptyMessage={t('bankPieDrilldownEmpty')}
         />
       </div>
-    </Modal>
+    </Drawer>
   );
 }

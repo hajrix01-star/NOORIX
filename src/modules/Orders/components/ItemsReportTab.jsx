@@ -10,7 +10,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import Toast from '../../../components/Toast';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 const CHART_COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
 
@@ -61,11 +61,13 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
   const title = isProduct ? (product?.productNameAr || product?.nameAr || product?.productNameEn || product?.nameEn || productId) : (category?.nameAr || category?.nameEn || categoryId);
 
   return (
-    <Modal
+    <Drawer
       open
       onClose={onClose}
       title={`${t('ordersPurchaseHistory')} — ${title}`}
       size="md"
+      side="start"
+      className="orders-purchase-history-drawer"
     >
       {isLoading ? (
         <div className="nx-text-center nx-text-muted" style={{ padding: 40 }}>{t('loading')}</div>
@@ -95,7 +97,7 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
           </tbody>
         </table>
       )}
-    </Modal>
+    </Drawer>
   );
 }
 

@@ -11,7 +11,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
-import { Button, Modal } from '../../../ui';
+import { Button, Drawer } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
@@ -159,11 +159,13 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   const modalTitle = `${vault ? vaultDisplayName(vault, lang) : t('vaults')} — ${t('transactions')}${periodLabel ? ` (${periodLabel})` : ''}`;
 
   return (
-    <Modal
+    <Drawer
       open
       onClose={onClose}
       title={modalTitle}
-      size="lg"
+      size="xl"
+      side="start"
+      className="vault-transactions-drawer"
     >
       <div className="nx-toolbar nx-mb-16">
         <Button onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>Excel</Button>
@@ -190,6 +192,6 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
         footerCells={footerCells}
         renderMobileCard={renderMobileCard}
       />
-    </Modal>
+    </Drawer>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 import { bulkDeletePriceHistory } from '../services/ocrApi';
 
 const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -31,17 +31,11 @@ function MiniImageViewer({ src }) {
 function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
   const saving = (alert.latestPrice - alert.lowestPrice).toFixed(2);
   return (
-    <Modal open={true} onClose={onClose} size="xl" hideClose>
+    <Drawer open={true} onClose={onClose} size="xl" side="start" title={alert.itemName} className="price-compare-drawer">
       <div dir={isAr ? 'rtl' : 'ltr'}>
-        <div className="modal-head">
-          <div>
-            <div className="modal-title">{alert.itemName}</div>
-            <div className="modal-sub">
-              {isAr ? 'مقارنة الفاتورتين' : 'Invoice Comparison'} — +{alert.priceIncreasePercent}%
-            </div>
-          </div>
-          <Button className="modal-close-btn" onClick={onClose}>✕</Button>
-        </div>
+        <p className="nx-text-sm nx-text-muted nx-mt-0 nx-mb-12">
+          {isAr ? 'مقارنة الفاتورتين' : 'Invoice Comparison'} — +{alert.priceIncreasePercent}%
+        </p>
 
         <div className="modal-body">
           <div className="compare-modal-grid">
@@ -90,7 +84,7 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
           </div>
         </div>
       </div>
-    </Modal>
+    </Drawer>
   );
 }
 
