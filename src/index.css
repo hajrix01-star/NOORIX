@@ -197,7 +197,7 @@
 
 /* ── ضمان overlay موحّد لجميع النوافذ (يشمل inline styles) ── */
 /* أي غلاف نافذة (ملء الشاشة) — بدون تعتيم أو ضبابية خلف البطاقة */
-[aria-modal="true"]:not(.noorix-modal-card):not(.noorix-surface-card):not(.noorix-modal-card *) {
+[aria-modal="true"]:not(.noorix-modal-card):not(.noorix-surface-card):not(.noorix-modal-card *):not(.nx-modal):not(.nx-drawer-panel) {
   background: transparent !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;

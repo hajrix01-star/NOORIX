@@ -98,9 +98,15 @@ import { Modal } from '../../ui';
 <Modal open={open} onClose={onClose} title="العنوان" size="md|lg|sm">
   {children}
 </Modal>
+
+// ✅ لوح جانبي (تفاصيل، معاينة، سجل) — `src/ui/Drawer.jsx`
+import { Drawer } from '../../ui';
+<Drawer open={open} onClose={onClose} title="التفاصيل" size="md|sm|lg|full" side="start|end">
+  {children}
+</Drawer>
 ```
 
-**الألواح الجانبية (drawer / side panel):** ليست بديلاً عن `Modal` المركزي. حالياً لا يوجد `Drawer` موحّد في `src/ui` — **ممنوع** بناء overlay جانبي مخصّص بـ portal؛ عند الحاجة (تفاصيل سجل، معاينة فاتورة، سجل نشاط) يُضاف مكوّن **`Drawer`** (أو امتداد رسمي) في `src/ui` بنفس منظومة z-index وتركيز لوحة المفاتيح وARIA مثل `Modal`.
+**الألواح الجانبية:** ليست بديلاً عن `Modal` المركزي — استخدم **`Drawer`** من `../../ui`. **ممنوع** portal/overlay جانبي مخصّص. `side="start"` في صفحة `dir="rtl"` يفتح من يمين الشاشة (بداية السطر المنطقية).
 
 ### 6. قواعد استخدام المكوّنات (Semantic usage)
 
@@ -185,7 +191,7 @@ import { Modal } from '../../ui';
 ## الاستيراد الصحيح
 
 ```jsx
-import { Button, Input, Card, Badge, Modal, Spinner, SmartTable, Divider, FormRow } from '../../ui';
+import { Button, Input, Card, Badge, Modal, Drawer, Spinner, SmartTable, Divider, FormRow } from '../../ui';
 // أو حسب عمق الملف:
 import { Button, Input, Modal } from '../../../ui';
 ```
