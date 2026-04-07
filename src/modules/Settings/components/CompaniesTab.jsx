@@ -273,7 +273,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
             </form>
 
             {/* قسم الخطر */}
-            <div className="rounded-xl" style={{ marginTop: 24, padding: 14, background: 'rgba(239,68,68,0.05)', border: '1px solid var(--noorix-red-20)' }}>
+            <div className="rounded-xl" style={{ marginTop: 24, padding: 14, background: 'var(--noorix-red-5)', border: '1px solid var(--noorix-red-20)' }}>
               <div className="text-[13px] font-bold mb-3" style={{ color: 'var(--noorix-accent-red)' }}>⚠ منطقة الخطر</div>
               <div className="grid gap-2.5">
                 <div>

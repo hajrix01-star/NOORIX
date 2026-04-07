@@ -171,7 +171,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
             <div
             className="p-3 rounded-lg text-[13px] text-noorix-text"
             style={{
-              background: 'rgba(34,197,94,0.1)',
+              background: 'var(--noorix-green-10)',
             }}
             >
               {t('bankStatementMappingRequired')}

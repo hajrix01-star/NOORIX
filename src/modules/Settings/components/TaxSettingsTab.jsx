@@ -117,7 +117,7 @@ export default function TaxSettingsTab() {
           </div>
 
           {hasChanges && (
-            <div className="rounded-xl text-[13px]" style={{ padding: '10px 14px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.35)', color: 'var(--noorix-text-default)', lineHeight: 1.6 }}>
+            <div className="rounded-xl text-[13px]" style={{ padding: '10px 14px', background: 'var(--noorix-yellow-8)', border: '1px solid var(--noorix-yellow-35)', color: 'var(--noorix-text-default)', lineHeight: 1.6 }}>
               <strong>⚠️ تنبيه مهم:</strong> تغيير إعدادات الضريبة سيُطبَّق على <strong>الفواتير والمعاملات الجديدة فقط</strong>. الفواتير والسجلات المحفوظة مسبقاً لن تتأثر بهذا التغيير ولن تُعاد حسابها تلقائياً.
             </div>
           )}

@@ -270,8 +270,8 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
               {warningCount > 0 && (
                 <div className="flex items-center gap-8 text-[13px] rounded-lg" style={{
                   padding: '10px 14px',
-                  background: 'rgba(245,158,11,0.08)',
-                  border: '1px solid rgba(245,158,11,0.25)',
+                  background: 'var(--noorix-yellow-8)',
+                  border: '1px solid var(--noorix-yellow-25)',
                 }}>
                   <div>
                     <div className="font-semibold" style={{ color: 'var(--noorix-accent-amber)' }}>
@@ -310,7 +310,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
       )}
 
       {error && (
-        <div className="text-[13px] rounded-lg" style={{ padding: '12px 16px', background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)', color: 'var(--noorix-accent-red)' }}>
+        <div className="text-[13px] rounded-lg" style={{ padding: '12px 16px', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-15)', color: 'var(--noorix-accent-red)' }}>
           {error}
         </div>
       )}
@@ -356,7 +356,7 @@ function EditableNumber({ value, onChange, warn }) {
       style={{
         width: 72, padding: '3px 6px', borderRadius: 6, fontSize: 13, fontWeight: 700,
         border: `1px solid ${warn ? 'var(--color-noorix-amber)' : 'var(--noorix-border)'}`,
-        background: warn ? 'rgba(245,158,11,0.08)' : 'var(--noorix-bg-surface)',
+        background: warn ? 'var(--noorix-yellow-8)' : 'var(--noorix-bg-surface)',
         color: 'var(--noorix-text)', outline: 'none', fontFamily: 'inherit',
         textAlign: 'center',
       }}
@@ -377,8 +377,8 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
     <div style={{
       padding: '10px 12px',
       borderRadius: 10,
-      background: hasMathWarn ? 'rgba(245,158,11,0.06)' : 'var(--noorix-bg-surface)',
-      border: `1px solid ${hasMathWarn ? 'rgba(245,158,11,0.4)' : 'var(--noorix-border)'}`,
+      background: hasMathWarn ? 'var(--noorix-yellow-6)' : 'var(--noorix-bg-surface)',
+      border: `1px solid ${hasMathWarn ? 'var(--noorix-yellow-40)' : 'var(--noorix-border)'}`,
     }}>
       {/* رأس الصنف */}
       <div className="flex gap-2 flex flex-wrap mb-2" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -437,7 +437,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
       {hasMathWarn && (
         <div className="flex items-center justify-between gap-2 mt-2 rounded-lg" style={{
           padding: '6px 10px',
-          background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
+          background: 'var(--noorix-yellow-12)', border: '1px solid var(--noorix-yellow-30)',
         }}>
           <div className="text-[12px]" style={{ color: 'var(--noorix-accent-amber)' }}>
             {item.mathWarning.message}
@@ -459,7 +459,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
       {hasPriceWarn && (
         <div className="text-[12px] rounded-lg" style={{
           marginTop: 6, padding: '6px 10px',
-          background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
+          background: 'var(--noorix-blue-8)', border: '1px solid var(--noorix-blue-25)',
           color: 'var(--noorix-accent-blue)',
         }}>
           السعر المعتاد في آخر 90 يوم: <strong>{item.priceWarning.avg} ريال</strong> — انحراف {item.priceWarning.deviation}%

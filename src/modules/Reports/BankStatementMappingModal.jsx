@@ -20,12 +20,12 @@ import {
 /** مطابق COLUMN_TYPES في Base44 (بدون amount) */
 const COLUMN_FIELD_DEFS = [
   { key: 'dateCol', labelKey: 'bankMapColDate', required: true, badgeBg: 'var(--noorix-blue-18)', badgeColor: 'var(--noorix-accent-blue)' },
-  { key: 'descCol', labelKey: 'bankMapColDescription', required: true, badgeBg: 'rgba(126,34,206,0.15)', badgeColor: '#6b21a8' },
-  { key: 'debitCol', labelKey: 'bankMapColDebit', required: true, badgeBg: 'rgba(220,38,38,0.15)', badgeColor: 'var(--noorix-accent-red)' },
-  { key: 'creditCol', labelKey: 'bankMapColCredit', required: true, badgeBg: 'rgba(22,163,74,0.15)', badgeColor: 'var(--noorix-accent-green)' },
+  { key: 'descCol', labelKey: 'bankMapColDescription', required: true, badgeBg: 'var(--noorix-violet-15)', badgeColor: 'var(--noorix-accent-violet)' },
+  { key: 'debitCol', labelKey: 'bankMapColDebit', required: true, badgeBg: 'var(--noorix-red-15)', badgeColor: 'var(--noorix-accent-red)' },
+  { key: 'creditCol', labelKey: 'bankMapColCredit', required: true, badgeBg: 'var(--noorix-green-15)', badgeColor: 'var(--noorix-accent-green)' },
   { key: 'balanceCol', labelKey: 'bankMapColBalance', required: false, badgeBg: 'var(--noorix-amber-18)', badgeColor: 'var(--noorix-accent-amber)' },
-  { key: 'refCol', labelKey: 'bankMapColReference', required: false, badgeBg: 'rgba(75,85,99,0.15)', badgeColor: 'var(--noorix-text)' },
-  { key: 'notesCol', labelKey: 'bankMapColNotes', required: false, badgeBg: 'rgba(79,70,229,0.15)', badgeColor: '#4338ca' },
+  { key: 'refCol', labelKey: 'bankMapColReference', required: false, badgeBg: 'var(--noorix-muted-15)', badgeColor: 'var(--noorix-text)' },
+  { key: 'notesCol', labelKey: 'bankMapColNotes', required: false, badgeBg: 'var(--noorix-violet-15)', badgeColor: 'var(--noorix-accent-violet)' },
 ];
 
 function normalizeDateForInput(v) {
@@ -314,8 +314,8 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
             className="rounded-lg text-[13px] mb-3"
             style={{
               padding: 10,
-              background: 'rgba(234,179,8,0.12)',
-              border: '1px solid rgba(234,179,8,0.35)',
+              background: 'var(--noorix-yellow-12)',
+              border: '1px solid var(--noorix-yellow-35)',
             }}
           >
             {t('bankStatementNoAutoDetect')}

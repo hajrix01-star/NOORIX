@@ -114,39 +114,101 @@
   --noorix-accent-rose:   #e11d48;
   --noorix-accent-red:    #dc2626;
   /* Alpha tints — استخدمها بدلاً من rgba(R,G,B,X) المشفرة مباشرة */
-  --noorix-blue-4:   color-mix(in srgb, var(--noorix-accent-blue)   4%, transparent);
-  --noorix-blue-5:   color-mix(in srgb, var(--noorix-accent-blue)   5%, transparent);
-  --noorix-blue-6:   color-mix(in srgb, var(--noorix-accent-blue)   6%, transparent);
-  --noorix-blue-7:   color-mix(in srgb, var(--noorix-accent-blue)   7%, transparent);
-  --noorix-blue-8:   color-mix(in srgb, var(--noorix-accent-blue)   8%, transparent);
-  --noorix-blue-10:  color-mix(in srgb, var(--noorix-accent-blue)  10%, transparent);
-  --noorix-blue-12:  color-mix(in srgb, var(--noorix-accent-blue)  12%, transparent);
-  --noorix-blue-15:  color-mix(in srgb, var(--noorix-accent-blue)  15%, transparent);
-  --noorix-blue-18:  color-mix(in srgb, var(--noorix-accent-blue)  18%, transparent);
-  --noorix-blue-20:  color-mix(in srgb, var(--noorix-accent-blue)  20%, transparent);
-  --noorix-blue-28:  color-mix(in srgb, var(--noorix-accent-blue)  28%, transparent);
-  --noorix-blue-35:  color-mix(in srgb, var(--noorix-accent-blue)  35%, transparent);
-  --noorix-blue-45:  color-mix(in srgb, var(--noorix-accent-blue)  45%, transparent);
-  --noorix-red-6:    color-mix(in srgb, var(--noorix-accent-red)    6%, transparent);
-  --noorix-red-7:    color-mix(in srgb, var(--noorix-accent-red)    7%, transparent);
-  --noorix-red-8:    color-mix(in srgb, var(--noorix-accent-red)    8%, transparent);
-  --noorix-red-10:   color-mix(in srgb, var(--noorix-accent-red)   10%, transparent);
-  --noorix-red-12:   color-mix(in srgb, var(--noorix-accent-red)   12%, transparent);
-  --noorix-red-20:   color-mix(in srgb, var(--noorix-accent-red)   20%, transparent);
-  --noorix-red-25:   color-mix(in srgb, var(--noorix-accent-red)   25%, transparent);
-  --noorix-amber-8:  color-mix(in srgb, var(--noorix-accent-amber)  8%, transparent);
-  --noorix-amber-12: color-mix(in srgb, var(--noorix-accent-amber) 12%, transparent);
-  --noorix-amber-18: color-mix(in srgb, var(--noorix-accent-amber) 18%, transparent);
+  /* ── Alpha tints ── استخدمها بدلاً من rgba(R,G,B,X) المشفرة مباشرة ── */
+  /* Blue */
+  --noorix-blue-4:    color-mix(in srgb, var(--noorix-accent-blue)   4%, transparent);
+  --noorix-blue-5:    color-mix(in srgb, var(--noorix-accent-blue)   5%, transparent);
+  --noorix-blue-6:    color-mix(in srgb, var(--noorix-accent-blue)   6%, transparent);
+  --noorix-blue-7:    color-mix(in srgb, var(--noorix-accent-blue)   7%, transparent);
+  --noorix-blue-8:    color-mix(in srgb, var(--noorix-accent-blue)   8%, transparent);
+  --noorix-blue-10:   color-mix(in srgb, var(--noorix-accent-blue)  10%, transparent);
+  --noorix-blue-12:   color-mix(in srgb, var(--noorix-accent-blue)  12%, transparent);
+  --noorix-blue-15:   color-mix(in srgb, var(--noorix-accent-blue)  15%, transparent);
+  --noorix-blue-18:   color-mix(in srgb, var(--noorix-accent-blue)  18%, transparent);
+  --noorix-blue-20:   color-mix(in srgb, var(--noorix-accent-blue)  20%, transparent);
+  --noorix-blue-28:   color-mix(in srgb, var(--noorix-accent-blue)  28%, transparent);
+  --noorix-blue-25:   color-mix(in srgb, var(--noorix-accent-blue)  25%, transparent);
+  --noorix-blue-30:   color-mix(in srgb, var(--noorix-accent-blue)  30%, transparent);
+  --noorix-blue-35:   color-mix(in srgb, var(--noorix-accent-blue)  35%, transparent);
+  --noorix-blue-45:   color-mix(in srgb, var(--noorix-accent-blue)  45%, transparent);
+  --noorix-blue-90:   color-mix(in srgb, var(--noorix-accent-blue)  90%, transparent);
+  /* Red */
+  --noorix-red-4:     color-mix(in srgb, var(--noorix-accent-red)    4%, transparent);
+  --noorix-red-5:     color-mix(in srgb, var(--noorix-accent-red)    5%, transparent);
+  --noorix-red-6:     color-mix(in srgb, var(--noorix-accent-red)    6%, transparent);
+  --noorix-red-7:     color-mix(in srgb, var(--noorix-accent-red)    7%, transparent);
+  --noorix-red-8:     color-mix(in srgb, var(--noorix-accent-red)    8%, transparent);
+  --noorix-red-10:    color-mix(in srgb, var(--noorix-accent-red)   10%, transparent);
+  --noorix-red-12:    color-mix(in srgb, var(--noorix-accent-red)   12%, transparent);
+  --noorix-red-15:    color-mix(in srgb, var(--noorix-accent-red)   15%, transparent);
+  --noorix-red-20:    color-mix(in srgb, var(--noorix-accent-red)   20%, transparent);
+  --noorix-red-25:    color-mix(in srgb, var(--noorix-accent-red)   25%, transparent);
+  --noorix-red-45:    color-mix(in srgb, var(--noorix-accent-red)   45%, transparent);
+  --noorix-red-95:    color-mix(in srgb, var(--noorix-accent-red)   95%, transparent);
+  /* Amber (--noorix-accent-amber #d97706 — canonical warning color) */
+  --noorix-amber-6:   color-mix(in srgb, var(--noorix-accent-amber)  6%, transparent);
+  --noorix-amber-7:   color-mix(in srgb, var(--noorix-accent-amber)  7%, transparent);
+  --noorix-amber-8:   color-mix(in srgb, var(--noorix-accent-amber)  8%, transparent);
+  --noorix-amber-10:  color-mix(in srgb, var(--noorix-accent-amber) 10%, transparent);
+  --noorix-amber-12:  color-mix(in srgb, var(--noorix-accent-amber) 12%, transparent);
+  --noorix-amber-15:  color-mix(in srgb, var(--noorix-accent-amber) 15%, transparent);
+  --noorix-amber-18:  color-mix(in srgb, var(--noorix-accent-amber) 18%, transparent);
+  --noorix-amber-20:  color-mix(in srgb, var(--noorix-accent-amber) 20%, transparent);
+  --noorix-amber-25:  color-mix(in srgb, var(--noorix-accent-amber) 25%, transparent);
+  --noorix-amber-30:  color-mix(in srgb, var(--noorix-accent-amber) 30%, transparent);
+  --noorix-amber-35:  color-mix(in srgb, var(--noorix-accent-amber) 35%, transparent);
+  --noorix-amber-40:  color-mix(in srgb, var(--noorix-accent-amber) 40%, transparent);
+  /* Yellow (--noorix-accent-yellow #f59e0b = amber-400, lighter warning variant) */
+  --noorix-accent-yellow: #f59e0b;
+  --noorix-yellow-6:  color-mix(in srgb, var(--noorix-accent-yellow)  6%, transparent);
+  --noorix-yellow-7:  color-mix(in srgb, var(--noorix-accent-yellow)  7%, transparent);
+  --noorix-yellow-8:  color-mix(in srgb, var(--noorix-accent-yellow)  8%, transparent);
+  --noorix-yellow-10: color-mix(in srgb, var(--noorix-accent-yellow) 10%, transparent);
+  --noorix-yellow-12: color-mix(in srgb, var(--noorix-accent-yellow) 12%, transparent);
+  --noorix-yellow-15: color-mix(in srgb, var(--noorix-accent-yellow) 15%, transparent);
+  --noorix-yellow-20: color-mix(in srgb, var(--noorix-accent-yellow) 20%, transparent);
+  --noorix-yellow-25: color-mix(in srgb, var(--noorix-accent-yellow) 25%, transparent);
+  --noorix-yellow-30: color-mix(in srgb, var(--noorix-accent-yellow) 30%, transparent);
+  --noorix-yellow-35: color-mix(in srgb, var(--noorix-accent-yellow) 35%, transparent);
+  --noorix-yellow-40: color-mix(in srgb, var(--noorix-accent-yellow) 40%, transparent);
+  /* Green */
+  --noorix-green-4:   color-mix(in srgb, var(--noorix-accent-green)  4%, transparent);
+  --noorix-green-5:   color-mix(in srgb, var(--noorix-accent-green)  5%, transparent);
+  --noorix-green-6:   color-mix(in srgb, var(--noorix-accent-green)  6%, transparent);
+  --noorix-green-7:   color-mix(in srgb, var(--noorix-accent-green)  7%, transparent);
+  --noorix-green-8:   color-mix(in srgb, var(--noorix-accent-green)  8%, transparent);
+  --noorix-green-10:  color-mix(in srgb, var(--noorix-accent-green) 10%, transparent);
+  --noorix-green-12:  color-mix(in srgb, var(--noorix-accent-green) 12%, transparent);
+  --noorix-green-15:  color-mix(in srgb, var(--noorix-accent-green) 15%, transparent);
+  --noorix-green-25:  color-mix(in srgb, var(--noorix-accent-green) 25%, transparent);
+  --noorix-green-30:  color-mix(in srgb, var(--noorix-accent-green) 30%, transparent);
+  --noorix-green-35:  color-mix(in srgb, var(--noorix-accent-green) 35%, transparent);
+  --noorix-green-50:  color-mix(in srgb, var(--noorix-accent-green) 50%, transparent);
+  /* Violet */
+  --noorix-violet-5:  color-mix(in srgb, var(--noorix-accent-violet)  5%, transparent);
+  --noorix-violet-8:  color-mix(in srgb, var(--noorix-accent-violet)  8%, transparent);
+  --noorix-violet-10: color-mix(in srgb, var(--noorix-accent-violet) 10%, transparent);
+  --noorix-violet-15: color-mix(in srgb, var(--noorix-accent-violet) 15%, transparent);
+  --noorix-violet-28: color-mix(in srgb, var(--noorix-accent-violet) 28%, transparent);
+  --noorix-violet-30: color-mix(in srgb, var(--noorix-accent-violet) 30%, transparent);
+  --noorix-violet-50: color-mix(in srgb, var(--noorix-accent-violet) 50%, transparent);
+  /* Sky */
+  --noorix-sky-10:    color-mix(in srgb, var(--noorix-accent-sky)   10%, transparent);
+  --noorix-sky-30:    color-mix(in srgb, var(--noorix-accent-sky)   30%, transparent);
+  /* Navy / near-black */
+  --noorix-navy-4:    color-mix(in srgb, var(--noorix-navy)          4%, transparent);
+  --noorix-navy-10:   color-mix(in srgb, var(--noorix-navy)         10%, transparent);
+  --noorix-navy-12:   color-mix(in srgb, var(--noorix-navy)         12%, transparent);
+  --noorix-navy-95:   color-mix(in srgb, var(--noorix-navy)         95%, transparent);
+  /* Muted */
   --noorix-muted-8:   color-mix(in srgb, var(--noorix-text-muted)    8%, transparent);
   --noorix-muted-10:  color-mix(in srgb, var(--noorix-text-muted)   10%, transparent);
   --noorix-muted-12:  color-mix(in srgb, var(--noorix-text-muted)   12%, transparent);
+  --noorix-muted-15:  color-mix(in srgb, var(--noorix-text-muted)   15%, transparent);
   --noorix-muted-20:  color-mix(in srgb, var(--noorix-text-muted)   20%, transparent);
-  --noorix-green-8:   color-mix(in srgb, var(--noorix-accent-green)  8%, transparent);
-  --noorix-green-10:  color-mix(in srgb, var(--noorix-accent-green) 10%, transparent);
-  --noorix-violet-8:  color-mix(in srgb, var(--noorix-accent-violet) 8%, transparent);
-  --noorix-violet-10: color-mix(in srgb, var(--noorix-accent-violet)10%, transparent);
-  --noorix-sky-10:    color-mix(in srgb, var(--noorix-accent-sky)   10%, transparent);
-  --noorix-navy-10:   color-mix(in srgb, var(--noorix-navy)         10%, transparent);
+  --noorix-muted-30:  color-mix(in srgb, var(--noorix-text-muted)   30%, transparent);
+  /* Semantic alias */
+  --noorix-accent-soft: var(--noorix-blue-10);
   /* أزرار */
   --btn-default-bg:     #ffffff;
   --btn-default-border: #c8d4e3;
@@ -418,7 +480,7 @@ a { color: inherit; text-decoration: none; }
   font-weight: 900;
   font-size: 18px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(22,163,74,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+  box-shadow: 0 2px 8px var(--noorix-green-35), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 .app-sidebar__title { display: flex; flex-direction: column; gap: 1px; }
 .app-sidebar__title-main {
@@ -494,7 +556,7 @@ a { color: inherit; text-decoration: none; }
   border-color: rgba(255,255,255,0.08);
 }
 .app-nav-link--active {
-  background: rgba(22,163,74,0.15);
+  background: var(--noorix-green-15);
   color: #fff;
   font-weight: 700;
   border-color: rgba(22,163,74,0.22);
@@ -1427,7 +1489,7 @@ html[data-card-style="10"] .noorix-stat-card {
 /* Amber warning variant: tinted background */
 .noorix-stat-card--amber .noorix-stat-card__body  { background: rgba(245,158,11,0.04); }
 .noorix-stat-card--amber .noorix-stat-card__value  { color: var(--noorix-accent-amber); }
-.noorix-stat-card--red   .noorix-stat-card__body   { background: rgba(220,38,38,0.04); }
+.noorix-stat-card--red   .noorix-stat-card__body   { background: var(--noorix-red-4); }
 .noorix-stat-card--red   .noorix-stat-card__value   { color: var(--noorix-accent-red); }
 
 /* ── Summary Bar: شريط إحصاء أفقي متعدد الخانات ─────────── */
@@ -1581,7 +1643,7 @@ html[data-card-style="10"] .noorix-stat-card {
   text-align: left;
 }
 .noorix-result-panel__row--highlight {
-  background: rgba(22,163,74,0.04);
+  background: var(--noorix-green-4);
   border-top: 1px solid var(--noorix-border);
 }
 .noorix-result-panel__row--highlight .noorix-result-panel__row-label { font-weight: 700; color: var(--noorix-text); }
@@ -1597,8 +1659,8 @@ html[data-card-style="10"] .noorix-stat-card {
   padding: 8px 16px;
   font-size: 11px;
   color: var(--noorix-accent-amber);
-  background: rgba(245,158,11,0.06);
-  border-top: 1px solid rgba(245,158,11,0.2);
+  background: var(--noorix-yellow-6);
+  border-top: 1px solid var(--noorix-yellow-20);
 }
 
 /* ========== كروت تنفيذية — نفس ثيم خزائن VaultCard ========== */
@@ -1945,7 +2007,7 @@ input:focus, select:focus, textarea:focus {
 }
 .noorix-settings-tab[data-active="true"] {
   border-bottom-color: var(--noorix-accent-green);
-  background: rgba(22,163,74,0.07);
+  background: var(--noorix-green-7);
   color: var(--noorix-accent-green);
   font-weight: 700;
 }
@@ -1962,7 +2024,7 @@ input:focus, select:focus, textarea:focus {
   gap: 0;
   padding: 0 16px;
   border-bottom: 2px solid var(--noorix-accent-green);
-  background: rgba(22,163,74,0.05);
+  background: var(--noorix-green-5);
   min-height: 52px;
 }
 .noorix-settings-mobile-nav__label {

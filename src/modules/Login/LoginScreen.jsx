@@ -95,7 +95,7 @@ export default function LoginScreen() {
         </div>
 
         {/* بطاقة تسجيل الدخول */}
-        <div className="bg-noorix-surface border border-noorix-border rounded-[20px] overflow-hidden shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+        <div className="bg-noorix-surface border border-noorix-border rounded-[20px] overflow-hidden shadow-[0_20px_60px_var(--noorix-navy-12)]">
           {/* شريط لوني علوي */}
           <div className="h-1 bg-gradient-to-r from-noorix-blue to-noorix-green" />
 

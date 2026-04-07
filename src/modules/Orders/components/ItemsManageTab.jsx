@@ -432,7 +432,7 @@ export function ItemsManageTab({ companyId }) {
           onClick={() => setActiveSubTab('products')}
           style={{
             borderBottom: activeSubTab === 'products' ? '2px solid var(--noorix-accent-green)' : '2px solid transparent',
-            background: activeSubTab === 'products' ? 'rgba(22,163,74,0.07)' : 'transparent',
+            background: activeSubTab === 'products' ? 'var(--noorix-green-7)' : 'transparent',
             fontWeight: activeSubTab === 'products' ? 700 : 500,
             padding: '8px 16px',
             borderRadius: 0,
@@ -445,7 +445,7 @@ export function ItemsManageTab({ companyId }) {
           onClick={() => setActiveSubTab('categories')}
           style={{
             borderBottom: activeSubTab === 'categories' ? '2px solid var(--noorix-accent-green)' : '2px solid transparent',
-            background: activeSubTab === 'categories' ? 'rgba(22,163,74,0.07)' : 'transparent',
+            background: activeSubTab === 'categories' ? 'var(--noorix-green-7)' : 'transparent',
             fontWeight: activeSubTab === 'categories' ? 700 : 500,
             padding: '8px 16px',
             borderRadius: 0,

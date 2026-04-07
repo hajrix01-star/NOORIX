@@ -139,7 +139,7 @@
 .nx-btn--primary:hover:not(:disabled) {
   background: var(--btn-primary-hover);
   border-color: var(--btn-primary-hover);
-  box-shadow: 0 2px 8px rgba(37,99,235,0.3), 0 4px 16px rgba(37,99,235,0.12);
+  box-shadow: 0 2px 8px var(--noorix-blue-30), 0 4px 16px rgba(37,99,235,0.12);
   color: #fff;
 }
 
@@ -152,7 +152,7 @@
 .nx-btn--success:hover:not(:disabled) {
   background: var(--btn-success-hover);
   border-color: var(--btn-success-hover);
-  box-shadow: 0 2px 8px rgba(22,163,74,0.25);
+  box-shadow: 0 2px 8px var(--noorix-green-25);
   color: #fff;
 }
 

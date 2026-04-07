@@ -301,7 +301,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                 {priceHistory.map((h) => {
                   const isLowest = Number(h.price) === lowestPrice;
                   return (
-                    <div key={h.id} className="flex items-center justify-between rounded-lg" style={{ padding: '10px 14px', background: isLowest ? 'rgba(22,163,74,0.06)' : 'var(--noorix-bg-muted)' }}>
+                    <div key={h.id} className="flex items-center justify-between rounded-lg" style={{ padding: '10px 14px', background: isLowest ? 'var(--noorix-green-6)' : 'var(--noorix-bg-muted)' }}>
                       <div>
                         <div className="font-semibold text-[13px]">{h.supplier?.nameAr || '—'}</div>
                         <div className="text-[12px] text-noorix-muted">

@@ -270,7 +270,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                           <div style={{
                             position: 'absolute', bottom: '100%', left: '50%',
                             transform: 'translate(-50%, -6px)',
-                            background: 'rgba(15,23,42,0.95)', color: '#fff',
+                            background: 'var(--noorix-navy-95)', color: '#fff',
                             padding: '6px 10px', borderRadius: 8,
                             fontSize: 11, fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700,
                             whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.25)',

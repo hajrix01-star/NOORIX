@@ -121,7 +121,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
                     ...tdStyle, textAlign: 'center',
                     background: full
                       ? 'var(--noorix-blue-6)'
-                      : partial ? 'rgba(245,158,11,0.06)' : undefined,
+                      : partial ? 'var(--noorix-yellow-6)' : undefined,
                     borderInline: '1px solid var(--noorix-border)',
                   }}>
                     <Cb
@@ -140,7 +140,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
                     return (
                       <td key={lvl} style={{
                         ...tdStyle, textAlign: 'center',
-                        background: isChecked(perm) ? 'rgba(22,163,74,0.05)' : undefined,
+                        background: isChecked(perm) ? 'var(--noorix-green-5)' : undefined,
                       }}>
                         <Cb
                           checked={isChecked(perm)}
@@ -272,7 +272,7 @@ export default function RolesTab({ userRole, language }) {
       <div className="flex flex-wrap gap-1">
         {activeModules.slice(0, 5).map((m) => (
           <span key={m.key} className="rounded-xl font-semibold" style={{
-            background: 'var(--noorix-accent-soft, rgba(59,130,246,0.1))',
+            background: 'var(--noorix-accent-soft, var(--noorix-blue-10))',
             color: 'var(--noorix-accent)',
             padding: '2px 8px', fontSize: 10,
             whiteSpace: 'nowrap',

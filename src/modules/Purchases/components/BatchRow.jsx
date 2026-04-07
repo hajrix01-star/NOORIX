@@ -101,7 +101,7 @@ export const BatchRow = memo(function BatchRow({
               className="text-[14px]"
               style={{
                 width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 6,
-                background: bookmarkedIds.includes(row.supplierId) ? 'rgba(245,158,11,0.15)' : 'var(--noorix-bg-page)',
+                background: bookmarkedIds.includes(row.supplierId) ? 'var(--noorix-yellow-15)' : 'var(--noorix-bg-page)',
                 flexShrink: 0,
               }}
             >

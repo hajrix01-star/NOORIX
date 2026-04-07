@@ -472,11 +472,11 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
               <span>{t('dashboardLegendGreen')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(22,163,74,0.5)', flexShrink: 0 }} />
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--noorix-green-50)', flexShrink: 0 }} />
               <span>{t('dashboardLegendGreenNoTarget')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(139,92,246,0.5)', flexShrink: 0 }} />
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--noorix-violet-50)', flexShrink: 0 }} />
               <span>{t('dashboardLegendSpecial')}</span>
             </div>
           </div>

@@ -486,7 +486,7 @@ export default function PurchasesBatchScreen() {
           </div>
 
           {!vaultsLoading && activeVaults.length === 0 && (
-            <div className="text-[13px] border-b border-noorix-border" style={{ padding: '10px 16px', color: 'var(--noorix-accent-amber)', background: 'rgba(245,158,11,0.12)' }}>
+            <div className="text-[13px] border-b border-noorix-border" style={{ padding: '10px 16px', color: 'var(--noorix-accent-amber)', background: 'var(--noorix-yellow-12)' }}>
               {t('batchPurchasesNoVaults')}
             </div>
           )}

@@ -205,7 +205,7 @@ export default function AppSidebar({ isOpen, onClose, activeCompany, setActiveCo
                   style={{
                     background: activeCo?.logoUrl
                       ? 'transparent'
-                      : 'linear-gradient(135deg, rgba(37,99,235,0.9) 0%, rgba(16,163,74,0.7) 100%)',
+                      : 'linear-gradient(135deg, var(--noorix-blue-90) 0%, var(--noorix-green-50) 100%)',
                   }}
                 >
                   {activeCo?.logoUrl

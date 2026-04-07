@@ -134,7 +134,7 @@ export const SupplierTable = memo(function SupplierTable({
               <div
                 key={s.id}
                   className="px-4 py-3 border-b border-noorix-border"
-                  style={{ background: checked ? 'rgba(22,163,74,0.04)' : 'transparent' }}
+                  style={{ background: checked ? 'var(--noorix-green-4)' : 'transparent' }}
               >
                 <div className="flex gap-2" style={{ alignItems: 'flex-start' }}>
                   {/* checkbox */}
@@ -219,7 +219,7 @@ export const SupplierTable = memo(function SupplierTable({
               return (
                 <tr
                   key={s.id}
-                  style={{ background: checked ? 'rgba(22,163,74,0.04)' : 'transparent' }}
+                  style={{ background: checked ? 'var(--noorix-green-4)' : 'transparent' }}
                 >
                   <td style={{ padding: '4px 4px 4px 12px' }}>
                     <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />

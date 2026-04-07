@@ -121,7 +121,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                         padding: '2px 10px',
                         borderRadius: 6,
                         fontWeight: 700,
-                        background: tpl.isActive ? 'rgba(34,197,94,0.15)' : 'rgba(220,38,38,0.12)',
+                        background: tpl.isActive ? 'var(--noorix-green-15)' : 'var(--noorix-red-12)',
                         color: tpl.isActive ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
                       }}
                     >

@@ -43,7 +43,7 @@ export function OrdersImportHelpTrigger({ t, variant }) {
           padding: '6px 12px',
           borderRadius: 999,
           border: '1px solid var(--noorix-border)',
-          background: pinned ? 'rgba(22,163,74,0.12)' : 'var(--noorix-bg-muted)',
+          background: pinned ? 'var(--noorix-green-12)' : 'var(--noorix-bg-muted)',
         }}
       >
         ⓘ {t('ordersImportHelpBadge')}

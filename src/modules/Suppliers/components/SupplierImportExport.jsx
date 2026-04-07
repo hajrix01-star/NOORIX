@@ -172,8 +172,8 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
       {result && (
         <div style={{
           padding: '10px 14px', borderRadius: 10,
-          background: result.failed === 0 ? 'rgba(22,163,74,0.07)' : 'rgba(234,179,8,0.07)',
-          border: `1px solid ${result.failed === 0 ? 'rgba(22,163,74,0.25)' : 'rgba(234,179,8,0.35)'}`,
+          background: result.failed === 0 ? 'var(--noorix-green-7)' : 'var(--noorix-yellow-7)',
+          border: `1px solid ${result.failed === 0 ? 'var(--noorix-green-25)' : 'var(--noorix-yellow-35)'}`,
           fontSize: 13,
         }}>
           <div className="font-bold" style={{ marginBottom: result.errors.length ? 6 : 0 }}>

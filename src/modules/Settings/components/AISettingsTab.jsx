@@ -81,7 +81,7 @@ export default function AISettingsTab() {
                 borderRadius: '50%',
                 background: status === STATUS_ONLINE ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
                 boxShadow: status === STATUS_ONLINE
-                  ? '0 0 8px rgba(22,163,74,0.5)'
+                  ? '0 0 8px var(--noorix-green-50)'
                   : '0 0 8px rgba(var(--noorix-accent-red-rgb,220,38,38),0.5)',
               }}
               title={status === STATUS_ONLINE ? 'متصل' : 'غير متصل'}
@@ -147,7 +147,7 @@ export default function AISettingsTab() {
       {!geminiAvailable && isOnline && (
         <div
           className="p-3 rounded-lg text-[13px] text-noorix-text"
-          style={{ background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.4)' }}
+          style={{ background: 'var(--noorix-yellow-12)', border: '1px solid var(--noorix-yellow-40)' }}
         >
           {lang === 'ar'
             ? 'لتفعيل Gemini: أضف GEMINI_API_KEY في backend/.env ثم أعد تشغيل السيرفر. احصل على المفتاح من: https://aistudio.google.com/app/apikey'

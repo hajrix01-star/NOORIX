@@ -74,7 +74,7 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
             </div>
           </div>
 
-          <div className="rounded-lg" style={{ padding: '12px 14px', background: 'rgba(22,163,74,0.05)', border: '1px solid var(--noorix-border)' }}>
+          <div className="rounded-lg" style={{ padding: '12px 14px', background: 'var(--noorix-green-5)', border: '1px solid var(--noorix-border)' }}>
             <div className="font-semibold text-[13px]" style={{ color: 'var(--noorix-accent-green)', marginBottom: 2 }}>
               {isAr ? 'التوفير المحتمل' : 'Potential Savings'}: {fmtNum(saving)} {isAr ? 'ريال / وحدة' : 'SAR/unit'}
             </div>

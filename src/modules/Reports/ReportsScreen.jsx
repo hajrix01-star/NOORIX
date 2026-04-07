@@ -249,7 +249,7 @@ export default function ReportsScreen() {
                         {!isMobile && (report?.months ?? []).map((month) => (
                           <th key={month.index} style={{ textAlign: 'center', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', whiteSpace: 'nowrap', background: selectedMonthNumber === month.index ? 'var(--noorix-blue-10)' : undefined }}>{month.label}</th>
                         ))}
-                        <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'rgba(248,250,252,1)', borderInlineStart: '2px solid rgba(15,23,42,0.12)', fontWeight: 800 }}>{t('reportAnnualTotal')}</th>
+                        <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'var(--noorix-table-header-bg)', borderInlineStart: '2px solid var(--noorix-navy-12)', fontWeight: 800 }}>{t('reportAnnualTotal')}</th>
                       </tr>
                     </thead>
                   <tbody>
@@ -327,7 +327,7 @@ export default function ReportsScreen() {
                           </td>
 
                           {selectedMonthNumber && (
-                            <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: `${row.groupKey === 'purchases' ? 'var(--noorix-red-7)' : row.groupKey === 'expenses' ? 'rgba(220,38,38,0.07)' : 'var(--noorix-blue-4)'}`, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(getContextAmount(row, selectedMonthNumber) || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit') }}>
+                            <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: `${row.groupKey === 'purchases' ? 'var(--noorix-red-7)' : row.groupKey === 'expenses' ? 'var(--noorix-red-7)' : 'var(--noorix-blue-4)'}`, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(getContextAmount(row, selectedMonthNumber) || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit') }}>
                               <Button
                                 onClick={() => setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: row.rowType === 'item' })}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'block', width: '100%', padding: 0 }}
@@ -360,7 +360,7 @@ export default function ReportsScreen() {
                             </td>
                           ))}
 
-                          <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(row.total || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit'), background: 'rgba(248,250,252,1)', borderInlineStart: '2px solid rgba(15,23,42,0.12)' }}>
+                          <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(row.total || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit'), background: 'var(--noorix-table-header-bg)', borderInlineStart: '2px solid var(--noorix-navy-12)' }}>
                             <div>{amountText(row.total)}</div>
                             <div style={{ fontSize: 11, marginTop: 1, color: PERCENT_COLOR }}>{percentText(row.percentOfSalesYear)}</div>
                           </td>

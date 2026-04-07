@@ -107,10 +107,10 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
         .day-close-report .dc-kpi-card__label { font-size: 10px; font-weight: 800; color: #334155; margin-bottom: 4px; }
         .day-close-report .dc-kpi-card__val { font-size: 16px; font-weight: 800; font-family: var(--noorix-font-numbers); letter-spacing: 0.02em; }
         .day-close-report .dc-kpi-card__sub { font-size: 10px; color: var(--dc-muted); margin-top: 4px; }
-        .day-close-report .dc-kpi-card--in { border-color: rgba(22,163,74,0.35); background: rgba(22,163,74,0.06); }
-        .day-close-report .dc-kpi-card--out { border-color: rgba(220,38,38,0.25); background: rgba(220,38,38,0.04); }
-        .day-close-report .dc-kpi-card--cash { border-color: rgba(37,99,235,0.3); background: var(--noorix-blue-5); }
-        .day-close-report .dc-kpi-card--bal { border-color: rgba(124,58,237,0.28); background: rgba(124,58,237,0.05); }
+        .day-close-report .dc-kpi-card--in { border-color: var(--noorix-green-35); background: var(--noorix-green-6); }
+        .day-close-report .dc-kpi-card--out { border-color: var(--noorix-red-25); background: var(--noorix-red-4); }
+        .day-close-report .dc-kpi-card--cash { border-color: var(--noorix-blue-30); background: var(--noorix-blue-5); }
+        .day-close-report .dc-kpi-card--bal { border-color: var(--noorix-violet-28); background: var(--noorix-violet-5); }
         .day-close-report .dc-inline-stats {
           display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; margin-top: 4px;
         }
@@ -219,7 +219,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
           {data && !isLoading && (
             <div className="grid gap-3.5">
-              <div className="day-close-screen-only flex gap-2" style={{ justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', paddingBottom: 8, borderBottom: '1px solid #e2e8f0' }}>
+              <div className="day-close-screen-only flex gap-2" style={{ justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', paddingBottom: 8, borderBottom: '1px solid var(--noorix-border)' }}>
                 <div>
                   <div className="text-[11px]" style={{ color: 'var(--noorix-text-muted)' }}>{t('dayCloseReportDate')}</div>
                   <div className="text-[15px] font-extrabold">{reportDateLabel}</div>
@@ -230,7 +230,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
               </div>
 
               {data.meta?.invoicesTruncated && (
-                <div style={{ fontSize: 11, padding: '8px 10px', background: 'rgba(234,179,8,0.12)', borderRadius: 8, color: '#a16207', border: '1px solid rgba(234,179,8,0.35)' }}>
+                <div style={{ fontSize: 11, padding: '8px 10px', background: 'var(--noorix-yellow-12)', borderRadius: 8, color: 'var(--noorix-accent-amber)', border: '1px solid var(--noorix-yellow-35)' }}>
                   {t('dayCloseTruncatedWarning', data.meta.operationsReturned)}
                 </div>
               )}

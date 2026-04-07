@@ -54,7 +54,7 @@ function ToastBanner({ message, type, isAr, onDismiss }) {
         [isAr ? 'right' : 'left']: 24,
         padding: '12px 20px',
         borderRadius: 10,
-        background: isError ? 'rgba(220,38,38,0.95)' : 'rgba(34,197,94,0.95)',
+        background: isError ? 'var(--noorix-red-95)' : 'var(--noorix-accent-green)',
         color: '#fff',
         fontSize: 14,
         fontWeight: 600,
@@ -496,7 +496,7 @@ export default function SmartChatScreen() {
           {loading && (
             <div className={`noorix-chat-msg-row noorix-chat-msg-row--assistant`}>
               <div className="bg-noorix-bg-muted text-[14px] text-noorix-muted gap-2" style={{ padding: '12px 18px', borderRadius: 18, display: 'inline-flex', alignItems: 'center' }}>
-                <span className="noorix-chat-spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(100,116,139,0.3)', borderTopColor: 'var(--noorix-text-muted)' }} />
+                <span className="noorix-chat-spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'var(--noorix-muted-30)', borderTopColor: 'var(--noorix-text-muted)' }} />
                 {isAr ? 'جاري البحث...' : 'Searching...'}
               </div>
             </div>

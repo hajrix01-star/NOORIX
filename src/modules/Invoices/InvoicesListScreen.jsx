@@ -472,7 +472,7 @@ export default function InvoicesListScreen() {
             <Button
               size="sm"
               onClick={() => setShowCancelled((v) => !v)}
-              style={showCancelled ? { color: 'var(--noorix-accent-red)', borderColor: 'rgba(220,38,38,0.25)', background: 'rgba(220,38,38,0.06)' } : undefined}
+              style={showCancelled ? { color: 'var(--noorix-accent-red)', borderColor: 'var(--noorix-red-25)', background: 'var(--noorix-red-6)' } : undefined}
             >
               {showCancelled ? t('hideCancelledInvoices') : t('showCancelledInvoices')}
             </Button>

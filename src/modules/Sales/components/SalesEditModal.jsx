@@ -13,7 +13,7 @@ import { Button, Input, AdaptiveSheet } from '../../../ui';
 const CHANNEL_COLORS = {
   cash: { bg: 'var(--noorix-green-8)', border: 'var(--noorix-accent-green)', icon: '💵' },
   bank: { bg: 'var(--noorix-blue-8)', border: 'var(--noorix-accent-blue)', icon: '🏦' },
-  app:  { bg: 'rgba(124,58,237,0.08)', border: 'var(--noorix-accent-violet)', icon: '📱' },
+  app:  { bg: 'var(--noorix-violet-8)', border: 'var(--noorix-accent-violet)', icon: '📱' },
 };
 
 export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }) {
@@ -188,27 +188,27 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       </div>
 
       <div className="grid gap-2.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
-        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-green-10)', border: '1px solid rgba(22,163,74,0.3)' }}>
+        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-green-10)', border: '1px solid var(--noorix-green-30)' }}>
           <div className="text-[11px] text-noorix-green">الإجمالي</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)} ﷼</div>
         </div>
         {vatEnabled && totalAmount.gt(0) && (
           <>
-            <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)' }}>
+            <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-sky-10)', border: '1px solid var(--noorix-sky-30)' }}>
               <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>الصافي</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-sky)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)} ﷼</div>
             </div>
-            <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
+            <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-yellow-10)', border: '1px solid var(--noorix-yellow-30)' }}>
               <div className="text-[11px]" style={{ color: 'var(--color-noorix-amber)' }}>الضريبة</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--color-noorix-amber)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)} ﷼</div>
             </div>
           </>
         )}
-        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-blue-10)', border: '1px solid rgba(37,99,235,0.3)' }}>
+        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-blue-10)', border: '1px solid var(--noorix-blue-30)' }}>
           <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>العملاء</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-blue)' }}>{customerCount || 0}</div>
         </div>
-        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
+        <div className="rounded-xl text-center" style={{ padding: '12px 14px', background: 'var(--noorix-violet-10)', border: '1px solid var(--noorix-violet-30)' }}>
           <div className="text-[11px]" style={{ color: 'var(--noorix-accent-violet)' }}>معدل الطلب</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-violet)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} ﷼</div>
         </div>

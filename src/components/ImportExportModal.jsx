@@ -102,7 +102,7 @@ const S = {
     display: 'grid', gridTemplateColumns: '56px 1fr',
     gap: 8, alignItems: 'start',
     padding: '5px 10px', borderRadius: 8,
-    background: 'rgba(245,158,11,0.07)', fontSize: 12,
+    background: 'var(--noorix-yellow-7)', fontSize: 12,
   },
 };
 
@@ -634,7 +634,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                         </div>
                       ))}
                       {r.warnings.map((msg, j) => (
-                        <div key={`w${j}`} className="grid gap-2 rounded-lg text-[12px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
+                        <div key={`w${j}`} className="grid gap-2 rounded-lg text-[12px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'var(--noorix-yellow-7)' }}>
                           <span className="font-bold text-noorix-amber">صف {r.rowNum}</span>
                           <span style={{ color: 'var(--noorix-accent-amber)' }}>⚠ {msg}</span>
                         </div>
@@ -699,7 +699,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               {(progress.warnings || []).length > 0 && (
                 <div className="flex flex-col mt-2" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
                   {(progress.warnings || []).slice(0, 20).map((w, i) => (
-                    <div key={i} className="grid gap-2 rounded-lg text-[12px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
+                    <div key={i} className="grid gap-2 rounded-lg text-[12px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'var(--noorix-yellow-7)' }}>
                       <span className="font-bold text-noorix-amber">صف {w.rowNum}</span>
                       <span style={{ color: 'var(--noorix-accent-amber)' }}>⚠ {w.message}</span>
                     </div>

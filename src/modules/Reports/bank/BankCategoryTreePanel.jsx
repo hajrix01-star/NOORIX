@@ -192,7 +192,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
           </Input>
         </div>
 
-        <div className="p-3" style={{ borderRadius: 10, border: '1px solid rgba(217,119,6,0.35)', background: 'rgba(254,243,199,0.35)' }}>
+        <div className="p-3" style={{ borderRadius: 10, border: '1px solid var(--noorix-amber-35)', background: 'rgba(254,243,199,0.35)' }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('bankTreeParentKeywords')}</div>
           <p style={{ fontSize: 11, color: 'var(--noorix-text-muted)', margin: '0 0 8px' }}>{t('bankTreeParentKeywordsHint')}</p>
           <div className="flex flex-wrap gap-1.5 mb-2">

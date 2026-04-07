@@ -136,7 +136,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         <div style={{
           padding: 14, borderRadius: 10,
           border: `1px solid ${form.isSalesChannel ? '#16a34a44' : 'var(--noorix-border)'}`,
-          background: form.isSalesChannel ? 'rgba(22,163,74,0.05)' : 'transparent',
+          background: form.isSalesChannel ? 'var(--noorix-green-5)' : 'transparent',
           transition: 'all 150ms',
         }}>
           <label className="flex items-center gap-10 cursor-pointer" style={{ marginBottom: form.isSalesChannel ? 12 : 0 }}>
@@ -163,7 +163,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         <div style={{
           padding: 14, borderRadius: 10,
           border: `1px solid ${form.showAsPaymentMethod ? 'var(--noorix-border)' : '#f59e0b44'}`,
-          background: form.showAsPaymentMethod ? 'transparent' : 'rgba(245,158,11,0.06)',
+          background: form.showAsPaymentMethod ? 'transparent' : 'var(--noorix-yellow-6)',
           transition: 'all 150ms',
         }}>
           <label className="flex items-center gap-10 cursor-pointer">
@@ -216,7 +216,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         />
 
           {saveError && (
-          <div className="rounded-lg text-[13px] py-2 px-3 text-noorix-red" style={{ background: 'var(--noorix-red-8)', border: '1px solid rgba(220,38,38,0.2)' }}>
+          <div className="rounded-lg text-[13px] py-2 px-3 text-noorix-red" style={{ background: 'var(--noorix-red-8)', border: '1px solid var(--noorix-red-20)' }}>
             {saveError}
           </div>
         )}

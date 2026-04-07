@@ -144,8 +144,8 @@ export default function TaxReportTab() {
 <p style="margin:8px 0 0;font-size:12px;color:#555">${(lang === 'ar' ? 'نموذج الإفصاح الضريبي — ضريبة القيمة المضافة' : 'VAT Tax Disclosure Form').replace(/</g, '&lt;')} — ${periodKey}</p>
 </div>
 <table><thead><tr><th>${(t('reportItem') || '').replace(/</g, '&lt;')}</th><th>${(lang === 'ar' ? 'المبلغ (ر.س)' : 'Amount (SAR)').replace(/</g, '&lt;')}</th><th>${(lang === 'ar' ? 'التعديلات' : 'Adjustments').replace(/</g, '&lt;')}</th><th>${(lang === 'ar' ? 'ضريبة القيمة المضافة' : 'VAT').replace(/</g, '&lt;')}</th></tr></thead>
-<tbody><tr><td colspan="4" style="background:rgba(22,163,74,0.15);font-weight:700">${(lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)').replace(/</g, '&lt;')}</td></tr>${outRows}
-<tr><td colspan="4" style="background:rgba(220,38,38,0.15);font-weight:700">${(lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)').replace(/</g, '&lt;')}</td></tr>${inRows}
+<tbody><tr><td colspan="4" style="background:var(--noorix-green-15);font-weight:700">${(lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)').replace(/</g, '&lt;')}</td></tr>${outRows}
+<tr><td colspan="4" style="background:var(--noorix-red-15);font-weight:700">${(lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)').replace(/</g, '&lt;')}</td></tr>${inRows}
 <tr><td colspan="4" style="background:var(--noorix-blue-15);font-weight:700">${(lang === 'ar' ? 'الملخص' : 'Summary').replace(/</g, '&lt;')}</td></tr>
 <tr><td>${(lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(outputTotal, 2)} ر.س</td></tr>
 <tr><td>${(lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(inputTotal, 2)} ر.س</td></tr>
@@ -287,12 +287,12 @@ export default function TaxReportTab() {
               </thead>
               <tbody>
                 <tr>
-                  <td colSpan={4} className="font-bold text-noorix-green" style={{ padding: '10px 12px', background: 'rgba(22,163,74,0.06)' }}>
+                  <td colSpan={4} className="font-bold text-noorix-green" style={{ padding: '10px 12px', background: 'var(--noorix-green-6)' }}>
                     {lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)'}
                   </td>
                 </tr>
                 {OUTPUT_ROWS.map((r) => (
-                  <tr key={r.key} style={{ background: r.isTotal ? 'rgba(15,23,42,0.04)' : undefined }}>
+                  <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
                     <td className="border-b border-noorix-border" style={{ padding: '10px 12px', fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
@@ -308,12 +308,12 @@ export default function TaxReportTab() {
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} className="font-bold text-noorix-red" style={{ padding: '10px 12px', background: 'rgba(220,38,38,0.06)' }}>
+                  <td colSpan={4} className="font-bold text-noorix-red" style={{ padding: '10px 12px', background: 'var(--noorix-red-6)' }}>
                     {lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)'}
                   </td>
                 </tr>
                 {INPUT_ROWS.map((r) => (
-                  <tr key={r.key} style={{ background: r.isTotal ? 'rgba(15,23,42,0.04)' : undefined }}>
+                  <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
                     <td className="border-b border-noorix-border" style={{ padding: '10px 12px', fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>

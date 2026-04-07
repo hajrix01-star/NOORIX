@@ -50,7 +50,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
           <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('dashboardSalesTarget')}</div>
           <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget, 2) : '—'} ﷼</div>
         </div>
-        <div className="rounded-lg flex-1 min-w-0" style={{ padding: 10, background: achieved ? 'rgba(22,163,74,0.12)' : 'var(--noorix-bg-muted)', minWidth: 90 }}>
+        <div className="rounded-lg flex-1 min-w-0" style={{ padding: 10, background: achieved ? 'var(--noorix-green-12)' : 'var(--noorix-bg-muted)', minWidth: 90 }}>
           <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('total')}</div>
           <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>{fmt(totalAmount, 2)} ﷼ {achieved && '✓'}</div>
         </div>

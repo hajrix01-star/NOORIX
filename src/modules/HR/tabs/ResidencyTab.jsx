@@ -90,7 +90,7 @@ export default function ResidencyTab() {
           <span style={{ fontSize: 12, color: soon ? 'var(--color-noorix-amber)' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined, whiteSpace: 'nowrap' }}>
             {formatSaudiDate(v)}
             {soon && (
-              <span style={{ marginRight: 6, fontSize: 10, background: 'rgba(245,158,11,0.2)', padding: '2px 6px', borderRadius: 4 }}>
+              <span style={{ marginRight: 6, fontSize: 10, background: 'var(--noorix-yellow-20)', padding: '2px 6px', borderRadius: 4 }}>
                 {t('residencyExpiringSoon')}
               </span>
             )}
@@ -150,7 +150,7 @@ export default function ResidencyTab() {
             <div className="text-noorix-muted mb-1" style={{ fontSize: 10 }}>{t('expiryDate')}</div>
             <div className="text-[13px]" style={{ fontFamily: 'var(--noorix-font-numbers)', color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}>
               {formatSaudiDate(row.expiryDate)}
-              {soon && <span style={{ marginRight: 4, fontSize: 10, background: 'rgba(245,158,11,0.2)', padding: '1px 5px', borderRadius: 4 }}>⚠</span>}
+              {soon && <span style={{ marginRight: 4, fontSize: 10, background: 'var(--noorix-yellow-20)', padding: '1px 5px', borderRadius: 4 }}>⚠</span>}
             </div>
           </div>
         </div>
@@ -167,7 +167,7 @@ export default function ResidencyTab() {
 
       <div className="nx-toolbar">
         {expiringCount > 0 && (
-          <span className="rounded-lg text-[13px] font-semibold px-3 py-1.5" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--color-noorix-amber)' }}>
+          <span className="rounded-lg text-[13px] font-semibold px-3 py-1.5" style={{ background: 'var(--noorix-yellow-15)', color: 'var(--color-noorix-amber)' }}>
             {t('residencyExpiringSoon')}: {expiringCount}
           </span>
         )}
