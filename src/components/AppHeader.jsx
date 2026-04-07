@@ -6,7 +6,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import UserMenu from './UserMenu';
-import { Button } from '../ui';
+import { Button, Modal } from '../ui';
 
 const MENU_WIDTH = 220;
 
@@ -33,6 +33,13 @@ export default function AppHeader({
   const coInitial = coName?.[0] || '';
 
   /* ── Dropdown الشركة ── */
+  /* ── تأكيد تبديل الشركة ── */
+  const [pendingCompany, setPendingCompany] = useState(null);
+  const pendingCo   = pendingCompany ? companies.find((c) => c.id === pendingCompany) : null;
+  const pendingName = pendingCo
+    ? (lang === 'en' ? pendingCo.nameEn || pendingCo.nameAr : pendingCo.nameAr || pendingCo.nameEn) || '—'
+    : '';
+
   const [coDropOpen, setCoDropOpen] = useState(false);
   const coDropBtnRef  = useRef(null);
   const coDropMenuRef = useRef(null);
@@ -70,9 +77,14 @@ export default function AppHeader({
   }, [coDropOpen, updateCoDropPos]);
 
   const handleCompanySelect = (id) => {
-    if (id && id !== activeCompanyId) setActiveCompany?.(id);
     setCoDropOpen(false);
+    if (id && id !== activeCompanyId) setPendingCompany(id);
   };
+
+  const confirmSwitch = () => {
+    if (pendingCompany) { setActiveCompany?.(pendingCompany); setPendingCompany(null); }
+  };
+  const cancelSwitch = () => setPendingCompany(null);
 
   return (
     <>
@@ -231,6 +243,25 @@ export default function AppHeader({
           )}
         </div>
       </header>
+
+      {/* نافذة تأكيد تبديل الشركة */}
+      <Modal
+        open={!!pendingCompany}
+        onClose={cancelSwitch}
+        size="sm"
+        title={t('switchCompanyConfirmTitle')}
+        footer={
+          <>
+            <Button variant="ghost" onClick={cancelSwitch}>{t('cancel')}</Button>
+            <Button variant="primary" onClick={confirmSwitch}>{t('switchCompanyConfirmBtn')}</Button>
+          </>
+        }
+      >
+        <div className="text-center mb-2 text-[36px]">🏢</div>
+        <p className="m-0 text-[14px] text-noorix-text leading-relaxed">
+          {t('switchCompanyConfirmBody')} <strong>{pendingName}</strong>؟
+        </p>
+      </Modal>
     </>
   );
 }
