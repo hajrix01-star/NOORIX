@@ -1900,16 +1900,23 @@
 /* ═══════════════════════════════════════════════════════════
    KPI Card — كرت المؤشر الرئيسي 2026
    ═══════════════════════════════════════════════════════════ */
+
+/* متغيرات الكرت — سهولة التعديل من مكان واحد */
 .nx-kpi-card {
+  --kpi-px: 20px;   /* حشو أفقي */
+  --kpi-pt: 18px;   /* حشو علوي */
+  --kpi-sp: 58px;   /* ارتفاع Sparkline */
+
   position: relative;
   background: var(--noorix-bg-surface, #fff);
   border: 1px solid var(--noorix-border, #dde3ec);
   border-radius: 8px;
-  padding: 16px 18px 0;
+  padding: var(--kpi-pt) var(--kpi-px) 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
+  min-width: 0;
   box-shadow: 0 1px 3px rgba(10,31,68,0.04), 0 4px 14px rgba(10,31,68,0.06);
   transition: box-shadow 200ms, transform 200ms;
 }
@@ -1924,9 +1931,12 @@
   font-weight: 600;
   color: var(--noorix-text-muted);
   letter-spacing: 0.2px;
-  line-height: 1.3;
+  line-height: 1.4;
   text-align: start;
   margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* صف الرقم: ر.س + القيمة الكبيرة + باج % */
@@ -1934,7 +1944,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  min-width: 0;
 }
 
 /* وسم العملة ر.س */
@@ -1961,6 +1972,9 @@
   letter-spacing: -0.5px;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* باج التغيير % مع سهم */
@@ -1990,10 +2004,10 @@
   color: var(--noorix-text-muted);
 }
 
-/* Sparkline — يمتد حتى حواف الكرت أفقياً */
+/* Sparkline — يمتد حتى حواف الكرت أفقياً (يُعوِّض الحشو الجانبي) */
 .nx-kpi-card__sparkline {
-  margin-inline: -18px;
-  height: 52px;
+  margin-inline: calc(-1 * var(--kpi-px));
+  height: var(--kpi-sp);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -2003,8 +2017,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 18px 8px;
-  margin-inline: -18px;
+  padding: 5px var(--kpi-px) 8px;
+  margin-inline: calc(-1 * var(--kpi-px));
   background: rgba(0,0,0,0.018);
   border-top: 1px solid var(--noorix-border);
 }
@@ -2012,6 +2026,10 @@
   font-size: 10px;
   color: var(--noorix-text-muted);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50%;
 }
 
 /* الفاصل الأفقي الخفيف */
@@ -2098,16 +2116,42 @@
 /* شبكة كروت KPI */
 .nx-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 14px;
+  /* كل كرت يأخذ مساحته بشكل متساوٍ مع حد أدنى 200px — يتكيف تلقائياً مع عدد الكروت وعرض الشاشة */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
 }
+
+/* تابلت: عمودان أو ثلاثة بحد أدنى 200px */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .nx-kpi-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+}
+
+/* جوال (≤640px): عمودان بمساحة متساوية */
 @media (max-width: 640px) {
-  .nx-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .nx-kpi-card { padding: 16px 14px 14px; }
-  .nx-kpi-card__value { font-size: 20px; }
+  .nx-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .nx-kpi-card {
+    --kpi-px: 14px;
+    --kpi-pt: 14px;
+    --kpi-sp: 48px;
+  }
+  .nx-kpi-card__value    { font-size: 18px; }
+  .nx-kpi-card__label    { font-size: 11px; margin-bottom: 8px; }
+  .nx-kpi-card__num-row  { gap: 4px; margin-bottom: 10px; }
+  .nx-kpi-card__footer   { padding: 4px var(--kpi-px) 6px; }
 }
+
+/* جوال صغير جداً (≤380px): عمود واحد */
 @media (max-width: 380px) {
-  .nx-kpi-grid { grid-template-columns: 1fr; }
+  .nx-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .nx-kpi-card__value { font-size: 20px; }
 }
 
 /* ═══════════════════════════════════════════════════════════
