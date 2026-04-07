@@ -248,6 +248,7 @@ export default function AppHeader({
       <Modal
         open={!!pendingCompany}
         onClose={cancelSwitch}
+        closeOnBackdrop={false}
         size="sm"
         title={t('switchCompanyConfirmTitle')}
         footer={
@@ -257,7 +258,6 @@ export default function AppHeader({
           </>
         }
       >
-        <div className="text-center mb-2 text-[36px]">🏢</div>
         <p className="m-0 text-[14px] text-noorix-text leading-relaxed">
           {t('switchCompanyConfirmBody')} <strong>{pendingName}</strong>؟
         </p>

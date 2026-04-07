@@ -1717,28 +1717,31 @@
    18. Actions Cell Kebab — زر ⋮ في عمود الإجراءات
    ═══════════════════════════════════════════════════════════ */
 .nx-actions-kebab {
-  width: 36px;
-  height: 32px;
-  min-width: 36px;
-  min-height: 32px;
+  width: 30px;
+  height: 28px;
+  min-width: 30px;
+  min-height: 28px;
   border-radius: 6px;
-  border: 1px solid var(--noorix-border);
-  background: var(--noorix-bg-surface);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--noorix-text-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 120ms, color 120ms;
+  transition: background 120ms, color 120ms, border-color 120ms;
   padding: 0;
 }
 
 .nx-actions-kebab:hover:not(:disabled) {
-  background: var(--noorix-bg-page);
+  background: var(--noorix-bg-muted);
+  border-color: var(--noorix-border);
   color: var(--noorix-text);
 }
 
 .nx-actions-kebab--open {
-  background: var(--noorix-bg-page) !important;
+  background: var(--noorix-bg-muted) !important;
+  border-color: var(--noorix-border) !important;
+  color: var(--noorix-text) !important;
 }
 
 .nx-actions-menu {

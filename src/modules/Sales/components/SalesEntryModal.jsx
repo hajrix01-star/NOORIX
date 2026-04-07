@@ -111,24 +111,30 @@ export function SalesEntryModal({
           </>
         }
       >
-        <div className="text-center">
-          <div className="mb-3 text-[48px]">✅</div>
-          <p className="text-[14px] text-noorix-muted m-0 mb-4">
-            {t('summaryNumber')}: <strong style={{ color: 'var(--noorix-accent-blue)' }}>{savedSummary.summaryNumber}</strong>
-          </p>
-          <div className="flex flex-wrap gap-4 mb-5 justify-center">
-            <div className="text-center">
-              <div className="text-[11px] text-noorix-muted">{t('total')}</div>
-              <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedSummary.totalAmount, 2)} ﷼</div>
+        <div className="flex flex-col gap-4">
+          {/* رقم الملخص */}
+          <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-noorix-bg-muted">
+            <span className="text-[12px] text-noorix-muted font-medium">{t('summaryNumber')}</span>
+            <strong className="text-[14px]" style={{ color: 'var(--noorix-accent-blue)' }}>#{savedSummary.summaryNumber}</strong>
+          </div>
+          {/* أرقام الإجمالي والعملاء */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-green-12)' }}>
+              <span className="text-[11px] text-noorix-muted mb-1">{t('total')}</span>
+              <span className="text-[20px] font-black nx-font-numbers" style={{ color: 'var(--noorix-accent-green)' }}>{fmt(savedSummary.totalAmount, 2)}</span>
+              <span className="text-[11px] text-noorix-muted mt-0.5">SAR</span>
             </div>
-            <div className="text-center">
-              <div className="text-[11px] text-noorix-muted">{t('customers')}</div>
-              <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-blue)' }}>{savedSummary.customerCount}</div>
+            <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-blue-8)' }}>
+              <span className="text-[11px] text-noorix-muted mb-1">{t('customers')}</span>
+              <span className="text-[20px] font-black" style={{ color: 'var(--noorix-accent-blue)' }}>{savedSummary.customerCount}</span>
+              <span className="text-[11px] text-noorix-muted mt-0.5">&nbsp;</span>
             </div>
           </div>
+          {/* إرسال واتساب */}
           <Button
             variant="success"
-            className="w-full max-w-[280px]"
+            size="md"
+            className="w-full"
             onClick={() => onWhatsApp?.(savedSummary)}
           >
             {t('sendWhatsApp')} — {t('salesDailySummary')}

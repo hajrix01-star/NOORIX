@@ -18,11 +18,11 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-noorix-muted">{receivedLabel}</span>
-            <span className="nx-font-numbers font-bold text-[13px] text-noorix-green">{fmt(Number(received ?? 0), 2)} <span className="font-normal text-noorix-muted text-[11px]">﷼</span></span>
+            <span className="nx-font-numbers font-bold text-[13px] text-noorix-green">{fmt(Number(received ?? 0), 2)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-noorix-muted">{spentLabel}</span>
-            <span className="nx-font-numbers font-bold text-[13px] text-noorix-red">− {fmt(Number(spent ?? 0), 2)} <span className="font-normal text-noorix-muted text-[11px]">﷼</span></span>
+            <span className="nx-font-numbers font-bold text-[13px] text-noorix-red">− {fmt(Number(spent ?? 0), 2)}</span>
           </div>
         </div>
       </div>
@@ -35,7 +35,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
           color: resNum < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
         }}>
           {resNum < 0 ? '−' : ''}{fmt(Math.abs(resNum), 2)}
-          <span className="text-[14px] font-semibold text-noorix-muted mr-1">﷼</span>
+          <span className="text-[12px] font-medium text-noorix-muted mr-1.5">SAR</span>
         </div>
       </div>
     </div>
@@ -63,8 +63,11 @@ export function OrdersSummaryCard({ summary = {}, cashSalesTotal = 0, isLoading 
     <div className="border border-noorix-border bg-noorix-surface overflow-hidden rounded-[14px]" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
       <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, var(--noorix-accent-blue), var(--noorix-accent-green))' }} />
       <div className="p-5">
-        <div className="text-[13px] font-bold text-noorix-muted mb-4 tracking-[0.04em]">
-          {t('ordersSummaryCardTitle')}
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-[13px] font-bold text-noorix-muted tracking-[0.04em]">
+            {t('ordersSummaryCardTitle')}
+          </div>
+          <span className="text-[11px] font-semibold text-noorix-muted bg-noorix-bg-muted px-2 py-0.5 rounded-md">SAR</span>
         </div>
         <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
           <SectionBlock

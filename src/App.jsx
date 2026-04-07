@@ -245,16 +245,17 @@ export default function App() {
     setActiveCompanyId(activeCompanyId || '');
   }, [activeCompanyId]);
 
-  // عند تغيير الشركة: إلغاء صلاحية الاستعلامات المرتبطة بالشركة — مع الإبقاء على بيانات الشركات والمستخدم
+  // عند تغيير الشركة: تحديد الاستعلامات كـ stale — البيانات القديمة تبقى مرئية حتى يكتمل التحديث
   useEffect(() => {
     if (!queryClient || !activeCompanyId) return;
     const GLOBAL_KEYS = ['companies', 'me'];
-    queryClient.removeQueries({
+    queryClient.invalidateQueries({
       predicate: (query) => {
         const key = query.queryKey;
         if (!Array.isArray(key)) return false;
         return !GLOBAL_KEYS.includes(key[0]);
       },
+      refetchType: 'active',
     });
   }, [activeCompanyId, queryClient]);
 

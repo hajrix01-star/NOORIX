@@ -16,7 +16,7 @@ export default {
   summaryDeleted: { ar: 'تم حذف الملخص بشكل آمن مع الحفاظ على الأثر المحاسبي', en: 'Summary deleted safely while preserving accounting history' },
   cancelFailed: { ar: 'فشل الإلغاء', en: 'Cancel failed' },
   transactionDate: { ar: 'تاريخ العملية *', en: 'Transaction date *' },
-  customerCount: { ar: 'عدد العملاء (الطلبات)', en: 'Customer count (orders)' },
+  customerCount: { ar: 'عدد العملاء', en: 'Customer count' },
   cashOnHand: { ar: 'المبلغ الموجود بالصندوق', en: 'Cash on hand' },
   salesChannels: { ar: 'قنوات البيع', en: 'Sales channels' },
   noSalesChannels: { ar: 'لا توجد قنوات بيع مفعّلة. اذهب إلى الخزائن وفعّل خزنة كقناة بيع.', en: 'No sales channels enabled. Go to Vaults and enable a vault as a sales channel.' },
