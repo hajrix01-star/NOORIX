@@ -214,6 +214,28 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     [performanceData, t]
   );
 
+  /* ── ثوابت السلاسل الزمنية — قبل أي return مشروط ── */
+  const salesSeries   = t('annualSales');
+  const purchSeries   = t('annualPurchases');
+  const expSeries     = t('annualExpenses');
+  const isAnnualChart = !selectedMonth;
+
+  /* ── حالة إخفاء/إظهار الخطوط — يجب أن تكون قبل أي return مشروط ── */
+  const [hiddenSeries, setHiddenSeries] = useState(new Set());
+  const toggleSeries = useCallback((key) => {
+    setHiddenSeries((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }, []);
+
+  const SERIES = useMemo(() => [
+    { key: salesSeries,  label: t('annualSales'),    color: '#16a34a', gradId: 'gradSales', disabled: false },
+    { key: purchSeries,  label: t('annualPurchases'), color: '#2563eb', gradId: 'gradPurch', disabled: !isAnnualChart },
+    { key: expSeries,    label: t('annualExpenses'),  color: '#d97706', gradId: 'gradExp',   disabled: !isAnnualChart },
+  ], [salesSeries, purchSeries, expSeries, isAnnualChart, t]);
+
   /* ── حالة: لا شركة ── */
   if (!companyId) {
     return <div className="p-8 text-center text-noorix-muted">{t('pleaseSelectCompany')}</div>;
@@ -240,27 +262,6 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       </div>
     );
   }
-
-  const salesSeries   = t('annualSales');
-  const purchSeries   = t('annualPurchases');
-  const expSeries     = t('annualExpenses');
-  const isAnnualChart = !selectedMonth;
-
-  /* ── حالة إخفاء/إظهار الخطوط ── */
-  const [hiddenSeries, setHiddenSeries] = useState(new Set());
-  const toggleSeries = useCallback((key) => {
-    setHiddenSeries((prev) => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  }, []);
-
-  const SERIES = useMemo(() => [
-    { key: salesSeries,  label: t('annualSales'),     color: '#16a34a', gradId: 'gradSales', disabled: false },
-    { key: purchSeries,  label: t('annualPurchases'),  color: '#2563eb', gradId: 'gradPurch', disabled: !isAnnualChart },
-    { key: expSeries,    label: t('annualExpenses'),   color: '#d97706', gradId: 'gradExp',   disabled: !isAnnualChart },
-  ], [salesSeries, purchSeries, expSeries, isAnnualChart, t]);
 
   return (
     <div className="flex flex-col gap-5">
