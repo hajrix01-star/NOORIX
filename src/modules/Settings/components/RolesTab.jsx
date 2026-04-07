@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import Toast from '../../../components/Toast';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 function Cb({ checked, indeterminate, onChange, disabled }) {
   return (
@@ -374,11 +374,13 @@ export default function RolesTab({ userRole, language }) {
       )}
 
       {/* نموذج إنشاء دور جديد */}
-      <Modal
+      <Drawer
         open={showForm}
         onClose={() => !createMutation.isPending && setShowForm(false)}
         title={isAr ? 'إنشاء دور جديد' : 'Create New Role'}
         size="lg"
+        side="start"
+        className="roles-create-drawer"
       >
         <form onSubmit={(e) => {
           e.preventDefault();
@@ -419,14 +421,16 @@ export default function RolesTab({ userRole, language }) {
             </Button>
           </div>
         </form>
-      </Modal>
+      </Drawer>
 
       {/* نافذة تعديل دور */}
-      <Modal
+      <Drawer
         open={!!editing}
         onClose={() => !updateMutation.isPending && setEditing(null)}
         title={editing ? (isAr ? `تعديل: ${editing.nameAr || editing.name}` : `Edit: ${editing.nameAr || editing.name}`) : ''}
         size="lg"
+        side="start"
+        className="roles-edit-drawer"
       >
         {editing && (
           <form onSubmit={(e) => {
@@ -494,7 +498,7 @@ export default function RolesTab({ userRole, language }) {
             </div>
           </form>
         )}
-      </Modal>
+      </Drawer>
     </div>
   );
 }

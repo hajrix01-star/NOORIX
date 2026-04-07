@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Modal, FormRow } from '../../../ui';
+import { Button, Input, Drawer, FormRow } from '../../../ui';
 
 export const SupplierEditModal = memo(function SupplierEditModal({
   supplier, flatCategories = [], onSave, onClose, isSaving,
@@ -54,7 +54,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
   }
 
   return (
-    <Modal open={!!supplier} onClose={onClose} title={t('editSupplier')} size="md">
+    <Drawer open={!!supplier} onClose={onClose} title={t('editSupplier')} size="md" side="start" className="supplier-edit-drawer">
       <form onSubmit={handleSubmit}>
         <FormRow cols={2}>
           <Input
@@ -116,7 +116,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
           </Button>
         </div>
       </form>
-    </Modal>
+    </Drawer>
   );
 });
 

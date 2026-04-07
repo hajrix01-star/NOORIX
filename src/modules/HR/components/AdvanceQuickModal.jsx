@@ -10,7 +10,7 @@ import { getEmployees } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }) {
   const { t, lang } = useTranslation();
@@ -70,11 +70,13 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
     : (t('payAdvance') || 'صرف سلفة');
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={title}
-      size="sm"
+      size="md"
+      side="start"
+      className="advance-quick-drawer"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
@@ -133,6 +135,6 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
           placeholder={t('notes')}
         />
       </form>
-    </Modal>
+    </Drawer>
   );
 }

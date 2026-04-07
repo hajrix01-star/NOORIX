@@ -84,8 +84,7 @@ export default function BankStatementTransactionsFullTab({
     <div className="nx-grid nx-gap-14">
       {/* ── شريط الفلاتر ── */}
       <div
-        className="nx-grid nx-gap-10 nx-bg-muted nx-rounded-lg"
-        className="nx-p-12 nx-border-all"
+        className="nx-grid nx-gap-10 nx-bg-muted nx-rounded-lg nx-p-12 nx-border-all"
         style={{
           gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
         }}

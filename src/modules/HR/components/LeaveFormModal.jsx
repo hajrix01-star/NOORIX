@@ -8,7 +8,7 @@ import { useApp } from '../../../context/AppContext';
 import { getEmployees } from '../../../services/api';
 import { createLeave } from '../../../services/api';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 const TYPE_MAP = {
   annual: 'leaveAnnual',
@@ -101,11 +101,13 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
   };
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={t('addLeave')}
-      size="sm"
+      size="md"
+      side="start"
+      className="leave-form-drawer"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
@@ -179,6 +181,6 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
           </div>
         )}
       </form>
-    </Modal>
+    </Drawer>
   );
 }

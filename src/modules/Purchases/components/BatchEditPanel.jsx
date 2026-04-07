@@ -6,7 +6,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { Button, Modal, Input } from '../../../ui';
+import { Button, Drawer, Input } from '../../../ui';
 
 const inputBase = {
   width: '100%', padding: '6px 8px', borderRadius: 6, fontSize: 12,
@@ -62,11 +62,13 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
   const total = sumAmounts(items, 'totalAmount').toNumber();
 
   return (
-    <Modal
+    <Drawer
       open
       onClose={onClose}
       title={`${t('batchLabel', batchId)} — ${t('batchSummary', items.length, fmt(total))}`}
       size="xl"
+      side="start"
+      className="batch-edit-drawer"
       footer={
         <Button variant="primary" disabled={saving} onClick={handleSave}>
           {saving ? t('saving') : t('saveChanges')}
@@ -170,6 +172,6 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
           </tbody>
         </table>
       </div>
-    </Modal>
+    </Drawer>
   );
 }

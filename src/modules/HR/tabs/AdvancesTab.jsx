@@ -18,7 +18,7 @@ import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Modal, Input } from '../../../ui';
+import { Button, Badge, Drawer, Input } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
@@ -382,11 +382,13 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
   }
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={t('editAdvance')}
       size="md"
+      side="start"
+      className="hr-advance-edit-drawer"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
@@ -399,7 +401,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
         <Input type="date" label={t('advanceLoanDate')} value={date} onChange={(e) => setDate(e.target.value)} />
         <Input multiline rows={3} label="ملاحظات" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
-    </Modal>
+    </Drawer>
   );
 }
 
@@ -462,11 +464,13 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
   }
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={t('settleAdvance')}
       size="md"
+      side="start"
+      className="hr-advance-settle-drawer"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
@@ -496,6 +500,6 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
           </>
         )}
       </div>
-    </Modal>
+    </Drawer>
   );
 }

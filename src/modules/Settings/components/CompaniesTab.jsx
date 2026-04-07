@@ -9,7 +9,7 @@ import {
   getDeleteCode, setDeleteCode, DEFAULT_DELETE_CODE,
   fileToDataUrl,
 } from '../constants/settingsConstants';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 export default function CompaniesTab({ onCompanyCreated }) {
   const queryClient = useQueryClient();
@@ -208,11 +208,13 @@ export default function CompaniesTab({ onCompanyCreated }) {
         </div>
       )}
 
-      <Modal
+      <Drawer
         open={!!editModal}
         onClose={() => !updateMutation.isPending && !deleteMutation.isPending && setEditModal(null)}
         title={editModal ? `تعديل الشركة — ${editModal.nameAr || '—'}` : ''}
         size="md"
+        side="start"
+        className="companies-edit-drawer"
         footer={
           <div className="nx-flex-end nx-flex-wrap nx-gap-10">
             {editModal && !editModal.isArchived && (
@@ -295,7 +297,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
             </div>
           </>
         )}
-      </Modal>
+      </Drawer>
     </div>
   );
 }

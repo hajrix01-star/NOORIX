@@ -13,7 +13,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { parseOvertimeWorkDaysPerMonth, totalSalary } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Modal, Input } from '../../../ui';
+import { Button, Drawer, Input } from '../../../ui';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -421,18 +421,20 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   if (isEditMode && isLoadingRun) {
     return (
-      <Modal open={true} onClose={onClose} title={t('loading')} size="sm">
+      <Drawer open={true} onClose={onClose} title={t('loading')} size="sm" side="start">
         {t('loading')}
-      </Modal>
+      </Drawer>
     );
   }
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={modalTitle}
       size="xl"
+      side="start"
+      className="payroll-run-form-drawer"
       footer={
         <>
           <div className="nx-font-800" style={{ fontSize: 'clamp(15px, 2.4vw, 17px)', fontFamily: 'var(--noorix-font-numbers)' }}>
@@ -619,6 +621,6 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           </div>
         )}
       </form>
-    </Modal>
+    </Drawer>
   );
 }

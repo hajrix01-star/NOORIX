@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import { changePassword } from '../services/api';
-import { Button, Input, Modal } from '../ui';
+import { Button, Input, Drawer } from '../ui';
 
 const MIN_LENGTH = 8;
 
@@ -74,7 +74,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
   };
 
   return (
-    <Modal open={true} onClose={onClose} title={t('changePassword')} size="sm">
+    <Drawer open={true} onClose={onClose} title={t('changePassword')} size="sm" side="start" className="change-password-drawer">
       <form onSubmit={handleSubmit}>
         <div className="nx-flex nx-flex-col nx-gap-16">
           <Input
@@ -144,6 +144,6 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
           </div>
         </div>
       </form>
-    </Modal>
+    </Drawer>
   );
 }

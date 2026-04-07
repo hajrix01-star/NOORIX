@@ -17,7 +17,7 @@ import ExpenseFormModal from '../Expenses/components/ExpenseFormModal';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { loadChat, saveChat, filterByDate } from './chatStorage';
 import './SmartChatScreen.css';
-import { Button, Modal, Input } from '../../ui';
+import { Button, Drawer, Input } from '../../ui';
 
 function SendIcon() {
   return (
@@ -531,7 +531,7 @@ export default function SmartChatScreen() {
       )}
 
       {faqOpen && (
-        <Modal open={true} onClose={() => setFaqOpen(false)} title={isAr ? 'أسئلة جاهزة' : 'Suggested questions'} size="md">
+        <Drawer open={true} onClose={() => setFaqOpen(false)} title={isAr ? 'أسئلة جاهزة' : 'Suggested questions'} size="md" side="start" className="smartchat-faq-drawer">
           <div className="nx-flex-col nx-gap-8">
             {visibleFaqQuestions.map((q, i) => (
               <Button key={i} className="nx-w-full nx-text-lg" style={{ textAlign: isAr ? 'right' : 'left', justifyContent: 'flex-start', padding: '14px 16px' }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
@@ -539,7 +539,7 @@ export default function SmartChatScreen() {
               </Button>
             ))}
           </div>
-        </Modal>
+        </Drawer>
       )}
 
       {entryMode && activeCompanyId && (
@@ -593,7 +593,7 @@ export default function SmartChatScreen() {
 
       {expenseMode === 'editLine' && activeCompanyId && (
         expenseEditLine === undefined ? (
-          <Modal open={true} onClose={() => setExpenseMode(null)} title={t('chatEditFixedExpense')} size="sm">
+          <Drawer open={true} onClose={() => setExpenseMode(null)} title={t('chatEditFixedExpense')} size="sm" side="start" className="smartchat-expense-pick-drawer">
             <div className="nx-flex-col nx-gap-8">
               {expenseLines.filter((l) => l.isActive !== false).map((line) => (
                 <Button key={line.id} className="nx-w-full" style={{ textAlign: isAr ? 'right' : 'left', justifyContent: 'flex-start', padding: '12px 14px' }} onClick={() => setExpenseEditLine(line)}>
@@ -601,7 +601,7 @@ export default function SmartChatScreen() {
                 </Button>
               ))}
             </div>
-          </Modal>
+          </Drawer>
         ) : (
           <ExpenseLineFormModal
             companyId={activeCompanyId}
@@ -619,11 +619,13 @@ export default function SmartChatScreen() {
         )
       )}
 
-      <Modal
+      <Drawer
         open={!!(activeCompanyId && commandsOpen && filteredGroups.length > 0)}
         onClose={() => setCommandsOpen(false)}
         title={isAr ? 'أوامر المحادثة' : 'Chat commands'}
         size="md"
+        side="start"
+        className="smartchat-commands-drawer"
       >
         <div className="noorix-chat-commands-panel-content" dir={isAr ? 'rtl' : 'ltr'}>
           {filteredGroups.map((g) => (
@@ -648,7 +650,7 @@ export default function SmartChatScreen() {
             </div>
           ))}
         </div>
-      </Modal>
+      </Drawer>
 
       {toast.visible && (
         <ToastBanner message={toast.message} type={toast.type} isAr={isAr} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />

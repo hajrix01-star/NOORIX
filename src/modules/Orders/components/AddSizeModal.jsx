@@ -3,16 +3,18 @@
  */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 export function AddSizeModal({ visible, onClose, value, onChange, onAdd }) {
   const { t } = useTranslation();
   return (
-    <Modal
+    <Drawer
       open={visible}
       onClose={onClose}
       title={`+ ${t('ordersProductSizes')}`}
       size="sm"
+      side="start"
+      className="add-size-drawer"
       footer={
         <>
           <Button onClick={onClose}>{t('cancel')}</Button>
@@ -34,6 +36,6 @@ export function AddSizeModal({ visible, onClose, value, onChange, onAdd }) {
           placeholder="Small"
         />
       </div>
-    </Modal>
+    </Drawer>
   );
 }

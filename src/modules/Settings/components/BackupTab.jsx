@@ -22,7 +22,7 @@ import {
 import Toast from '../../../components/Toast';
 import { useAuth } from '../../../context/AuthContext';
 import { useApp } from '../../../context/AppContext';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 function formatBackupDate(iso, lang) {
   if (!iso) return '—';
@@ -606,11 +606,13 @@ export default function BackupTab({ activeCompanies = [] }) {
         </div>
       </section>
 
-      <Modal
+      <Drawer
         open={!!importModal}
         onClose={() => !importMut.isPending && (setImportModal(null), setImportConfirmed(false))}
         title={t('backupImportNewCompany')}
         size="md"
+        side="start"
+        className="backup-import-drawer"
       >
         <div
           className="nx-text-base nx-font-500"
@@ -675,13 +677,15 @@ export default function BackupTab({ activeCompanies = [] }) {
             {importMut.isPending ? t('loading') : t('backupImportRun')}
           </Button>
         </div>
-      </Modal>
+      </Drawer>
 
-      <Modal
+      <Drawer
         open={!!reportModal}
         onClose={() => setReportModal(null)}
         title={t('backupRestoreReport')}
         size="md"
+        side="start"
+        className="backup-restore-report-drawer"
       >
         {reportModal && (
           <>
@@ -775,13 +779,15 @@ export default function BackupTab({ activeCompanies = [] }) {
             </div>
           </>
         )}
-      </Modal>
+      </Drawer>
 
-      <Modal
+      <Drawer
         open={!!importReportModal}
         onClose={() => setImportReportModal(null)}
         title={t('backupImportReportTitle')}
         size="md"
+        side="start"
+        className="backup-import-report-drawer"
       >
         {importReportModal && (
           <>
@@ -870,7 +876,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             </div>
           </>
         )}
-      </Modal>
+      </Drawer>
 
       <Toast
         visible={toast.visible}

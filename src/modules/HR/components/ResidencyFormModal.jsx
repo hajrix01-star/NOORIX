@@ -10,7 +10,7 @@ import { getEmployees } from '../../../services/api';
 import { createResidency, updateResidency, createInvoice } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'statusActive' },
@@ -118,11 +118,13 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
   };
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={isEdit ? t('editResidency') : t('addResidency')}
       size="md"
+      side="start"
+      className="residency-form-drawer"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
@@ -246,6 +248,6 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
           </div>
         )}
       </form>
-    </Modal>
+    </Drawer>
   );
 }

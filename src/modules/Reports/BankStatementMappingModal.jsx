@@ -9,7 +9,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementConfirmMapping, bankStatementGet, bankStatementSuggestHeaderMetadata } from '../../services/api';
-import { Button, Modal, Input } from '../../ui';
+import { Button, Drawer, Input } from '../../ui';
 import {
   autoDetectRows,
   autoDetectColumns,
@@ -225,11 +225,13 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
   };
 
   return (
-    <Modal
+    <Drawer
       open={!!statement}
       onClose={onClose}
       title={t('bankMapTitle')}
       size="full"
+      side="start"
+      className="bank-mapping-drawer"
       footer={
         <div className="nx-flex nx-flex-wrap nx-flex-between nx-gap-12 nx-w-full">
           <div>
@@ -417,6 +419,6 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           </div>
         </div>
 
-    </Modal>
+    </Drawer>
   );
 }

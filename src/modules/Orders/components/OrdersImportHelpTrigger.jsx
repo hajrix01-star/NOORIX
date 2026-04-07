@@ -52,8 +52,7 @@ export function OrdersImportHelpTrigger({ t, variant }) {
         <div
           role="region"
           aria-label={title}
-          className="noorix-print-hide"
-          className="nx-text-sm nx-text-primary nx-bg-surface nx-rounded-lg"
+          className="noorix-print-hide nx-text-sm nx-text-primary nx-bg-surface nx-rounded-lg"
           style={{
             position: 'absolute',
             top: 'calc(100% + 8px)',

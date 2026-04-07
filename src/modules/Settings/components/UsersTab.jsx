@@ -8,7 +8,7 @@ import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import Toast from '../../../components/Toast';
 import SmartTable from '../../../components/common/SmartTable';
-import { Button, Badge, Input, Modal } from '../../../ui';
+import { Button, Badge, Input, Drawer } from '../../../ui';
 
 export default function UsersTab({ userRole, activeCompanies = [] }) {
   const { t } = useTranslation();
@@ -121,11 +121,13 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
         </div>
       )}
 
-      <Modal
+      <Drawer
         open={!!editing}
         onClose={() => !updateMutation.isPending && setEditing(null)}
         title={editing ? t('editUser', editing.email) : ''}
         size="md"
+        side="start"
+        className="users-edit-drawer"
       >
         {editing && (
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
@@ -155,7 +157,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
             </div>
           </form>
         )}
-      </Modal>
+      </Drawer>
 
       <SmartTable
         columns={columns}

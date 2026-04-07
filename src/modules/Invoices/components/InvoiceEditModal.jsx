@@ -7,7 +7,7 @@ import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { updateInvoice } from '../../../services/api';
 import { fmt } from '../../../utils/format';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClose }) {
   const { t } = useTranslation();
@@ -88,11 +88,13 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
   if (!invoice) return null;
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={t('editInvoice')}
-      size="sm"
+      size="md"
+      side="start"
+      className="invoice-edit-drawer"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -174,6 +176,6 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
           placeholder={t('invoiceNotesPlaceholder')}
         />
       </div>
-    </Modal>
+    </Drawer>
   );
 }

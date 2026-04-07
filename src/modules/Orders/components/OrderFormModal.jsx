@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { ProductSearchInput } from '../../../components/common/ProductSearchInput';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 export function OrderFormModal({
   companyId,
@@ -172,10 +172,12 @@ export function OrderFormModal({
   // شاشة النجاح بعد الحفظ
   if (savedOrder) {
     return (
-      <Modal
+      <Drawer
         open
         onClose={() => { resetForm(); onClose?.(); }}
         size="sm"
+        side="start"
+        className="order-form-success-drawer"
         hideClose={false}
       >
         <div className="nx-text-center" style={{ padding: '8px 0' }}>
@@ -200,16 +202,18 @@ export function OrderFormModal({
             </div>
           </div>
         </div>
-      </Modal>
+      </Drawer>
     );
   }
 
   return (
-    <Modal
+    <Drawer
       open
       onClose={onClose}
       title={isEdit ? t('ordersEditOrder') : t('ordersNewOrder')}
       size="lg"
+      side="start"
+      className="order-form-drawer"
       footer={
         <Button
           variant="primary"
@@ -438,6 +442,6 @@ export function OrderFormModal({
           <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount, 2)} ﷼</div>
         </div>
       </div>
-    </Modal>
+    </Drawer>
   );
 }

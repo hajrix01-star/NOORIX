@@ -11,7 +11,7 @@ import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { splitTaxFromTotal } from '../../../utils/math-engine';
 import { sumObjectValues } from '../../../utils/math-engine';
 import { getSaudiToday } from '../../../utils/saudiDate';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 export function SalesEntryModal({
   companyId,
@@ -97,11 +97,13 @@ export function SalesEntryModal({
 
   if (savedSummary) {
     return (
-      <Modal
+      <Drawer
         open={true}
         onClose={() => { resetForm(); onClose?.(); }}
         title={t('summarySaved')}
         size="sm"
+        side="start"
+        className="sales-entry-success-drawer"
         footer={
           <>
             <Button onClick={() => { resetForm(); onClose?.(); }}>{t('addNewSummary')}</Button>
@@ -133,16 +135,18 @@ export function SalesEntryModal({
             {t('sendWhatsApp')} — {t('salesDailySummary')}
           </Button>
         </div>
-      </Modal>
+      </Drawer>
     );
   }
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={t('dailySummaryInput')}
       size="xl"
+      side="start"
+      className="sales-entry-drawer"
       footer={
         <>
           <Button
@@ -231,6 +235,6 @@ export function SalesEntryModal({
           <div className="noorix-summary-bar__value">{fmt(avgPerCustomer, 2)} ﷼</div>
         </div>
       </div>
-    </Modal>
+    </Drawer>
   );
 }

@@ -29,7 +29,7 @@ import {
   createDailySalesSummary,
   getPaymentVaults,
 } from '../services/api';
-import { Button, Modal } from '../ui';
+import { Button, Drawer } from '../ui';
 
 // ─── Config per entity type ──────────────────────────────────────────────────
 
@@ -509,11 +509,13 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
   const errorsToShow = showAllErrors ? validationResults.filter((r) => !r.valid || r.warnings.length > 0) : validationResults.filter((r) => !r.valid || r.warnings.length > 0).slice(0, 10);
 
   return (
-    <Modal
+    <Drawer
       open={isOpen}
       onClose={() => { if (!importing) onClose(); }}
       title={`استيراد وتصدير — ${cfg.label}`}
       size="xl"
+      side="start"
+      className="import-export-drawer"
       closeOnBackdrop={!importing}
     >
       {lookupsLoading && (
@@ -738,6 +740,6 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           )}
         </div>
       )}
-    </Modal>
+    </Drawer>
   );
 }

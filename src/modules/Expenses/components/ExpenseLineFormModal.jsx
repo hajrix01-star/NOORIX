@@ -7,7 +7,7 @@ import { createExpenseLine, updateExpenseLine } from '../../../services/api';
 import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Modal, Input } from '../../../ui';
+import { Button, Drawer, Input } from '../../../ui';
 
 export default function ExpenseLineFormModal({ companyId, editing, onClose, onSaved }) {
   const { lang } = useTranslation();
@@ -120,11 +120,13 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
   );
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={editing ? 'تعديل بند مصروف' : 'إضافة بند مصروف'}
       size="md"
+      side="start"
+      className="expense-line-form-drawer"
       footer={footer}
     >
       <form id="expense-line-form-modal" onSubmit={handleSubmit}>
@@ -201,6 +203,6 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           rows={3}
         />
       </form>
-    </Modal>
+    </Drawer>
   );
 }

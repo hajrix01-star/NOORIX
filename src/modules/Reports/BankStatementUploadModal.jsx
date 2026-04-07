@@ -5,7 +5,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementUpload } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
-import { Button, Modal } from '../../ui';
+import { Button, Drawer } from '../../ui';
 
 const STEPS = [
   { id: 'upload', labelKey: 'bankStatementStepUpload' },
@@ -83,11 +83,13 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
   };
 
   return (
-    <Modal
+    <Drawer
       open
       onClose={onClose}
       title={t('bankStatementUploadTitle')}
       size="md"
+      side="start"
+      className="bank-upload-drawer"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -177,6 +179,6 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           )}
         </div>
       )}
-    </Modal>
+    </Drawer>
   );
 }

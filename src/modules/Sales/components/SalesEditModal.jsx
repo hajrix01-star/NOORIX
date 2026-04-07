@@ -8,7 +8,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { splitTaxFromTotal } from '../../../utils/math-engine';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 const CHANNEL_COLORS = {
   cash: { bg: 'rgba(22,163,74,0.08)', border: '#16a34a', icon: '💵' },
@@ -102,11 +102,13 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
   if (!summary) return null;
 
   return (
-    <Modal
+    <Drawer
       open={true}
       onClose={onClose}
       title={`تعديل ملخص المبيعات — ${summary.summaryNumber}`}
       size="xl"
+      side="start"
+      className="sales-edit-drawer"
       footer={
         <>
           <Button
@@ -211,6 +213,6 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
           <div style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} ﷼</div>
         </div>
       </div>
-    </Modal>
+    </Drawer>
   );
 }

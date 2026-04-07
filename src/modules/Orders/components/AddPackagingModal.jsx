@@ -3,16 +3,18 @@
  */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 
 export function AddPackagingModal({ visible, onClose, value, onChange, onAdd }) {
   const { t } = useTranslation();
   return (
-    <Modal
+    <Drawer
       open={visible}
       onClose={onClose}
       title={`+ ${t('ordersProductPackaging')}`}
       size="sm"
+      side="start"
+      className="add-packaging-drawer"
       footer={
         <>
           <Button onClick={onClose}>{t('cancel')}</Button>
@@ -34,6 +36,6 @@ export function AddPackagingModal({ visible, onClose, value, onChange, onAdd }) 
           placeholder="Box"
         />
       </div>
-    </Modal>
+    </Drawer>
   );
 }

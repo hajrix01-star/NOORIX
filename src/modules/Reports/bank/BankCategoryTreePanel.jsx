@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Modal, Input } from '../../../ui';
+import { Button, Input, Drawer } from '../../../ui';
 import {
   bankStatementTreeCategoriesList,
   bankStatementTreeCategoryCreate,
@@ -156,11 +156,13 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
   const pending = createMut.isPending || updateMut.isPending;
 
   return (
-    <Modal
+    <Drawer
       open={open}
       onClose={onClose}
       size="lg"
+      side="start"
       title={category ? t('bankTreeEditCategory') : t('bankTreeAddCategory')}
+      className="bank-category-form-drawer"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
@@ -296,7 +298,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
           ))}
         </div>
       </div>
-    </Modal>
+    </Drawer>
   );
 }
 
@@ -715,11 +717,13 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
         t={t}
       />
 
-      <Modal
+      <Drawer
         open={showMigrate}
         onClose={() => !migrating && setShowMigrate(false)}
         title={t('bankTreeMigrateTitle')}
         size="md"
+        side="start"
+        className="bank-tree-migrate-drawer"
         closeOnBackdrop={!migrating}
         footer={
           <>
@@ -739,13 +743,15 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
             </div>
           ))}
         </div>
-      </Modal>
+      </Drawer>
 
-      <Modal
+      <Drawer
         open={showImportModal}
         onClose={() => !importBusy && setShowImportModal(false)}
         title={t('bankRulesImport')}
-        size="sm"
+        size="md"
+        side="start"
+        className="bank-rules-import-drawer"
         closeOnBackdrop={!importBusy}
         footer={
           <>
@@ -806,7 +812,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
             </label>
           </div>
         </div>
-      </Modal>
+      </Drawer>
     </div>
   );
 }

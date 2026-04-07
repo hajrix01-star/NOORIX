@@ -21,7 +21,7 @@ import Toast from '../../../components/Toast';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
-import { Button, Badge, Modal } from '../../../ui';
+import { Button, Badge, Drawer } from '../../../ui';
 
 function buildWhatsAppText(order, t) {
   const lines = (order.items || []).map((it) => {
@@ -400,11 +400,13 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
       )}
 
       {viewingOrder && (
-        <Modal
+        <Drawer
           open={!!viewingOrder}
           onClose={() => setViewingOrder(null)}
           title={`${t('ordersViewOrder')} — ${viewingOrder.orderNumber}`}
-          size="lg"
+          size="xl"
+          side="start"
+          className="orders-view-drawer"
           footer={
             <>
               <Button variant="primary" onClick={() => handlePrintOrder(viewingOrder)}>
@@ -468,7 +470,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
               </tfoot>
             </table>
           </div>
-        </Modal>
+        </Drawer>
       )}
     </div>
   );
