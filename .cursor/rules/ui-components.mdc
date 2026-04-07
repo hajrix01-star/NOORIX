@@ -93,20 +93,34 @@ import { SmartTable } from '../../ui';
 createPortal(<div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)' }}> ... </div>)
 <div className="modal-overlay"> ... </div>
 
-// ✅ نوافذ حوارية مركزية
+// ✅ Modal — حوارات مركزية محدودة (انظر «سياسة Modal vs Drawer» أدناه)
 import { Modal } from '../../ui';
 <Modal open={open} onClose={onClose} title="العنوان" size="md|lg|sm">
   {children}
 </Modal>
 
-// ✅ لوح جانبي (تفاصيل، معاينة، سجل) — `src/ui/Drawer.jsx`
+// ✅ Drawer — سطح العمل الافتراضي للنماذج والمعالجات — `src/ui/Drawer.jsx`
 import { Drawer } from '../../ui';
-<Drawer open={open} onClose={onClose} title="التفاصيل" size="sm|md|lg|xl|full" side="start|end">
+<Drawer open={open} onClose={onClose} title="العنوان" size="sm|md|lg|xl|full" side="start|end">
   {children}
 </Drawer>
 ```
 
-**الألواح الجانبية:** ليست بديلاً عن `Modal` المركزي — استخدم **`Drawer`** من `../../ui`. **ممنوع** portal/overlay جانبي مخصّص. `side="start"` في صفحة `dir="rtl"` يفتح من يمين الشاشة (بداية السطر المنطقية).
+**ممنوع** portal/overlay مخصّص (مركزي أو جانبي). **`side="start"`** في `dir="rtl"` يفتح من **يمين** الشاشة (بداية السطر المنطقية) — هذا هو الافتراضي المفضّل للواجهة العربية.
+
+### سياسة المشروع: `Modal` مقابل `Drawer`
+
+| استخدم **`Drawer`** | استخدم **`Modal`** |
+|---------------------|---------------------|
+| نماذج إنشاء/تعديل (موظف، فاتورة، طلب، مصروف، …) | تأكيدات (حذف، إنهاء خدمة، تبديل شركة، …) |
+| معالجات متعددة الخطوات (رفع كشف، ربط بنك، استيراد/تصدير) | حوارات صغيرة مركّزة (تقويم: أيام خاصة، …) |
+| تفاصيل سجل / معاينة طويلة تحتاج تمريراً عمودياً | سلوك خاص: `closeOnBackdrop={false}` (إغلاق صريح فقط) |
+| لوحات تحرير دفعية أو شاشات عمل عريضة | معاينة «ملاصقة للحافة» مع `className="nx-modal--flush"` أو ما يعادلها |
+| تغيير كلمة المرور وأي نموذج يشبه «صفحة عمل» | تقارير/طباعة مودال بحجم ثابت يعتمد على التمرير داخل المودال فقط عند الحاجة |
+
+**قاعدة سريعة:** إذا كان المحتوى **نموذج عمل أو جدول أو معالج** → **`Drawer`** مع `side="start"` ما لم يوجد سبب تقني (الجدول الأيمن). إذا كان **سؤال نعم/لا أو جملة قصيرة** → **`Modal`** عادةً `size="sm"`.
+
+أسماء الملفات قد تبقى `*Modal.jsx` لأسباب تاريخية؛ **المهم أن الجذر البصري يكون `Drawer` أو `Modal` حسب الجدول أعلاه.**
 
 ### 6. قواعد استخدام المكوّنات (Semantic usage)
 
@@ -193,7 +207,7 @@ import { Drawer } from '../../ui';
 ```jsx
 import { Button, Input, Card, Badge, Modal, Drawer, Spinner, SmartTable, Divider, FormRow } from '../../ui';
 // أو حسب عمق الملف:
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Modal, Drawer } from '../../../ui';
 ```
 
 ---
@@ -205,7 +219,7 @@ import { Button, Input, Modal } from '../../../ui';
 3. **ألوان من البيانات**: `style={{ color: category.color }}`
 4. **إحداثيات من DOM**: `style={{ top: y, left: x }}` (قوائم منسدلة محسوبة)
 5. **CSS Grid الديناميكي**: `style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}`
-6. **طبقة الوظائف** (انظر §2): `zIndex`, `min/max` أبعاد للمكوّن، `transform`, `transitionDuration` ديناميكي
+6. **طبقة الوظائف** (انظر قسم «Inline Styles» أعلاه): `zIndex`, `min/max` أبعاد للمكوّن، `transform`, `transitionDuration` ديناميكي
 7. **مستندات الطباعة** (print/PDF): أنماط دقيقة للطباعة
 
 **تخطيط الصفحة والألوان الثابتة عبر `style` = مرفوض.** ما عدا القائمة أعلاه.
