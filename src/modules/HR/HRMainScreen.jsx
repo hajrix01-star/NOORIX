@@ -62,7 +62,7 @@ export default function HRMainScreen() {
   }).length;
 
   return (
-    <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
+    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
 
       {/* ── ترويسة الصفحة — على الجوال: العنوان ثم الكروت بعرض تلقائي ── */}
       <div className="nx-page-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

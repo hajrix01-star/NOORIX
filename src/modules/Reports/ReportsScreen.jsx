@@ -114,7 +114,7 @@ export default function ReportsScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
+    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
       <div className="flex flex-col gap-4">

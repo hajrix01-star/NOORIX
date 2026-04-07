@@ -48,7 +48,7 @@ export default function DashboardScreen() {
   }), [year, selectedMonthNumber]);
 
   return (
-      <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
+      <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
       {/* هيدر */}
       <div className="flex flex-wrap items-start justify-between gap-3 nx-page-header">
         <div>

@@ -85,7 +85,7 @@ export default function ExpensesScreen() {
   };
 
   return (
-    <div className="flex flex-col gap-4 px-3 py-4 lg:px-6">
+    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>
       </div>
