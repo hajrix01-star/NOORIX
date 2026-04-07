@@ -1,5 +1,5 @@
 ---
-description: STRICT — Enforce Noorix UI system (src/ui). Block raw HTML, inline styles for layout/colors, and old noorix-btn-* classes.
+description: STRICT — Enforce Noorix UI system (src/ui). Block raw HTML, inline styles for layout/colors, and old noorix-btn-* classes. See ui-responsive-standards.mdc for breakpoints, Button size, mobile cards.
 globs: src/**/*.{jsx,tsx,js,ts}
 alwaysApply: true
 ---

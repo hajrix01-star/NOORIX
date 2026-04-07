@@ -975,6 +975,21 @@ a { color: inherit; text-decoration: none; }
 }
 @media (max-width: 640px) {
   .noorix-surface-card { border-radius: 14px; }
+  /* كثافة الجوال: كروت بحشو nx-p-* داخل المحتوى الرئيسي */
+  .app-main .noorix-surface-card.nx-p-24 { padding: 14px 12px; }
+  .app-main .noorix-surface-card.nx-p-20 { padding: 12px 10px; }
+  .app-main .noorix-surface-card.nx-p-16 { padding: 12px 10px; }
+  /* شريط أدوات: أزرار أصغر بصرياً مع بقاء منطقة لمس معقولة */
+  .app-main .nx-toolbar .nx-btn:not(.nx-btn--lg):not(.nx-btn--raw) {
+    min-height: 40px;
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+  .app-main .nx-page-header .nx-toolbar .nx-btn:not(.nx-btn--lg):not(.nx-btn--raw) {
+    min-height: 40px;
+    padding: 7px 14px;
+    font-size: 13px;
+  }
 }
 
 /* ========== أشكال الكروت الاحترافية (1–10) — تطبيق حسب data-card-style ========== */
