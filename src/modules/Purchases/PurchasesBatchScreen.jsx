@@ -200,11 +200,11 @@ export default function PurchasesBatchScreen() {
     /* المورد — minWidth يضمن عدم انهيار العمود مع table-layout:auto */
     { key: 'supplierNames', label: t('supplier'), sortable: true, minWidth: 160,
       render: (v) => (
-        <span className="truncate" style={{ display: 'block', minWidth: 0 }}>{v || '—'}</span>
+        <span className="truncate block min-w-0">{v || '—'}</span>
       )},
     { key: 'vaultName', label: t('vault'), sortable: true, shrink: true, minWidth: 120,
       render: (v) => (
-        <span className="truncate" style={{ display: 'block', minWidth: 0, maxWidth: 200 }}>{v || '—'}</span>
+        <span className="truncate block min-w-0 max-w-[200px]">{v || '—'}</span>
       )},
     /* الأعمدة المالية — ضيقة، محاذاة يمين */
     { key: 'netAmount',   label: t('net'),   numeric: true, sortable: true, shrink: true,
@@ -511,7 +511,7 @@ export default function PurchasesBatchScreen() {
                       { label: t('notes'),                 align: 'right'  },
                       { label: '',                         align: 'center' },
                     ].map(({ label, align, title }, i) => (
-                      <th key={i} title={title} className="text-[11px] font-bold text-noorix-muted overflow-hidden whitespace-nowrap" style={{ padding: '8px 6px', textAlign: align }}>{label}</th>
+                      <th key={i} title={title} className="text-[11px] font-bold text-noorix-muted overflow-hidden whitespace-nowrap py-2 px-1.5" style={{ textAlign: align }}>{label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -553,7 +553,7 @@ export default function PurchasesBatchScreen() {
                 variant="primary"
                 disabled={saveMutation.isPending || summary.count === 0 || !batchVaultId || activeVaults.length === 0}
                 onClick={() => saveMutation.mutate()}
-                style={{ flex: '1 1 200px', minWidth: 0 }}
+                className="flex-[1_1_200px] min-w-0"
               >
                 {saveMutation.isPending ? t('saving') : t('saveBatch', summary.count)}
               </Button>

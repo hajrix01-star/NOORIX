@@ -241,7 +241,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
 
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
-      <div className="noorix-print-header" style={{ display: 'none' }}>
+      <div className="noorix-print-header hidden print:block">
         {companyName} — {t('ordersTab')} — {printDate}
       </div>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />

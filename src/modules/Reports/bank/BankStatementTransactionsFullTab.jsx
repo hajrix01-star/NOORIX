@@ -70,7 +70,7 @@ export default function BankStatementTransactionsFullTab({
       onClick={() => handleSort(sortKey)}
     >
       {label}
-      <span style={{ fontSize: 10, opacity: sortConfig.key === sortKey ? 1 : 0.35 }}>
+      <span className="text-[10px]" style={{ opacity: sortConfig.key === sortKey ? 1 : 0.35 }}>
         {sortConfig.key === sortKey ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}
       </span>
     </Button>
@@ -250,7 +250,7 @@ export default function BankStatementTransactionsFullTab({
                     }}
                   >
                     {/* Checkbox */}
-                    <td style={{ padding: '8px 10px' }}>
+                    <td className="py-2 px-[10px]">
                       <label className="nx-checkbox">
                         <input
                           type="checkbox"
@@ -304,7 +304,7 @@ export default function BankStatementTransactionsFullTab({
                       ) : (
                         <Button
                           size="sm"
-                          style={{ textAlign: 'start', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
+                          className="text-start max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap block"
                           onClick={() => {
                             setEditingTxId(tx.id);
                             setEditingCategory(catId);

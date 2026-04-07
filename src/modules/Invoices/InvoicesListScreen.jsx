@@ -43,7 +43,7 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
   return (
     <Modal open={!!invoice} onClose={onClose} size="sm" hideClose className="nx-modal--flush">
       {/* هيدر بـ gradient */}
-      <div className="flex items-center justify-between" style={{ background: 'linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%)', padding: '16px 20px' }}>
+      <div className="flex items-center justify-between py-4 px-5" style={{ background: 'linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%)' }}>
         <div>
           <div className="text-[11px] mb-[3px]" style={{ color: 'rgba(255,255,255,0.75)' }}>{t('invoicesTitle')}</div>
           <h3 className="m-0 font-bold text-[17px]" style={{ color: 'var(--noorix-navy-text)' }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
@@ -55,14 +55,14 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
       {/* حقول التفاصيل */}
       <div className="grid grid-cols-2 gap-2.5 p-5">
         {fields.map(({ label, value, highlight, bold }) => (
-          <div key={label} className="bg-noorix-bg-muted" style={{ padding: '10px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-            <div style={{ fontSize: 14, fontWeight: bold ? 700 : 600, color: highlight || 'var(--noorix-text)', fontFamily: 'var(--noorix-font-numbers)' }}>{value}</div>
+          <div key={label} className="bg-noorix-bg-muted py-[10px] px-3 rounded-[10px] border border-noorix-border">
+            <div className="text-noorix-muted mb-1 text-[10px] uppercase tracking-[0.05em]">{label}</div>
+            <div className="text-[14px]" style={{ fontWeight: bold ? 700 : 600, color: highlight || 'var(--noorix-text)', fontFamily: 'var(--noorix-font-numbers)' }}>{value}</div>
           </div>
         ))}
         {invoice.notes && (
-          <div className="bg-noorix-bg-muted" style={{ gridColumn: '1 / -1', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--noorix-border)' }}>
-            <div className="text-noorix-muted mb-1" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('notes')}</div>
+          <div className="bg-noorix-bg-muted col-span-full py-[10px] px-3 rounded-[10px] border border-noorix-border">
+            <div className="text-noorix-muted mb-1 text-[10px] uppercase tracking-[0.05em]">{t('notes')}</div>
             <div className="text-[13px] text-noorix-text">{invoice.notes}</div>
           </div>
         )}
@@ -445,8 +445,7 @@ export default function InvoicesListScreen() {
           </div>
           {(urlExtra.categoryId || urlExtra.expenseLineId || urlExtra.kind) && (
             <div
-            className="noorix-surface-card flex items-center justify-between flex flex-wrap gap-3 text-[12px]"
-            style={{ padding: '10px 14px', border: '1px dashed var(--noorix-blue-35)', background: 'var(--noorix-blue-4)' }}
+            className="noorix-surface-card flex items-center justify-between flex-wrap gap-3 text-[12px] py-[10px] px-[14px] border border-dashed border-[var(--noorix-blue-35)] bg-[var(--noorix-blue-4)]"
             >
               <span className="nx-cell-muted">{t('invoicesDrillBanner')}</span>
               <Button size="sm" onClick={() => { setUrlExtra({ kind: '', categoryId: '', expenseLineId: '' }); setPage(1); }}>

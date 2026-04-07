@@ -119,7 +119,7 @@ function ProgressBar({ pct }) {
 function StatBadge({ count, label, color }) {
   return (
     <div className="text-center" style={{ padding: '10px 20px', borderRadius: 10, background: color + '14', border: `1px solid ${color}30`, minWidth: 90 }}>
-      <div style={{ fontSize: 26, fontWeight: 900, color, fontFamily: 'var(--noorix-font-numbers)' }}>{count}</div>
+      <div className="text-[26px] font-black" style={{ color, fontFamily: 'var(--noorix-font-numbers)' }}>{count}</div>
       <div className="text-[12px] text-noorix-muted mt-0.5">{label}</div>
     </div>
   );
@@ -591,7 +591,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 ref={fileInputRef}
                 type="file"
                 accept=".xlsx,.xls,.csv"
-                style={{ display: 'none' }}
+                className="hidden"
                 onChange={(e) => handleFile(e.target.files?.[0])}
               />
               {parsedRows.length > 0 && (
@@ -631,7 +631,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                         </div>
                       ))}
                       {r.warnings.map((msg, j) => (
-                        <div key={`w${j}`} className="grid gap-2 rounded-lg text-[12px]" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'var(--noorix-yellow-7)' }}>
+                        <div key={`w${j}`} className="grid gap-2 rounded-lg text-[12px] grid-cols-[56px_1fr] items-start py-[5px] px-[10px] bg-[var(--noorix-yellow-7)]">
                           <span className="font-bold text-noorix-amber">?? {r.rowNum}</span>
                           <span style={{ color: 'var(--noorix-accent-amber)' }}>? {msg}</span>
                         </div>

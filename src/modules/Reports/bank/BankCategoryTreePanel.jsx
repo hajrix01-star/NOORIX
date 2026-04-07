@@ -199,7 +199,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
             {parentKeywords.map((kw, idx) => (
               <span key={idx} className="text-[11px] px-2 py-[2px] rounded-[6px] bg-noorix-surface border border-noorix-border">
                 {kw}
-                <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} style={{ marginInlineStart: 6, color: 'var(--noorix-accent-red)', padding: '0 4px', minHeight: 'auto' }}>
+                <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} className="ms-1.5 text-noorix-red px-1" style={{ minHeight: 'auto' }}>
                   ×
                 </Button>
               </span>
@@ -273,7 +273,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                           p.map((c, i) => (i === idx ? { ...c, keywords: c.keywords.filter((_, ki) => ki !== kwIdx) } : c)),
                         );
                       }}
-                      style={{ marginInlineStart: 4, padding: '0 4px', minHeight: 'auto' }}
+                      className="ms-1 px-1" style={{ minHeight: 'auto' }}
                     >
                       ×
                     </Button>
@@ -334,7 +334,7 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
               </span>
             ) : null}
             <span className="font-bold">{category.name}</span>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: typeInfo.color, color: typeInfo.colorText }}>
+            <span className="text-[11px] py-[2px] px-2 rounded-md" style={{ background: typeInfo.color, color: typeInfo.colorText }}>
               {typeInfo.icon} {typeInfo.label}
             </span>
             {category.transactionSide && category.transactionSide !== 'any' ? (

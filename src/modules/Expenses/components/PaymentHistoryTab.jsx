@@ -103,7 +103,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
 
   if (isError) {
     return (
-      <div className="text-center text-[14px]" style={{ padding: 32, color: 'var(--noorix-accent-red)' }}>
+      <div className="text-center text-[14px] p-8 text-noorix-red">
         ⚠ {error?.message || 'فشل تحميل سجل المدفوعات'}
       </div>
     );
@@ -112,7 +112,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   return (
     <div>
       {!externalDateFilter && (
-        <div className="flex items-center gap-12 mb-3" style={{ flexWrap: 'wrap' }}>
+        <div className="flex items-center gap-12 mb-3 flex-wrap">
           <DateFilterBar filter={dateFilter} />
           <label className="nx-checkbox">
             <input type="checkbox" checked={showAllDates} onChange={(e) => setShowAllDates(e.target.checked)} />
@@ -145,7 +145,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           keyExtractor={(row) => row.id}
           footer={
             activeItems.length > 0 ? (
-              <div className="flex items-center justify-between p-4 rounded-lg mt-3 gap-3" style={{ background: 'var(--noorix-bg-page)', flexWrap: 'wrap' }}>
+              <div className="flex items-center justify-between p-4 rounded-lg mt-3 gap-3 flex-wrap bg-[var(--noorix-bg-page)]">
                 <span className="text-[14px] text-noorix-muted">عدد السجلات: <strong>{activeItems.length}</strong></span>
                 <span className="text-[14px]">الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
                 <span className="text-[14px]">الضريبة: <strong className="nx-cell-num text-noorix-amber">{fmt(totalTax)}</strong></span>

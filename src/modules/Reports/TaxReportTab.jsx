@@ -293,7 +293,7 @@ export default function TaxReportTab() {
                 </tr>
                 {OUTPUT_ROWS.map((r) => (
                   <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
-                    <td className="border-b border-noorix-border" style={{ padding: '10px 12px', fontWeight: r.isTotal ? 700 : 500 }}>
+                    <td className="border-b border-noorix-border py-[10px] px-3" style={{ fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
                     <td className="text-center border-b border-noorix-border py-2 px-3">
@@ -314,7 +314,7 @@ export default function TaxReportTab() {
                 </tr>
                 {INPUT_ROWS.map((r) => (
                   <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
-                    <td className="border-b border-noorix-border" style={{ padding: '10px 12px', fontWeight: r.isTotal ? 700 : 500 }}>
+                    <td className="border-b border-noorix-border py-[10px] px-3" style={{ fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
                     <td className="text-center border-b border-noorix-border py-2 px-3">

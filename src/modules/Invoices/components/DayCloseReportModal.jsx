@@ -183,17 +183,16 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
             </header>
           </div>
 
-          <div className="day-close-no-print flex items-center justify-between gap-2" style={{ flexWrap: 'wrap', marginBottom: 14 }}>
-            <div className="flex items-center gap-10" style={{ flexWrap: 'wrap' }}>
-              <h2 id="day-close-title" className="m-0 font-extrabold" style={{ fontSize: 17 }}>{t('dayCloseTitle')}</h2>
+          <div className="day-close-no-print flex items-center justify-between gap-2 flex-wrap mb-[14px]">
+            <div className="flex items-center gap-10 flex-wrap">
+              <h2 id="day-close-title" className="m-0 font-extrabold text-[17px]">{t('dayCloseTitle')}</h2>
               <label className="flex items-center gap-6 text-[13px]">
                 <span className="text-noorix-muted">{t('date')}</span>
                 <Input
                   type="date"
                   value={dateStr}
                   onChange={(e) => setDateStr(e.target.value)}
-                  className="rounded-lg"
-                  style={{ padding: '4px 8px', border: '1px solid var(--noorix-border)' }}
+                  className="rounded-lg py-1 px-2 border border-noorix-border"
                 />
               </label>
               <Button onClick={() => refetch()} disabled={isFetching}>
@@ -219,18 +218,18 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
           {data && !isLoading && (
             <div className="grid gap-3.5">
-              <div className="day-close-screen-only flex gap-2" style={{ justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', paddingBottom: 8, borderBottom: '1px solid var(--noorix-border)' }}>
+              <div className="day-close-screen-only flex gap-2 justify-between items-baseline flex-wrap pb-2 border-b border-noorix-border">
                 <div>
                   <div className="text-[11px]" style={{ color: 'var(--noorix-text-muted)' }}>{t('dayCloseReportDate')}</div>
                   <div className="text-[15px] font-extrabold">{reportDateLabel}</div>
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--noorix-text-muted-2)', maxWidth: 340, textAlign: 'right', lineHeight: 1.45 }}>
+                <div className="text-[10px] text-[var(--noorix-text-muted-2)] max-w-[340px] text-right leading-[1.45]">
                   {t('dayCloseVaultBalanceNote')}
                 </div>
               </div>
 
               {data.meta?.invoicesTruncated && (
-                <div style={{ fontSize: 11, padding: '8px 10px', background: 'var(--noorix-yellow-12)', borderRadius: 8, color: 'var(--noorix-accent-amber)', border: '1px solid var(--noorix-yellow-35)' }}>
+                <div className="text-[11px] py-2 px-[10px] bg-[var(--noorix-yellow-12)] rounded-lg text-noorix-amber border border-[var(--noorix-yellow-35)]">
                   {t('dayCloseTruncatedWarning', data.meta.operationsReturned)}
                 </div>
               )}
@@ -317,7 +316,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 </div>
               </div>
 
-              <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', alignItems: 'start' }}>
+              <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] items-start">
                 <div>
                   <SectionTitle>{t('dayCloseByKind')}</SectionTitle>
                   <table className="dc-table">
@@ -415,7 +414,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                           <td className="dc-num">{s.customerCount}</td>
                           <td className="dc-num">{fmt(Number(s.cashOnHand), 2)}</td>
                           <td className="dc-num">{fmt(Number(s.totalAmount), 2)}</td>
-                          <td className="dc-muted" style={{ fontSize: 10 }}>
+                          <td className="dc-muted text-[10px]">
                             {(s.channels || []).map((c) => `${c.vaultName}: ${fmt(Number(c.amount), 2)}`).join(' · ') || '—'}
                           </td>
                         </tr>

@@ -1,6 +1,6 @@
-/**
- * ItemsManageTab — ÊÈæíÈÉ ÅÏÇÑÉ ÇáÃÕäÇÝ æÇáÝÆÇÊ
- * ÅÚÇÏÉ ÈäÇÁ ãÚ ÞæÇÆã ãäÓÏáÉ ááÃÍÌÇã æÇáÊÛáíÝ + ÎíÇÑ ÅÖÇÝÉ ÌÏíÏ
+ï»¿/**
+ * ItemsManageTab ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
  */
 import React, { useState, useRef, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -173,27 +173,27 @@ export function ItemsManageTab({ companyId }) {
   function handleAddSize() {
     const ar = (newSize.ar || '').trim();
     if (!ar) {
-      setToast({ visible: true, message: t('ordersSizeNameRequired') || 'ÇÓã ÇáÍÌã ÈÇáÚÑÈíÉ ãØáæÈ', type: 'error' });
+      setToast({ visible: true, message: t('ordersSizeNameRequired') || 'ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½', type: 'error' });
       return;
     }
     addCustomSize(companyId, ar, newSize.en);
     setSizesKey((k) => k + 1);
     setNewSize({ ar: '', en: '' });
     setAddSizeModal(false);
-    setToast({ visible: true, message: t('ordersSizeAdded') || 'ÊãÊ ÅÖÇÝÉ ÇáÍÌã', type: 'success' });
+    setToast({ visible: true, message: t('ordersSizeAdded') || 'ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½', type: 'success' });
   }
 
   function handleAddPackaging() {
     const ar = (newPackaging.ar || '').trim();
     if (!ar) {
-      setToast({ visible: true, message: t('ordersPackagingNameRequired') || 'ÇÓã ÇáÊÛáíÝ ÈÇáÚÑÈíÉ ãØáæÈ', type: 'error' });
+      setToast({ visible: true, message: t('ordersPackagingNameRequired') || 'ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½', type: 'error' });
       return;
     }
     addCustomPackaging(companyId, ar, newPackaging.en);
     setPackagingKey((k) => k + 1);
     setNewPackaging({ ar: '', en: '' });
     setAddPackagingModal(false);
-    setToast({ visible: true, message: t('ordersPackagingAdded') || 'ÊãÊ ÅÖÇÝÉ ÇáÊÛáíÝ', type: 'success' });
+    setToast({ visible: true, message: t('ordersPackagingAdded') || 'ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½', type: 'success' });
   }
 
   async function handleInsertPresetCatalog() {
@@ -463,7 +463,7 @@ export function ItemsManageTab({ companyId }) {
               <div className="flex flex-col gap-2" className="items-end">
                 <div className="nx-toolbar" className="flex-wrap justify-end">
                   <OrdersImportHelpTrigger t={t} variant="products" />
-                  <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} style={{ display: 'none' }} />
+                  <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} className="hidden" />
                   <Button variant="primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
                     {presetBusy ? t('saving') : t('ordersPresetCatalogButton')}
                   </Button>
@@ -498,7 +498,7 @@ export function ItemsManageTab({ companyId }) {
                   value={newProduct.categoryId}
                   onChange={(e) => setNewProduct((p) => ({ ...p, categoryId: e.target.value }))}
                 >
-                  <option value="">—</option>
+                  <option value="">ï¿½</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>{c.nameAr || c.nameEn || c.id}</option>
                   ))}
@@ -526,7 +526,7 @@ export function ItemsManageTab({ companyId }) {
                           <td className="py-1.5 px-2">
                             <div className="flex gap-1">
                               <Input type="select" value={v.size} onChange={(e) => updateNewProductVariant(idx, 'size', e.target.value)} className="flex-1 min-w-0">
-                                <option value="">—</option>
+                                <option value="">ï¿½</option>
                                 {sizesOptions.map((s) => (
                                   <option key={s.ar} value={s.ar}>{s.ar}</option>
                                 ))}
@@ -537,7 +537,7 @@ export function ItemsManageTab({ companyId }) {
                           <td className="py-1.5 px-2">
                             <div className="flex gap-1">
                               <Input type="select" value={v.packaging} onChange={(e) => updateNewProductVariant(idx, 'packaging', e.target.value)} className="flex-1 min-w-0">
-                                <option value="">—</option>
+                                <option value="">ï¿½</option>
                                 {packagingOptions.map((s) => (
                                   <option key={s.ar} value={s.ar}>{s.ar}</option>
                                 ))}
@@ -554,7 +554,7 @@ export function ItemsManageTab({ companyId }) {
                             </Input>
                           </td>
                           <td className="py-1.5 px-2">
-                            <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateNewProductVariant(idx, 'lastPrice', e.target.value)} placeholder="0" style={{ width: 80 }} />
+                            <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateNewProductVariant(idx, 'lastPrice', e.target.value)} placeholder="0" className="w-20" />
                           </td>
                           <td className="py-1.5 px-1">
                             <Button size="sm" variant="danger" onClick={() => removeNewProductVariant(idx)}>?</Button>
@@ -598,8 +598,8 @@ export function ItemsManageTab({ companyId }) {
                 {filteredProducts.map((p) => {
                   const variants = Array.isArray(p.variants) ? p.variants : [];
                   const variantsSummary = variants.length > 0
-                    ? variants.map((v) => `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0, 2)}`).join(' | ')
-                    : (p.lastPrice ? fmt(p.lastPrice, 2) + ' (ÇÝÊÑÇÖí)' : '—');
+                    ? variants.map((v) => `${v.size || 'ï¿½'}/${v.packaging || 'ï¿½'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0, 2)}`).join(' | ')
+                    : (p.lastPrice ? fmt(p.lastPrice, 2) + ' (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)' : 'ï¿½');
                   return (
                   <tr key={p.id} className="border-b border-noorix-border">
                     {editingProduct?.id === p.id ? (
@@ -618,7 +618,7 @@ export function ItemsManageTab({ companyId }) {
                               <div className="min-w-[120px]">
                                 <label className="text-[11px] text-noorix-muted">{t('category')}</label>
                                 <Input type="select" value={editingProduct.categoryId || ''} onChange={(e) => setEditingProduct((x) => ({ ...x, categoryId: e.target.value }))}>
-                                  <option value="">—</option>
+                                  <option value="">ï¿½</option>
                                   {categories.map((c) => (
                                     <option key={c.id} value={c.id}>{c.nameAr || c.nameEn}</option>
                                   ))}
@@ -646,7 +646,7 @@ export function ItemsManageTab({ companyId }) {
                                       <tr key={idx}>
                                         <td className="py-1 px-1.5">
                                           <Input type="select" value={v.size} onChange={(e) => updateEditingVariant(idx, 'size', e.target.value)}>
-                                            <option value="">—</option>
+                                            <option value="">ï¿½</option>
                                             {sizesOptions.map((s) => (
                                               <option key={s.ar} value={s.ar}>{s.ar}</option>
                                             ))}
@@ -654,7 +654,7 @@ export function ItemsManageTab({ companyId }) {
                                         </td>
                                         <td className="py-1 px-1.5">
                                           <Input type="select" value={v.packaging} onChange={(e) => updateEditingVariant(idx, 'packaging', e.target.value)}>
-                                            <option value="">—</option>
+                                            <option value="">ï¿½</option>
                                             {packagingOptions.map((s) => (
                                               <option key={s.ar} value={s.ar}>{s.ar}</option>
                                             ))}
@@ -669,7 +669,7 @@ export function ItemsManageTab({ companyId }) {
                                           </Input>
                                         </td>
                                         <td className="py-1 px-1.5">
-                                          <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateEditingVariant(idx, 'lastPrice', e.target.value)} style={{ width: 70 }} />
+                                          <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateEditingVariant(idx, 'lastPrice', e.target.value)} className="w-[70px]" />
                                         </td>
                                         <td className="p-1">
                                           <Button size="sm" variant="danger" onClick={() => removeEditingVariant(idx)}>?</Button>
@@ -689,9 +689,9 @@ export function ItemsManageTab({ companyId }) {
                       </>
                     ) : (
                       <>
-                        <td className="py-[10px] px-3">{p.nameAr || '—'}</td>
-                        <td className="nx-cell-muted" className="py-[10px] px-3">{p.nameEn || '—'}</td>
-                        <td className="nx-cell-muted" className="py-[10px] px-3">{p.category?.nameAr || p.category?.nameEn || '—'}</td>
+                        <td className="py-[10px] px-3">{p.nameAr || 'ï¿½'}</td>
+                        <td className="nx-cell-muted" className="py-[10px] px-3">{p.nameEn || 'ï¿½'}</td>
+                        <td className="nx-cell-muted" className="py-[10px] px-3">{p.category?.nameAr || p.category?.nameEn || 'ï¿½'}</td>
                         <td className="nx-cell-ellipsis nx-cell-muted" className="py-[10px] px-3 text-[12px] max-w-[280px]" title={variantsSummary}>{variantsSummary}</td>
                         <td className="text-center" className="py-[10px] px-3">
                           <Button size="sm" onClick={() => setEditingProduct({ id: p.id, nameAr: p.nameAr, nameEn: p.nameEn || '', categoryId: p.categoryId || '', variants: variants.length > 0 ? variants.map((v) => ({ size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', lastPrice: v.lastPrice ? String(v.lastPrice) : '' })) : [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }] })}>{t('edit')}</Button>
@@ -721,7 +721,7 @@ export function ItemsManageTab({ companyId }) {
               <div className="flex flex-col gap-2" className="items-end">
                 <div className="nx-toolbar" className="flex-wrap justify-end">
                   <OrdersImportHelpTrigger t={t} variant="categories" />
-                  <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} style={{ display: 'none' }} />
+                  <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} className="hidden" />
                   <Button onClick={handleDownloadCategoriesImportTemplate}>
                     {t('ordersDownloadImportTemplate')}
                   </Button>
@@ -792,8 +792,8 @@ export function ItemsManageTab({ companyId }) {
                       </>
                     ) : (
                       <>
-                        <td className="py-[10px] px-3">{c.nameAr || '—'}</td>
-                        <td className="nx-cell-muted" className="py-[10px] px-3">{c.nameEn || '—'}</td>
+                        <td className="py-[10px] px-3">{c.nameAr || 'ï¿½'}</td>
+                        <td className="nx-cell-muted" className="py-[10px] px-3">{c.nameEn || 'ï¿½'}</td>
                         <td className="text-center" className="py-[10px] px-3">
                           <Button size="sm" onClick={() => setEditingCategory({ id: c.id, nameAr: c.nameAr, nameEn: c.nameEn || '' })}>{t('edit')}</Button>
                         </td>

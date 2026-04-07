@@ -40,7 +40,7 @@ export default function ExpenseLineList({
           variant="ghost"
           className="expense-line-name-btn font-semibold"
           onClick={() => onLineClick(row)}
-          style={{ padding: 0, color: 'var(--noorix-accent-blue)', textAlign: 'inherit', fontSize: 'inherit' }}
+          className="p-0 text-noorix-blue"
         >
           {v || row.nameEn || '—'}
         </Button>
@@ -55,7 +55,7 @@ export default function ExpenseLineList({
       render: (v) => <span className="nx-cell-num">{v || '—'}</span> },
     { key: 'actions', label: 'إجراءات',
       render: (_, row) => (
-        <span style={{ display: 'inline-flex', gap: 6 }}>
+        <span className="inline-flex gap-1.5">
           <Button size="sm" onClick={(e) => { e.stopPropagation(); onEditLine?.(row); }}>تعديل</Button>
           <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); onDeleteLine?.(row); }}>حذف</Button>
         </span>
@@ -86,12 +86,12 @@ export default function ExpenseLineList({
     const kindS = KIND_LABELS[row.kind] || { label: row.kind, bg: 'var(--noorix-muted-8)', color: 'var(--noorix-text-muted)' };
     return (
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+        <div className="flex justify-between items-start mb-2">
           <Button
             variant="ghost"
             className="expense-line-name-btn font-bold text-[14px] text-start"
             onClick={() => onLineClick(row)}
-            style={{ padding: 0, color: 'var(--noorix-accent-blue)' }}
+            className="p-0 text-noorix-blue"
           >
             {row.nameAr || row.nameEn || '—'}
           </Button>
@@ -102,7 +102,7 @@ export default function ExpenseLineList({
           {row.supplierName && row.supplierName !== '—' && <span>{row.supplierName}</span>}
           {row.serviceNumber && <span className="nx-cell-num">#{row.serviceNumber}</span>}
         </div>
-        <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
+        <div className="flex gap-2 justify-end">
           <Button size="sm" onClick={() => onEditLine?.(row)}>تعديل</Button>
           <Button size="sm" variant="danger" onClick={() => onDeleteLine?.(row)}>حذف</Button>
         </div>

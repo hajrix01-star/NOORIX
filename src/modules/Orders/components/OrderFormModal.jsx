@@ -403,10 +403,10 @@ export function OrderFormModal({
                           )}
                         </td>
                         <td className="py-2 px-2.5">
-                          <Input type="number" min="0" step="0.01" value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} style={{ width: 70 }} />
+                          <Input type="number" min="0" step="0.01" value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} className="w-[70px]" />
                         </td>
                         <td className="py-2 px-2.5">
-                          <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} style={{ width: 80 }} />
+                          <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} className="w-20" />
                         </td>
                         <td className="nx-cell-num font-semibold" className="py-2 px-2.5">{fmt(enrichedItems[idx]?.amount ?? 0, 2)}</td>
                         <td className="py-2 px-1">
