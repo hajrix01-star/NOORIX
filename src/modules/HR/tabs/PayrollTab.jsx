@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PayrollTab — مسيرات الرواتب (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
@@ -22,7 +22,7 @@ import { Button, Badge, Input } from '../../../ui';
 const PAGE_SIZE = 50;
 
 const STATUS_MAP = {
-  draft: { bg: 'rgba(100,116,139,0.1)', color: '#64748b', labelKey: 'payrollDraft' },
+  draft: { bg: 'rgba(100,116,139,0.1)', color: 'var(--noorix-text-muted)', labelKey: 'payrollDraft' },
   completed: { bg: 'rgba(22,163,74,0.1)', color: 'var(--noorix-accent-green)', labelKey: 'payrollPaid' },
 };
 

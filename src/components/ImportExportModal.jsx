@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ImportExportModal — نظام استيراد وتصدير موحد
  * Entities: invoices | employees | sales
  *
@@ -636,7 +636,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                       {r.warnings.map((msg, j) => (
                         <div key={`w${j}`} className="nx-grid nx-gap-8 nx-rounded nx-text-sm" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
                           <span className="nx-font-700 nx-text-warn">صف {r.rowNum}</span>
-                          <span style={{ color: '#92400e' }}>⚠ {msg}</span>
+                          <span style={{ color: 'var(--noorix-accent-amber)' }}>⚠ {msg}</span>
                         </div>
                       ))}
                     </div>
@@ -676,7 +676,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 <StatBadge count={progress.succeeded} label="نجح" color="#16a34a" />
                 {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
-                  <StatBadge count={(progress.warnings || []).length} label="تحذيرات من الخادم" color="#d97706" />
+                  <StatBadge count={(progress.warnings || []).length} label="تحذيرات من الخادم" color="var(--noorix-accent-amber)" />
                 )}
               </div>
               <Button variant="danger" size="sm" style={{ alignSelf: 'flex-start' }} onClick={() => { abortRef.current = true; }}>
@@ -692,7 +692,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 <StatBadge count={progress.succeeded} label="تم بنجاح" color="#16a34a" />
                 {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
-                  <StatBadge count={(progress.warnings || []).length} label="تحذيرات" color="#d97706" />
+                  <StatBadge count={(progress.warnings || []).length} label="تحذيرات" color="var(--noorix-accent-amber)" />
                 )}
               </div>
 
@@ -701,7 +701,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                   {(progress.warnings || []).slice(0, 20).map((w, i) => (
                     <div key={i} className="nx-grid nx-gap-8 nx-rounded nx-text-sm" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '5px 10px', background: 'rgba(245,158,11,0.07)' }}>
                       <span className="nx-font-700 nx-text-warn">صف {w.rowNum}</span>
-                      <span style={{ color: '#92400e' }}>⚠ {w.message}</span>
+                      <span style={{ color: 'var(--noorix-accent-amber)' }}>⚠ {w.message}</span>
                     </div>
                   ))}
                   {(progress.warnings || []).length > 20 && (

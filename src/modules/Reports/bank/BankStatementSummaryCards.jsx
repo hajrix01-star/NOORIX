@@ -1,4 +1,4 @@
-/**
+﻿/**
  * بطاقات ملخص الكشف — أسلوب مشابه للمشروع السابق مع متغيرات Noorix
  */
 import React from 'react';
@@ -23,7 +23,7 @@ export default function BankStatementSummaryCards({ statement, t }) {
       title: t('bankStatementDateRange'),
       value: statement.startDate?.slice(0, 10) || '—',
       sub: statement.endDate?.slice(0, 10) ? `→ ${statement.endDate.slice(0, 10)}` : '',
-      accent: '#64748b',
+      accent: 'var(--noorix-text-muted)',
     },
     {
       title: t('bankStatementCardDeposits'),
@@ -41,13 +41,13 @@ export default function BankStatementSummaryCards({ statement, t }) {
       title: t('bankStatementCardNetFlow'),
       value: fmt(net),
       sub: net >= 0 ? t('bankNetSurplus') : t('bankNetDeficit'),
-      accent: net >= 0 ? '#059669' : 'var(--noorix-accent-rose)',
+      accent: net >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)',
     },
     {
       title: t('bankStatementTransactions'),
       value: String(nTx),
       sub: statement.fileName || '',
-      accent: '#7c3aed',
+      accent: 'var(--noorix-accent-violet)',
     },
   ];
 

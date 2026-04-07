@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { bulkDeletePriceHistory } from '../services/ocrApi';
@@ -58,14 +58,14 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
 
             {/* Best */}
             <div className="compare-invoice-card">
-              <div className="compare-invoice-label" style={{ color: '#15803d' }}>
+              <div className="compare-invoice-label" style={{ color: 'var(--noorix-accent-green)' }}>
                 {isAr ? 'أفضل سعر' : 'Best Price'}
               </div>
               {lowestInvoice?.imageUrl && (
                 <MiniImageViewer src={lowestInvoice.imageUrl} />
               )}
               <div className="compare-invoice-meta nx-mt-10">
-                <div className="nx-font-800" style={{ fontSize: 22, color: '#15803d' }}>
+                <div className="nx-font-800" style={{ fontSize: 22, color: 'var(--noorix-accent-green)' }}>
                   {fmtNum(alert.lowestPrice)} <span className="nx-text-sm" style={{ fontWeight: 400 }}>{isAr ? 'ريال' : 'SAR'}</span>
                 </div>
                 <div className="nx-text-sm nx-text-muted">{alert.lowestSupplier}</div>
@@ -75,7 +75,7 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
           </div>
 
           <div className="nx-rounded" style={{ padding: '12px 14px', background: 'rgba(22,163,74,0.05)', border: '1px solid var(--noorix-border)' }}>
-            <div className="nx-font-600 nx-text-base" style={{ color: '#15803d', marginBottom: 2 }}>
+            <div className="nx-font-600 nx-text-base" style={{ color: 'var(--noorix-accent-green)', marginBottom: 2 }}>
               {isAr ? 'التوفير المحتمل' : 'Potential Savings'}: {fmtNum(saving)} {isAr ? 'ريال / وحدة' : 'SAR/unit'}
             </div>
             <div className="nx-text-sm nx-text-muted">
@@ -163,11 +163,11 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
           <div className="ocr-alert-stat-label">{isAr ? 'تنبيه' : 'Alerts'}</div>
         </div>
         <div className="ocr-alert-stat">
-          <div className="ocr-alert-stat-value" style={{ color: '#b45309' }}>+{avgIncrease}%</div>
+          <div className="ocr-alert-stat-value" style={{ color: 'var(--noorix-accent-amber)' }}>+{avgIncrease}%</div>
           <div className="ocr-alert-stat-label">{isAr ? 'متوسط الارتفاع' : 'Avg. Increase'}</div>
         </div>
         <div className="ocr-alert-stat">
-          <div className="ocr-alert-stat-value" style={{ color: '#15803d' }}>{fmtNum(totalSavings)}</div>
+          <div className="ocr-alert-stat-value" style={{ color: 'var(--noorix-accent-green)' }}>{fmtNum(totalSavings)}</div>
           <div className="ocr-alert-stat-label">{isAr ? 'فرص التوفير (ريال)' : 'Savings (SAR)'}</div>
         </div>
       </div>
@@ -241,7 +241,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
                   <div className="ocr-alert-title">{alert.itemName}</div>
                   <div className="ocr-alert-detail">
                     {alert.latestSupplier} · {fmtDate(alert.latestInvoiceDate)}
-                    {saving > 0 && <span className="nx-font-600" style={{ color: '#15803d', marginInlineStart: 8 }}>
+                    {saving > 0 && <span className="nx-font-600" style={{ color: 'var(--noorix-accent-green)', marginInlineStart: 8 }}>
                       {isAr ? `توفير ${fmtNum(saving)}` : `Save ${fmtNum(saving)}`}
                     </span>}
                   </div>
@@ -249,7 +249,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
 
                 <div className="ocr-alert-prices">
                   <div className="ocr-alert-price">
-                    <div className="ocr-alert-price-value" style={{ color: '#15803d' }}>{fmtNum(alert.lowestPrice)}</div>
+                    <div className="ocr-alert-price-value" style={{ color: 'var(--noorix-accent-green)' }}>{fmtNum(alert.lowestPrice)}</div>
                     <div className="ocr-alert-price-label">{isAr ? 'أفضل' : 'Best'}</div>
                   </div>
                   <span className="ocr-alert-arrow">→</span>

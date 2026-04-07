@@ -63,7 +63,7 @@ export function OrdersSummaryCard({ summary = {}, cashSalesTotal = 0, isLoading 
 
   return (
     <div className="nx-border-all nx-bg-surface nx-overflow-hidden" style={{ borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-      <div style={{ height: 3, background: 'linear-gradient(90deg, #2563eb, #16a34a)' }} />
+      <div style={{ height: 3, background: 'linear-gradient(90deg, var(--noorix-accent-blue), var(--noorix-accent-green))' }} />
       <div className="nx-p-20">
         <div className="nx-text-base nx-font-700 nx-text-muted nx-mb-16" style={{ letterSpacing: '0.04em' }}>
           {t('ordersSummaryCardTitle')}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import {
@@ -261,7 +261,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
       >
         <div dir={dir}>
           {lowestPrice != null && (
-            <p className="nx-text-sm nx-font-600 nx-mt-0 nx-mb-12" style={{ color: '#15803d' }}>
+            <p className="nx-text-sm nx-font-600 nx-mt-0 nx-mb-12" style={{ color: 'var(--noorix-accent-green)' }}>
               {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
             </p>
           )}
@@ -308,7 +308,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                           {new Date(h.invoiceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                         </div>
                       </div>
-                      <div className="nx-font-700 nx-text-lg" style={{ color: isLowest ? '#15803d' : 'var(--noorix-text)' }}>
+                      <div className="nx-font-700 nx-text-lg" style={{ color: isLowest ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>
                         {Number(h.price).toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
                       </div>
                     </div>

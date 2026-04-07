@@ -1,4 +1,4 @@
-/**
+﻿/**
  * OwnerDashboardScreen — لوحة المالك
  * مؤشرات شاملة: المبيعات الشهرية لكل شركة، الأرباح المجمعة، توزيع الأرباح
  */
@@ -12,7 +12,7 @@ import { fmt } from '../../utils/format';
 import { CARD_BORDER_RADIUS } from '../../utils/cardStyles';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 
-const COLORS = ['var(--noorix-accent-green)', 'var(--noorix-accent-blue)', 'var(--noorix-accent-amber)', '#7c3aed', 'var(--noorix-accent-red)', '#0891b2', '#4f46e5', '#059669'];
+const COLORS = ['var(--noorix-accent-green)', 'var(--noorix-accent-blue)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-violet)', 'var(--noorix-accent-red)', '#0891b2', '#4f46e5', 'var(--noorix-accent-green)'];
 
 function formatAxisValue(n) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;

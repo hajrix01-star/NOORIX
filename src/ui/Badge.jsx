@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Badge — مكوّن شارة الحالة الموحّد لنظام نووريكس
  * colors: green | red | amber | blue | violet | gray | sky | navy
  */
@@ -6,13 +6,13 @@ import React from 'react';
 import { cn } from './cn';
 
 export const BADGE_COLORS = {
-  green:  { bg: 'rgba(22,163,74,0.1)',   color: '#15803d' },
+  green:  { bg: 'rgba(22,163,74,0.1)',   color: 'var(--noorix-accent-green)' },
   red:    { bg: 'rgba(220,38,38,0.1)',   color: 'var(--noorix-accent-red)' },
-  amber:  { bg: 'rgba(217,119,6,0.12)',  color: '#b45309' },
+  amber:  { bg: 'rgba(217,119,6,0.12)',  color: 'var(--noorix-accent-amber)' },
   blue:   { bg: 'rgba(37,99,235,0.1)',   color: 'var(--noorix-accent-blue)' },
   sky:    { bg: 'rgba(2,132,199,0.1)',   color: '#0369a1' },
   violet: { bg: 'rgba(99,102,241,0.1)',  color: '#4f46e5' },
-  gray:   { bg: 'rgba(100,116,139,0.1)', color: '#475569' },
+  gray:   { bg: 'rgba(100,116,139,0.1)', color: 'var(--noorix-text-muted)' },
   navy:   { bg: 'rgba(10,31,68,0.1)',    color: 'var(--noorix-navy)' },
 };
 

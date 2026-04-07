@@ -1,4 +1,4 @@
-import React, { memo, useState, useRef, useEffect } from 'react';
+﻿import React, { memo, useState, useRef, useEffect } from 'react';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -138,7 +138,7 @@ const VaultCard = memo(function VaultCard({
 
   const { isCustom, emoji: customEmoji } = parseVaultType(vault.type);
   const typeInfo    = !isCustom ? (VAULT_TYPES.find((x) => x.value === vault.type) || VAULT_TYPES[0]) : null;
-  const accentColor = !isCustom ? (TYPE_COLORS[vault.type] || '#64748b') : '#64748b';
+  const accentColor = !isCustom ? (TYPE_COLORS[vault.type] || 'var(--noorix-text-muted)') : 'var(--noorix-text-muted)';
   const isArchived  = vault.isArchived;
   const balance     = Number(vault.balance ?? 0);
   const totalIn     = Number(vault.totalIn ?? 0);

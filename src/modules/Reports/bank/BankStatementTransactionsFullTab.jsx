@@ -1,4 +1,4 @@
-/**
+﻿/**
  * جدول العمليات الكامل — فرز، تصفية، تصنيف، ملاحظات
  * واجهة محترفة مع تمييز لوني وعرض واضح للأرقام
  */
@@ -445,7 +445,7 @@ export default function BankStatementTransactionsFullTab({
               <td colSpan={2} style={{ padding: '10px 12px', textAlign: 'right', fontSize: 12 }}>
                 <span
                   style={{
-                    color: columnTotals.credit - columnTotals.debit >= 0 ? '#059669' : 'var(--noorix-accent-rose)',
+                    color: columnTotals.credit - columnTotals.debit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)',
                     fontWeight: 800,
                     direction: 'ltr',
                     display: 'inline-block',

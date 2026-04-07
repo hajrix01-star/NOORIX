@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS, TYPE_BG } from '../constants/treasuryConstants';
 import { parseVaultType } from './VaultCard';
@@ -104,7 +104,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
             <Button
               className="nx-vault-type-btn"
               onClick={() => set('type', 'custom')}
-              style={isCustom ? { border: '2px solid #64748b', background: 'rgba(100,116,139,0.1)', color: '#475569' } : undefined}
+              style={isCustom ? { border: '2px solid #64748b', background: 'rgba(100,116,139,0.1)', color: 'var(--noorix-text-muted)' } : undefined}
             >
               <span className="nx-font-800" style={{ fontSize: 18 }}>{form.customEmoji || 'خ'}</span>
               <span>{t('vaultTypeCustom') || 'مخصص'}</span>

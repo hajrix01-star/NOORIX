@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ExpenseLineList — قائمة بنود المصاريف (هاتف 1، كهرب 1، إيجار محل)
  * عند الضغط على بند → فتح تفاصيله وسجل مدفوعاته
  */
@@ -10,7 +10,7 @@ import SmartTable from '../../../components/common/SmartTable';
 import { Button, Badge, Input } from '../../../ui';
 
 const KIND_LABELS = {
-  fixed_expense: { label: 'ثابت', bg: 'rgba(100,116,139,0.12)', color: '#64748b' },
+  fixed_expense: { label: 'ثابت', bg: 'rgba(100,116,139,0.12)', color: 'var(--noorix-text-muted)' },
   expense: { label: 'متغير', bg: 'rgba(217,119,6,0.12)', color: 'var(--noorix-accent-amber)' },
 };
 
@@ -83,7 +83,7 @@ export default function ExpenseLineList({
   );
 
   const renderMobileCard = useCallback((row) => {
-    const kindS = KIND_LABELS[row.kind] || { label: row.kind, bg: 'rgba(100,116,139,0.08)', color: '#64748b' };
+    const kindS = KIND_LABELS[row.kind] || { label: row.kind, bg: 'rgba(100,116,139,0.08)', color: 'var(--noorix-text-muted)' };
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>

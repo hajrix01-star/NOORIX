@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ReportsScreen — التقرير العام (ربح وخسارة شهري)
  */
 import React, { useEffect, useMemo, useState } from 'react';
@@ -242,7 +242,7 @@ export default function ReportsScreen() {
                     </colgroup>
                     <thead>
                       <tr>
-                        <th style={{ textAlign: 'right', padding: isMobile ? '6px 8px' : '8px 12px', borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: 'var(--noorix-bg-surface)', zIndex: 2, fontSize: isMobile ? 11 : 13, fontWeight: 700, fontFamily: 'var(--noorix-font-primary)', color: '#374151', width: isMobile ? 120 : 200, minWidth: isMobile ? 120 : 200, maxWidth: isMobile ? 120 : 300 }}>{t('reportItem')}</th>
+                        <th style={{ textAlign: 'right', padding: isMobile ? '6px 8px' : '8px 12px', borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: 'var(--noorix-bg-surface)', zIndex: 2, fontSize: isMobile ? 11 : 13, fontWeight: 700, fontFamily: 'var(--noorix-font-primary)', color: 'var(--noorix-text)', width: isMobile ? 120 : 200, minWidth: isMobile ? 120 : 200, maxWidth: isMobile ? 120 : 300 }}>{t('reportItem')}</th>
                         {selectedMonthNumber && (
                           <th style={{ textAlign: 'center', padding: '8px 12px', borderBottom: '1px solid var(--noorix-border)', background: 'rgba(37,99,235,0.06)' }}>{(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}</th>
                         )}

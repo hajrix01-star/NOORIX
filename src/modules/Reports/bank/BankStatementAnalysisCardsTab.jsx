@@ -1,4 +1,4 @@
-/**
+﻿/**
  * تبويب التحليل — رسوم بيانية احترافية وبطاقات قابلة للإضافة/الحذف
  */
 import React, { useMemo, useState } from 'react';
@@ -38,12 +38,12 @@ const BAR_CHART_TOOLTIP_STYLE = {
 };
 
 const COLORS = [
-  'var(--noorix-accent-blue)', 'var(--noorix-accent-green)', '#ca8a04', 'var(--noorix-accent-red)', '#7c3aed',
+  'var(--noorix-accent-blue)', 'var(--noorix-accent-green)', '#ca8a04', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)',
   '#0891b2', '#db2777', '#4f46e5', '#ea580c', '#84cc16',
 ];
 
 const RED_PIE_TINTS = ['var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--color-danger-bg)', '#f87171'];
-const GREEN_PIE_TINTS = ['var(--noorix-accent-green)', '#15803d', 'var(--noorix-accent-green)', '#166534', '#4ade80'];
+const GREEN_PIE_TINTS = ['var(--noorix-accent-green)', 'var(--noorix-accent-green)', 'var(--noorix-accent-green)', 'var(--noorix-accent-green)', '#4ade80'];
 
 function pieSliceFill(mode, index, item) {
   if (mode === 'combined') {
@@ -85,7 +85,7 @@ function DailyTooltip({ active, payload, label }) {
       </div>
       <div
         className="nx-font-700 nx-recharts-tooltip-footer"
-        style={{ color: deposits - withdrawals >= 0 ? '#059669' : 'var(--noorix-accent-rose)' }}
+        style={{ color: deposits - withdrawals >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)' }}
       >
         الصافي: <span className="nx-inline-ltr">{fmt(deposits - withdrawals)}</span>
       </div>
@@ -311,7 +311,7 @@ export default function BankStatementAnalysisCardsTab({
                 <XAxis dataKey="dateLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 10 }} width={60} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                 <Tooltip content={<DailyTooltip />} />
-                <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
+                <ReferenceLine y={0} stroke="var(--noorix-text-muted-2)" strokeDasharray="4 4" />
                 <Area type="monotone" dataKey="deposits" stroke="#16a34a" strokeWidth={2} fill="url(#gradDeposits)" name="إيداعات" />
                 <Area type="monotone" dataKey="withdrawals" stroke="var(--noorix-accent-red)" strokeWidth={2} fill="url(#gradWithdrawals)" name="سحوبات" />
               </AreaChart>
@@ -464,7 +464,7 @@ export default function BankStatementAnalysisCardsTab({
                       cursor="pointer"
                       isAnimationActive={false}
                       label={({ percent }) => (percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : '')}
-                      labelLine={{ stroke: '#94a3b8', strokeWidth: 1 }}
+                      labelLine={{ stroke: 'var(--noorix-text-muted-2)', strokeWidth: 1 }}
                       onClick={(_, index) => {
                         const item = pieDisplayData[index];
                         if (item?.name) setPieDrilldownCategory(item.name);

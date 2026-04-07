@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+﻿import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input } from '../../../ui';
 import { extractInvoice, saveOcrInvoice } from '../services/ocrApi';
@@ -10,8 +10,8 @@ const CONFIDENCE_COLOR = (c) => {
 };
 
 const STATUS_BADGE = {
-  auto:    { bg: '#dcfce7', color: '#15803d', label: { ar: 'تلقائي', en: 'Auto' } },
-  review:  { bg: '#fef3c7', color: '#92400e', label: { ar: 'راجع', en: 'Review' } },
+  auto:    { bg: '#dcfce7', color: 'var(--noorix-accent-green)', label: { ar: 'تلقائي', en: 'Auto' } },
+  review:  { bg: '#fef3c7', color: 'var(--noorix-accent-amber)', label: { ar: 'راجع', en: 'Review' } },
   new:     { bg: '#fee2e2', color: 'var(--noorix-accent-red)', label: { ar: 'جديد', en: 'New' } },
 };
 
@@ -254,7 +254,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                     {extracted.vatAmount?.value && (
                       <div className="nx-flex-between nx-border-b nx-py-8 nx-px-12">
                         <span className="nx-text-base nx-text-muted">{isAr ? 'ضريبة القيمة المضافة' : 'VAT (15%)'}</span>
-                        <span className="nx-text-base nx-font-600" style={{ color: '#b45309' }}>{extracted.vatAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
+                        <span className="nx-text-base nx-font-600" style={{ color: 'var(--noorix-accent-amber)' }}>{extracted.vatAmount.value.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}</span>
                       </div>
                     )}
                     {extracted.totalAmount?.value && (
@@ -274,11 +274,11 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                   border: '1px solid rgba(245,158,11,0.25)',
                 }}>
                   <div>
-                    <div className="nx-font-600" style={{ color: '#92400e' }}>
+                    <div className="nx-font-600" style={{ color: 'var(--noorix-accent-amber)' }}>
                       {warningCount} {isAr ? 'تحذير — راجع الأرقام قبل الحفظ' : 'warning(s) — review before saving'}
                     </div>
                     {extracted.invoiceTotalWarning && (
-                      <div className="nx-text-sm" style={{ color: '#78350f', marginTop: 2 }}>{extracted.invoiceTotalWarning}</div>
+                      <div className="nx-text-sm" style={{ color: 'var(--noorix-accent-amber)', marginTop: 2 }}>{extracted.invoiceTotalWarning}</div>
                     )}
                   </div>
                 </div>
@@ -329,7 +329,7 @@ function FieldRow({ label, value, confidence, match }) {
             <span style={{
               padding: '2px 6px', borderRadius: 4,
               background: match.status === 'auto' ? '#dcfce7' : '#fef3c7',
-              color: match.status === 'auto' ? '#15803d' : '#92400e',
+              color: match.status === 'auto' ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-amber)',
             }}>
               ↳ {match.nameAr} ({Math.round(match.score * 100)}%)
             </span>
@@ -439,7 +439,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
           padding: '6px 10px',
           background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
         }}>
-          <div className="nx-text-sm" style={{ color: '#92400e' }}>
+          <div className="nx-text-sm" style={{ color: 'var(--noorix-accent-amber)' }}>
             {item.mathWarning.message}
           </div>
           {(item.mathWarning.suggestedQuantity !== undefined || item.mathWarning.suggestedUnitPrice !== undefined) && (
@@ -460,7 +460,7 @@ function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
         <div className="nx-text-sm nx-rounded" style={{
           marginTop: 6, padding: '6px 10px',
           background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
-          color: '#1e40af',
+          color: 'var(--noorix-accent-blue)',
         }}>
           السعر المعتاد في آخر 90 يوم: <strong>{item.priceWarning.avg} ريال</strong> — انحراف {item.priceWarning.deviation}%
         </div>

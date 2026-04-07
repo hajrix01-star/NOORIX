@@ -1,4 +1,4 @@
-/**
+﻿/**
  * النسخ الاحتياطي — لقطة منطقية لكل شركة، سجل، تقرير استرجاع، إعادة رفع خارجي
  */
 import React, { useState } from 'react';
@@ -483,7 +483,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   </div>
                   <div className="nx-flex-col nx-gap-4" style={{ alignItems: 'stretch' }}>
                     {sj.verifyOk === true && (
-                      <span style={{ color: '#15803d', fontSize: 11 }}>{t('backupVerifyOk')}</span>
+                      <span style={{ color: 'var(--noorix-accent-green)', fontSize: 11 }}>{t('backupVerifyOk')}</span>
                     )}
                     {sj.verifyOk === false && sj.verifyError && (
                       <span style={{ color: 'var(--noorix-accent-red)', fontSize: 11, wordBreak: 'break-word' }}>{sj.verifyError}</span>
@@ -541,7 +541,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   </div>
                 )}
                 {j.verifyOk === true && (
-                  <div className="backup-job__flags" style={{ color: '#15803d' }}>
+                  <div className="backup-job__flags" style={{ color: 'var(--noorix-accent-green)' }}>
                     {t('backupVerifyOk')}
                   </div>
                 )}

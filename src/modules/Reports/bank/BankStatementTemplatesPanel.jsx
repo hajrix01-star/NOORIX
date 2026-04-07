@@ -1,4 +1,4 @@
-/**
+﻿/**
  * مطابق BankTemplatesManager.jsx في Base44 — بطاقة تعريف، أعمدة، تفعيل/تعطيل، حذف نهائي
  */
 import React, { useState, useMemo } from 'react';
@@ -84,7 +84,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
           border: '1px solid rgba(37, 99, 235, 0.25)',
         }}
       >
-        <div className="nx-font-700 nx-text-lg" style={{ color: '#1e40af', marginBottom: 6 }}>{t('bankTemplatesIntroTitle')}</div>
+        <div className="nx-font-700 nx-text-lg" style={{ color: 'var(--noorix-accent-blue)', marginBottom: 6 }}>{t('bankTemplatesIntroTitle')}</div>
         <p className="nx-m-0 nx-text-base" style={{ color: 'var(--noorix-accent-blue)', lineHeight: 1.5 }}>{t('bankTemplatesIntroBody')}</p>
       </div>
 
@@ -122,7 +122,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                         borderRadius: 6,
                         fontWeight: 700,
                         background: tpl.isActive ? 'rgba(34,197,94,0.15)' : 'rgba(220,38,38,0.12)',
-                        color: tpl.isActive ? '#166534' : 'var(--noorix-accent-red)',
+                        color: tpl.isActive ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
                       }}
                     >
                       {tpl.isActive ? t('bankTemplatesStatusActive') : t('bankTemplatesStatusInactive')}

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ItemsReportTab — تقارير الأصناف والفئات
  * فلاتر، رسوم بيانية، تاريخ الشراء، تصدير
  */
@@ -12,7 +12,7 @@ import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import Toast from '../../../components/Toast';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
-const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', '#7c3aed', '#0891b2'];
+const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
 
 function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-accent-blue)' }) {
   const m = maxVal > 0 ? maxVal : 1;

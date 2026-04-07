@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SalesEditModal — نافذة تعديل ملخص المبيعات
  * تفتح الصفحة/النموذج ويتم التعديل عليها
  */
@@ -13,7 +13,7 @@ import { Button, Input, AdaptiveSheet } from '../../../ui';
 const CHANNEL_COLORS = {
   cash: { bg: 'rgba(22,163,74,0.08)', border: 'var(--noorix-accent-green)', icon: '💵' },
   bank: { bg: 'rgba(37,99,235,0.08)', border: 'var(--noorix-accent-blue)', icon: '🏦' },
-  app:  { bg: 'rgba(124,58,237,0.08)', border: '#7c3aed', icon: '📱' },
+  app:  { bg: 'rgba(124,58,237,0.08)', border: 'var(--noorix-accent-violet)', icon: '📱' },
 };
 
 export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }) {
@@ -124,7 +124,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       }
     >
       {error && (
-        <div className="nx-rounded nx-text-base nx-mb-16 nx-p-10 nx-text-expense" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #dc2626' }}>
+        <div className="nx-rounded nx-text-base nx-mb-16 nx-p-10 nx-text-expense" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid var(--noorix-accent-red)' }}>
           {error}
         </div>
       )}
@@ -161,7 +161,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
                     <div className="nx-flex-1" style={{ minWidth: 0 }}>
                       <div className="nx-font-700 nx-text-sm">{vaultDisplayName(v, lang)}</div>
                       {v.isLegacyDisabled && (
-                        <div className="nx-font-700" style={{ marginTop: 2, fontSize: 10, color: '#b45309' }}>
+                        <div className="nx-font-700" style={{ marginTop: 2, fontSize: 10, color: 'var(--noorix-accent-amber)' }}>
                           قناة قديمة غير مفعلة حالياً
                         </div>
                       )}
@@ -196,7 +196,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
           <>
             <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)' }}>
               <div className="nx-text-xs" style={{ color: 'var(--noorix-accent-blue)' }}>الصافي</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#0ea5e9', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)} ﷼</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-sky)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)} ﷼</div>
             </div>
             <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
               <div className="nx-text-xs" style={{ color: 'var(--color-noorix-amber)' }}>الضريبة</div>
@@ -209,8 +209,8 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
           <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-blue)' }}>{customerCount || 0}</div>
         </div>
         <div className="nx-rounded-lg nx-text-center" style={{ padding: '12px 14px', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
-          <div className="nx-text-xs" style={{ color: '#7c3aed' }}>معدل الطلب</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} ﷼</div>
+          <div className="nx-text-xs" style={{ color: 'var(--noorix-accent-violet)' }}>معدل الطلب</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-violet)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} ﷼</div>
         </div>
       </div>
     </AdaptiveSheet>

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * مطابق CategoryTreeManager.jsx + CategoryCard + CategoryFormDialog في Base44
  * + تصدير/استيراد حزمة القواعد (فئات شجرية + قواعد مسطّحة) من ملف أو من شركة أخرى.
  */
@@ -197,7 +197,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
           <p style={{ fontSize: 11, color: 'var(--noorix-text-muted)', margin: '0 0 8px' }}>{t('bankTreeParentKeywordsHint')}</p>
           <div className="nx-flex-wrap nx-gap-6 nx-mb-8">
             {parentKeywords.map((kw, idx) => (
-              <span key={idx} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
+              <span key={idx} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
                 {kw}
                 <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} style={{ marginInlineStart: 6, color: 'var(--noorix-accent-red)', padding: '0 4px', minHeight: 'auto' }}>
                   ×
@@ -262,7 +262,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
               </div>
               <div className="nx-flex-wrap nx-gap-6 nx-mb-8">
                 {(cl.keywords || []).map((kw, kwIdx) => (
-                  <span key={kwIdx} style={{ fontSize: 11, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
+                  <span key={kwIdx} style={{ fontSize: 11, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
                     {kw}
                     <Button
                       variant="ghost"
@@ -355,7 +355,7 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
             </span>
           </div>
           {parentKeywords.length > 0 ? (
-            <div style={{ fontSize: 11, marginBottom: 8, color: '#b45309' }}>
+            <div style={{ fontSize: 11, marginBottom: 8, color: 'var(--noorix-accent-amber)' }}>
               {t('bankTreeParentKeywordsShort')}: {parentKeywords.join(' · ')}
             </div>
           ) : null}
@@ -627,7 +627,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
         <strong style={{ color: 'var(--noorix-accent-blue)' }}>{totalClassifications}</strong>
         <span style={{ color: 'var(--noorix-border)' }}>|</span>
         <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeStatsKeywords')}</span>
-        <strong style={{ color: '#15803d' }}>{totalKeywords}</strong>
+        <strong style={{ color: 'var(--noorix-accent-green)' }}>{totalKeywords}</strong>
         {inactiveCategories.length > 0 ? (
           <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>
             ({t('bankTreeInactiveCount', String(inactiveCategories.length))})

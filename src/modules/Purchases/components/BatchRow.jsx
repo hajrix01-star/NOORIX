@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BatchRow — صف إدخال فاتورة واحدة
  * النوع والفئة في عمودين مستقلين | جلب نوع وفئة المورد عند الاختيار
  */
@@ -187,9 +187,9 @@ export const BatchRow = memo(function BatchRow({
           className="nx-w-full nx-text-xs nx-font-700"
           style={{
             padding: '6px 2px', borderRadius: 5,
-            border: `1px solid ${row.isTaxable === false ? '#94a3b8' : 'var(--noorix-accent-amber)'}`,
+            border: `1px solid ${row.isTaxable === false ? 'var(--noorix-text-muted-2)' : 'var(--noorix-accent-amber)'}`,
             background: row.isTaxable === false ? 'var(--noorix-bg-page)' : 'rgba(217,119,6,0.08)',
-            color: row.isTaxable === false ? '#64748b' : 'var(--noorix-accent-amber)',
+            color: row.isTaxable === false ? 'var(--noorix-text-muted)' : 'var(--noorix-accent-amber)',
           }}
         >
           {row.isTaxable === false ? '0%' : '15%'}

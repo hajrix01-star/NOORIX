@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Card — مكوّن البطاقات الموحّد لنظام نووريكس
  * variants: surface | exec | stat | plain
  */
@@ -21,7 +21,7 @@ const STAT_COLOR = {
   red:    { accent: 'var(--noorix-accent-red)', bg: 'rgba(220,38,38,0.08)'   },
   amber:  { accent: 'var(--noorix-accent-amber)', bg: 'rgba(217,119,6,0.08)'   },
   violet: { accent: 'var(--noorix-accent-violet)', bg: 'rgba(99,102,241,0.08)'  },
-  gray:   { accent: '#64748b', bg: 'rgba(100,116,139,0.08)' },
+  gray:   { accent: 'var(--noorix-text-muted)', bg: 'rgba(100,116,139,0.08)' },
 };
 
 export function SurfaceCard({ padding = 'md', className = '', children, onClick, ...rest }) {

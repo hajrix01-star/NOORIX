@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DashboardCalendarTab — تقويم حراري للمبيعات
  * أهداف احترافية | تحديد أيام متعددة → إضافة كأيام خاصة | ملاحظة لكل يوم
  */
@@ -425,7 +425,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     title={`${dateStr}: ${fmt(amount, 2)} ﷼${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget, 2)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
                   >
                     <span className="nx-text-sm nx-font-700 nx-text-primary">{day}</span>
-                    <span style={{ fontSize: 11, fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? '#166534' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
+                    <span style={{ fontSize: 11, fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
                     {achieved && <span style={{ fontSize: 8, color: 'var(--noorix-accent-green)' }}>✓</span>}
                     {hasNote && <span style={{ fontSize: 8, color: 'var(--noorix-accent-blue)', width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-blue)', display: 'inline-block' }} />}
                     {special && specialColor && (
@@ -456,7 +456,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           <div className="nx-font-700 nx-mb-8 nx-text-primary">{lang === 'ar' ? 'دليل الألوان' : 'Color legend'}</div>
           <div className="nx-flex-col nx-gap-6">
             <div className="flex items-center gap-8">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: '#e5e7eb', border: '1px solid #d1d5db', flexShrink: 0 }} />
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--noorix-border)', border: '1px solid var(--noorix-border)', flexShrink: 0 }} />
               <span>{t('dashboardLegendGray')}</span>
             </div>
             <div className="flex items-center gap-8">

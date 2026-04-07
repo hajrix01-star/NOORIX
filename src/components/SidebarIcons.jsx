@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 const size = 20;
 const stroke = 1.8;
@@ -105,7 +105,7 @@ export function IconPeople({ color = '#ec4899', ...props }) {
   );
 }
 
-export function IconChartBar({ color = '#0ea5e9', ...props }) {
+export function IconChartBar({ color = 'var(--noorix-accent-sky)', ...props }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M12 20V10" />
@@ -115,7 +115,7 @@ export function IconChartBar({ color = '#0ea5e9', ...props }) {
   );
 }
 
-export function IconFileSpreadsheet({ color = '#0ea5e9', ...props }) {
+export function IconFileSpreadsheet({ color = 'var(--noorix-accent-sky)', ...props }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -140,7 +140,7 @@ export function IconOcr({ color = '#8b5cf6', ...props }) {
   );
 }
 
-export function IconSettings({ color = '#64748b', ...props }) {
+export function IconSettings({ color = 'var(--noorix-text-muted)', ...props }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <circle cx="12" cy="12" r="3" />

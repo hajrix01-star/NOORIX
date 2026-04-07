@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BankStatementMappingModal — مطابقة BankColumnMapper.jsx (Base44) دون امتدادات واجهة
  * - لا حقول تعديل صف العناوين/البيانات (يُشتق من autoDetectRows فقط مثل القديم)
  * - لا عمود مبلغ موحد (لم يكن في COLUMN_TYPES القديم)
@@ -22,9 +22,9 @@ const COLUMN_FIELD_DEFS = [
   { key: 'dateCol', labelKey: 'bankMapColDate', required: true, badgeBg: 'rgba(37,99,235,0.18)', badgeColor: 'var(--noorix-accent-blue)' },
   { key: 'descCol', labelKey: 'bankMapColDescription', required: true, badgeBg: 'rgba(126,34,206,0.15)', badgeColor: '#6b21a8' },
   { key: 'debitCol', labelKey: 'bankMapColDebit', required: true, badgeBg: 'rgba(220,38,38,0.15)', badgeColor: 'var(--noorix-accent-red)' },
-  { key: 'creditCol', labelKey: 'bankMapColCredit', required: true, badgeBg: 'rgba(22,163,74,0.15)', badgeColor: '#15803d' },
-  { key: 'balanceCol', labelKey: 'bankMapColBalance', required: false, badgeBg: 'rgba(217,119,6,0.18)', badgeColor: '#b45309' },
-  { key: 'refCol', labelKey: 'bankMapColReference', required: false, badgeBg: 'rgba(75,85,99,0.15)', badgeColor: '#374151' },
+  { key: 'creditCol', labelKey: 'bankMapColCredit', required: true, badgeBg: 'rgba(22,163,74,0.15)', badgeColor: 'var(--noorix-accent-green)' },
+  { key: 'balanceCol', labelKey: 'bankMapColBalance', required: false, badgeBg: 'rgba(217,119,6,0.18)', badgeColor: 'var(--noorix-accent-amber)' },
+  { key: 'refCol', labelKey: 'bankMapColReference', required: false, badgeBg: 'rgba(75,85,99,0.15)', badgeColor: 'var(--noorix-text)' },
   { key: 'notesCol', labelKey: 'bankMapColNotes', required: false, badgeBg: 'rgba(79,70,229,0.15)', badgeColor: '#4338ca' },
 ];
 
@@ -236,7 +236,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
         <div className="nx-flex nx-flex-wrap nx-flex-between nx-gap-12 nx-w-full">
           <div>
             {!canConfirm ? (
-              <div className="nx-flex nx-gap-6 nx-text-base" style={{ alignItems: 'center', color: '#b45309' }}>
+              <div className="nx-flex nx-gap-6 nx-text-base" style={{ alignItems: 'center', color: 'var(--noorix-accent-amber)' }}>
                 <span>⚠</span>
                 <span>{t('bankMapRequiredWarningStrict')}</span>
               </div>
@@ -261,20 +261,20 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           }}
         >
           <div className="nx-flex-center nx-flex-wrap nx-gap-8 nx-mb-10">
-            <span style={{ fontWeight: 700, fontSize: 13, color: '#1e40af' }}>{t('bankMapStatementInfo')}</span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--noorix-accent-blue)' }}>{t('bankMapStatementInfo')}</span>
             {aiHeaderLoading ? (
-              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#dbeafe', color: 'var(--noorix-accent-blue)' }}>
+              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'color-mix(in srgb, var(--noorix-accent-blue) 12%, var(--noorix-bg-surface))', color: 'var(--noorix-accent-blue)' }}>
                 {t('bankMapAiReading')}
               </span>
             ) : null}
-            <span style={{ marginInlineStart: 'auto', fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
+            <span style={{ marginInlineStart: 'auto', fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
               {totalDataRows} {t('bankMapOperationsCount')}
             </span>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
               {t('bankMapHeaderRowBadge', String(headerRow + 1))}
             </span>
             {isAutoDetected ? (
-              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#dcfce7', color: '#166534' }}>
+              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'color-mix(in srgb, var(--noorix-accent-green) 12%, var(--noorix-bg-surface))', color: 'var(--noorix-accent-green)' }}>
                 ✓ {t('bankMapColumnsDetected')}
               </span>
             ) : null}

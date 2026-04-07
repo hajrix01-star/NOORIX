@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PurchasesBatchScreen — إدخال جماعي لفواتير الموردين
  * تصميم احترافي متكامل — جدول موحد مثل الفواتير، اختصارات مدمجة، ملخص متسق
  */
@@ -296,7 +296,7 @@ export default function PurchasesBatchScreen() {
       </td>
       <td className="nx-text-income nx-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{fmt(totalNet, 2)}</td>
       <td className="nx-text-warn nx-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{fmt(totalTax, 2)}</td>
-      <td className="nx-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: '#7c3aed', fontWeight: 900, textAlign: 'right' }}>{fmt(totalAmount, 2)}</td>
+      <td className="nx-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-accent-violet)', fontWeight: 900, textAlign: 'right' }}>{fmt(totalAmount, 2)}</td>
       <td colSpan={2} style={{ padding: '8px 10px' }} />
     </>
   );
@@ -486,7 +486,7 @@ export default function PurchasesBatchScreen() {
           </div>
 
           {!vaultsLoading && activeVaults.length === 0 && (
-            <div className="nx-text-base nx-border-b" style={{ padding: '10px 16px', color: '#b45309', background: 'rgba(245,158,11,0.12)' }}>
+            <div className="nx-text-base nx-border-b" style={{ padding: '10px 16px', color: 'var(--noorix-accent-amber)', background: 'rgba(245,158,11,0.12)' }}>
               {t('batchPurchasesNoVaults')}
             </div>
           )}

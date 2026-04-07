@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HRActionsCell — قائمة إجراءات منسدلة (Kebab) لصفوف HR
  * عرض، تعديل، اعتماد، صرف — حسب نوع الجدول والسياق
  */
@@ -48,9 +48,9 @@ export const HRActionsCell = memo(function HRActionsCell({
   if (onReject) items.push({ key: 'reject', label: t('statusRejected'), fn: onReject, color: 'var(--noorix-accent-red)' });
   if (onPay) items.push({ key: 'pay', label: t('payrollPay') || 'صرف المسيرة', fn: onPay, color: 'var(--noorix-accent-blue)' });
   if (onAdvance) items.push({ key: 'advance', label: t('quickAdvance') || 'صرف سلفة', fn: onAdvance, color: 'var(--color-noorix-amber)' });
-  if (onSettle) items.push({ key: 'settle', label: t('settleAdvance') || 'تسديد السلفة', fn: onSettle, color: '#b45309' });
+  if (onSettle) items.push({ key: 'settle', label: t('settleAdvance') || 'تسديد السلفة', fn: onSettle, color: 'var(--noorix-accent-amber)' });
   if (onTerminate) items.push({ key: 'terminate', label: t('terminateEmployee'), fn: onTerminate, color: 'var(--noorix-accent-red)' });
-  if (onArchive) items.push({ key: 'archive', label: t('archiveEmployee'), fn: onArchive, color: '#64748b' });
+  if (onArchive) items.push({ key: 'archive', label: t('archiveEmployee'), fn: onArchive, color: 'var(--noorix-text-muted)' });
   if (onRestore) items.push({ key: 'restore', label: t('restoreEmployee'), fn: onRestore, color: 'var(--noorix-accent-green)' });
   if (onDelete) items.push({ key: 'delete', label: t('delete'), fn: onDelete, color: 'var(--noorix-accent-red)' });
   if (onPermanentDelete) items.push({ key: 'permdelete', label: t('deleteEmployeePermanent'), fn: onPermanentDelete, color: '#7f1d1d' });
