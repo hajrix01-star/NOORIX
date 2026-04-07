@@ -269,7 +269,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="relative min-h-[168px] rounded-xl border-[0.5px] border-noorix-border bg-noorix-surface p-4 shadow-none bg-[length:200%_100%] animate-[shimmer_1.4s_ease_infinite]"
+                className="relative min-h-[168px] rounded-xl border-[0.5px] border-noorix-border bg-noorix-surface p-4 bg-[length:200%_100%] animate-[shimmer_1.4s_ease_infinite] shadow-[0_2px_8px_rgba(15,23,42,0.07),0_10px_28px_rgba(15,23,42,0.11)]"
               />
             ))}
           </div>
@@ -342,10 +342,10 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           return (
             <div
               key={card.key}
-              className="relative flex min-h-[168px] min-w-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-noorix-border bg-noorix-surface p-4 shadow-none"
+              className="relative flex min-h-[168px] min-w-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-noorix-border bg-noorix-surface p-4 shadow-[0_2px_8px_rgba(15,23,42,0.07),0_10px_28px_rgba(15,23,42,0.11)]"
             >
               <span
-                className={`pointer-events-none absolute right-0 top-0 h-full w-1 ${KPI_ACCENT_BAR[card.key] || KPI_ACCENT_BAR.sales}`}
+                className={`pointer-events-none absolute inset-x-0 top-0 h-1 ${KPI_ACCENT_BAR[card.key] || KPI_ACCENT_BAR.sales}`}
                 aria-hidden
               />
 
