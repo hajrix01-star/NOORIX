@@ -1948,6 +1948,7 @@
 .nx-gap-2  { gap: 2px; }
 .nx-gap-4  { gap: 4px; }
 .nx-gap-6  { gap: 6px; }
+.nx-gap-7  { gap: 7px; }
 .nx-gap-8  { gap: 8px; }
 .nx-gap-10 { gap: 10px; }
 .nx-gap-12 { gap: 12px; }
@@ -2330,4 +2331,252 @@
 }
 @media (max-width: 380px) {
   .nx-kpi-grid { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Bank statement analysis cards (compact tables, Recharts chrome)
+   ═══════════════════════════════════════════════════════════ */
+.nx-gap-18 { gap: 18px; }
+.nx-mb-14 { margin-bottom: 14px; }
+.nx-mb-3 { margin-bottom: 3px; }
+.nx-mt-6px { margin-top: 6px; }
+.nx-px-14 { padding-inline: 14px; }
+.nx-items-stretch { align-items: stretch; }
+.nx-min-w-36 { min-width: 36px; }
+.nx-min-w-38 { min-width: 38px; }
+.nx-max-w-360 { max-width: 360px; }
+.nx-w-40 { width: 40px; }
+.nx-w-100px { width: 100px; }
+.nx-min-w-120 { min-width: 120px; }
+.nx-h-260 { height: 260px; }
+.nx-h-320 { height: 320px; }
+.nx-leading-none { line-height: 1; }
+.nx-leading-135 { line-height: 1.35; }
+.nx-text-10 { font-size: 10px; }
+.nx-text-17 { font-size: 17px; }
+.nx-text-22 { font-size: 22px; }
+.nx-text-28 { font-size: 28px; }
+.nx-text-40 { font-size: 40px; }
+.nx-ps-20 { padding-inline-start: 20px; }
+.nx-p-48 { padding: 48px; }
+
+.nx-recharts-tooltip-shell {
+  background: var(--noorix-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 168px;
+}
+.nx-recharts-tooltip-footer {
+  border-top: 1px solid var(--noorix-border);
+  padding-top: 4px;
+  margin-top: 4px;
+}
+.nx-recharts-tooltip-footer--loose {
+  border-top: 1px solid var(--noorix-border);
+  padding-top: 6px;
+  margin-top: 4px;
+}
+
+.nx-analysis-card {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid var(--noorix-border);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+  height: 100%;
+}
+.nx-analysis-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--noorix-border);
+  background: linear-gradient(180deg, var(--noorix-bg-muted) 0%, var(--noorix-surface) 100%);
+}
+.nx-analysis-card__body {
+  padding: 18px 20px;
+}
+.nx-analysis-card__title-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.nx-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.nx-legend-dot--income { background: #16a34a; }
+.nx-legend-dot--expense { background: #dc2626; }
+.nx-legend-dot--bar {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.nx-legend-dot--bar-red { background: #dc2626; }
+.nx-legend-dot--bar-green { background: #16a34a; }
+
+.nx-table-collapse { border-collapse: collapse; }
+.nx-th-pad { padding: 8px 10px; text-align: start; vertical-align: middle; }
+.nx-th-pad-center { padding: 8px 10px; text-align: center; vertical-align: middle; }
+.nx-td-pad { padding: 8px 10px; vertical-align: middle; }
+.nx-td-pad-9 { padding: 9px 10px; vertical-align: middle; }
+.nx-td-pad-10 { padding: 10px; vertical-align: middle; }
+
+.nx-border-b-2-muted { border-bottom: 2px solid var(--noorix-border); }
+.nx-border-t-2-muted { border-top: 2px solid var(--noorix-border); }
+
+.nx-bank-row {
+  border-bottom: 1px solid var(--noorix-border);
+}
+.nx-bank-row--click {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nx-bank-row--a { background: var(--noorix-bg-surface); }
+.nx-bank-row--b { background: var(--noorix-bg-muted); }
+
+.nx-stat-tile {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  text-align: center;
+}
+.nx-text-violet {
+  color: #7c3aed;
+}
+
+.nx-pie-chart-wrap {
+  flex: 1 1 300px;
+  min-width: 280px;
+  position: relative;
+  height: 320px;
+}
+.nx-pie-legend-aside {
+  flex: 1 1 240px;
+  min-width: 220px;
+}
+.nx-pie-center-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  max-width: 132px;
+  background: var(--noorix-bg-surface);
+  border-radius: 50px;
+  padding: 8px 10px;
+  z-index: 0;
+}
+.nx-pie-empty-box {
+  height: 320px;
+  border: 1px dashed var(--noorix-border);
+}
+
+.nx-bank-pie-legend-btn.nx-btn {
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px 10px;
+  color: inherit;
+}
+
+.nx-bank-bar-section-hdr {
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+}
+.nx-bank-bar-legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 28px;
+  padding-top: 16px;
+}
+
+.nx-table-min-400 { min-width: 400px; }
+.nx-table-min-540 { min-width: 540px; }
+
+.nx-grid-auto-fill-140 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.nx-bank-cards-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+  align-items: stretch;
+}
+.nx-bank-card-cell {
+  min-width: 0;
+}
+.nx-bank-card-cell--full {
+  grid-column: 1 / -1;
+}
+
+.nx-bank-add-wrap {
+  position: relative;
+}
+.nx-bank-add-menu {
+  position: absolute;
+  top: 110%;
+  inset-inline-end: 0;
+  background: var(--noorix-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  z-index: 200;
+  overflow: hidden;
+}
+.nx-bank-add-menu-item.nx-btn {
+  padding: 10px 14px;
+}
+
+.nx-pill-count {
+  background: var(--noorix-accent-blue);
+  color: #fff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  margin-inline-start: 6px;
+}
+
+.nx-code-inline {
+  font-size: 11px;
+  background: var(--noorix-border);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.nx-bank-dot-8 {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.nx-bank-dot-10 {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
 }

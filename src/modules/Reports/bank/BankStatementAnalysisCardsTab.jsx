@@ -30,6 +30,13 @@ import {
 import { fmt } from '../../../utils/format';
 import BankStatementPieDrilldownModal from './BankStatementPieDrilldownModal';
 
+const BAR_CHART_TOOLTIP_STYLE = {
+  borderRadius: 10,
+  border: '1px solid var(--noorix-border)',
+  fontSize: 12,
+  direction: 'rtl',
+};
+
 const COLORS = [
   '#2563eb', '#16a34a', '#ca8a04', '#dc2626', '#7c3aed',
   '#0891b2', '#db2777', '#4f46e5', '#ea580c', '#84cc16',
@@ -68,17 +75,7 @@ function DailyTooltip({ active, payload, label }) {
   const deposits = payload.find((p) => p.dataKey === 'deposits')?.value ?? 0;
   const withdrawals = payload.find((p) => p.dataKey === 'withdrawals')?.value ?? 0;
   return (
-    <div
-      className="nx-text-sm nx-rtl"
-      style={{
-        background: 'var(--noorix-surface)',
-        border: '1px solid var(--noorix-border)',
-        borderRadius: 10,
-        padding: '10px 14px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-        minWidth: 170,
-      }}
-    >
+    <div className="nx-text-sm nx-rtl nx-recharts-tooltip-shell">
       <div className="nx-font-700 nx-text-primary nx-mb-6">{label}</div>
       <div className="nx-text-income nx-mb-4">
         إيداعات: <span className="nx-num-bold">{fmt(deposits)}</span>
@@ -87,13 +84,8 @@ function DailyTooltip({ active, payload, label }) {
         سحوبات: <span className="nx-num-bold">{fmt(withdrawals)}</span>
       </div>
       <div
-        className="nx-font-700"
-        style={{
-          borderTop: '1px solid var(--noorix-border)',
-          paddingTop: 4,
-          marginTop: 4,
-          color: deposits - withdrawals >= 0 ? '#059669' : '#e11d48',
-        }}
+        className="nx-font-700 nx-recharts-tooltip-footer"
+        style={{ color: deposits - withdrawals >= 0 ? '#059669' : '#e11d48' }}
       >
         الصافي: <span className="nx-inline-ltr">{fmt(deposits - withdrawals)}</span>
       </div>
@@ -107,36 +99,19 @@ function PieTooltip({ active, payload, pieMode, t }) {
   const d = payload[0];
   const p = d.payload;
   return (
-    <div
-      className="nx-text-sm nx-rtl"
-      style={{
-        background: 'var(--noorix-surface)',
-        border: '1px solid var(--noorix-border)',
-        borderRadius: 10,
-        padding: '10px 14px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-        minWidth: 168,
-      }}
-    >
+    <div className="nx-text-sm nx-rtl nx-recharts-tooltip-shell">
       <div className="nx-font-700 nx-text-primary nx-mb-6">{d.name}</div>
       {pieMode === 'combined' ? (
         <>
-          <div className="nx-text-expense" style={{ marginBottom: 3 }}>
+          <div className="nx-text-expense nx-mb-3">
             {t('bankStatementColDebit')}:{' '}
             <span className="nx-num-bold">{fmt(p.debit)}</span>
           </div>
-          <div className="nx-text-income" style={{ marginBottom: 3 }}>
+          <div className="nx-text-income nx-mb-3">
             {t('bankStatementColCredit')}:{' '}
             <span className="nx-num-bold">{fmt(p.credit)}</span>
           </div>
-          <div
-            className="nx-font-700 nx-mb-4"
-            style={{
-              borderTop: '1px solid var(--noorix-border)',
-              paddingTop: 6,
-              marginTop: 4,
-            }}
-          >
+          <div className="nx-font-700 nx-mb-4 nx-recharts-tooltip-footer--loose">
             {t('bankPieCenterVolume')}:{' '}
             <span className="nx-inline-ltr">{fmt(d.value)}</span>
           </div>
@@ -157,35 +132,17 @@ function PieTooltip({ active, payload, pieMode, t }) {
 /* ── غلاف بطاقة موحد ── */
 function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }) {
   return (
-    <div
-      className="noorix-surface-card"
-      style={{
-        padding: 0,
-        overflow: 'hidden',
-        position: 'relative',
-        borderRadius: 14,
-        border: '1px solid var(--noorix-border)',
-        boxShadow: '0 4px 18px rgba(15, 23, 42, 0.06)',
-        height: '100%',
-      }}
-    >
-      <div
-        className="nx-flex-between nx-gap-12"
-        style={{
-          padding: '14px 18px',
-          borderBottom: '1px solid var(--noorix-border)',
-          background: 'linear-gradient(180deg, var(--noorix-bg-muted) 0%, var(--noorix-surface) 100%)',
-        }}
-      >
-        <div className="nx-flex-center nx-gap-10" style={{ minWidth: 0 }}>
-          <span className="nx-text-3xl nx-flex-shrink-0" style={{ lineHeight: 1 }}>{icon}</span>
-          <span className="nx-font-700 nx-text-lg" style={{ lineHeight: 1.35 }}>{title}</span>
+    <div className="noorix-surface-card nx-analysis-card">
+      <div className="nx-analysis-card__head">
+        <div className="nx-analysis-card__title-cluster">
+          <span className="nx-text-3xl nx-flex-shrink-0 nx-leading-none">{icon}</span>
+          <span className="nx-font-700 nx-text-lg nx-leading-135">{title}</span>
         </div>
         <Button size="sm" onClick={() => onRemove(cardId)} className="nx-flex-shrink-0 nx-nowrap">
           {removeLabel}
         </Button>
       </div>
-      <div style={{ padding: '18px 20px' }}>{children}</div>
+      <div className="nx-analysis-card__body">{children}</div>
     </div>
   );
 }
@@ -337,7 +294,7 @@ export default function BankStatementAnalysisCardsTab({
       if (dailyData.length < 2) return null;
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCashFlow')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div className="nx-w-full" style={{ height: 260 }}>
+          <div className="nx-w-full nx-h-260">
             <ResponsiveContainer>
               <AreaChart data={dailyData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <defs>
@@ -360,13 +317,13 @@ export default function BankStatementAnalysisCardsTab({
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="nx-flex nx-gap-24 nx-mt-10" style={{ justifyContent: 'center' }}>
+          <div className="nx-flex nx-gap-24 nx-mt-10 nx-flex-center">
             <div className="nx-flex-center nx-gap-6 nx-text-sm">
-              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+              <span className="nx-legend-dot nx-legend-dot--income" />
               <span>إيداعات</span>
             </div>
             <div className="nx-flex-center nx-gap-6 nx-text-sm">
-              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
+              <span className="nx-legend-dot nx-legend-dot--expense" />
               <span>سحوبات</span>
             </div>
           </div>
@@ -383,28 +340,28 @@ export default function BankStatementAnalysisCardsTab({
           ) : (
             <div className="nx-grid nx-gap-10">
               <div className="nx-overflow-auto nx-rounded nx-border-all">
-                <table className="nx-w-full nx-text-sm" style={{ borderCollapse: 'collapse' }}>
+                <table className="nx-w-full nx-text-sm nx-table-collapse">
                   <thead>
                     <tr className="nx-bg-muted nx-border-b">
-                      <th className="nx-font-700" style={{ padding: '8px 10px', textAlign: 'right' }}>التاريخ</th>
-                      <th className="nx-font-700" style={{ padding: '8px 10px', textAlign: 'right' }}>الوصف</th>
-                      <th className="nx-font-700 nx-nowrap" style={{ padding: '8px 10px', textAlign: 'right' }}>المبلغ</th>
-                      <th className="nx-font-700 nx-text-center" style={{ padding: '8px 10px', width: 100 }}>إجراء</th>
+                      <th className="nx-font-700 nx-th-pad">التاريخ</th>
+                      <th className="nx-font-700 nx-th-pad">الوصف</th>
+                      <th className="nx-font-700 nx-nowrap nx-th-pad">المبلغ</th>
+                      <th className="nx-font-700 nx-th-pad-center nx-w-100px">إجراء</th>
                     </tr>
                   </thead>
                   <tbody>
                     {alerts.map((tx, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 ? 'var(--noorix-bg-muted)' : 'var(--noorix-bg-surface)' }}>
-                        <td className="nx-text-muted nx-nowrap" style={{ padding: '8px 10px', verticalAlign: 'middle' }}>{tx.txDate}</td>
-                        <td style={{ padding: '8px 10px', maxWidth: 360, verticalAlign: 'middle' }}>
+                      <tr key={i} className={`nx-bank-row ${i % 2 ? 'nx-bank-row--b' : 'nx-bank-row--a'}`}>
+                        <td className="nx-text-muted nx-nowrap nx-td-pad">{tx.txDate}</td>
+                        <td className="nx-td-pad nx-max-w-360">
                           <div className="nx-truncate" title={tx.description || ''}>
                             {tx.description || '—'}
                           </div>
                         </td>
-                        <td className="nx-text-end nx-ltr nx-font-800 nx-text-expense nx-nowrap" style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+                        <td className="nx-text-end nx-ltr nx-font-800 nx-text-expense nx-nowrap nx-td-pad">
                           {fmt(Number(tx.debit))}
                         </td>
-                        <td className="nx-text-center" style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+                        <td className="nx-text-center nx-td-pad">
                           <Button size="sm" onClick={() => { setTypeFilter('debit'); setActiveTab('transactions'); }}>
                             {t('bankViewTransactions')}
                         </Button>
@@ -425,12 +382,12 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosHint')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div className="nx-flex nx-gap-16 nx-flex-wrap">
-            <div className="nx-bg-muted nx-border-all nx-text-center" style={{ flex: 1, minWidth: 100, padding: '12px 16px', borderRadius: 10 }}>
-              <div className="nx-font-800 nx-text-info" style={{ fontSize: 28 }}>{posCount}</div>
+            <div className="nx-bg-muted nx-border-all nx-stat-tile">
+              <div className="nx-font-800 nx-text-info nx-text-28">{posCount}</div>
               <div className="nx-text-xs nx-text-muted nx-mt-4">عملية تشبه نقاط البيع</div>
             </div>
-            <div className="nx-bg-muted nx-border-all nx-text-center" style={{ flex: 1, minWidth: 100, padding: '12px 16px', borderRadius: 10 }}>
-              <div className="nx-font-800" style={{ fontSize: 28, color: '#7c3aed' }}>{txs.length}</div>
+            <div className="nx-bg-muted nx-border-all nx-stat-tile">
+              <div className="nx-font-800 nx-text-28 nx-text-violet">{txs.length}</div>
               <div className="nx-text-xs nx-text-muted nx-mt-4">إجمالي العمليات</div>
             </div>
           </div>
@@ -457,7 +414,7 @@ export default function BankStatementAnalysisCardsTab({
 
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div className="nx-flex-center nx-gap-8 nx-flex-wrap" style={{ marginBottom: 14 }}>
+          <div className="nx-flex-center nx-gap-8 nx-flex-wrap nx-mb-14">
             <span className="nx-text-sm nx-font-700 nx-text-muted">{t('bankPieViewMode')}</span>
             {(['combined', 'debit', 'credit']).map((m) => (
               <Button
@@ -470,36 +427,22 @@ export default function BankStatementAnalysisCardsTab({
               </Button>
             ))}
           </div>
-          <p className="nx-text-sm nx-text-muted" style={{ margin: '0 0 14px', lineHeight: 1.5 }}>
+          <p className="nx-text-sm nx-text-muted nx-m-0 nx-mb-14 nx-line-145">
             {t('bankPieLegendHint')}
           </p>
-          <div className="nx-flex-wrap nx-gap-24" style={{ alignItems: 'stretch' }}>
-            <div style={{ flex: '1 1 300px', minWidth: 280, position: 'relative', height: 320 }}>
+          <div className="nx-flex-wrap nx-gap-24 nx-items-stretch">
+            <div className="nx-pie-chart-wrap">
               {/* النص المركزي يُرسم أولاً ليبقى تحت tooltip الدائرة */}
               {pieDisplayData.length > 0 ? (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    textAlign: 'center',
-                    pointerEvents: 'none',
-                    maxWidth: 132,
-                    background: 'var(--noorix-bg-surface)',
-                    borderRadius: 50,
-                    padding: '8px 10px',
-                    zIndex: 0,
-                  }}
-                >
-                  <div className="nx-text-muted nx-font-600" style={{ fontSize: 10, lineHeight: 1.25 }}>
+                <div className="nx-pie-center-label">
+                  <div className="nx-text-muted nx-font-600 nx-text-10 nx-line-145">
                     {centerTitle}
                   </div>
-                  <div className="nx-font-800 nx-text-primary nx-ltr nx-mt-4" style={{ fontSize: 17 }}>
+                  <div className="nx-font-800 nx-text-primary nx-ltr nx-mt-4 nx-text-17">
                     {fmt(centerMain)}
                   </div>
                   {pieMode === 'combined' && (pieGrandTotals.totalDebit > 0 || pieGrandTotals.totalCredit > 0) ? (
-                    <div style={{ fontSize: 10, marginTop: 6, lineHeight: 1.35 }}>
+                    <div className="nx-text-10 nx-mt-6px nx-leading-135">
                       <div className="nx-text-expense nx-ltr">{fmt(pieGrandTotals.totalDebit)}</div>
                       <div className="nx-text-income nx-ltr">{fmt(pieGrandTotals.totalCredit)}</div>
                     </div>
@@ -540,20 +483,13 @@ export default function BankStatementAnalysisCardsTab({
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div
-                  className="nx-flex-center nx-bg-muted nx-rounded-lg nx-text-md nx-text-muted"
-                  style={{
-                    height: 320,
-                    justifyContent: 'center',
-                    border: '1px dashed var(--noorix-border)',
-                  }}
-                >
+                <div className="nx-flex-center nx-bg-muted nx-rounded-lg nx-text-md nx-text-muted nx-h-320 nx-pie-empty-box">
                   {t('bankNoCategoryData')}
                 </div>
               )}
             </div>
-            <div className="nx-flex-col" style={{ flex: '1 1 240px', minWidth: 220 }}>
-              <div className="nx-text-sm nx-font-700 nx-text-muted" style={{ marginBottom: 10 }}>
+            <div className="nx-flex-col nx-pie-legend-aside">
+              <div className="nx-text-sm nx-font-700 nx-text-muted nx-mb-10">
                 {t('bankPieCategoryKey')}
               </div>
               <div
@@ -570,24 +506,13 @@ export default function BankStatementAnalysisCardsTab({
                       <Button
                         key={item.name}
                         variant="ghost"
-                        className="bank-pie-legend-row nx-flex-col nx-w-full nx-text-base nx-text-end"
+                        className="bank-pie-legend-row nx-bank-pie-legend-btn nx-flex-col nx-w-full nx-text-base nx-text-end"
                         onClick={() => setPieDrilldownCategory(item.name)}
-                        style={{
-                          alignItems: 'stretch',
-                          gap: 4,
-                          padding: '8px 10px',
-                          color: 'inherit',
-                        }}
                       >
                         <div className="nx-flex-center nx-gap-10 nx-w-full">
                           <span
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: '50%',
-                              background: dot,
-                              flexShrink: 0,
-                            }}
+                            className="nx-bank-dot-10"
+                            style={{ background: dot }}
                           />
                           <span className="nx-flex-1 nx-truncate nx-font-600">
                             {item.name}
@@ -596,10 +521,7 @@ export default function BankStatementAnalysisCardsTab({
                           <span className="nx-font-800 nx-ltr nx-flex-shrink-0 nx-text-base">{fmt(item.value)}</span>
                         </div>
                         {pieMode === 'combined' ? (
-                          <div
-                            className="nx-flex-between nx-gap-8 nx-text-xs nx-text-muted"
-                            style={{ paddingInlineStart: 20 }}
-                          >
+                          <div className="nx-flex-between nx-gap-8 nx-text-xs nx-text-muted nx-ps-20">
                             <span className="nx-text-expense">
                               {t('bankStatementColDebit')}: <strong className="nx-ltr">{fmt(item.debit)}</strong>
                             </span>
@@ -628,10 +550,7 @@ export default function BankStatementAnalysisCardsTab({
         const h = Math.max(168, 52 + rows.length * 46);
         return (
           <div className="nx-mb-8">
-            <div
-              className="nx-text-sm nx-font-700 nx-text-muted nx-border-b"
-              style={{ marginBottom: 10, paddingBottom: 6 }}
-            >
+            <div className="nx-text-sm nx-font-700 nx-text-muted nx-border-b nx-bank-bar-section-hdr">
               {blockTitle}
             </div>
             <div className="nx-w-full" style={{ height: h }}>
@@ -653,12 +572,7 @@ export default function BankStatementAnalysisCardsTab({
                   <Tooltip
                     formatter={(v) => [fmt(Number(v)), blockTitle]}
                     labelFormatter={(_, p) => p?.[0]?.payload?.fullName || ''}
-                    contentStyle={{
-                      borderRadius: 10,
-                      border: '1px solid var(--noorix-border)',
-                      fontSize: 12,
-                      direction: 'rtl',
-                    }}
+                    contentStyle={BAR_CHART_TOOLTIP_STYLE}
                   />
                   <Bar dataKey="value" fill={color} radius={[0, 6, 6, 0]} barSize={28} />
                 </BarChart>
@@ -672,16 +586,13 @@ export default function BankStatementAnalysisCardsTab({
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryBar')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {renderBarBlock(barRowsDebit, 'أعلى الفئات — السحوبات', '#dc2626', barDebitAxisW)}
           {renderBarBlock(barRowsCredit, 'أعلى الفئات — الإيداعات', '#16a34a', barCreditAxisW)}
-          <div
-            className="nx-flex nx-flex-wrap nx-mt-16 nx-border-t"
-            style={{ justifyContent: 'center', gap: 28, paddingTop: 16 }}
-          >
+          <div className="nx-flex nx-flex-wrap nx-mt-16 nx-border-t nx-bank-bar-legend-row">
             <div className="nx-flex-center nx-gap-8 nx-text-sm">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: '#dc2626', display: 'inline-block' }} />
+              <span className="nx-legend-dot--bar nx-legend-dot--bar-red" />
               <span className="nx-font-600">سحوبات</span>
             </div>
             <div className="nx-flex-center nx-gap-8 nx-text-sm">
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: '#16a34a', display: 'inline-block' }} />
+              <span className="nx-legend-dot--bar nx-legend-dot--bar-green" />
               <span className="nx-font-600">إيداعات</span>
             </div>
           </div>
@@ -694,60 +605,48 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryTable')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div className="nx-overflow-auto">
-            <table className="nx-w-full nx-text-sm" style={{ borderCollapse: 'collapse', minWidth: 540 }}>
+            <table className="nx-w-full nx-text-sm nx-table-collapse nx-table-min-540">
               <thead>
-                <tr className="nx-bg-muted" style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th className="nx-font-700 nx-nowrap" style={{ padding: '8px 10px', textAlign: 'right' }}>الفئة</th>
-                  <th className="nx-font-700 nx-text-center" style={{ padding: '8px 10px' }}>العمليات</th>
-                  <th className="nx-font-700 nx-text-expense nx-nowrap" style={{ padding: '8px 10px', textAlign: 'right' }}>السحوبات</th>
-                  <th className="nx-font-700 nx-text-income nx-nowrap" style={{ padding: '8px 10px', textAlign: 'right' }}>الإيداعات</th>
-                  <th className="nx-font-700" style={{ padding: '8px 10px', minWidth: 120 }}>النسبة (سحب)</th>
+                <tr className="nx-bg-muted nx-border-b-2-muted">
+                  <th className="nx-font-700 nx-nowrap nx-th-pad">الفئة</th>
+                  <th className="nx-font-700 nx-th-pad-center">العمليات</th>
+                  <th className="nx-font-700 nx-text-expense nx-nowrap nx-th-pad">السحوبات</th>
+                  <th className="nx-font-700 nx-text-income nx-nowrap nx-th-pad">الإيداعات</th>
+                  <th className="nx-font-700 nx-th-pad nx-min-w-120">النسبة (سحب)</th>
                 </tr>
               </thead>
               <tbody>
                 {categoryRows.map((row, i) => (
                   <tr
                     key={row.name}
-                    style={{
-                      borderBottom: '1px solid var(--noorix-border)',
-                      background: i % 2 === 0 ? 'var(--noorix-bg-surface)' : 'var(--noorix-bg-muted)',
-                      cursor: 'pointer',
-                      transition: 'background 0.15s',
-                    }}
+                    className={`nx-bank-row nx-bank-row--click ${i % 2 === 0 ? 'nx-bank-row--a' : 'nx-bank-row--b'}`}
                     onClick={() => { setCategoryFilter(row.name); setActiveTab('transactions'); }}
                     title="انقر لعرض عمليات هذه الفئة"
                   >
-                    <td style={{ padding: '9px 10px' }}>
-                      <div className="nx-flex-center" style={{ gap: 7 }}>
+                    <td className="nx-td-pad-9">
+                      <div className="nx-flex-center nx-gap-7">
                         <span
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: COLORS[i % COLORS.length],
-                            flexShrink: 0,
-                          }}
+                          className="nx-bank-dot-8"
+                          style={{ background: COLORS[i % COLORS.length] }}
                         />
                         {row.name}
                       </div>
                     </td>
-                    <td className="nx-text-center nx-text-muted" style={{ padding: '9px 10px' }}>{row.count}</td>
+                    <td className="nx-text-center nx-text-muted nx-td-pad-9">{row.count}</td>
                     <td
-                      className="nx-text-end nx-ltr"
-                      style={{ padding: '9px 10px', color: row.debit > 0 ? '#dc2626' : 'var(--noorix-text-muted)', fontWeight: row.debit > 0 ? 700 : 400 }}
+                      className={`nx-text-end nx-ltr nx-td-pad-9 ${row.debit > 0 ? 'nx-text-expense nx-font-700' : 'nx-text-muted nx-font-400'}`}
                     >
                       {row.debit > 0 ? fmt(row.debit) : '—'}
                     </td>
                     <td
-                      className="nx-text-end nx-ltr"
-                      style={{ padding: '9px 10px', color: row.credit > 0 ? '#16a34a' : 'var(--noorix-text-muted)', fontWeight: row.credit > 0 ? 700 : 400 }}
+                      className={`nx-text-end nx-ltr nx-td-pad-9 ${row.credit > 0 ? 'nx-text-income nx-font-700' : 'nx-text-muted nx-font-400'}`}
                     >
                       {row.credit > 0 ? fmt(row.credit) : '—'}
                     </td>
-                    <td style={{ padding: '9px 10px' }}>
+                    <td className="nx-td-pad-9">
                       <div className="nx-flex-center nx-gap-8">
                         <ProgressBar value={row.debit} max={totalDebit} color={COLORS[i % COLORS.length]} />
-                        <span className="nx-text-muted nx-flex-shrink-0" style={{ minWidth: 38, textAlign: 'left' }}>
+                        <span className="nx-text-muted nx-flex-shrink-0 nx-min-w-38 nx-ltr nx-text-start">
                           {row.debitPct.toFixed(1)}%
                         </span>
                       </div>
@@ -756,14 +655,14 @@ export default function BankStatementAnalysisCardsTab({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="nx-font-800 nx-bg-muted" style={{ borderTop: '2px solid var(--noorix-border)' }}>
-                  <td style={{ padding: '10px' }}>الإجمالي</td>
-                  <td className="nx-text-center" style={{ padding: '10px' }}>
+                <tr className="nx-font-800 nx-bg-muted nx-border-t-2-muted">
+                  <td className="nx-td-pad-10">الإجمالي</td>
+                  <td className="nx-text-center nx-td-pad-10">
                     {categoryRows.reduce((s, r) => s + r.count, 0)}
                   </td>
-                  <td className="nx-text-end nx-ltr nx-text-expense" style={{ padding: '10px' }}>{fmt(totalDebit)}</td>
-                  <td className="nx-text-end nx-ltr nx-text-income" style={{ padding: '10px' }}>{fmt(totalCredit)}</td>
-                  <td className="nx-text-muted" style={{ padding: '10px' }}>100%</td>
+                  <td className="nx-text-end nx-ltr nx-text-expense nx-td-pad-10">{fmt(totalDebit)}</td>
+                  <td className="nx-text-end nx-ltr nx-text-income nx-td-pad-10">{fmt(totalCredit)}</td>
+                  <td className="nx-text-muted nx-td-pad-10">100%</td>
                 </tr>
               </tfoot>
             </table>
@@ -781,14 +680,14 @@ export default function BankStatementAnalysisCardsTab({
             <p className="nx-text-muted nx-text-base">لا توجد إيداعات.</p>
           ) : (
             <div className="nx-overflow-auto">
-              <table className="nx-w-full nx-text-sm" style={{ borderCollapse: 'collapse', minWidth: 400 }}>
+              <table className="nx-w-full nx-text-sm nx-table-collapse nx-table-min-400">
                 <thead>
-                  <tr className="nx-bg-muted" style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-                    <th className="nx-font-700" style={{ padding: '8px 10px', textAlign: 'right' }}>#</th>
-                    <th className="nx-font-700" style={{ padding: '8px 10px', textAlign: 'right' }}>الفئة</th>
-                    <th className="nx-font-700 nx-text-center" style={{ padding: '8px 10px' }}>العمليات</th>
-                    <th className="nx-font-700 nx-text-income" style={{ padding: '8px 10px', textAlign: 'right' }}>إجمالي الإيداعات</th>
-                    <th className="nx-font-700" style={{ padding: '8px 10px', minWidth: 120 }}>النسبة</th>
+                  <tr className="nx-bg-muted nx-border-b-2-muted">
+                    <th className="nx-font-700 nx-th-pad">#</th>
+                    <th className="nx-font-700 nx-th-pad">الفئة</th>
+                    <th className="nx-font-700 nx-th-pad-center">العمليات</th>
+                    <th className="nx-font-700 nx-text-income nx-th-pad">إجمالي الإيداعات</th>
+                    <th className="nx-font-700 nx-th-pad nx-min-w-120">النسبة</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -797,26 +696,25 @@ export default function BankStatementAnalysisCardsTab({
                     return (
                       <tr
                         key={row.name}
-                        style={{
-                          borderBottom: '1px solid var(--noorix-border)',
-                          background: i % 2 === 0 ? 'var(--noorix-bg-surface)' : 'var(--noorix-bg-muted)',
-                          cursor: 'pointer',
-                        }}
+                        className={`nx-bank-row nx-bank-row--click ${i % 2 === 0 ? 'nx-bank-row--a' : 'nx-bank-row--b'}`}
                         onClick={() => { setCategoryFilter(row.name); setTypeFilter('credit'); setActiveTab('transactions'); }}
                       >
-                        <td className="nx-text-muted nx-font-700" style={{ padding: '9px 10px' }}>{i + 1}</td>
-                        <td style={{ padding: '9px 10px' }}>
-                          <div className="nx-flex-center" style={{ gap: 7 }}>
-                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS[i % COLORS.length], flexShrink: 0 }} />
+                        <td className="nx-text-muted nx-font-700 nx-td-pad-9">{i + 1}</td>
+                        <td className="nx-td-pad-9">
+                          <div className="nx-flex-center nx-gap-7">
+                            <span
+                              className="nx-bank-dot-8"
+                              style={{ background: COLORS[i % COLORS.length] }}
+                            />
                             {row.name}
                           </div>
                         </td>
-                        <td className="nx-text-center nx-text-muted" style={{ padding: '9px 10px' }}>{row.count}</td>
-                        <td className="nx-text-end nx-ltr nx-text-income nx-font-700" style={{ padding: '9px 10px' }}>{fmt(row.total)}</td>
-                        <td style={{ padding: '9px 10px' }}>
+                        <td className="nx-text-center nx-text-muted nx-td-pad-9">{row.count}</td>
+                        <td className="nx-text-end nx-ltr nx-text-income nx-font-700 nx-td-pad-9">{fmt(row.total)}</td>
+                        <td className="nx-td-pad-9">
                           <div className="nx-flex-center nx-gap-8">
                             <ProgressBar value={row.total} max={totalDep} color="#16a34a" />
-                            <span className="nx-text-muted nx-flex-shrink-0" style={{ minWidth: 38, textAlign: 'left' }}>{pct.toFixed(1)}%</span>
+                            <span className="nx-text-muted nx-flex-shrink-0 nx-min-w-38 nx-ltr nx-text-start">{pct.toFixed(1)}%</span>
                           </div>
                         </td>
                       </tr>
@@ -824,11 +722,11 @@ export default function BankStatementAnalysisCardsTab({
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="nx-font-800 nx-bg-muted" style={{ borderTop: '2px solid var(--noorix-border)' }}>
-                    <td colSpan={2} style={{ padding: '10px' }}>الإجمالي</td>
-                    <td className="nx-text-center" style={{ padding: '10px' }}>{depositsByCategory.reduce((s, r) => s + r.count, 0)}</td>
-                    <td className="nx-text-end nx-ltr nx-text-income" style={{ padding: '10px' }}>{fmt(totalDep)}</td>
-                    <td className="nx-text-muted" style={{ padding: '10px' }}>100%</td>
+                  <tr className="nx-font-800 nx-bg-muted nx-border-t-2-muted">
+                    <td colSpan={2} className="nx-td-pad-10">الإجمالي</td>
+                    <td className="nx-text-center nx-td-pad-10">{depositsByCategory.reduce((s, r) => s + r.count, 0)}</td>
+                    <td className="nx-text-end nx-ltr nx-text-income nx-td-pad-10">{fmt(totalDep)}</td>
+                    <td className="nx-text-muted nx-td-pad-10">100%</td>
                   </tr>
                 </tfoot>
               </table>
@@ -849,42 +747,42 @@ export default function BankStatementAnalysisCardsTab({
             </p>
           ) : (
             <div className="nx-grid nx-gap-12">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
-                <div className="nx-bg-muted nx-border-all nx-rounded-lg nx-text-center" style={{ padding: '12px 14px' }}>
-                  <div className="nx-font-800 nx-text-income" style={{ fontSize: 22 }}>{posTerminals.reduce((s, t) => s + t.count, 0)}</div>
+              <div className="nx-grid-auto-fill-140">
+                <div className="nx-bg-muted nx-border-all nx-rounded-lg nx-text-center nx-py-12 nx-px-14">
+                  <div className="nx-font-800 nx-text-income nx-text-22">{posTerminals.reduce((s, t) => s + t.count, 0)}</div>
                   <div className="nx-text-xs nx-text-muted nx-mt-4">عدد العمليات</div>
                 </div>
-                <div className="nx-bg-muted nx-border-all nx-rounded-lg nx-text-center" style={{ padding: '12px 14px' }}>
+                <div className="nx-bg-muted nx-border-all nx-rounded-lg nx-text-center nx-py-12 nx-px-14">
                   <div className="nx-text-2xl nx-font-800 nx-text-income nx-ltr">{fmt(totalPOS)}</div>
                   <div className="nx-text-xs nx-text-muted nx-mt-4">إجمالي المبيعات</div>
                 </div>
               </div>
               <div className="nx-overflow-auto nx-rounded nx-border-all">
-                <table className="nx-w-full nx-text-sm" style={{ borderCollapse: 'collapse' }}>
+                <table className="nx-w-full nx-text-sm nx-table-collapse">
                   <thead>
                     <tr className="nx-bg-muted nx-border-b">
-                      <th className="nx-font-700" style={{ padding: '8px 10px', textAlign: 'right', width: 40 }}>#</th>
-                      <th className="nx-font-700" style={{ padding: '8px 10px', textAlign: 'right' }}>الجهاز</th>
-                      <th className="nx-font-700 nx-text-center" style={{ padding: '8px 10px' }}>العمليات</th>
-                      <th className="nx-font-700" style={{ padding: '8px 10px', textAlign: 'right' }}>المبلغ</th>
-                      <th className="nx-font-700" style={{ padding: '8px 10px', textAlign: 'right' }}>النسبة</th>
+                      <th className="nx-font-700 nx-th-pad nx-w-40">#</th>
+                      <th className="nx-font-700 nx-th-pad">الجهاز</th>
+                      <th className="nx-font-700 nx-th-pad-center">العمليات</th>
+                      <th className="nx-font-700 nx-th-pad">المبلغ</th>
+                      <th className="nx-font-700 nx-th-pad">النسبة</th>
                     </tr>
                   </thead>
                   <tbody>
                     {posTerminals.slice(0, 8).map((term, i) => {
                       const pct = totalPOS > 0 ? (term.total / totalPOS) * 100 : 0;
                       return (
-                        <tr key={term.terminalId} style={{ borderBottom: '1px solid var(--noorix-border)', background: i % 2 ? 'var(--noorix-bg-muted)' : 'var(--noorix-bg-surface)' }}>
-                          <td className="nx-font-700 nx-text-muted" style={{ padding: '8px 10px' }}>{i + 1}</td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <code style={{ fontSize: 11, background: 'var(--noorix-border)', padding: '4px 8px', borderRadius: 6 }}>…{term.terminalId.slice(-8)}</code>
+                        <tr key={term.terminalId} className={`nx-bank-row ${i % 2 ? 'nx-bank-row--b' : 'nx-bank-row--a'}`}>
+                          <td className="nx-font-700 nx-text-muted nx-td-pad">{i + 1}</td>
+                          <td className="nx-td-pad">
+                            <code className="nx-code-inline">…{term.terminalId.slice(-8)}</code>
                           </td>
-                          <td className="nx-text-center" style={{ padding: '8px 10px' }}>{term.count}</td>
-                          <td className="nx-text-end nx-ltr nx-font-800 nx-text-income" style={{ padding: '8px 10px' }}>{fmt(term.total)}</td>
-                          <td className="nx-text-end" style={{ padding: '8px 10px' }}>
+                          <td className="nx-text-center nx-td-pad">{term.count}</td>
+                          <td className="nx-text-end nx-ltr nx-font-800 nx-text-income nx-td-pad">{fmt(term.total)}</td>
+                          <td className="nx-text-end nx-td-pad">
                             <div className="nx-flex-end nx-gap-8">
                               <ProgressBar value={term.total} max={totalPOS} color={COLORS[i % COLORS.length]} />
-                              <span className="nx-text-xs nx-text-muted" style={{ minWidth: 36 }}>{pct.toFixed(1)}%</span>
+                              <span className="nx-text-xs nx-text-muted nx-min-w-36 nx-ltr nx-text-start">{pct.toFixed(1)}%</span>
                             </div>
                           </td>
                         </tr>
@@ -903,13 +801,13 @@ export default function BankStatementAnalysisCardsTab({
   };
 
   return (
-    <div className="nx-grid" style={{ gap: 18 }}>
+    <div className="nx-grid nx-gap-18">
       {/* شريط التحكم — إضافة بطاقات */}
       <div className="nx-row-between nx-bg-muted nx-border-all nx-rounded-lg nx-gap-10 nx-px-16 nx-py-12">
         <span className="nx-text-base nx-text-muted">
           {activeCards.length} بطاقة معروضة
         </span>
-        <div style={{ position: 'relative' }}>
+        <div className="nx-bank-add-wrap">
           <Button
             size="sm"
             onClick={() => setAddOpen((v) => !v)}
@@ -917,47 +815,18 @@ export default function BankStatementAnalysisCardsTab({
           >
             + {t('bankAddAnalysisCard')}
             {availableToAdd.length > 0 && (
-              <span
-                style={{
-                  background: 'var(--noorix-accent-blue)',
-                  color: '#fff',
-                  borderRadius: '50%',
-                  width: 18,
-                  height: 18,
-                  fontSize: 10,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  marginInlineStart: 6,
-                }}
-              >
+              <span className="nx-pill-count">
                 {availableToAdd.length}
               </span>
             )}
           </Button>
           {addOpen && availableToAdd.length > 0 && (
-            <div
-              className="bank-analysis-add-menu"
-              style={{
-                position: 'absolute',
-                top: '110%',
-                insetInlineEnd: 0,
-                background: 'var(--noorix-surface)',
-                border: '1px solid var(--noorix-border)',
-                borderRadius: 10,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-                minWidth: 220,
-                zIndex: 200,
-                overflow: 'hidden',
-              }}
-            >
+            <div className="bank-analysis-add-menu nx-bank-add-menu">
               {availableToAdd.map((c) => (
                 <Button
                   key={c.id}
                   variant="ghost"
-                  className="bank-add-card-item nx-flex-center nx-gap-10 nx-w-full nx-text-base nx-text-end nx-border-b"
-                  style={{ padding: '10px 14px' }}
+                  className="bank-add-card-item nx-bank-add-menu-item nx-flex-center nx-gap-10 nx-w-full nx-text-base nx-text-end nx-border-b"
                   onClick={() => { addCard(c.id); setAddOpen(false); }}
                 >
                   <span>{c.icon}</span>
@@ -970,14 +839,7 @@ export default function BankStatementAnalysisCardsTab({
       </div>
 
       {/* البطاقات — عمودان تلقائياً عندما تسمح الشاشة (min ~400px لكل عمود) */}
-      <div
-        className="nx-grid"
-        style={{
-          gap: 18,
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
-          alignItems: 'stretch',
-        }}
-      >
+      <div className="nx-grid nx-bank-cards-grid">
         {activeCards.map((id) => {
           const card = renderCard(id);
           if (!card) return null;
@@ -985,10 +847,7 @@ export default function BankStatementAnalysisCardsTab({
           return (
             <div
               key={id}
-              style={{
-                minWidth: 0,
-                ...(fullRow ? { gridColumn: '1 / -1' } : {}),
-              }}
+              className={`nx-bank-card-cell${fullRow ? ' nx-bank-card-cell--full' : ''}`}
             >
               {card}
             </div>
@@ -997,8 +856,8 @@ export default function BankStatementAnalysisCardsTab({
       </div>
 
       {!activeCards.length && (
-        <div className="nx-text-center nx-text-muted" style={{ padding: 48 }}>
-          <div className="nx-mb-16" style={{ fontSize: 40 }}></div>
+        <div className="nx-text-center nx-text-muted nx-p-48">
+          <div className="nx-mb-16 nx-text-40" />
           <p className="nx-text-lg nx-font-600">{t('bankNoCardsPickAbove')}</p>
         </div>
       )}
