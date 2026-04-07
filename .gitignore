@@ -14,8 +14,10 @@ build/
 # Logs
 *.log
 
-# IDE / OS
-.cursor/
+# IDE / OS — قواعد Cursor المشتركة تُرفع تحت .cursor/rules/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**/*.mdc
 .idea/
 .vscode/
 .DS_Store
