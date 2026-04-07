@@ -151,20 +151,19 @@ export default function App() {
     });
   }, [startCompanyTransition]);
   useEffect(() => {
-    if (singleCompanyId) {
-      setActiveCompany(singleCompanyId);
-    } else if (companiesList.length > 0) {
-      // إذا الشركة المحفوظة موجودة في القائمة → ابقَ عليها
-      const savedId = (() => { try { return localStorage.getItem(ACTIVE_COMPANY_KEY); } catch { return null; } })();
-      if (savedId && companiesList.some((c) => c.id === savedId)) {
-        // الشركة المحفوظة صالحة — لا حاجة للتغيير
-        if (activeCompany !== savedId) _setActiveCompany(savedId);
-      } else if (!companiesList.some((c) => c.id === activeCompany)) {
-        // الشركة الحالية غير موجودة في القائمة → اختر الأولى
-        setActiveCompany(companiesList[0].id);
-      }
+    // انتظر بيانات API الحقيقية — لا تعتمد على JWT الذي قد لا يحوي كل الشركات
+    if (!Array.isArray(companiesFromApi) || companiesFromApi.length === 0) return;
+
+    const savedId = (() => { try { return localStorage.getItem(ACTIVE_COMPANY_KEY); } catch { return null; } })();
+
+    if (savedId && companiesFromApi.some((c) => c.id === savedId)) {
+      // الشركة المحفوظة صالحة في API → استعدها دائماً
+      if (activeCompany !== savedId) _setActiveCompany(savedId);
+    } else if (!companiesFromApi.some((c) => c.id === activeCompany)) {
+      // الشركة الحالية غير موجودة في API ولا توجد قيمة محفوظة صالحة → اختر الأولى
+      setActiveCompany(companiesFromApi[0].id);
     }
-  }, [singleCompanyId, companiesFromApi, companiesList]);
+  }, [companiesFromApi]);
 
   const [language, setLanguage] = useState(getInitialLanguage); // 'ar' | 'en'
   const [cardStyle, setCardStyle] = useState(getInitialCardStyle); // 1..10
