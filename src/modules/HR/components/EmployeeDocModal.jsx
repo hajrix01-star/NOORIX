@@ -611,7 +611,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
 
   return (
     <ModalShell title={t('documentContract') || 'عقد عمل'} onClose={onClose} onPrint={handlePrint} onSave={handleSaveToDocuments} saving={saving} t={t}>
-      <div className="nx-flex-center nx-gap-12" style={{ padding: '8px 4px 12px', flexWrap: 'wrap' }}>
+      <div className="flex items-center gap-12" style={{ padding: '8px 4px 12px', flexWrap: 'wrap' }}>
         <Input
           type="date"
           label="تاريخ انتهاء العقد (اختياري)"

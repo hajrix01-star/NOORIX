@@ -26,9 +26,9 @@ const TYPE_MAP = {
 };
 
 const STATUS_MAP = {
-  pending: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', labelKey: 'statusPending' },
-  approved: { bg: 'rgba(22,163,74,0.1)', color: '#16a34a', labelKey: 'statusApproved' },
-  rejected: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', labelKey: 'statusRejected' },
+  pending: { bg: 'rgba(245,158,11,0.1)', color: 'var(--color-noorix-amber)', labelKey: 'statusPending' },
+  approved: { bg: 'rgba(22,163,74,0.1)', color: 'var(--noorix-accent-green)', labelKey: 'statusApproved' },
+  rejected: { bg: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)', labelKey: 'statusRejected' },
 };
 
 const statusColorMap = { pending: 'amber', approved: 'green', rejected: 'red' };
@@ -155,7 +155,7 @@ export default function LeaveTab() {
   }, [statusStyles, t, updateStatusMutation]);
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-toolbar">

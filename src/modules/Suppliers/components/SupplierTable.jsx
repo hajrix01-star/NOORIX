@@ -111,7 +111,7 @@ export const SupplierTable = memo(function SupplierTable({
     return (
       <div className="noorix-surface-card" style={{ overflow: 'hidden' }}>
         {/* رأس: عدد + تحديد الكل */}
-          <div className="nx-flex-center nx-gap-8 nx-px-16 nx-py-8 nx-border-b">
+          <div className="flex items-center gap-8 nx-px-16 nx-py-8 nx-border-b">
           <CB
             checked={allSelected}
             indeterminate={someSelected}
@@ -125,7 +125,7 @@ export const SupplierTable = memo(function SupplierTable({
 
         {BulkBar}
 
-        <div className="nx-flex-col">
+        <div className="flex flex-col">
           {suppliers.map((s) => {
             const cat = flatCategories.find((c) => c.id === s.supplierCategoryId);
             const icon = cat?.icon || cat?.account?.icon || '';
@@ -187,7 +187,7 @@ export const SupplierTable = memo(function SupplierTable({
   return (
     <div className="noorix-surface-card noorix-table-frame nx-overflow-hidden">
       {/* رأس: عدد */}
-      <div className="nx-flex-center nx-gap-8 nx-text-sm nx-text-muted nx-px-16 nx-py-8 nx-border-b">
+      <div className="flex items-center gap-8 nx-text-sm nx-text-muted nx-px-16 nx-py-8 nx-border-b">
         <span className="nx-flex-1">{t('supplierCount', suppliers.length)}</span>
       </div>
 
@@ -230,7 +230,7 @@ export const SupplierTable = memo(function SupplierTable({
                   <td className="nx-text-sm" style={{ padding: '9px 12px' }}>{s.phone || '—'}</td>
                   <td className="nx-text-sm" style={{ padding: '9px 12px' }}>
                     {cat ? (
-                      <span className="nx-flex-center nx-gap-6">
+                      <span className="flex items-center gap-6">
                         {icon && <span className="nx-text-md">{icon}</span>}
                         <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
                           {cat.nameAr}

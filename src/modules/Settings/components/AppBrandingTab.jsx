@@ -59,7 +59,7 @@ export default function AppBrandingTab() {
     setTaglineAr('نظام إدارة متكامل');
     setTaglineEn('Business Management System');
     setLogoUrl('');
-    setColor('#0a1f44');
+    setColor('var(--noorix-navy)');
     setLoginDomain('noorix.sa');
   };
 

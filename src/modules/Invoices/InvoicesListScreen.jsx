@@ -36,14 +36,14 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
     { label: t('type'),            value: invoice.kind || '—' },
     { label: t('status'),          value: invoice.status || '—' },
     { label: t('supplier'),        value: supplierName },
-    { label: t('net'),             value: invoice.netAmount != null ? `${fmt(invoice.netAmount, 2)} ﷼` : '—', highlight: '#16a34a' },
-    { label: t('tax'),             value: invoice.taxAmount != null ? `${fmt(invoice.taxAmount, 2)} ﷼` : '—', highlight: '#d97706' },
-    { label: t('total'),           value: invoice.totalAmount != null ? `${fmt(invoice.totalAmount, 2)} ﷼` : '—', highlight: '#2563eb', bold: true },
+    { label: t('net'),             value: invoice.netAmount != null ? `${fmt(invoice.netAmount, 2)} ﷼` : '—', highlight: 'var(--noorix-accent-green)' },
+    { label: t('tax'),             value: invoice.taxAmount != null ? `${fmt(invoice.taxAmount, 2)} ﷼` : '—', highlight: 'var(--noorix-accent-amber)' },
+    { label: t('total'),           value: invoice.totalAmount != null ? `${fmt(invoice.totalAmount, 2)} ﷼` : '—', highlight: 'var(--noorix-accent-blue)', bold: true },
   ].filter(Boolean);
   return (
     <Modal open={!!invoice} onClose={onClose} size="sm" hideClose className="nx-modal--flush">
       {/* هيدر بـ gradient */}
-      <div className="nx-flex-between" style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', padding: '16px 20px' }}>
+      <div className="flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', padding: '16px 20px' }}>
         <div>
           <div className="nx-text-xs" style={{ color: 'rgba(255,255,255,0.75)', marginBottom: 3 }}>{t('invoicesTitle')}</div>
           <h3 className="nx-m-0 nx-font-700" style={{ color: '#fff', fontSize: 17 }}>{invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}</h3>
@@ -276,7 +276,7 @@ export default function InvoicesListScreen() {
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
       </div>
-      <div className="nx-flex-center nx-gap-8 nx-text-base nx-mb-8">
+      <div className="flex items-center gap-8 nx-text-base nx-mb-8">
         <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
         {row.supplierName && <span className="nx-cell-muted">{row.supplierName}</span>}
       </div>
@@ -317,10 +317,10 @@ export default function InvoicesListScreen() {
   ), [KIND_MAP, STATUS_MAP, userRole, companyId, queryClient, t]);
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
       <div>
-        <h1 className="nx-page-title">{t('invoicesTitle')}</h1>
+        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('invoicesTitle')}</h1>
       </div>
 
       <DateFilterBar filter={dateFilter} />
@@ -472,7 +472,7 @@ export default function InvoicesListScreen() {
             <Button
               size="sm"
               onClick={() => setShowCancelled((v) => !v)}
-              style={showCancelled ? { color: '#dc2626', borderColor: 'rgba(220,38,38,0.25)', background: 'rgba(220,38,38,0.06)' } : undefined}
+              style={showCancelled ? { color: 'var(--noorix-accent-red)', borderColor: 'rgba(220,38,38,0.25)', background: 'rgba(220,38,38,0.06)' } : undefined}
             >
               {showCancelled ? t('hideCancelledInvoices') : t('showCancelledInvoices')}
             </Button>

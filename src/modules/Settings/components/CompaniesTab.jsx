@@ -251,7 +251,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
               {/* شعار الشركة */}
               <div className="nx-rounded-lg nx-bg-muted nx-p-14 nx-border-all">
                 <label style={{ ...labelStyle, display: 'block', marginBottom: 10 }}>شعار الشركة (يُستخدم في الفواتير والتقارير والشريط الجانبي)</label>
-                <div className="nx-flex-center nx-gap-14">
+                <div className="flex items-center gap-14">
                   <div className="nx-flex-center nx-rounded-lg nx-bg-surface nx-overflow-hidden" style={{ width: 56, height: 56, border: '2px dashed var(--noorix-border)', justifyContent: 'center', flexShrink: 0 }}>
                     {editModal.logoUrl ? (
                       <img src={editModal.logoUrl} alt="logo" className="nx-w-full" style={{ height: '100%', objectFit: 'cover' }} />

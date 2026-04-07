@@ -1,36 +1,26 @@
 /**
  * Input — مكوّن حقل الإدخال الموحّد لنظام نووريكس
- *
- * يشمل: text, number, date, email, password, tel, search
- * وكذلك: Textarea (multiline=true) و Select (type="select")
- *
- * الاستخدام:
- *   <Input label="الاسم" value={name} onChange={e => setName(e.target.value)} />
- *   <Input type="number" label="المبلغ" required error="مطلوب" />
- *   <Input type="select" label="الحالة" value={status} onChange={...}>
- *     <option value="active">نشط</option>
- *   </Input>
- *   <Input multiline label="ملاحظات" rows={4} value={notes} onChange={...} />
+ * types: text | number | date | email | password | tel | search | select
+ * multiline → textarea
  */
 import React, { useId } from 'react';
+import { cn } from './cn';
 
-/**
- * @param {object} props
- * @param {string} [props.label]
- * @param {string} [props.hint]
- * @param {string} [props.error]
- * @param {boolean} [props.required]
- * @param {boolean} [props.disabled]
- * @param {boolean} [props.readOnly]
- * @param {'sm'|'md'|'lg'} [props.size='md']
- * @param {string} [props.type='text'] - text|number|date|email|password|tel|search|select
- * @param {boolean} [props.multiline=false] - textarea
- * @param {number} [props.rows=3]
- * @param {string} [props.className]
- * @param {React.ReactNode} [props.prefix] - نص/أيقونة قبل الحقل (e.g. "SAR")
- * @param {React.ReactNode} [props.suffix] - نص/أيقونة بعد الحقل
- * @param {React.ReactNode} [props.children] - options لـ select
- */
+const SIZE_FIELD = {
+  sm: 'h-7  px-2.5 text-[12px]',
+  md: 'h-9  px-3   text-[13px]',
+  lg: 'h-11 px-3.5 text-[14px]',
+};
+
+const FIELD_BASE = [
+  'w-full rounded-lg border border-noorix-border bg-noorix-surface text-noorix-text',
+  'placeholder:text-noorix-muted',
+  'focus:outline-none focus:border-noorix-blue focus:ring-1 focus:ring-noorix-blue/30',
+  'disabled:opacity-50 disabled:bg-noorix-bg-muted disabled:cursor-not-allowed',
+  'read-only:bg-noorix-bg-muted read-only:cursor-default',
+  'transition-colors duration-150',
+].join(' ');
+
 export default function Input({
   label,
   hint,
@@ -38,10 +28,10 @@ export default function Input({
   required,
   disabled,
   readOnly,
-  size     = 'md',
-  type     = 'text',
+  size      = 'md',
+  type      = 'text',
   multiline = false,
-  rows     = 3,
+  rows      = 3,
   prefix,
   suffix,
   className = '',
@@ -50,76 +40,72 @@ export default function Input({
   ...rest
 }) {
   const generatedId = useId();
-  const id = externalId ?? generatedId;
+  const id          = externalId ?? generatedId;
 
-  const isSelect    = type === 'select';
-  const isTextarea  = multiline;
-  const hasWrapper  = prefix || suffix;
+  const isSelect   = type === 'select';
+  const isTextarea = multiline;
+  const hasWrapper = prefix || suffix;
 
-  const fieldClass = [
-    'nx-input__field',
-    `nx-input__field--${size}`,
-    error     ? 'nx-input__field--error'    : '',
-    disabled  ? 'nx-input__field--disabled' : '',
-    readOnly  ? 'nx-input__field--readonly' : '',
-    prefix    ? 'nx-input__field--prefixed' : '',
-    suffix    ? 'nx-input__field--suffixed' : '',
-    isSelect  ? 'nx-input__field--select'   : '',
-    isTextarea? 'nx-input__field--textarea' : '',
+  const fieldCls = cn(
+    FIELD_BASE,
+    SIZE_FIELD[size] ?? SIZE_FIELD.md,
+    error     && 'border-noorix-red focus:ring-noorix-red/30',
+    prefix    && 'ps-9',
+    suffix    && 'pe-9',
+    isSelect  && 'cursor-pointer appearance-none',
+    isTextarea && '!h-auto py-2',
     className,
-  ].filter(Boolean).join(' ');
+  );
+
+  const shared = {
+    id,
+    className: fieldCls,
+    disabled,
+    readOnly,
+    'aria-required':    required  || undefined,
+    'aria-invalid':     !!error   || undefined,
+    'aria-describedby': error ? `${id}-error` : hint ? `${id}-hint` : undefined,
+    ...rest,
+  };
 
   const renderField = () => {
-    const shared = {
-      id,
-      className: fieldClass,
-      disabled,
-      readOnly,
-      'aria-required':    required   || undefined,
-      'aria-invalid':     !!error    || undefined,
-      'aria-describedby': error      ? `${id}-error` : hint ? `${id}-hint` : undefined,
-      ...rest,
-    };
-
-    if (isSelect) {
-      return (
-        <select {...shared}>
-          {children}
-        </select>
-      );
-    }
-    if (isTextarea) {
-      return (
-        <textarea rows={rows} {...shared} />
-      );
-    }
+    if (isSelect)   return <select {...shared}>{children}</select>;
+    if (isTextarea) return <textarea rows={rows} {...shared} />;
     return <input type={type} {...shared} />;
   };
 
   return (
-    <div className={`nx-input ${error ? 'nx-input--has-error' : ''}`}>
+    <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={id} className="nx-input__label">
+        <label htmlFor={id} className="text-[13px] font-semibold text-noorix-text">
           {label}
-          {required && <span className="nx-input__required" aria-hidden="true"> *</span>}
+          {required && <span className="text-noorix-red ms-0.5" aria-hidden="true">*</span>}
         </label>
       )}
 
       {hasWrapper ? (
-        <div className="nx-input__wrapper">
-          {prefix && <span className="nx-input__prefix">{prefix}</span>}
+        <div className="relative flex items-center">
+          {prefix && (
+            <span className="absolute start-2.5 flex items-center text-noorix-muted text-[13px] pointer-events-none">
+              {prefix}
+            </span>
+          )}
           {renderField()}
-          {suffix && <span className="nx-input__suffix">{suffix}</span>}
+          {suffix && (
+            <span className="absolute end-2.5 flex items-center text-noorix-muted text-[13px] pointer-events-none">
+              {suffix}
+            </span>
+          )}
         </div>
       ) : (
         renderField()
       )}
 
       {hint && !error && (
-        <p id={`${id}-hint`} className="nx-input__hint">{hint}</p>
+        <p id={`${id}-hint`} className="text-[12px] text-noorix-muted">{hint}</p>
       )}
       {error && (
-        <p id={`${id}-error`} role="alert" className="nx-input__error">{error}</p>
+        <p id={`${id}-error`} role="alert" className="text-[12px] text-noorix-red font-medium">{error}</p>
       )}
     </div>
   );

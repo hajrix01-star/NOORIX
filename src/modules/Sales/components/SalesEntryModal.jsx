@@ -119,11 +119,11 @@ export function SalesEntryModal({
           <div className="nx-flex nx-flex-wrap nx-gap-16 nx-mb-20" style={{ justifyContent: 'center' }}>
             <div className="nx-text-center">
               <div className="nx-text-xs nx-text-muted">{t('total')}</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedSummary.totalAmount, 2)} ﷼</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(savedSummary.totalAmount, 2)} ﷼</div>
             </div>
             <div className="nx-text-center">
               <div className="nx-text-xs nx-text-muted">{t('customers')}</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#2563eb' }}>{savedSummary.customerCount}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--noorix-accent-blue)' }}>{savedSummary.customerCount}</div>
             </div>
           </div>
           <Button
@@ -174,7 +174,7 @@ export function SalesEntryModal({
             {t('loading')}
           </div>
         ) : salesChannelsError ? (
-          <div className="nx-p-16 nx-text-center nx-text-base nx-font-600" style={{ color: '#b91c1c', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10 }}>
+          <div className="nx-p-16 nx-text-center nx-text-base nx-font-600" style={{ color: 'var(--noorix-accent-red)', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10 }}>
             {salesChannelsError}
           </div>
         ) : salesChannels.length === 0 ? (

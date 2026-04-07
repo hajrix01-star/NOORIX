@@ -34,14 +34,9 @@ const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
 const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvoicesScreen'));
 
-const THEME_KEY          = 'noorix-theme';
 const LANG_KEY           = 'noorix-lang';
 const CARD_STYLE_KEY     = 'noorix-card-style';
 const ACTIVE_COMPANY_KEY = 'noorix-active-company';
-function getInitialTheme() {
-  if (typeof window === 'undefined') return 'light';
-  return (localStorage.getItem(THEME_KEY) || 'light');
-}
 function getInitialLanguage() {
   if (typeof window === 'undefined') return 'ar';
   const stored = localStorage.getItem(LANG_KEY);
@@ -172,7 +167,6 @@ export default function App() {
   }, [singleCompanyId, companiesFromApi, companiesList]);
 
   const [language, setLanguage] = useState(getInitialLanguage); // 'ar' | 'en'
-  const [theme, setTheme] = useState(getInitialTheme); // 'light' | 'dark'
   const [cardStyle, setCardStyle] = useState(getInitialCardStyle); // 1..10
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const companies = companiesList;
@@ -190,18 +184,6 @@ export default function App() {
       body.style.direction = 'ltr';
     }
   }, [language]);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    try {
-      localStorage.setItem(THEME_KEY, theme);
-    } catch (_) {}
-  }, [theme]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-card-style', String(cardStyle));
@@ -222,10 +204,6 @@ export default function App() {
         document.documentElement.classList.remove('dir-switching');
       });
     });
-  };
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
@@ -249,8 +227,6 @@ export default function App() {
       setActiveCompany,
       companies,
       hasRealCompanies,
-      theme,
-      setTheme,
       cardStyle,
       setCardStyle,
       language,
@@ -261,7 +237,7 @@ export default function App() {
       userRole: user?.role,
       userPermissions: user?.permissions || [],
     }),
-    [activeCompany, activeCompanyId, companies, hasRealCompanies, theme, cardStyle, language, isSidebarOpen, user]
+    [activeCompany, activeCompanyId, companies, hasRealCompanies, cardStyle, language, isSidebarOpen, user]
   );
 
   // مزامنة فورية مع api.js قبل الرسم/الطلبات — يقلل خلط x-company-id مع ?companyId
@@ -306,7 +282,7 @@ export default function App() {
   return (
     <AppContext.Provider value={appContextValue}>
       {isLoginPage ? (
-        <React.Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--noorix-bg-page)', color: 'var(--noorix-text-muted)' }}>جاري التحميل...</div>}>
+        <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-noorix-bg text-noorix-muted">جاري التحميل...</div>}>
           <LoginScreen />
         </React.Suspense>
       ) : (
@@ -321,12 +297,10 @@ export default function App() {
           userPermissions={user?.permissions}
           showCompanySwitcher={showCompanySwitcher}
         />
-        <div className="app-main" style={serverDown ? { paddingTop: 38 } : {}}>
+        <div className={`app-main${serverDown ? ' pt-[38px]' : ''}`}>
           <AppHeader
             toggleSidebar={toggleSidebar}
-            toggleTheme={toggleTheme}
             toggleLanguage={toggleLanguage}
-            theme={theme}
             language={language}
             serverDown={serverDown}
             onRetryConnection={async () => { const { ok } = await checkApiConnection(); setServerDown(!ok); }}

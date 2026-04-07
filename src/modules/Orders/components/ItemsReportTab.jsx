@@ -12,15 +12,15 @@ import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import Toast from '../../../components/Toast';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
-const CHART_COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
+const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', '#7c3aed', '#0891b2'];
 
-function BarChart({ data, maxVal, labelKey, valueKey, color = '#2563eb' }) {
+function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-accent-blue)' }) {
   const m = maxVal > 0 ? maxVal : 1;
   const getLabel = (r) => r[labelKey] || r.productNameEn || r.categoryNameEn || '—';
   return (
     <div className="nx-flex-col nx-gap-6">
       {data.slice(0, 10).map((r, i) => (
-        <div key={i} className="nx-flex-center nx-gap-8">
+        <div key={i} className="flex items-center gap-8">
           <span className="nx-text-sm nx-truncate" style={{ minWidth: 80 }} title={getLabel(r)}>
             {getLabel(r)}
           </span>
@@ -160,7 +160,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
   };
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">

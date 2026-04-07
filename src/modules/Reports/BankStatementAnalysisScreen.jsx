@@ -136,7 +136,7 @@ export default function BankStatementAnalysisScreen() {
 
   if (selectedStatementId) {
     return (
-      <div className="nx-screen">
+      <div className="flex flex-col gap-4 p-4 lg:p-6">
         <BankStatementDetailView
           statementId={selectedStatementId}
           companyId={companyId}
@@ -178,9 +178,9 @@ export default function BankStatementAnalysisScreen() {
   }
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="nx-page-header">
-        <h1 className="nx-page-title">{t('reportBankStatementAnalysis')}</h1>
+        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('reportBankStatementAnalysis')}</h1>
         <Button variant="primary" onClick={() => setShowUpload(true)}>
           <span aria-hidden style={{ fontSize: 18, lineHeight: 1, opacity: 0.95 }}>＋</span>
           {t('bankStatementUploadNew')}
@@ -205,7 +205,7 @@ export default function BankStatementAnalysisScreen() {
               style={{
                 padding: 14,
                 borderLeft: `4px solid ${
-                  c.tone === 'blue' ? '#2563eb' : c.tone === 'green' ? '#16a34a' : '#dc2626'
+                  c.tone === 'blue' ? 'var(--noorix-accent-blue)' : c.tone === 'green' ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)'
                 }`,
               }}
             >

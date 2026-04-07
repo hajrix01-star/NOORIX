@@ -10,17 +10,17 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
   const resNum = Number(result ?? 0);
   return (
     <div className="nx-border-all nx-overflow-hidden nx-bg-surface nx-flex-col" style={{ borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-      <div style={{ height: 3, background: accentColor || '#2563eb' }} />
+      <div style={{ height: 3, background: accentColor || 'var(--noorix-accent-blue)' }} />
       <div style={{ padding: '14px 16px 12px' }}>
         <div className="nx-text-xs nx-font-700 nx-text-muted nx-mb-12 nx-uppercase" style={{ letterSpacing: '0.04em' }}>
           {title}
         </div>
         <div className="nx-grid nx-gap-8">
-          <div className="nx-flex-between">
+          <div className="flex items-center justify-between">
             <span className="nx-text-2xs nx-text-muted">{receivedLabel}</span>
             <span className="nx-font-numbers nx-font-700 nx-text-base nx-text-green">{fmt(Number(received ?? 0), 2)} <span className="nx-font-400 nx-text-muted nx-text-xs">﷼</span></span>
           </div>
-          <div className="nx-flex-between">
+          <div className="flex items-center justify-between">
             <span className="nx-text-2xs nx-text-muted">{spentLabel}</span>
             <span className="nx-font-numbers nx-font-700 nx-text-base nx-text-red">− {fmt(Number(spent ?? 0), 2)} <span className="nx-font-400 nx-text-muted nx-text-xs">﷼</span></span>
           </div>
@@ -33,7 +33,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
         </div>
         <div className="nx-font-800 nx-font-numbers" style={{
           fontSize: 22,
-          color: resNum < 0 ? '#dc2626' : 'var(--noorix-text)',
+          color: resNum < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
           letterSpacing: '-0.5px',
         }}>
           {resNum < 0 ? '−' : ''}{fmt(Math.abs(resNum), 2)}

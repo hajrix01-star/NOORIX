@@ -12,7 +12,7 @@ import { fmt } from '../../utils/format';
 import { CARD_BORDER_RADIUS } from '../../utils/cardStyles';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 
-const COLORS = ['#16a34a', '#2563eb', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#4f46e5', '#059669'];
+const COLORS = ['var(--noorix-accent-green)', 'var(--noorix-accent-blue)', 'var(--noorix-accent-amber)', '#7c3aed', 'var(--noorix-accent-red)', '#0891b2', '#4f46e5', '#059669'];
 
 function formatAxisValue(n) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
@@ -172,8 +172,8 @@ export default function OwnerDashboardScreen() {
 
   if (companyList.length === 0) {
     return (
-      <div className="nx-screen">
-        <h1 className="nx-page-title">{t('ownerDashboard')}</h1>
+      <div className="flex flex-col gap-4 p-4 lg:p-6">
+        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('ownerDashboard')}</h1>
         <div className="noorix-surface-card nx-text-center nx-text-muted nx-mt-16" style={{ padding: 32 }}>
           {t('pleaseSelectCompany')}
         </div>
@@ -182,11 +182,11 @@ export default function OwnerDashboardScreen() {
   }
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="nx-page-header">
         <div className="nx-page-header__titles">
-          <h1 className="nx-page-title">{t('ownerDashboard')}</h1>
-          <p className="nx-page-desc">{t('ownerDashboardDesc')}</p>
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('ownerDashboard')}</h1>
+          <p className="text-[13px] text-noorix-muted m-0">{t('ownerDashboardDesc')}</p>
         </div>
         <div className="nx-toolbar">
           <Input
@@ -251,7 +251,7 @@ export default function OwnerDashboardScreen() {
       )}
 
       {isError && (
-        <div className="noorix-surface-card nx-p-20" style={{ color: '#dc2626', background: 'rgba(239,68,68,0.08)' }}>{error?.message || t('loading')}</div>
+        <div className="noorix-surface-card nx-p-20" style={{ color: 'var(--noorix-accent-red)', background: 'rgba(239,68,68,0.08)' }}>{error?.message || t('loading')}</div>
       )}
 
       {!isLoading && !isError && idsToFetch.length > 0 && (
@@ -259,7 +259,7 @@ export default function OwnerDashboardScreen() {
           {/* كروت الإجماليات + النسب */}
           <div className="nx-grid nx-gap-12" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
             <div className="nx-border-all nx-overflow-hidden nx-bg-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: '#16a34a' }} />
+              <div style={{ height: 3, background: 'var(--noorix-accent-green)' }} />
               <div className="nx-p-16">
                 <div className="nx-text-xs nx-text-muted nx-mb-4">{t('ownerTotalSales')}</div>
                 <div className="nx-text-3xl nx-font-800 nx-font-numbers">{fmt(aggregated.totalSales, 2)} ﷼</div>
@@ -267,7 +267,7 @@ export default function OwnerDashboardScreen() {
               </div>
             </div>
             <div className="nx-border-all nx-overflow-hidden nx-bg-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: '#dc2626' }} />
+              <div style={{ height: 3, background: 'var(--noorix-accent-red)' }} />
               <div className="nx-p-16">
                 <div className="nx-text-xs nx-text-muted nx-mb-4">{t('purchasesToSalesRatio')}</div>
                 <div className="nx-text-3xl nx-font-800 nx-font-numbers nx-text-expense">
@@ -277,20 +277,20 @@ export default function OwnerDashboardScreen() {
               </div>
             </div>
             <div className="nx-border-all nx-overflow-hidden nx-bg-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: '#b91c1c' }} />
+              <div style={{ height: 3, background: 'var(--noorix-accent-red)' }} />
               <div className="nx-p-16">
                 <div className="nx-text-xs nx-text-muted nx-mb-4">{t('annualExpenses')} {t('sectionToSalesRatio')}</div>
-                <div className="nx-text-3xl nx-font-800 nx-font-numbers" style={{ color: '#b91c1c' }}>
+                <div className="nx-text-3xl nx-font-800 nx-font-numbers" style={{ color: 'var(--noorix-accent-red)' }}>
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalExpenses / aggregated.totalSales) * 100, 1) : '—'}%
                 </div>
                 <div className="nx-text-2xs nx-text-muted nx-mt-4">{fmt(aggregated.totalExpenses, 2)} ﷼</div>
               </div>
             </div>
             <div className="nx-border-all nx-overflow-hidden nx-bg-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: aggregated.totalNetProfit >= 0 ? '#2563eb' : '#dc2626' }} />
+              <div style={{ height: 3, background: aggregated.totalNetProfit >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)' }} />
               <div className="nx-p-16">
                 <div className="nx-text-xs nx-text-muted nx-mb-4">{t('ownerTotalNetProfit')}</div>
-                <div className="nx-text-3xl nx-font-800 nx-font-numbers" style={{ color: aggregated.totalNetProfit >= 0 ? '#2563eb' : '#dc2626' }}>
+                <div className="nx-text-3xl nx-font-800 nx-font-numbers" style={{ color: aggregated.totalNetProfit >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)' }}>
                   {fmt(aggregated.totalNetProfit, 2)} ﷼
                 </div>
                 <div className="nx-text-2xs nx-text-muted nx-mt-4">
@@ -303,7 +303,7 @@ export default function OwnerDashboardScreen() {
           {/* المبيعات الشهرية — رسم بياني */}
           <div className="noorix-surface-card nx-border-all" style={{ padding: isMobile ? 12 : 24, borderRadius: CARD_BORDER_RADIUS }}>
             <div className="nx-text-xl nx-font-700 nx-mb-20">{t('ownerMonthlySales')} — {year}{selectedMonthNum ? ` (${EN_MONTHS[selectedMonthNum - 1]})` : ''}</div>
-            <div className="nx-flex" style={{ gap: 0, minHeight: 220 }}>
+            <div className="flex" style={{ gap: 0, minHeight: 220 }}>
               <div className="nx-flex-shrink-0 nx-flex-col" style={{ width: 48, justifyContent: 'space-between', paddingTop: 4, paddingBottom: 28 }}>
                 {[...yAxisTicks].reverse().map((tick) => (
                   <div key={tick} className="nx-text-2xs nx-font-numbers nx-text-muted nx-font-600">
@@ -349,7 +349,7 @@ export default function OwnerDashboardScreen() {
               {idsToFetch.map((companyId, i) => {
                 const c = companyList.find((x) => x.id === companyId);
                 return (
-                  <div key={companyId} className="nx-flex-center nx-gap-6">
+                  <div key={companyId} className="flex items-center gap-6">
                     <span style={{ width: 10, height: 10, borderRadius: 2, background: COLORS[i % COLORS.length] }} />
                     <span className="nx-text-sm">{lang === 'ar' ? c?.nameAr || c?.nameEn : c?.nameEn || c?.nameAr}</span>
                   </div>
@@ -368,15 +368,15 @@ export default function OwnerDashboardScreen() {
                 .map((item, i) => {
                   const pct = aggregated.totalNetProfit !== 0 ? (item.netProfit / aggregated.totalNetProfit) * 100 : 0;
                   const barWidth = Math.min(100, Math.max(0, Math.abs(pct)));
-                  const profitColor = item.netProfit >= 0 ? '#16a34a' : '#dc2626';
+                  const profitColor = item.netProfit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)';
                   return (
                     <div key={item.companyId}>
                       <div className="nx-flex-between nx-gap-8 nx-mb-4">
-                        <div className="nx-flex-center nx-gap-8 nx-min-w-0">
+                        <div className="flex items-center gap-8 nx-min-w-0">
                           <span className="nx-flex-shrink-0" style={{ width: 8, height: 8, borderRadius: 2, background: COLORS[i % COLORS.length] }} />
                           <span className="nx-text-base nx-font-600 nx-truncate">{item.name}</span>
                         </div>
-                        <div className="nx-flex-center nx-gap-8 nx-flex-shrink-0">
+                        <div className="flex items-center gap-8 nx-flex-shrink-0">
                           <span className="nx-text-base nx-font-700 nx-font-numbers" style={{ color: profitColor }}>
                             {fmt(item.netProfit, 2)} ﷼
                           </span>

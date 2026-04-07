@@ -85,7 +85,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
         }}
       >
         <div className="nx-font-700 nx-text-lg" style={{ color: '#1e40af', marginBottom: 6 }}>{t('bankTemplatesIntroTitle')}</div>
-        <p className="nx-m-0 nx-text-base" style={{ color: '#1d4ed8', lineHeight: 1.5 }}>{t('bankTemplatesIntroBody')}</p>
+        <p className="nx-m-0 nx-text-base" style={{ color: 'var(--noorix-accent-blue)', lineHeight: 1.5 }}>{t('bankTemplatesIntroBody')}</p>
       </div>
 
       {isLoading ? <p style={{ color: 'var(--noorix-text-muted)' }}>{t('loading')}…</p> : null}
@@ -122,7 +122,7 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
                         borderRadius: 6,
                         fontWeight: 700,
                         background: tpl.isActive ? 'rgba(34,197,94,0.15)' : 'rgba(220,38,38,0.12)',
-                        color: tpl.isActive ? '#166534' : '#b91c1c',
+                        color: tpl.isActive ? '#166534' : 'var(--noorix-accent-red)',
                       }}
                     >
                       {tpl.isActive ? t('bankTemplatesStatusActive') : t('bankTemplatesStatusInactive')}

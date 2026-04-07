@@ -176,7 +176,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
         />
 
         {error && (
-          <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13 }}>
+          <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: 'var(--noorix-accent-red)', fontSize: 13 }}>
             {error}
           </div>
         )}

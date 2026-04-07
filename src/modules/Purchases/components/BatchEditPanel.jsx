@@ -76,7 +76,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
       }
     >
       {error && (
-        <div className="nx-rounded nx-text-base nx-p-12 nx-mb-12" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>
+        <div className="nx-rounded nx-text-base nx-p-12 nx-mb-12" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
           {error}
         </div>
       )}
@@ -156,7 +156,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                 </td>
                 <td style={{ padding: 6 }}>
                   {inv.status === 'cancelled' ? (
-                    <span className="nx-text-sm nx-font-600" style={{ color: '#dc2626' }}>{t('cancelled')}</span>
+                    <span className="nx-text-sm nx-font-600" style={{ color: 'var(--noorix-accent-red)' }}>{t('cancelled')}</span>
                   ) : (
                     <Button
                       size="sm"

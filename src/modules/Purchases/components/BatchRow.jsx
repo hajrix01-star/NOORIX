@@ -83,7 +83,7 @@ export const BatchRow = memo(function BatchRow({
 
       {/* المورد + bookmark */}
       <td style={{ ...cp }}>
-        <div className="nx-flex-center nx-gap-4">
+        <div className="flex items-center gap-4">
           <div className="nx-flex-1" style={{ minWidth: 0 }}>
             <SupplierSelect
               suppliers={suppliers}
@@ -137,7 +137,7 @@ export const BatchRow = memo(function BatchRow({
       {/* صافي / ضريبة — خلية واحدة، سطران */}
       <td className="nx-text-xs" style={{ ...cp, fontFamily: 'var(--noorix-font-numbers)', lineHeight: 1.5 }}>
         <div className="nx-text-muted">{net || '—'}</div>
-        <div style={{ color: '#d97706' }}>{tax || '—'}</div>
+        <div style={{ color: 'var(--noorix-accent-amber)' }}>{tax || '—'}</div>
       </td>
 
       {/* تاريخ الفاتورة */}
@@ -187,9 +187,9 @@ export const BatchRow = memo(function BatchRow({
           className="nx-w-full nx-text-xs nx-font-700"
           style={{
             padding: '6px 2px', borderRadius: 5,
-            border: `1px solid ${row.isTaxable === false ? '#94a3b8' : '#d97706'}`,
+            border: `1px solid ${row.isTaxable === false ? '#94a3b8' : 'var(--noorix-accent-amber)'}`,
             background: row.isTaxable === false ? 'var(--noorix-bg-page)' : 'rgba(217,119,6,0.08)',
-            color: row.isTaxable === false ? '#64748b' : '#d97706',
+            color: row.isTaxable === false ? '#64748b' : 'var(--noorix-accent-amber)',
           }}
         >
           {row.isTaxable === false ? '0%' : '15%'}

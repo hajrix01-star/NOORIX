@@ -64,12 +64,12 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod
   const items = [
     { label: t('edit'),    action: () => { onEdit(vault); setOpen(false); }, color: 'var(--noorix-text)' },
     { label: vault.isSalesChannel ? t('salesChannelEnabled') : t('salesChannel'),
-      action: () => { onToggleSalesChannel(vault); setOpen(false); }, color: '#16a34a' },
+      action: () => { onToggleSalesChannel(vault); setOpen(false); }, color: 'var(--noorix-accent-green)' },
     { label: paymentOn ? t('hidePaymentMethodOption') : t('showPaymentMethodOption'),
-      action: () => { onTogglePaymentMethod(vault); setOpen(false); }, color: '#2563eb' },
+      action: () => { onTogglePaymentMethod(vault); setOpen(false); }, color: 'var(--noorix-accent-blue)' },
     { label: isArchived ? t('restore') : t('archive'),
-      action: () => { onArchive(vault); setOpen(false); }, color: '#d97706' },
-    { label: t('delete'), action: () => { onDelete(vault); setOpen(false); }, color: '#dc2626' },
+      action: () => { onArchive(vault); setOpen(false); }, color: 'var(--noorix-accent-amber)' },
+    { label: t('delete'), action: () => { onDelete(vault); setOpen(false); }, color: 'var(--noorix-accent-red)' },
   ];
 
   return (
@@ -173,7 +173,7 @@ const VaultCard = memo(function VaultCard({
 
       {/* هيدر الكرت */}
       <div className="nx-flex-between nx-gap-10" style={{ padding: '14px 16px 12px' }}>
-        <div className="nx-flex-center nx-gap-10" style={{ minWidth: 0 }}>
+        <div className="flex items-center gap-10" style={{ minWidth: 0 }}>
           <div className="nx-flex-center" style={{
             width: 38, height: 38, borderRadius: 10, flexShrink: 0,
             background: isArchived ? 'var(--noorix-bg-muted)' : accentColor + '14',
@@ -204,7 +204,7 @@ const VaultCard = memo(function VaultCard({
         </div>
         <div className="nx-font-800" style={{
           fontSize: 26, fontFamily: 'var(--noorix-font-numbers)',
-          color: balance < 0 ? '#dc2626' : 'var(--noorix-text)',
+          color: balance < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
           letterSpacing: '-0.5px',
         }}>
           {balance < 0 ? '−' : ''}{fmt(Math.abs(balance), 2)}
@@ -217,7 +217,7 @@ const VaultCard = memo(function VaultCard({
       {/* وارد / صادر */}
       <div className="nx-grid-2 nx-gap-8 nx-py-12 nx-px-16">
         <div>
-          <div className="nx-flex-center nx-gap-4 nx-text-muted" style={{ fontSize: 10, marginBottom: 3 }}>
+          <div className="flex items-center gap-4 nx-text-muted" style={{ fontSize: 10, marginBottom: 3 }}>
             <svg viewBox="0 0 12 12" fill="none" stroke="#16a34a" strokeWidth="2" width="10" height="10">
               <path d="M6 10V2M2 6l4-4 4 4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -228,9 +228,9 @@ const VaultCard = memo(function VaultCard({
           </div>
         </div>
         <div style={{ textAlign: 'left', borderRight: '1px solid var(--noorix-border)', paddingRight: 8 }}>
-          <div className="nx-flex-center nx-gap-4 nx-text-muted" style={{ fontSize: 10, marginBottom: 3, justifyContent: 'flex-end' }}>
+          <div className="flex items-center gap-4 nx-text-muted" style={{ fontSize: 10, marginBottom: 3, justifyContent: 'flex-end' }}>
             {t('outbound')}
-            <svg viewBox="0 0 12 12" fill="none" stroke="#dc2626" strokeWidth="2" width="10" height="10">
+            <svg viewBox="0 0 12 12" fill="none" stroke="var(--noorix-accent-red)" strokeWidth="2" width="10" height="10">
               <path d="M6 2v8M2 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>

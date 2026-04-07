@@ -62,12 +62,12 @@ export default function HRMainScreen() {
   }).length;
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
 
       {/* ── ترويسة الصفحة ── */}
       <div className="nx-page-header">
         <div>
-          <h1 className="nx-page-title">{t('staffTitle')}</h1>
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
         </div>
         {companyId && (
           <div className="nx-flex nx-flex-wrap nx-gap-8">
@@ -98,7 +98,7 @@ export default function HRMainScreen() {
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
       }}>
-        <div className="nx-flex" style={{ gap: 2, width: 'max-content', minWidth: '100%' }}>
+        <div className="flex" style={{ gap: 2, width: 'max-content', minWidth: '100%' }}>
           {TABS.map((tab) => (
             <Button
               key={tab.id}

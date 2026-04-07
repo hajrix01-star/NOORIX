@@ -6,7 +6,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { getStoredSpecialDays, setStoredSpecialDays } from '../utils/dashboardStorage';
 import { Button, Input } from '../../../ui';
 
-const DEFAULT_COLORS = ['#f59e0b', '#eab308', '#84cc16', '#22c55e', '#8b5cf6'];
+const DEFAULT_COLORS = ['var(--color-noorix-amber)', '#eab308', '#84cc16', 'var(--noorix-accent-green)', '#8b5cf6'];
 
 function lastDayOfMonth(year, month) {
   return new Date(year, month, 0).getDate();
@@ -122,7 +122,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
 
       <div className="nx-flex nx-flex-col nx-gap-10">
         {specialDaysList.map((sp) => (
-          <div key={sp.id} className="nx-flex-center nx-gap-12 nx-p-14 nx-bg-surface nx-border-all nx-rounded">
+          <div key={sp.id} className="flex items-center gap-12 nx-p-14 nx-bg-surface nx-border-all nx-rounded">
             <div style={{ width: 12, height: 12, borderRadius: 6, background: sp.color || '#8b5cf6', flexShrink: 0 }} />
             {editingId === sp.id ? (
               <>

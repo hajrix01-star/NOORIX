@@ -11,7 +11,7 @@ import { Button, Badge, Input } from '../../../ui';
 
 const KIND_LABELS = {
   fixed_expense: { label: 'ثابت', bg: 'rgba(100,116,139,0.12)', color: '#64748b' },
-  expense: { label: 'متغير', bg: 'rgba(217,119,6,0.12)', color: '#d97706' },
+  expense: { label: 'متغير', bg: 'rgba(217,119,6,0.12)', color: 'var(--noorix-accent-amber)' },
 };
 
 const KIND_STATUS_MAP = {

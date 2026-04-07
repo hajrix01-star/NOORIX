@@ -378,7 +378,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             ))}
           </div>
           {allowanceError && (
-            <div className="nx-mt-10 nx-text-sm" style={{ color: '#dc2626' }}>{allowanceError}</div>
+            <div className="nx-mt-10 nx-text-sm" style={{ color: 'var(--noorix-accent-red)' }}>{allowanceError}</div>
           )}
         </div>
       </form>

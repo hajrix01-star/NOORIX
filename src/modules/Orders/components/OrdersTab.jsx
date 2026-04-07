@@ -240,7 +240,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
   const printDate = `${year}/${String(month).padStart(2, '0')}`;
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div className="noorix-print-header" style={{ display: 'none' }}>
         {companyName} — {t('ordersTab')} — {printDate}
       </div>

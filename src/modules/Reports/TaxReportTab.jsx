@@ -359,7 +359,7 @@ export default function TaxReportTab() {
                 </tr>
                 <tr style={{ background: 'rgba(37,99,235,0.08)', borderTop: '2px solid var(--noorix-accent-blue)' }}>
                   <td className="nx-font-800" style={{ padding: '12px 12px' }}>{lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td>
-                  <td colSpan={3} className="nx-text-end nx-font-numbers nx-font-800" style={{ padding: '12px 12px', color: netPayable >= 0 ? '#dc2626' : '#16a34a' }}>
+                  <td colSpan={3} className="nx-text-end nx-font-numbers nx-font-800" style={{ padding: '12px 12px', color: netPayable >= 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-accent-green)' }}>
                     {fmt(netPayable, 2)} ر.س {netPayable >= 0 ? (lang === 'ar' ? '(مستحقة)' : '(payable)') : (lang === 'ar' ? '(مطالب بها)' : '(refundable)')}
                   </td>
                 </tr>

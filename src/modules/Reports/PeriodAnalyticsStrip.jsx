@@ -76,7 +76,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                   style={{ textAlign: 'start' }}
                 >
                   <span className="nx-font-700">{kindLabel(t, row.kind)}</span>
-                  <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#2563eb' }}>
+                  <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-accent-blue)' }}>
                     {fmt(row.total, 0)} <small style={{ opacity: 0.7 }}>({row.count})</small>
                   </span>
                 </Button>
@@ -101,7 +101,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                   <span className="nx-font-600 nx-truncate" style={{ maxWidth: '58%' }} title={lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}>
                     {lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}
                   </span>
-                  <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: '#dc2626', flexShrink: 0 }}>
+                  <span style={{ fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-accent-red)', flexShrink: 0 }}>
                     {fmt(Number(s.totalAmount || 0), 0)} <small style={{ opacity: 0.7 }}>({s.invoiceCount})</small>
                   </span>
                 </Button>

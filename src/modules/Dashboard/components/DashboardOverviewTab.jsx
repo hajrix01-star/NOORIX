@@ -231,7 +231,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           </div>
         ) : (
           <div style={{ position: 'relative' }}>
-            <div className="nx-flex" style={{ gap: 0, minHeight: 200 }}>
+            <div className="flex" style={{ gap: 0, minHeight: 200 }}>
               {/* محور Y */}
               <div style={{ flexShrink: 0, width: 48, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 24 }}>
                 {[...yAxisTicks].reverse().map((tick) => (
@@ -251,7 +251,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                 </div>
 
                 {/* الأعمدة */}
-                <div className="nx-flex" style={{ alignItems: 'flex-end', height: 180, paddingBottom: 24, gap: chartData.length > 20 ? 2 : 4 }}>
+                <div className="flex" style={{ alignItems: 'flex-end', height: 180, paddingBottom: 24, gap: chartData.length > 20 ? 2 : 4 }}>
                   {chartData.map((point) => {
                     const barH  = maxSales > 0 ? (point.amount / maxSales) * 100 : 0;
                     const pKey  = point.month ?? point.day;

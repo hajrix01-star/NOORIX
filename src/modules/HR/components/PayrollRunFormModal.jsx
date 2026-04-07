@@ -593,7 +593,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                         <td className="nx-font-800 nx-text-md nx-nowrap nx-font-numbers">{hrFmt(items[idx].netSalary)}</td>
                       </>
                     ) : (
-                      <td colSpan={7} className="nx-text-muted nx-text-base">
+                      <td colSpan={7} className="text-noorix-muted text-[13px]">
                         —
                       </td>
                     )}

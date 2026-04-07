@@ -132,14 +132,14 @@ export default function TreasuryScreen() {
   );
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type}
         onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       {/* هيدر */}
       <div className="nx-page-header">
         <div className="nx-flex-1" style={{ minWidth: 0 }}>
-          <h1 className="nx-page-title">{t('vaults')}</h1>
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('vaults')}</h1>
           {hasCompany && isFetching && !isLoading && (
             <p className="nx-text-sm nx-font-600 nx-mt-8" style={{ margin: 0, color: 'var(--noorix-accent-blue)' }}>
               {t('vaultsSyncing')}
@@ -180,8 +180,8 @@ export default function TreasuryScreen() {
                 {dateFilter?.label || t('allMonths')}
               </div>
               {[
-                { label: t('totalBalance'), value: totalBalance, color: totalBalance < 0 ? '#dc2626' : 'var(--noorix-text)', sign: totalBalance < 0 ? '−' : '' },
-                { label: t('inbound'),      value: totalIn,      color: '#16a34a', sign: '' },
+                { label: t('totalBalance'), value: totalBalance, color: totalBalance < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)', sign: totalBalance < 0 ? '−' : '' },
+                { label: t('inbound'),      value: totalIn,      color: 'var(--noorix-accent-green)', sign: '' },
                 { label: t('outbound'),     value: totalOut,     color: 'var(--noorix-text)', sign: '' },
               ].map(({ label, value, color, sign }, i) => (
                 <div key={label} className="nx-text-center nx-p-16" style={{ borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none' }}>

@@ -199,7 +199,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
             {parentKeywords.map((kw, idx) => (
               <span key={idx} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#fff', border: '1px solid var(--noorix-border)' }}>
                 {kw}
-                <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} style={{ marginInlineStart: 6, color: '#b91c1c', padding: '0 4px', minHeight: 'auto' }}>
+                <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} style={{ marginInlineStart: 6, color: 'var(--noorix-accent-red)', padding: '0 4px', minHeight: 'auto' }}>
                   ×
                 </Button>
               </span>
@@ -624,7 +624,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
         <strong>{sortedCategories.length}</strong>
         <span style={{ color: 'var(--noorix-border)' }}>|</span>
         <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeStatsClassifications')}</span>
-        <strong style={{ color: '#1d4ed8' }}>{totalClassifications}</strong>
+        <strong style={{ color: 'var(--noorix-accent-blue)' }}>{totalClassifications}</strong>
         <span style={{ color: 'var(--noorix-border)' }}>|</span>
         <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeStatsKeywords')}</span>
         <strong style={{ color: '#15803d' }}>{totalKeywords}</strong>

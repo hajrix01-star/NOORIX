@@ -24,7 +24,7 @@ function getPasswordStrength(pwd) {
 }
 
 const STRENGTH_LABELS = ['ضعيفة جداً', 'ضعيفة', 'متوسطة', 'جيدة', 'قوية'];
-const STRENGTH_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a'];
+const STRENGTH_COLORS = ['var(--noorix-accent-red)', '#f97316', '#eab308', 'var(--noorix-accent-green)', 'var(--noorix-accent-green)'];
 
 export default function ChangePasswordModal({ onClose, onSuccess }) {
   const { t } = useTranslation();
@@ -124,13 +124,13 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
               autoComplete="new-password"
             />
             {confirmPassword && confirmPassword !== newPassword && (
-              <span className="nx-text-xs nx-mt-4" style={{ color: '#ef4444', display: 'block' }}>
+              <span className="nx-text-xs nx-mt-4" style={{ color: 'var(--noorix-accent-red)', display: 'block' }}>
                 كلمتا المرور غير متطابقتين
               </span>
             )}
           </div>
           {error && (
-            <div className="nx-p-10 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>
+            <div className="nx-p-10 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
               {error}
             </div>
           )}

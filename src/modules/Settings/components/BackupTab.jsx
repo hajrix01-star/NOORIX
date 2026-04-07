@@ -486,7 +486,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                       <span style={{ color: '#15803d', fontSize: 11 }}>{t('backupVerifyOk')}</span>
                     )}
                     {sj.verifyOk === false && sj.verifyError && (
-                      <span style={{ color: '#b91c1c', fontSize: 11, wordBreak: 'break-word' }}>{sj.verifyError}</span>
+                      <span style={{ color: 'var(--noorix-accent-red)', fontSize: 11, wordBreak: 'break-word' }}>{sj.verifyError}</span>
                     )}
                     {sj.status === 'completed' && sj.localRelativePath && (
                       <Button
@@ -536,7 +536,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   </span>
                 </div>
                 {j.errorMessage && (
-                  <div className="backup-job__flags" style={{ color: '#b91c1c' }}>
+                  <div className="backup-job__flags" style={{ color: 'var(--noorix-accent-red)' }}>
                     {j.errorMessage}
                   </div>
                 )}
@@ -546,7 +546,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   </div>
                 )}
                 {j.verifyOk === false && j.verifyError && (
-                  <div className="backup-job__flags" style={{ color: '#b91c1c' }}>
+                  <div className="backup-job__flags" style={{ color: 'var(--noorix-accent-red)' }}>
                     {j.verifyError}
                   </div>
                 )}

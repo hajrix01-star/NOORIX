@@ -174,7 +174,7 @@ function ImportPhaseSteps({ phase, importing }) {
   else if (phase === 'done') active = 5;
 
   return (
-    <div className="nx-flex-center nx-gap-6 nx-rounded-lg nx-flex-wrap nx-border-all" style={{
+    <div className="flex items-center gap-6 nx-rounded-lg nx-flex-wrap nx-border-all" style={{
       padding: '12px 14px',
       background: 'var(--noorix-bg)', marginBottom: 4,
     }}>
@@ -231,7 +231,7 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
                   <td className="nx-border-b nx-truncate" style={{ padding: '7px 10px', maxWidth: 160 }}>{name}</td>
                   <td className="nx-border-b nx-nowrap" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{jd}</td>
                   <td className="nx-border-b" style={{ padding: '7px 10px', fontFamily: 'var(--noorix-font-numbers)' }}>{sal}</td>
-                  <td className="nx-border-b nx-font-700" style={{ padding: '7px 10px', color: ok ? '#16a34a' : '#dc2626' }}>
+                  <td className="nx-border-b nx-font-700" style={{ padding: '7px 10px', color: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }}>
                     {ok ? '✓ صالح' : '✗ خطأ'}
                   </td>
                   <td className="nx-border-b nx-text-muted nx-truncate" style={{ padding: '7px 10px', maxWidth: 220 }} title={note}>{note}</td>
@@ -556,7 +556,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
       {/* ── IMPORT TAB ──────────────────────────────────────────────── */}
       {activeTab === 'import' && (
-        <div className="nx-flex-col" style={{ gap: 18 }}>
+        <div className="flex flex-col" style={{ gap: 18 }}>
           <ImportPhaseSteps phase={phase} importing={importing} />
 
           {phase !== 'done' && !importing && (
@@ -615,7 +615,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>الخطوة 3 — نتائج الفحص والمعاينة</p>
               <div className="nx-flex-wrap nx-gap-12">
                 <StatBadge count={validCount} label="صف صحيح" color="#16a34a" />
-                {errorCount > 0 && <StatBadge count={errorCount} label="بها أخطاء" color="#dc2626" />}
+                {errorCount > 0 && <StatBadge count={errorCount} label="بها أخطاء" color="var(--noorix-accent-red)" />}
                 {warnCount > 0 && <StatBadge count={warnCount} label="تحذيرات" color="#f59e0b" />}
               </div>
 
@@ -674,7 +674,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               </div>
               <div className="nx-flex-wrap nx-gap-12">
                 <StatBadge count={progress.succeeded} label="نجح" color="#16a34a" />
-                {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="#dc2626" />}
+                {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
                   <StatBadge count={(progress.warnings || []).length} label="تحذيرات من الخادم" color="#d97706" />
                 )}
@@ -686,11 +686,11 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           )}
 
           {phase === 'done' && !importing && (
-            <div className="nx-rounded-lg nx-p-16 nx-flex-col nx-gap-12" style={{ border: `1px solid ${progress.failed === 0 ? '#16a34a' : '#f59e0b'}40` }}>
+            <div className="nx-rounded-lg nx-p-16 nx-flex-col nx-gap-12" style={{ border: `1px solid ${progress.failed === 0 ? 'var(--noorix-accent-green)' : 'var(--color-noorix-amber)'}40` }}>
               <p className="nx-text-base nx-font-700 nx-text-muted nx-uppercase nx-mb-8" style={{ letterSpacing: 0.5 }}>نتائج الاستيراد</p>
               <div className="nx-flex-wrap nx-gap-12">
                 <StatBadge count={progress.succeeded} label="تم بنجاح" color="#16a34a" />
-                {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="#dc2626" />}
+                {progress.failed > 0 && <StatBadge count={progress.failed} label="فشل" color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
                   <StatBadge count={(progress.warnings || []).length} label="تحذيرات" color="#d97706" />
                 )}
@@ -714,7 +714,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               )}
 
               {progress.errors.length > 0 && (
-                <div className="nx-flex-col" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
+                <div className="flex flex-col" style={{ gap: 5, maxHeight: 200, overflowY: 'auto' }}>
                   {progress.errors.slice(0, 20).map((e, i) => (
                     <div key={i} className="nx-grid nx-gap-8 nx-rounded nx-text-base" style={{ gridTemplateColumns: '56px 1fr', alignItems: 'start', padding: '6px 10px', background: 'rgba(239,68,68,0.07)' }}>
                       <span className="nx-font-700 nx-text-expense">صف {e.rowNum}</span>

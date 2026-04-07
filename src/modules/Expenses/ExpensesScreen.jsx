@@ -85,9 +85,9 @@ export default function ExpensesScreen() {
   };
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div>
-        <h1 className="nx-page-title">{t('fixedAndVariableExpenses')}</h1>
+        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>
       </div>
 
       <div className="noorix-surface-card nx-overflow-hidden" style={{ padding: 0 }}>

@@ -104,7 +104,7 @@ export default function AdvancesTab() {
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
       render: (v, row) => (
         <span className="nx-font-600 nx-text-base" style={{
-          color: row.settlementStatus === 'settled' ? '#b91c1c' : 'inherit',
+          color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
         }}
         >
@@ -114,7 +114,7 @@ export default function AdvancesTab() {
     { key: 'totalAmount', label: t('advanceAmount'), numeric: true, sortable: true, width: 140, minWidth: 130,
       render: (v, row) => (
         <span className="nx-cell-num" style={{
-          color: row.settlementStatus === 'settled' ? '#b91c1c' : 'inherit',
+          color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
         }}
         >
@@ -124,7 +124,7 @@ export default function AdvancesTab() {
     { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
       render: (v, row) => (
         <span className="nx-text-sm" style={{
-          color: row.settlementStatus === 'settled' ? '#b91c1c' : 'var(--noorix-text-muted)',
+          color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'var(--noorix-text-muted)',
           whiteSpace: 'nowrap',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
         }}
@@ -134,13 +134,13 @@ export default function AdvancesTab() {
       ) },
     { key: 'settledAmount', label: t('advanceSettledAmount'), numeric: true, width: 120, minWidth: 110,
       render: (_, row) => (
-        <span className="nx-cell-num" style={{ color: row.settlementStatus === 'settled' ? '#b91c1c' : 'inherit' }}>
+        <span className="nx-cell-num" style={{ color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit' }}>
           {hrFmt(row.settledAmountNum || 0)}
         </span>
       ) },
     { key: 'remainingAmount', label: t('advanceRemainingAmount'), numeric: true, width: 120, minWidth: 110,
       render: (_, row) => (
-        <span className="nx-cell-num" style={{ color: row.remainingAmount > 0 ? '#f59e0b' : '#16a34a' }}>
+        <span className="nx-cell-num" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
           {hrFmt(row.remainingAmount || 0)}
         </span>
       ) },
@@ -220,7 +220,7 @@ export default function AdvancesTab() {
     return (
       <div>
         <div className="nx-flex-between nx-flex-wrap nx-mb-4">
-          <span className="nx-font-700 nx-text-lg" style={{ textDecoration: settled ? 'line-through' : 'none', color: settled ? '#b91c1c' : 'var(--noorix-text)' }}>
+          <span className="nx-font-700 nx-text-lg" style={{ textDecoration: settled ? 'line-through' : 'none', color: settled ? 'var(--noorix-accent-red)' : 'var(--noorix-text)' }}>
             {row.employeeName}
           </span>
           <Badge
@@ -243,7 +243,7 @@ export default function AdvancesTab() {
           </div>
           <div>
             <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('advanceRemainingAmount')}</div>
-            <div className="nx-text-base" style={{ color: row.remainingAmount > 0 ? '#f59e0b' : '#16a34a', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.remainingAmount)}</div>
+            <div className="nx-text-base" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{hrFmt(row.remainingAmount)}</div>
           </div>
         </div>
         <div className="nx-flex-end">
@@ -259,7 +259,7 @@ export default function AdvancesTab() {
   }, [t]);
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-toolbar nx-mb-8 nx-flex-end">

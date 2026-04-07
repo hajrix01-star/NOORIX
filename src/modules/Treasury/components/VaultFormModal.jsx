@@ -139,12 +139,12 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           background: form.isSalesChannel ? 'rgba(22,163,74,0.05)' : 'transparent',
           transition: 'all 150ms',
         }}>
-          <label className="nx-flex-center nx-gap-10 nx-cursor-pointer" style={{ marginBottom: form.isSalesChannel ? 12 : 0 }}>
+          <label className="flex items-center gap-10 nx-cursor-pointer" style={{ marginBottom: form.isSalesChannel ? 12 : 0 }}>
             <div
               onClick={() => set('isSalesChannel', !form.isSalesChannel)}
               style={{
                 width: 40, height: 22, borderRadius: 999, position: 'relative', cursor: 'pointer', flexShrink: 0,
-                background: form.isSalesChannel ? '#16a34a' : 'var(--noorix-border)', transition: 'background 200ms',
+                background: form.isSalesChannel ? 'var(--noorix-accent-green)' : 'var(--noorix-border)', transition: 'background 200ms',
               }}
             >
               <div style={{
@@ -166,12 +166,12 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           background: form.showAsPaymentMethod ? 'transparent' : 'rgba(245,158,11,0.06)',
           transition: 'all 150ms',
         }}>
-          <label className="nx-flex-center nx-gap-10 nx-cursor-pointer">
+          <label className="flex items-center gap-10 nx-cursor-pointer">
             <div
               onClick={() => setShowAsPaymentMethod(!form.showAsPaymentMethod)}
               style={{
                 width: 40, height: 22, borderRadius: 999, position: 'relative', cursor: 'pointer', flexShrink: 0,
-                background: form.showAsPaymentMethod ? '#2563eb' : 'var(--noorix-border)', transition: 'background 200ms',
+                background: form.showAsPaymentMethod ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)', transition: 'background 200ms',
               }}
             >
               <div style={{
@@ -183,7 +183,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
             </div>
             <span className="nx-font-700 nx-text-base">{t('showAsPaymentMethodLabel')}</span>
             {!form.showAsPaymentMethod && (
-              <span className="nx-text-sm nx-font-600" style={{ color: '#d97706' }}>{t('hiddenFromSalesPurchasesShort')}</span>
+              <span className="nx-text-sm nx-font-600" style={{ color: 'var(--noorix-accent-amber)' }}>{t('hiddenFromSalesPurchasesShort')}</span>
             )}
           </label>
           <p className="nx-text-sm nx-text-muted nx-mt-8" style={{ margin: 0, lineHeight: 1.45 }}>

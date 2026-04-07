@@ -146,7 +146,7 @@ export default function BankStatementTransactionsFullTab({
 
         {/* إحصاء */}
         <div
-          className="nx-flex-center nx-gap-10 nx-text-sm nx-rounded nx-px-12 nx-py-4 nx-bg-surface nx-border-all"
+          className="flex items-center gap-10 nx-text-sm nx-rounded nx-px-12 nx-py-4 nx-bg-surface nx-border-all"
         >
           <span style={{ color: 'var(--noorix-text-muted)' }}>النتائج:</span>
           <span style={{ fontWeight: 700 }}>{filteredTransactions.length}</span>
@@ -341,7 +341,7 @@ export default function BankStatementTransactionsFullTab({
                             direction: 'ltr',
                             display: 'inline-block',
                             fontWeight: 700,
-                            color: '#dc2626',
+                            color: 'var(--noorix-accent-red)',
                             background: 'rgba(220,38,38,0.07)',
                             borderRadius: 6,
                             padding: '2px 8px',
@@ -363,7 +363,7 @@ export default function BankStatementTransactionsFullTab({
                             direction: 'ltr',
                             display: 'inline-block',
                             fontWeight: 700,
-                            color: '#16a34a',
+                            color: 'var(--noorix-accent-green)',
                             background: 'rgba(22,163,74,0.07)',
                             borderRadius: 6,
                             padding: '2px 8px',
@@ -433,19 +433,19 @@ export default function BankStatementTransactionsFullTab({
                 {t('bankColumnTotalsFiltered')} ({filteredTransactions.length} عملية)
               </td>
               <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                <span style={{ color: '#dc2626', direction: 'ltr', display: 'inline-block', fontSize: 13 }}>
+                <span style={{ color: 'var(--noorix-accent-red)', direction: 'ltr', display: 'inline-block', fontSize: 13 }}>
                   {fmt(columnTotals.debit)}
                 </span>
               </td>
               <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                <span style={{ color: '#16a34a', direction: 'ltr', display: 'inline-block', fontSize: 13 }}>
+                <span style={{ color: 'var(--noorix-accent-green)', direction: 'ltr', display: 'inline-block', fontSize: 13 }}>
                   {fmt(columnTotals.credit)}
                 </span>
               </td>
               <td colSpan={2} style={{ padding: '10px 12px', textAlign: 'right', fontSize: 12 }}>
                 <span
                   style={{
-                    color: columnTotals.credit - columnTotals.debit >= 0 ? '#059669' : '#e11d48',
+                    color: columnTotals.credit - columnTotals.debit >= 0 ? '#059669' : 'var(--noorix-accent-rose)',
                     fontWeight: 800,
                     direction: 'ltr',
                     display: 'inline-block',

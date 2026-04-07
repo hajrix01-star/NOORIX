@@ -1,50 +1,36 @@
 /**
- * Modal — مكوّن النافذة المنبثقة الموحّد لنظام نووريكس
- *
- * المزايا:
- * ─ خلفية معتمة إجبارية مع backdrop-filter blur لعزل بصري كامل
- * ─ z-index system متدرّج (var(--nx-z-backdrop) = 2000)
- * ─ أحجام Responsive بالكامل (CSS classes — لا maxWidth inline)
- * ─ Focus-trap يحبس التنقل بـ Tab داخل النافذة
- * ─ إغلاق بـ Escape أو النقر خارج النافذة
- * ─ منع تمرير الصفحة الخلفية عند الفتح
- * ─ ARIA كاملة (role=dialog, aria-modal, aria-labelledby)
- *
- * الأحجام:
- *   sm (400px) | md (560px) | lg (720px) | xl (920px) | 2xl (1100px) | full (1200px)
- *
- * الأنماط:
- *   default | danger | flush
- *
- * مثال:
- *   <Modal open={open} onClose={onClose} title="تعديل الموظف">
- *     <p>محتوى النموذج</p>
- *   </Modal>
- *
- *   <Modal open={open} onClose={onClose} title="حذف؟" size="sm" variant="danger"
- *     footer={<><Button variant="ghost" onClick={onClose}>إلغاء</Button>
- *               <Button variant="danger" onClick={onConfirm}>حذف</Button></>}
- *   >
- *     هل أنت متأكد؟
- *   </Modal>
+ * Modal — نافذة منبثقة مركزية بـ Tailwind
+ * sizes: sm | md | lg | xl | 2xl | full
+ * variants: default | danger
  */
 import React, { useEffect, useCallback, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
+import { cn } from './cn';
 import Button from './Button';
 
-/**
- * @param {object}  props
- * @param {boolean} props.open
- * @param {()=>void} props.onClose
- * @param {string}  [props.title]
- * @param {'sm'|'md'|'lg'|'xl'|'2xl'|'full'} [props.size='md']
- * @param {'default'|'danger'} [props.variant='default']
- * @param {React.ReactNode} [props.footer]
- * @param {boolean} [props.closeOnBackdrop=true]
- * @param {boolean} [props.hideClose=false]
- * @param {string}  [props.className]
- * @param {React.ReactNode} props.children
- */
+const SIZE_MAX = {
+  sm:   'max-w-[min(95vw,400px)]',
+  md:   'max-w-[min(95vw,560px)]',
+  lg:   'max-w-[min(95vw,720px)]',
+  xl:   'max-w-[min(95vw,920px)]',
+  '2xl':'max-w-[min(95vw,1100px)]',
+  full: 'max-w-[min(95vw,1200px)]',
+};
+
+function trapFocusIn(panelEl, e) {
+  const focusable = panelEl.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  const first = focusable[0];
+  const last  = focusable[focusable.length - 1];
+  if (!first) return;
+  if (e.shiftKey) {
+    if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+  } else {
+    if (document.activeElement === last)  { e.preventDefault(); first?.focus(); }
+  }
+}
+
 export default function Modal({
   open,
   onClose,
@@ -60,50 +46,30 @@ export default function Modal({
   const dialogRef = useRef(null);
   const titleId   = useId();
 
-  /* ── Escape key ── */
   const handleEscape = useCallback((e) => {
     if (e.key === 'Escape') onClose?.();
   }, [onClose]);
-
-  /* ── Focus Trap ── */
-  const trapFocus = useCallback((e) => {
-    if (!dialogRef.current) return;
-    const focusable = dialogRef.current.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    const first = focusable[0];
-    const last  = focusable[focusable.length - 1];
-    if (!first) return;
-    if (e.shiftKey) {
-      if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
-    } else {
-      if (document.activeElement === last)  { e.preventDefault(); first?.focus(); }
-    }
-  }, []);
 
   useEffect(() => {
     if (!open) return;
     document.addEventListener('keydown', handleEscape);
     document.body.style.overflow = 'hidden';
-
-    /* إعطاء focus للحوار عند الفتح */
-    const id = requestAnimationFrame(() => dialogRef.current?.focus());
-
+    const rafId = requestAnimationFrame(() => dialogRef.current?.focus());
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
-      cancelAnimationFrame(id);
+      cancelAnimationFrame(rafId);
     };
   }, [open, handleEscape]);
 
   if (!open) return null;
 
-  const sizeClass    = `nx-modal--${size}`;
-  const variantClass = variant !== 'default' ? `nx-modal--${variant}` : '';
+  const isDanger = variant === 'danger';
 
   return createPortal(
     <div
-      className="nx-modal-backdrop"
+      className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(8,16,32,0.55)] backdrop-blur-sm"
+      style={{ animation: 'nx-backdrop-in 0.2s ease' }}
       role="presentation"
       onClick={closeOnBackdrop ? onClose : undefined}
     >
@@ -113,46 +79,56 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
-        className={[
-          'nx-modal',
-          sizeClass,
-          variantClass,
+        className={cn(
+          'relative z-[2001] w-full flex flex-col overflow-hidden',
+          'bg-white border border-[rgba(200,215,235,0.8)] rounded-[18px]',
+          'shadow-[0_0_0_1px_rgba(200,215,235,0.7),0_4px_16px_rgba(10,31,68,0.08),0_20px_60px_rgba(10,31,68,0.18)]',
+          'max-h-[min(92vh,860px)]',
+          'nx-modal-animate',
+          'focus:outline-none',
+          SIZE_MAX[size] ?? SIZE_MAX.md,
           className,
-        ].filter(Boolean).join(' ')}
+        )}
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => { if (e.key === 'Tab') trapFocus(e); }}
+        onKeyDown={(e) => { if (e.key === 'Tab') trapFocusIn(dialogRef.current, e); }}
       >
-        {/* ── رأس النافذة ── */}
+        {/* رأس النافذة */}
         {(title || !hideClose) && (
-          <div className="nx-modal__header">
+          <div className={cn(
+            'flex items-center justify-between gap-3 px-5 py-4 shrink-0 border-b border-[rgba(200,215,235,0.6)]',
+            isDanger && 'bg-red-50 border-b-red-100',
+          )}>
             {title && (
-              <h2 id={titleId} className="nx-modal__title">
+              <h2
+                id={titleId}
+                className={cn('m-0 text-[16px] font-bold flex-1 min-w-0', isDanger ? 'text-noorix-red' : 'text-noorix-text')}
+              >
                 {title}
               </h2>
             )}
             {!hideClose && (
-              <Button
-                variant="raw"
-                className="nx-modal__close"
+              <button
+                type="button"
                 onClick={onClose}
                 aria-label="إغلاق"
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-noorix-muted hover:bg-noorix-bg-muted hover:text-noorix-text transition-colors shrink-0"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-              </Button>
+              </button>
             )}
           </div>
         )}
 
-        {/* ── المحتوى ── */}
-        <div className="nx-modal__body">
+        {/* المحتوى */}
+        <div className="flex-1 overflow-y-auto p-5 min-h-0 scrollbar-thin">
           {children}
         </div>
 
-        {/* ── التذييل ── */}
+        {/* التذييل */}
         {footer && (
-          <div className="nx-modal__footer">
+          <div className="flex items-center justify-end gap-2.5 flex-wrap px-5 py-3 shrink-0 border-t border-[rgba(200,215,235,0.6)] bg-[#f8fafc]">
             {footer}
           </div>
         )}

@@ -55,7 +55,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
       <div
         className="noorix-surface-card nx-p-16"
         style={{
-          borderLeft: `4px solid ${okAgg ? '#16a34a' : '#ca8a04'}`,
+          borderLeft: `4px solid ${okAgg ? 'var(--noorix-accent-green)' : '#ca8a04'}`,
         }}
       >
         <strong>{t('bankReconAggregateCheck')}</strong>
@@ -72,7 +72,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
       <div
         className="noorix-surface-card nx-p-16"
         style={{
-          borderLeft: `4px solid ${okSeq ? '#16a34a' : '#dc2626'}`,
+          borderLeft: `4px solid ${okSeq ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)'}`,
         }}
       >
         <strong>{t('bankReconBalanceSequence')}</strong>
@@ -113,7 +113,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
             </div>
             <div className="noorix-surface-card nx-p-14">
               <div className="nx-text-sm nx-text-muted">{t('bankReconExpectedCredits')}</div>
-              <div className="nx-font-800 nx-ltr nx-text-end" style={{ fontSize: 17, color: '#2563eb' }}>
+              <div className="nx-font-800 nx-ltr nx-text-end" style={{ fontSize: 17, color: 'var(--noorix-accent-blue)' }}>
                 {reconLoading ? '…' : fmt(reconciliationStats?.expected_credits ?? 0)}
               </div>
             </div>

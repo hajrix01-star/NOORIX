@@ -202,8 +202,8 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
                   {supplierLabel(s, lang)}
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                  {isBookmarked ? <span style={{ color: '#f59e0b' }}>★</span> : null}
-                  <span style={{ color: '#2563eb', fontSize: 11 }}>الأكثر</span>
+                  {isBookmarked ? <span style={{ color: 'var(--color-noorix-amber)' }}>★</span> : null}
+                  <span style={{ color: 'var(--noorix-accent-blue)', fontSize: 11 }}>الأكثر</span>
                 </span>
               </Button>
             );
@@ -229,7 +229,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {supplierLabel(s, lang)}
                 </span>
-                {isBookmarked ? <span style={{ color: '#f59e0b', flexShrink: 0 }}>★</span> : null}
+                {isBookmarked ? <span style={{ color: 'var(--color-noorix-amber)', flexShrink: 0 }}>★</span> : null}
               </Button>
             );
           }) : (

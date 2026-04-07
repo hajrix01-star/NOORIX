@@ -435,41 +435,39 @@ export default function DailySalesScreen() {
   }
 
   const renderMobileCard = useCallback((row) => (
-    <div>
-      <div className="nx-mc__header">
-        <span className="nx-cell-num nx-cell-accent nx-text-md">
-          #{row.summaryNumber}
-        </span>
-        <div className="nx-mc__meta">
-          <span className="nx-cell-muted-sm">{formatSaudiDate(row.transactionDate)}</span>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-noorix-blue ltr">#{row.summaryNumber}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
       </div>
       {row.channelsText && (
-        <div className="nx-mc__channels">{row.channelsText}</div>
+        <div className="text-[12px] text-noorix-muted truncate">{row.channelsText}</div>
       )}
-      <div className="nx-mc__grid nx-mc__grid--3">
+      <div className="grid grid-cols-3 gap-2 mt-1">
         <div>
-          <div className="nx-mc__stat-label">{t('total')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--green">{fmt(row.totalAmount, 2)}</div>
+          <div className="text-[11px] text-noorix-muted mb-0.5">{t('total')}</div>
+          <div className="text-[13px] font-bold text-noorix-green ltr">{fmt(row.totalAmount, 2)}</div>
         </div>
         <div>
-          <div className="nx-mc__stat-label">{t('customers')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--blue">{row.customerCount ?? 0}</div>
+          <div className="text-[11px] text-noorix-muted mb-0.5">{t('customers')}</div>
+          <div className="text-[13px] font-bold text-noorix-blue ltr">{row.customerCount ?? 0}</div>
         </div>
         <div>
-          <div className="nx-mc__stat-label">{t('avgPerOrder')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--violet nx-text-base">{fmt(row.avgPerCustomer, 2)}</div>
+          <div className="text-[11px] text-noorix-muted mb-0.5">{t('avgPerOrder')}</div>
+          <div className="text-[13px] font-bold text-noorix-violet ltr">{fmt(row.avgPerCustomer, 2)}</div>
         </div>
       </div>
-      <div className="nx-mc__actions">
+      <div className="flex justify-end mt-1">
         <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
       </div>
     </div>
   ), [STATUS_MAP, userRole, t]);
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       {editingSummary && (
@@ -519,14 +517,13 @@ export default function DailySalesScreen() {
         }}
       />
 
-      {/* هيدر + شريط إجراءات (ثابت على الجوال بجانب الاستيراد) */}
-      <div className="noorix-daily-sales-header">
-        <div className="noorix-daily-sales-header__titles">
-          <h1 className="nx-page-title">{t('salesDailySummary')}</h1>
-        </div>
-        <div className="noorix-daily-sales-header__toolbar noorix-print-hide">
+      {/* هيدر + شريط إجراءات */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('salesDailySummary')}</h1>
+        <div className="flex items-center gap-2 flex-wrap print:hidden">
           {salesFullHistory && (
             <Button
+              size="sm"
               icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
               onClick={() => setShowImportExport(true)}
               disabled={!hasCompany}
@@ -534,58 +531,55 @@ export default function DailySalesScreen() {
               استيراد / تصدير
             </Button>
           )}
-          <Button variant="primary" onClick={() => setShowEntryModal(true)} disabled={!hasCompany}>
+          <Button variant="primary" size="sm" onClick={() => setShowEntryModal(true)} disabled={!hasCompany}>
             {t('addDailySummary')}
           </Button>
         </div>
       </div>
 
       {hasCompany && salesChannelsHasError && (
-        <div className="nx-error-banner">
-          {salesChannelsError?.message || t('salesChannelsLoadFailed')}
-          <Button size="sm" onClick={refetchSalesChannels}>
-            {t('retryLoadSalesChannels')}
-          </Button>
+        <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-noorix-red">
+          <span className="flex-1">{salesChannelsError?.message || t('salesChannelsLoadFailed')}</span>
+          <Button size="sm" onClick={refetchSalesChannels}>{t('retryLoadSalesChannels')}</Button>
         </div>
       )}
 
       {salesFullHistory && <DateFilterBar filter={dateFilter} />}
 
       {!hasCompany && (
-        <div className="noorix-surface-card nx-empty-state">
+        <div className="bg-noorix-surface border border-noorix-border rounded-xl p-8 text-center text-noorix-muted text-[14px]">
           {t('pleaseSelectCompany')}
         </div>
       )}
 
-      {/* ── الملخصات السابقة — جدول احترافي ── */}
       {hasCompany && !salesViewSummariesList && (
-        <div className="noorix-surface-card nx-empty-state">
+        <div className="bg-noorix-surface border border-noorix-border rounded-xl p-8 text-center text-noorix-muted text-[14px]">
           {t('salesSummariesHiddenByRole')}
         </div>
       )}
       {hasCompany && salesViewSummariesList && (
-        <div className="noorix-sales-table-wrapper">
-          <SmartTable
-            columns={columns}
-            data={tableData}
-            total={displayedTotal}
-            page={listPage}
-            pageSize={PAGE_SIZE}
-            onPageChange={setListPage}
-            isLoading={summariesLoading}
-            isError={!!summariesError}
-            errorMessage={summariesError?.message || ''}
-            footerCells={footerCells}
-            title={t('previousSummaries')}
-            showRowNumbers
-            rowNumberWidth="1%"
-            innerPadding={16}
-            badge={
+        <SmartTable
+          columns={columns}
+          data={tableData}
+          total={displayedTotal}
+          page={listPage}
+          pageSize={PAGE_SIZE}
+          onPageChange={setListPage}
+          isLoading={summariesLoading}
+          isError={!!summariesError}
+          errorMessage={summariesError?.message || ''}
+          footerCells={footerCells}
+          title={t('previousSummaries')}
+          showRowNumbers
+          rowNumberWidth="1%"
+          badge={
             <>
-              <span className="nx-cell-muted-sm">— {dateFilter.label}</span>
-              <span className="nx-pill nx-pill--blue">{t('summaryCount', displayedTotal)}</span>
+              <span className="text-[12px] text-noorix-muted">— {dateFilter.label}</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-noorix-blue text-[12px] font-semibold">
+                {t('summaryCount', displayedTotal)}
+              </span>
               {salesFullHistory && (
-                  <span className="noorix-print-hide nx-flex nx-gap-6" style={{ flexWrap: 'wrap' }}>
+                <span className="flex flex-wrap gap-1.5 print:hidden">
                   <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportExcel')}</Button>
                   <Button size="sm" onClick={handleExportPdf} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportPdf')}</Button>
                   <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('print')}</Button>
@@ -600,8 +594,7 @@ export default function DailySalesScreen() {
           onSort={toggleSort}
           emptyMessage={t('noSummariesInPeriod')}
           renderMobileCard={renderMobileCard}
-          />
-        </div>
+        />
       )}
     </div>
   );

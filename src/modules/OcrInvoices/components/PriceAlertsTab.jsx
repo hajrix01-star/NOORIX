@@ -41,14 +41,14 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
           <div className="compare-modal-grid">
             {/* Latest (higher) */}
             <div className="compare-invoice-card">
-              <div className="compare-invoice-label" style={{ color: '#b91c1c' }}>
+              <div className="compare-invoice-label" style={{ color: 'var(--noorix-accent-red)' }}>
                 {isAr ? 'السعر الأخير' : 'Latest Price'}
               </div>
               {latestInvoice?.imageUrl && (
                 <MiniImageViewer src={latestInvoice.imageUrl} />
               )}
               <div className="compare-invoice-meta nx-mt-10">
-                <div className="nx-font-800" style={{ fontSize: 22, color: '#b91c1c' }}>
+                <div className="nx-font-800" style={{ fontSize: 22, color: 'var(--noorix-accent-red)' }}>
                   {fmtNum(alert.latestPrice)} <span className="nx-text-sm" style={{ fontWeight: 400 }}>{isAr ? 'ريال' : 'SAR'}</span>
                 </div>
                 <div className="nx-text-sm nx-text-muted">{alert.latestSupplier}</div>
@@ -154,7 +154,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
   );
 
   return (
-    <div dir={dir} className="nx-flex-col" style={{ gap: 18 }}>
+    <div dir={dir} className="flex flex-col" style={{ gap: 18 }}>
 
       {/* Stats */}
       <div className="ocr-alerts-stats">
@@ -254,7 +254,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
                   </div>
                   <span className="ocr-alert-arrow">→</span>
                   <div className="ocr-alert-price">
-                    <div className="ocr-alert-price-value" style={{ color: '#b91c1c' }}>{fmtNum(alert.latestPrice)}</div>
+                    <div className="ocr-alert-price-value" style={{ color: 'var(--noorix-accent-red)' }}>{fmtNum(alert.latestPrice)}</div>
                     <div className="ocr-alert-price-label">{isAr ? 'أخير' : 'Latest'}</div>
                   </div>
                 </div>

@@ -195,7 +195,7 @@ export default function PurchasesBatchScreen() {
     /* عدد الفواتير — ضيق جداً */
     { key: 'invoiceCount', label: t('invoiceCount'), numeric: true, sortable: true, shrink: true,
       render: (v) => (
-        <span className="nx-font-700" style={{ color: '#2563eb', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span>
+        <span className="nx-font-700" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span>
       )},
     /* المورد — minWidth يضمن عدم انهيار العمود مع table-layout:auto */
     { key: 'supplierNames', label: t('supplier'), sortable: true, minWidth: 160,
@@ -259,7 +259,7 @@ export default function PurchasesBatchScreen() {
         </div>
         <div className="nx-flex nx-gap-10 nx-text-sm nx-text-muted nx-mb-6">
           <span>{formatSaudiDate(row.transactionDate)}</span>
-          {row.invoiceCount > 0 && <span className="nx-font-700" style={{ color: '#2563eb' }}>{row.invoiceCount} {t('invoices')}</span>}
+          {row.invoiceCount > 0 && <span className="nx-font-700" style={{ color: 'var(--noorix-accent-blue)' }}>{row.invoiceCount} {t('invoices')}</span>}
         </div>
         {row.supplierNames && <div className="nx-text-base nx-mb-4 nx-truncate">{row.supplierNames}</div>}
         <div className="nx-text-sm nx-mb-8 nx-text-muted nx-truncate">
@@ -404,7 +404,7 @@ export default function PurchasesBatchScreen() {
       {/* ── الهيدر ── */}
       <header className="nx-page-header">
         <div className="nx-page-header__titles">
-          <h1 className="nx-page-title">{t('batchPurchasesTitle')}</h1>
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('batchPurchasesTitle')}</h1>
         </div>
       </header>
 

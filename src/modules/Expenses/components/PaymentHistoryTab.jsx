@@ -103,7 +103,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
 
   if (isError) {
     return (
-      <div className="nx-text-center nx-text-md" style={{ padding: 32, color: '#dc2626' }}>
+      <div className="nx-text-center nx-text-md" style={{ padding: 32, color: 'var(--noorix-accent-red)' }}>
         ⚠ {error?.message || 'فشل تحميل سجل المدفوعات'}
       </div>
     );
@@ -112,7 +112,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   return (
     <div>
       {!externalDateFilter && (
-        <div className="nx-flex-center nx-gap-12 nx-mb-12" style={{ flexWrap: 'wrap' }}>
+        <div className="flex items-center gap-12 nx-mb-12" style={{ flexWrap: 'wrap' }}>
           <DateFilterBar filter={dateFilter} />
           <label className="nx-checkbox">
             <input type="checkbox" checked={showAllDates} onChange={(e) => setShowAllDates(e.target.checked)} />

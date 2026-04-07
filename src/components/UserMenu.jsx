@@ -13,10 +13,10 @@ const ROLE_KEYS = {
 };
 
 const ROLE_COLORS = {
-  owner:       '#f59e0b',
-  super_admin: '#a855f7',
-  accountant:  '#38bdf8',
-  cashier:     '#22c55e',
+  owner:       'var(--color-noorix-amber)',
+  super_admin: 'var(--color-noorix-violet)',
+  accountant:  'var(--color-noorix-sky)',
+  cashier:     'var(--noorix-accent-green)',
 };
 
 function getInitials(user) {
@@ -30,9 +30,9 @@ function getInitials(user) {
 const MENU_WIDTH  = 240;
 const VIEWPORT_GAP = 8;
 
-export default function UserMenu({ user, onLogout, theme, toggleTheme, language, toggleLanguage }) {
+export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
   const { t, lang } = useTranslation();
-  const showAppearance = typeof toggleTheme === 'function' && typeof toggleLanguage === 'function';
+  const showAppearance = typeof toggleLanguage === 'function';
   const [open, setOpen]                       = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [toast, setToast]                     = useState({ visible: false, message: '', type: 'success' });
@@ -88,7 +88,7 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
 
   const role         = (user?.role || '').toLowerCase();
   const roleLabel    = ROLE_KEYS[role] ? t(ROLE_KEYS[role]) : role;
-  const roleColor    = ROLE_COLORS[role] || '#22c55e';
+  const roleColor    = ROLE_COLORS[role] || 'var(--noorix-accent-green)';
   const initials     = getInitials(user);
   const displayName  = user?.nameAr || user?.nameEn || user?.email || t('userDefault');
   const email        = user?.email || '';
@@ -132,16 +132,6 @@ export default function UserMenu({ user, onLogout, theme, toggleTheme, language,
       {showAppearance && (
         <>
           <div className="um-section">
-            <Button
-              variant="raw"
-              className="um-item"
-              onClick={toggleTheme}
-              icon={<span className="um-item-icon">{theme === 'light' ? '◑' : '○'}</span>}
-            >
-              <span className="um-item-label">
-                {theme === 'light' ? t('darkMode') : t('lightMode')}
-              </span>
-            </Button>
             <Button
               variant="raw"
               className="um-item"

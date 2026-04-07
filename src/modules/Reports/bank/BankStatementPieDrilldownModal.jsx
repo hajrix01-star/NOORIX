@@ -63,17 +63,17 @@ export default function BankStatementPieDrilldownModal({
       footer={<Button onClick={onClose}>{t('close') || 'إغلاق'}</Button>}
     >
       <div className="nx-text-sm nx-text-muted nx-mb-12 nx-flex-center nx-flex-wrap nx-gap-16">
-        <span className="nx-flex-center nx-gap-6">
+        <span className="flex items-center gap-6">
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-text-muted)', display: 'inline-block' }} />
           {t('bankStatementTransactions')}: <strong className="nx-text-primary">{rows.length}</strong>
         </span>
-        <span className="nx-flex-center nx-gap-6">
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
-          {t('bankStatementColDebit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: '#dc2626' }}>{fmt(totals.debit)}</strong>
+        <span className="flex items-center gap-6">
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-red)', display: 'inline-block' }} />
+          {t('bankStatementColDebit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: 'var(--noorix-accent-red)' }}>{fmt(totals.debit)}</strong>
         </span>
-        <span className="nx-flex-center nx-gap-6">
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
-          {t('bankStatementColCredit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: '#16a34a' }}>{fmt(totals.credit)}</strong>
+        <span className="flex items-center gap-6">
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-green)', display: 'inline-block' }} />
+          {t('bankStatementColCredit')}: <strong className="nx-ltr" style={{ display: 'inline-block', color: 'var(--noorix-accent-green)' }}>{fmt(totals.credit)}</strong>
         </span>
       </div>
 
@@ -86,13 +86,13 @@ export default function BankStatementPieDrilldownModal({
               render: (v) => <div className="nx-truncate nx-text-primary" title={v}>{v}</div> },
             { key: 'debit', label: t('bankStatementColDebit'), numeric: true,
               render: (v) => (
-                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? '#dc2626' : 'var(--noorix-text-muted)' }}>
+                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text-muted)' }}>
                   {Number(v) > 0 ? fmt(Number(v)) : '—'}
                 </span>
               ) },
             { key: 'credit', label: t('bankStatementColCredit'), numeric: true,
               render: (v) => (
-                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? '#16a34a' : 'var(--noorix-text-muted)' }}>
+                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>
                   {Number(v) > 0 ? fmt(Number(v)) : '—'}
                 </span>
               ) },

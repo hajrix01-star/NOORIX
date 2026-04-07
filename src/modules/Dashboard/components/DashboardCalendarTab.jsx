@@ -22,7 +22,7 @@ import {
 const DOW_KEYS = [0, 1, 2, 3, 4, 5, 6];
 const DOW_LABELS = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
 const DOW_LABELS_AR = { 0: 'أحد', 1: 'إثنين', 2: 'ثلاثاء', 3: 'أربعاء', 4: 'خميس', 5: 'جمعة', 6: 'سبت' };
-const DEFAULT_COLORS = ['#f59e0b', '#eab308', '#84cc16', '#22c55e', '#8b5cf6'];
+const DEFAULT_COLORS = ['var(--color-noorix-amber)', '#eab308', '#84cc16', 'var(--noorix-accent-green)', '#8b5cf6'];
 
 function lastDayOfMonth(year, month) {
   return new Date(year, month, 0).getDate();
@@ -319,7 +319,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           <div className="nx-p-12 nx-mb-12 nx-bg-muted nx-rounded nx-text-sm">
             <div className="nx-font-700 nx-mb-8">{t('dashboardTargetOverall')}</div>
             {editingTarget ? (
-              <div className="nx-flex-center nx-gap-8" style={{ marginBottom: 10 }}>
+              <div className="flex items-center gap-8" style={{ marginBottom: 10 }}>
                 <Input
                   type="number"
                   min="0"
@@ -333,7 +333,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                 <Button onClick={() => { setEditingTarget(false); setTargetInput(''); }}>{t('cancel')}</Button>
               </div>
             ) : (
-              <div className="nx-flex-center nx-gap-8" style={{ marginBottom: 10 }}>
+              <div className="flex items-center gap-8" style={{ marginBottom: 10 }}>
                 <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{targets.overall != null ? fmt(targets.overall, 2) : '—'} ﷼</span>
                 <Button onClick={() => { setTargetInput(targets.overall != null ? String(targets.overall) : ''); setEditingTarget(true); }}>{t('edit')}</Button>
               </div>
@@ -341,7 +341,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             <div className="nx-font-700 nx-mb-6">{t('dashboardTargetByDay')}</div>
             <div className="nx-flex-wrap nx-gap-8" key={`targets-${targetsVersion}`}>
               {DOW_KEYS.map((dow) => (
-                <div key={dow} className="nx-flex-center nx-gap-4">
+                <div key={dow} className="flex items-center gap-4">
                   <span className="nx-text-xs" style={{ minWidth: 50 }}>{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
                   <Input
                     type="number"
@@ -426,7 +426,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                   >
                     <span className="nx-text-sm nx-font-700 nx-text-primary">{day}</span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? '#166534' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
-                    {achieved && <span style={{ fontSize: 8, color: '#16a34a' }}>✓</span>}
+                    {achieved && <span style={{ fontSize: 8, color: 'var(--noorix-accent-green)' }}>✓</span>}
                     {hasNote && <span style={{ fontSize: 8, color: 'var(--noorix-accent-blue)', width: 6, height: 6, borderRadius: '50%', background: 'var(--noorix-accent-blue)', display: 'inline-block' }} />}
                     {special && specialColor && (
                       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: specialColor, borderRadius: '0 0 6px 6px' }} />
@@ -455,27 +455,27 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
         <div className="nx-mt-16 nx-p-12 nx-bg-muted nx-rounded nx-text-xs">
           <div className="nx-font-700 nx-mb-8 nx-text-primary">{lang === 'ar' ? 'دليل الألوان' : 'Color legend'}</div>
           <div className="nx-flex-col nx-gap-6">
-            <div className="nx-flex-center nx-gap-8">
+            <div className="flex items-center gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: '#e5e7eb', border: '1px solid #d1d5db', flexShrink: 0 }} />
               <span>{t('dashboardLegendGray')}</span>
             </div>
-            <div className="nx-flex-center nx-gap-8">
+            <div className="flex items-center gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgb(220, 38, 38)', flexShrink: 0 }} />
               <span>{t('dashboardLegendRed')}</span>
             </div>
-            <div className="nx-flex-center nx-gap-8">
+            <div className="flex items-center gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgb(234, 179, 8)', flexShrink: 0 }} />
               <span>{t('dashboardLegendYellow')}</span>
             </div>
-            <div className="nx-flex-center nx-gap-8">
+            <div className="flex items-center gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgb(22, 163, 74)', flexShrink: 0 }} />
               <span>{t('dashboardLegendGreen')}</span>
             </div>
-            <div className="nx-flex-center nx-gap-8">
+            <div className="flex items-center gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(22,163,74,0.5)', flexShrink: 0 }} />
               <span>{t('dashboardLegendGreenNoTarget')}</span>
             </div>
-            <div className="nx-flex-center nx-gap-8">
+            <div className="flex items-center gap-8">
               <span style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(139,92,246,0.5)', flexShrink: 0 }} />
               <span>{t('dashboardLegendSpecial')}</span>
             </div>

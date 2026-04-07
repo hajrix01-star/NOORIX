@@ -235,7 +235,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                     <div className="ocr-catalog-name-primary">{isAr ? item.nameAr : (item.nameEn || item.nameAr)}</div>
                     {item.nameEn && item.nameAr && <div className="ocr-catalog-name-secondary">{isAr ? item.nameEn : item.nameAr}</div>}
                   </div>
-                  <div className="nx-flex-center nx-gap-6" style={{ flexShrink: 0 }}>
+                  <div className="flex items-center gap-6" style={{ flexShrink: 0 }}>
                     {item.category && <span className="ocr-catalog-badge">{item.category}</span>}
                     <span className="ocr-catalog-badge">{item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'}</span>
                   </div>
@@ -270,7 +270,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
             {/* Aliases */}
             <div className="nx-font-600 nx-text-base nx-mb-6">{t('ocrAliases')}</div>
             {(viewing?.aliases || []).length === 0 && (
-              <div className="nx-text-muted nx-text-base">{isAr ? 'لا توجد مرادفات بعد' : 'No aliases yet'}</div>
+              <div className="text-noorix-muted text-[13px]">{isAr ? 'لا توجد مرادفات بعد' : 'No aliases yet'}</div>
             )}
             <div className="nx-flex nx-flex-wrap nx-gap-4 nx-mb-16">
               {(viewing?.aliases || []).map((a) => (
@@ -295,7 +295,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                 <div className="ocr-spinner" />
               </div>
             ) : priceHistory.length === 0 ? (
-              <div className="nx-text-muted nx-text-base">{isAr ? 'لا يوجد تاريخ أسعار بعد' : 'No price history yet'}</div>
+              <div className="text-noorix-muted text-[13px]">{isAr ? 'لا يوجد تاريخ أسعار بعد' : 'No price history yet'}</div>
             ) : (
               <div className="nx-flex-col nx-gap-4">
                 {priceHistory.map((h) => {

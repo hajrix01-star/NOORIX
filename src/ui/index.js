@@ -31,3 +31,4 @@ export { default as SmartTable } from '../components/common/SmartTable';
 
 export { SurfaceCard, ExecCard, StatCard } from './Card';
 export { BADGE_COLORS } from './Badge';
+export { cn } from './cn';

@@ -52,7 +52,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
         </div>
         <div className="nx-rounded nx-flex-1" style={{ padding: 10, background: achieved ? 'rgba(22,163,74,0.12)' : 'var(--noorix-bg-muted)', minWidth: 90 }}>
           <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('total')}</div>
-          <div className="nx-text-xl nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? '#16a34a' : 'var(--noorix-text)' }}>{fmt(totalAmount, 2)} ﷼ {achieved && '✓'}</div>
+          <div className="nx-text-xl nx-font-700" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>{fmt(totalAmount, 2)} ﷼ {achieved && '✓'}</div>
         </div>
       </div>
 

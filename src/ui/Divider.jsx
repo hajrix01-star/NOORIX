@@ -1,18 +1,14 @@
 /**
  * Divider — فاصل أفقي/عمودي بسيط
- *
- * الاستخدام:
- *   <Divider />
- *   <Divider label="أو" />
- *   <Divider vertical style={{ height: 24 }} />
  */
 import React from 'react';
+import { cn } from './cn';
 
 export default function Divider({ label, vertical = false, className = '', ...rest }) {
   if (vertical) {
     return (
       <span
-        className={['nx-divider', 'nx-divider--vertical', className].filter(Boolean).join(' ')}
+        className={cn('inline-block w-px self-stretch bg-noorix-border mx-2', className)}
         aria-hidden="true"
         {...rest}
       />
@@ -20,16 +16,16 @@ export default function Divider({ label, vertical = false, className = '', ...re
   }
   if (label) {
     return (
-      <div className={['nx-divider', 'nx-divider--labeled', className].filter(Boolean).join(' ')} {...rest}>
-        <span className="nx-divider__line" aria-hidden="true" />
-        <span className="nx-divider__label">{label}</span>
-        <span className="nx-divider__line" aria-hidden="true" />
+      <div className={cn('flex items-center gap-3 my-2', className)} {...rest}>
+        <span className="flex-1 h-px bg-noorix-border" aria-hidden="true" />
+        <span className="text-[12px] text-noorix-muted whitespace-nowrap">{label}</span>
+        <span className="flex-1 h-px bg-noorix-border" aria-hidden="true" />
       </div>
     );
   }
   return (
     <hr
-      className={['nx-divider', className].filter(Boolean).join(' ')}
+      className={cn('border-0 border-t border-noorix-border my-2', className)}
       aria-hidden="true"
       {...rest}
     />

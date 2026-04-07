@@ -398,11 +398,11 @@ export default function StaffListScreen({ embedded }) {
   ), [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete]);
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       {!embedded && (
         <div>
-          <h1 className="nx-page-title">{t('staffTitle')}</h1>
-          <p className="nx-page-desc">{t('staffDesc')}</p>
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
+          <p className="text-[13px] text-noorix-muted m-0">{t('staffDesc')}</p>
         </div>
       )}
 

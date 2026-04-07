@@ -19,9 +19,9 @@ import {
 
 /** مطابق COLUMN_TYPES في Base44 (بدون amount) */
 const COLUMN_FIELD_DEFS = [
-  { key: 'dateCol', labelKey: 'bankMapColDate', required: true, badgeBg: 'rgba(37,99,235,0.18)', badgeColor: '#1d4ed8' },
+  { key: 'dateCol', labelKey: 'bankMapColDate', required: true, badgeBg: 'rgba(37,99,235,0.18)', badgeColor: 'var(--noorix-accent-blue)' },
   { key: 'descCol', labelKey: 'bankMapColDescription', required: true, badgeBg: 'rgba(126,34,206,0.15)', badgeColor: '#6b21a8' },
-  { key: 'debitCol', labelKey: 'bankMapColDebit', required: true, badgeBg: 'rgba(220,38,38,0.15)', badgeColor: '#b91c1c' },
+  { key: 'debitCol', labelKey: 'bankMapColDebit', required: true, badgeBg: 'rgba(220,38,38,0.15)', badgeColor: 'var(--noorix-accent-red)' },
   { key: 'creditCol', labelKey: 'bankMapColCredit', required: true, badgeBg: 'rgba(22,163,74,0.15)', badgeColor: '#15803d' },
   { key: 'balanceCol', labelKey: 'bankMapColBalance', required: false, badgeBg: 'rgba(217,119,6,0.18)', badgeColor: '#b45309' },
   { key: 'refCol', labelKey: 'bankMapColReference', required: false, badgeBg: 'rgba(75,85,99,0.15)', badgeColor: '#374151' },
@@ -263,7 +263,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           <div className="nx-flex-center nx-flex-wrap nx-gap-8 nx-mb-10">
             <span style={{ fontWeight: 700, fontSize: 13, color: '#1e40af' }}>{t('bankMapStatementInfo')}</span>
             {aiHeaderLoading ? (
-              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#dbeafe', color: '#1d4ed8' }}>
+              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#dbeafe', color: 'var(--noorix-accent-blue)' }}>
                 {t('bankMapAiReading')}
               </span>
             ) : null}
@@ -332,12 +332,12 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
           >
             {COLUMN_FIELD_DEFS.map((col) => (
               <div key={col.key}>
-                <label className="nx-flex-center nx-gap-6 nx-text-sm nx-font-600 nx-mb-4">
+                <label className="flex items-center gap-6 nx-text-sm nx-font-600 nx-mb-4">
                   <span>
                     {t(col.labelKey)}
                     {col.required ? <span style={{ color: 'var(--noorix-error)' }}> *</span> : null}
                   </span>
-                  {columnMapping[col.key] >= 0 ? <span style={{ color: '#16a34a' }}>✓</span> : null}
+                  {columnMapping[col.key] >= 0 ? <span style={{ color: 'var(--noorix-accent-green)' }}>✓</span> : null}
                 </label>
                 <Input
                   type="select"

@@ -87,7 +87,7 @@ export default function ResidencyTab() {
       render: (v, row) => {
         const soon = isExpiringSoon(v);
         return (
-          <span style={{ fontSize: 12, color: soon ? '#f59e0b' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined, whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 12, color: soon ? 'var(--color-noorix-amber)' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined, whiteSpace: 'nowrap' }}>
             {formatSaudiDate(v)}
             {soon && (
               <span style={{ marginRight: 6, fontSize: 10, background: 'rgba(245,158,11,0.2)', padding: '2px 6px', borderRadius: 4 }}>
@@ -148,7 +148,7 @@ export default function ResidencyTab() {
           </div>
           <div>
             <div className="nx-text-muted nx-mb-4" style={{ fontSize: 10 }}>{t('expiryDate')}</div>
-            <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)', color: soon ? '#f59e0b' : undefined, fontWeight: soon ? 700 : undefined }}>
+            <div className="nx-text-base" style={{ fontFamily: 'var(--noorix-font-numbers)', color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}>
               {formatSaudiDate(row.expiryDate)}
               {soon && <span style={{ marginRight: 4, fontSize: 10, background: 'rgba(245,158,11,0.2)', padding: '1px 5px', borderRadius: 4 }}>⚠</span>}
             </div>
@@ -162,12 +162,12 @@ export default function ResidencyTab() {
   }, [t, deleteMutation]);
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-toolbar">
         {expiringCount > 0 && (
-          <span className="nx-rounded nx-text-base nx-font-600 nx-px-12 nx-py-6" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+          <span className="nx-rounded nx-text-base nx-font-600 nx-px-12 nx-py-6" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--color-noorix-amber)' }}>
             {t('residencyExpiringSoon')}: {expiringCount}
           </span>
         )}

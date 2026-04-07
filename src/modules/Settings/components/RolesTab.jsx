@@ -326,7 +326,7 @@ export default function RolesTab({ userRole, language }) {
             >
               <div className="nx-flex nx-gap-12 nx-flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div className="nx-flex-1" style={{ minWidth: 200 }}>
-                  <div className="nx-flex-center nx-gap-8 nx-mb-4">
+                  <div className="flex items-center gap-8 nx-mb-4">
                     <span className="nx-text-lg nx-font-700">{role.nameAr || role.name}</span>
                     {role.isSystem && (
                       <span className="nx-rounded nx-font-700" style={{
@@ -344,7 +344,7 @@ export default function RolesTab({ userRole, language }) {
                   )}
                   {renderPermissionBadges(role.permissions)}
                 </div>
-                <div className="nx-flex-center nx-gap-12 nx-flex-shrink-0">
+                <div className="flex items-center gap-12 nx-flex-shrink-0">
                   <div className="nx-text-center">
                     <div className="nx-text-2xl nx-font-700" style={{ color: 'var(--noorix-accent)' }}>
                       {role._count?.users ?? 0}

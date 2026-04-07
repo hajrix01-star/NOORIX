@@ -23,7 +23,7 @@ const PAGE_SIZE = 50;
 
 const STATUS_MAP = {
   draft: { bg: 'rgba(100,116,139,0.1)', color: '#64748b', labelKey: 'payrollDraft' },
-  completed: { bg: 'rgba(22,163,74,0.1)', color: '#16a34a', labelKey: 'payrollPaid' },
+  completed: { bg: 'rgba(22,163,74,0.1)', color: 'var(--noorix-accent-green)', labelKey: 'payrollPaid' },
 };
 
 const statusColorMap = { draft: 'gray', completed: 'green' };
@@ -222,7 +222,7 @@ export default function PayrollTab() {
   }
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-toolbar">

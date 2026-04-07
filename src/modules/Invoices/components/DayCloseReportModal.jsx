@@ -184,9 +184,9 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           </div>
 
           <div className="day-close-no-print nx-flex-between nx-gap-8" style={{ flexWrap: 'wrap', marginBottom: 14 }}>
-            <div className="nx-flex-center nx-gap-10" style={{ flexWrap: 'wrap' }}>
+            <div className="flex items-center gap-10" style={{ flexWrap: 'wrap' }}>
               <h2 id="day-close-title" className="nx-m-0 nx-font-800" style={{ fontSize: 17 }}>{t('dayCloseTitle')}</h2>
-              <label className="nx-flex-center nx-gap-6 nx-text-base">
+              <label className="flex items-center gap-6 nx-text-base">
                 <span className="nx-text-muted">{t('date')}</span>
                 <Input
                   type="date"
@@ -214,7 +214,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
             <p className="nx-m-0 nx-text-base nx-text-muted">{t('dayCloseLoading')}</p>
           )}
           {isError && (
-            <p className="nx-m-0 nx-text-base" style={{ color: '#dc2626' }}>{error?.message || t('dayCloseLoadFailed')}</p>
+            <p className="nx-m-0 nx-text-base" style={{ color: 'var(--noorix-accent-red)' }}>{error?.message || t('dayCloseLoadFailed')}</p>
           )}
 
           {data && !isLoading && (

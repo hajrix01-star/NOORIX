@@ -111,7 +111,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   }
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast
         visible={toast.visible}
         message={toast.message}

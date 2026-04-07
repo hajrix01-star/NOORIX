@@ -16,9 +16,9 @@ export default function ReportsLayout() {
   const { t } = useTranslation();
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <div>
-        <h1 className="nx-page-title">{t('reports')}</h1>
+        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('reports')}</h1>
       </div>
 
       <div className="noorix-surface-card" style={{ padding: 0, overflow: 'hidden' }}>

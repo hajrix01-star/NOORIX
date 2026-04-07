@@ -177,7 +177,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
           <p className="nx-text-sm nx-text-muted nx-mt-0 nx-mb-12">{t('ocrAliases')}</p>
           <div className="modal-body">
             {(viewing?.aliases || []).length === 0 && (
-              <div className="nx-text-muted nx-text-base">{isAr ? 'لا توجد أسماء بديلة بعد' : 'No aliases yet'}</div>
+              <div className="text-noorix-muted text-[13px]">{isAr ? 'لا توجد أسماء بديلة بعد' : 'No aliases yet'}</div>
             )}
             <div className="nx-flex-col nx-gap-4">
               {(viewing?.aliases || []).map((a) => (

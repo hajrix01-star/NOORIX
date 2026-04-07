@@ -115,7 +115,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
               {fmt(yearApp, 2)} ﷼ / {fmt(yearTotal, 2)} ﷼
             </div>
             {yearApp === 0 && (
-              <div className="nx-mt-8 nx-text-xs nx-font-600" style={{ color: '#f59e0b' }}>
+              <div className="nx-mt-8 nx-text-xs nx-font-600" style={{ color: 'var(--color-noorix-amber)' }}>
                 {t('dashboardNoAppSales')}
               </div>
             )}

@@ -38,12 +38,12 @@ const BAR_CHART_TOOLTIP_STYLE = {
 };
 
 const COLORS = [
-  '#2563eb', '#16a34a', '#ca8a04', '#dc2626', '#7c3aed',
+  'var(--noorix-accent-blue)', 'var(--noorix-accent-green)', '#ca8a04', 'var(--noorix-accent-red)', '#7c3aed',
   '#0891b2', '#db2777', '#4f46e5', '#ea580c', '#84cc16',
 ];
 
-const RED_PIE_TINTS = ['#dc2626', '#b91c1c', '#ef4444', '#991b1b', '#f87171'];
-const GREEN_PIE_TINTS = ['#16a34a', '#15803d', '#22c55e', '#166534', '#4ade80'];
+const RED_PIE_TINTS = ['var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--color-danger-bg)', '#f87171'];
+const GREEN_PIE_TINTS = ['var(--noorix-accent-green)', '#15803d', 'var(--noorix-accent-green)', '#166534', '#4ade80'];
 
 function pieSliceFill(mode, index, item) {
   if (mode === 'combined') {
@@ -85,7 +85,7 @@ function DailyTooltip({ active, payload, label }) {
       </div>
       <div
         className="nx-font-700 nx-recharts-tooltip-footer"
-        style={{ color: deposits - withdrawals >= 0 ? '#059669' : '#e11d48' }}
+        style={{ color: deposits - withdrawals >= 0 ? '#059669' : 'var(--noorix-accent-rose)' }}
       >
         الصافي: <span className="nx-inline-ltr">{fmt(deposits - withdrawals)}</span>
       </div>
@@ -148,7 +148,7 @@ function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }) 
 }
 
 /* ── شريط تقدم بسيط ── */
-function ProgressBar({ value, color = '#2563eb', max = 100 }) {
+function ProgressBar({ value, color = 'var(--noorix-accent-blue)', max = 100 }) {
   const pct = Math.min(100, Math.max(0, max > 0 ? (value / max) * 100 : 0));
   return (
     <div className="nx-progress-track nx-flex-1">
@@ -303,8 +303,8 @@ export default function BankStatementAnalysisCardsTab({
                     <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gradWithdrawals" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#dc2626" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--noorix-accent-red)" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="var(--noorix-accent-red)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" vertical={false} />
@@ -313,16 +313,16 @@ export default function BankStatementAnalysisCardsTab({
                 <Tooltip content={<DailyTooltip />} />
                 <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
                 <Area type="monotone" dataKey="deposits" stroke="#16a34a" strokeWidth={2} fill="url(#gradDeposits)" name="إيداعات" />
-                <Area type="monotone" dataKey="withdrawals" stroke="#dc2626" strokeWidth={2} fill="url(#gradWithdrawals)" name="سحوبات" />
+                <Area type="monotone" dataKey="withdrawals" stroke="var(--noorix-accent-red)" strokeWidth={2} fill="url(#gradWithdrawals)" name="سحوبات" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
           <div className="nx-flex nx-gap-24 nx-mt-10 nx-flex-center">
-            <div className="nx-flex-center nx-gap-6 nx-text-sm">
+            <div className="flex items-center gap-6 nx-text-sm">
               <span className="nx-legend-dot nx-legend-dot--income" />
               <span>إيداعات</span>
             </div>
-            <div className="nx-flex-center nx-gap-6 nx-text-sm">
+            <div className="flex items-center gap-6 nx-text-sm">
               <span className="nx-legend-dot nx-legend-dot--expense" />
               <span>سحوبات</span>
             </div>
@@ -336,7 +336,7 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardAlerts')} icon="⚠" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {alerts.length === 0 ? (
-            <p className="nx-text-muted nx-text-base">لا توجد سحوبات.</p>
+            <p className="text-noorix-muted text-[13px]">لا توجد سحوبات.</p>
           ) : (
             <div className="nx-grid nx-gap-10">
               <div className="nx-overflow-auto nx-rounded nx-border-all">
@@ -414,7 +414,7 @@ export default function BankStatementAnalysisCardsTab({
 
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          <div className="nx-flex-center nx-gap-8 nx-flex-wrap nx-mb-14">
+          <div className="flex items-center gap-8 nx-flex-wrap nx-mb-14">
             <span className="nx-text-sm nx-font-700 nx-text-muted">{t('bankPieViewMode')}</span>
             {(['combined', 'debit', 'credit']).map((m) => (
               <Button
@@ -509,7 +509,7 @@ export default function BankStatementAnalysisCardsTab({
                         className="bank-pie-legend-row nx-bank-pie-legend-btn nx-flex-col nx-w-full nx-text-base nx-text-end"
                         onClick={() => setPieDrilldownCategory(item.name)}
                       >
-                        <div className="nx-flex-center nx-gap-10 nx-w-full">
+                        <div className="flex items-center gap-10 nx-w-full">
                           <span
                             className="nx-bank-dot-10"
                             style={{ background: dot }}
@@ -584,14 +584,14 @@ export default function BankStatementAnalysisCardsTab({
 
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryBar')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
-          {renderBarBlock(barRowsDebit, 'أعلى الفئات — السحوبات', '#dc2626', barDebitAxisW)}
-          {renderBarBlock(barRowsCredit, 'أعلى الفئات — الإيداعات', '#16a34a', barCreditAxisW)}
+          {renderBarBlock(barRowsDebit, 'أعلى الفئات — السحوبات', 'var(--noorix-accent-red)', barDebitAxisW)}
+          {renderBarBlock(barRowsCredit, 'أعلى الفئات — الإيداعات', 'var(--noorix-accent-green)', barCreditAxisW)}
           <div className="nx-flex nx-flex-wrap nx-mt-16 nx-border-t nx-bank-bar-legend-row">
-            <div className="nx-flex-center nx-gap-8 nx-text-sm">
+            <div className="flex items-center gap-8 nx-text-sm">
               <span className="nx-legend-dot--bar nx-legend-dot--bar-red" />
               <span className="nx-font-600">سحوبات</span>
             </div>
-            <div className="nx-flex-center nx-gap-8 nx-text-sm">
+            <div className="flex items-center gap-8 nx-text-sm">
               <span className="nx-legend-dot--bar nx-legend-dot--bar-green" />
               <span className="nx-font-600">إيداعات</span>
             </div>
@@ -624,7 +624,7 @@ export default function BankStatementAnalysisCardsTab({
                     title="انقر لعرض عمليات هذه الفئة"
                   >
                     <td className="nx-td-pad-9">
-                      <div className="nx-flex-center nx-gap-7">
+                      <div className="flex items-center gap-7">
                         <span
                           className="nx-bank-dot-8"
                           style={{ background: COLORS[i % COLORS.length] }}
@@ -644,7 +644,7 @@ export default function BankStatementAnalysisCardsTab({
                       {row.credit > 0 ? fmt(row.credit) : '—'}
                     </td>
                     <td className="nx-td-pad-9">
-                      <div className="nx-flex-center nx-gap-8">
+                      <div className="flex items-center gap-8">
                         <ProgressBar value={row.debit} max={totalDebit} color={COLORS[i % COLORS.length]} />
                         <span className="nx-text-muted nx-flex-shrink-0 nx-min-w-38 nx-ltr nx-text-start">
                           {row.debitPct.toFixed(1)}%
@@ -677,7 +677,7 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardDepositsTable')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {depositsByCategory.length === 0 ? (
-            <p className="nx-text-muted nx-text-base">لا توجد إيداعات.</p>
+            <p className="text-noorix-muted text-[13px]">لا توجد إيداعات.</p>
           ) : (
             <div className="nx-overflow-auto">
               <table className="nx-w-full nx-text-sm nx-table-collapse nx-table-min-400">
@@ -701,7 +701,7 @@ export default function BankStatementAnalysisCardsTab({
                       >
                         <td className="nx-text-muted nx-font-700 nx-td-pad-9">{i + 1}</td>
                         <td className="nx-td-pad-9">
-                          <div className="nx-flex-center nx-gap-7">
+                          <div className="flex items-center gap-7">
                             <span
                               className="nx-bank-dot-8"
                               style={{ background: COLORS[i % COLORS.length] }}
@@ -712,7 +712,7 @@ export default function BankStatementAnalysisCardsTab({
                         <td className="nx-text-center nx-text-muted nx-td-pad-9">{row.count}</td>
                         <td className="nx-text-end nx-ltr nx-text-income nx-font-700 nx-td-pad-9">{fmt(row.total)}</td>
                         <td className="nx-td-pad-9">
-                          <div className="nx-flex-center nx-gap-8">
+                          <div className="flex items-center gap-8">
                             <ProgressBar value={row.total} max={totalDep} color="#16a34a" />
                             <span className="nx-text-muted nx-flex-shrink-0 nx-min-w-38 nx-ltr nx-text-start">{pct.toFixed(1)}%</span>
                           </div>
@@ -742,7 +742,7 @@ export default function BankStatementAnalysisCardsTab({
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosTerminals')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {posTerminals.length === 0 ? (
-            <p className="nx-text-muted nx-text-base">
+            <p className="text-noorix-muted text-[13px]">
               لم يتم الكشف عن أجهزة نقاط بيع في هذا الكشف.
             </p>
           ) : (

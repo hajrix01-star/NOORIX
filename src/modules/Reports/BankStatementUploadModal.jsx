@@ -155,7 +155,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
         </div>
       ) : (
         <div className="nx-grid nx-gap-12">
-          <div className="nx-flex-center nx-gap-12 nx-p-12 nx-bg-muted nx-rounded">
+          <div className="flex items-center gap-12 nx-p-12 nx-bg-muted nx-rounded">
             <span style={{ fontSize: 24 }}></span>
             <div className="nx-flex-1" style={{ minWidth: 0 }}>
               <div className="nx-font-600 nx-text-primary">{file.name}</div>

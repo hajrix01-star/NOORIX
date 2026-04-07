@@ -39,7 +39,7 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
       >
         <div className="noorix-surface-card nx-p-16">
           <div className="nx-text-sm nx-text-muted">{t('bankStatementBankCredits')}</div>
-          <div className="nx-text-3xl nx-font-800 nx-ltr nx-text-end" style={{ color: '#16a34a' }}>
+          <div className="nx-text-3xl nx-font-800 nx-ltr nx-text-end" style={{ color: 'var(--noorix-accent-green)' }}>
             {fmt(bankCredits)}
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
             style={{
               fontSize: 20,
               textAlign: 'right',
-              color: reconLoading ? 'var(--noorix-text-muted)' : Math.abs(diff) < 1 ? '#16a34a' : '#ca8a04',
+              color: reconLoading ? 'var(--noorix-text-muted)' : Math.abs(diff) < 1 ? 'var(--noorix-accent-green)' : '#ca8a04',
             }}
           >
             {reconLoading ? '…' : fmt(diff)}

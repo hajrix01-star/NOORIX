@@ -95,12 +95,12 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
         </Button>
       )}
       {showEdit && (
-        <Button role="menuitem" onClick={() => run(onEdit)} className="nx-actions-menu-item" style={{ color: '#16a34a' }}>
+        <Button role="menuitem" onClick={() => run(onEdit)} className="nx-actions-menu-item" style={{ color: 'var(--noorix-accent-green)' }}>
           {t('edit')}
         </Button>
       )}
       {showDel && (
-        <Button role="menuitem" onClick={() => run(onDelete)} className="nx-actions-menu-item" style={{ color: '#dc2626' }}>
+        <Button role="menuitem" onClick={() => run(onDelete)} className="nx-actions-menu-item" style={{ color: 'var(--noorix-accent-red)' }}>
           {t('delete')}
         </Button>
       )}

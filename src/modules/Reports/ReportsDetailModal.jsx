@@ -157,7 +157,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     <div key={point.month} className="nx-grid nx-gap-10" style={{ gridTemplateColumns: '52px 1fr 120px 78px', alignItems: 'center' }}>
                       <div className="nx-text-sm nx-text-muted">{point.label}</div>
                       <div className="nx-bg-muted nx-overflow-hidden nx-rounded-full" style={{ height: 12 }}>
-                        <div className="nx-h-full nx-rounded-full" style={{ width, background: amount >= 0 ? '#16a34a' : '#dc2626' }} />
+                        <div className="nx-h-full nx-rounded-full" style={{ width, background: amount >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }} />
                       </div>
                       <div className="nx-text-end nx-font-numbers nx-font-700">{moneyText(point.amount)}</div>
                       <div className="nx-text-end nx-font-numbers nx-text-sm" style={{ color: PERCENT_COLOR }}>{percentText(point.percentOfSales)}</div>

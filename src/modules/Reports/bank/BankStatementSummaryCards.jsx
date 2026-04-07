@@ -29,19 +29,19 @@ export default function BankStatementSummaryCards({ statement, t }) {
       title: t('bankStatementCardDeposits'),
       value: fmt(dep),
       sub: t('bankCurrencySar'),
-      accent: '#16a34a',
+      accent: 'var(--noorix-accent-green)',
     },
     {
       title: t('bankStatementCardWithdrawals'),
       value: fmt(wdr),
       sub: t('bankCurrencySar'),
-      accent: '#dc2626',
+      accent: 'var(--noorix-accent-red)',
     },
     {
       title: t('bankStatementCardNetFlow'),
       value: fmt(net),
       sub: net >= 0 ? t('bankNetSurplus') : t('bankNetDeficit'),
-      accent: net >= 0 ? '#059669' : '#e11d48',
+      accent: net >= 0 ? '#059669' : 'var(--noorix-accent-rose)',
     },
     {
       title: t('bankStatementTransactions'),

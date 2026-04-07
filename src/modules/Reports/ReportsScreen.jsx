@@ -327,7 +327,7 @@ export default function ReportsScreen() {
                           </td>
 
                           {selectedMonthNumber && (
-                            <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: `${row.groupKey === 'purchases' ? 'rgba(239,68,68,0.07)' : row.groupKey === 'expenses' ? 'rgba(220,38,38,0.07)' : 'rgba(37,99,235,0.04)'}`, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(getContextAmount(row, selectedMonthNumber) || 0) >= 0 ? '#2563eb' : '#dc2626') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit') }}>
+                            <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: `${row.groupKey === 'purchases' ? 'rgba(239,68,68,0.07)' : row.groupKey === 'expenses' ? 'rgba(220,38,38,0.07)' : 'rgba(37,99,235,0.04)'}`, fontWeight: 700, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(getContextAmount(row, selectedMonthNumber) || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit') }}>
                               <Button
                                 onClick={() => setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: row.rowType === 'item' })}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'block', width: '100%', padding: 0 }}
@@ -349,7 +349,7 @@ export default function ReportsScreen() {
                                   display: 'block',
                                   width: '100%',
                                   padding: 0,
-                                  color: isSummary ? (Number(value || 0) >= 0 ? '#2563eb' : '#dc2626') : (Number(value || 0) < 0 ? '#dc2626' : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'var(--noorix-text)')),
+                                  color: isSummary ? (Number(value || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (Number(value || 0) < 0 ? 'var(--noorix-accent-red)' : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'var(--noorix-text)')),
                                   fontWeight: isSummary || isGroup || isCategory ? 800 : 600,
                                   fontFamily: 'var(--noorix-font-numbers)',
                                 }}
@@ -360,7 +360,7 @@ export default function ReportsScreen() {
                             </td>
                           ))}
 
-                          <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(row.total || 0) >= 0 ? '#2563eb' : '#dc2626') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit'), background: 'rgba(248,250,252,1)', borderInlineStart: '2px solid rgba(15,23,42,0.12)' }}>
+                          <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--noorix-border)', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(row.total || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit'), background: 'rgba(248,250,252,1)', borderInlineStart: '2px solid rgba(15,23,42,0.12)' }}>
                             <div>{amountText(row.total)}</div>
                             <div style={{ fontSize: 11, marginTop: 1, color: PERCENT_COLOR }}>{percentText(row.percentOfSalesYear)}</div>
                           </td>

@@ -35,9 +35,9 @@ export const SalesActionsCell = memo(function SalesActionsCell({
   if (!showAny) return <span className="nx-cell-muted">—</span>;
 
   const items = [];
-  if (canPrint) items.push({ key: 'print', label: t('printWhatsApp'), fn: onPrint, color: '#2563eb' });
-  if (canEdit && summary.status === 'active') items.push({ key: 'edit', label: t('edit'), fn: onEdit, color: '#16a34a' });
-  if (canDel && onDelete) items.push({ key: 'delete', label: t('delete'), fn: onDelete, color: '#dc2626' });
+  if (canPrint) items.push({ key: 'print', label: t('printWhatsApp'), fn: onPrint, color: 'var(--noorix-accent-blue)' });
+  if (canEdit && summary.status === 'active') items.push({ key: 'edit', label: t('edit'), fn: onEdit, color: 'var(--noorix-accent-green)' });
+  if (canDel && onDelete) items.push({ key: 'delete', label: t('delete'), fn: onDelete, color: 'var(--noorix-accent-red)' });
 
   useEffect(() => {
     if (open && btnRef.current) {

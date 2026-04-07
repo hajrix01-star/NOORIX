@@ -1,5 +1,46 @@
-/* Noorix Theme – خط Cairo احترافي للعربية والإنجليزية */
+/* Noorix Theme */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* ألوان نووريكس الأساسية */
+  --color-noorix-blue:    #2563eb;
+  --color-noorix-green:   #16a34a;
+  --color-noorix-red:     #dc2626;
+  --color-noorix-amber:   #d97706;
+  --color-noorix-violet:  #6366f1;
+  --color-noorix-sky:     #0284c7;
+  --color-noorix-rose:    #e11d48;
+  --color-noorix-navy:    #0a1f44;
+  --color-noorix-navy-mid: #123159;
+  --color-noorix-navy-light: #1b3f73;
+
+  /* ألوان ديناميكية من CSS variables */
+  --color-noorix-text:     var(--noorix-text);
+  --color-noorix-muted:    var(--noorix-text-muted);
+  --color-noorix-muted2:   var(--noorix-text-muted-2);
+  --color-noorix-border:   var(--noorix-border);
+  --color-noorix-surface:  var(--noorix-bg-surface);
+  --color-noorix-bg:       var(--noorix-bg-page);
+  --color-noorix-bg-muted: var(--noorix-bg-muted);
+
+  /* ألوان overlay شائعة */
+  --color-danger-bg:       #991b1b;
+  --color-white-7:         rgba(255,255,255,0.07);
+  --color-white-10:        rgba(255,255,255,0.10);
+  --color-white-45:        rgba(255,255,255,0.45);
+  --color-white-92:        rgba(255,255,255,0.92);
+
+  /* خط Cairo */
+  --font-cairo: 'Cairo', system-ui, sans-serif;
+  --font-sans:  'Cairo', system-ui, sans-serif;
+
+  /* حدود دائرية */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
 
 @keyframes fadeSlideDown {
   from { opacity: 0; transform: translateY(-6px); }
@@ -12,8 +53,29 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+@keyframes nx-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes nx-modal-in {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes nx-drawer-in-start {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes nx-drawer-in-end {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+[dir="rtl"] .nx-drawer-slide-start { animation: nx-drawer-in-start 0.28s cubic-bezier(0.4,0,0.2,1); }
+[dir="rtl"] .nx-drawer-slide-end   { animation: nx-drawer-in-end   0.28s cubic-bezier(0.4,0,0.2,1); }
+[dir="ltr"] .nx-drawer-slide-start { animation: nx-drawer-in-end   0.28s cubic-bezier(0.4,0,0.2,1); }
+[dir="ltr"] .nx-drawer-slide-end   { animation: nx-drawer-in-start 0.28s cubic-bezier(0.4,0,0.2,1); }
+.nx-modal-animate { animation: nx-modal-in 0.22s cubic-bezier(0.34,1.1,0.64,1); }
 
-/* ========== متغيرات الثيم الفاتح ========== */
+/* ========== متغيرات الثيم ========== */
 :root {
   /* ألوان أساسية */
   --noorix-navy:        #0a1f44;
@@ -86,36 +148,7 @@
   --noorix-line-height: 1.6;
 }
 
-/* ========== ثيم داكن ========== */
-.dark {
-  --noorix-bg-page:     #0d1524;
-  --noorix-bg-surface:  #172033;
-  --noorix-surface:     #172033;
-  --noorix-bg-muted:    #1f2d42;
-  --noorix-text:        #e8f0fa;
-  --noorix-text-muted:  #8fa8c8;
-  --noorix-text-muted-2:#5a7a9e;
-  --noorix-border:      #253449;
-  --noorix-border-muted:rgba(100,140,190,0.18);
-  --noorix-border-strong:rgba(100,140,190,0.4);
-  --noorix-sidebar-bg:  linear-gradient(180deg,#0f2744 0%,#0a1f44 50%,#060e22 100%);
-  --noorix-sidebar-text:#ffffff;
-  --noorix-sidebar-text-sub:#ffffff;
-  --noorix-topbar-bg:   #172033;
-  --noorix-topbar-text: #e8f0fa;
-  --noorix-topbar-border: #253449;
-  --noorix-table-header-bg: #1c2c44;
-  --noorix-table-row-even: #1a2840;
-  /* أزرار داكن */
-  --btn-default-bg:     #1f2d42;
-  --btn-default-border: #2e4060;
-  --btn-default-text:   #c8daf0;
-  --btn-default-hover:  #263650;
-  --noorix-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.22);
-  --noorix-shadow-sm: 0 1px 3px rgba(0,0,0,0.15);
-  --noorix-shadow-md: 0 4px 20px rgba(0,0,0,0.25);
-  --noorix-shadow-lg: 0 8px 32px rgba(0,0,0,0.32);
-}
+/* Dark mode محذوف — يُضاف مستقبلاً بـ Tailwind dark: prefix */
 
 /* ورقة/لوحة منبثقة بثيم فاتح ثابت — وضوح عند تشغيل التطبيق بالوضع الداكن */
 .noorix-light-sheet {
@@ -152,12 +185,6 @@
     0 4px 16px rgba(10,31,68,0.08),
     0 20px 60px rgba(10,31,68,0.18);
   --noorix-modal-radius:      18px;
-}
-.dark {
-  --noorix-bg-modal:          #1e2d45;
-  --noorix-modal-header-bg:   #1e2d45;
-  --noorix-modal-footer-bg:   #192538;
-  --noorix-modal-shadow:      0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.5);
 }
 
 /* ── خط موحد لجميع النوافذ ── */
@@ -902,10 +929,6 @@ a { color: inherit; text-decoration: none; }
   background: rgba(37,99,235,0.1);
   color: #2563eb;
 }
-.dark .um-lang-chip--active {
-  background: rgba(37,99,235,0.2);
-  color: #60a5fa;
-}
 
 /* backdrop جوال */
 .um-mobile-backdrop {
@@ -1037,13 +1060,6 @@ html[data-card-style="3"] .noorix-stat-card {
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
-.dark html[data-card-style="3"] .noorix-surface-card,
-.dark html[data-card-style="3"] .noorix-table-frame,
-.dark html[data-card-style="3"] .noorix-exec-card,
-.dark html[data-card-style="3"] .noorix-stat-card {
-  background: rgba(23,32,51,0.85);
-  border-color: rgba(255,255,255,0.08);
-}
 /* 4. نيومورفيك — Neumorphism */
 html[data-card-style="4"] .noorix-surface-card,
 html[data-card-style="4"] .noorix-table-frame,
@@ -1053,12 +1069,6 @@ html[data-card-style="4"] .noorix-stat-card {
   border: none;
   background: var(--noorix-bg-surface);
   box-shadow: 6px 6px 14px rgba(0,0,0,0.08), -6px -6px 14px rgba(255,255,255,0.9);
-}
-.dark html[data-card-style="4"] .noorix-surface-card,
-.dark html[data-card-style="4"] .noorix-table-frame,
-.dark html[data-card-style="4"] .noorix-exec-card,
-.dark html[data-card-style="4"] .noorix-stat-card {
-  box-shadow: 6px 6px 14px rgba(0,0,0,0.4), -6px -6px 14px rgba(30,45,65,0.5);
 }
 /* 5. شريط جانبي — Side Accent */
 html[data-card-style="5"] .noorix-surface-card,
@@ -1112,12 +1122,6 @@ html[data-card-style="9"] .noorix-stat-card {
   border-radius: 16px;
   border: 1px solid rgba(37,99,235,0.2);
   box-shadow: 0 2px 12px rgba(37,99,235,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
-}
-.dark html[data-card-style="9"] .noorix-surface-card,
-.dark html[data-card-style="9"] .noorix-table-frame,
-.dark html[data-card-style="9"] .noorix-exec-card,
-.dark html[data-card-style="9"] .noorix-stat-card {
-  box-shadow: 0 2px 12px rgba(37,99,235,0.15), inset 0 1px 0 rgba(255,255,255,0.03);
 }
 /* 10. حدود مزدوجة — Double Outline */
 html[data-card-style="10"] .noorix-surface-card,
@@ -1177,8 +1181,6 @@ html[data-card-style="10"] .noorix-stat-card {
   border-inline-end: 1px solid var(--noorix-border-muted);
   text-align: center;
 }
-.dark .noorix-table-frame thead th,
-.dark .noorix-table thead th { color: var(--noorix-text-muted); }
 .noorix-table-frame thead th:first-child,
 .noorix-table thead th:first-child {
   border-inline-start: none;
@@ -1591,9 +1593,6 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-exec-card:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   transform: translateY(-1px);
-}
-.dark .noorix-exec-card {
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
 /* الشريط اللوني العلوي — نفس طريقة VaultCard */

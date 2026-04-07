@@ -112,7 +112,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
         </p>
 
         {error && (
-          <div className="nx-p-10 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>
+          <div className="nx-p-10 nx-rounded nx-text-base" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--noorix-accent-red)' }}>
             {error}
           </div>
         )}

@@ -82,7 +82,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   ];
 
   return (
-    <div className="nx-screen">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-flex-end">
