@@ -136,11 +136,11 @@ export const SupplierTable = memo(function SupplierTable({
                   className="px-4 py-3 border-b border-noorix-border"
                   style={{ background: checked ? 'var(--noorix-green-4)' : 'transparent' }}
               >
-                <div className="flex gap-2" style={{ alignItems: 'flex-start' }}>
+                <div className="flex gap-2 items-start">
                   {/* checkbox */}
                   <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
                   <div className="flex-1 min-w-0">
-                    <div className="flex mb-1" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div className="flex mb-1 justify-between items-start">
                       <div>
                         <div className="font-bold text-[14px]">{sName(s, lang)}</div>
                         {s.nameEn && s.nameAr && lang !== 'en' && <div className="nx-cell-muted">{s.nameEn}</div>}
@@ -193,12 +193,12 @@ export const SupplierTable = memo(function SupplierTable({
 
       {BulkBar}
 
-      <div style={{ overflowX: 'auto' }}>
-        <table className="noorix-table" style={{ minWidth: 560 }}>
+      <div className="overflow-x-auto">
+        <table className="noorix-table min-w-[560px]">
           <thead>
-            <tr style={{ textAlign: 'right' }}>
+            <tr className="text-right">
               {/* عمود التحديد */}
-              <th style={{ padding: '9px 4px 9px 12px', width: 40 }}>
+              <th className="py-[9px] pe-1 ps-3 w-10">
                 <CB
                   checked={allSelected}
                   indeterminate={someSelected}
@@ -207,7 +207,7 @@ export const SupplierTable = memo(function SupplierTable({
                 />
               </th>
               {headers.slice(1).map((h) => (
-                <th key={h.label} className="font-bold text-[12px]" style={{ padding: '9px 12px' }}>{h.label}</th>
+                <th key={h.label} className="font-bold text-[12px] py-[9px] px-3">{h.label}</th>
               ))}
             </tr>
           </thead>
@@ -221,28 +221,28 @@ export const SupplierTable = memo(function SupplierTable({
                   key={s.id}
                   style={{ background: checked ? 'var(--noorix-green-4)' : 'transparent' }}
                 >
-                  <td style={{ padding: '4px 4px 4px 12px' }}>
+                  <td className="py-1 pe-1 ps-3">
                     <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
                   </td>
-                  <td className="font-bold" style={{ padding: '9px 12px' }}>{sName(s, lang)}</td>
-                  <td style={{ padding: '9px 12px' }} className="nx-cell-muted">{lang === 'en' ? (s.nameAr || '—') : (s.nameEn || '—')}</td>
-                  <td style={{ padding: '9px 12px' }} className="nx-cell-num">{s.taxNumber || '—'}</td>
-                  <td className="text-[12px]" style={{ padding: '9px 12px' }}>{s.phone || '—'}</td>
-                  <td className="text-[12px]" style={{ padding: '9px 12px' }}>
+                  <td className="font-bold py-[9px] px-3">{sName(s, lang)}</td>
+                  <td className="nx-cell-muted py-[9px] px-3">{lang === 'en' ? (s.nameAr || '—') : (s.nameEn || '—')}</td>
+                  <td className="nx-cell-num py-[9px] px-3">{s.taxNumber || '—'}</td>
+                  <td className="text-[12px] py-[9px] px-3">{s.phone || '—'}</td>
+                  <td className="text-[12px] py-[9px] px-3">
                     {cat ? (
                       <span className="flex items-center gap-6">
                         {icon && <span className="text-[14px]">{icon}</span>}
                         <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
                           {cat.nameAr}
-                          {cat.account?.code && <span style={{ marginRight: 4, opacity: 0.7 }}>[{cat.account.code}]</span>}
+                          {cat.account?.code && <span className="me-1 opacity-70">[{cat.account.code}]</span>}
                         </Badge>
                       </span>
                     ) : '—'}
                   </td>
-                  <td style={{ padding: '9px 12px' }}>
+                  <td className="py-[9px] px-3">
                     <TypeBadge type={s.supplierType || 'purchases'} />
                   </td>
-                  <td style={{ padding: '9px 12px' }}>
+                  <td className="py-[9px] px-3">
                     <ActionBtns onEdit={() => onEdit?.(s)} onDelete={() => onDelete?.(s)} t={t} />
                   </td>
                 </tr>

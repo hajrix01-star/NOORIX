@@ -171,7 +171,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
       }
     >
       <div className="grid gap-3.5">
-        <div className="grid gap-2.5" style={{ gridTemplateColumns: '1fr 100px' }}>
+        <div className="grid gap-2.5 grid-cols-[1fr_100px]">
           <Input type="text" label={`${t('bankTreeCategoryName')} *`} value={name} onChange={(e) => setName(e.target.value)} />
           <Input type="number" label={t('bankTreeSortOrder')} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} min={1} />
         </div>
@@ -193,11 +193,11 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
         </div>
 
         <div className="p-3" style={{ borderRadius: 10, border: '1px solid var(--noorix-amber-35)', background: 'rgba(254,243,199,0.35)' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t('bankTreeParentKeywords')}</div>
-          <p style={{ fontSize: 11, color: 'var(--noorix-text-muted)', margin: '0 0 8px' }}>{t('bankTreeParentKeywordsHint')}</p>
+          <div className="text-[13px] font-semibold mb-1.5">{t('bankTreeParentKeywords')}</div>
+          <p className="text-[11px] text-noorix-muted mb-2">{t('bankTreeParentKeywordsHint')}</p>
           <div className="flex flex-wrap gap-1.5 mb-2">
             {parentKeywords.map((kw, idx) => (
-              <span key={idx} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
+              <span key={idx} className="text-[11px] px-2 py-[2px] rounded-[6px] bg-noorix-surface border border-noorix-border">
                 {kw}
                 <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} style={{ marginInlineStart: 6, color: 'var(--noorix-accent-red)', padding: '0 4px', minHeight: 'auto' }}>
                   ×
@@ -262,7 +262,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
               </div>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {(cl.keywords || []).map((kw, kwIdx) => (
-                  <span key={kwIdx} style={{ fontSize: 11, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)' }}>
+                  <span key={kwIdx} className="text-[11px] font-mono px-2 py-[2px] rounded-[6px] bg-noorix-surface border border-noorix-border">
                     {kw}
                     <Button
                       variant="ghost"
@@ -312,8 +312,8 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
 
   return (
     <div className="noorix-surface-card p-3.5" style={{ opacity: active ? 1 : 0.55 }}>
-        <div className="flex gap-3 flex flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
+        <div className="flex gap-3 flex-wrap justify-between items-start">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center flex flex-wrap gap-2 mb-2">
             {index != null ? (
               <span
@@ -333,7 +333,7 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
                 {index}
               </span>
             ) : null}
-            <span style={{ fontWeight: 700 }}>{category.name}</span>
+            <span className="font-bold">{category.name}</span>
             <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: typeInfo.color, color: typeInfo.colorText }}>
               {typeInfo.icon} {typeInfo.label}
             </span>
@@ -350,23 +350,23 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
                 {sideInfo.icon} {t(sideInfo.labelKey)}
               </span>
             ) : null}
-            <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'var(--noorix-bg-muted)' }}>
+            <span className="text-[10px] px-2 py-[2px] rounded-[6px] bg-noorix-bg-muted">
               {classifications.length} {t('bankTreeStatsClassifications')} · {totalKw} {t('bankTreeStatsKeywords')}
             </span>
           </div>
           {parentKeywords.length > 0 ? (
-            <div style={{ fontSize: 11, marginBottom: 8, color: 'var(--noorix-accent-amber)' }}>
+            <div className="text-[11px] mb-2 text-noorix-amber">
               {t('bankTreeParentKeywordsShort')}: {parentKeywords.join(' · ')}
             </div>
           ) : null}
           {classifications.length > 0 ? (
             <div className="grid gap-1.5">
               {classifications.map((cl, idx) => (
-                <div key={idx} className="text-[12px]" style={{ paddingLeft: 8, borderLeft: '2px solid var(--noorix-border)' }}>
+                <div key={idx} className="text-[12px] pl-2 border-l-2 border-noorix-border">
                   <strong>{cl.name}</strong>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {(cl.keywords || []).map((kw, ki) => (
-                      <code key={ki} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--noorix-bg-muted)' }}>
+                      <code key={ki} className="text-[10px] px-1.5 py-[2px] rounded bg-noorix-bg-muted">
                         {kw}
                       </code>
                     ))}
@@ -376,7 +376,7 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
             </div>
           ) : null}
         </div>
-        <div className="flex flex-col gap-1.5 shrink-0" style={{ alignItems: 'flex-end' }}>
+        <div className="flex flex-col gap-1.5 shrink-0 items-end">
           <label className="nx-checkbox">
             <input type="checkbox" checked={active} onChange={() => onToggle()} />
             {t('bankTreeActive')}
@@ -618,18 +618,18 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
   if (!companyId) return null;
 
   return (
-    <div className="p-4" style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div className="p-4 max-w-[800px] mx-auto">
       <div className="noorix-surface-card flex items-center flex flex-wrap gap-3 p-3 mb-3">
-        <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeStatsCategories')}</span>
+        <span className="text-[13px] text-noorix-muted">{t('bankTreeStatsCategories')}</span>
         <strong>{sortedCategories.length}</strong>
-        <span style={{ color: 'var(--noorix-border)' }}>|</span>
-        <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeStatsClassifications')}</span>
-        <strong style={{ color: 'var(--noorix-accent-blue)' }}>{totalClassifications}</strong>
-        <span style={{ color: 'var(--noorix-border)' }}>|</span>
-        <span style={{ fontSize: 13, color: 'var(--noorix-text-muted)' }}>{t('bankTreeStatsKeywords')}</span>
-        <strong style={{ color: 'var(--noorix-accent-green)' }}>{totalKeywords}</strong>
+        <span className="text-noorix-border">|</span>
+        <span className="text-[13px] text-noorix-muted">{t('bankTreeStatsClassifications')}</span>
+        <strong className="text-noorix-blue">{totalClassifications}</strong>
+        <span className="text-noorix-border">|</span>
+        <span className="text-[13px] text-noorix-muted">{t('bankTreeStatsKeywords')}</span>
+        <strong className="text-noorix-green">{totalKeywords}</strong>
         {inactiveCategories.length > 0 ? (
-          <span style={{ fontSize: 11, color: 'var(--noorix-text-muted)' }}>
+          <span className="text-[11px] text-noorix-muted">
             ({t('bankTreeInactiveCount', String(inactiveCategories.length))})
           </span>
         ) : null}
@@ -656,10 +656,10 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
           <div className="mb-3 text-[20px]"></div>
           <div className="font-semibold mb-1.5">{t('bankTreeEmptyTitle')}</div>
           <div className="text-[13px] mb-2">{t('bankTreeEmptyDesc')}</div>
-          <p className="text-[12px] text-noorix-muted mb-4" style={{ maxWidth: 420, marginInline: 'auto' }}>
+          <p className="text-[12px] text-noorix-muted mb-4 max-w-[420px] mx-auto">
             {t('bankTreeSeedDefaultsHint')}
           </p>
-          <div className="flex flex-wrap gap-2.5 text-center" style={{ justifyContent: 'center' }}>
+          <div className="flex flex-wrap gap-2.5 text-center justify-center">
             <Button variant="primary" onClick={openNew}>{t('bankTreeCreateFirst')}</Button>
             <Button disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
               {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
@@ -735,7 +735,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
         }
       >
         <p className="text-[13px] text-noorix-muted">{t('bankTreeMigrateBody', String(activeFlat.length), String(groupedForMigrate.length))}</p>
-        <div className="overflow-auto grid gap-2 mt-3 rounded-lg" style={{ maxHeight: 200 }}>
+        <div className="overflow-auto grid gap-2 mt-3 rounded-lg max-h-[200px]">
           {groupedForMigrate.map((g, i) => (
             <div key={i} className="p-2 rounded-lg bg-noorix-bg-muted text-[12px]">
               <strong>{g.categoryName}</strong> — {g.keywords.slice(0, 6).join(', ')}
@@ -791,7 +791,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
           ) : null}
           {importSource === 'file' ? (
             <div>
-              <label className="nx-file-label" style={{ display: 'inline-flex', maxWidth: '100%' }}>
+              <label className="nx-file-label inline-flex max-w-full">
                 <input
                   type="file"
                   accept="application/json,.json"
@@ -801,7 +801,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
               </label>
             </div>
           ) : null}
-          <div className="grid gap-2 border-t border-noorix-border" style={{ paddingTop: 10 }}>
+          <div className="grid gap-2 border-t border-noorix-border pt-2.5">
             <label className="nx-checkbox">
               <input type="radio" name="impMode" checked={importMode === 'merge'} onChange={() => setImportMode('merge')} />
               {t('bankRulesImportModeMerge')}

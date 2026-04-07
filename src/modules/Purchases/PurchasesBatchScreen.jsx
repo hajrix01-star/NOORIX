@@ -221,7 +221,7 @@ export default function PurchasesBatchScreen() {
       render: (_, row) => {
         const canCancel = row.status === 'active' || row.status === 'partial';
         return (
-          <div className="noorix-actions-row flex flex-wrap" style={{ justifyContent: 'center', maxWidth: 280 }}>
+          <div className="noorix-actions-row flex flex-wrap justify-center max-w-[280px]">
             <Button
               size="sm"
               onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
@@ -253,33 +253,33 @@ export default function PurchasesBatchScreen() {
     const canCancel = row.status === 'active' || row.status === 'partial';
     return (
       <div>
-        <div className="flex mb-1" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <span className="font-bold text-[14px]" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{row.batchId}</span>
+        <div className="flex mb-1 justify-between items-start">
+          <span className="font-bold text-[14px] text-noorix-blue" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{row.batchId}</span>
           <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
         </div>
         <div className="flex gap-2.5 text-[12px] text-noorix-muted mb-1.5">
           <span>{formatSaudiDate(row.transactionDate)}</span>
-          {row.invoiceCount > 0 && <span className="font-bold" style={{ color: 'var(--noorix-accent-blue)' }}>{row.invoiceCount} {t('invoices')}</span>}
+          {row.invoiceCount > 0 && <span className="font-bold text-noorix-blue">{row.invoiceCount} {t('invoices')}</span>}
         </div>
         {row.supplierNames && <div className="text-[13px] mb-1 truncate">{row.supplierNames}</div>}
         <div className="text-[12px] mb-2 text-noorix-muted truncate">
           {t('vault')}: {row.vaultName || '—'}
         </div>
-        <div className="grid grid-cols-3 rounded-lg gap-1.5" style={{ background: 'var(--noorix-bg-page)', padding: '8px 10px', marginBottom: 10 }}>
+        <div className="grid grid-cols-3 rounded-lg gap-1.5 bg-noorix-bg py-2 px-2.5 mb-2.5">
           <div>
-            <div className="text-noorix-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('net')}</div>
+            <div className="text-noorix-muted text-[10px] mb-0.5">{t('net')}</div>
             <div className="text-[13px] text-noorix-green font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.netAmount)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('tax')}</div>
+            <div className="text-noorix-muted text-[10px] mb-0.5">{t('tax')}</div>
             <div className="text-[13px] text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.taxAmount)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted" style={{ fontSize: 10, marginBottom: 2 }}>{t('total')}</div>
+            <div className="text-noorix-muted text-[10px] mb-0.5">{t('total')}</div>
             <div className="text-[14px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmount)}</div>
           </div>
         </div>
-        <div className="flex gap-1.5 flex flex-wrap" style={{ justifyContent: 'flex-end' }}>
+        <div className="flex gap-1.5 flex-wrap justify-end">
           <Button size="sm" onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId}>{t('print')}</Button>
           <Button size="sm" onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId}>✎ {t('edit')}</Button>
           {canCancel && <Button size="sm" variant="danger" onClick={() => handleCancelBatch(row)} disabled={batchActionLoading === row.batchId}>× {t('cancel')}</Button>}
@@ -291,13 +291,13 @@ export default function PurchasesBatchScreen() {
   /* صف التذييل: # + batchId + تاريخ + عدد + مورد + خزنة + صافي + ضريبة + إجمالي + حالة + إجراءات = 11 عموداً */
   const batchesFooterCells = (
     <>
-      <td colSpan={6} className="text-[12px] text-noorix-muted" style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+      <td colSpan={6} className="text-[12px] text-noorix-muted py-2 px-2.5 align-middle">
         {t('totalBatches', activeOnly.length) || `الإجمالي (${activeOnly.length} دفعة)`}
       </td>
-      <td className="text-noorix-green whitespace-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{fmt(totalNet, 2)}</td>
-      <td className="text-noorix-amber whitespace-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', textAlign: 'right' }}>{fmt(totalTax, 2)}</td>
-      <td className="whitespace-nowrap" style={{ padding: '8px 10px', fontFamily: 'var(--noorix-font-numbers)', color: 'var(--noorix-accent-violet)', fontWeight: 900, textAlign: 'right' }}>{fmt(totalAmount, 2)}</td>
-      <td colSpan={2} style={{ padding: '8px 10px' }} />
+      <td className="text-noorix-green whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet, 2)}</td>
+      <td className="text-noorix-amber whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax, 2)}</td>
+      <td className="whitespace-nowrap py-2 px-2.5 text-noorix-violet font-[900] text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount, 2)}</td>
+      <td colSpan={2} className="py-2 px-2.5" />
     </>
   );
 
@@ -410,7 +410,7 @@ export default function PurchasesBatchScreen() {
 
       {/* ── التبويبات ── */}
       {hasCompany && (
-        <div className="noorix-tab-bar flex gap-1" style={{ borderBottom: '2px solid var(--noorix-border)', paddingBottom: 0 }}>
+        <div className="noorix-tab-bar flex gap-1 border-b-2 border-noorix-border pb-0">
           {getTabs(t).map((tab) => (
             <Button
               key={tab.id}
@@ -486,15 +486,15 @@ export default function PurchasesBatchScreen() {
           </div>
 
           {!vaultsLoading && activeVaults.length === 0 && (
-            <div className="text-[13px] border-b border-noorix-border" style={{ padding: '10px 16px', color: 'var(--noorix-accent-amber)', background: 'var(--noorix-yellow-12)' }}>
+            <div className="text-[13px] border-b border-noorix-border py-[10px] px-4 text-noorix-amber bg-[var(--noorix-yellow-12)]">
               {t('batchPurchasesNoVaults')}
             </div>
           )}
 
           {/* جدول الإدخال */}
-          <div style={{ padding: '0 12px 16px' }}>
+          <div className="px-3 pb-4">
               <div className="noorix-surface-card noorix-table-frame batch-purchases-table w-full">
-              <table className="noorix-table w-full" style={{ tableLayout: 'fixed', minWidth: 900 }}>
+              <table className="noorix-table w-full table-fixed min-w-[900px]">
                 <colgroup><col style={{ width: '3%' }} /><col style={{ width: '20%' }} /><col style={{ width: '11%' }} /><col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '11%' }} /><col style={{ width: '5%' }} /><col style={{ width: '14%' }} /><col style={{ width: '3%' }} /></colgroup>
                 <thead>
                   <tr>

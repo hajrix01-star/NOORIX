@@ -259,7 +259,7 @@ export default function TaxReportTab() {
           {t('pleaseSelectCompany')}
         </div>
       ) : (
-        <div className="noorix-surface-card overflow-hidden" style={{ padding: 0 }}>
+        <div className="noorix-surface-card overflow-hidden p-0">
           <div className="p-4 border-b border-noorix-border bg-noorix-surface">
             <div className="text-[14px] font-bold text-noorix-blue">{companyName}</div>
             <div className="text-[12px] text-noorix-muted mt-1">
@@ -268,26 +268,26 @@ export default function TaxReportTab() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full" style={{ minWidth: 700, borderCollapse: 'collapse', fontSize: 14 }}>
+            <table className="w-full min-w-[700px] border-collapse text-[14px]">
               <thead>
                 <tr>
-                  <th className="text-end border-b border-noorix-border font-bold" style={{ padding: '10px 12px', background: 'var(--noorix-table-header-bg)', width: 280 }}>
+                  <th className="text-end border-b border-noorix-border font-bold py-[10px] px-3 w-[280px] bg-[var(--noorix-table-header-bg)]">
                     {t('reportItem')}
                   </th>
-                  <th className="text-center border-b border-noorix-border font-bold" style={{ padding: '10px 12px', background: 'var(--noorix-table-header-bg)' }}>
+                  <th className="text-center border-b border-noorix-border font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">
                     {lang === 'ar' ? 'المبلغ (ر.س)' : 'Amount (SAR)'}
                   </th>
-                  <th className="text-center border-b border-noorix-border font-bold" style={{ padding: '10px 12px', background: 'var(--noorix-table-header-bg)' }}>
+                  <th className="text-center border-b border-noorix-border font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">
                     {lang === 'ar' ? 'التعديلات (ر.س)' : 'Adjustments (SAR)'}
                   </th>
-                  <th className="text-center border-b border-noorix-border font-bold" style={{ padding: '10px 12px', background: 'var(--noorix-table-header-bg)' }}>
+                  <th className="text-center border-b border-noorix-border font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">
                     {lang === 'ar' ? 'ضريبة القيمة المضافة (ر.س)' : 'VAT (SAR)'}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td colSpan={4} className="font-bold text-noorix-green" style={{ padding: '10px 12px', background: 'var(--noorix-green-6)' }}>
+                  <td colSpan={4} className="font-bold text-noorix-green py-[10px] px-3 bg-[var(--noorix-green-6)]">
                     {lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)'}
                   </td>
                 </tr>
@@ -296,19 +296,19 @@ export default function TaxReportTab() {
                     <td className="border-b border-noorix-border" style={{ padding: '10px 12px', fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
-                    <td className="text-center border-b border-noorix-border" style={{ padding: '8px 12px' }}>
+                    <td className="text-center border-b border-noorix-border py-2 px-3">
                       {r.isTotal ? fmt(outputTotal, 2) : renderEditableCell(r.key, 'amount')}
                     </td>
-                    <td className="text-center border-b border-noorix-border" style={{ padding: '8px 12px' }}>
+                    <td className="text-center border-b border-noorix-border py-2 px-3">
                       {r.isTotal ? '—' : renderEditableCell(r.key, 'adjustment')}
                     </td>
-                    <td className="text-center border-b border-noorix-border nx-font-numbers" style={{ padding: '8px 12px' }}>
+                    <td className="text-center border-b border-noorix-border nx-font-numbers py-2 px-3">
                       {r.isTotal ? fmt(outputTotal, 2) : renderEditableCell(r.key, 'vat')}
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} className="font-bold text-noorix-red" style={{ padding: '10px 12px', background: 'var(--noorix-red-6)' }}>
+                  <td colSpan={4} className="font-bold text-noorix-red py-[10px] px-3 bg-[var(--noorix-red-6)]">
                     {lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)'}
                   </td>
                 </tr>
@@ -317,49 +317,49 @@ export default function TaxReportTab() {
                     <td className="border-b border-noorix-border" style={{ padding: '10px 12px', fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
-                    <td className="text-center border-b border-noorix-border" style={{ padding: '8px 12px' }}>
+                    <td className="text-center border-b border-noorix-border py-2 px-3">
                       {r.isTotal ? fmt(inputTotal, 2) : renderEditableCell(r.key, 'amount')}
                     </td>
-                    <td className="text-center border-b border-noorix-border" style={{ padding: '8px 12px' }}>
+                    <td className="text-center border-b border-noorix-border py-2 px-3">
                       {r.isTotal ? '—' : renderEditableCell(r.key, 'adjustment')}
                     </td>
-                    <td className="text-center border-b border-noorix-border nx-font-numbers" style={{ padding: '8px 12px' }}>
+                    <td className="text-center border-b border-noorix-border nx-font-numbers py-2 px-3">
                       {r.isTotal ? fmt(inputTotal, 2) : renderEditableCell(r.key, 'vat')}
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} className="font-bold text-noorix-text" style={{ padding: '10px 12px', background: 'var(--noorix-blue-6)' }}>
+                  <td colSpan={4} className="font-bold text-noorix-text py-[10px] px-3 bg-[var(--noorix-blue-6)]">
                     {lang === 'ar' ? 'الملخص' : 'Summary'}
                   </td>
                 </tr>
                 <tr>
-                  <td className="border-b border-noorix-border" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers" style={{ padding: '10px 12px' }}>{fmt(outputTotal, 2)} ر.س</td>
+                  <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td>
+                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3">{fmt(outputTotal, 2)} ر.س</td>
                 </tr>
                 <tr>
-                  <td className="border-b border-noorix-border" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers" style={{ padding: '10px 12px' }}>{fmt(inputTotal, 2)} ر.س</td>
+                  <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable'}</td>
+                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3">{fmt(inputTotal, 2)} ر.س</td>
                 </tr>
                 <tr>
-                  <td className="border-b border-noorix-border" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers font-bold" style={{ padding: '10px 12px' }}>{fmt(netVat, 2)} ر.س</td>
+                  <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td>
+                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers font-bold py-[10px] px-3">{fmt(netVat, 2)} ر.س</td>
                 </tr>
                 <tr>
-                  <td className="border-b border-noorix-border" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-center" style={{ padding: '8px 12px' }}>
+                  <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td>
+                  <td colSpan={3} className="border-b border-noorix-border text-center py-2 px-3">
                     <Input type="text" inputMode="decimal" value={priorAdj || ''} onChange={(e) => updateRow('prior_adjustments', null, e.target.value)} placeholder="0" />
                   </td>
                 </tr>
                 <tr>
-                  <td className="border-b border-noorix-border" style={{ padding: '10px 12px' }}>{lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-center" style={{ padding: '8px 12px' }}>
+                  <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td>
+                  <td colSpan={3} className="border-b border-noorix-border text-center py-2 px-3">
                     <Input type="text" inputMode="decimal" value={balanceCarried || ''} onChange={(e) => updateRow('balance_carried', null, e.target.value)} placeholder="0" />
                   </td>
                 </tr>
-                <tr style={{ background: 'var(--noorix-blue-8)', borderTop: '2px solid var(--noorix-accent-blue)' }}>
-                  <td className="font-extrabold" style={{ padding: '12px 12px' }}>{lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td>
-                  <td colSpan={3} className="text-end nx-font-numbers font-extrabold" style={{ padding: '12px 12px', color: netPayable >= 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-accent-green)' }}>
+                <tr className="bg-[var(--noorix-blue-8)] border-t-2 border-noorix-blue">
+                  <td className="font-extrabold p-3">{lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td>
+                  <td colSpan={3} className="text-end nx-font-numbers font-extrabold p-3" style={{ color: netPayable >= 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-accent-green)' }}>
                     {fmt(netPayable, 2)} ر.س {netPayable >= 0 ? (lang === 'ar' ? '(مستحقة)' : '(payable)') : (lang === 'ar' ? '(مطالب بها)' : '(refundable)')}
                   </td>
                 </tr>

@@ -174,7 +174,7 @@ export default function OwnerDashboardScreen() {
     return (
       <div className="flex flex-col gap-4 p-4 lg:p-6">
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('ownerDashboard')}</h1>
-        <div className="noorix-surface-card text-center text-noorix-muted mt-4" style={{ padding: 32 }}>
+        <div className="noorix-surface-card text-center text-noorix-muted mt-4 p-8">
           {t('pleaseSelectCompany')}
         </div>
       </div>
@@ -247,7 +247,7 @@ export default function OwnerDashboardScreen() {
       </div>
 
       {isLoading && (
-        <div className="noorix-surface-card text-center text-noorix-muted" style={{ padding: 32 }}>{t('loading')}</div>
+        <div className="noorix-surface-card text-center text-noorix-muted p-8">{t('loading')}</div>
       )}
 
       {isError && (
@@ -257,9 +257,9 @@ export default function OwnerDashboardScreen() {
       {!isLoading && !isError && idsToFetch.length > 0 && (
         <>
           {/* كروت الإجماليات + النسب */}
-          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+          <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
             <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: 'var(--noorix-accent-green)' }} />
+              <div className="h-[3px] bg-noorix-green" />
               <div className="p-4">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('ownerTotalSales')}</div>
                 <div className="text-[20px] font-extrabold nx-font-numbers">{fmt(aggregated.totalSales, 2)} ﷼</div>
@@ -267,7 +267,7 @@ export default function OwnerDashboardScreen() {
               </div>
             </div>
             <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: 'var(--noorix-accent-red)' }} />
+              <div className="h-[3px] bg-noorix-red" />
               <div className="p-4">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('purchasesToSalesRatio')}</div>
                 <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
@@ -277,10 +277,10 @@ export default function OwnerDashboardScreen() {
               </div>
             </div>
             <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: 'var(--noorix-accent-red)' }} />
+              <div className="h-[3px] bg-noorix-red" />
               <div className="p-4">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('annualExpenses')} {t('sectionToSalesRatio')}</div>
-                <div className="text-[20px] font-extrabold nx-font-numbers" style={{ color: 'var(--noorix-accent-red)' }}>
+                <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalExpenses / aggregated.totalSales) * 100, 1) : '—'}%
                 </div>
                 <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalExpenses, 2)} ﷼</div>
@@ -303,8 +303,8 @@ export default function OwnerDashboardScreen() {
           {/* المبيعات الشهرية — رسم بياني */}
           <div className="noorix-surface-card border border-noorix-border" style={{ padding: isMobile ? 12 : 24, borderRadius: CARD_BORDER_RADIUS }}>
             <div className="text-[16px] font-bold mb-5">{t('ownerMonthlySales')} — {year}{selectedMonthNum ? ` (${EN_MONTHS[selectedMonthNum - 1]})` : ''}</div>
-            <div className="flex" style={{ gap: 0, minHeight: 220 }}>
-              <div className="shrink-0 flex flex-col" style={{ width: 48, justifyContent: 'space-between', paddingTop: 4, paddingBottom: 28 }}>
+            <div className="flex gap-0 min-h-[220px]">
+              <div className="shrink-0 flex flex-col w-12 justify-between pt-1 pb-7">
                 {[...yAxisTicks].reverse().map((tick) => (
                   <div key={tick} className="text-[10px] nx-font-numbers text-noorix-muted font-semibold">
                     {formatAxisValue(tick)}
@@ -312,14 +312,14 @@ export default function OwnerDashboardScreen() {
                 ))}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex gap-1.5" style={{ alignItems: 'flex-end', height: 180, paddingBottom: 28 }}>
+                <div className="flex gap-1.5 items-end h-[180px] pb-7">
                   {chartData.map((point) => {
                     const companyAmounts = point.byCompany || {};
                     const total = Object.values(companyAmounts).reduce((a, b) => a + b, 0);
                     const barHeightPct = maxChartValue > 0 ? (total / maxChartValue) * 100 : 0;
                     return (
-                      <div key={point.month} className="flex-1 min-w-0 flex flex-col gap-1 min-w-0" style={{ alignItems: 'center' }}>
-                        <div className="w-full h-full flex" style={{ maxWidth: 40, flexDirection: 'column-reverse', alignItems: 'stretch' }}>
+                      <div key={point.month} className="flex-1 min-w-0 flex flex-col gap-1 items-center">
+                        <div className="w-full h-full flex max-w-[40px] flex-col-reverse items-stretch">
                           {idsToFetch.map((companyId, i) => {
                             const amt = companyAmounts[companyId] || 0;
                             if (amt <= 0) return null;
@@ -345,7 +345,7 @@ export default function OwnerDashboardScreen() {
                 </div>
               </div>
             </div>
-            <div className="flex flex flex-wrap gap-4 mt-4 border-t border-noorix-border" style={{ paddingTop: 12 }}>
+            <div className="flex flex-wrap gap-4 mt-4 border-t border-noorix-border pt-3">
               {idsToFetch.map((companyId, i) => {
                 const c = companyList.find((x) => x.id === companyId);
                 return (
@@ -360,7 +360,7 @@ export default function OwnerDashboardScreen() {
 
           {/* توزيع الأرباح */}
           <div className="noorix-surface-card p-4 border border-noorix-border" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-            <div className="text-[16px] font-bold" style={{ marginBottom: 14 }}>{t('ownerProfitDistribution')}</div>
+            <div className="text-[16px] font-bold mb-3.5">{t('ownerProfitDistribution')}</div>
             <div className="flex flex-col gap-3">
               {aggregated.byCompany
                 .filter((x) => Math.abs(x.netProfit) > 0.001)
@@ -377,15 +377,15 @@ export default function OwnerDashboardScreen() {
                           <span className="text-[13px] font-semibold truncate">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-8 shrink-0">
-                          <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor }}>
+                          <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor /* dynamic: profit/loss color */ }}>
                             {fmt(item.netProfit, 2)} ﷼
                           </span>
-                          <span className="text-[11px] text-noorix-muted text-end" style={{ minWidth: 38 }}>
+                          <span className="text-[11px] text-noorix-muted text-end min-w-[38px]">
                             {aggregated.totalNetProfit !== 0 ? `${fmt(pct, 1)}%` : '—'}
                           </span>
                         </div>
                       </div>
-                      <div className="bg-noorix-bg-muted overflow-hidden" style={{ height: 6, borderRadius: 4 }}>
+                      <div className="bg-noorix-bg-muted overflow-hidden h-1.5 rounded">
                         <div className="h-full" style={{ width: `${barWidth}%`, background: profitColor, borderRadius: 4, transition: 'width 400ms ease' }} />
                       </div>
                     </div>

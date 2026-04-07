@@ -119,10 +119,10 @@ export default function ReportsScreen() {
 
       <div className="flex flex-col gap-4">
       <div className="nx-page-header">
-        <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
+        <div className="flex-1 min-w-0">
           <h2 className="font-bold m-0 text-[18px]">{t('reportGeneral')}</h2>
         </div>
-        <div className="flex items-center flex flex-wrap gap-2" style={{ flex: '0 1 auto' }}>
+        <div className="flex items-center flex-wrap gap-2 flex-[0_1_auto]">
           <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </Input>
@@ -222,10 +222,10 @@ export default function ReportsScreen() {
           )}
 
           {!isLoading && !error && report && visibleRows.length > 0 && (
-            <div style={{ maxWidth: 'min(100%, 1400px)', margin: '0 auto' }}>
-              <div className="noorix-surface-card overflow-hidden rounded-xl" style={{ padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+            <div className="max-w-[min(100%,1400px)] mx-auto">
+              <div className="noorix-surface-card overflow-hidden rounded-xl p-0" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 {isMobile && (
-                  <div className="nx-tab-bar" style={{ overflowX: 'auto', flexWrap: 'nowrap', borderBottom: '1px solid var(--noorix-border)' }}>
+                  <div className="nx-tab-bar overflow-x-auto flex-nowrap border-b border-noorix-border">
                     <Button type="button" className={`nx-tab-btn${!selectedMonth ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth('')}>{t('allMonths')}</Button>
                     {(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN).map((name, index) => (
                       <Button key={index} type="button" className={`nx-tab-btn${selectedMonthNumber === index + 1 ? ' nx-tab-btn--active' : ''}`} onClick={() => setSelectedMonth(String(index + 1))}>{name}</Button>
