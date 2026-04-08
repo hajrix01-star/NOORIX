@@ -6,7 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
-import { Button } from '../../ui';
+import { ScreenShell, ScreenTitle, ScreenTabs, cn } from '../../ui';
 import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';
 import { ItemsManageTab } from './components/ItemsManageTab';
@@ -50,9 +50,9 @@ export default function OrdersScreen() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+    <ScreenShell>
       <div>
-        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('ordersTitle')}</h1>
+        <ScreenTitle>{t('ordersTitle')}</ScreenTitle>
       </div>
 
       {!companyId && (
@@ -63,22 +63,17 @@ export default function OrdersScreen() {
 
       {companyId && (
         <>
-          {/* تبويبات */}
-          <div className="orders-screen-tab-strip" role="tablist" dir="ltr">
-            {tabs.map((tab) => (
-              <Button
-                key={tab.id}
-                type="button"
-                variant="ghost"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                className={`orders-screen-tab${activeTab === tab.id ? ' orders-screen-tab--active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </Button>
-            ))}
-          </div>
+          <ScreenTabs
+            omitDefaultBarClasses
+            fadeWrap={false}
+            variant="underline"
+            barClassName="orders-screen-tab-strip"
+            getTabClassName={(_, active) => cn('orders-screen-tab', active && 'orders-screen-tab--active')}
+            items={tabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+            value={activeTab}
+            onChange={setActiveTab}
+            buttonSize="auto"
+          />
 
           {activeTab === 'orders' && (
             <OrdersTab
@@ -103,6 +98,6 @@ export default function OrdersScreen() {
           {activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
         </>
       )}
-    </div>
+    </ScreenShell>
   );
 }

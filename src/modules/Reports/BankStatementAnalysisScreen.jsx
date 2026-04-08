@@ -15,7 +15,7 @@ import {
 import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import Toast from '../../components/Toast';
-import { Button, Badge, Modal, Input } from '../../ui';
+import { Button, Badge, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
 import BankStatementDetailView from './bank/BankStatementDetailView';
@@ -136,7 +136,7 @@ export default function BankStatementAnalysisScreen() {
 
   if (selectedStatementId) {
     return (
-      <div className="flex flex-col gap-4 p-4 lg:p-6">
+      <ScreenShell>
         <BankStatementDetailView
           statementId={selectedStatementId}
           companyId={companyId}
@@ -173,14 +173,14 @@ export default function BankStatementAnalysisScreen() {
           type={toast.type}
           onClose={() => setToast((p) => ({ ...p, visible: false }))}
         />
-      </div>
+      </ScreenShell>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
       <div className="nx-page-header">
-        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('reportBankStatementAnalysis')}</h1>
+        <ScreenTitle>{t('reportBankStatementAnalysis')}</ScreenTitle>
         <Button variant="primary" onClick={() => setShowUpload(true)}>
           <span aria-hidden className="text-[18px] leading-none opacity-[0.95]">＋</span>
           {t('bankStatementUploadNew')}
@@ -216,20 +216,17 @@ export default function BankStatementAnalysisScreen() {
       )}
 
         <div className="noorix-surface-card p-0 overflow-hidden">
-        <div className="noorix-bank-tab-row" role="tablist">
-          {TABS.map((tab) => (
-            <Button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              className={`noorix-bank-tab${activeTab === tab.id ? ' noorix-bank-tab--active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {t(tab.labelKey)}
-            </Button>
-          ))}
-        </div>
+        <ScreenTabs
+          omitDefaultBarClasses
+          fadeWrap={false}
+          variant="underline"
+          barClassName="noorix-bank-tab-row"
+          getTabClassName={(_, active) => cn('noorix-bank-tab', active && 'noorix-bank-tab--active')}
+          items={TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) }))}
+          value={activeTab}
+          onChange={setActiveTab}
+          buttonSize="auto"
+        />
 
         <div className="p-6">
           {activeTab === 'statements' && (
@@ -377,6 +374,6 @@ export default function BankStatementAnalysisScreen() {
         type={toast.type}
         onClose={() => setToast((p) => ({ ...p, visible: false }))}
       />
-    </div>
+    </ScreenShell>
   );
 }

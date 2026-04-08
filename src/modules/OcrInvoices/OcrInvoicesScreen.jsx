@@ -1,7 +1,7 @@
 ﻿import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button } from '../../ui';
+import { Button, ScreenShell, ScreenTabs, cn } from '../../ui';
 import InvoiceUploadTab    from './components/InvoiceUploadTab';
 import InvoiceListTab      from './components/InvoiceListTab';
 import SuppliersCatalogTab from './components/SuppliersCatalogTab';
@@ -52,7 +52,7 @@ export default function OcrInvoicesScreen() {
   const itemsCount    = itemsData?.length     || 0;
 
   return (
-    <div className="flex flex-col gap-4 ocr-screen" dir={dir}>
+    <ScreenShell className="ocr-screen" dir={dir}>
 
       {/* ── Header ── */}
       <div className="ocr-header">
@@ -88,25 +88,27 @@ export default function OcrInvoicesScreen() {
       {/* ── Tabs ───────────────────────────────────────────────────────── */}
       <div className="ocr-card">
         {/* Tab bar */}
-        <div className="ocr-tabbar" role="tablist">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <Button
-                key={tab.key}
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setActiveTab(tab.key)}
-                className={`ocr-tab-btn${isActive ? ' ocr-tab-btn--active' : ''}`}
-              >
+        <ScreenTabs
+          omitDefaultBarClasses
+          fadeWrap={false}
+          variant="underline"
+          barClassName="ocr-tabbar"
+          getTabClassName={(_, active) => cn('ocr-tab-btn', active && 'ocr-tab-btn--active')}
+          items={TABS.map((tab) => ({
+            id: tab.key,
+            label: (
+              <span className="inline-flex items-center gap-1.5">
                 <span className="ocr-tab-label">{isAr ? tab.labelAr : tab.labelEn}</span>
-                {tab.key === 'alerts' && alertsCount > 0 && (
+                {tab.key === 'alerts' && alertsCount > 0 ? (
                   <span className="ocr-tab-badge">{alertsCount}</span>
-                )}
-              </Button>
-            );
-          })}
-        </div>
+                ) : null}
+              </span>
+            ),
+          }))}
+          value={activeTab}
+          onChange={setActiveTab}
+          buttonSize="auto"
+        />
 
         {/* Tab content */}
         <div className="ocr-tab-body">
@@ -127,6 +129,6 @@ export default function OcrInvoicesScreen() {
           )}
         </div>
       </div>
-    </div>
+    </ScreenShell>
   );
 }
