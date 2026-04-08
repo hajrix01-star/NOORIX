@@ -4290,7 +4290,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 6px;
+    /* مسافة أوضح بين الحبات — يمنع انطباع «سطر نص واحد» */
+    gap: 10px;
     min-width: 100%;
     width: max-content;
     overflow-x: auto;
@@ -4307,35 +4308,42 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
   .nx-tab-btn.nx-tab-btn--segmented {
     border-bottom: none;
-    border-radius: 0.5rem;
+    border-radius: 0.625rem;
     margin: 0;
     border: 1px solid transparent;
     /* حشو أفقي أوفر للعربي — الحروف تتجاوز صندوق الإيمو أحياناً فتُقصّ مع الزوايا */
-    padding: 0.5rem 1.125rem;
-    min-height: 2.25rem;
+    padding: 0.55rem 1.25rem;
+    min-height: 2.5rem;
     font-size: 13px;
     line-height: 1.45;
     overflow: visible;
+    box-sizing: border-box;
   }
+  /* غير نشط: سطح أبيض + حد واضح + ظل — يبرز فوق شريط الخلفية المموّه */
   .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) {
-    border-color: var(--noorix-border-muted);
-    background: var(--noorix-bg-muted);
+    border-color: var(--noorix-border);
+    background: var(--noorix-bg-surface);
+    color: var(--noorix-text-muted);
+    box-shadow: 0 1px 2px rgba(10, 31, 68, 0.07);
   }
   .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) {
     color: var(--noorix-text);
-    background: var(--noorix-bg-muted);
-    border-color: var(--noorix-border);
+    background: var(--noorix-bg-surface);
+    border-color: var(--noorix-accent-blue);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
   }
   .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active {
-    border-color: transparent;
+    border-color: #15803d;
     background: var(--noorix-accent-green);
     color: #fff;
     font-weight: 700;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35);
   }
   .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover {
     color: #fff;
     background: var(--noorix-accent-green);
-    filter: brightness(0.97);
+    filter: brightness(1.03);
+    box-shadow: 0 3px 10px rgba(22, 163, 74, 0.4);
   }
 
   .nx-tab-content {

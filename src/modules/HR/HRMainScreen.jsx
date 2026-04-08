@@ -93,7 +93,7 @@ export default function HRMainScreen() {
       <div className="noorix-surface-card overflow-hidden p-0">
         <ScreenTabs
           variant="segmented"
-          className="rounded-none border-0 border-b border-noorix-border bg-noorix-bg-muted/45 p-2 shadow-none"
+          className="rounded-none border-0 border-b border-noorix-border bg-noorix-bg-muted p-3 shadow-none"
           items={hrTabItems}
           value={activeTab}
           onChange={setActiveTab}
