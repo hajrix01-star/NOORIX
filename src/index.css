@@ -3264,6 +3264,15 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   text-align: center !important;
   vertical-align: middle !important;
 }
+/* عمود الاسم — محاذاة بداية القراءة (مثل التصميم الأول)، لا يتوسّط */
+.nx-modal.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table thead th:first-child,
+.nx-drawer-panel.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table thead th:first-child {
+  text-align: start !important;
+}
+.nx-modal.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table tbody td:first-child,
+.nx-drawer-panel.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table tbody td:first-child {
+  text-align: start !important;
+}
 .payroll-run-form-drawer .prfm-modal-scroll tbody td {
   padding: 4px 5px;
 }
@@ -3275,13 +3284,17 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   text-align: center;
   min-width: 0;
 }
-.payroll-run-form-drawer .payroll-run-table tbody td .nx-checkbox {
-  justify-content: center;
+.payroll-run-form-drawer .payroll-run-table tbody td:first-child .nx-checkbox.nx-checkbox--tight {
+  justify-content: flex-start;
   width: 100%;
 }
 .payroll-run-form-drawer .payroll-run-table tbody td .nx-checkbox--tight {
   flex-wrap: nowrap;
   gap: 6px;
+}
+.payroll-run-form-drawer .payroll-run-table tbody td .nx-checkbox--cell-center {
+  justify-content: center;
+  width: 100%;
 }
 .payroll-run-form-drawer .payroll-run-table tbody td input[type='number'] {
   display: block;

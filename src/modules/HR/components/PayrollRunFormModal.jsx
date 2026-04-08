@@ -528,7 +528,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           <table className="payroll-run-table">
             <thead>
               <tr>
-                <th className="w-[24%] min-w-0 text-center">{t('employeeName')}</th>
+                <th className="w-[24%] min-w-0 text-start">{t('employeeName')}</th>
                 <th className="w-[11%] min-w-0 text-center">{t('payrollAdvanceDates')}</th>
                 <th className="w-[10%] min-w-0 text-center">{t('grossSalary')}</th>
                 <th className="w-[9%] min-w-0 text-center">{t('payrollAllowances')}</th>
@@ -544,8 +544,8 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 const included = idx >= 0;
                 return (
                   <tr key={emp.id}>
-                    <td className="min-w-0 text-center">
-                      <label className="nx-checkbox nx-checkbox--tight min-w-0 justify-center">
+                    <td className="min-w-0 text-start">
+                      <label className="nx-checkbox nx-checkbox--tight min-w-0">
                         <input
                           type="checkbox"
                           checked={included}

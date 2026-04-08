@@ -236,10 +236,6 @@ export default {
   payrollDeleted: { ar: 'تم حذف مسيرة الراتب', en: 'Payroll run deleted' },
   deletePayrollRunConfirm: { ar: 'هل تريد حذف مسيرة الراتب هذه؟', en: 'Do you want to delete this payroll run?' },
   payrollMonthExists: { ar: 'مسيرة لهذا الشهر موجودة مسبقاً', en: 'Payroll run for this month already exists' },
-  payrollGrossFixedPackageHint: {
-    ar: '',
-    en: '',
-  },
   payrollEmploymentProrationNote: {
     ar: 'تناسب مدة العمل: {0} من {1} يوم',
     en: 'Work proration: {0} of {1} calendar days',
