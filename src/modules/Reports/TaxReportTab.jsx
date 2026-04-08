@@ -9,8 +9,12 @@ import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import { Button, Input } from '../../ui';
+import { TAX_REPORT_STORAGE_PREFIX } from '../../constants/storageKeys';
+import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 
-const STORAGE_KEY = 'noorix_tax_report_v1';
+function taxReportStorageKey(companyId, period) {
+  return `${TAX_REPORT_STORAGE_PREFIX}_${companyId}_${period}`;
+}
 
 // بنود نموذج الإفصاح الضريبي — مخرجات ضريبة القيمة المضافة
 const OUTPUT_ROWS = [
@@ -50,20 +54,15 @@ const defaultData = () => {
 };
 
 function loadStoredData(companyId, period) {
-  try {
-    const raw = localStorage.getItem(`${STORAGE_KEY}_${companyId}_${period}`);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return { ...defaultData(), ...parsed };
-    }
-  } catch (_) {}
+  const parsed = readJsonStorage(taxReportStorageKey(companyId, period), null);
+  if (parsed && typeof parsed === 'object') {
+    return { ...defaultData(), ...parsed };
+  }
   return defaultData();
 }
 
 function saveStoredData(companyId, period, data) {
-  try {
-    localStorage.setItem(`${STORAGE_KEY}_${companyId}_${period}`, JSON.stringify(data));
-  } catch (_) {}
+  writeJsonStorage(taxReportStorageKey(companyId, period), data);
 }
 
 const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

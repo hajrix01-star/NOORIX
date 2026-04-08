@@ -3,7 +3,7 @@
  */
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import useBankStatementView from './useBankStatementView';
+import useBankStatementView from '../../../hooks/useBankStatementView';
 import { Button, Modal } from '../../../ui';
 import BankStatementSummaryCards from './BankStatementSummaryCards';
 import BankStatementAnalysisCardsTab from './BankStatementAnalysisCardsTab';

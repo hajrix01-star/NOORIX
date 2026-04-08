@@ -12,9 +12,8 @@ import React, {
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Input, Button } from '../../ui';
-
-const USAGE_STORAGE_KEY = 'noorix_supplier_usage_v1';
-
+import { SUPPLIER_USAGE_KEY } from '../../constants/storageKeys';
+import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 
 function supplierLabel(supplier, lang = 'ar') {
   if (lang === 'en') return supplier?.nameEn || supplier?.nameAr || supplier?.id || '';
@@ -22,24 +21,15 @@ function supplierLabel(supplier, lang = 'ar') {
 }
 
 function readSupplierUsage() {
-  try {
-    const raw = localStorage.getItem(USAGE_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
+  const parsed = readJsonStorage(SUPPLIER_USAGE_KEY, {});
+  return parsed && typeof parsed === 'object' ? parsed : {};
 }
 
 function trackSupplierUsage(supplierId) {
   if (!supplierId) return;
-  try {
-    const usage = readSupplierUsage();
-    usage[supplierId] = Number(usage[supplierId] || 0) + 1;
-    localStorage.setItem(USAGE_STORAGE_KEY, JSON.stringify(usage));
-  } catch {
-    // ignore
-  }
+  const usage = readSupplierUsage();
+  usage[supplierId] = Number(usage[supplierId] || 0) + 1;
+  writeJsonStorage(SUPPLIER_USAGE_KEY, usage);
 }
 
 export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds = [], placeholder = '—' }) {

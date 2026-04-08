@@ -18,7 +18,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { AVAILABLE_ANALYSIS_CARDS } from './useBankStatementView';
+import { AVAILABLE_ANALYSIS_CARDS } from '../../../hooks/useBankStatementView';
 import { Button } from '../../../ui';
 import {
   buildDailyChartData,

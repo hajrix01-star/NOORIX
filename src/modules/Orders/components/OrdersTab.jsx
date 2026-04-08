@@ -1,7 +1,7 @@
 ﻿/**
  * OrdersTab — تبويبة الطلبات
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
@@ -21,7 +21,7 @@ import Toast from '../../../components/Toast';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
-import { Button, Badge, AdaptiveSheet } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, SmartTable } from '../../../ui';
 
 function buildWhatsAppText(order, t) {
   const lines = (order.items || []).map((it) => {
@@ -143,6 +143,178 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
     }
     return map;
   }, [dateFilteredOrders]);
+
+  const ordersColumns = useMemo(
+    () => [
+      {
+        key: 'orderNumber',
+        label: t('orderNumber'),
+        minWidth: 100,
+        align: 'center',
+        shrink: true,
+        render: (v) => <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{v}</span>,
+      },
+      {
+        key: 'orderDate',
+        label: t('orderDate'),
+        minWidth: 115,
+        align: 'center',
+        render: (v) => <span className="whitespace-nowrap">{formatSaudiDate(v)}</span>,
+      },
+      {
+        key: 'orderType',
+        label: t('orderType'),
+        align: 'center',
+        render: (v) => {
+          const isExt = v === 'external';
+          return (
+            <Badge color={isExt ? 'blue' : 'green'} size="sm">
+              {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
+            </Badge>
+          );
+        },
+      },
+      {
+        key: 'items',
+        label: t('ordersTotalItems'),
+        numeric: true,
+        align: 'center',
+        render: (items) => (items ?? []).length,
+      },
+      {
+        key: 'pettyCashAmount',
+        label: t('ordersPettyCashGiven'),
+        align: 'center',
+        render: (v, o) =>
+          o.orderType === 'external' && v != null ? (
+            <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{fmt(Number(v), 2)} ﷼</span>
+          ) : (
+            <span className="nx-cell-muted">—</span>
+          ),
+      },
+      {
+        key: 'totalAmount',
+        label: t('orderTotalAmount') || t('ordersDelegatePurchases'),
+        numeric: true,
+        align: 'center',
+        render: (v) => <span className="nx-cell-num font-bold whitespace-nowrap">{fmt(Number(v ?? 0), 2)} ﷼</span>,
+      },
+      {
+        key: 'id',
+        label: t('ordersCumulativeRemaining'),
+        align: 'center',
+        render: (_, o) => {
+          const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
+          if (cumRem == null) return <span className="nx-cell-muted">—</span>;
+          return (
+            <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
+              {cumRem >= 0 ? '' : '−'}
+              {fmt(Math.abs(cumRem), 2)} ﷼
+            </Badge>
+          );
+        },
+      },
+      {
+        key: 'actions',
+        label: t('actions'),
+        align: 'center',
+        width: '1%',
+        shrink: true,
+        render: (_, o) => (
+          <div className="nx-toolbar justify-center">
+            <Button size="sm" onClick={() => handleView(o)} title={t('ordersViewOrder')}>
+              {t('view')}
+            </Button>
+            <Button size="sm" onClick={() => handleWhatsApp(o)} title={t('sendWhatsApp')}>
+              {t('sendWhatsApp')}
+            </Button>
+            <Button size="sm" onClick={() => handleEdit(o)} title={t('edit')}>
+              {t('edit')}
+            </Button>
+            <Button size="sm" variant="danger" onClick={() => handleDelete(o)} title={t('delete')}>
+              {t('delete')}
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [t, fmt, formatSaudiDate, cumulativeRemainingByOrderId],
+  );
+
+  const ordersFooterCells = useMemo(
+    () => (
+      <>
+        <td colSpan={5} className="font-bold text-center py-[11px] px-[14px]">
+          {t('ordersFilteredTotal')}
+        </td>
+        <td className="nx-cell-num nx-cell-num--blue font-extrabold text-center text-[14px] py-[11px] px-[14px]">
+          {fmt(filteredTotal, 2)} ﷼
+        </td>
+        <td className="text-center py-[11px] px-[14px]" />
+        <td className="noorix-print-hide py-[11px] px-[14px]" />
+      </>
+    ),
+    [t, filteredTotal, fmt],
+  );
+
+  const ordersRenderMobileCard = useCallback(
+    (o) => {
+      const pettyGiven = o.orderType === 'external' ? Number(o.pettyCashAmount ?? 0) : null;
+      const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
+      const isExt = o.orderType === 'external';
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="font-bold text-noorix-blue nx-font-numbers">#{o.orderNumber}</span>
+            <Badge color={isExt ? 'blue' : 'green'} size="sm">
+              {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
+            </Badge>
+          </div>
+          <div className="text-[12px] text-noorix-muted">{formatSaudiDate(o.orderDate)}</div>
+          <div className="grid grid-cols-2 gap-2 rounded-lg bg-noorix-bg-muted py-2 px-2.5">
+            <div>
+              <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersTotalItems')}</div>
+              <div className="text-[13px] font-semibold nx-font-numbers">{(o.items ?? []).length}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-noorix-muted mb-0.5">{t('orderTotalAmount')}</div>
+              <div className="text-[13px] font-bold nx-font-numbers text-noorix-navy">{fmt(Number(o.totalAmount ?? 0), 2)} ﷼</div>
+            </div>
+            {pettyGiven != null && (
+              <div>
+                <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersPettyCashGiven')}</div>
+                <div className="text-[13px] nx-font-numbers text-noorix-blue">{fmt(pettyGiven, 2)} ﷼</div>
+              </div>
+            )}
+            {cumRem != null && (
+              <div>
+                <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersCumulativeRemaining')}</div>
+                <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
+                  {cumRem >= 0 ? '' : '−'}
+                  {fmt(Math.abs(cumRem), 2)} ﷼
+                </Badge>
+              </div>
+            )}
+          </div>
+          <div className="nx-toolbar justify-end flex-wrap">
+            <Button size="sm" onClick={() => handleView(o)}>
+              {t('view')}
+            </Button>
+            <Button size="sm" onClick={() => handleWhatsApp(o)}>
+              {t('sendWhatsApp')}
+            </Button>
+            <Button size="sm" onClick={() => handleEdit(o)}>
+              {t('edit')}
+            </Button>
+            <Button size="sm" variant="danger" onClick={() => handleDelete(o)}>
+              {t('delete')}
+            </Button>
+          </div>
+        </div>
+      );
+    },
+    [t, fmt, formatSaudiDate, cumulativeRemainingByOrderId],
+  );
 
   function handleWhatsApp(order) {
     const text = encodeURIComponent(buildWhatsAppText(order, t));
@@ -266,120 +438,42 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           <div className="text-center text-noorix-muted p-10">{t('ordersNoOrdersInPeriod')}</div>
         ) : dateFilteredOrders.length === 0 ? (
           <div className="text-center text-noorix-muted p-10">{t('ordersNoOrdersInRange')}</div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center text-noorix-muted p-10">{t('noDataInPeriod')}</div>
         ) : (
-          <>
-            <div className="noorix-print-hide nx-section-header">
-              <span className="text-[13px] font-semibold text-noorix-muted">{t('ordersFilterByType')}:</span>
-              <div className="nx-toolbar">
-                {['all', 'external', 'internal'].map((v) => (
-                  <Button
-                    key={v}
-                    type="button"
-                    style={{
-                      padding: '6px 14px',
-                      fontSize: 12,
-                      background: orderTypeFilter === v ? 'var(--noorix-accent-blue)' : 'transparent',
-                      borderColor: orderTypeFilter === v ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
-                      color: orderTypeFilter === v ? '#fff' : 'var(--noorix-text)',
-                    }}
-                    onClick={() => setOrderTypeFilter(v)}
-                  >
-                    {v === 'all' ? t('ordersFilterAll') : v === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
-                  </Button>
-                ))}
-              </div>
-              <span className="text-[14px] font-bold nx-font-numbers me-auto">
-                {t('ordersFilteredTotal')}: {fmt(filteredTotal, 2)} ﷼
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[13px]">
-              <thead>
-                <tr style={{
-                  background: 'linear-gradient(135deg, var(--noorix-accent-blue, #2563eb) 0%, #1d4ed8 100%)',
-                }}>
-                  {[
-                    t('orderNumber'), t('orderDate'), t('orderType'),
-                    t('ordersTotalItems'), t('ordersPettyCashGiven'),
-                    t('orderTotalAmount') || 'مشتريات المندوب',
-                    t('ordersCumulativeRemaining'), t('actions'),
-                  ].map((label, i) => (
-                    <th
-                      key={label}
-                      className={`${i === 7 ? 'noorix-print-hide' : ''} text-center whitespace-nowrap font-bold py-[11px] px-[14px] text-[12px] tracking-[0.02em]`.trim()}
-                      style={{
-                        color: 'white',
-                        borderInlineEnd: i < 7 ? '1px solid rgba(255,255,255,0.15)' : 'none',
-                      }}
-                    >{label}</th>
+          <SmartTable
+            compact={false}
+            tableMinWidth={1000}
+            innerPadding={0}
+            columns={ordersColumns}
+            data={filteredOrders}
+            total={filteredOrders.length}
+            page={1}
+            pageSize={Math.max(filteredOrders.length, 1)}
+            footerCells={ordersFooterCells}
+            renderMobileCard={ordersRenderMobileCard}
+            badge={
+              <div className="noorix-print-hide flex flex-wrap items-center gap-2 w-full min-w-0">
+                <span className="text-[13px] font-semibold text-noorix-muted shrink-0">{t('ordersFilterByType')}:</span>
+                <div className="nx-toolbar flex-wrap">
+                  {['all', 'external', 'internal'].map((v) => (
+                    <Button
+                      key={v}
+                      type="button"
+                      size="sm"
+                      variant={orderTypeFilter === v ? 'primary' : 'ghost'}
+                      onClick={() => setOrderTypeFilter(v)}
+                    >
+                      {v === 'all' ? t('ordersFilterAll') : v === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
+                    </Button>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.map((o, rowIdx) => {
-                  const pettyGiven = o.orderType === 'external' ? Number(o.pettyCashAmount ?? 0) : null;
-                  const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
-                  const isExt = o.orderType === 'external';
-                  const rowBg = rowIdx % 2 === 0 ? 'var(--noorix-bg-surface)' : 'var(--noorix-bg-muted)';
-                  return (
-                  <tr
-                    key={o.id}
-                    className="border-b border-noorix-border"
-                    style={{ background: rowBg, transition: 'background 0.12s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--noorix-blue-5)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = rowBg; }}
-                  >
-                    <td className="nx-cell-num nx-cell-num--blue text-center whitespace-nowrap py-[11px] px-[14px] border-e border-noorix-border">
-                      {o.orderNumber}
-                    </td>
-                    <td className="text-center whitespace-nowrap py-[11px] px-[14px] border-e border-noorix-border">
-                      {formatSaudiDate(o.orderDate)}
-                    </td>
-                    <td className="text-center py-[11px] px-[14px] border-e border-noorix-border">
-                      <Badge color={isExt ? 'blue' : 'green'} size="sm">
-                        {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
-                      </Badge>
-                    </td>
-                    <td className="nx-cell-num text-center py-[11px] px-[14px] border-e border-noorix-border">
-                      {(o.items ?? []).length}
-                    </td>
-                    <td className="text-center whitespace-nowrap py-[11px] px-[14px] border-e border-noorix-border">
-                      {pettyGiven != null ? (
-                        <span className="nx-cell-num nx-cell-num--blue">{fmt(pettyGiven, 2)} ﷼</span>
-                      ) : <span className="nx-cell-muted">—</span>}
-                    </td>
-                    <td className="nx-cell-num font-bold text-center whitespace-nowrap py-[11px] px-[14px] border-e border-noorix-border">
-                      {fmt(o.totalAmount ?? 0, 2)} ﷼
-                    </td>
-                    <td className="text-center whitespace-nowrap py-[11px] px-[14px] border-e border-noorix-border">
-                      {cumRem != null ? (
-                        <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
-                          {cumRem >= 0 ? '' : '−'}{fmt(Math.abs(cumRem ?? 0), 2)} ﷼
-                        </Badge>
-                      ) : <span className="nx-cell-muted">—</span>}
-                    </td>
-                    <td className="noorix-print-hide text-center whitespace-nowrap py-2 px-2.5">
-                      <div className="nx-toolbar justify-center">
-                        <Button size="sm" onClick={() => handleView(o)} title={t('ordersViewOrder')}>{t('view')}</Button>
-                        <Button size="sm" onClick={() => handleWhatsApp(o)} title={t('sendWhatsApp')}>{t('sendWhatsApp')}</Button>
-                        <Button size="sm" onClick={() => handleEdit(o)} title={t('edit')}>{t('edit')}</Button>
-                        <Button size="sm" variant="danger" onClick={() => handleDelete(o)} title={t('delete')}>{t('delete')}</Button>
-                      </div>
-                    </td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="bg-[var(--noorix-blue-6)] border-t-2 border-noorix-blue">
-                  <td colSpan={5} className="font-bold text-center py-[11px] px-[14px]">{t('ordersFilteredTotal')}</td>
-                  <td className="nx-cell-num nx-cell-num--blue font-extrabold text-center text-[14px] py-[11px] px-[14px]">{fmt(filteredTotal, 2)} ﷼</td>
-                  <td colSpan={2} className="noorix-print-hide py-[11px] px-[14px]" />
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          </>
+                </div>
+                <span className="text-[14px] font-bold nx-font-numbers ms-auto shrink-0">
+                  {t('ordersFilteredTotal')}: {fmt(filteredTotal, 2)} ﷼
+                </span>
+              </div>
+            }
+          />
         )}
       </div>
 

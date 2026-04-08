@@ -1,6 +1,7 @@
 /**
  * قيم افتراضية للأحجام والتغليف — متعارف عليها بالسعودية
  */
+import { readJsonStorage, writeJsonStorage } from '../../../utils/jsonStorage';
 export const DEFAULT_SIZES = [
   { ar: 'صغير', en: 'Small' },
   { ar: 'وسط', en: 'Medium' },
@@ -27,19 +28,13 @@ const STORAGE_KEY_SIZES = 'noorix_order_sizes';
 const STORAGE_KEY_PACKAGING = 'noorix_order_packaging';
 
 function loadCustom(companyId, key) {
-  try {
-    const raw = localStorage.getItem(`${key}_${companyId}`);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  const parsed = readJsonStorage(`${key}_${companyId}`, null);
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 function saveCustom(companyId, key, items) {
-  try {
-    localStorage.setItem(`${key}_${companyId}`, JSON.stringify(items));
-  } catch (e) {
-    console.warn('Failed to save to localStorage', e);
+  if (!writeJsonStorage(`${key}_${companyId}`, items)) {
+    console.warn('Failed to save order defaults to localStorage');
   }
 }
 

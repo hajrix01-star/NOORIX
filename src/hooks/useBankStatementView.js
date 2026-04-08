@@ -1,5 +1,5 @@
 /**
- * حالة ومنطق عرض كشف واحد — مكيّف لـ API الحالي (Nest + Prisma)
+ * حالة ومنطق عرض كشف بنكي واحد — مكيّف لـ API الحالي (Nest + Prisma)
  */
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,14 +9,14 @@ import {
   bankStatementUpdateTxNote,
   bankStatementReclassify,
   bankStatementReconciliationStats,
-} from '../../../services/api';
+} from '../services/api';
 import {
   getTxKey,
   buildSummaryByCategory,
   computeBalanceVerification,
-} from './bankAnalysisUtils';
-
-const CARDS_STORAGE = 'noorix_bank_analysis_cards_v1';
+} from '../modules/Reports/bank/bankAnalysisUtils';
+import { BANK_ANALYSIS_CARDS_KEY } from '../constants/storageKeys';
+import { readJsonStorage, writeJsonStorage } from '../utils/jsonStorage';
 
 export const AVAILABLE_ANALYSIS_CARDS = [
   { id: 'cash_flow', nameKey: 'bankCardCashFlow', icon: '' },
@@ -32,22 +32,12 @@ export const AVAILABLE_ANALYSIS_CARDS = [
 export const DEFAULT_ACTIVE_CARDS = ['cash_flow', 'alerts', 'category_pie', 'category_bar', 'category_table'];
 
 function loadSavedCards() {
-  try {
-    const raw = localStorage.getItem(CARDS_STORAGE);
-    if (!raw) return DEFAULT_ACTIVE_CARDS;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_ACTIVE_CARDS;
-  } catch {
-    return DEFAULT_ACTIVE_CARDS;
-  }
+  const parsed = readJsonStorage(BANK_ANALYSIS_CARDS_KEY, null);
+  return Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_ACTIVE_CARDS;
 }
 
 function saveCards(ids) {
-  try {
-    localStorage.setItem(CARDS_STORAGE, JSON.stringify(ids));
-  } catch {
-    /* ignore */
-  }
+  writeJsonStorage(BANK_ANALYSIS_CARDS_KEY, ids);
 }
 
 export default function useBankStatementView(statementId, companyId, t) {

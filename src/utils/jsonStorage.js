@@ -21,3 +21,14 @@ export function writeJsonStorage(key, value) {
     return false;
   }
 }
+
+/** إزالة مفتاح JSON من التخزين المحلي */
+export function removeJsonStorage(key) {
+  if (typeof window === 'undefined') return false;
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}

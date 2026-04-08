@@ -3,7 +3,8 @@
 // - Supports relation-based invalidation
 // - Persists to localStorage when available
 
-const STORAGE_KEY = 'noorix_global_cache_v1';
+import { GLOBAL_CACHE_STORAGE_KEY } from '../constants/storageKeys';
+import { readJsonStorage, writeJsonStorage } from './jsonStorage';
 
 let memoryStore = {
   // [key]: { value: any, expiresAt: number|null }
@@ -29,23 +30,16 @@ const hasLocalStorage = isLocalStorageAvailable();
 
 function loadFromStorage() {
   if (!hasLocalStorage) return;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object') {
-      if (parsed.store && typeof parsed.store === 'object') {
-        memoryStore = parsed.store;
-      }
-      if (parsed.relations && typeof parsed.relations === 'object') {
-        relations = Object.entries(parsed.relations).reduce((acc, [k, v]) => {
-          acc[k] = new Set(Array.isArray(v) ? v : []);
-          return acc;
-        }, {});
-      }
-    }
-  } catch {
-    // Ignore malformed storage
+  const parsed = readJsonStorage(GLOBAL_CACHE_STORAGE_KEY, null);
+  if (!parsed || typeof parsed !== 'object') return;
+  if (parsed.store && typeof parsed.store === 'object') {
+    memoryStore = parsed.store;
+  }
+  if (parsed.relations && typeof parsed.relations === 'object') {
+    relations = Object.entries(parsed.relations).reduce((acc, [k, v]) => {
+      acc[k] = new Set(Array.isArray(v) ? v : []);
+      return acc;
+    }, {});
   }
 }
 
@@ -63,7 +57,7 @@ function persistToStorage() {
       store: memoryStore,
       relations: serializableRelations,
     };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    writeJsonStorage(GLOBAL_CACHE_STORAGE_KEY, payload);
   } catch {
     // Ignore persistence errors
   }

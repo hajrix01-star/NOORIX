@@ -4160,13 +4160,22 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   /* ─── شريط التبويبات ─── */
   .nx-tab-bar {
     display: flex;
+    flex-direction: row;
     flex-wrap: nowrap;
+    align-items: stretch;
     gap: 0;
     border-bottom: 1px solid var(--noorix-border);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    /* يمنع انهيار العرض داخل كرت/RTL في بعض المتصفحات — بدون هذا قد تتكدس أزرار التبويب فوق بعضها */
+    width: max-content;
+    min-width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2;
+    isolation: isolate;
   }
   .nx-tab-bar::-webkit-scrollbar {
     display: none;
@@ -4198,6 +4207,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     background: linear-gradient(to left, var(--noorix-bg-surface), transparent);
   }
   .nx-tab-btn {
+    flex: 0 0 auto;
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
@@ -4230,7 +4240,9 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   /* شريط تبويبات segmented (حبات داخل كرت — مثل الموارد البشرية) */
   .nx-segmented-tab-bar {
     display: flex;
+    flex-direction: row;
     flex-wrap: nowrap;
+    align-items: stretch;
     gap: 2px;
     min-width: 100%;
     width: max-content;
@@ -4239,6 +4251,9 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     scrollbar-width: none;
     -ms-overflow-style: none;
     border-bottom: none;
+    position: relative;
+    z-index: 2;
+    isolation: isolate;
   }
   .nx-segmented-tab-bar::-webkit-scrollbar {
     display: none;

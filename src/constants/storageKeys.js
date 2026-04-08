@@ -15,3 +15,15 @@ export const SUPPLIER_BOOKMARKS_KEY = 'noorix_supplier_bookmarks_v1';
 
 /** تنبيهات أسعار OCR — معرفات الصنف المُخفاة */
 export const OCR_DISMISSED_ALERTS_KEY = 'noorix-dismissed-alerts';
+
+/** ترتيب بطاقات تحليل كشف البنك */
+export const BANK_ANALYSIS_CARDS_KEY = 'noorix_bank_analysis_cards_v1';
+
+/** تكرار اختيار الموردين في القوائم */
+export const SUPPLIER_USAGE_KEY = 'noorix_supplier_usage_v1';
+
+/** بادئة مفتاح مسودة تقرير الضريبة: `${TAX_REPORT_STORAGE_PREFIX}_${companyId}_${period}` */
+export const TAX_REPORT_STORAGE_PREFIX = 'noorix_tax_report_v1';
+
+/** كاش عام في الذاكرة/المتصفح */
+export const GLOBAL_CACHE_STORAGE_KEY = 'noorix_global_cache_v1';
