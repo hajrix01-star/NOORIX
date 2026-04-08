@@ -432,7 +432,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
             items: slice.map((r) => ({ ...r.payload, companyId })),
           });
         } catch (err) {
-          res = { success: false, error: err?.message ?? '??? ????' };
+          res = { success: false, error: err?.message ?? t('importErrorSaveFailed') };
         }
         if (res?.success) {
           const br = res.data || {};
@@ -534,7 +534,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
         contentClassName="nx-tab-content p-1 sm:p-4"
         animateContent={false}
       >
-      {/* ?? EXPORT TAB ??????????????????????????????????????????????? */}
+      {/* Export tab */}
       {activeTab === 'export' && (
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-2.5">
@@ -558,29 +558,29 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
         </div>
       )}
 
-      {/* ?? IMPORT TAB ???????????????????????????????????????????????? */}
+      {/* Import tab */}
       {activeTab === 'import' && (
         <div className="flex flex-col gap-[18px]">
-          <ImportPhaseSteps phase={phase} importing={importing} />
+          <ImportPhaseSteps phase={phase} importing={importing} t={t} />
 
           {phase !== 'done' && !importing && (
             <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
-              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >?????? 1 ? ????? ??????</p>
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2">{t('importStep1Title')}</p>
               <p className="m-0 text-[13px] text-noorix-muted leading-[1.6]">
-                ???? ???? Excel ?????? ????? ?? Excel ?? Google Sheets? ??? ??????? ?? ?????.
-                {entityType === 'invoices' && ' ????? ???????? ????????? ??? ?? ?????? ?? ??????? ??????? ?? ??????.'}
-                {entityType === 'sales' && ' ????? ??????? ?????? ?? ????? ???????? ?? ?????.'}
-                {entityType === 'employees' && ' ?????? ?? ?????: ????? ???????? ?? ?????????? (?????? ????). ???? ??????? ???????? ??????? ??????? ???????? ??????? ???? ???????? ?? ????? ?????.'}
+                {t('importStep1Body')}
+                {entityType === 'invoices' && t('importStep1HintInvoices')}
+                {entityType === 'sales' && t('importStep1HintSales')}
+                {entityType === 'employees' && t('importStep1HintEmployees')}
               </p>
               <Button onClick={handleDownloadTemplate} disabled={lookupsLoading}>
-                {lookupsLoading ? '??????' : '????? ???? Excel'}
+                {lookupsLoading ? t('loading') : t('importDownloadTemplate')}
               </Button>
             </div>
           )}
 
           {phase !== 'done' && !importing && (
             <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
-              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >?????? 2 ? ??? ?????</p>
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2">{t('importStep2Title')}</p>
               <div
                 style={S.dropzone(dragging)}
                 onClick={() => fileInputRef.current?.click()}
@@ -590,7 +590,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               >
                 <div className="mb-2 text-[36px]"></div>
                 <div className="text-[14px] font-semibold mb-1">
-                  {phase === 'parsing' ? '???? ????? ??????' : '???? ??? Excel ??? ?? ???? ????????'}
+                  {phase === 'parsing' ? t('importDropzoneParsing') : t('importDropzoneIdle')}
                 </div>
                 <div className="text-[12px] text-noorix-muted">xlsx / xls / csv</div>
               </div>
@@ -603,10 +603,10 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               />
               {parsedRows.length > 0 && (
                 <div className="text-[13px] text-noorix-muted">
-                  ? ?? ????? <strong>{parsedRows.length}</strong> ?? ?? ?????
+                  {t('importRowsRead', { count: parsedRows.length })}
                   {phase !== 'done' && (
                     <Button variant="ghost" size="sm" className="me-3" onClick={() => fileInputRef.current?.click()}>
-                      ????? ?????
+                      {t('importChooseOtherFile')}
                     </Button>
                   )}
                 </div>
@@ -616,15 +616,15 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
           {phase === 'validated' && !importing && (
             <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
-              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >?????? 3 ? ????? ????? ?????????</p>
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2">{t('importStep3Title')}</p>
               <div className="flex flex-wrap gap-3">
-                <StatBadge count={validCount} label="?? ????" color="#16a34a" />
-                {errorCount > 0 && <StatBadge count={errorCount} label="??? ?????" color="var(--noorix-accent-red)" />}
-                {warnCount > 0 && <StatBadge count={warnCount} label="???????" color="#f59e0b" />}
+                <StatBadge count={validCount} label={t('importStatValidRows')} color="#16a34a" />
+                {errorCount > 0 && <StatBadge count={errorCount} label={t('importStatRowErrors')} color="var(--noorix-accent-red)" />}
+                {warnCount > 0 && <StatBadge count={warnCount} label={t('importStatWarnings')} color="#f59e0b" />}
               </div>
 
               {entityType === 'employees' && validationResults.length > 0 && (
-                <EmployeeImportPreviewTable validationResults={validationResults} parsedRows={parsedRows} />
+                <EmployeeImportPreviewTable validationResults={validationResults} parsedRows={parsedRows} t={t} />
               )}
 
               {(errorCount > 0 || warnCount > 0) && (
@@ -633,36 +633,39 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                     <div key={r.rowNum}>
                       {r.errors.map((msg, j) => (
                         <div key={j} className="grid gap-2 rounded-lg text-[13px] grid-cols-[56px_1fr] items-start py-1.5 px-2.5 bg-[var(--noorix-red-7)]">
-                          <span className="font-bold text-noorix-red">?? {r.rowNum}</span>
-                          <span className="text-noorix-red">? {msg}</span>
+                          <span className="font-bold text-noorix-red">{t('importValidationRowPrefix')} {r.rowNum}</span>
+                          <span className="text-noorix-red">{msg}</span>
                         </div>
                       ))}
                       {r.warnings.map((msg, j) => (
                         <div key={`w${j}`} className="grid gap-2 rounded-lg text-[12px] grid-cols-[56px_1fr] items-start py-[5px] px-[10px] bg-[var(--noorix-yellow-7)]">
-                          <span className="font-bold text-noorix-amber">?? {r.rowNum}</span>
-                          <span style={{ color: 'var(--noorix-accent-amber)' }}>? {msg}</span>
+                          <span className="font-bold text-noorix-amber">{t('importValidationRowPrefix')} {r.rowNum}</span>
+                          <span style={{ color: 'var(--noorix-accent-amber)' }}>{msg}</span>
                         </div>
                       ))}
                     </div>
                   ))}
                   {validationResults.filter((r) => !r.valid || r.warnings.length > 0).length > 10 && (
                     <Button variant="ghost" size="sm" className="self-start" onClick={() => setShowAllErrors(!showAllErrors)}>
-                      {showAllErrors ? '??? ???' : `??? ???? (${validationResults.filter((r) => !r.valid || r.warnings.length > 0).length})`}
+                      {showAllErrors
+                        ? t('importShowLess')
+                        : t('importShowAll', { count: validationResults.filter((r) => !r.valid || r.warnings.length > 0).length })}
                     </Button>
                   )}
                   <Button variant="ghost" size="sm" className="self-start" onClick={handleDownloadValidationErrors}>
-                    ????? ????? ?????
+                    {t('importDownloadValidationReport')}
                   </Button>
                 </div>
               )}
 
               {validCount === 0 ? (
                 <div className="text-[14px] text-noorix-red font-semibold">
-                  ?? ???? ???? ????? ?????????. ???? ?????? ??????? ?????? ??? ?????.
+                  {t('importNoValidRows')}
                 </div>
               ) : (
                 <Button variant="primary" className="self-start" onClick={handleImport}>
-                  ??????? {validCount} ??{errorCount > 0 ? ` (???? ???? ${errorCount} ?? ?? ?????)` : ''}
+                  {t('importStartImport', { valid: validCount })}
+                  {errorCount > 0 ? t('importStartImportSkipErrors', { count: errorCount }) : ''}
                 </Button>
               )}
             </div>
@@ -670,33 +673,33 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
           {importing && (
             <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-3">
-              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >???? ??????????</p>
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2">{t('importPhaseImporting')}</p>
               <ProgressBar pct={pct} />
               <div className="flex items-center justify-between text-[13px] text-noorix-muted">
-                <span>{progress.current} / {progress.total} ??</span>
+                <span>{t('importProgressOfRows', { current: progress.current, total: progress.total })}</span>
                 <span>{pct}%</span>
               </div>
               <div className="flex flex-wrap gap-3">
-                <StatBadge count={progress.succeeded} label="???" color="#16a34a" />
-                {progress.failed > 0 && <StatBadge count={progress.failed} label="???" color="var(--noorix-accent-red)" />}
+                <StatBadge count={progress.succeeded} label={t('importStatSucceeded')} color="#16a34a" />
+                {progress.failed > 0 && <StatBadge count={progress.failed} label={t('importStatFailed')} color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
-                  <StatBadge count={(progress.warnings || []).length} label="??????? ?? ??????" color="var(--noorix-accent-amber)" />
+                  <StatBadge count={(progress.warnings || []).length} label={t('importStatServerWarnings')} color="var(--noorix-accent-amber)" />
                 )}
               </div>
               <Button variant="danger" size="sm" className="self-start" onClick={() => { abortRef.current = true; }}>
-                ?????
+                {t('importAbort')}
               </Button>
             </div>
           )}
 
           {phase === 'done' && !importing && (
             <div className="rounded-xl p-4 flex flex-col gap-3" style={{ border: `1px solid ${progress.failed === 0 ? 'var(--noorix-accent-green)' : 'var(--color-noorix-amber)'}40` }}>
-              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2" >????? ?????????</p>
+              <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2">{t('importDoneTitle')}</p>
               <div className="flex flex-wrap gap-3">
-                <StatBadge count={progress.succeeded} label="?? ?????" color="#16a34a" />
-                {progress.failed > 0 && <StatBadge count={progress.failed} label="???" color="var(--noorix-accent-red)" />}
+                <StatBadge count={progress.succeeded} label={t('importStatImportedOk')} color="#16a34a" />
+                {progress.failed > 0 && <StatBadge count={progress.failed} label={t('importStatFailed')} color="var(--noorix-accent-red)" />}
                 {(progress.warnings || []).length > 0 && (
-                  <StatBadge count={(progress.warnings || []).length} label="???????" color="var(--noorix-accent-amber)" />
+                  <StatBadge count={(progress.warnings || []).length} label={t('importStatWarnings')} color="var(--noorix-accent-amber)" />
                 )}
               </div>
 
@@ -704,15 +707,17 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 <div className="flex flex-col mt-2 gap-[5px] max-h-[200px] overflow-y-auto">
                   {(progress.warnings || []).slice(0, 20).map((w, i) => (
                     <div key={i} className="grid gap-2 rounded-lg text-[12px] grid-cols-[56px_1fr] items-start py-[5px] px-2.5 bg-[var(--noorix-yellow-7)]">
-                      <span className="font-bold text-noorix-amber">?? {w.rowNum}</span>
-                      <span style={{ color: 'var(--noorix-accent-amber)' }}>? {w.message}</span>
+                      <span className="font-bold text-noorix-amber">{t('importValidationRowPrefix')} {w.rowNum}</span>
+                      <span style={{ color: 'var(--noorix-accent-amber)' }}>{w.message}</span>
                     </div>
                   ))}
                   {(progress.warnings || []).length > 20 && (
-                    <span className="text-[12px] text-noorix-muted">? ? {(progress.warnings || []).length - 20} ????? ???</span>
+                    <span className="text-[12px] text-noorix-muted">
+                      {t('importMoreWarnings', { n: (progress.warnings || []).length - 20 })}
+                    </span>
                   )}
                   <Button variant="ghost" size="sm" className="self-start" onClick={handleDownloadWarningsReport}>
-                    ????? ????? ?????????
+                    {t('importDownloadWarningsReport')}
                   </Button>
                 </div>
               )}
@@ -721,23 +726,25 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
                 <div className="flex flex-col gap-[5px] max-h-[200px] overflow-y-auto">
                   {progress.errors.slice(0, 20).map((e, i) => (
                     <div key={i} className="grid gap-2 rounded-lg text-[13px] grid-cols-[56px_1fr] items-start py-1.5 px-2.5 bg-[var(--noorix-red-7)]">
-                      <span className="font-bold text-noorix-red">?? {e.rowNum}</span>
-                      <span className="text-noorix-red">? {e.message}</span>
+                      <span className="font-bold text-noorix-red">{t('importValidationRowPrefix')} {e.rowNum}</span>
+                      <span className="text-noorix-red">{e.message}</span>
                     </div>
                   ))}
                   {progress.errors.length > 20 && (
-                    <span className="text-[12px] text-noorix-muted">? ? {progress.errors.length - 20} ??? ???</span>
+                    <span className="text-[12px] text-noorix-muted">
+                      {t('importMoreErrors', { n: progress.errors.length - 20 })}
+                    </span>
                   )}
                   <Button variant="ghost" size="sm" className="self-start" onClick={handleDownloadErrorReport}>
-                    ????? ????? ???????
+                    {t('importDownloadErrorsReport')}
                   </Button>
                 </div>
               )}
 
               <div className="flex gap-2.5">
-                <Button variant="primary" onClick={onClose}>?????</Button>
+                <Button variant="primary" onClick={onClose}>{t('close')}</Button>
                 <Button onClick={() => { setPhase('idle'); setParsedRows([]); setValidationResults([]); setProgress({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [], warnings: [] }); }}>
-                  ??????? ??? ???
+                  {t('importImportAnotherFile')}
                 </Button>
               </div>
             </div>
