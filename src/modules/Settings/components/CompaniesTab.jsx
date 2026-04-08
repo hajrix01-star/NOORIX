@@ -2,7 +2,8 @@
  * CompaniesTab — تبويب إدارة الشركات
  */
 import React, { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getCompanies, createCompany, updateCompany, deleteCompany } from '../../../services/api';
 import {
   labelStyle,
@@ -12,8 +13,6 @@ import {
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 export default function CompaniesTab({ onCompanyCreated }) {
-  const queryClient = useQueryClient();
-
   const [includeArchived,    setIncludeArchived]    = useState(false);
   const [showAddForm,        setShowAddForm]        = useState(false);
   const [editModal,          setEditModal]          = useState(null);
@@ -48,35 +47,29 @@ export default function CompaniesTab({ onCompanyCreated }) {
     setShowAddForm(false);
   }, []);
 
-  const addMutation = useMutation({
-    mutationFn: async (body) => {
-      const res = await createCompany(body);
-      if (!res || !res.success) throw new Error(res?.error || 'فشل إضافة الشركة');
-      return res.data;
-    },
-    onSuccess: (created) => {
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
+  const addMutation = useApiMutation({
+    mutationFn: (body) => createCompany(body),
+    invalidateQueries: [['companies']],
+    showErrorToast: false,
+    onSuccess: (res) => {
+      const created = res?.data ?? res;
       if (created?.id && onCompanyCreated) onCompanyCreated(created.id);
       resetAddForm();
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, body }) => {
-      const res = await updateCompany(id, body);
-      if (!res || !res.success) throw new Error(res?.error || 'فشل تحديث الشركة');
-      return res.data;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['companies'] }); setEditModal(null); },
+  const updateMutation = useApiMutation({
+    mutationFn: ({ id, body }) => updateCompany(id, body),
+    invalidateQueries: [['companies']],
+    showErrorToast: false,
+    onSuccess: () => { setEditModal(null); },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const res = await deleteCompany(id);
-      if (!res || !res.success) throw new Error(res?.error || 'فشل حذف الشركة');
-      return res.data;
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['companies'] }); setEditModal(null); },
+  const deleteMutation = useApiMutation({
+    mutationFn: (id) => deleteCompany(id),
+    invalidateQueries: [['companies']],
+    showErrorToast: false,
+    onSuccess: () => { setEditModal(null); },
   });
 
   const openEdit = (company, e) => {

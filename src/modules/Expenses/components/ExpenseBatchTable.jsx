@@ -3,9 +3,9 @@
  * كل صف: بند مصروف، رقم فاتورة، مبلغ، ملاحظات
  */
 import React, { useState, useMemo } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
-import { useToast } from '../../../context/ToastContext';
 import { createInvoiceBatch, getExpenseLines } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { getSaudiToday } from '../../../utils/saudiDate';
@@ -25,7 +25,6 @@ const EMPTY_ROW = () => ({
 export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
   const { lang, t } = useTranslation();
   const queryClient = useQueryClient();
-  const { showToast } = useToast();
   const [rows, setRows] = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [batchDate, setBatchDate] = useState(getSaudiToday());
   const [vaultId, setVaultId] = useState('');
@@ -62,10 +61,10 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     return { totalNet, totalTax, total: totalNet + totalTax, count: validRows.length };
   }, [validRows]);
 
-  const saveMutation = useMutation({
+  const saveMutation = useApiMutation({
     mutationFn: async () => {
-      if (!vaultId) throw new Error('اختر الخزينة');
-      if (validRows.length === 0) throw new Error('لا توجد صفوف صالحة');
+      if (!vaultId) throw new Error(t('expenseBatchSelectVault'));
+      if (validRows.length === 0) throw new Error(t('expenseBatchNoValidRows'));
       // مفتاح عدم التكرار: يُولَّد عند كل نقرة — يمنع الحفظ المزدوج إن تكرر الطلب
       const idempotencyKey = `exp-${companyId}-${batchDate}-${Date.now()}`;
       const res = await createInvoiceBatch({
@@ -90,15 +89,16 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
           };
         }),
       });
-      if (!res.success) throw new Error(res.error);
-      return res.data ?? res;
+      return res;
     },
+    successToast: false,
+    showErrorToast: true,
+    errorToast: (e) => e?.message || t('saveFailedGeneric'),
     onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
       setRows([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
       onSaved?.();
     },
-    onError: (e) => showToast(e?.message || 'فشل الحفظ', 'error'),
   });
 
   const updateRow = (i, updates) => {

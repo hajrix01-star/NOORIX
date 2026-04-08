@@ -3,7 +3,8 @@
  * يختار المستخدم بند مصروف، مبلغ، تاريخ، خزنة، ملاحظات
  */
 import React, { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { createInvoice, getExpenseLines } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
@@ -12,7 +13,6 @@ import { Button, AdaptiveSheet, Input } from '../../../ui';
 
 export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [form, setForm] = useState({
     expenseLineId: '',
     totalAmount: '',
@@ -36,15 +36,10 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
 
   const selectedLine = expenseLines.find((l) => l.id === form.expenseLineId);
 
-  const createMutation = useMutation({
+  const createMutation = useApiMutation({
     mutationFn: (body) => createInvoice(body),
-    onSuccess: (res) => {
-      if (res?.success !== false) {
-        onSaved?.();
-      } else {
-        setError(res?.error || 'فشل الحفظ');
-      }
-    },
+    showErrorToast: false,
+    onSuccess: () => onSaved?.(),
     onError: (err) => setError(err?.message || 'حدث خطأ'),
   });
 

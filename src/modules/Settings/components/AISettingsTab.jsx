@@ -3,7 +3,8 @@
  * عرض حالة الاتصال، التشخيص، وزر الفحص الاحترافي
  */
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getHealth, testGemini } from '../../../services/api';
 import { Button } from '../../../ui';
@@ -27,11 +28,13 @@ export default function AISettingsTab() {
     staleTime: 30000,
   });
 
-  const testMutation = useMutation({
+  const testMutation = useApiMutation({
     mutationFn: testGemini,
+    invalidateQueries: [['health', 'ai-settings']],
+    showErrorToast: false,
+    rejectOnApiFailure: false,
     onSuccess: (res) => {
       setLastTestResult(res);
-      queryClient.invalidateQueries({ queryKey: ['health', 'ai-settings'] });
     },
     onError: () => {
       setLastTestResult({ success: false, error: 'فشل الاتصال' });

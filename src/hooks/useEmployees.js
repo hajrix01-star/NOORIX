@@ -2,7 +2,8 @@
  * useEmployees — جلب الموظفين وإضافتهم وتعديلهم مع Caching/Invalidation تلقائي.
  * يدعم صرف السلفة عبر createAdvance.
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from './useApiMutation';
 import {
   getEmployees,
   getEmployee,
@@ -30,33 +31,47 @@ export function useEmployees(companyId, { includeTerminated = false, fetchEnable
     enabled: !!companyId && fetchEnabled,
   });
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['invoices'] });
-    queryClient.invalidateQueries({ queryKey: ['vaults'] });
-  };
-
-  const createMutation = useMutation({
+  const createMutation = useApiMutation({
     mutationFn: createEmployee,
-    onSuccess: invalidate,
+    invalidateQueries: [
+      ['employees', companyId],
+      ['employees-paged', companyId],
+      ['invoices'],
+      ['vaults'],
+    ],
+    showErrorToast: false,
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateEmployee(id, body, companyId),
-    onSuccess: invalidate,
+    invalidateQueries: [
+      ['employees', companyId],
+      ['employees-paged', companyId],
+      ['invoices'],
+      ['vaults'],
+    ],
+    showErrorToast: false,
   });
 
-  const terminateMutation = useMutation({
+  const terminateMutation = useApiMutation({
     mutationFn: (id) => terminateEmployee(id, companyId),
-    onSuccess: invalidate,
+    invalidateQueries: [
+      ['employees', companyId],
+      ['employees-paged', companyId],
+      ['invoices'],
+      ['vaults'],
+    ],
+    showErrorToast: false,
   });
 
-  const advanceMutation = useMutation({
+  const advanceMutation = useApiMutation({
     mutationFn: createAdvance,
+    invalidateQueries: [
+      ['employees', companyId],
+      ['employees-paged', companyId],
+    ],
+    showErrorToast: false,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
       invalidateOnFinancialMutation(queryClient);
     },
   });

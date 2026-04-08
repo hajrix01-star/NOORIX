@@ -3,7 +3,8 @@
  * إبطال الكاش مركزي عبر دالة invalidate واحدة.
  */
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from './useApiMutation';
 import {
   getVaults,
   getPaymentVaults,
@@ -60,24 +61,28 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
       queryClient.invalidateQueries({ queryKey: ['payment-vaults', companyId] }),
     ]);
 
-  const createMutation = useMutation({
+  const createMutation = useApiMutation({
     mutationFn: (body) => createVault({ ...body, companyId }),
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateVault(id, body),
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
-  const archiveMutation = useMutation({
+  const archiveMutation = useApiMutation({
     mutationFn: (id) => archiveVault(id),
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useApiMutation({
     mutationFn: (id) => deleteVault(id),
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
   return {

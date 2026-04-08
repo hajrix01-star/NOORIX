@@ -1,7 +1,8 @@
 /**
  * useSales — ملخصات المبيعات اليومية
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from './useApiMutation';
 import {
   getDailySalesSummaries,
   createDailySalesSummary,
@@ -45,24 +46,28 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
     invalidateOnFinancialMutation(queryClient);
   };
 
-  const createMutation = useMutation({
+  const createMutation = useApiMutation({
     mutationFn: createDailySalesSummary,
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiMutation({
     mutationFn: ({ id, body, companyId: cid }) => updateDailySalesSummary(id, body, cid),
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
-  const cancelMutation = useMutation({
+  const cancelMutation = useApiMutation({
     mutationFn: ({ id, companyId: cid }) => cancelDailySalesSummary(id, cid),
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useApiMutation({
     mutationFn: ({ id, companyId: cid }) => deleteDailySalesSummary(id, cid),
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
   return {

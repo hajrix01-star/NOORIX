@@ -18,10 +18,23 @@ import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, Input, ScreenShell } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, Modal } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
+
+/** آخر يوم تقويمي لشهر مسيرة الرواتب (YYYY-MM-DD) من قيمة payrollMonth */
+function lastDayOfPayrollMonth(monthRaw) {
+  if (!monthRaw) return null;
+  const s = String(monthRaw).slice(0, 10);
+  const [y, m] = s.split('-').map((x) => parseInt(x, 10));
+  if (!y || !m || m < 1 || m > 12) return null;
+  const last = new Date(Date.UTC(y, m, 0));
+  const dd = String(last.getUTCDate()).padStart(2, '0');
+  const mm = String(last.getUTCMonth() + 1).padStart(2, '0');
+  const yyyy = last.getUTCFullYear();
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 export default function PayrollTab() {
   const { t } = useTranslation();
@@ -34,6 +47,8 @@ export default function PayrollTab() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingRunId, setEditingRunId] = useState(null);
   const [detailRunId, setDetailRunId] = useState(null);
+  const [payModalRun, setPayModalRun] = useState(null);
+  const [payTransactionDate, setPayTransactionDate] = useState(() => getSaudiToday());
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -71,12 +86,28 @@ export default function PayrollTab() {
   });
 
   const issuePaymentMutation = useApiMutation({
-    mutationFn: ({ id }) => issuePayrollPayment({ payrollRunId: id, transactionDate: getSaudiToday() }),
+    mutationFn: ({ id, transactionDate }) =>
+      issuePayrollPayment({
+        payrollRunId: id,
+        transactionDate: transactionDate || getSaudiToday(),
+      }),
     invalidateQueries: [['payroll-runs', companyId]],
     successToast: () => t('payrollPaidSuccess') || 'تم صرف المسيرة بنجاح',
     errorToast: (e) => e?.message || t('saveFailed'),
-    onSuccess: () => invalidateOnFinancialMutation(queryClient),
+    onSuccess: () => {
+      invalidateOnFinancialMutation(queryClient);
+      setPayModalRun(null);
+    },
   });
+
+  const openPayModal = useCallback((row) => {
+    setPayModalRun({
+      id: row.id,
+      runNumber: row.runNumber,
+      month: row.month,
+    });
+    setPayTransactionDate(lastDayOfPayrollMonth(row.monthRaw) || getSaudiToday());
+  }, []);
 
   const deleteRunMutation = useApiMutation({
     mutationFn: ({ id }) => deletePayrollRun(id, companyId),
@@ -127,10 +158,10 @@ export default function PayrollTab() {
           onEdit={row.status === 'draft' ? () => setEditingRunId(row.id) : undefined}
           onDelete={row.status === 'draft' ? () => handleDeleteDraft(row.id) : undefined}
           onApprove={row.status === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
-          onPay={row.status === 'completed' ? () => issuePaymentMutation.mutate({ id: row.id }) : undefined}
+          onPay={row.status === 'completed' ? () => openPayModal(row) : undefined}
         />
       ) },
-  ], [t, payrollStatusMap, updateStatusMutation, issuePaymentMutation, handleDeleteDraft]);
+  ], [t, payrollStatusMap, updateStatusMutation, handleDeleteDraft, openPayModal]);
 
   const footerCells = (
     <>
@@ -175,12 +206,12 @@ export default function PayrollTab() {
             onEdit={row.status === 'draft' ? () => setEditingRunId(row.id) : undefined}
             onDelete={row.status === 'draft' ? () => handleDeleteDraft(row.id) : undefined}
             onApprove={row.status === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
-            onPay={row.status === 'completed' ? () => issuePaymentMutation.mutate({ id: row.id }) : undefined}
+            onPay={row.status === 'completed' ? () => openPayModal(row) : undefined}
           />
         </div>
       </div>
     );
-  }, [payrollStatusMap, t, updateStatusMutation, issuePaymentMutation, handleDeleteDraft]);
+  }, [payrollStatusMap, t, updateStatusMutation, handleDeleteDraft, openPayModal]);
 
   function handleExportExcel() {
     exportToExcel(exportData, `payroll-runs-${year}.xlsx`);
@@ -296,6 +327,69 @@ export default function PayrollTab() {
           onClose={() => setDetailRunId(null)}
         />
       )}
+
+      <Modal
+        open={!!payModalRun}
+        onClose={() => {
+          if (issuePaymentMutation.isPending) return;
+          setPayModalRun(null);
+        }}
+        title={t('payrollPayConfirmTitle')}
+        size="sm"
+        footer={(
+          <>
+            <Button
+              size="md"
+              variant="ghost"
+              disabled={issuePaymentMutation.isPending}
+              onClick={() => setPayModalRun(null)}
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              size="md"
+              variant="primary"
+              loading={issuePaymentMutation.isPending}
+              onClick={() => {
+                if (!payModalRun || !payTransactionDate) return;
+                issuePaymentMutation.mutate({
+                  id: payModalRun.id,
+                  transactionDate: payTransactionDate,
+                });
+              }}
+            >
+              {t('payrollPayConfirm')}
+            </Button>
+          </>
+        )}
+      >
+        <div className="flex flex-col gap-4">
+          {payModalRun && (
+            <p className="m-0 text-[13px] text-noorix-text">
+              <span className="text-noorix-muted">{t('payrollRunNumber')}: </span>
+              <span className="font-semibold">{payModalRun.runNumber}</span>
+              {payModalRun.month && (
+                <>
+                  <span className="text-noorix-muted"> — {t('payrollMonth')}: </span>
+                  <span className="font-semibold">{payModalRun.month}</span>
+                </>
+              )}
+            </p>
+          )}
+          <div>
+            <label className="mb-1.5 block text-[12px] font-semibold text-noorix-muted" htmlFor="payroll-issue-date">
+              {t('transactionDate')}
+            </label>
+            <Input
+              id="payroll-issue-date"
+              type="date"
+              value={payTransactionDate}
+              onChange={(e) => setPayTransactionDate(e.target.value)}
+            />
+          </div>
+          <p className="m-0 text-[12px] text-noorix-muted leading-relaxed">{t('payrollPayDateHelp')}</p>
+        </div>
+      </Modal>
     </ScreenShell>
   );
 }

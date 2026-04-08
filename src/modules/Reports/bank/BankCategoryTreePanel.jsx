@@ -3,7 +3,9 @@
  * + تصدير/استيراد حزمة القواعد (فئات شجرية + قواعد مسطّحة) من ملف أو من شركة أخرى.
  */
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import {
@@ -34,8 +36,8 @@ function normClassifications(raw) {
   }));
 }
 
-function CategoryFormModal({ open, onClose, category, existingCategories, companyId, showToast, t }) {
-  const qc = useQueryClient();
+function CategoryFormModal({ open, onClose, category, existingCategories, companyId, t }) {
+  const { showToast } = useToast();
   const EMPTY = { name: '', keywords: [] };
   const [name, setName] = useState('');
   const [parentKeywords, setParentKeywords] = useState([]);
@@ -71,39 +73,25 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
     setNewParentKeyword('');
   }, [open, category, existingCategories]);
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['bank-tree-categories', companyId] });
-
-  const createMut = useMutation({
-    mutationFn: async (body) => {
-      const res = await bankStatementTreeCategoryCreate(body);
-      if (!res?.success) throw new Error(res?.error || 'create');
-      return res;
-    },
-    onSuccess: () => {
-      invalidate();
-      showToast?.(t('savedSuccessfully') || 'OK');
-      onClose();
-    },
-    onError: (e) => showToast?.(e?.message || 'Error', 'error'),
+  const createMut = useApiMutation({
+    mutationFn: (body) => bankStatementTreeCategoryCreate(body),
+    invalidateQueries: [['bank-tree-categories', companyId]],
+    successToast: () => t('savedSuccessfully'),
+    errorToast: (e) => e?.message || t('apiRequestFailed'),
+    onSuccess: () => onClose(),
   });
 
-  const updateMut = useMutation({
-    mutationFn: async ({ id, patch }) => {
-      const res = await bankStatementTreeCategoryUpdate(companyId, id, patch);
-      if (!res?.success) throw new Error(res?.error || 'update');
-      return res;
-    },
-    onSuccess: () => {
-      invalidate();
-      showToast?.(t('savedSuccessfully') || 'OK');
-      onClose();
-    },
-    onError: (e) => showToast?.(e?.message || 'Error', 'error'),
+  const updateMut = useApiMutation({
+    mutationFn: ({ id, patch }) => bankStatementTreeCategoryUpdate(companyId, id, patch),
+    invalidateQueries: [['bank-tree-categories', companyId]],
+    successToast: () => t('savedSuccessfully'),
+    errorToast: (e) => e?.message || t('apiRequestFailed'),
+    onSuccess: () => onClose(),
   });
 
   const handleSave = () => {
     if (!name.trim()) {
-      showToast?.(t('bankTreeCategoryNameRequired'), 'error');
+      showToast(t('bankTreeCategoryNameRequired'), 'error');
       return;
     }
     const cleanClassifications = classifications
@@ -113,7 +101,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
         keywords: (c.keywords || []).filter(Boolean),
       }));
     if (!cleanClassifications.length || cleanClassifications.every((c) => !c.keywords.length)) {
-      showToast?.(t('bankTreeClassificationKeywordsRequired'), 'error');
+      showToast(t('bankTreeClassificationKeywordsRequired'), 'error');
       return;
     }
     const payload = {
@@ -144,7 +132,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
     if (!kw) return;
     const cl = classifications[classIdx];
     if (cl.keywords?.includes(kw)) {
-      showToast?.(t('bankTreeDuplicateKeyword'), 'error');
+      showToast(t('bankTreeDuplicateKeyword'), 'error');
       return;
     }
     setClassifications((prev) =>
@@ -382,8 +370,9 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
   );
 }
 
-export default function BankCategoryTreePanel({ companyId, companies = [], showToast }) {
+export default function BankCategoryTreePanel({ companyId, companies = [] }) {
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -441,33 +430,29 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
     return categories.reduce((sum, c) => sum + normClassifications(c.classifications).length, 0);
   }, [categories]);
 
-  const deleteMut = useMutation({
+  const deleteMut = useApiMutation({
     mutationFn: (id) => bankStatementTreeCategoryDelete(companyId, id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qKey });
-      showToast?.(t('deletedSuccessfully') || 'OK');
-    },
-    onError: (e) => showToast?.(e?.message || 'Error', 'error'),
+    invalidateQueries: [qKey],
+    successToast: () => t('deletedSuccessfully'),
+    errorToast: (e) => e?.message || t('apiRequestFailed'),
   });
 
-  const updateMut = useMutation({
+  const updateMut = useApiMutation({
     mutationFn: ({ id, patch }) => bankStatementTreeCategoryUpdate(companyId, id, patch),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qKey }),
-    onError: (e) => showToast?.(e?.message || 'Error', 'error'),
+    invalidateQueries: [qKey],
+    showErrorToast: true,
+    errorToast: (e) => e?.message || t('apiRequestFailed'),
   });
 
-  const seedDefaultsMut = useMutation({
-    mutationFn: async () => {
-      const res = await bankStatementTreeCategoriesSeedDefaults(companyId);
-      if (!res?.success) throw new Error(res?.error || 'seed');
-      return res.data ?? res;
+  const seedDefaultsMut = useApiMutation({
+    mutationFn: () => bankStatementTreeCategoriesSeedDefaults(companyId),
+    invalidateQueries: [qKey],
+    successToast: (res) => {
+      const inner = res?.data ?? res;
+      const n = inner?.created ?? 8;
+      return t('bankTreeSeedDefaultsDone', String(n));
     },
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: qKey });
-      const n = data?.created ?? 8;
-      showToast?.(t('bankTreeSeedDefaultsDone', String(n)));
-    },
-    onError: (e) => showToast?.(e?.message || t('bankTreeSeedDefaultsError'), 'error'),
+    errorToast: (e) => e?.message || t('bankTreeSeedDefaultsError'),
   });
 
   const groupedForMigrate = useMemo(() => {
@@ -507,10 +492,10 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
       }
       await qc.invalidateQueries({ queryKey: qKey });
       await qc.invalidateQueries({ queryKey: ['bank-classification-rules', companyId] });
-      showToast?.(t('bankTreeMigrateDone', String(groupedForMigrate.length)));
+      showToast(t('bankTreeMigrateDone', String(groupedForMigrate.length)));
       setShowMigrate(false);
     } catch (e) {
-      showToast?.(e?.message || 'Error', 'error');
+      showToast(e?.message || 'Error', 'error');
     } finally {
       setMigrating(false);
     }
@@ -545,9 +530,9 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast?.(t('bankRulesExportDone'));
+      showToast(t('bankRulesExportDone'));
     } catch (e) {
-      showToast?.(e?.message || 'Error', 'error');
+      showToast(e?.message || 'Error', 'error');
     } finally {
       setExportBusy(false);
     }
@@ -569,13 +554,13 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
       let res;
       if (importSource === 'company') {
         if (!importSourceCompanyId) {
-          showToast?.(t('bankRulesSelectCompany'), 'error');
+          showToast(t('bankRulesSelectCompany'), 'error');
           return;
         }
         res = await bankStatementClassificationRulesImportFromCompany(companyId, importSourceCompanyId, importMode);
       } else {
         if (!importFile) {
-          showToast?.(t('bankRulesPickFile'), 'error');
+          showToast(t('bankRulesPickFile'), 'error');
           return;
         }
         const text = await importFile.text();
@@ -589,7 +574,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
       }
       if (!res.success) throw new Error(res.error || 'import');
       const d = res.data ?? res;
-      showToast?.(
+      showToast(
         t(
           'bankRulesImportDone',
           String(d.treeCreated ?? 0),
@@ -602,7 +587,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
       setImportFile(null);
       invalidateRulesQueries();
     } catch (e) {
-      showToast?.(e?.message || 'Error', 'error');
+      showToast(e?.message || 'Error', 'error');
     } finally {
       setImportBusy(false);
     }
@@ -706,7 +691,6 @@ export default function BankCategoryTreePanel({ companyId, companies = [], showT
         category={editing}
         existingCategories={categories}
         companyId={companyId}
-        showToast={showToast}
         t={t}
       />
 

@@ -228,6 +228,12 @@ export default {
   payrollTotalDeductionsAll: { ar: 'إجمالي الخصومات', en: 'Total deductions' },
   payrollTotalAfterDeductions: { ar: 'الإجمالي بعد الخصم', en: 'Total after deductions' },
   payrollPay: { ar: 'صرف المسيرة', en: 'Pay payroll run' },
+  payrollPayConfirmTitle: { ar: 'تاريخ صرف المسيرة', en: 'Payroll payment date' },
+  payrollPayDateHelp: {
+    ar: 'يُسجَّل هذا التاريخ على حركات الخزائن والرواتب. يمكنك اختيار يوم في الشهر الماضي أو شهر المسيرة إذا كانت الفترة المحاسبية لمغلقة بعد.',
+    en: 'This date is recorded on vault and salary movements. You may pick a day in a prior month or the payroll month if that fiscal period is still open.',
+  },
+  payrollPayConfirm: { ar: 'تأكيد الصرف', en: 'Confirm payment' },
   payrollPaidSuccess: { ar: 'تم صرف المسيرة بنجاح', en: 'Payroll paid successfully' },
   exportExcel: { ar: 'تصدير Excel', en: 'Export Excel' },
   exportPdf: { ar: 'تصدير PDF', en: 'Export PDF' },

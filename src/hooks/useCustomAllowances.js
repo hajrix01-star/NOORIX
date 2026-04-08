@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from './useApiMutation';
 import {
   getCustomAllowances,
   createCustomAllowance,
@@ -24,14 +25,16 @@ export function useCustomAllowances(companyId, employeeId) {
     queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
   };
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: createCustomAllowance,
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
-  const remove = useMutation({
+  const remove = useApiMutation({
     mutationFn: ({ id, activeCompanyId }) => deleteCustomAllowance(id, activeCompanyId),
     onSuccess: invalidate,
+    showErrorToast: false,
   });
 
   return {

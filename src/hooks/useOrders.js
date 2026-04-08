@@ -1,7 +1,8 @@
 /**
  * useOrders — جلب الطلبات والمنتجات والفئات
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useApiMutation } from './useApiMutation';
 import {
   getOrders,
   createOrder,
@@ -34,36 +35,35 @@ export function useOrders(companyId, year, month) {
 }
 
 export function useCreateOrderMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn: createOrder,
-    onSuccess: (_, variables) => {
-      // إبطال جميع استعلامات الطلبات والملخص (بما فيها year/month) لضمان ظهور الطلب الجديد
-      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'orders' });
-      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'orders-summary' });
-    },
+    invalidateQueries: [
+      { predicate: (q) => q.queryKey[0] === 'orders' },
+      { predicate: (q) => q.queryKey[0] === 'orders-summary' },
+    ],
+    showErrorToast: false,
   });
 }
 
 export function useUpdateOrderMutation(companyId) {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn: ({ id, body }) => updateOrder(id, body, companyId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'orders' });
-      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'orders-summary' });
-    },
+    invalidateQueries: [
+      { predicate: (q) => q.queryKey[0] === 'orders' },
+      { predicate: (q) => q.queryKey[0] === 'orders-summary' },
+    ],
+    showErrorToast: false,
   });
 }
 
 export function useCancelOrderMutation(companyId) {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn: (id) => cancelOrder(id, companyId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'orders' });
-      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'orders-summary' });
-    },
+    invalidateQueries: [
+      { predicate: (q) => q.queryKey[0] === 'orders' },
+      { predicate: (q) => q.queryKey[0] === 'orders-summary' },
+    ],
+    showErrorToast: false,
   });
 }
 
@@ -140,61 +140,49 @@ export function useOrdersItemsReport(companyId, year, month) {
 }
 
 export function useCreateOrderProductMutation(companyId) {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn: createOrderProduct,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order-products', companyId] });
-    },
+    invalidateQueries: [['order-products', companyId]],
+    showErrorToast: false,
   });
 }
 
 export function useCreateOrderProductsBatchMutation(companyId) {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn: (products) => createOrderProductsBatch(companyId, products),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order-products', companyId] });
-    },
+    invalidateQueries: [['order-products', companyId]],
+    showErrorToast: false,
   });
 }
 
 export function useCreateOrderCategoriesBatchMutation(companyId) {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn: (categories) => createOrderCategoriesBatch(companyId, categories),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order-categories', companyId] });
-    },
+    invalidateQueries: [['order-categories', companyId]],
+    showErrorToast: false,
   });
 }
 
 export function useUpdateOrderProductMutation(companyId) {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn: ({ id, body }) => updateOrderProduct(id, body, companyId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order-products', companyId] });
-    },
+    invalidateQueries: [['order-products', companyId]],
+    showErrorToast: false,
   });
 }
 
 export function useCreateOrderCategoryMutation(companyId) {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn: createOrderCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order-categories', companyId] });
-    },
+    invalidateQueries: [['order-categories', companyId]],
+    showErrorToast: false,
   });
 }
 
 export function useUpdateOrderCategoryMutation(companyId) {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn: ({ id, body }) => updateOrderCategory(id, body, companyId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order-categories', companyId] });
-    },
+    invalidateQueries: [['order-categories', companyId]],
+    showErrorToast: false,
   });
 }

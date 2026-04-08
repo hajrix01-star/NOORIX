@@ -2,7 +2,8 @@
  * مطابق BankTemplatesManager.jsx في Base44 — بطاقة تعريف، أعمدة، تفعيل/تعطيل، حذف نهائي
  */
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStatementTemplateDelete } from '../../../services/api';
 import { Button, Modal } from '../../../ui';
@@ -30,9 +31,8 @@ function columnsToBadges(columnsJson, t) {
     }));
 }
 
-export default function BankStatementTemplatesPanel({ companyId, showToast }) {
+export default function BankStatementTemplatesPanel({ companyId }) {
   const { t, lang } = useTranslation();
-  const qc = useQueryClient();
   const [deleteId, setDeleteId] = useState(null);
 
   const { data: list = [], isLoading } = useQuery({
@@ -45,31 +45,19 @@ export default function BankStatementTemplatesPanel({ companyId, showToast }) {
     enabled: !!companyId,
   });
 
-  const toggleMut = useMutation({
-    mutationFn: async ({ id, isActive }) => {
-      const res = await bankStatementTemplateSetActive(companyId, id, isActive);
-      if (res?.success === false) throw new Error(res?.error || 'toggle');
-      return res;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['bank-statement-templates', companyId] });
-      showToast?.(t('bankTemplatesUpdated'));
-    },
-    onError: (e) => showToast?.(e?.message || 'Error', 'error'),
+  const toggleMut = useApiMutation({
+    mutationFn: async ({ id, isActive }) => bankStatementTemplateSetActive(companyId, id, isActive),
+    invalidateQueries: [['bank-statement-templates', companyId]],
+    successToast: () => t('bankTemplatesUpdated'),
+    errorToast: (e) => e?.message || t('apiRequestFailed'),
   });
 
-  const deleteMut = useMutation({
-    mutationFn: async (id) => {
-      const res = await bankStatementTemplateDelete(companyId, id);
-      if (res?.success === false) throw new Error(res?.error || 'delete');
-      return res;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['bank-statement-templates', companyId] });
-      showToast?.(t('bankTemplatesDeleted'));
-      setDeleteId(null);
-    },
-    onError: (e) => showToast?.(e?.message || 'Error', 'error'),
+  const deleteMut = useApiMutation({
+    mutationFn: async (id) => bankStatementTemplateDelete(companyId, id),
+    invalidateQueries: [['bank-statement-templates', companyId]],
+    successToast: () => t('bankTemplatesDeleted'),
+    errorToast: (e) => e?.message || t('apiRequestFailed'),
+    onSuccess: () => { setDeleteId(null); },
   });
 
   const sorted = useMemo(() => [...list].sort((a, b) => (b.isActive === a.isActive ? 0 : a.isActive ? -1 : 1)), [list]);

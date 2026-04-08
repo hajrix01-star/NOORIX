@@ -3,7 +3,8 @@
  * Single source of truth لبيانات الموردين.
  */
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useApiMutation } from './useApiMutation';
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../services/api';
 
 /**
@@ -11,8 +12,6 @@ import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '..
  * @param {{ pageSize?: number }} [opts]
  */
 export function useSuppliers(companyId, { pageSize = 200, q } = {}) {
-  const queryClient = useQueryClient();
-
   const { data: raw = [], isLoading } = useQuery({
     queryKey: ['suppliers', companyId, pageSize, q || ''],
     queryFn: async () => {
@@ -26,22 +25,22 @@ export function useSuppliers(companyId, { pageSize = 200, q } = {}) {
 
   const suppliers = useMemo(() => raw.filter((s) => !s.isDeleted), [raw]);
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['suppliers', companyId] });
-
-  const createMutation = useMutation({
+  const createMutation = useApiMutation({
     mutationFn: createSupplier,
-    onSuccess: invalidate,
+    invalidateQueries: [['suppliers', companyId]],
+    showErrorToast: false,
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateSupplier(id, body),
-    onSuccess: invalidate,
+    invalidateQueries: [['suppliers', companyId]],
+    showErrorToast: false,
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useApiMutation({
     mutationFn: deleteSupplier,
-    onSuccess: invalidate,
+    invalidateQueries: [['suppliers', companyId]],
+    showErrorToast: false,
   });
 
   return {

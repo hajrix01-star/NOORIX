@@ -3,10 +3,10 @@
  * ✅ المصفوفة تُجلب من Backend API — مصدر حقيقة واحد.
  */
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useToast } from '../../../context/ToastContext';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 function Cb({ checked, indeterminate, onChange, disabled }) {
@@ -178,10 +178,8 @@ const labelStyle = {
 
 export default function RolesTab({ userRole, language }) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const { showToast } = useToast();
   const [form, setForm] = useState({ name: '', nameAr: '', description: '', permissions: [] });
 
   // ── جلب المصفوفة من Backend (مصدر الحقيقة الوحيد) ──
@@ -205,38 +203,31 @@ export default function RolesTab({ userRole, language }) {
     },
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['roles'] });
-
-  const createMutation = useMutation({
+  const createMutation = useApiMutation({
     mutationFn: createRole,
+    invalidateQueries: [['roles']],
+    successToast: () => t('roleAdded'),
+    errorToast: (e) => e?.message || t('addFailed'),
     onSuccess: () => {
-      invalidate();
       setShowForm(false);
       setForm({ name: '', nameAr: '', description: '', permissions: [] });
-      showToast(t('roleAdded'), 'success');
     },
-    onError: (e) => showToast(e?.message || t('addFailed'), 'error'),
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateRole(id, body),
-    onSuccess: () => {
-      invalidate();
-      queryClient.invalidateQueries({ queryKey: ['me'] });
-      setEditing(null);
-      showToast(t('updateSuccess'), 'success');
-    },
-    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
+    invalidateQueries: [['roles'], ['me']],
+    successToast: () => t('updateSuccess'),
+    errorToast: (e) => e?.message || t('updateFailed'),
+    onSuccess: () => { setEditing(null); },
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useApiMutation({
     mutationFn: deleteRole,
-    onSuccess: () => {
-      invalidate();
-      setEditing(null);
-      showToast(t('roleDeleted'), 'success');
-    },
-    onError: (e) => showToast(e?.message || t('deleteFailed'), 'error'),
+    invalidateQueries: [['roles']],
+    successToast: () => t('roleDeleted'),
+    errorToast: (e) => e?.message || t('deleteFailed'),
+    onSuccess: () => { setEditing(null); },
   });
 
   function openEdit(r) {

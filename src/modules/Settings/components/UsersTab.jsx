@@ -2,20 +2,18 @@
  * UsersTab — إدارة المستخدمين
  */
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useToast } from '../../../context/ToastContext';
 import SmartTable from '../../../components/common/SmartTable';
 import { Button, Badge, Input, AdaptiveSheet, ScreenShell } from '../../../ui';
 
 export default function UsersTab({ userRole, activeCompanies = [] }) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const { showToast } = useToast();
   const [form, setForm] = useState({ email: '', password: '', nameAr: '', nameEn: '', roleName: '', companyIds: [] });
 
   const { data: users = [], isLoading } = useQuery({
@@ -34,30 +32,36 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
     },
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['users'] });
-
-  const createMutation = useMutation({
+  const createMutation = useApiMutation({
     mutationFn: createUser,
-    onSuccess: () => { invalidate(); setShowForm(false); showToast(t('userAdded'), 'success'); },
-    onError: (e) => showToast(e?.message || t('addFailed'), 'error'),
+    invalidateQueries: [['users']],
+    successToast: () => t('userAdded'),
+    errorToast: (e) => e?.message || t('addFailed'),
+    onSuccess: () => { setShowForm(false); },
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateUser(id, body),
-    onSuccess: () => { invalidate(); setEditing(null); showToast(t('updateSuccess'), 'success'); },
-    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
+    invalidateQueries: [['users']],
+    successToast: () => t('updateSuccess'),
+    errorToast: (e) => e?.message || t('updateFailed'),
+    onSuccess: () => { setEditing(null); },
   });
 
-  const archiveMutation = useMutation({
+  const archiveMutation = useApiMutation({
     mutationFn: archiveUser,
-    onSuccess: () => { invalidate(); setEditing(null); showToast(t('userArchived'), 'success'); },
-    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
+    invalidateQueries: [['users']],
+    successToast: () => t('userArchived'),
+    errorToast: (e) => e?.message || t('updateFailed'),
+    onSuccess: () => { setEditing(null); },
   });
 
-  const restoreMutation = useMutation({
+  const restoreMutation = useApiMutation({
     mutationFn: restoreUser,
-    onSuccess: () => { invalidate(); setEditing(null); showToast(t('userRestored'), 'success'); },
-    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
+    invalidateQueries: [['users']],
+    successToast: () => t('userRestored'),
+    errorToast: (e) => e?.message || t('updateFailed'),
+    onSuccess: () => { setEditing(null); },
   });
 
   function openEdit(u) {

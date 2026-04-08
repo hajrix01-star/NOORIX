@@ -3,7 +3,8 @@
  * نافذة احترافية: بطاقة مركزية، حقول منسقة، دعم RTL، مناسب للجوال 100%.
  */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Button, AdaptiveSheet, Input } from '../../ui';
 import { getEmployees, createLeave, createDeduction, createMovement, createCustomAllowance } from '../../services/api';
@@ -145,13 +146,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
     onCloseRef.current?.();
   };
 
-  const advMut = useMutation({
+  const advMut = useApiMutation({
     mutationFn: async (arg) => {
       const p = arg?.payload ?? arg;
-      const res = await createAdvance(p);
-      if (!res?.success) throw new Error(res?.error || 'Request failed');
-      return res;
+      return createAdvance(p);
     },
+    showErrorToast: false,
     onSuccess: (_, variables) => {
       invalidateOnFinancialMutation(qc);
       invalidateHrQueries(qc, companyId);
@@ -160,13 +160,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
     onError: (e) => setFormError(e?.message || String(e)),
   });
 
-  const leaveMut = useMutation({
+  const leaveMut = useApiMutation({
     mutationFn: async (arg) => {
       const body = arg?.payload ?? arg;
-      const res = await createLeave(body);
-      if (!res?.success) throw new Error(res?.error || 'Request failed');
-      return res;
+      return createLeave(body);
     },
+    showErrorToast: false,
     onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
       closeOnSuccess(variables, { textAr: 'تم تسجيل الإجازة.', textEn: 'Leave recorded.' });
@@ -174,13 +173,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
     onError: (e) => setFormError(e?.message || String(e)),
   });
 
-  const dedMut = useMutation({
+  const dedMut = useApiMutation({
     mutationFn: async (arg) => {
       const body = arg?.payload ?? arg;
-      const res = await createDeduction(body);
-      if (!res?.success) throw new Error(res?.error || 'Request failed');
-      return res;
+      return createDeduction(body);
     },
+    showErrorToast: false,
     onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
       closeOnSuccess(variables, { textAr: 'تم تسجيل الخصم.', textEn: 'Deduction recorded.' });
@@ -188,13 +186,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
     onError: (e) => setFormError(e?.message || String(e)),
   });
 
-  const movMut = useMutation({
+  const movMut = useApiMutation({
     mutationFn: async (arg) => {
       const body = arg?.payload ?? arg;
-      const res = await createMovement(body);
-      if (!res?.success) throw new Error(res?.error || 'Request failed');
-      return res;
+      return createMovement(body);
     },
+    showErrorToast: false,
     onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
       closeOnSuccess(variables, { textAr: 'تم تسجيل الزيادة أو الترقية.', textEn: 'Promotion or raise recorded.' });
@@ -202,13 +199,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
     onError: (e) => setFormError(e?.message || String(e)),
   });
 
-  const alMut = useMutation({
+  const alMut = useApiMutation({
     mutationFn: async (arg) => {
       const body = arg?.payload ?? arg;
-      const res = await createCustomAllowance(body);
-      if (!res?.success) throw new Error(res?.error || 'Request failed');
-      return res;
+      return createCustomAllowance(body);
     },
+    showErrorToast: false,
     onSuccess: (_, variables) => {
       invalidateHrQueries(qc, companyId);
       closeOnSuccess(variables, { textAr: 'تم تسجيل البدلة الإضافية.', textEn: 'Allowance recorded.' });

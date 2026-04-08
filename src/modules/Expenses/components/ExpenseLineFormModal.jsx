@@ -2,7 +2,7 @@
  * ExpenseLineFormModal — نموذج إنشاء/تعديل بند مصروف (هاتف 1، كهرب 1، إيجار محل)
  */
 import React, { useState, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { createExpenseLine, updateExpenseLine } from '../../../services/api';
 import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
@@ -42,27 +42,17 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
   const { suppliers = [] } = useSuppliers(companyId);
   const expenseCategoriesGrouped = categories.filter((c) => c.type === 'expense');
 
-  const createMutation = useMutation({
+  const createMutation = useApiMutation({
     mutationFn: (body) => createExpenseLine(body),
-    onSuccess: (res) => {
-      if (res?.success !== false) {
-        onSaved?.();
-      } else {
-        setError(res?.error || 'فشل الحفظ');
-      }
-    },
+    showErrorToast: false,
+    onSuccess: () => onSaved?.(),
     onError: (err) => setError(err?.message || 'حدث خطأ'),
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateExpenseLine(id, body, companyId),
-    onSuccess: (res) => {
-      if (res?.success !== false) {
-        onSaved?.();
-      } else {
-        setError(res?.error || 'فشل التحديث');
-      }
-    },
+    showErrorToast: false,
+    onSuccess: () => onSaved?.(),
     onError: (err) => setError(err?.message || 'حدث خطأ'),
   });
 

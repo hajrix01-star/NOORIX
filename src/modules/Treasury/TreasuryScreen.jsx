@@ -1,5 +1,5 @@
 ﻿import React, { useState, useMemo, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { updateVault } from '../../services/api';
 import { useApp }         from '../../context/AppContext';
 import { useToast }       from '../../context/ToastContext';
@@ -16,7 +16,6 @@ export default function TreasuryScreen() {
   const { activeCompanyId } = useApp();
   const { t } = useTranslation();
   const companyId   = activeCompanyId ?? '';
-  const queryClient = useQueryClient();
 
   const { showToast } = useToast();
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -49,18 +48,18 @@ export default function TreasuryScreen() {
     setSaveError('');
   }, [companyId]);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['vaults', companyId] });
-
-  const toggleSalesMutation = useMutation({
+  const toggleSalesMutation = useApiMutation({
     mutationFn: (v) => updateVault(v.id, { isSalesChannel: !v.isSalesChannel }),
-    onSuccess: () => { invalidate(); notify(t('salesChannelUpdated')); },
-    onError:   (e) => notify(e?.message || t('updateFailed'), 'error'),
+    invalidateQueries: [['vaults', companyId]],
+    successToast: () => t('salesChannelUpdated'),
+    errorToast: (e) => e?.message || t('updateFailed'),
   });
 
-  const togglePaymentMethodMutation = useMutation({
+  const togglePaymentMethodMutation = useApiMutation({
     mutationFn: (v) => updateVault(v.id, { showAsPaymentMethod: !(v.showAsPaymentMethod !== false) }),
-    onSuccess: () => { invalidate(); notify(t('paymentMethodVisibilityUpdated')); },
-    onError:   (e) => notify(e?.message || t('updateFailed'), 'error'),
+    invalidateQueries: [['vaults', companyId]],
+    successToast: () => t('paymentMethodVisibilityUpdated'),
+    errorToast: (e) => e?.message || t('updateFailed'),
   });
 
   const handleDelete = (v) => {

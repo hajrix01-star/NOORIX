@@ -3,7 +3,8 @@
  * تفعيل ضريبة القيمة المضافة للمبيعات ونسبة الضريبة (%)
  */
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApp } from '../../../context/AppContext';
 import { getCompany, updateCompany } from '../../../services/api';
 import { Button, Input } from '../../../ui';
@@ -33,16 +34,10 @@ export default function TaxSettingsTab() {
     }
   }, [company]);
 
-  const updateMutation = useMutation({
-    mutationFn: async (body) => {
-      const res = await updateCompany(activeCompanyId, body);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحديث الإعدادات');
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['company', activeCompanyId] });
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
-    },
+  const updateMutation = useApiMutation({
+    mutationFn: (body) => updateCompany(activeCompanyId, body),
+    invalidateQueries: [['company', activeCompanyId], ['companies']],
+    showErrorToast: false,
   });
 
   function handleSave() {

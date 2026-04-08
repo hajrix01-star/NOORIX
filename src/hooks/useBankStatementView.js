@@ -2,7 +2,8 @@
  * حالة ومنطق عرض كشف بنكي واحد — مكيّف لـ API الحالي (Nest + Prisma)
  */
 import { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useApiMutation } from './useApiMutation';
 import {
   bankStatementGet,
   bankStatementUpdateTxCategory,
@@ -41,7 +42,6 @@ function saveCards(ids) {
 }
 
 export default function useBankStatementView(statementId, companyId, t) {
-  const queryClient = useQueryClient();
   const uncategorized = t('uncategorized');
 
   const [activeTab, setActiveTab] = useState('analysis');
@@ -163,34 +163,36 @@ export default function useBankStatementView(statementId, companyId, t) {
     }));
   }, []);
 
-  const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['bank-statement', companyId, statementId] });
-    queryClient.invalidateQueries({ queryKey: ['bank-statements'] });
-    queryClient.invalidateQueries({ queryKey: ['bank-statements-summary'] });
-  }, [queryClient, companyId, statementId]);
+  const bankInv = useMemo(
+    () => [
+      ['bank-statement', companyId, statementId],
+      ['bank-statements'],
+      ['bank-statements-summary'],
+    ],
+    [companyId, statementId],
+  );
 
-  const updateCategoryMutation = useMutation({
+  const updateCategoryMutation = useApiMutation({
     mutationFn: ({ txId, categoryId }) =>
       bankStatementUpdateTxCategory(statementId, txId, companyId, categoryId),
-    onSuccess: () => {
-      invalidate();
-    },
+    invalidateQueries: bankInv,
+    showErrorToast: false,
   });
 
-  const updateNoteMutation = useMutation({
+  const updateNoteMutation = useApiMutation({
     mutationFn: ({ txId, note }) =>
       bankStatementUpdateTxNote(statementId, txId, companyId, note),
-    onSuccess: () => {
-      invalidate();
-    },
+    invalidateQueries: bankInv,
+    showErrorToast: false,
   });
 
-  const reclassifyMutation = useMutation({
+  const reclassifyMutation = useApiMutation({
     mutationFn: () => bankStatementReclassify(companyId, statementId),
-    onSuccess: () => {
-      invalidate();
-      queryClient.invalidateQueries({ queryKey: ['bank-reconciliation-stats', companyId] });
-    },
+    invalidateQueries: [
+      ...bankInv,
+      { queryKey: ['bank-reconciliation-stats', companyId] },
+    ],
+    showErrorToast: false,
   });
 
   const handleCategoryChange = (txId, categoryId) => {

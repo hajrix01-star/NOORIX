@@ -1,17 +1,27 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import Toast from '../components/Toast';
 
 const ToastContext = createContext(null);
+
+/** تجاهل تكرار نفس الرسالة ونفس النوع خلال هذه المدة (يقلّل الوميض المزدوج). */
+const DEDUPE_MS = 2200;
 
 /**
  * إشعارات عائمة موحّدة عبر التطبيق (بدلاً من useState + Toast في كل شاشة).
  */
 export function ToastProvider({ children }) {
   const [state, setState] = useState({ visible: false, message: '', type: 'success' });
+  const lastRef = useRef({ key: '', at: 0 });
 
   const showToast = useCallback((message, type = 'success') => {
     if (message == null || message === '') return;
-    setState({ visible: true, message: String(message), type: type || 'success' });
+    const msg = String(message);
+    const t = type || 'success';
+    const now = Date.now();
+    const key = `${t}::${msg}`;
+    if (lastRef.current.key === key && now - lastRef.current.at < DEDUPE_MS) return;
+    lastRef.current = { key, at: now };
+    setState({ visible: true, message: msg, type: t });
   }, []);
 
   const dismiss = useCallback(() => {

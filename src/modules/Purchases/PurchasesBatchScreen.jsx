@@ -5,7 +5,8 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { Button, Badge, Input, ScreenTabs, ScreenShell } from '../../ui';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
@@ -302,7 +303,7 @@ export default function PurchasesBatchScreen() {
 
   const summary = useBatchSummary(rows);
 
-  const saveMutation = useMutation({
+  const saveMutation = useApiMutation({
     mutationFn: async () => {
       const valid = rows.filter((r) => {
         try {
@@ -345,12 +346,12 @@ export default function PurchasesBatchScreen() {
       if (!res.success) throw new Error(res.error || t('saveFailed'));
       return res.data ?? { batchId: 'B-' + Date.now(), count: valid.length };
     },
-    onSuccess: (data) => {
+    successToast: (data) => t('savedInvoicesCount', data.count, data.batchId),
+    errorToast: (e) => e?.message || t('saveFailed'),
+    onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
-      showToast(t('savedInvoicesCount', data.count, data.batchId), 'success');
       setRows([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
     },
-    onError: (e) => showToast(e?.message || t('saveFailed'), 'error'),
   });
 
   const updateRow = (i, f, v) => {

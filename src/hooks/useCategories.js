@@ -3,7 +3,8 @@
  * يُعيد أيضاً قائمة مسطّحة (flatCategories) لاستخدامها في الـ selects.
  */
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useApiMutation } from './useApiMutation';
 import {
   getCategories,
   createCategory,
@@ -15,8 +16,6 @@ import {
  * @param {string} companyId
  */
 export function useCategories(companyId) {
-  const queryClient = useQueryClient();
-
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories', companyId],
     queryFn: async () => {
@@ -37,22 +36,22 @@ export function useCategories(companyId) {
     return list;
   }, [categories]);
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['categories', companyId] });
-
-  const createMutation = useMutation({
+  const createMutation = useApiMutation({
     mutationFn: createCategory,
-    onSuccess: invalidate,
+    invalidateQueries: [['categories', companyId]],
+    showErrorToast: false,
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateCategory(id, body),
-    onSuccess: invalidate,
+    invalidateQueries: [['categories', companyId]],
+    showErrorToast: false,
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useApiMutation({
     mutationFn: (id) => deleteCategory(id, companyId),
-    onSuccess: invalidate,
+    invalidateQueries: [['categories', companyId]],
+    showErrorToast: false,
   });
 
   return {

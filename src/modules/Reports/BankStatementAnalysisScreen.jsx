@@ -2,7 +2,8 @@
  * BankStatementAnalysisScreen — تحليل كشوف الحساب (واجهة كاملة مكيّفة من المشروع السابق)
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -108,15 +109,15 @@ export default function BankStatementAnalysisScreen() {
     setSelectedStatementId(stmt.id);
   };
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useApiMutation({
     mutationFn: (id) => bankStatementDelete(companyId, id),
+    successToast: () => t('deletedSuccessfully'),
+    errorToast: (err) => err?.message || t('saveFailedGeneric'),
     onSuccess: () => {
       invalidate();
       setDeleteConfirmId(null);
       setSelectedStatementId(null);
-      showToast(t('deletedSuccessfully') || 'تم الحذف');
     },
-    onError: (err) => showToast(err?.message || 'فشل الحذف', 'error'),
   });
 
   const completedStatements = useMemo(
@@ -333,10 +334,10 @@ export default function BankStatementAnalysisScreen() {
           )}
 
           {activeTab === 'rules' && (
-            <BankCategoryTreePanel companyId={companyId} companies={companies} showToast={showToast} />
+            <BankCategoryTreePanel companyId={companyId} companies={companies} />
           )}
           {activeTab === 'templates' && (
-            <BankStatementTemplatesPanel companyId={companyId} showToast={showToast} />
+            <BankStatementTemplatesPanel companyId={companyId} />
           )}
         </div>
       </div>
