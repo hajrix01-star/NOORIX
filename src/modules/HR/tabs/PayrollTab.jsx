@@ -23,13 +23,13 @@ import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 
-/** آخر يوم تقويمي لشهر مسيرة الرواتب (YYYY-MM-DD) من قيمة payrollMonth */
-function lastDayOfPayrollMonth(monthRaw) {
+/** آخر يوم تقويمي للشهر السابق لشهر المسيرة (YYYY-MM-DD) من قيمة payrollMonth — مثال: مسيرة مارس → 28/29 فبراير */
+function lastDayOfMonthBeforePayroll(monthRaw) {
   if (!monthRaw) return null;
   const s = String(monthRaw).slice(0, 10);
   const [y, m] = s.split('-').map((x) => parseInt(x, 10));
   if (!y || !m || m < 1 || m > 12) return null;
-  const last = new Date(Date.UTC(y, m, 0));
+  const last = new Date(Date.UTC(y, m - 1, 0));
   const dd = String(last.getUTCDate()).padStart(2, '0');
   const mm = String(last.getUTCMonth() + 1).padStart(2, '0');
   const yyyy = last.getUTCFullYear();
@@ -106,7 +106,7 @@ export default function PayrollTab() {
       runNumber: row.runNumber,
       month: row.month,
     });
-    setPayTransactionDate(lastDayOfPayrollMonth(row.monthRaw) || getSaudiToday());
+    setPayTransactionDate(lastDayOfMonthBeforePayroll(row.monthRaw) || getSaudiToday());
   }, []);
 
   const deleteRunMutation = useApiMutation({

@@ -230,8 +230,8 @@ export default {
   payrollPay: { ar: 'صرف المسيرة', en: 'Pay payroll run' },
   payrollPayConfirmTitle: { ar: 'تاريخ صرف المسيرة', en: 'Payroll payment date' },
   payrollPayDateHelp: {
-    ar: 'يُسجَّل هذا التاريخ على حركات الخزائن والرواتب. يمكنك اختيار يوم في الشهر الماضي أو شهر المسيرة إذا كانت الفترة المحاسبية لمغلقة بعد.',
-    en: 'This date is recorded on vault and salary movements. You may pick a day in a prior month or the payroll month if that fiscal period is still open.',
+    ar: 'يُسجَّل هذا التاريخ على حركات الخزائن والرواتب. الافتراضي: آخر يوم من الشهر السابق لشهر المسيرة. يمكنك تغييره إذا كانت الفترة المحاسبية لمغلقة.',
+    en: 'Recorded on vault and salary movements. Default: last day of the calendar month before the payroll run month. Change it if needed; the fiscal period for that date must be open.',
   },
   payrollPayConfirm: { ar: 'تأكيد الصرف', en: 'Confirm payment' },
   payrollPaidSuccess: { ar: 'تم صرف المسيرة بنجاح', en: 'Payroll paid successfully' },
