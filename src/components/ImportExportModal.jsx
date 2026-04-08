@@ -1,16 +1,9 @@
 /**
- * ImportExportModal ? ???? ??????? ?????? ????
+ * ImportExportModal — bulk import/export sheet (AdaptiveSheet + ScreenTabs).
  * Entities: invoices | employees | sales
  *
- * Import flow:
- *   1. User downloads template ? fills it ? uploads
- *   2. Rows are validated client-side (with lookup resolution)
- *   3. Valid rows are sent to backend in parallel/sequential batches
- *   4. Progress bar tracks completed rows; results show per-row errors
- *
- * Export flow:
- *   1. exportFetcher() is called ? returns pre-formatted row objects
- *   2. Exported to Excel with entity-appropriate filename
+ * Import: template → upload → validate → batch API → progress/results.
+ * Export: exportFetcher() → exportToExcel with dated filename.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { importFromExcel, exportToExcel } from '../utils/exportUtils';
@@ -32,12 +25,9 @@ import {
 import { Button, AdaptiveSheet, ScreenTabs } from '../ui';
 import { useTranslation } from '../i18n/useTranslation';
 
-// ??? Config per entity type ??????????????????????????????????????????????????
-
 const ENTITY_CONFIG = {
   invoices: {
-    label: '????????',
-    labelEn: 'Invoices',
+    labelKey: 'importExportEntityInvoices',
     downloadTemplate: null,
     validate: null,
     batchSize: 8,
@@ -45,8 +35,7 @@ const ENTITY_CONFIG = {
     exportFilename: 'invoices-export.xlsx',
   },
   employees: {
-    label: '????????',
-    labelEn: 'Employees',
+    labelKey: 'importExportEntityEmployees',
     downloadTemplate: downloadEmployeeTemplate,
     validate: (rows) => validateEmployeeRows(rows),
     batchSize: 50,
@@ -54,8 +43,7 @@ const ENTITY_CONFIG = {
     exportFilename: 'employees-export.xlsx',
   },
   sales: {
-    label: '???????? ???????',
-    labelEn: 'Daily Sales',
+    labelKey: 'importExportEntitySales',
     downloadTemplate: null,
     validate: null,
     batchSize: 1,
@@ -63,8 +51,6 @@ const ENTITY_CONFIG = {
     exportFilename: 'daily-sales-export.xlsx',
   },
 };
-
-// ??? Styles ???????????????????????????????????????????????????????????????????
 
 const S = {
   tabs: {
@@ -107,7 +93,6 @@ const S = {
   },
 };
 
-// ??? Small helpers ???????????????????????????????????????????????????????????
 
 function ProgressBar({ pct }) {
   return (
@@ -126,15 +111,15 @@ function StatBadge({ count, label, color }) {
   );
 }
 
-/** ??? ????? ???? ???????? ?? ????? ?????? */
-function appendEmployeesBatchErrors(batchErrors, slice, errors) {
+function appendEmployeesBatchErrors(batchErrors, slice, errors, unknownMessage) {
   if (!Array.isArray(batchErrors)) return;
+  const fallback = unknownMessage ?? 'Unknown error';
   for (const err of batchErrors) {
     if (err && typeof err === 'object' && typeof err.index === 'number') {
       const rowEntry = slice[err.index];
       errors.push({
         rowNum: rowEntry?.rowNum ?? err.index + 2,
-        message: err.message || '???',
+        message: err.message || fallback,
       });
     } else if (typeof err === 'string') {
       const m = err.match(/^([^:]+):\s*(.+)$/s);
@@ -159,14 +144,13 @@ function appendEmployeesBatchWarnings(batchWarnings, slice, warnings) {
   }
 }
 
-/** ???? ????? ????????? */
-function ImportPhaseSteps({ phase, importing }) {
+function ImportPhaseSteps({ phase, importing, t }) {
   const steps = [
-    { n: 1, label: '??????' },
-    { n: 2, label: '??? ?????' },
-    { n: 3, label: '???????? ??????' },
-    { n: 4, label: '???????' },
-    { n: 5, label: '???????' },
+    { n: 1, label: t('importStep1Label') },
+    { n: 2, label: t('importStep2Label') },
+    { n: 3, label: t('importStep3Label') },
+    { n: 4, label: t('importStep4Label') },
+    { n: 5, label: t('importStep5Label') },
   ];
   let active = 1;
   if (phase === 'parsing') active = 2;
@@ -178,7 +162,7 @@ function ImportPhaseSteps({ phase, importing }) {
     <div className="flex items-center gap-6 rounded-xl flex-wrap border border-noorix-border py-3 px-[14px] bg-noorix-bg mb-1">
       {steps.map((s, i) => (
         <React.Fragment key={s.n}>
-          {i > 0 && <span className="text-noorix-muted text-[12px] select-none">?</span>}
+          {i > 0 && <span className="text-noorix-muted text-[12px] select-none">{t('importStepSep')}</span>}
           <span className="text-[12px] rounded-lg whitespace-nowrap" style={{
             fontWeight: active === s.n ? 800 : 500,
             color: active === s.n ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
@@ -193,19 +177,30 @@ function ImportPhaseSteps({ phase, importing }) {
   );
 }
 
-function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
+function EmployeeImportPreviewTable({ validationResults, parsedRows, t }) {
   const maxRows = 150;
   const slice = validationResults.slice(0, maxRows);
+  const headers = [
+    t('importPreviewColNum'),
+    t('importPreviewColName'),
+    t('importPreviewColJoinDate'),
+    t('importPreviewColSalary'),
+    t('importPreviewColStatus'),
+    t('importPreviewColNotes'),
+  ];
   return (
     <div className="mt-3 overflow-hidden rounded-lg border border-noorix-border">
       <div className="bg-noorix-bg-muted text-[12px] font-bold text-noorix-muted py-2 px-3 border-b border-noorix-border">
-        ?????? ???????? (??? {Math.min(slice.length, maxRows)} ???? ?? ??? {validationResults.length})
+        {t('importEmployeePreviewTitle', {
+          shown: Math.min(slice.length, maxRows),
+          total: validationResults.length,
+        })}
       </div>
       <div className="overflow-auto max-h-[280px]">
         <table className="w-full text-[12px] border-collapse">
           <thead>
             <tr className="bg-noorix-surface sticky top-0 z-[1]">
-              {['#', '?????', '????? ????????', '?????? ???????', '??????', '???????'].map((h) => (
+              {headers.map((h) => (
                 <th key={h} className="border-b border-noorix-border whitespace-nowrap py-2 px-2.5 text-right">{h}</th>
               ))}
             </tr>
@@ -213,16 +208,16 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
           <tbody>
             {slice.map((r) => {
               const raw = parsedRows[r.rowNum - 2] || {};
-              const nameStr = String(raw['????? ????????'] ?? raw.name ?? '').trim();
-              const name = r.payload?.name ?? (nameStr || '?');
-              const jdStr = String(raw['????? ????????'] ?? raw.joinDate ?? '').trim();
-              const jd = r.payload?.joinDate ?? (jdStr || '?');
-              const salRaw = r.payload?.basicSalary ?? raw['?????? ???????'] ?? raw.basicSalary;
-              const sal = salRaw === undefined || salRaw === null || salRaw === '' ? '?' : salRaw;
+              const nameStr = String(raw['الاسم بالعربية'] ?? raw['الاسم بالإنجليزية'] ?? raw.name ?? '').trim();
+              const name = r.payload?.name ?? (nameStr || '—');
+              const jdStr = String(raw['تاريخ الالتحاق'] ?? raw.joinDate ?? '').trim();
+              const jd = r.payload?.joinDate ?? (jdStr || '—');
+              const salRaw = r.payload?.basicSalary ?? raw['الراتب الأساسي'] ?? raw.basicSalary;
+              const sal = salRaw === undefined || salRaw === null || salRaw === '' ? '—' : salRaw;
               const ok = r.valid;
               const note = ok
-                ? (r.warnings.length ? r.warnings.join('? ') : '?')
-                : r.errors.join('? ');
+                ? (r.warnings.length ? r.warnings.join('؛ ') : t('importPreviewEmptyNote'))
+                : r.errors.join('؛ ');
               return (
                 <tr key={r.rowNum} style={{ background: ok ? 'transparent' : 'var(--noorix-red-6)' }}>
                   <td className="border-b border-noorix-border py-[7px] px-2.5" style={{ fontFamily: "var(--noorix-font-numbers)" }}>{r.rowNum}</td>
@@ -230,7 +225,7 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
                   <td className="border-b border-noorix-border whitespace-nowrap py-[7px] px-2.5" style={{ fontFamily: "var(--noorix-font-numbers)" }}>{jd}</td>
                   <td className="border-b border-noorix-border py-[7px] px-2.5" style={{ fontFamily: "var(--noorix-font-numbers)" }}>{sal}</td>
                   <td className="border-b border-noorix-border font-bold py-[7px] px-2.5" style={{ color: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }}>
-                    {ok ? '? ????' : '? ???'}
+                    {ok ? t('importPreviewStatusOk') : t('importPreviewStatusBad')}
                   </td>
                   <td className="border-b border-noorix-border text-noorix-muted truncate py-[7px] px-2.5 max-w-[220px]" title={note}>{note}</td>
                 </tr>
@@ -241,19 +236,13 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows }) {
       </div>
       {validationResults.length > maxRows && (
         <div className="text-[11px] text-noorix-muted py-1.5 px-3 border-t border-noorix-border">
-          ? ? {validationResults.length - maxRows} ???? ??????? (???? ?????? ?? ????????? ??? ???? ?????)
+          {t('importPreviewMoreRows', { n: validationResults.length - maxRows })}
         </div>
       )}
     </div>
   );
 }
 
-const EMPLOYEE_EXPORT_COLUMNS_AR = [
-  '????? ????????', '????? ???????????', '??? ??????', '??? ???????', '?????? ???????',
-  '?????? ???????', '??? ?????', '??? ?????', '????? ????', '????? ????????', '????? ?????', '??????', '???????',
-];
-
-// ??? Main component ??????????????????????????????????????????????????????????
 
 /**
  * @param {{
@@ -292,6 +281,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
   const abortRef = useRef(false);
 
   const cfg = ENTITY_CONFIG[entityType] ?? ENTITY_CONFIG.invoices;
+  const entityLabel = t(cfg.labelKey);
 
   useEffect(() => {
     if (!isOpen || !companyId) return;
@@ -336,14 +326,18 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
     if (!['xlsx', 'xls', 'csv'].includes(ext)) {
-      alert('???? ??? ??? Excel (.xlsx/.xls) ?? CSV');
+      alert(t('importAlertWrongFile'));
       return;
     }
     setPhase('parsing');
     setValidationResults([]);
     try {
       const rows = await importFromExcel(file);
-      if (!rows.length) { setPhase('idle'); alert('????? ???? ?? ?? ????? ??? ??????'); return; }
+      if (!rows.length) {
+        setPhase('idle');
+        alert(t('importAlertEmptyRows'));
+        return;
+      }
       setParsedRows(rows);
 
       let results;
@@ -358,9 +352,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       setPhase('validated');
     } catch (err) {
       setPhase('idle');
-      alert('??? ??? ????? ????? ?????: ' + (err?.message ?? '??? ??? ?????'));
+      alert(t('importAlertParseFailed', { msg: err?.message ?? t('importErrorUnknown') }));
     }
-  }, [entityType, lookups]);
+  }, [entityType, lookups, t]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
@@ -379,12 +373,15 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     setExporting(true);
     try {
       const rows = await exportFetcher();
-      if (!rows.length) { alert('?? ???? ?????? ???????'); return; }
+      if (!rows.length) {
+        alert(t('importAlertNoDataToExport'));
+        return;
+      }
       const stamp = new Date().toISOString().slice(0, 10);
       const base = String(cfg.exportFilename || 'export.xlsx').replace(/\.xlsx$/i, '');
       await exportToExcel(rows, `${base}-${stamp}.xlsx`);
     } catch (err) {
-      alert('??? ?? ???????: ' + (err?.message ?? ''));
+      alert(t('importAlertExportFailed', { msg: err?.message ?? '' }));
     } finally {
       setExporting(false);
     }
@@ -418,7 +415,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
             succeeded++;
           } else {
             failed++;
-            errors.push({ rowNum, message: res.reason?.message ?? '??? ??? ?????' });
+            errors.push({ rowNum, message: res.reason?.message ?? t('importErrorUnknown') });
           }
         });
         setProgress({ current: i + slice.length, total, succeeded, failed, errors: [...errors], warnings: [...importWarnings] });
@@ -441,7 +438,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           const br = res.data || {};
           succeeded += Number(br.created) || 0;
           failed += Number(br.failed) || 0;
-          appendEmployeesBatchErrors(br.errors, slice, errors);
+          appendEmployeesBatchErrors(br.errors, slice, errors, t('importErrorUnknown'));
           appendEmployeesBatchWarnings(br.warnings, slice, importWarnings);
         } else {
           for (const r of slice) {
@@ -450,17 +447,17 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
               r2 = await createEmployeesBatch({ companyId, items: [{ ...r.payload, companyId }] });
             } catch (e2) {
               failed += 1;
-              errors.push({ rowNum: r.rowNum, message: e2?.message ?? '??? ??? ?????' });
+              errors.push({ rowNum: r.rowNum, message: e2?.message ?? t('importErrorUnknown') });
               continue;
             }
             if (!r2?.success) {
               failed += 1;
-              errors.push({ rowNum: r.rowNum, message: r2?.error || res?.error || '??? ?????????' });
+              errors.push({ rowNum: r.rowNum, message: r2?.error || res?.error || t('importErrorBatchFailed') });
             } else {
               const br = r2.data || {};
               succeeded += Number(br.created) || 0;
               failed += Number(br.failed) || 0;
-              appendEmployeesBatchErrors(br.errors, [r], errors);
+              appendEmployeesBatchErrors(br.errors, [r], errors, t('importErrorUnknown'));
               appendEmployeesBatchWarnings(br.warnings, [r], importWarnings);
             }
           }
@@ -476,7 +473,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           succeeded++;
         } catch (err) {
           failed++;
-          errors.push({ rowNum: r.rowNum, message: err?.message ?? '??? ??? ?????' });
+          errors.push({ rowNum: r.rowNum, message: err?.message ?? t('importErrorUnknown') });
         }
         setProgress({ current: i + 1, total, succeeded, failed, errors: [...errors], warnings: [...importWarnings] });
       }
@@ -518,14 +515,14 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     <AdaptiveSheet
       open={isOpen}
       onClose={() => { if (!importing) onClose(); }}
-      title={`??????? ?????? ? ${cfg.label}`}
+      title={t('importExportSheetTitle', { entity: entityLabel })}
       size="xl"
       side="start"
       className="import-export-drawer"
       closeOnBackdrop={!importing}
     >
       {lookupsLoading && (
-        <p className="text-[12px] text-noorix-muted mb-3">???? ????? ?????? ???????</p>
+        <p className="text-[12px] text-noorix-muted mb-3">{t('importLookupsLoading')}</p>
       )}
 
       <ScreenTabs
@@ -542,19 +539,19 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-noorix-border p-4 flex flex-col gap-2.5">
             <p className="m-0 text-[14px] text-noorix-muted leading-[1.6]">
-              ??? ??? ??????? ?? ?????? ?? ????? ??? Excel ???? ????? ????? ?????. ?????? ??????? ?? ?????? ???????? (??? ??????) ?????? ???? ??????? ??? ???????.
+              {t('importExportIntro')}
             </p>
             {entityType === 'employees' && (
               <div className="mt-1">
-                <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2 mt-0" >????? ??? ????????</p>
+                <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2 mt-0">{t('importEmployeeExportColumnsTitle')}</p>
                 <p className="m-0 text-[12px] text-noorix-muted leading-[1.65]">
-                  {EMPLOYEE_EXPORT_COLUMNS_AR.join(' ? ')}
+                  {t('importEmployeeExportColumnsList')}
                 </p>
               </div>
             )}
             <div className="flex gap-2.5 flex flex-wrap">
               <Button variant="primary" onClick={handleExport} disabled={exporting} loading={exporting}>
-                {exporting ? '???? ????????' : '????? Excel'}
+                {exporting ? t('importExporting') : t('importExportDownloadExcel')}
               </Button>
             </div>
           </div>

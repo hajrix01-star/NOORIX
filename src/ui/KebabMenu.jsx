@@ -104,6 +104,8 @@ function KebabMenuInner({
     <div className="relative inline-flex">
       <Button
         ref={btnRef}
+        variant="raw"
+        size="auto"
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-haspopup="true"
