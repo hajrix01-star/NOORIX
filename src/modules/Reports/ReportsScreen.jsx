@@ -9,14 +9,13 @@ import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
 import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
-import { Button, Input, ScreenTabs, ScreenShell } from '../../ui';
+import { Button, Input, ScreenTabs, ScreenShell, cn } from '../../ui';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
+import { KPI_CARD_TOP_BAR_CLASS } from '../../constants/kpiCardTheme';
 import {
   EN_MONTHS,
-  CARD_COLORS,
   PERCENT_COLOR,
   amountText,
-  moneyText,
   percentText,
   displayLabel,
   getContextAmount,
@@ -46,7 +45,7 @@ export default function ReportsScreen() {
   const company = companies?.find((item) => item.id === activeCompanyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
 
-  const { data: report, isLoading, error } = useReportsGeneralProfitLoss({
+  const { data: report, isLoading, error, isFetching, isPlaceholderData } = useReportsGeneralProfitLoss({
     companyId: activeCompanyId,
     year,
   });
@@ -165,41 +164,72 @@ export default function ReportsScreen() {
           />
 
           {report && (
-            <div className="grid gap-3 mt-1" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-              {[
-                { key: 'sales', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('revenueGroup')}` : t('annualSales') },
-                { key: 'purchases', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('purchasesGroup')}` : t('annualPurchases') },
-                { key: 'expenses', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('expensesGroup')}` : t('annualExpenses') },
-                { key: 'grossProfit', label: t('annualGrossProfit') },
-                { key: 'netProfit', label: t('annualNetProfit') },
-              ].map((card) => {
-                const profitPct = (card.key === 'grossProfit' || card.key === 'netProfit') ? getCardProfitPercent(card.key) : null;
-                const val = Number(getCardValue(card.key) || 0);
-                const isProfitCard = card.key === 'grossProfit' || card.key === 'netProfit';
-                const c = CARD_COLORS[card.key];
-                const accent = isProfitCard ? (val >= 0 ? c.accent : c.accentLoss) : c.accent;
-                return (
-                  <div key={card.key} className="noorix-surface-card relative min-w-0 overflow-hidden">
-                    <div className="h-1" style={{ background: accent }} aria-hidden />
-                    <div className="p-4">
-                      <div className="mb-2 text-[12px] font-bold" style={{ color: accent }}>
-                        {card.label}
+            <div
+              className={cn(
+                'nx-kpi-container mt-1 transition-opacity duration-200',
+                isFetching && isPlaceholderData && 'pointer-events-none opacity-55',
+              )}
+            >
+              <div className="nx-kpi-grid">
+                {[
+                  { key: 'sales', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('revenueGroup')}` : t('annualSales') },
+                  { key: 'purchases', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('purchasesGroup')}` : t('annualPurchases') },
+                  { key: 'expenses', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('expensesGroup')}` : t('annualExpenses') },
+                  { key: 'grossProfit', label: t('annualGrossProfit') },
+                  { key: 'netProfit', label: t('annualNetProfit') },
+                ].map((card) => {
+                  const profitPct = (card.key === 'grossProfit' || card.key === 'netProfit') ? getCardProfitPercent(card.key) : null;
+                  const val = Number(getCardValue(card.key) || 0);
+                  const isProfitCard = card.key === 'grossProfit' || card.key === 'netProfit';
+                  const barClass = KPI_CARD_TOP_BAR_CLASS[card.key] || KPI_CARD_TOP_BAR_CLASS.sales;
+                  const periodLabel = selectedMonthNumber
+                    ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} · ${year}`
+                    : String(year);
+                  const valueNegative = isProfitCard && val < 0;
+                  return (
+                    <div
+                      key={`${year}-${selectedMonth || 'all'}-${card.key}`}
+                      className="noorix-surface-card relative flex min-h-[120px] min-w-0 flex-col overflow-hidden p-4"
+                    >
+                      <span
+                        className={cn('pointer-events-none absolute inset-x-0 top-0 h-1', barClass)}
+                        aria-hidden
+                      />
+                      <div className="text-[12px] font-medium text-noorix-muted">{card.label}</div>
+                      <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                        <span
+                          dir="ltr"
+                          className={cn(
+                            'nx-font-numbers text-start text-[22px] font-bold leading-tight tracking-[-0.5px]',
+                            valueNegative ? 'text-noorix-red' : 'text-noorix-text',
+                          )}
+                        >
+                          {amountText(getCardValue(card.key))}
+                        </span>
+                        <span className="text-[12px] font-medium text-noorix-muted">
+                          {lang === 'ar' ? 'ر.س' : 'SAR'}
+                        </span>
                       </div>
-                      <div
-                        className="text-[24px] font-black nx-font-numbers leading-tight"
-                        style={{ color: accent }}
-                      >
-                        {moneyText(getCardValue(card.key))}
+                      <div className="min-h-[24px] flex-1" aria-hidden />
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-noorix-border pt-3">
+                        <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
+                        {profitPct != null && (
+                          <span
+                            className={cn(
+                              'inline-flex max-w-[min(100%,140px)] shrink-0 truncate rounded px-2 py-0.5 text-[11px] font-bold',
+                              Number(profitPct) > 0 && 'bg-[#eaf3de] text-[#3B6D11]',
+                              Number(profitPct) < 0 && 'bg-[#FCEBEB] text-[#A32D2D]',
+                              Number(profitPct) === 0 && 'bg-noorix-bg-muted text-noorix-muted',
+                            )}
+                          >
+                            {t('reportProfitMargin')}: {profitPct}%
+                          </span>
+                        )}
                       </div>
-                      {profitPct != null && (
-                        <div className="mt-1.5 text-[12px] opacity-90" style={{ color: accent }}>
-                          {t('reportProfitMargin')}: {profitPct}%
-                        </div>
-                      )}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
 

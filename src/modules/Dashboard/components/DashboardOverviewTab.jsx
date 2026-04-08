@@ -18,6 +18,7 @@ import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
 import { Button, cn } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
+import { KPI_CARD_SPARKLINE_COLORS, KPI_CARD_TOP_BAR_CLASS } from '../../../constants/kpiCardTheme';
 
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -41,23 +42,6 @@ function fmtAxis(n) {
   if (n >= 1e3) return `${(n/1e3).toFixed(0)}K`;
   return String(Math.round(n));
 }
-
-/* ألوان الشريط الجانبي والسباركلاين حسب نوع الكرت */
-const KPI_ACCENT = {
-  sales: '#185FA5',
-  grossProfit: '#3B6D11',
-  netProfit: '#854F0B',
-  purchases: '#888780',
-  expenses: '#A32D2D',
-};
-
-const KPI_ACCENT_BAR = {
-  sales: 'bg-[#185FA5]',
-  grossProfit: 'bg-[#3B6D11]',
-  netProfit: 'bg-[#854F0B]',
-  purchases: 'bg-[#888780]',
-  expenses: 'bg-[#A32D2D]',
-};
 
 /* ── Sparkline — polyline + تعبئة شفافة؛ بدون بيانات: خط متقطع ── */
 function SparkLine({ data = [], color = '#185FA5' }) {
@@ -329,7 +313,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           const pct = isSales ? null : getSectionPercentOfSales(card.key);
           const pctNum = pct != null ? Number(pct) : null;
 
-          const accentColor = KPI_ACCENT[card.key] || KPI_ACCENT.sales;
+          const accentColor = KPI_CARD_SPARKLINE_COLORS[card.key] || KPI_CARD_SPARKLINE_COLORS.sales;
           const sparkData = getMonthlyData(card.key);
 
           let badgeTone = 'neutral';
@@ -366,7 +350,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
               className="noorix-surface-card relative flex min-h-[168px] min-w-0 flex-col overflow-hidden p-4"
             >
               <span
-                className={`pointer-events-none absolute inset-x-0 top-0 h-1 ${KPI_ACCENT_BAR[card.key] || KPI_ACCENT_BAR.sales}`}
+                className={`pointer-events-none absolute inset-x-0 top-0 h-1 ${KPI_CARD_TOP_BAR_CLASS[card.key] || KPI_CARD_TOP_BAR_CLASS.sales}`}
                 aria-hidden
               />
 

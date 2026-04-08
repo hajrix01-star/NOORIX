@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   getGeneralProfitLossDetails,
   getGeneralProfitLossReport,
@@ -16,6 +16,7 @@ export function useReportsGeneralProfitLoss({ companyId, year }) {
       return res.data;
     },
     enabled: !!companyId && !!year,
+    placeholderData: keepPreviousData,
   });
 }
 
