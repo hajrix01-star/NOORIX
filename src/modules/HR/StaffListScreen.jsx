@@ -23,7 +23,7 @@ import {
   getEmployeesPaged,
   getEmployeesBulk,
 } from '../../services/api';
-import { Badge, Button, Modal, Input, ScreenShell } from '../../ui';
+import { Badge, Button, Modal, Input, ScreenShell, cn } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import { HRActionsCell } from './components/HRActionsCell';
 import Toast from '../../components/Toast';
@@ -404,7 +404,14 @@ export default function StaffListScreen({ embedded }) {
   ), [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete]);
 
   return (
-    <ScreenShell embedded={!!embedded}>
+    <ScreenShell
+      embedded={!!embedded}
+      className={cn(
+        embedded &&
+          /* نفس إيقاع التبويبات الأخرى (ScreenShell page = py-4) حتى لا تلتصق أزرار العرض بشريط التبويبات */
+          'pt-4',
+      )}
+    >
       {!embedded && (
         <div>
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
