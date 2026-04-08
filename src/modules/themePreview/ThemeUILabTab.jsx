@@ -114,9 +114,14 @@ export default function ThemeUILabTab() {
         title={t('themePreviewLab3Title')}
         hint={t('themePreviewLab3Hint')}
       >
-        <div className="noorix-surface-card border border-noorix-border rounded-xl overflow-hidden p-0">
+        <div className="noorix-surface-card border border-noorix-border rounded-xl overflow-hidden p-0 shadow-sm">
           <div
-            className="flex flex-nowrap items-stretch overflow-x-auto bg-noorix-bg-muted text-[13px] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-b border-noorix-border"
+            className={cn(
+              'ui-lab-tab-strip flex flex-nowrap items-stretch overflow-x-auto text-[13px]',
+              'bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
+              '[-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+              'border-b border-noorix-border',
+            )}
             role="tablist"
           >
             {demoTabItems.map((item) => {
@@ -129,21 +134,20 @@ export default function ThemeUILabTab() {
                   role="tab"
                   aria-selected={active}
                   className={cn(
-                    '!flex !flex-col !items-stretch !justify-start !h-auto !min-h-0 rounded-none shrink-0 shadow-none',
+                    '!flex !flex-col !items-stretch !justify-start !h-auto !min-h-0 rounded-none shrink-0',
                     'border-0 border-e border-noorix-border last:border-e-0',
-                    'text-[13px] font-medium leading-normal whitespace-nowrap',
+                    'text-[13px] leading-normal whitespace-nowrap',
+                    'transition-all duration-200 ease-out',
                     active
-                      ? 'bg-noorix-surface text-noorix-text'
-                      : 'bg-noorix-bg-muted text-noorix-muted hover:bg-noorix-bg-muted/80 hover:text-noorix-text',
+                      ? 'relative z-[1] bg-noorix-surface text-noorix-text font-semibold shadow-[0_6px_18px_-4px_rgba(10,31,68,0.14)]'
+                      : 'z-0 bg-noorix-bg-muted/90 text-noorix-muted font-medium shadow-none hover:z-[1] hover:bg-noorix-surface hover:text-noorix-text hover:shadow-[0_3px_10px_-2px_rgba(10,31,68,0.1)]',
                   )}
                   onClick={() => setDemoTab(item.id)}
                 >
                   <span
                     className={cn(
-                      'block h-[3px] w-full shrink-0',
-                      active
-                        ? 'bg-gradient-to-l from-noorix-green via-noorix-violet to-noorix-blue'
-                        : 'bg-transparent',
+                      'block h-[3px] w-full shrink-0 transition-opacity duration-200',
+                      active ? 'ui-lab-tab-sparkline' : 'bg-transparent',
                     )}
                     aria-hidden
                   />
@@ -154,8 +158,8 @@ export default function ThemeUILabTab() {
               );
             })}
           </div>
-          <div className="p-4">
-            <p className="text-[13px] text-noorix-muted m-0">
+          <div className="border-t border-noorix-border/60 bg-noorix-surface/30 p-4">
+            <p key={demoTab} className="ui-lab-tab-content-swap text-[13px] text-noorix-muted m-0">
               {t(lab3ContentKey)}
             </p>
           </div>

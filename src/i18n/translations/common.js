@@ -100,8 +100,8 @@ export default {
   themePreviewLab2Primary: { ar: 'إجراء رئيسي', en: 'Primary action' },
   themePreviewLab3Title: { ar: 'تبويبات داخل كرت', en: 'Tabs inside card' },
   themePreviewLab3Hint: {
-    ar: 'شريط متصل — زوايا حادة، فاصل عمودي بين التبويبات، خط متدرج نحيف فوق النشط (تجربة)',
-    en: 'Connected strip — sharp corners, vertical dividers, thin gradient bar on active (lab)',
+    ar: 'شريط متصل + زوايا علوية ناعمة، ظل للنشط، تمرير لوني للخط العلوي، انتقال 200ms (تجربة)',
+    en: 'Connected strip, soft top radius, active elevation, animated sparkline, 200ms transitions (lab)',
   },
   themePreviewLab3ContentA: { ar: 'محتوى التبويب الأول (وهمي).', en: 'First tab placeholder content.' },
   themePreviewLab3ContentB: { ar: 'محتوى التبويب الثاني (وهمي).', en: 'Second tab placeholder content.' },
