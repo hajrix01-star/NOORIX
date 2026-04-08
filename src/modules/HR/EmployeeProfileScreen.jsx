@@ -667,6 +667,7 @@ export default function EmployeeProfileScreen() {
           kind={careerModal}
           employee={employee}
           companyId={companyId}
+          customAllowanceTotal={customAllowanceTotal}
           onClose={() => setCareerModal(null)}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['movements', companyId, id] });

@@ -22,6 +22,7 @@ import {
   parseWorkHours,
   parseOvertimeWorkDaysPerMonth,
   mergeOvertimeWorkDaysIntoSchedule,
+  basicSalaryFromTargetTotalInclusiveOvertime,
 } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, FormRow } from '../../../ui';
@@ -105,10 +106,10 @@ export default function SalaryCalcTab() {
   const editableAllowances = housing.plus(transport).plus(other);
   const customAllowanceTotal = toDecimal(emp ? (allowanceTotals.get(emp.id) || 0) : 0);
   const totalAllowances = editableAllowances.plus(customAllowanceTotal);
-  const overtimeFactor = new Decimal(overtimeHoursPerDay).times(workDays).div(SAUDI_DAYS_PER_MONTH * SAUDI_STANDARD_HOURS);
-  const basicNumerator = totalTarget.minus(totalAllowances.times(new Decimal(1).plus(overtimeFactor)));
-  const basicDenominator = new Decimal(1).plus(overtimeFactor.times(1.5));
-  const basic = Decimal.max(basicNumerator.div(basicDenominator), 0);
+  const { basic: basicNum, inverseWarning } = emp
+    ? basicSalaryFromTargetTotalInclusiveOvertime(emp, allowanceTotals.get(emp.id) || 0, totalTarget.toNumber())
+    : { basic: 0, inverseWarning: false };
+  const basic = toDecimal(basicNum);
   const actualWage = basic.plus(totalAllowances);
   const deduction = vacDays > 0 ? actualWage.times(vacDays).div(workDays) : new Decimal(0);
   const hourlyRate = actualWage.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
@@ -117,7 +118,6 @@ export default function SalaryCalcTab() {
   const overtimePay = overtimeRate.times(overtimeHoursPerDay).times(workDays);
   const calculatedTotal = actualWage.plus(overtimePay);
   const netSalary = calculatedTotal.minus(deduction);
-  const inverseWarning = totalTarget.gt(0) && basicNumerator.lt(0);
 
   const updateMutation = useApiMutation({
     mutationFn: async ({ id, body }) => {

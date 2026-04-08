@@ -112,3 +112,36 @@ export function fixedMonthlyPayPackageDecimal(emp, customTotal = 0) {
 export function fixedMonthlyPayPackage(emp, customTotal = 0) {
   return fixedMonthlyPayPackageDecimal(emp, customTotal).toNumber();
 }
+
+/**
+ * عكس حاسبة الراتب: إيجاد الراتب الأساسي الذي يحقق إجمالياً شهرياً (أساسي + بدلات + مخصصة + أوفر تايم)
+ * بنفس معادلة تبويب حاسبة الرواتب.
+ *
+ * @param {object} emp حقول الموظف (basicSalary الحالي لا يُستخدم إلا للتحقق الاختياري؛ يُعتمد workHours وworkSchedule والبدلات)
+ * @param {number} customTotal مجموع البدلات المخصصة
+ * @param {number|string|Decimal} targetTotal الإجمالي الشهري المستهدف (شامل الأوفر تايم)
+ * @returns {{ basic: number, inverseWarning: boolean }}
+ */
+export function basicSalaryFromTargetTotalInclusiveOvertime(emp, customTotal, targetTotal) {
+  const totalTarget = new Decimal(targetTotal || 0);
+  const hours = Math.max(1, Math.min(12, parseWorkHours(emp?.workHours)));
+  const workDays = Math.max(1, parseOvertimeWorkDaysPerMonth(emp));
+  const housing = new Decimal(emp?.housingAllowance ?? 0);
+  const transport = new Decimal(emp?.transportAllowance ?? 0);
+  const other = new Decimal(emp?.otherAllowance ?? 0);
+  const custom = new Decimal(customTotal || 0);
+  const editableAllowances = housing.plus(transport).plus(other);
+  const totalAllowances = editableAllowances.plus(custom);
+  const overtimeHoursPerDay = Math.max(0, hours - SAUDI_STANDARD_HOURS);
+  const overtimeFactor = new Decimal(overtimeHoursPerDay)
+    .times(workDays)
+    .div(SAUDI_DAYS_PER_MONTH * SAUDI_STANDARD_HOURS);
+  const basicNumerator = totalTarget.minus(totalAllowances.times(new Decimal(1).plus(overtimeFactor)));
+  const basicDenominator = new Decimal(1).plus(overtimeFactor.times(1.5));
+  const basic = Decimal.max(basicNumerator.div(basicDenominator), 0);
+  const inverseWarning = totalTarget.gt(0) && basicNumerator.lt(0);
+  return {
+    basic: basic.toDecimalPlaces(2).toNumber(),
+    inverseWarning,
+  };
+}

@@ -1,39 +1,77 @@
 /**
  * EmployeeCareerMovementModal — تسجيل ترقية أو زيادة راتب من ملف الموظف (مع تحديث السجل والبيانات الحالية).
+ * زيادة الراتب: تُطبَّق على الإجمالي الشهري شاملاً الأوفر تايم؛ يُستنتج الراتب الأساسي كما في حاسبة الرواتب.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
-import { roundMoney2, moneyAmountsEqual } from '../../../utils/moneyInput';
+import { roundMoney2 } from '../../../utils/moneyInput';
 import { createMovement, updateEmployee } from '../../../services/api';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { hrFmt } from '../utils/hrFmt';
+import {
+  totalSalary,
+  basicSalaryFromTargetTotalInclusiveOvertime,
+} from '../utils/employeeSalaryMath';
 
 /**
- * @param {{ kind: 'promotion' | 'raise', employee: object, companyId: string, onClose: () => void, onSuccess?: () => void }} props
+ * @param {{ kind: 'promotion' | 'raise', employee: object, companyId: string, customAllowanceTotal?: number, onClose: () => void, onSuccess?: () => void }} props
  */
-export function EmployeeCareerMovementModal({ kind, employee, companyId, onClose, onSuccess }) {
+export function EmployeeCareerMovementModal({
+  kind,
+  employee,
+  companyId,
+  customAllowanceTotal = 0,
+  onClose,
+  onSuccess,
+}) {
   const { t } = useTranslation();
   const [effectiveDate, setEffectiveDate] = useState(getSaudiToday());
   const [prevJobTitle, setPrevJobTitle] = useState('');
   const [newJobTitle, setNewJobTitle] = useState('');
-  const [newBasicSalary, setNewBasicSalary] = useState('');
+  const [raiseIncrement, setRaiseIncrement] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+
+  const customTotal = Number(customAllowanceTotal) || 0;
 
   useEffect(() => {
     if (!employee) return;
     setEffectiveDate(getSaudiToday());
     setPrevJobTitle(employee.jobTitle || '');
     setNewJobTitle('');
-    setNewBasicSalary('');
+    setRaiseIncrement('');
     setNotes('');
     setFormError('');
   }, [employee, kind]);
 
-  const currentBasic = roundMoney2(employee?.basicSalary ?? 0);
+  const currentTotalAllIn = useMemo(
+    () => totalSalary(employee, customTotal),
+    [employee, customTotal],
+  );
+
+  const raisePreview = useMemo(() => {
+    if (kind !== 'raise' || !employee) return null;
+    const raw = String(raiseIncrement ?? '').trim().replace(',', '.');
+    if (raw === '' || raw === '-' || raw === '+') return null;
+    const inc = roundMoney2(raw);
+    if (!Number.isFinite(inc) || inc === 0) return null;
+    const newTarget = roundMoney2(currentTotalAllIn + inc);
+    if (newTarget <= 0) return { invalidTarget: true, inc, newTarget };
+    const { basic, inverseWarning } = basicSalaryFromTargetTotalInclusiveOvertime(
+      employee,
+      customTotal,
+      newTarget,
+    );
+    return {
+      inc,
+      newTarget,
+      basic,
+      inverseWarning,
+    };
+  }, [kind, employee, customTotal, raiseIncrement, currentTotalAllIn]);
 
   async function handleSubmit(e) {
     e?.preventDefault?.();
@@ -71,30 +109,44 @@ export function EmployeeCareerMovementModal({ kind, employee, companyId, onClose
       return;
     }
 
-    const newB = roundMoney2(newBasicSalary);
-    if (!newB || newB <= 0) {
-      setFormError(t('requiredFields'));
+    const raw = String(raiseIncrement ?? '').trim().replace(',', '.');
+    const inc = roundMoney2(raw);
+    if (!Number.isFinite(inc) || inc === 0) {
+      setFormError(t('careerRaiseIncrementNonZero'));
       return;
     }
-    if (moneyAmountsEqual(newB, currentBasic)) {
-      setFormError(t('careerNewBasicMustDiffer'));
+    const newTarget = roundMoney2(currentTotalAllIn + inc);
+    if (newTarget <= 0) {
+      setFormError(t('careerRaiseNewTargetInvalid'));
+      return;
+    }
+    const { basic, inverseWarning } = basicSalaryFromTargetTotalInclusiveOvertime(
+      employee,
+      customTotal,
+      newTarget,
+    );
+    if (inverseWarning || basic <= 0) {
+      setFormError(t('careerInverseSalaryWarn'));
       return;
     }
 
     setSaving(true);
     try {
-      const up = await updateEmployee(employee.id, { basicSalary: newB }, companyId);
+      const up = await updateEmployee(employee.id, { basicSalary: basic }, companyId);
       rejectIfApiFailed(up, t('updateFailed'));
-      const diff = roundMoney2(newB - currentBasic);
       const mov = await createMovement({
         companyId,
         employeeId: employee.id,
         movementType: 'raise',
-        amount: diff > 0 ? diff : undefined,
-        previousValue: String(currentBasic),
-        newValue: String(newB),
+        amount: inc > 0 ? inc : undefined,
+        previousValue: String(roundMoney2(currentTotalAllIn)),
+        newValue: String(roundMoney2(newTarget)),
         effectiveDate: `${effectiveDate}T12:00:00.000Z`,
-        notes: notes.trim() || (diff < 0 ? `${t('careerSalaryAdjustmentNote')}: ${hrFmt(currentBasic)} → ${hrFmt(newB)}` : undefined),
+        notes:
+          notes.trim()
+          || (inc < 0
+            ? `${t('careerSalaryAdjustmentNote')}: ${hrFmt(currentTotalAllIn)} → ${hrFmt(newTarget)}`
+            : undefined),
       });
       rejectIfApiFailed(mov, t('saveFailed'));
       onSuccess?.();
@@ -108,6 +160,10 @@ export function EmployeeCareerMovementModal({ kind, employee, companyId, onClose
 
   const title = kind === 'promotion' ? t('careerRegisterPromotion') : t('careerRegisterRaise');
 
+  const raiseBlocked =
+    kind === 'raise'
+    && (raisePreview?.invalidTarget || raisePreview?.inverseWarning);
+
   return (
     <AdaptiveSheet
       open={true}
@@ -118,7 +174,7 @@ export function EmployeeCareerMovementModal({ kind, employee, companyId, onClose
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={saving}>{t('cancel')}</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={saving}>
+          <Button variant="primary" onClick={handleSubmit} disabled={saving || raiseBlocked}>
             {saving ? t('saving') : t('careerSaveMovement')}
           </Button>
         </>
@@ -160,18 +216,39 @@ export function EmployeeCareerMovementModal({ kind, employee, companyId, onClose
         ) : (
           <>
             <div className="text-[13px] text-noorix-muted">
-              {t('careerCurrentBasic')}: <span className="font-semibold text-noorix-text ltr inline-block">{hrFmt(currentBasic)}</span>
+              {t('careerCurrentTotalWithOvertime')}:{' '}
+              <span className="font-semibold text-noorix-text ltr inline-block">
+                {hrFmt(currentTotalAllIn)}
+              </span>
             </div>
+            <p className="text-[12px] text-noorix-muted m-0 -mt-2">{t('careerRaiseTotalHint')}</p>
             <Input
               type="number"
               inputMode="decimal"
               step="0.01"
-              min="0"
-              label={t('careerNewBasicSalary')}
-              value={newBasicSalary}
-              onChange={(e) => setNewBasicSalary(e.target.value)}
+              label={t('careerRaiseIncrementOnTotal')}
+              value={raiseIncrement}
+              onChange={(e) => setRaiseIncrement(e.target.value)}
               placeholder="0"
             />
+            {raisePreview?.invalidTarget ? (
+              <div className="text-[12px] text-noorix-red">{t('careerRaiseNewTargetInvalid')}</div>
+            ) : null}
+            {raisePreview && !raisePreview.invalidTarget && raisePreview.inverseWarning ? (
+              <div className="text-[12px] text-noorix-amber">{t('careerInverseSalaryWarn')}</div>
+            ) : null}
+            {raisePreview && !raisePreview.invalidTarget && !raisePreview.inverseWarning ? (
+              <div className="text-[13px] rounded-lg px-3 py-2 bg-noorix-bg-muted border border-noorix-border space-y-1">
+                <div>
+                  <span className="text-noorix-muted">{t('careerRaisePreviewTotal')}: </span>
+                  <span className="font-semibold text-noorix-text ltr">{hrFmt(raisePreview.newTarget)}</span>
+                </div>
+                <div className="text-[12px] text-noorix-muted">
+                  {t('careerRaiseImpliedBasic')}:{' '}
+                  <span className="font-medium text-noorix-text ltr">{hrFmt(raisePreview.basic)}</span>
+                </div>
+              </div>
+            ) : null}
           </>
         )}
 
