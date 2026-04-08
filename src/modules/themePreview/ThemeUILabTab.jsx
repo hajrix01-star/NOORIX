@@ -101,33 +101,51 @@ export default function ThemeUILabTab() {
         title={t('themePreviewLab3Title')}
         hint={t('themePreviewLab3Hint')}
       >
-        <div className="noorix-surface-card border border-noorix-border rounded-xl p-3">
+        <div className="noorix-surface-card border border-noorix-border rounded-xl overflow-hidden p-0">
           <div
-            className="flex flex-nowrap items-stretch gap-2 overflow-x-auto text-[13px] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="flex flex-nowrap items-stretch overflow-x-auto bg-noorix-bg-muted text-[13px] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-b border-noorix-border"
             role="tablist"
           >
-            {demoTabItems.map((item) => (
-              <Button
-                key={item.id}
-                type="button"
-                variant="raw"
-                role="tab"
-                aria-selected={demoTab === item.id}
-                className={cn(
-                  'shrink-0 whitespace-nowrap rounded-lg border px-3 py-2 min-h-[40px] sm:min-h-0 text-[13px] font-medium leading-normal shadow-none',
-                  demoTab === item.id
-                    ? 'border-noorix-border bg-noorix-bg-muted text-noorix-text'
-                    : 'border-noorix-border/70 bg-noorix-bg text-noorix-muted hover:border-noorix-border hover:text-noorix-text',
-                )}
-                onClick={() => setDemoTab(item.id)}
-              >
-                {item.label}
-              </Button>
-            ))}
+            {demoTabItems.map((item) => {
+              const active = demoTab === item.id;
+              return (
+                <Button
+                  key={item.id}
+                  type="button"
+                  variant="raw"
+                  role="tab"
+                  aria-selected={active}
+                  className={cn(
+                    '!flex !flex-col !items-stretch !justify-start !h-auto !min-h-0 rounded-none shrink-0 shadow-none',
+                    'border-0 border-e border-noorix-border last:border-e-0',
+                    'text-[13px] font-medium leading-normal whitespace-nowrap',
+                    active
+                      ? 'bg-noorix-surface text-noorix-text'
+                      : 'bg-noorix-bg-muted text-noorix-muted hover:bg-noorix-bg-muted/80 hover:text-noorix-text',
+                  )}
+                  onClick={() => setDemoTab(item.id)}
+                >
+                  <span
+                    className={cn(
+                      'block h-[3px] w-full shrink-0',
+                      active
+                        ? 'bg-gradient-to-l from-noorix-green via-noorix-violet to-noorix-blue'
+                        : 'bg-transparent',
+                    )}
+                    aria-hidden
+                  />
+                  <span className="flex min-h-[40px] items-center justify-center px-4 py-2.5">
+                    {item.label}
+                  </span>
+                </Button>
+              );
+            })}
           </div>
-          <p className="text-[13px] text-noorix-muted m-0 mt-3">
-            {demoTab === 'a' ? t('themePreviewLab3ContentA') : t('themePreviewLab3ContentB')}
-          </p>
+          <div className="p-4">
+            <p className="text-[13px] text-noorix-muted m-0">
+              {demoTab === 'a' ? t('themePreviewLab3ContentA') : t('themePreviewLab3ContentB')}
+            </p>
+          </div>
         </div>
       </LabBlock>
 
