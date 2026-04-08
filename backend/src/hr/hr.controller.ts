@@ -2,6 +2,7 @@
  * HRController — مسارات الموارد البشرية
  *
  * الصلاحيات: HR_READ, HR_WRITE, HR_DELETE
+ * حذف مسيرة رواتب: أدوار المالك / المشرف العام / manager فقط (@Roles PAYROLL_RUN_DELETE_ROLES)
  * companyId: من @Query أو @Headers('x-company-id')
  */
 import {
@@ -26,6 +27,8 @@ import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { PAYROLL_RUN_DELETE_ROLES } from '../auth/constants/permissions';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { preferQueryCompanyId } from '../common/utils/company-request';
 import { HRService } from './hr.service';
@@ -114,7 +117,7 @@ export class HRController {
   }
 
   @Delete('payroll-runs/:id')
-  @RequirePermission('HR_DELETE')
+  @Roles(...PAYROLL_RUN_DELETE_ROLES)
   deletePayrollRun(
     @Param('id') id: string,
     @Query('companyId') queryCompanyId: string,

@@ -251,3 +251,17 @@ export function isSuperAdmin(role: string): boolean {
   const r = (role || '').toLowerCase();
   return r === ROLES.SUPER_ADMIN || r === ROLES.OWNER;
 }
+
+/** حذف مسيرة رواتب — المالك، المشرف العام (مدير النظام)، أو دور manager مخصّص */
+export const PAYROLL_RUN_DELETE_ROLES = [
+  ROLES.OWNER,
+  ROLES.SUPER_ADMIN,
+  'manager',
+] as const;
+
+const PAYROLL_RUN_DELETE_ROLE_SET = new Set<string>([...PAYROLL_RUN_DELETE_ROLES]);
+
+export function canDeletePayrollRunRole(role: string | undefined): boolean {
+  const r = (role || '').toLowerCase();
+  return PAYROLL_RUN_DELETE_ROLE_SET.has(r);
+}

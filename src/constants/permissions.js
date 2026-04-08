@@ -100,6 +100,12 @@ export function isSuperAdmin(role) {
   return r === 'super_admin' || r === 'owner';
 }
 
+/** حذف مسيرة رواتب — المالك، المشرف العام، أو دور manager (مخصّص) */
+export function canDeletePayrollRunRole(role) {
+  const r = (role || '').toLowerCase();
+  return r === 'owner' || r === 'super_admin' || r === 'manager';
+}
+
 /** مسارات الصفحات → صلاحية مطلوبة */
 export const ROUTE_PERMISSION = {
   '/owner':         PERMISSIONS.VIEW_OWNER,
