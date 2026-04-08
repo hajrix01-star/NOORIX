@@ -6,7 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import Toast from '../../../components/Toast';
+import { useToast } from '../../../context/ToastContext';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 function Cb({ checked, indeterminate, onChange, disabled }) {
@@ -181,7 +181,7 @@ export default function RolesTab({ userRole, language }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [form, setForm] = useState({ name: '', nameAr: '', description: '', permissions: [] });
 
   // ── جلب المصفوفة من Backend (مصدر الحقيقة الوحيد) ──
@@ -213,9 +213,9 @@ export default function RolesTab({ userRole, language }) {
       invalidate();
       setShowForm(false);
       setForm({ name: '', nameAr: '', description: '', permissions: [] });
-      setToast({ visible: true, message: t('roleAdded'), type: 'success' });
+      showToast(t('roleAdded'), 'success');
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('addFailed'), type: 'error' }),
+    onError: (e) => showToast(e?.message || t('addFailed'), 'error'),
   });
 
   const updateMutation = useMutation({
@@ -224,9 +224,9 @@ export default function RolesTab({ userRole, language }) {
       invalidate();
       queryClient.invalidateQueries({ queryKey: ['me'] });
       setEditing(null);
-      setToast({ visible: true, message: t('updateSuccess'), type: 'success' });
+      showToast(t('updateSuccess'), 'success');
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
   });
 
   const deleteMutation = useMutation({
@@ -234,9 +234,9 @@ export default function RolesTab({ userRole, language }) {
     onSuccess: () => {
       invalidate();
       setEditing(null);
-      setToast({ visible: true, message: t('roleDeleted'), type: 'success' });
+      showToast(t('roleDeleted'), 'success');
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('deleteFailed'), type: 'error' }),
+    onError: (e) => showToast(e?.message || t('deleteFailed'), 'error'),
   });
 
   function openEdit(r) {
@@ -289,8 +289,6 @@ export default function RolesTab({ userRole, language }) {
 
   return (
     <div className="grid gap-4">
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       <div className="flex items-center justify-between gap-2 flex flex-wrap">
         <div>
           <h3 className="m-0 text-[16px] font-bold">

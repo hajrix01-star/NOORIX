@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import ChangePasswordModal from './ChangePasswordModal';
-import Toast from './Toast';
+import { useToast } from '../context/ToastContext';
 import { Button } from '../ui';
 import { useIsNarrow768 } from '../hooks/useMediaQuery';
 
@@ -37,7 +37,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
   const showAppearance = typeof toggleLanguage === 'function';
   const [open, setOpen]                       = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [toast, setToast]                     = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [pos, setPos]                         = useState({ top: 0, left: 0 });
   const btnRef  = useRef(null);
   const menuRef = useRef(null);
@@ -235,17 +235,11 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
           onClose={() => setShowChangePassword(false)}
           onSuccess={(msg) => {
             setShowChangePassword(false);
-            setToast({ visible: true, message: msg, type: 'success' });
+            showToast(msg, 'success');
           }}
         />
       )}
 
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onDismiss={() => setToast((p) => ({ ...p, visible: false }))}
-      />
     </div>
   );
 }

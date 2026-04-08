@@ -6,10 +6,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getExpenseLines, deactivateExpenseLine } from '../../services/api';
 import { Button, ScreenTabs, ScreenShell, cn } from '../../ui';
-import Toast from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import ExpenseLineList from './components/ExpenseLineList';
 import ExpenseLineDetailModal from './components/ExpenseLineDetailModal';
@@ -33,7 +33,7 @@ export default function ExpensesScreen() {
   const dateFilter = useDateFilter();
 
   const [activeTab, setActiveTab] = useState('lines');
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingLine, setEditingLine] = useState(null);
@@ -48,10 +48,6 @@ export default function ExpensesScreen() {
     },
     enabled: !!companyId,
   });
-
-  const showToast = (message, type = 'success') => {
-    setToast({ visible: true, message, type });
-  };
 
   const handleLineClick = (line) => setSelectedLineId(line?.id ?? null);
   const handleCloseDetail = () => setSelectedLineId(null);
@@ -212,12 +208,6 @@ export default function ExpensesScreen() {
         />
       )}
 
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast((p) => ({ ...p, visible: false }))}
-      />
     </ScreenShell>
   );
 }

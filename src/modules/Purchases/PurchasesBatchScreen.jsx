@@ -8,6 +8,7 @@ import { Button, Badge, Input, ScreenTabs, ScreenShell } from '../../ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { createInvoiceBatch, updateInvoice, getPurchaseBatchSummaries, fetchAllInvoicesForBatch } from '../../services/api';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useCategories } from '../../hooks/useCategories';
@@ -17,7 +18,6 @@ import { useTableFilter } from '../../hooks/useTableFilter';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { fmt, sumAmounts } from '../../utils/format';
-import Toast from '../../components/Toast';
 import { useTranslation } from '../../i18n/useTranslation';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
@@ -64,7 +64,7 @@ export default function PurchasesBatchScreen() {
   const queryClient = useQueryClient();
   const dateFilter = useDateFilter();
 
-  const [toast, setToast]         = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('entry');
   const [batchDate, setBatchDate] = useState(getSaudiToday());
   const [batchVaultId, setBatchVaultId] = useState('');
@@ -143,11 +143,11 @@ export default function PurchasesBatchScreen() {
       const invoices = await fetchAllInvoicesForBatch(companyId, row.batchId, dateFilter.startDate, dateFilter.endDate);
       setter({ ...row, batchId: row.batchId, invoices });
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('loadDataFailed'), type: 'error' });
+      showToast(e?.message || t('loadDataFailed'), 'error');
     } finally {
       setBatchActionLoading(null);
     }
-  }, [companyId, dateFilter.startDate, dateFilter.endDate, t]);
+  }, [companyId, dateFilter.startDate, dateFilter.endDate, t, showToast]);
 
   const handleCancelBatch = useCallback(async (batch) => {
     let invoices = batch.invoices;
@@ -155,7 +155,7 @@ export default function PurchasesBatchScreen() {
       try {
         invoices = await fetchAllInvoicesForBatch(companyId, batch.batchId, dateFilter.startDate, dateFilter.endDate);
       } catch (e) {
-        setToast({ visible: true, message: e?.message || t('loadDataFailed'), type: 'error' });
+        showToast(e?.message || t('loadDataFailed'), 'error');
         return;
       }
     }
@@ -168,12 +168,12 @@ export default function PurchasesBatchScreen() {
         }
       }
       invalidateOnFinancialMutation(queryClient);
-      setToast({ visible: true, message: t('batchCancelled'), type: 'success' });
+      showToast(t('batchCancelled'), 'success');
       setEditingBatch(null);
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('cancelFailed'), type: 'error' });
+      showToast(e?.message || t('cancelFailed'), 'error');
     }
-  }, [companyId, dateFilter.startDate, dateFilter.endDate, queryClient, t]);
+  }, [companyId, dateFilter.startDate, dateFilter.endDate, queryClient, t, showToast]);
 
   const batchesColumns = useMemo(() => [
     /* رقم الدفعة — ضيق، محتوى ثابت مثل INV-0001 */
@@ -347,10 +347,10 @@ export default function PurchasesBatchScreen() {
     },
     onSuccess: (data) => {
       invalidateOnFinancialMutation(queryClient);
-      setToast({ visible: true, message: t('savedInvoicesCount', data.count, data.batchId), type: 'success' });
+      showToast(t('savedInvoicesCount', data.count, data.batchId), 'success');
       setRows([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
+    onError: (e) => showToast(e?.message || t('saveFailed'), 'error'),
   });
 
   const updateRow = (i, f, v) => {
@@ -398,8 +398,6 @@ export default function PurchasesBatchScreen() {
 
   return (
     <ScreenShell className="w-full">
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       {/* ── الهيدر ── */}
       <header className="nx-page-header">
         <div className="nx-page-header__titles">

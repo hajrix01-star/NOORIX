@@ -4,6 +4,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import {
   bankStatementsList,
@@ -14,7 +15,6 @@ import {
 } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
-import Toast from '../../components/Toast';
 import { Button, Badge, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
@@ -43,14 +43,13 @@ export default function BankStatementAnalysisScreen() {
 
   const [selectedStatementId, setSelectedStatementId] = useState(null);
   const [activeTab, setActiveTab] = useState('statements');
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [showUpload, setShowUpload] = useState(false);
   const [mappingStatement, setMappingStatement] = useState(null);
   const [filterMonth, setFilterMonth] = useState('');
   const [filterBank, setFilterBank] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
-  const showToast = (message, type = 'success') => setToast({ visible: true, message, type });
+  const { showToast } = useToast();
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['bank-statements-summary', companyId],
@@ -167,12 +166,6 @@ export default function BankStatementAnalysisScreen() {
           <p className="text-noorix-muted text-[14px]">{t('bankDeleteStatementConfirm')}</p>
         </Modal>
 
-        <Toast
-          visible={toast.visible}
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast((p) => ({ ...p, visible: false }))}
-        />
       </ScreenShell>
     );
   }
@@ -368,12 +361,6 @@ export default function BankStatementAnalysisScreen() {
         />
       )}
 
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast((p) => ({ ...p, visible: false }))}
-      />
     </ScreenShell>
   );
 }

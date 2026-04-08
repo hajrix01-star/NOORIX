@@ -4,12 +4,12 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { useToast } from '../../../context/ToastContext';
 import { useOrdersItemsReport, useProductPurchaseHistory, useCategoryPurchaseHistory } from '../../../hooks/useOrders';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
-import Toast from '../../../components/Toast';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
@@ -105,10 +105,10 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
 
 export function ItemsReportTab({ companyId, year, month, dateFilter }) {
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [filterMode, setFilterMode] = useState('all'); // all | top | bottom
   const [filterCount, setFilterCount] = useState(10);
   const [historyModal, setHistoryModal] = useState(null); // { product } or { category }
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   const { data: report = [], isLoading } = useOrdersItemsReport(companyId, year, month);
 
@@ -138,9 +138,9 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
         [t('ordersOrderCount')]: r.orderCount ?? 0,
       }));
       await exportToExcel(rows, `orders-items-report-${year}-${month}.xlsx`);
-      setToast({ visible: true, message: t('exportSuccess'), type: 'success' });
+      showToast(t('exportSuccess'), 'success');
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
+      showToast(e?.message || t('exportFailed'), 'error');
     }
   };
 
@@ -155,16 +155,14 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
         [t('ordersOrderCount')]: r.orderCount ?? 0,
       }));
       await exportTableToPdf({ columns: cols, data, title: `${t('ordersItemsReportTab')} — ${year}/${month}`, filename: `orders-items-${year}-${month}.pdf` });
-      setToast({ visible: true, message: t('exportSuccess'), type: 'success' });
+      showToast(t('exportSuccess'), 'success');
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
+      showToast(e?.message || t('exportFailed'), 'error');
     }
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
         <DateFilterBar filter={dateFilter} />
         <div className="nx-toolbar">

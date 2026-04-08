@@ -27,7 +27,7 @@ import {
   groupOrderProductImportRows,
   orderProductImportGroupsToPayload,
 } from '../../../utils/exportUtils';
-import Toast from '../../../components/Toast';
+import { useToast } from '../../../context/ToastContext';
 import {
   getSizesOptions,
   getPackagingOptions,
@@ -51,7 +51,7 @@ export function ItemsManageTab({ companyId }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [activeSubTab, setActiveSubTab] = useState('products');
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [newProduct, setNewProduct] = useState({ nameAr: '', nameEn: '', categoryId: '', variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }] });
@@ -108,7 +108,7 @@ export function ItemsManageTab({ companyId }) {
 
   function handleCreateProduct() {
     if (!newProduct.nameAr?.trim()) {
-      setToast({ visible: true, message: t('ordersProductNameRequired'), type: 'error' });
+      showToast(t('ordersProductNameRequired'), 'error');
       return;
     }
     const validVariants = (newProduct.variants || []).filter((v) => v.size || v.packaging || v.unit || parseFloat(v.lastPrice) > 0);
@@ -121,11 +121,11 @@ export function ItemsManageTab({ companyId }) {
     };
     createProduct.mutate(payload, {
       onSuccess: () => {
-        setToast({ visible: true, message: t('ordersProductAdded'), type: 'success' });
+        showToast(t('ordersProductAdded'), 'success');
         setNewProduct({ nameAr: '', nameEn: '', categoryId: '', variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }] });
       },
       onError: (e) => {
-        setToast({ visible: true, message: e?.message || e?.error || t('addFailed'), type: 'error' });
+        showToast(e?.message || e?.error || t('addFailed'), 'error');
       },
     });
   }
@@ -143,11 +143,11 @@ export function ItemsManageTab({ companyId }) {
       { id: editingProduct.id, body },
       {
         onSuccess: () => {
-          setToast({ visible: true, message: t('ordersProductUpdated'), type: 'success' });
+          showToast(t('ordersProductUpdated'), 'success');
           setEditingProduct(null);
         },
         onError: (e) => {
-          setToast({ visible: true, message: e?.message || e?.error || t('updateFailed'), type: 'error' });
+          showToast(e?.message || e?.error || t('updateFailed'), 'error');
         },
       },
     );
@@ -155,17 +155,17 @@ export function ItemsManageTab({ companyId }) {
 
   function handleCreateCategory() {
     if (!newCategory.nameAr?.trim()) {
-      setToast({ visible: true, message: t('ordersCategoryNameRequired'), type: 'error' });
+      showToast(t('ordersCategoryNameRequired'), 'error');
       return;
     }
     createCategory.mutate(
       { companyId, nameAr: newCategory.nameAr.trim(), nameEn: newCategory.nameEn?.trim() || undefined },
       {
         onSuccess: () => {
-          setToast({ visible: true, message: t('ordersCategoryAdded'), type: 'success' });
+          showToast(t('ordersCategoryAdded'), 'success');
           setNewCategory({ nameAr: '', nameEn: '' });
         },
-        onError: (e) => setToast({ visible: true, message: e?.message || t('addFailed'), type: 'error' }),
+        onError: (e) => showToast(e?.message || t('addFailed'), 'error'),
       },
     );
   }
@@ -173,27 +173,27 @@ export function ItemsManageTab({ companyId }) {
   function handleAddSize() {
     const ar = (newSize.ar || '').trim();
     if (!ar) {
-      setToast({ visible: true, message: t('ordersSizeNameRequired') || '��� ����� �������� �����', type: 'error' });
+      showToast(t('ordersSizeNameRequired') || '��� ����� �������� �����', 'error');
       return;
     }
     addCustomSize(companyId, ar, newSize.en);
     setSizesKey((k) => k + 1);
     setNewSize({ ar: '', en: '' });
     setAddSizeModal(false);
-    setToast({ visible: true, message: t('ordersSizeAdded') || '��� ����� �����', type: 'success' });
+    showToast(t('ordersSizeAdded') || '��� ����� �����', 'success');
   }
 
   function handleAddPackaging() {
     const ar = (newPackaging.ar || '').trim();
     if (!ar) {
-      setToast({ visible: true, message: t('ordersPackagingNameRequired') || '��� ������� �������� �����', type: 'error' });
+      showToast(t('ordersPackagingNameRequired') || '��� ������� �������� �����', 'error');
       return;
     }
     addCustomPackaging(companyId, ar, newPackaging.en);
     setPackagingKey((k) => k + 1);
     setNewPackaging({ ar: '', en: '' });
     setAddPackagingModal(false);
-    setToast({ visible: true, message: t('ordersPackagingAdded') || '��� ����� �������', type: 'success' });
+    showToast(t('ordersPackagingAdded') || '��� ����� �������', 'success');
   }
 
   async function handleInsertPresetCatalog() {
@@ -264,16 +264,12 @@ export function ItemsManageTab({ companyId }) {
       queryClient.invalidateQueries({ queryKey: ['order-categories', companyId] });
 
       if (added === 0 && updated === 0 && catsAdded === 0) {
-        setToast({ visible: true, message: t('ordersPresetNothingDone'), type: 'success' });
+        showToast(t('ordersPresetNothingDone'), 'success');
       } else {
-        setToast({
-          visible: true,
-          message: t('ordersPresetDone', String(added), String(updated), String(catsAdded)),
-          type: 'success',
-        });
+        showToast(t('ordersPresetDone', String(added), String(updated), String(catsAdded)), 'success');
       }
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('addFailed'), type: 'error' });
+      showToast(e?.message || t('addFailed'), 'error');
     } finally {
       setPresetBusy(false);
     }
@@ -282,36 +278,36 @@ export function ItemsManageTab({ companyId }) {
   async function handleDownloadProductsImportTemplate() {
     try {
       await exportOrdersProductsImportTemplate('order-products-import-template.xlsx');
-      setToast({ visible: true, message: t('ordersImportTemplateReady'), type: 'success' });
+      showToast(t('ordersImportTemplateReady'), 'success');
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
+      showToast(e?.message || t('exportFailed'), 'error');
     }
   }
 
   async function handleDownloadCategoriesImportTemplate() {
     try {
       await exportOrdersCategoriesImportTemplate('order-categories-import-template.xlsx');
-      setToast({ visible: true, message: t('ordersImportTemplateReady'), type: 'success' });
+      showToast(t('ordersImportTemplateReady'), 'success');
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
+      showToast(e?.message || t('exportFailed'), 'error');
     }
   }
 
   async function handleExportProducts() {
     try {
       await exportOrderProductsWorkbook(products, 'order-products.xlsx');
-      setToast({ visible: true, message: t('exportSuccess'), type: 'success' });
+      showToast(t('exportSuccess'), 'success');
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
+      showToast(e?.message || t('exportFailed'), 'error');
     }
   }
 
   async function handleExportCategories() {
     try {
       await exportOrderCategoriesWorkbook(categories, 'order-categories.xlsx');
-      setToast({ visible: true, message: t('exportSuccess'), type: 'success' });
+      showToast(t('exportSuccess'), 'success');
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
+      showToast(e?.message || t('exportFailed'), 'error');
     }
   }
 
@@ -325,18 +321,18 @@ export function ItemsManageTab({ companyId }) {
       const groups = groupOrderProductImportRows(filtered);
       const toCreate = orderProductImportGroupsToPayload(groups, catByName);
       if (toCreate.length === 0) {
-        setToast({ visible: true, message: t('ordersImportNoValidRows'), type: 'error' });
+        showToast(t('ordersImportNoValidRows'), 'error');
         return;
       }
       createProductsBatch.mutate(toCreate, {
         onSuccess: (data) => {
-          setToast({ visible: true, message: t('ordersImportSuccess', data?.length ?? toCreate.length), type: 'success' });
+          showToast(t('ordersImportSuccess', data?.length ?? toCreate.length), 'success');
           if (fileInputProducts.current) fileInputProducts.current.value = '';
         },
-        onError: (err) => setToast({ visible: true, message: err?.message || err?.error || t('importFailed'), type: 'error' }),
+        onError: (err) => showToast(err?.message || err?.error || t('importFailed'), 'error'),
       });
     } catch (err) {
-      setToast({ visible: true, message: err?.message || t('importFailed'), type: 'error' });
+      showToast(err?.message || t('importFailed'), 'error');
     }
   }
 
@@ -354,18 +350,18 @@ export function ItemsManageTab({ companyId }) {
         }))
         .filter((r) => r.nameAr);
       if (toCreate.length === 0) {
-        setToast({ visible: true, message: t('ordersImportNoValidRows'), type: 'error' });
+        showToast(t('ordersImportNoValidRows'), 'error');
         return;
       }
       createCategoriesBatch.mutate(toCreate, {
         onSuccess: (data) => {
-          setToast({ visible: true, message: t('ordersImportSuccess', data?.length ?? toCreate.length), type: 'success' });
+          showToast(t('ordersImportSuccess', data?.length ?? toCreate.length), 'success');
           if (fileInputCategories.current) fileInputCategories.current.value = '';
         },
-        onError: (err) => setToast({ visible: true, message: err?.message || t('importFailed'), type: 'error' }),
+        onError: (err) => showToast(err?.message || t('importFailed'), 'error'),
       });
     } catch (err) {
-      setToast({ visible: true, message: err?.message || t('importFailed'), type: 'error' });
+      showToast(err?.message || t('importFailed'), 'error');
     }
   }
 
@@ -375,10 +371,10 @@ export function ItemsManageTab({ companyId }) {
       { id: editingCategory.id, body: { nameAr: editingCategory.nameAr, nameEn: editingCategory.nameEn ?? null } },
       {
         onSuccess: () => {
-          setToast({ visible: true, message: t('ordersCategoryUpdated'), type: 'success' });
+          showToast(t('ordersCategoryUpdated'), 'success');
           setEditingCategory(null);
         },
-        onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+        onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
       },
     );
   }
@@ -421,9 +417,7 @@ export function ItemsManageTab({ companyId }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
-      <AddSizeModal visible={addSizeModal} onClose={() => setAddSizeModal(false)} value={newSize} onChange={setNewSize} onAdd={handleAddSize} />
+            <AddSizeModal visible={addSizeModal} onClose={() => setAddSizeModal(false)} value={newSize} onChange={setNewSize} onAdd={handleAddSize} />
       <AddPackagingModal visible={addPackagingModal} onClose={() => setAddPackagingModal(false)} value={newPackaging} onChange={setNewPackaging} onAdd={handleAddPackaging} />
 
       <div className="flex gap-2 border-b border-noorix-border">

@@ -11,10 +11,10 @@ import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { updateEmployee } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
-import Toast from '../../../components/Toast';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import {
   SAUDI_STANDARD_HOURS,
   SAUDI_DAYS_PER_MONTH,
@@ -48,7 +48,6 @@ export default function SalaryCalcTab() {
   const [transportAllowance, setTransportAllowance] = useState('0');
   const [otherAllowance, setOtherAllowance] = useState('0');
   const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   const emp = employees.find((e) => e.id === selectedEmployee);
   const allowanceTotals = useMemo(() => {
@@ -120,7 +119,7 @@ export default function SalaryCalcTab() {
   const netSalary = calculatedTotal.minus(deduction);
   const inverseWarning = totalTarget.gt(0) && basicNumerator.lt(0);
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiMutation({
     mutationFn: async ({ id, body }) => {
       const res = await updateEmployee(id, body, companyId);
       if (!res?.success) {
@@ -128,12 +127,13 @@ export default function SalaryCalcTab() {
       }
       return res.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
-      queryClient.invalidateQueries({ queryKey: ['employee', emp?.id, companyId] });
-      setToast({ visible: true, message: t('salaryCalcUpdated') || 'تم تحديث الراتب بنجاح', type: 'success' });
+    invalidateQueries: [['employees']],
+    successToast: () => t('salaryCalcUpdated') || 'تم تحديث الراتب بنجاح',
+    errorToast: (e) => e?.message || t('saveFailed'),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['employee', variables.id, companyId] });
+      queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
   });
 
   function handleUpdateSalary() {
@@ -411,8 +411,6 @@ export default function SalaryCalcTab() {
       >
         {t('printCalc')}
       </Button>
-
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onClose={() => setToast((p) => ({ ...p, visible: false }))} />
     </div>
   );
 }

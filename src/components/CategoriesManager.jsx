@@ -5,7 +5,7 @@
 import React, { useState, useMemo, memo } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from '../i18n/useTranslation';
-import Toast from './Toast';
+import { useToast } from '../context/ToastContext';
 import SmartTable from './common/SmartTable';
 import { Button, Input, Card, Badge, FormRow } from '../ui';
 
@@ -25,7 +25,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [form, setForm] = useState({ nameAr: '', nameEn: '', type: 'purchase', icon: '', parentId: '' });
 
   const { categories, isLoading, create, update, remove } = useCategories(companyId);
@@ -73,18 +73,18 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
     e?.preventDefault();
     if (!form.nameAr?.trim()) return;
     if (!companyId) {
-      setToast({ visible: true, message: t('pleaseSelectCompanyFirst'), type: 'error' });
+      showToast(t('pleaseSelectCompanyFirst'), 'error');
       return;
     }
     if (editing) {
       update.mutate(
         { id: editing.id, body: { companyId, nameAr: form.nameAr.trim(), nameEn: form.nameEn?.trim() || null, type: form.type, parentId: form.parentId || null, icon: form.icon || null } },
-        { onSuccess: () => { setToast({ visible: true, message: t('updateSuccess'), type: 'success' }); resetForm(); }, onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }) },
+        { onSuccess: () => { showToast(t('updateSuccess'), 'success'); resetForm(); }, onError: (e) => showToast(e?.message || t('updateFailed'), 'error') },
       );
     } else {
       create.mutate(
         { companyId, nameAr: form.nameAr.trim(), nameEn: form.nameEn?.trim() || undefined, type: form.type, icon: form.icon || undefined, parentId: form.parentId || undefined, createAccount: true },
-        { onSuccess: () => { setToast({ visible: true, message: t('categoryAdded'), type: 'success' }); resetForm(); }, onError: (e) => setToast({ visible: true, message: e?.message || t('addFailed'), type: 'error' }) },
+        { onSuccess: () => { showToast(t('categoryAdded'), 'success'); resetForm(); }, onError: (e) => showToast(e?.message || t('addFailed'), 'error') },
       );
     }
   }
@@ -92,8 +92,8 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   function handleDelete(cat) {
     if (!confirm(t('deleteCategoryConfirm', cat.nameAr))) return;
     remove.mutate(cat.id, {
-      onSuccess: () => setToast({ visible: true, message: t('categoryDeleted'), type: 'success' }),
-      onError: (e) => setToast({ visible: true, message: e?.message || t('deleteFailed'), type: 'error' }),
+      onSuccess: () => showToast(t('categoryDeleted'), 'success'),
+      onError: (e) => showToast(e?.message || t('deleteFailed'), 'error'),
     });
   }
 
@@ -128,7 +128,6 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
 
   return (
     <div className="flex flex-col gap-4">
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
       <div className="flex flex items-center justify-end">
         <Button variant={showForm ? 'default' : 'primary'} onClick={() => (showForm ? resetForm() : setShowForm(true))}>
           {showForm ? t('cancel') : t('addCategory')}

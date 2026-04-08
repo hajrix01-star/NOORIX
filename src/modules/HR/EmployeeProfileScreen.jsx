@@ -8,6 +8,7 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useEmployee, useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import {
   getLeaves,
@@ -31,7 +32,6 @@ import {
 } from './utils/employeeSalaryMath';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
-import Toast from '../../components/Toast';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildLeaveRequestStatusMap, buildResidencyRecordStatusMap } from '../../constants/badgeMaps';
 
@@ -49,7 +49,7 @@ export default function EmployeeProfileScreen() {
   const companyLogo = activeCompany?.logoUrl || '';
   const [showAdvance, setShowAdvance] = useState(false);
   const [docModal, setDocModal] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [uploading, setUploading] = useState(false);
   const docFileRef = React.useRef(null);
 
@@ -198,13 +198,13 @@ export default function EmployeeProfileScreen() {
     if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
     const res = await deleteEmployee(employee.id, companyId);
     if (!res?.success) {
-      setToast({ visible: true, message: res?.error || t('updateFailed'), type: 'error' });
+      showToast(res?.error || t('updateFailed'), 'error');
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['employees'] });
     queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
     invalidateOnFinancialMutation(queryClient);
-    setToast({ visible: true, message: t('employeeDeletedPermanent'), type: 'success' });
+    showToast(t('employeeDeletedPermanent'), 'success');
     navigate('/hr');
   }
 
@@ -231,9 +231,9 @@ export default function EmployeeProfileScreen() {
       });
       if (!res?.success) throw new Error(res?.error || 'فشل الرفع');
       invalidateAll();
-      setToast({ visible: true, message: t('documentUploaded'), type: 'success' });
+      showToast(t('documentUploaded'), 'success');
     } catch (err) {
-      setToast({ visible: true, message: err?.message || t('saveFailed'), type: 'error' });
+      showToast(err?.message || t('saveFailed'), 'error');
     } finally {
       setUploading(false);
       if (docFileRef.current) docFileRef.current.value = '';
@@ -244,7 +244,7 @@ export default function EmployeeProfileScreen() {
     try {
       await downloadDocument(docId, companyId);
     } catch (err) {
-      setToast({ visible: true, message: err?.message || 'فشل التحميل', type: 'error' });
+      showToast(err?.message || 'فشل التحميل', 'error');
     }
   };
 
@@ -300,8 +300,6 @@ export default function EmployeeProfileScreen() {
 
   return (
     <ScreenShell>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       <div className="nx-page-header employee-profile-header-bar">
         <Button onClick={() => navigate('/hr')}>{t('employeeProfileBack')}</Button>
         <div className="nx-toolbar">
@@ -497,7 +495,7 @@ export default function EmployeeProfileScreen() {
           companyName={companyName}
           companyLogo={companyLogo}
           onClose={() => setDocModal(null)}
-          onSaved={() => { invalidateAll(); setToast({ visible: true, message: t('documentUploaded'), type: 'success' }); }}
+          onSaved={() => { invalidateAll(); showToast(t('documentUploaded'), 'success'); }}
         />
       )}
       {docModal === 'contract' && (
@@ -508,7 +506,7 @@ export default function EmployeeProfileScreen() {
           companyName={companyName}
           companyLogo={companyLogo}
           onClose={() => setDocModal(null)}
-          onSaved={() => { invalidateAll(); setToast({ visible: true, message: t('documentUploaded'), type: 'success' }); }}
+          onSaved={() => { invalidateAll(); showToast(t('documentUploaded'), 'success'); }}
         />
       )}
       {docModal === 'settlement' && (
@@ -519,7 +517,7 @@ export default function EmployeeProfileScreen() {
           companyName={companyName}
           companyLogo={companyLogo}
           onClose={() => setDocModal(null)}
-          onSaved={() => { invalidateAll(); setToast({ visible: true, message: t('documentUploaded'), type: 'success' }); }}
+          onSaved={() => { invalidateAll(); showToast(t('documentUploaded'), 'success'); }}
         />
       )}
       {showAdvance && (
@@ -529,7 +527,7 @@ export default function EmployeeProfileScreen() {
           createAdvance={createAdvance}
           onSuccess={() => {
             invalidateOnFinancialMutation(queryClient);
-            setToast({ visible: true, message: t('advancePaid'), type: 'success' });
+            showToast(t('advancePaid'), 'success');
           }}
           onClose={() => setShowAdvance(false)}
         />

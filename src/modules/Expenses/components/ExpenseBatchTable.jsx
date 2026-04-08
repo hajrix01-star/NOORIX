@@ -5,11 +5,11 @@
 import React, { useState, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
+import { useToast } from '../../../context/ToastContext';
 import { createInvoiceBatch, getExpenseLines } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { fmt, calcReverseVat } from '../../../utils/format';
-import Toast from '../../../components/Toast';
 import SmartTable from '../../../components/common/SmartTable';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, ScreenShell, cn } from '../../../ui';
@@ -25,10 +25,10 @@ const EMPTY_ROW = () => ({
 export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
   const { lang, t } = useTranslation();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [rows, setRows] = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [batchDate, setBatchDate] = useState(getSaudiToday());
   const [vaultId, setVaultId] = useState('');
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   const { data: expenseLines = [] } = useQuery({
     queryKey: ['expense-lines', companyId],
@@ -97,9 +97,8 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
       invalidateOnFinancialMutation(queryClient);
       setRows([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
       onSaved?.();
-      setToast({ visible: true, message: 'تم حفظ الدفعة بنجاح', type: 'success' });
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || 'فشل الحفظ', type: 'error' }),
+    onError: (e) => showToast(e?.message || 'فشل الحفظ', 'error'),
   });
 
   const updateRow = (i, updates) => {
@@ -282,7 +281,6 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         {saveMutation.isPending ? 'جاري الحفظ...' : 'حفظ الدفعة'}
       </Button>
 
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onClose={() => setToast((p) => ({ ...p, visible: false }))} />
     </ScreenShell>
   );
 }

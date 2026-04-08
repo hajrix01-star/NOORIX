@@ -8,8 +8,8 @@ import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
 import { useSuppliers }        from '../../../hooks/useSuppliers';
 import { useCategories }       from '../../../hooks/useCategories';
 import { useTranslation }      from '../../../i18n/useTranslation';
+import { useToast } from '../../../context/ToastContext';
 import { createSupplier }      from '../../../services/api';
-import Toast                   from '../../../components/Toast';
 import { SupplierForm }        from './SupplierForm';
 import { SupplierTable }       from './SupplierTable';
 import { SupplierEditModal }   from './SupplierEditModal';
@@ -25,7 +25,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   const debouncedQ = useDebouncedValue(search.trim(), 300);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [selectedIds,     setSelectedIds]     = useState(new Set());
-  const [toast,           setToast]           = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
 
   /* ── بيانات ── */
   const { suppliers, isLoading, create, update, remove } = useSuppliers(companyId, { pageSize: 500, q: debouncedQ || undefined });
@@ -33,8 +33,8 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
 
   /* ── مساعد toast ── */
   const notify = useCallback((message, type = 'success') => {
-    setToast({ visible: true, message, type });
-  }, []);
+    showToast(message, type);
+  }, [showToast]);
 
   /* ── إضافة مورد ── */
   function handleSave(body) {
@@ -107,13 +107,6 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
 
   return (
     <ScreenShell>
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onDismiss={() => setToast((p) => ({ ...p, visible: false }))}
-      />
-
       {/* ── شريط البحث + إضافة ── */}
       <div className="nx-page-header">
         <Input

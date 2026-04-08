@@ -5,6 +5,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
+import { useToast } from '../../../context/ToastContext';
 import {
   useOrders,
   useCreateOrderMutation,
@@ -17,7 +18,6 @@ import { getDailySalesSummaries } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
-import Toast from '../../../components/Toast';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
@@ -57,7 +57,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
   const { companies = [] } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [orderTypeFilter, setOrderTypeFilter] = useState('all'); // 'all' | 'external' | 'internal'
   const [viewingOrder, setViewingOrder] = useState(null);
 
@@ -329,8 +329,8 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
   function handleDelete(order) {
     if (!window.confirm(t('ordersDeleteConfirm', order.orderNumber))) return;
     cancelOrder.mutate(order.id, {
-      onSuccess: () => setToast({ visible: true, message: t('ordersOrderCancelled'), type: 'success' }),
-      onError: (e) => setToast({ visible: true, message: e?.message || t('deleteFailed'), type: 'error' }),
+      onSuccess: () => showToast(t('ordersOrderCancelled'), 'success'),
+      onError: (e) => showToast(e?.message || t('deleteFailed'), 'error'),
     });
   }
 
@@ -381,9 +381,9 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         });
       }
       await exportToExcel(rows, `order-${order.orderNumber}.xlsx`);
-      setToast({ visible: true, message: t('exportSuccess'), type: 'success' });
+      showToast(t('exportSuccess'), 'success');
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('exportFailed'), type: 'error' });
+      showToast(e?.message || t('exportFailed'), 'error');
     }
   };
 
@@ -391,7 +391,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
     const html = buildOrderPrintHtml(order, companyName, t, fmt, formatSaudiDate);
     const w = window.open('', '_blank');
     if (!w) {
-      setToast({ visible: true, message: t('allowPopupsForPrint'), type: 'error' });
+      showToast(t('allowPopupsForPrint'), 'error');
       return;
     }
     w.document.write(html);
@@ -416,7 +416,6 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
       <div className="noorix-print-header hidden print:block">
         {companyName} — {t('ordersTab')} — {printDate}
       </div>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
         <DateFilterBar filter={dateFilter} />
@@ -484,8 +483,8 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           initialOrder={editingOrder}
           createOrder={createOrder}
           updateOrder={updateOrder}
-          onSuccess={() => setToast({ visible: true, message: editingOrder ? t('ordersOrderUpdated') : t('orderSaved'), type: 'success' })}
-          onError={(msg) => setToast({ visible: true, message: msg || t('saveFailed'), type: 'error' })}
+          onSuccess={() => showToast(editingOrder ? t('ordersOrderUpdated') : t('orderSaved'), 'success')}
+          onError={(msg) => showToast(msg || t('saveFailed'), 'error')}
           onClose={closeModal}
           onWhatsApp={handleWhatsApp}
         />

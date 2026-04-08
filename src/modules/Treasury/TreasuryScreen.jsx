@@ -2,9 +2,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateVault } from '../../services/api';
 import { useApp }         from '../../context/AppContext';
+import { useToast }       from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useVaults } from '../../hooks/useVaults';
-import Toast              from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import { fmt, sumAmounts } from '../../utils/format';
 import VaultCard          from './components/VaultCard';
@@ -18,7 +18,7 @@ export default function TreasuryScreen() {
   const companyId   = activeCompanyId ?? '';
   const queryClient = useQueryClient();
 
-  const [toast,           setToast]          = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [includeArchived, setIncludeArchived] = useState(false);
   const [selectedVault,   setSelectedVault]  = useState(null);
   const [editVault,       setEditVault]      = useState(null);
@@ -29,8 +29,7 @@ export default function TreasuryScreen() {
   const startDate = dateFilter?.startDate || null;
   const endDate = dateFilter?.endDate || null;
 
-  const notify = (message, type = 'success') =>
-    setToast({ visible: true, message, type });
+  const notify = (message, type = 'success') => showToast(message, type);
 
   const {
     vaultsList = [],
@@ -109,9 +108,6 @@ export default function TreasuryScreen() {
 
   return (
     <ScreenShell>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type}
-        onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       {/* هيدر */}
       <div className="nx-page-header">
           <div className="flex-1 min-w-0">

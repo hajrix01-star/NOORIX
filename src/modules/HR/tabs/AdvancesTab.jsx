@@ -5,6 +5,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
+import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { createDeduction, getInvoices, updateInvoice } from '../../../services/api';
 import { useEmployees } from '../../../hooks/useEmployees';
@@ -16,7 +17,6 @@ import { useTableFilter } from '../../../hooks/useTableFilter';
 import SmartTable from '../../../components/common/SmartTable';
 import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
-import Toast from '../../../components/Toast';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
@@ -31,7 +31,7 @@ export default function AdvancesTab() {
   const [showAdvance, setShowAdvance] = useState(false);
   const [editingAdvance, setEditingAdvance] = useState(null);
   const [settlingAdvance, setSettlingAdvance] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
   const [settlementFilter, setSettlementFilter] = useState('all');
@@ -169,12 +169,12 @@ export default function AdvancesTab() {
             updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res) => {
               if (!res?.success) throw new Error(res?.error || t('saveFailed'));
               invalidateOnFinancialMutation(queryClient);
-              setToast({ visible: true, message: t('advanceDeleted'), type: 'success' });
-            }).catch((e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }));
+              showToast(t('advanceDeleted'), 'success');
+            }).catch((e) => showToast(e?.message || t('saveFailed'), 'error'));
           }}
         />
       ) },
-  ], [t, settlementMap, queryClient]);
+  ], [t, settlementMap, queryClient, showToast]);
 
   const footerCells = (
     <>
@@ -246,8 +246,6 @@ export default function AdvancesTab() {
 
   return (
     <ScreenShell>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <Input type="select" value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
@@ -317,7 +315,7 @@ export default function AdvancesTab() {
           createAdvance={createAdvance}
           onSuccess={() => {
             invalidateOnFinancialMutation(queryClient);
-            setToast({ visible: true, message: t('advancePaid'), type: 'success' });
+            showToast(t('advancePaid'), 'success');
           }}
           onClose={() => setShowAdvance(false)}
         />
@@ -329,10 +327,10 @@ export default function AdvancesTab() {
           onClose={() => setEditingAdvance(null)}
           onSaved={() => {
             invalidateOnFinancialMutation(queryClient);
-            setToast({ visible: true, message: t('advanceUpdated'), type: 'success' });
+            showToast(t('advanceUpdated'), 'success');
             setEditingAdvance(null);
           }}
-          onError={(msg) => setToast({ visible: true, message: msg, type: 'error' })}
+          onError={(msg) => showToast(msg, 'error')}
         />
       )}
       {settlingAdvance && (
@@ -343,10 +341,10 @@ export default function AdvancesTab() {
           onSaved={() => {
             invalidateOnFinancialMutation(queryClient);
             queryClient.invalidateQueries({ queryKey: ['deductions', companyId] });
-            setToast({ visible: true, message: t('advanceSettledSuccess'), type: 'success' });
+            showToast(t('advanceSettledSuccess'), 'success');
             setSettlingAdvance(null);
           }}
-          onError={(msg) => setToast({ visible: true, message: msg, type: 'error' })}
+          onError={(msg) => showToast(msg, 'error')}
         />
       )}
     </ScreenShell>

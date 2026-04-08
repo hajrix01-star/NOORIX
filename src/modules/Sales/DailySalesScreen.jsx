@@ -9,6 +9,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useSales } from '../../hooks/useSales';
 import { useSalesChannels } from '../../hooks/useSalesChannels';
@@ -18,7 +19,6 @@ import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
 import { Badge, Button, ScreenShell } from '../../ui';
-import Toast from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
 import { SalesActionsCell } from '../../components/common/SalesActionsCell';
@@ -50,7 +50,7 @@ export default function DailySalesScreen() {
   const logoUrl = companies?.find((c) => c.id === activeCompanyId)?.logoUrl || '';
 
   // ── كل الـ Hooks في أعلى المكوّن ──
-  const [toast, setToast]             = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingSummary, setEditingSummary] = useState(null);
   const [listPage, setListPage] = useState(1);
@@ -209,20 +209,20 @@ export default function DailySalesScreen() {
     if (res?.success === false) {
       throw new Error(res?.error || t('updateFailed'));
     }
-    setToast({ visible: true, message: t('updateSuccess'), type: 'success' });
+    showToast(t('updateSuccess'), 'success');
     setEditingSummary(null);
   }
 
-  function handleDeleteSummary(s) {
+  const handleDeleteSummary = useCallback((s) => {
     if (!companyId || !window.confirm(t('deleteSummaryConfirm', s.summaryNumber))) return;
     deleteSummary.mutate(
       { id: s.id, companyId },
       {
-        onSuccess: () => setToast({ visible: true, message: t('summaryDeleted'), type: 'success' }),
-        onError: (e) => setToast({ visible: true, message: e?.message || t('deleteFailed'), type: 'error' }),
+        onSuccess: () => showToast(t('summaryDeleted'), 'success'),
+        onError: (e) => showToast(e?.message || t('deleteFailed'), 'error'),
       },
     );
-  }
+  }, [companyId, deleteSummary, t, showToast]);
 
   const hasCompany = !!companyId;
 
@@ -285,7 +285,7 @@ export default function DailySalesScreen() {
         />
       ),
     },
-  ], [userRole, t, STATUS_MAP]);
+  ], [userRole, t, STATUS_MAP, handleDeleteSummary]);
 
   const footerCells = (
     <>
@@ -353,7 +353,7 @@ export default function DailySalesScreen() {
         logoUrl,
       });
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+      showToast(e?.message || t('saveFailed'), 'error');
     } finally {
       setExportBusy(false);
     }
@@ -381,7 +381,7 @@ export default function DailySalesScreen() {
         logoUrl,
       });
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+      showToast(e?.message || t('saveFailed'), 'error');
     } finally {
       setExportBusy(false);
     }
@@ -401,7 +401,7 @@ export default function DailySalesScreen() {
         sortDir,
       );
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+      showToast(e?.message || t('saveFailed'), 'error');
       setExportBusy(false);
       return;
     } finally {
@@ -457,12 +457,10 @@ export default function DailySalesScreen() {
         <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
       </div>
     </div>
-  ), [STATUS_MAP, userRole, t]);
+  ), [STATUS_MAP, userRole, t, handleDeleteSummary]);
 
   return (
     <ScreenShell>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       {editingSummary && (
         <SalesEditModal
           summary={editingSummary}
@@ -486,8 +484,8 @@ export default function DailySalesScreen() {
           vatEnabled={vatEnabled}
           vatRate={vatRate}
           createSummary={createSummary}
-          onSuccess={(summary) => setToast({ visible: true, message: `${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, type: 'success' })}
-          onError={(msg) => setToast({ visible: true, message: msg || t('saveFailed'), type: 'error' })}
+          onSuccess={(summary) => showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success')}
+          onError={(msg) => showToast(msg || t('saveFailed'), 'error')}
           onClose={() => setShowEntryModal(false)}
           onWhatsApp={openWhatsApp}
           autoCloseOnSuccess={false}
@@ -506,7 +504,7 @@ export default function DailySalesScreen() {
         }}
         onImportSuccess={() => {
           invalidateOnFinancialMutation(queryClient);
-          setToast({ visible: true, message: 'تم استيراد ملخصات المبيعات بنجاح', type: 'success' });
+          showToast('تم استيراد ملخصات المبيعات بنجاح', 'success');
         }}
       />
 

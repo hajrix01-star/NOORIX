@@ -19,8 +19,8 @@ import {
   backupVerifySystemJob,
   backupVerifyCompanyJob,
 } from '../../../services/api';
-import Toast from '../../../components/Toast';
 import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
 import { useApp } from '../../../context/AppContext';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { formatSaudiDate, formatSaudiDateTime } from '../../../utils/saudiDate';
@@ -129,7 +129,7 @@ export default function BackupTab({ activeCompanies = [] }) {
   const isAr = lang !== 'en';
   const qc = useQueryClient();
   const [companyId, setCompanyId] = useState(() => activeCompanies[0]?.id || '');
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [reportModal, setReportModal] = useState(null);
   const [importModal, setImportModal] = useState(null);
   const [importReportModal, setImportReportModal] = useState(null);
@@ -182,20 +182,20 @@ export default function BackupTab({ activeCompanies = [] }) {
     mutationFn: () => backupTriggerCompany(companyId),
     onSuccess: (res) => {
       if (!res?.success) {
-        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        showToast( res?.error || t('backupError'), 'error');
         return;
       }
       qc.invalidateQueries({ queryKey: ['backup-jobs'] });
-      setToast({ visible: true, message: t('backupStarted'), type: 'success' });
+      showToast( t('backupStarted'), 'success');
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+    onError: (e) => showToast( e?.message || t('backupError'), 'error'),
   });
 
   const reportMut = useMutation({
     mutationFn: (jobId) => backupRestoreReport(jobId),
     onSuccess: (res, jobId) => {
       if (!res?.success) {
-        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        showToast( res?.error || t('backupError'), 'error');
         return;
       }
       setReportModal({ jobId, payload: res.data });
@@ -208,15 +208,15 @@ export default function BackupTab({ activeCompanies = [] }) {
       if (!r?.success) throw new Error(r?.error || 'download failed');
       return r;
     },
-    onSuccess: () => setToast({ visible: true, message: t('backupDownloadOk'), type: 'success' }),
-    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+    onSuccess: () => showToast( t('backupDownloadOk'), 'success'),
+    onError: (e) => showToast( e?.message || t('backupError'), 'error'),
   });
 
   const importMut = useMutation({
     mutationFn: ({ jobId, nameAr }) => backupImportFromJob({ jobId, nameAr }),
     onSuccess: async (res) => {
       if (!res?.success) {
-        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        showToast( res?.error || t('backupError'), 'error');
         return;
       }
       setImportModal(null);
@@ -234,79 +234,78 @@ export default function BackupTab({ activeCompanies = [] }) {
       const nid = res.data?.newCompanyId;
       if (nid && typeof setActiveCompany === 'function') setActiveCompany(nid);
       setImportReportModal(res.data || null);
-      setToast({
-        visible: true,
-        message: ref.success ? t('backupImportOk') : `${t('backupImportOk')} — ${t('backupImportSessionHint')}`,
-        type: ref.success ? 'success' : 'error',
-      });
+      showToast(
+        ref.success ? t('backupImportOk') : `${t('backupImportOk')} — ${t('backupImportSessionHint')}`,
+        ref.success ? 'success' : 'error',
+      );
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+    onError: (e) => showToast( e?.message || t('backupError'), 'error'),
   });
 
   const retryMut = useMutation({
     mutationFn: (jobId) => backupRetryExternal(jobId),
     onSuccess: (res) => {
       if (!res?.success) {
-        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        showToast( res?.error || t('backupError'), 'error');
         return;
       }
       qc.invalidateQueries({ queryKey: ['backup-jobs'] });
-      setToast({ visible: true, message: t('backupRetryOk'), type: 'success' });
+      showToast( t('backupRetryOk'), 'success');
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+    onError: (e) => showToast( e?.message || t('backupError'), 'error'),
   });
 
   const saveSysMut = useMutation({
     mutationFn: (body) => backupPatchSystemConfig(body),
     onSuccess: (res) => {
       if (!res?.success) {
-        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        showToast( res?.error || t('backupError'), 'error');
         return;
       }
       qc.invalidateQueries({ queryKey: ['backup-system-config'] });
-      setToast({ visible: true, message: t('backupSettingsSaved'), type: 'success' });
+      showToast( t('backupSettingsSaved'), 'success');
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+    onError: (e) => showToast( e?.message || t('backupError'), 'error'),
   });
 
   const runSysMut = useMutation({
     mutationFn: () => backupRunSystemNow(),
     onSuccess: (res) => {
       if (!res?.success) {
-        setToast({ visible: true, message: res?.error || t('backupError'), type: 'error' });
+        showToast( res?.error || t('backupError'), 'error');
         return;
       }
       qc.invalidateQueries({ queryKey: ['backup-system-jobs'] });
       qc.invalidateQueries({ queryKey: ['backup-jobs'] });
-      setToast({ visible: true, message: t('backupStarted'), type: 'success' });
+      showToast( t('backupStarted'), 'success');
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('backupError'), type: 'error' }),
+    onError: (e) => showToast( e?.message || t('backupError'), 'error'),
   });
 
   const verifySysMut = useMutation({
     mutationFn: (jobId) => backupVerifySystemJob(jobId),
     onSuccess: (res) => {
       if (!res?.success) {
-        setToast({ visible: true, message: res?.error || t('backupVerifyBad'), type: 'error' });
+        showToast( res?.error || t('backupVerifyBad'), 'error');
         return;
       }
       qc.invalidateQueries({ queryKey: ['backup-system-jobs'] });
-      setToast({ visible: true, message: t('backupVerifyOk'), type: 'success' });
+      showToast( t('backupVerifyOk'), 'success');
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('backupVerifyBad'), type: 'error' }),
+    onError: (e) => showToast( e?.message || t('backupVerifyBad'), 'error'),
   });
 
   const verifyCoMut = useMutation({
     mutationFn: (jobId) => backupVerifyCompanyJob(jobId),
     onSuccess: (res) => {
       if (!res?.success) {
-        setToast({ visible: true, message: res?.error || t('backupVerifyBad'), type: 'error' });
+        showToast( res?.error || t('backupVerifyBad'), 'error');
         return;
       }
       qc.invalidateQueries({ queryKey: ['backup-jobs'] });
-      setToast({ visible: true, message: t('backupVerifyOk'), type: 'success' });
+      showToast( t('backupVerifyOk'), 'success');
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('backupVerifyBad'), type: 'error' }),
+    onError: (e) => showToast( e?.message || t('backupVerifyBad'), 'error'),
   });
 
   React.useEffect(() => {
@@ -844,13 +843,6 @@ export default function BackupTab({ activeCompanies = [] }) {
           </>
         )}
       </AdaptiveSheet>
-
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast((p) => ({ ...p, visible: false }))}
-      />
     </div>
   );
 }

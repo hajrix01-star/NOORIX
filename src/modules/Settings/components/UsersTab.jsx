@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import Toast from '../../../components/Toast';
+import { useToast } from '../../../context/ToastContext';
 import SmartTable from '../../../components/common/SmartTable';
 import { Button, Badge, Input, AdaptiveSheet, ScreenShell } from '../../../ui';
 
@@ -15,7 +15,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [form, setForm] = useState({ email: '', password: '', nameAr: '', nameEn: '', roleName: '', companyIds: [] });
 
   const { data: users = [], isLoading } = useQuery({
@@ -38,26 +38,26 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
 
   const createMutation = useMutation({
     mutationFn: createUser,
-    onSuccess: () => { invalidate(); setShowForm(false); setToast({ visible: true, message: t('userAdded'), type: 'success' }); },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('addFailed'), type: 'error' }),
+    onSuccess: () => { invalidate(); setShowForm(false); showToast(t('userAdded'), 'success'); },
+    onError: (e) => showToast(e?.message || t('addFailed'), 'error'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => updateUser(id, body),
-    onSuccess: () => { invalidate(); setEditing(null); setToast({ visible: true, message: t('updateSuccess'), type: 'success' }); },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+    onSuccess: () => { invalidate(); setEditing(null); showToast(t('updateSuccess'), 'success'); },
+    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
   });
 
   const archiveMutation = useMutation({
     mutationFn: archiveUser,
-    onSuccess: () => { invalidate(); setEditing(null); setToast({ visible: true, message: t('userArchived'), type: 'success' }); },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+    onSuccess: () => { invalidate(); setEditing(null); showToast(t('userArchived'), 'success'); },
+    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
   });
 
   const restoreMutation = useMutation({
     mutationFn: restoreUser,
-    onSuccess: () => { invalidate(); setEditing(null); setToast({ visible: true, message: t('userRestored'), type: 'success' }); },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+    onSuccess: () => { invalidate(); setEditing(null); showToast(t('userRestored'), 'success'); },
+    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
   });
 
   function openEdit(u) {
@@ -83,8 +83,6 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
 
   return (
     <ScreenShell>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       <div className="flex items-center justify-end">
         <Button variant="primary" onClick={() => { setForm({ email: '', password: '', nameAr: '', nameEn: '', roleName: roles[0]?.name || '', companyIds: [] }); setShowForm(true); }}>
           {t('addUser')}

@@ -2,7 +2,7 @@
  * PayrollTab — مسيرات الرواتب (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -16,7 +16,8 @@ import SmartTable from '../../../components/common/SmartTable';
 import { PayrollRunFormModal } from '../components/PayrollRunFormModal';
 import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
-import Toast from '../../../components/Toast';
+import { useToast } from '../../../context/ToastContext';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { Button, Badge, Input, ScreenShell } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 
@@ -33,7 +34,7 @@ export default function PayrollTab() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingRunId, setEditingRunId] = useState(null);
   const [detailRunId, setDetailRunId] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -61,34 +62,28 @@ export default function PayrollTab() {
     enabled: !!companyId,
   });
 
-  const updateStatusMutation = useMutation({
+  const updateStatusMutation = useApiMutation({
     mutationFn: ({ id, status }) => updatePayrollRunStatus(id, companyId, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payroll-runs', companyId] });
-      invalidateOnFinancialMutation(queryClient);
-      setToast({ visible: true, message: t('payrollCreated'), type: 'success' });
-    },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
+    invalidateQueries: [['payroll-runs', companyId]],
+    successToast: () => t('payrollCreated'),
+    errorToast: (e) => e?.message || t('saveFailed'),
+    onSuccess: () => invalidateOnFinancialMutation(queryClient),
   });
 
-  const issuePaymentMutation = useMutation({
+  const issuePaymentMutation = useApiMutation({
     mutationFn: ({ id }) => issuePayrollPayment({ payrollRunId: id, transactionDate: getSaudiToday() }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payroll-runs', companyId] });
-      invalidateOnFinancialMutation(queryClient);
-      setToast({ visible: true, message: t('payrollPaidSuccess') || 'تم صرف المسيرة بنجاح', type: 'success' });
-    },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
+    invalidateQueries: [['payroll-runs', companyId]],
+    successToast: () => t('payrollPaidSuccess') || 'تم صرف المسيرة بنجاح',
+    errorToast: (e) => e?.message || t('saveFailed'),
+    onSuccess: () => invalidateOnFinancialMutation(queryClient),
   });
 
-  const deleteRunMutation = useMutation({
+  const deleteRunMutation = useApiMutation({
     mutationFn: ({ id }) => deletePayrollRun(id, companyId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payroll-runs', companyId] });
-      invalidateOnFinancialMutation(queryClient);
-      setToast({ visible: true, message: t('payrollDeleted') || t('deletedSuccessfully'), type: 'success' });
-    },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
+    invalidateQueries: [['payroll-runs', companyId]],
+    successToast: () => t('payrollDeleted') || t('deletedSuccessfully'),
+    errorToast: (e) => e?.message || t('saveFailed'),
+    onSuccess: () => invalidateOnFinancialMutation(queryClient),
   });
 
   const handleDeleteDraft = useCallback((id) => {
@@ -211,8 +206,6 @@ export default function PayrollTab() {
 
   return (
     <ScreenShell>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>
@@ -274,7 +267,7 @@ export default function PayrollTab() {
           onCreate={() => {
             queryClient.invalidateQueries({ queryKey: ['payroll-runs', companyId] });
             invalidateOnFinancialMutation(queryClient);
-            setToast({ visible: true, message: t('payrollCreated'), type: 'success' });
+            showToast(t('payrollCreated'), 'success');
           }}
           onClose={() => setShowCreate(false)}
         />
@@ -288,7 +281,7 @@ export default function PayrollTab() {
             queryClient.invalidateQueries({ queryKey: ['payroll-runs', companyId] });
             queryClient.invalidateQueries({ queryKey: ['payroll-run', editingRunId, companyId] });
             invalidateOnFinancialMutation(queryClient);
-            setToast({ visible: true, message: t('payrollUpdated') || t('savedSuccessfully'), type: 'success' });
+            showToast(t('payrollUpdated') || t('savedSuccessfully'), 'success');
           }}
           onClose={() => setEditingRunId(null)}
         />
