@@ -3,6 +3,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { updateInvoice } from '../../../services/api';
@@ -21,8 +22,17 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
     transactionDate: '',
     notes: '',
   });
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const saveMutation = useApiMutation({
+    mutationFn: ({ id, body }) => updateInvoice(id, body, companyId),
+    showErrorToast: false,
+    onSuccess: () => {
+      onSaved?.();
+      onClose?.();
+    },
+    onError: (e) => setError(e?.message || t('saveFailed')),
+  });
 
   useEffect(() => {
     if (!invoice) return;
@@ -62,9 +72,9 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
       setError(t('totalMustBePositiveShort'));
       return;
     }
-    setSaving(true);
-    try {
-      const res = await updateInvoice(invoice.id, {
+    saveMutation.mutate({
+      id: invoice.id,
+      body: {
         supplierId: form.supplierId || undefined,
         supplierInvoiceNumber: form.supplierInvoiceNumber.trim(),
         kind: form.kind,
@@ -73,16 +83,8 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
         taxAmount: parseFloat(form.taxAmount) || 0,
         transactionDate: form.transactionDate || undefined,
         notes: form.notes?.trim() || undefined,
-      }, companyId);
-      if (res.success) {
-        onSaved?.();
-        onClose?.();
-      } else throw new Error(res.error || t('updateFailed'));
-    } catch (e) {
-      setError(e?.message || t('saveFailed'));
-    } finally {
-      setSaving(false);
-    }
+      },
+    });
   }
 
   if (!invoice) return null;
@@ -100,8 +102,8 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
           <Button variant="ghost" onClick={onClose}>
             {t('cancel')}
           </Button>
-          <Button variant="primary" disabled={saving} onClick={handleSave}>
-            {saving ? t('saving') : t('saveChanges')}
+          <Button variant="primary" disabled={saveMutation.isPending} onClick={handleSave}>
+            {saveMutation.isPending ? t('saving') : t('saveChanges')}
           </Button>
         </>
       }

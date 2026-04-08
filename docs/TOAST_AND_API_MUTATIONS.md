@@ -25,6 +25,7 @@
 ## قائمة تحقق (مكتملة في الكود الحالي)
 
 - [x] استبدال `useMutation` المباشر في الخطافات والشاشات المذكورة في سجل Git لهذا التغيير بـ `useApiMutation` حيث ينطبق.
+- [x] مسارات إضافية: حذف فاتورة من `InvoicesListScreen`، حفظ `InvoiceEditModal`، الحذف النهائي للموظف من `StaffListScreen` و`EmployeeProfileScreen`.
 - [x] `ToastContext` مع منطق تقليل التكرار.
 - [x] `apiResponse.js` + اختبارات Vitest.
 - [x] مفاتيح ترجمة مساعدة للرسائل المشتركة.

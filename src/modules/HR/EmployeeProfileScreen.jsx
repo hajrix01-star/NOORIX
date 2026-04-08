@@ -4,6 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useEmployee, useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
@@ -192,20 +193,24 @@ export default function EmployeeProfileScreen() {
   }, [hrInvoicesData, deductions, t]);
   const queryClient = useQueryClient();
 
-  async function handlePermanentDeleteFromProfile() {
+  const permanentDeleteEmployeeMut = useApiMutation({
+    mutationFn: ({ empId }) => deleteEmployee(empId, companyId),
+    successToast: () => t('employeeDeletedPermanent'),
+    errorToast: (e) => e?.message || t('updateFailed'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee', id, companyId] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+      invalidateOnFinancialMutation(queryClient);
+      navigate('/hr');
+    },
+  });
+
+  function handlePermanentDeleteFromProfile() {
     if (!employee?.id || !companyId) return;
     if (!window.confirm(t('deleteEmployeePermanentConfirm', employeeDisplayName(employee, lang, '') || ''))) return;
     if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
-    const res = await deleteEmployee(employee.id, companyId);
-    if (!res?.success) {
-      showToast(res?.error || t('updateFailed'), 'error');
-      return;
-    }
-    queryClient.invalidateQueries({ queryKey: ['employees'] });
-    queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
-    invalidateOnFinancialMutation(queryClient);
-    showToast(t('employeeDeletedPermanent'), 'success');
-    navigate('/hr');
+    permanentDeleteEmployeeMut.mutate({ empId: employee.id });
   }
 
   const invalidateAll = () => {

@@ -6,6 +6,7 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp }         from '../../context/AppContext';
 import { useToast }       from '../../context/ToastContext';
@@ -145,6 +146,18 @@ export default function InvoicesListScreen() {
   const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
   const KIND_MAP = useMemo(() => buildInvoiceKindBadgeMap(t), [t]);
 
+  const deleteInvoiceMut = useApiMutation({
+    mutationFn: ({ id }) => deleteInvoice(id, companyId),
+    invalidateQueries: [['invoices'], ['vaults'], ['ledger']],
+    successToast: () => t('invoiceDeleted'),
+    errorToast: (e) => e?.message || t('deleteFailed'),
+  });
+
+  const confirmAndDeleteInvoice = useCallback((r) => {
+    if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
+    deleteInvoiceMut.mutate({ id: r.id });
+  }, [t, deleteInvoiceMut]);
+
   const columns = useMemo(() => [
     { key: 'invoiceNumber', label: t('documentNumber'), shrink: true, width: '15%',
       render: (v) => <span className="nx-cell-num nx-cell-accent nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
@@ -175,20 +188,11 @@ export default function InvoicesListScreen() {
           onView={(r) => setViewingInvoice(r)}
           onPrint={() => window.print()}
           onEdit={(r) => setEditingInvoice(r)}
-          onDelete={async (r) => {
-            if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
-            const res = await deleteInvoice(r.id, companyId);
-            if (res.success) {
-              queryClient.invalidateQueries({ queryKey: ['invoices'] });
-              queryClient.invalidateQueries({ queryKey: ['vaults'] });
-              queryClient.invalidateQueries({ queryKey: ['ledger'] });
-              showToast(t('invoiceDeleted'), 'success');
-            } else showToast(res.error || t('deleteFailed'), 'error');
-          }}
+          onDelete={confirmAndDeleteInvoice}
         />
       ),
     },
-  ], [userRole, companyId, queryClient, t, STATUS_MAP, KIND_MAP, showToast]);
+  ], [userRole, companyId, t, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice]);
 
   const { suppliers } = useSuppliers(companyId);
 
@@ -285,20 +289,11 @@ export default function InvoicesListScreen() {
           companyId={companyId}
           onPrint={() => window.print()}
           onEdit={(r) => setEditingInvoice(r)}
-          onDelete={async (r) => {
-            if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
-            const res = await deleteInvoice(r.id, companyId);
-            if (res.success) {
-              queryClient.invalidateQueries({ queryKey: ['invoices'] });
-              queryClient.invalidateQueries({ queryKey: ['vaults'] });
-              queryClient.invalidateQueries({ queryKey: ['ledger'] });
-              showToast(t('invoiceDeleted'), 'success');
-            } else showToast(res.error || t('deleteFailed'), 'error');
-          }}
+          onDelete={confirmAndDeleteInvoice}
         />
       </div>
     </div>
-  ), [KIND_MAP, STATUS_MAP, userRole, companyId, queryClient, t, showToast]);
+  ), [KIND_MAP, STATUS_MAP, userRole, companyId, t, confirmAndDeleteInvoice]);
 
   return (
     <ScreenShell>

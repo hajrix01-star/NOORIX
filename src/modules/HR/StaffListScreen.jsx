@@ -10,6 +10,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { hrFmt } from './utils/hrFmt';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
@@ -63,6 +64,19 @@ export default function StaffListScreen({ embedded }) {
   ];
   const queryClient = useQueryClient();
   const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
+
+  const permanentDeleteEmployeeMut = useApiMutation({
+    mutationFn: ({ id }) => deleteEmployee(id, companyId),
+    successToast: () => t('employeeDeletedPermanent'),
+    errorToast: (e) => e?.message || t('updateFailed'),
+    onSuccess: (_data, variables) => {
+      const id = variables.id;
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['employee', id, companyId] });
+      invalidateOnFinancialMutation(queryClient);
+    },
+  });
 
   const { create, update, createAdvance } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: false });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
@@ -140,21 +154,12 @@ export default function StaffListScreen({ embedded }) {
     setListPage(1);
   }, []);
 
-  const handlePermanentDelete = useCallback(async (row) => {
+  const handlePermanentDelete = useCallback((row) => {
     if (!companyId || !row?.id) return;
     if (!window.confirm(t('deleteEmployeePermanentConfirm', employeeDisplayName(row, lang, '')))) return;
     if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
-    const res = await deleteEmployee(row.id, companyId);
-    if (!res?.success) {
-      showToast(res?.error || t('updateFailed'), 'error');
-      return;
-    }
-    queryClient.invalidateQueries({ queryKey: ['employees'] });
-    queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['employee', row.id, companyId] });
-    invalidateOnFinancialMutation(queryClient);
-    showToast(t('employeeDeletedPermanent'), 'success');
-  }, [companyId, t, queryClient, lang, showToast]);
+    permanentDeleteEmployeeMut.mutate({ id: row.id });
+  }, [companyId, t, lang, permanentDeleteEmployeeMut]);
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
