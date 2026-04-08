@@ -5,6 +5,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { chatQuery, getExpenseLines, getEmployees, getVaults } from '../../services/api';
 import { getStoredUser } from '../../services/authStore';
@@ -39,28 +40,6 @@ const PERMANENT_QUESTIONS = [
   { ar: 'كم عدد الموظفين؟', en: 'How many employees?', domain: (c) => c(PERMISSIONS.VIEW_EMPLOYEES) || c(PERMISSIONS.EMPLOYEES_READ) },
   { ar: 'مساعدة', en: 'Help', domain: () => true },
 ];
-
-function ToastBanner({ message, type, isAr, onDismiss }) {
-  const isError = type === 'error';
-  useEffect(() => {
-    const t = setTimeout(onDismiss, 3500);
-    return () => clearTimeout(t);
-  }, [onDismiss]);
-  return (
-    <div
-      role="alert"
-      className="fixed bottom-6 py-3 px-5 rounded-[10px] text-white text-[14px] font-semibold"
-      style={{
-        [isAr ? 'right' : 'left']: 24,
-        background: isError ? 'var(--noorix-red-95)' : 'var(--noorix-accent-green)',
-        zIndex: 1100,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      }}
-    >
-      {message}
-    </div>
-  );
-}
 
 /** كرت احترافي للردود والتقارير — عرض سطور منفصلة (عنوان، اسم، مبلغ، إلخ) */
 function ReportCard({ text, isAr, createdAt }) {
@@ -161,7 +140,7 @@ export default function SmartChatScreen() {
   const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
   const [expenseMode, setExpenseMode] = useState(null);
   const [expenseEditLine, setExpenseEditLine] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [visibleMessageCount, setVisibleMessageCount] = useState(CHAT_PAGE_SIZE);
 
   const messagesScrollRef = useRef(null);
@@ -365,17 +344,17 @@ export default function SmartChatScreen() {
               await createCustomAllowance({ companyId: activeCompanyId, employeeId: empId, nameAr: row.nameAr, amount: row.amount });
             }
           }
-          setToast({ visible: true, message: t('employeeAdded'), type: 'success' });
+          showToast(t('employeeAdded'), 'success');
           setAddEmployeeOpen(false);
           const eb = empBody || employeeBody;
           const empName = eb?.name || eb?.nameAr || eb?.nameEn || '—';
           const salary = Number(eb?.basicSalary ?? 0);
           addMessage({ role: 'assistant', textAr: `النوع: إضافة موظف\nالاسم: ${empName}\nالمسمى: ${eb?.jobTitle || '—'}\nالراتب: ${salary.toLocaleString('en')} ﷼`, textEn: `Type: Add employee\nName: ${empName}\nTitle: ${eb?.jobTitle || '—'}\nSalary: ${salary.toLocaleString('en')} SAR` });
         } catch (e) {
-          setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+          showToast(e?.message || t('saveFailed'), 'error');
         }
       },
-      onError: (e) => setToast({ visible: true, message: e?.message || (isAr ? 'فشل الإضافة' : 'Add failed'), type: 'error' }),
+      onError: (e) => showToast(e?.message || (isAr ? 'فشل الإضافة' : 'Add failed'), 'error'),
     });
   };
 
@@ -563,7 +542,7 @@ export default function SmartChatScreen() {
             invalidateOnFinancialMutation(qc);
             qc.invalidateQueries({ queryKey: ['expense-lines'] });
             setExpenseMode(null);
-            setToast({ visible: true, message: isAr ? 'تمت إضافة بند المصروف' : 'Expense line added', type: 'success' });
+            showToast(isAr ? 'تمت إضافة بند المصروف' : 'Expense line added', 'success');
             addMessage({ role: 'assistant', textAr: 'النوع: إضافة بند مصروف\nالحالة: تمت الإضافة بنجاح', textEn: 'Type: Add expense line\nStatus: Added successfully' });
           }}
         />
@@ -576,7 +555,7 @@ export default function SmartChatScreen() {
           onSaved={() => {
             invalidateOnFinancialMutation(qc);
             setExpenseMode(null);
-            setToast({ visible: true, message: isAr ? 'تم تسجيل المصروف' : 'Expense recorded', type: 'success' });
+            showToast(isAr ? 'تم تسجيل المصروف' : 'Expense recorded', 'success');
             addMessage({ role: 'assistant', textAr: 'النوع: سداد مصروف\nالحالة: تم التسجيل بنجاح', textEn: 'Type: Expense payment\nStatus: Recorded successfully' });
           }}
         />
@@ -603,7 +582,7 @@ export default function SmartChatScreen() {
               qc.invalidateQueries({ queryKey: ['expense-lines'] });
               setExpenseEditLine(undefined);
               setExpenseMode(null);
-              setToast({ visible: true, message: isAr ? 'تم تعديل بند المصروف' : 'Expense line updated', type: 'success' });
+              showToast(isAr ? 'تم تعديل بند المصروف' : 'Expense line updated', 'success');
               addMessage({ role: 'assistant', textAr: 'النوع: تعديل بند مصروف\nالحالة: تم التعديل بنجاح', textEn: 'Type: Edit expense line\nStatus: Updated successfully' });
             }}
           />
@@ -643,9 +622,6 @@ export default function SmartChatScreen() {
         </div>
       </AdaptiveSheet>
 
-      {toast.visible && (
-        <ToastBanner message={toast.message} type={toast.type} isAr={isAr} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-      )}
     </div>
   );
 }
