@@ -6,6 +6,8 @@
  * ✅ لا يوجد PERMISSION_MODULES أو SYSTEM_ROLE_PERMISSIONS — تُجلب من API.
  */
 
+import { getAuthToken } from '../services/authStore';
+
 export const PERMISSIONS = {
   VIEW_OWNER:       'VIEW_OWNER',
   VIEW_DASHBOARD:   'VIEW_DASHBOARD',
@@ -104,6 +106,29 @@ export function isSuperAdmin(role) {
 export function canDeletePayrollRunRole(role) {
   const r = (role || '').toLowerCase();
   return r === 'owner' || r === 'super_admin' || r === 'manager';
+}
+
+/** يقرأ حقل role من JWT عند غيابه في كائن المستخدم (سياق /me لم يكتمل بعد). */
+function decodeJwtRole() {
+  const token = getAuthToken();
+  if (!token || typeof token !== 'string') return '';
+  const parts = token.split('.');
+  if (parts.length < 2) return '';
+  try {
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64.length % 4 ? '='.repeat(4 - (b64.length % 4)) : '';
+    const json = JSON.parse(atob(b64 + pad));
+    return String(json.role || '').toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+/** دور المستخدم للعرض: السياق أولاً ثم JWT. */
+export function resolveUserRole(primary) {
+  const p = String(primary || '').toLowerCase();
+  if (p) return p;
+  return decodeJwtRole();
 }
 
 /** مسارات الصفحات → صلاحية مطلوبة */
