@@ -181,7 +181,7 @@ className="text-[20px]"    // 20px — عنوان صفحة
 شريط تبويبات موحّد من `src/ui/ScreenTabs.jsx` — **لا تكرر** يدوياً `nx-tab-bar` + حلقات `Button` في شاشات جديدة.
 
 - **`variant="underline"`** — شريط سفلي (لوحة، مصاريف، موردين، مودالات، إلخ). يدعم `fadeWrap` (افتراضي `true`) و`barClassName` عند الحاجة.
-- **`variant="segmented"`** — حبات داخل كرت (مثل الموارد البشرية). الألوان عبر `.nx-tab-btn--segmented` في `index.css` بدون `style` مضمّن.
+- **`variant="segmented"`** — حبات داخل كرت لعدد **قليل** من التبويبات القصيرة؛ على الجوال مع تبويبات كثيرة/نص طويل يُفضَّل **`underline`** داخل `noorix-surface-card overflow-hidden p-0` + `nx-tab-content` (نمط المصاريف / الموارد البشرية). الألوان عبر `.nx-tab-btn--segmented` في `index.css`.
 
 ```jsx
 import { ScreenTabs } from '../../ui';

@@ -96,23 +96,23 @@ export default function HRMainScreen() {
         )}
       </div>
 
-      {/* ── شريط التبويبات — segmented + تمرير أفقي على الجوال ── */}
-      <ScreenTabs
-        variant="segmented"
-        items={hrTabItems}
-        value={activeTab}
-        onChange={setActiveTab}
-      />
-
-      {/* ── محتوى التبويب ── */}
-      <div className="noorix-surface-card p-5 min-h-[200px]">
-        {activeTab === 'employees' && <StaffListScreen embedded />}
-        {activeTab === 'payroll'   && <PayrollTab />}
-        {activeTab === 'leave'     && <LeaveTab />}
-        {activeTab === 'advances'  && <AdvancesTab />}
-        {activeTab === 'residency' && <ResidencyTab />}
-        {activeTab === 'salaryCalc' && <SalaryCalcTab />}
-        {activeTab === 'eosCalc'   && <EOSCalcTab />}
+      {/* ── تبويبات + محتوى داخل كرت واحد (مثل المصاريف): underline + تمرير أفقي على الجوال ── */}
+      <div className="noorix-surface-card overflow-hidden p-0">
+        <ScreenTabs
+          variant="underline"
+          items={hrTabItems}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
+        <div className="nx-tab-content min-h-[200px]">
+          {activeTab === 'employees' && <StaffListScreen embedded />}
+          {activeTab === 'payroll'   && <PayrollTab />}
+          {activeTab === 'leave'     && <LeaveTab />}
+          {activeTab === 'advances'  && <AdvancesTab />}
+          {activeTab === 'residency' && <ResidencyTab />}
+          {activeTab === 'salaryCalc' && <SalaryCalcTab />}
+          {activeTab === 'eosCalc'   && <EOSCalcTab />}
+        </div>
       </div>
 
     </div>

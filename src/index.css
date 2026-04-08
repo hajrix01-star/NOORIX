@@ -4169,6 +4169,16 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   .nx-tab-bar::-webkit-scrollbar {
     display: none;
   }
+  @media (max-width: 640px) {
+    .nx-tab-bar,
+    .nx-segmented-tab-bar {
+      scroll-padding-inline: 0.5rem;
+    }
+    /* لمسة إصبع مريحة على الجوال (قواعد المسارات الحرجة) */
+    .nx-tab-btn {
+      min-height: 44px;
+    }
+  }
 
   /* غلاف تبويبات: تلاشي خفيف عند الحافة (مؤشر تمرير على الجوال) */
   .nx-tab-bar-fade-wrap {
