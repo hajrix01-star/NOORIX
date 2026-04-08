@@ -31,7 +31,7 @@ export default function ConnectedTabStrip({
     >
       <div
         className={cn(
-          'nx-connected-tab-strip flex flex-nowrap items-stretch overflow-x-auto text-[14px]',
+          'nx-connected-tab-strip isolate flex flex-nowrap items-stretch overflow-x-auto text-[14px]',
           'bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
           '[-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
           'border-b border-noorix-border',
@@ -52,13 +52,16 @@ export default function ConnectedTabStrip({
                 /* grid: مركز النص في الصف العلوي؛ السباركلاين صف ثابت — size=auto يزيل h-9 من الزر */
                 '!grid !h-full min-h-[39px] grid-cols-1 grid-rows-[minmax(36px,1fr)_3px] sm:grid-rows-[minmax(38px,1fr)_3px] self-stretch shrink-0 rounded-none',
                 'border-0 border-e border-noorix-border-strong last:border-e-0',
-                'text-[14px] leading-normal whitespace-nowrap',
-                'transition-all duration-200 ease-out',
+                'text-[14px] font-semibold leading-normal whitespace-nowrap',
+                /* لا transition-all — يقلل الاهتزاز مع الظلال؛ وزن موحّد يمنع انزياح العرض عند تبديل النشط */
+                'transition-[background-color,color,box-shadow] duration-200 ease-out',
                 active
-                  ? 'relative z-[1] bg-noorix-surface text-noorix-text font-bold shadow-[0_6px_18px_-4px_rgba(10,31,68,0.14)]'
-                  : 'z-0 bg-noorix-bg-muted/90 text-noorix-muted font-semibold shadow-none hover:z-[1] hover:bg-noorix-surface hover:text-noorix-text hover:shadow-[0_3px_10px_-2px_rgba(10,31,68,0.1)]',
+                  ? 'relative z-[1] bg-noorix-surface text-noorix-text shadow-[0_6px_18px_-4px_rgba(10,31,68,0.14)]'
+                  : 'z-0 bg-noorix-bg-muted/90 text-noorix-muted shadow-none hover:bg-noorix-surface hover:text-noorix-text hover:shadow-[0_3px_10px_-2px_rgba(10,31,68,0.1)]',
               )}
-              onClick={() => onChange(item.id)}
+              onClick={() => {
+                if (item.id !== value) onChange(item.id);
+              }}
             >
               <span className="flex h-full min-h-0 w-full items-center justify-center px-3 py-0 text-center">
                 {item.label}
