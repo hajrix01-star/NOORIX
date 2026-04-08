@@ -2,7 +2,7 @@
  * ExpensesScreen — المصاريف الثابتة والمتغيرة
  * 4 تبويبات: أصناف المصاريف، تسجيل مصروف، إدخال جماعي، سجل المدفوعات
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
@@ -16,15 +16,6 @@ import { useSuppliers } from '../../hooks/useSuppliers';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { Button, Input, ScreenTabs, ScreenShell } from '../../ui';
-
-const REFRESH_ICON = (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-    <path d="M21 3v5h-5" />
-    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-    <path d="M3 21v-5h5" />
-  </svg>
-);
 import Toast from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
@@ -34,6 +25,15 @@ import ExpenseLineFormModal from './components/ExpenseLineFormModal';
 import ExpenseFormModal from './components/ExpenseFormModal';
 import ExpenseBatchTable from './components/ExpenseBatchTable';
 import PaymentHistoryTab from './components/PaymentHistoryTab';
+
+const REFRESH_ICON = (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+    <path d="M21 3v5h-5" />
+    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+    <path d="M3 21v-5h5" />
+  </svg>
+);
 
 const TABS = [
   { id: 'lines', labelKey: 'expenseLinesTab' },
@@ -55,6 +55,7 @@ export default function ExpensesScreen() {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingLine, setEditingLine] = useState(null);
   const [filterKind, setFilterKind] = useState('');
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
 
   const { data: expenseLines = [], isLoading: linesLoading } = useQuery({
     queryKey: ['expense-lines', companyId, filterKind],
@@ -98,6 +99,10 @@ export default function ExpensesScreen() {
     [t],
   );
 
+  useEffect(() => {
+    if (activeTab !== 'entry') setShowExpenseForm(false);
+  }, [activeTab]);
+
   return (
     <ScreenShell>
       <div>
@@ -110,35 +115,45 @@ export default function ExpensesScreen() {
         onChange={setActiveTab}
         contentClassName="nx-tab-content"
         tabBarEnd={
-          companyId && activeTab === 'lines' ? (
-            <div className="nx-toolbar w-full sm:w-auto sm:justify-end">
-              <div className="w-full min-w-0 sm:w-[min(100%,10.5rem)] shrink-0">
-                <Input
-                  type="select"
-                  size="sm"
-                  value={filterKind}
-                  onChange={(e) => setFilterKind(e.target.value)}
-                  className="w-full"
-                  aria-label={t('allTypes')}
-                >
-                  <option value="">{t('allTypes')}</option>
-                  <option value="fixed_expense">{t('fixedExpense')}</option>
-                  <option value="expense">{t('variableExpense')}</option>
-                </Input>
-              </div>
-              <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={handleCreateLine}>
-                {t('addExpenseLine')}
-              </Button>
-              <Button
-                size="sm"
-                className="shrink-0 whitespace-nowrap"
-                icon={REFRESH_ICON}
-                onClick={() => queryClient.invalidateQueries({ queryKey: ['expense-lines'] })}
-              >
-                {t('refresh')}
-              </Button>
-            </div>
-          ) : null
+          !companyId
+            ? null
+            : activeTab === 'lines'
+              ? (
+                  <div className="nx-toolbar !flex-nowrap max-w-full min-w-0 justify-end">
+                    <div className="w-[min(100%,11rem)] shrink-0">
+                      <Input
+                        type="select"
+                        size="sm"
+                        value={filterKind}
+                        onChange={(e) => setFilterKind(e.target.value)}
+                        className="w-full"
+                        aria-label={t('allTypes')}
+                      >
+                        <option value="">{t('allTypes')}</option>
+                        <option value="fixed_expense">{t('fixedExpense')}</option>
+                        <option value="expense">{t('variableExpense')}</option>
+                      </Input>
+                    </div>
+                    <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={handleCreateLine}>
+                      {t('addExpenseLine')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="shrink-0 whitespace-nowrap"
+                      icon={REFRESH_ICON}
+                      onClick={() => queryClient.invalidateQueries({ queryKey: ['expense-lines'] })}
+                    >
+                      {t('refresh')}
+                    </Button>
+                  </div>
+                )
+              : activeTab === 'entry'
+                ? (
+                    <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={() => setShowExpenseForm(true)}>
+                      {t('expenseRecordNew')}
+                    </Button>
+                  )
+                : null
         }
       >
       {activeTab === 'lines' && (
@@ -151,15 +166,25 @@ export default function ExpensesScreen() {
         />
       )}
 
-      {activeTab === 'entry' && (
-        <ExpenseFormTab
+      {activeTab === 'entry' && companyId && showExpenseForm && (
+        <ExpenseFormModal
           companyId={companyId}
+          onClose={() => setShowExpenseForm(false)}
           onSaved={() => {
+            setShowExpenseForm(false);
             invalidateOnFinancialMutation(queryClient);
             queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
             showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
           }}
         />
+      )}
+
+      {activeTab === 'entry' && !companyId && (
+        <p className="m-0 text-[13px] text-noorix-muted">{t('pleaseSelectCompany')}</p>
+      )}
+
+      {activeTab === 'entry' && companyId && !showExpenseForm && (
+        <p className="m-0 text-[13px] text-noorix-muted">{t('expensesDesc')}</p>
       )}
 
       {activeTab === 'batch' && (
@@ -209,23 +234,5 @@ export default function ExpensesScreen() {
         onClose={() => setToast((p) => ({ ...p, visible: false }))}
       />
     </ScreenShell>
-  );
-}
-
-function ExpenseFormTab({ companyId, onSaved }) {
-  const [showForm, setShowForm] = useState(false);
-  return (
-    <div>
-      <Button variant="primary" onClick={() => setShowForm(true)}>
-        + تسجيل مصروف جديد
-      </Button>
-      {showForm && (
-        <ExpenseFormModal
-          companyId={companyId}
-          onClose={() => setShowForm(false)}
-          onSaved={() => { setShowForm(false); onSaved(); }}
-        />
-      )}
-    </div>
   );
 }

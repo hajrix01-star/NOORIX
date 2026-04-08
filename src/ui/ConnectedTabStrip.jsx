@@ -37,15 +37,15 @@ export default function ConnectedTabStrip({
     >
       <div
         className={cn(
-          'flex w-full flex-col border-b border-noorix-border sm:flex-row sm:items-stretch',
+          'flex w-full flex-col border-b border-noorix-border sm:flex-row sm:items-stretch sm:justify-between sm:gap-0',
           hasEnd && 'bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
         )}
       >
         <div
           className={cn(
-            'nx-connected-tab-strip isolate flex min-w-0 flex-1 flex-nowrap items-stretch overflow-x-auto text-[14px]',
-            !hasEnd && 'bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
-            hasEnd && 'bg-transparent',
+            'nx-connected-tab-strip isolate flex min-w-0 flex-nowrap items-stretch overflow-x-auto text-[14px]',
+            /* مع tabBarEnd: لا نستخدم flex-1 حتى لا يبقى فراغ كبير بين التبويبات وشريط الأدوات */
+            hasEnd ? 'min-w-0 max-w-full shrink bg-transparent' : 'min-w-0 flex-1 bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
             '[-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
           )}
           role="tablist"
@@ -108,8 +108,8 @@ export default function ConnectedTabStrip({
         {hasEnd && (
           <div
             className={cn(
-              'flex shrink-0 flex-wrap items-center justify-end gap-2 border-noorix-border bg-noorix-surface px-3 py-2 shadow-[inset_0_1px_0_0_var(--noorix-border)] sm:min-h-[39px] sm:border-s sm:border-t-0 sm:py-0 sm:shadow-none',
-              'border-t sm:max-w-[min(100%,28rem)] lg:max-w-none',
+              'flex min-w-0 shrink-0 flex-nowrap items-center justify-end gap-2 overflow-x-auto border-noorix-border bg-noorix-surface px-3 py-2 shadow-[inset_0_1px_0_0_var(--noorix-border)] sm:min-h-[39px] sm:border-s sm:border-t-0 sm:py-0 sm:shadow-none',
+              'border-t [-webkit-overflow-scrolling:touch]',
             )}
           >
             {tabBarEnd}

@@ -23,7 +23,7 @@ const EMPTY_ROW = () => ({
 });
 
 export default function ExpenseBatchTable({ companyId, onSaved }) {
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [batchDate, setBatchDate] = useState(getSaudiToday());
@@ -200,35 +200,44 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-3 mb-4 items-end">
-        <Input
-          label="تاريخ العملية"
-          type="date"
-          value={batchDate}
-          onChange={(e) => setBatchDate(e.target.value)}
-        />
-        <div className="flex-[1_1_160px] min-w-0">
+      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <Input
-            label="الخزينة *"
-            type="select"
-            value={vaultId}
-            onChange={(e) => setVaultId(e.target.value)}
-          >
-            <option value="">— اختر الخزينة —</option>
-            {activeVaults.map((v) => (
-              <option key={v.id} value={v.id}>{v.nameAr || v.nameEn}</option>
-            ))}
-          </Input>
+            label="تاريخ العملية"
+            type="date"
+            size="sm"
+            value={batchDate}
+            onChange={(e) => setBatchDate(e.target.value)}
+          />
+          <div className="min-w-0 w-full sm:w-[min(100%,14rem)] sm:flex-1 sm:max-w-xs">
+            <Input
+              label="الخزينة *"
+              type="select"
+              size="sm"
+              value={vaultId}
+              onChange={(e) => setVaultId(e.target.value)}
+            >
+              <option value="">— اختر الخزينة —</option>
+              {activeVaults.map((v) => (
+                <option key={v.id} value={v.id}>{v.nameAr || v.nameEn}</option>
+              ))}
+            </Input>
+          </div>
         </div>
-        <Button onClick={addRow}>+ إضافة صف</Button>
+        <Button size="sm" className="shrink-0 whitespace-nowrap self-end sm:self-auto" onClick={addRow}>
+          {t('expenseBatchAddRow')}
+        </Button>
       </div>
 
-      <SmartTable columns={columns} data={tableData} keyExtractor={(r) => r.key} showRowNumbers rowNumberWidth="1%" />
+      <SmartTable columns={columns} data={tableData} keyExtractor={(r) => r.key} />
 
       <div className="noorix-summary-bar noorix-summary-bar--4 mt-4">
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">عدد الصفوف</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{summary.count}</div>
+          <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{rows.length}</div>
+          <div className="mt-0.5 text-[11px] font-medium text-noorix-muted">
+            {validRows.length} {t('expenseBatchRowsValidHint')}
+          </div>
         </div>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">الصافي</div>
@@ -245,9 +254,10 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       </div>
       <Button
         variant="primary"
+        size="md"
         onClick={() => saveMutation.mutate()}
         disabled={saveMutation.isPending || validRows.length === 0 || !vaultId}
-        className="w-full mt-3"
+        className="mt-3 w-full min-h-[44px] sm:min-h-0"
       >
         {saveMutation.isPending ? 'جاري الحفظ...' : 'حفظ الدفعة'}
       </Button>

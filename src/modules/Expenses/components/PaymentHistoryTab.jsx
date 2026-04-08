@@ -115,19 +115,32 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           </label>
         </div>
       )}
-      <div className="nx-toolbar mt-4 mb-3">
-        <Input
-          type="select"
-          value={filterKind}
-          onChange={(e) => setFilterKind(e.target.value)}
-        >
-          <option value="">الكل (ثابت + متغير)</option>
-          <option value="fixed_expense">ثابت فقط</option>
-          <option value="expense">متغير فقط</option>
-        </Input>
-        <Button onClick={handlePrint} disabled={!activeItems.length}>طباعة</Button>
-        <Button onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>Excel</Button>
-        <Button onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', filename: 'payment-history.pdf' })} disabled={!activeItems.length}>PDF</Button>
+      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
+        <div className="nx-toolbar !flex-nowrap w-full justify-end sm:w-auto">
+          <div className="w-full min-w-0 sm:w-[min(100%,14rem)] shrink-0">
+            <Input
+              type="select"
+              size="sm"
+              value={filterKind}
+              onChange={(e) => setFilterKind(e.target.value)}
+              className="w-full"
+              aria-label={t('paymentHistoryTab')}
+            >
+              <option value="">الكل (ثابت + متغير)</option>
+              <option value="fixed_expense">ثابت فقط</option>
+              <option value="expense">متغير فقط</option>
+            </Input>
+          </div>
+          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!activeItems.length}>
+            طباعة
+          </Button>
+          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>
+            Excel
+          </Button>
+          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', filename: 'payment-history.pdf' })} disabled={!activeItems.length}>
+            PDF
+          </Button>
+        </div>
       </div>
       <div className="mt-2">
         <SmartTable
