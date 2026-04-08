@@ -94,7 +94,10 @@ export default {
   themePreviewLab2Secondary: { ar: 'ثانوي', en: 'Secondary' },
   themePreviewLab2Primary: { ar: 'إجراء رئيسي', en: 'Primary action' },
   themePreviewLab3Title: { ar: 'تبويبات داخل كرت', en: 'Tabs inside card' },
-  themePreviewLab3Hint: { ar: 'noorix-surface-card + p-0 + ScreenTabs underline', en: 'surface card, p-0, ScreenTabs underline' },
+  themePreviewLab3Hint: {
+    ar: 'نصوص تبويب بسيطة (Button raw) + فاصل · — بدون شريط underline أو تباعد كبير',
+    en: 'Plain text tabs (Button raw) + dot separators — no underline bar or wide spacing',
+  },
   themePreviewLab3ContentA: { ar: 'محتوى التبويب الأول (وهمي).', en: 'First tab placeholder content.' },
   themePreviewLab3ContentB: { ar: 'محتوى التبويب الثاني (وهمي).', en: 'Second tab placeholder content.' },
   themePreviewLab4Title: { ar: 'أزرار بحجم sm', en: 'Buttons (sm)' },

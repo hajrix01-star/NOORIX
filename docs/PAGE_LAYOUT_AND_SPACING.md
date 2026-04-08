@@ -53,7 +53,7 @@
 |------|-----------|
 | 1 | عنوان صفحة + وصف (نمط `ScreenTitle` + نص ثانوي) |
 | 2 | `nx-page-header` + أزرار `sm` و`gap-2` |
-| 3 | `noorix-surface-card` + `p-0` + `ScreenTabs` underline + `nx-tab-content` |
+| 3 | كرت + تبويبات كنصوص بسيطة (`Button` `raw`، فاصل `·`) بدون `ScreenTabs` |
 | 4 | أزرار `Button` بأحجام وألوان شائعة |
 | 5 | حقول `Input` في شبكة |
 | 6 | `Badge` |

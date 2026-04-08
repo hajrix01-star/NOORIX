@@ -9,8 +9,8 @@ import {
   Input,
   KebabMenu,
   Modal,
-  ScreenTabs,
   SmartTable,
+  cn,
 } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -101,11 +101,30 @@ export default function ThemeUILabTab() {
         title={t('themePreviewLab3Title')}
         hint={t('themePreviewLab3Hint')}
       >
-        <div className="noorix-surface-card overflow-hidden p-0 border border-noorix-border rounded-xl">
-          <ScreenTabs variant="underline" items={demoTabItems} value={demoTab} onChange={setDemoTab} />
-          <div className="nx-tab-content p-4 text-[13px] text-noorix-muted min-h-[72px]">
-            {demoTab === 'a' ? t('themePreviewLab3ContentA') : t('themePreviewLab3ContentB')}
+        <div className="noorix-surface-card border border-noorix-border rounded-xl p-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0 text-[13px] leading-none" role="tablist">
+            {demoTabItems.map((item, i) => (
+              <React.Fragment key={item.id}>
+                {i > 0 ? <span className="text-noorix-border select-none" aria-hidden>·</span> : null}
+                <Button
+                  type="button"
+                  variant="raw"
+                  role="tab"
+                  aria-selected={demoTab === item.id}
+                  className={cn(
+                    'min-h-0 h-auto py-0 px-0 text-[13px] font-normal rounded-none shadow-none',
+                    demoTab === item.id ? 'text-noorix-text' : 'text-noorix-muted',
+                  )}
+                  onClick={() => setDemoTab(item.id)}
+                >
+                  {item.label}
+                </Button>
+              </React.Fragment>
+            ))}
           </div>
+          <p className="text-[13px] text-noorix-muted m-0 mt-2">
+            {demoTab === 'a' ? t('themePreviewLab3ContentA') : t('themePreviewLab3ContentB')}
+          </p>
         </div>
       </LabBlock>
 
