@@ -90,13 +90,13 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         {/* النوع */}
         <div>
           <label className="text-[13px] font-semibold mb-1.5 block">{t('vaultType')}</label>
-          <div className="vault-type-grid grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {VAULT_TYPES.map((vt) => (
               <Button
                 key={vt.value}
                 type="button"
                 size="auto"
-                className="nx-vault-type-btn"
+                className="flex flex-col items-center justify-center gap-1 py-2.5 px-1.5 rounded border-2 border-noorix-border text-[12px] font-semibold text-noorix-muted w-full hover:border-noorix-blue hover:text-noorix-blue transition-colors"
                 onClick={() => set('type', vt.value)}
                 style={form.type === vt.value ? {
                   border: `2px solid ${TYPE_COLORS[vt.value]}`,
@@ -104,10 +104,10 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                   color: TYPE_COLORS[vt.value],
                 } : undefined}
               >
-                <span className="flex h-[22px] min-h-[22px] items-center justify-center text-current [&_svg]:shrink-0" aria-hidden>
+                <span className="flex h-[22px] w-full items-center justify-center [&_svg]:shrink-0" aria-hidden>
                   {VAULT_TYPE_SVGS[vt.value] ?? VAULT_TYPE_SVGS.bank}
                 </span>
-                <span className="text-center">{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].split('/')[0].trim()}</span>
+                <span className="text-center leading-tight">{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].split('/')[0].trim()}</span>
               </Button>
             ))}
 
@@ -115,12 +115,12 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
             <Button
               type="button"
               size="auto"
-              className="nx-vault-type-btn"
+              className="flex flex-col items-center justify-center gap-1 py-2.5 px-1.5 rounded border-2 border-noorix-border text-[12px] font-semibold text-noorix-muted w-full hover:border-noorix-blue hover:text-noorix-blue transition-colors"
               onClick={() => set('type', 'custom')}
-              style={isCustom ? { border: '2px solid #64748b', background: 'var(--noorix-muted-10)', color: 'var(--noorix-text-muted)' } : undefined}
+              style={isCustom ? { border: '2px solid #64748b', background: 'var(--noorix-bg-muted)', color: 'var(--noorix-text-muted)' } : undefined}
             >
-              <span className="flex h-[22px] min-h-[22px] items-center justify-center font-extrabold text-[18px] leading-none">{sanitizeCustomEmoji(form.customEmoji)}</span>
-              <span>{t('vaultTypeCustom') || 'مخصص'}</span>
+              <span className="flex h-[22px] w-full items-center justify-center font-extrabold text-[18px] leading-none">{sanitizeCustomEmoji(form.customEmoji)}</span>
+              <span className="text-center leading-tight">{t('vaultTypeCustom') || 'مخصص'}</span>
             </Button>
           </div>
 
