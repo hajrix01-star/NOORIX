@@ -5,7 +5,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { ScreenTabs } from '../../ui';
+import { ScreenTabs, ScreenShell } from '../../ui';
 import { SuppliersTab } from './components/SuppliersTab';
 import { CategoriesTab } from './components/CategoriesTab';
 
@@ -26,7 +26,7 @@ export default function SuppliersScreen() {
   );
 
   return (
-    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+    <ScreenShell>
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('suppliersAndCategoriesTitle')}</h1>
       </div>
@@ -50,6 +50,6 @@ export default function SuppliersScreen() {
           {activeTab === 'categories' && <CategoriesTab companyId={companyId} />}
         </>
       )}
-    </div>
+    </ScreenShell>
   );
 }

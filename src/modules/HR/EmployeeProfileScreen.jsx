@@ -21,7 +21,7 @@ import {
 } from '../../services/api';
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { hrFmt } from './utils/hrFmt';
-import { Badge, Button } from '../../ui';
+import { Badge, Button, ScreenShell } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import {
   parseWorkHours,
@@ -299,7 +299,7 @@ export default function EmployeeProfileScreen() {
   })();
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-page-header employee-profile-header-bar">
@@ -534,6 +534,6 @@ export default function EmployeeProfileScreen() {
           onClose={() => setShowAdvance(false)}
         />
       )}
-    </div>
+    </ScreenShell>
   );
 }

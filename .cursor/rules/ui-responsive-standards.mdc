@@ -29,20 +29,28 @@ alwaysApply: true
 
 ## جذر شاشات الأقسام (داخل `app-main`) — إلزامي
 
-تحت `@media (max-width: 768px)` يوفّر `.app-main` هامشاً أفقياً (~16px). إذا أضاف جذر الشاشة `px-3` أو `p-4` يتضاعف الهامش ويضيق المحتوى.
+تحت العرض الضيق يوفّر `.app-main` هامشاً أفقياً (`clamp` + `app-main__content`). إذا أضاف جذر الشاشة `px-3` على الجوال يتضاعف الهامش ويضيق المحتوى.
 
-**النمط القياسي لجذر أي شاشة قسم رئيسية:**
+**القانون الموحّد (طبقة واحدة — لا تنسخ الـ classes يدوياً في شاشات جديدة):**
 
 ```jsx
-<div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+import { ScreenShell } from '../../ui';
+
+<ScreenShell>
+  …
+</ScreenShell>
 ```
+
+يُطبَّق داخلياً نفس السلوك التالي (ثابت `SCREEN_SHELL_PAGE_CLASS` في `src/ui/ScreenShell.jsx`):
 
 | العرض | السلوك |
 |----|-----|
 | أقل من `md` (768px) | `px-0` — الاعتماد على حشو `app-main` فقط |
 | `md` فما فوق | `px-3` أفقياً |
 | `lg` | `px-6` أفقياً |
-| دائماً | `py-4` رأسياً للتنفس بين الهيدر والمحتوى |
+| دائماً | `py-4` رأسياً + `gap-4` بين أقسام الصفحة |
+
+**مضمّن داخل تبويب/كرت أب** (مثل قائمة الموظفين داخل HR): `<ScreenShell embedded>` — بدون `py`/`px` على الجذر حتى لا يتضاعف الهامش مع `ScreenShell` الخارجي.
 
 استخدم **`md:`** (وليس `sm:`) ليتماشى مع استعلام التطبيق لـ `.app-main`. لا تستخدم `p-4 lg:p-6` على جذر الشاشة الجديدة إلا لسبب موثّق (مثلاً شاشة خارج الإطار العام).
 
@@ -78,20 +86,18 @@ import { Card } from '../../ui';
 ## هيكل الشاشة القياسي
 
 ```jsx
-// ✅ شاشة كاملة مع رأس وجدول (انظر «جذر شاشات الأقسام» أعلاه)
-<div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
-  {/* رأس */}
+// ✅ شاشة كاملة مع رأس وجدول
+import { ScreenShell, Button, SmartTable } from '../../ui';
+
+<ScreenShell>
   <div className="flex flex-wrap items-center justify-between gap-3">
     <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('title')}</h1>
     <div className="flex items-center gap-2 flex-wrap">
-      {/* أزرار بـ size="sm" */}
       <Button size="sm" variant="primary">{t('add')}</Button>
     </div>
   </div>
-
-  {/* جدول */}
-  <SmartTable columns={cols} data={rows} ... />
-</div>
+  <SmartTable columns={cols} data={rows} … />
+</ScreenShell>
 ```
 
 ---

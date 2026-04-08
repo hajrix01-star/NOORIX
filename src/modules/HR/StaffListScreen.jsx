@@ -23,7 +23,7 @@ import {
   getEmployeesPaged,
   getEmployeesBulk,
 } from '../../services/api';
-import { Badge, Button, Modal, Input } from '../../ui';
+import { Badge, Button, Modal, Input, ScreenShell } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import { HRActionsCell } from './components/HRActionsCell';
 import Toast from '../../components/Toast';
@@ -404,7 +404,7 @@ export default function StaffListScreen({ embedded }) {
   ), [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete]);
 
   return (
-    <div className={embedded ? 'flex flex-col gap-4' : 'flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6'}>
+    <ScreenShell embedded={!!embedded}>
       {!embedded && (
         <div>
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
@@ -589,6 +589,6 @@ export default function StaffListScreen({ embedded }) {
           />
         </div>
       </Modal>
-    </div>
+    </ScreenShell>
   );
 }

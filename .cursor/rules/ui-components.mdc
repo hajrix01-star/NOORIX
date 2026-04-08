@@ -198,6 +198,10 @@ const items = useMemo(() => TABS.map((x) => ({ id: x.id, label: t(x.labelKey) })
 
 ## جذر الشاشة والعنوان — `ScreenShell` / `ScreenTitle`
 
+- **`ScreenShell`** — **القانون الوحيد** لجذر شاشة قسم داخل `app-main`: مسافات `py-4 px-0 md:px-3 lg:px-6` و`gap-4` (تفاصيل في `ui-responsive-standards.mdc`). لا تكرّر هذا السطر كـ `<div className="flex flex-col …">` في شاشات جديدة.
+- **`embedded`** — `<ScreenShell embedded>` للمحتوى داخل تبويب أو كرت أب يملك بالفعل `ScreenShell` خارجياً (بدون `py`/`px` على الجذر).
+- ثوابت للحالات النادرة: `SCREEN_SHELL_PAGE_CLASS` و`SCREEN_SHELL_EMBEDDED_CLASS` من `../../ui`.
+
 ```jsx
 import { ScreenShell, ScreenTitle } from '../../ui';
 
@@ -228,5 +232,6 @@ import { KebabMenu } from '../../ui';
 
 ```jsx
 import { Button, Input, Card, Badge, Modal, Drawer, AdaptiveSheet, Spinner, SmartTable, ScreenTabs, ScreenShell, ScreenTitle, KebabMenu, Divider, FormRow, cn } from '../../ui';
+// عند الحاجة: SCREEN_SHELL_PAGE_CLASS, SCREEN_SHELL_EMBEDDED_CLASS من '../../ui'
 // cn — دمج classes بأمان (clsx + tailwind-merge)
 ```

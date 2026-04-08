@@ -9,7 +9,7 @@ import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
 import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
-import { Button, Input, ScreenTabs } from '../../ui';
+import { Button, Input, ScreenTabs, ScreenShell } from '../../ui';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import {
   EN_MONTHS,
@@ -118,7 +118,7 @@ export default function ReportsScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+    <ScreenShell>
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
       <div className="flex flex-col gap-4">
@@ -381,6 +381,6 @@ export default function ReportsScreen() {
         </>
       )}
       </div>
-    </div>
+    </ScreenShell>
   );
 }

@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Input, ScreenTabs } from '../../ui';
+import { Input, ScreenTabs, ScreenShell } from '../../ui';
 import DashboardOverviewTab from './components/DashboardOverviewTab';
 import DashboardCalendarTab from './components/DashboardCalendarTab';
 import DashboardSpecialDaysTab from './components/DashboardSpecialDaysTab';
@@ -53,7 +53,7 @@ export default function DashboardScreen() {
   );
 
   return (
-      <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+    <ScreenShell>
       {/* هيدر */}
       <div className="flex flex-wrap items-start justify-between gap-3 nx-page-header">
         <div>
@@ -94,6 +94,6 @@ export default function DashboardScreen() {
           {activeTab === 'appSales'    && <DashboardAppSalesTab    companyId={activeCompanyId} year={year} filter={filter} />}
         </div>
       </div>
-    </div>
+    </ScreenShell>
   );
 }

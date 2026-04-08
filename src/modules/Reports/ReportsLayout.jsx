@@ -5,7 +5,7 @@
 import React from 'react';
 import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
-import { ScreenShell, ScreenTitle } from '../../ui';
+import { ScreenShell, ScreenTitle, cn } from '../../ui';
 
 const REPORT_SUB_LINKS = [
   { to: '/reports/general', labelKey: 'reportGeneralReport' },
@@ -28,19 +28,14 @@ export default function ReportsLayout() {
             <NavLink
               key={link.to}
               to={link.to}
-              style={({ isActive }) => ({
-                margin: 0,
-                borderRadius: 0,
-                border: 'none',
-                borderBottom: isActive ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
-                background: isActive ? 'var(--noorix-blue-7)' : 'transparent',
-                color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-                fontWeight: isActive ? 700 : 500,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                padding: '12px 18px',
-                textDecoration: 'none',
-              })}
+              className={({ isActive }) =>
+                cn(
+                  'm-0 shrink-0 whitespace-nowrap rounded-none border-0 border-b-2 px-[18px] py-3 text-[14px] no-underline transition-colors',
+                  isActive
+                    ? 'border-b-noorix-blue bg-[var(--noorix-blue-7)] font-bold text-noorix-blue'
+                    : 'border-b-transparent bg-transparent font-medium text-noorix-muted hover:text-noorix-text',
+                )
+              }
             >
               {t(link.labelKey)}
             </NavLink>

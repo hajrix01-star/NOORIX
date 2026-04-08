@@ -1,10 +1,10 @@
 ﻿/**
  * عرض كشف كامل (صفحة) — بديل النافذة المنبثقة البسيطة؛ مستوحى من المشروع السابق.
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import useBankStatementView from '../../../hooks/useBankStatementView';
-import { Button, Modal } from '../../../ui';
+import { Button, Modal, ScreenTabs, cn } from '../../../ui';
 import BankStatementSummaryCards from './BankStatementSummaryCards';
 import BankStatementAnalysisCardsTab from './BankStatementAnalysisCardsTab';
 import BankStatementTransactionsFullTab from './BankStatementTransactionsFullTab';
@@ -67,42 +67,30 @@ export default function BankStatementDetailView({
     }
   };
 
-  const tabBtn = (id, label, count) => (
-    <Button
-      key={id}
-      type="button"
-      style={{
-        margin: 0,
-        borderRadius: 0,
-        border: 'none',
-        borderBottom: vm.activeTab === id ? '3px solid var(--noorix-accent-blue)' : '3px solid transparent',
-        background: vm.activeTab === id ? 'var(--noorix-blue-8)' : 'transparent',
-        color: vm.activeTab === id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-        fontWeight: vm.activeTab === id ? 700 : 500,
-        padding: '13px 20px',
-        fontSize: 13,
-        whiteSpace: 'nowrap',
-        transition: 'all 0.2s',
-      }}
-      onClick={() => vm.setActiveTab(id)}
-    >
-      {label}
-      {count != null ? (
-        <span
-          style={{
-            marginInlineStart: 6,
-            background: vm.activeTab === id ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
-            color: vm.activeTab === id ? '#fff' : 'var(--noorix-text-muted)',
-            borderRadius: 10,
-            padding: '1px 7px',
-            fontSize: 11,
-            fontWeight: 700,
-          }}
-        >
-          {count}
-        </span>
-      ) : null}
-    </Button>
+  const txCount = stmt.transactions?.length ?? 0;
+  const detailTabItems = useMemo(
+    () => [
+      { id: 'analysis', label: t('bankTabAnalysis') },
+      {
+        id: 'transactions',
+        label: (
+          <>
+            {t('bankTabTransactions')}
+            <span
+              className={cn(
+                'noorix-bank-detail-tab__count',
+                vm.activeTab === 'transactions' && 'noorix-bank-detail-tab__count--active',
+              )}
+            >
+              {txCount}
+            </span>
+          </>
+        ),
+      },
+      { id: 'reconciliation', label: t('bankTabReconciliation') },
+      { id: 'sales', label: t('bankTabSalesCompare') },
+    ],
+    [t, vm.activeTab, txCount],
   );
 
   return (
@@ -158,14 +146,17 @@ export default function BankStatementDetailView({
       <div
         className="noorix-surface-card overflow-hidden border border-noorix-border p-0"
       >
-        <div
-          className="noorix-tab-bar flex flex-nowrap overflow-x-auto gap-0 border-b border-noorix-border bg-noorix-bg-muted"
-        >
-          {tabBtn('analysis', t('bankTabAnalysis'))}
-          {tabBtn('transactions', t('bankTabTransactions'), stmt.transactions?.length)}
-          {tabBtn('reconciliation', t('bankTabReconciliation'))}
-          {tabBtn('sales', t('bankTabSalesCompare'))}
-        </div>
+        <ScreenTabs
+          omitDefaultBarClasses
+          fadeWrap={false}
+          variant="underline"
+          barClassName="noorix-bank-detail-tab-row"
+          getTabClassName={() => 'noorix-bank-detail-tab'}
+          items={detailTabItems}
+          value={vm.activeTab}
+          onChange={vm.setActiveTab}
+          buttonSize="auto"
+        />
         <div className="p-5">
           {vm.activeTab === 'analysis' && (
             <BankStatementAnalysisCardsTab

@@ -10,7 +10,7 @@ import { fmt, sumAmounts } from '../../utils/format';
 import VaultCard          from './components/VaultCard';
 import VaultFormModal     from './components/VaultFormModal';
 import VaultTransactionsModal from './components/VaultTransactionsModal';
-import { Button } from '../../ui';
+import { Button, ScreenShell } from '../../ui';
 
 export default function TreasuryScreen() {
   const { activeCompanyId } = useApp();
@@ -108,7 +108,7 @@ export default function TreasuryScreen() {
   );
 
   return (
-    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+    <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type}
         onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
@@ -260,6 +260,6 @@ export default function TreasuryScreen() {
           )}
           isSaving={updateMut.isPending} saveError={saveError} />
       )}
-    </div>
+    </ScreenShell>
   );
 }

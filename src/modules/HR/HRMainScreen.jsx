@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
-import { ScreenTabs } from '../../ui';
+import { ScreenTabs, ScreenShell } from '../../ui';
 import { useEmployees } from '../../hooks/useEmployees';
 import { getResidencies } from '../../services/api';
 import StaffListScreen from './StaffListScreen';
@@ -60,7 +60,7 @@ export default function HRMainScreen() {
   );
 
   return (
-    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+    <ScreenShell>
 
       {/* ── ترويسة الصفحة — على الجوال: العنوان ثم الكروت بعرض تلقائي ── */}
       <div className="nx-page-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -108,6 +108,6 @@ export default function HRMainScreen() {
         </div>
       </div>
 
-    </div>
+    </ScreenShell>
   );
 }

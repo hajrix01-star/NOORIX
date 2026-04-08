@@ -14,7 +14,7 @@ import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDate, formatSaudiDateISO } from '../../utils/saudiDate';
 import { updateInvoice, getInvoices, deleteInvoice } from '../../services/api';
-import { Badge, Button, Modal, Input, FilterScrollStrip } from '../../ui';
+import { Badge, Button, Modal, Input, FilterScrollStrip, ScreenShell } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable         from '../../components/common/SmartTable';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
@@ -301,7 +301,7 @@ export default function InvoicesListScreen() {
   ), [KIND_MAP, STATUS_MAP, userRole, companyId, queryClient, t]);
 
   return (
-    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+    <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('invoicesTitle')}</h1>
@@ -529,6 +529,6 @@ export default function InvoicesListScreen() {
         />
         </>
       )}
-    </div>
+    </ScreenShell>
   );
 }

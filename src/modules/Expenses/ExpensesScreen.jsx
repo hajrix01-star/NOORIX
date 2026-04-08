@@ -15,7 +15,7 @@ import { useCategories } from '../../hooks/useCategories';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
-import { Button, ScreenTabs } from '../../ui';
+import { Button, ScreenTabs, ScreenShell } from '../../ui';
 import Toast from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
@@ -90,7 +90,7 @@ export default function ExpensesScreen() {
   );
 
   return (
-    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+    <ScreenShell>
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>
       </div>
@@ -177,7 +177,7 @@ export default function ExpensesScreen() {
         type={toast.type}
         onClose={() => setToast((p) => ({ ...p, visible: false }))}
       />
-    </div>
+    </ScreenShell>
   );
 }
 

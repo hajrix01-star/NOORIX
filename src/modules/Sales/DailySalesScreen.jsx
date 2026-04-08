@@ -17,7 +17,7 @@ import { formatSaudiDate, getSaudiToday } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
-import { Badge, Button } from '../../ui';
+import { Badge, Button, ScreenShell } from '../../ui';
 import Toast from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
@@ -460,7 +460,7 @@ export default function DailySalesScreen() {
   ), [STATUS_MAP, userRole, t]);
 
   return (
-    <div className="flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6">
+    <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       {editingSummary && (
@@ -589,6 +589,6 @@ export default function DailySalesScreen() {
           renderMobileCard={renderMobileCard}
         />
       )}
-    </div>
+    </ScreenShell>
   );
 }

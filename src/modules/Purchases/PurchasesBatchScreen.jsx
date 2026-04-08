@@ -4,7 +4,7 @@
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Decimal from 'decimal.js';
-import { Button, Badge, Input } from '../../ui';
+import { Button, Badge, Input, ScreenTabs, ScreenShell } from '../../ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
@@ -391,8 +391,13 @@ export default function PurchasesBatchScreen() {
 
   const hasCompany = !!companyId;
 
+  const purchaseBatchTabItems = useMemo(
+    () => getTabs(t).map((tab) => ({ id: tab.id, label: tab.icon ? <>{tab.icon} {tab.label}</> : tab.label })),
+    [t],
+  );
+
   return (
-    <div className="flex flex-col gap-5 w-full">
+    <ScreenShell className="w-full">
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       {/* ── الهيدر ── */}
@@ -402,25 +407,14 @@ export default function PurchasesBatchScreen() {
         </div>
       </header>
 
-      {/* ── التبويبات ── */}
+      {/* ── التبويبات (ScreenTabs — موحّد مع بقية النظام) ── */}
       {hasCompany && (
-        <div className="noorix-tab-bar flex gap-1 border-b-2 border-noorix-border pb-0">
-          {getTabs(t).map((tab) => (
-            <Button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '12px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                border: 'none', borderBottom: activeTab === tab.id ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
-                marginBottom: -2, background: 'transparent', color: activeTab === tab.id ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-                transition: 'color 150ms, border-color 150ms', whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-            >
-              {tab.icon} {tab.label}
-            </Button>
-          ))}
-        </div>
+        <ScreenTabs
+          variant="underline"
+          items={purchaseBatchTabItems}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
       )}
 
       {!hasCompany && (
@@ -563,7 +557,7 @@ export default function PurchasesBatchScreen() {
 
       {/* ── تبويب: الدفعات المحفوظة — جدول مثل الفواتير ── */}
       {activeTab === 'history' && hasCompany && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           <DateFilterBar filter={dateFilter} />
 
           <SmartTable
@@ -620,6 +614,6 @@ export default function PurchasesBatchScreen() {
           }}
         />
       )}
-    </div>
+    </ScreenShell>
   );
 }
