@@ -173,7 +173,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
       </div>
 
       {isPaginatedTotal && (
-        <div className="text-[12px] text-noorix-muted bg-noorix-surface border border-noorix-border rounded-lg mb-3 px-3 py-1.5 leading-[1.5]">
+        <div className="noorix-surface-card mb-3 px-3 py-1.5 text-[12px] leading-[1.5] text-noorix-muted">
           ℹ️ المجموع الظاهر في الأسفل يعكس إجمالي حركات الفترة بأكملها ({data?.total?.toLocaleString('en')} حركة)، وليس مجموع الصفحة الحالية فقط. للاطلاع على جميع الحركات استخدم تصدير Excel.
         </div>
       )}

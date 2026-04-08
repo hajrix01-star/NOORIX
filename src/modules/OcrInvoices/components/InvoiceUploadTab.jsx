@@ -234,7 +234,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
           {extracted && (
             <div className="flex flex-col gap-[14px] flex-[1_1_280px] min-w-0">
 
-              <div className="p-4 rounded-xl bg-noorix-surface border border-noorix-border">
+              <div className="noorix-surface-card p-4">
                 <div className="font-semibold text-[14px] mb-3">{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>
                 <div className="grid gap-2">
                   <FieldRow label={t('ocrSupplierField')} value={extracted.supplier?.name} confidence={extracted.supplier?.confidence} match={extracted.supplierMatch} />
