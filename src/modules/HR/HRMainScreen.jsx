@@ -89,10 +89,11 @@ export default function HRMainScreen() {
         )}
       </div>
 
-      {/* ── تبويبات + محتوى داخل كرت واحد (مثل المصاريف): underline + تمرير أفقي على الجوال ── */}
+      {/* ── تبويبات segmented: عناوين طويلة وعدد كبير — حدود وحبات أوضح من underline ── */}
       <div className="noorix-surface-card overflow-hidden p-0">
         <ScreenTabs
-          variant="underline"
+          variant="segmented"
+          className="rounded-none border-0 border-b border-noorix-border bg-noorix-bg-muted/45 p-2 shadow-none"
           items={hrTabItems}
           value={activeTab}
           onChange={setActiveTab}
