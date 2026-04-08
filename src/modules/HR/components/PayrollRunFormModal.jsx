@@ -19,7 +19,7 @@ import {
 } from '../utils/payrollAttendanceMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../utils/moneyInput';
-import { Button, AdaptiveSheet, Input } from '../../../ui';
+import { Button, AdaptiveSheet, Input, cn } from '../../../ui';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -430,7 +430,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       open={true}
       onClose={onClose}
       title={modalTitle}
-      size="xl"
+      size="full"
       side="start"
       className="payroll-run-form-drawer"
       footer={
@@ -455,11 +455,11 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       }
     >
       <form className="prfm-modal-form" onSubmit={handleSubmit}>
-        <div className="pt-1 pb-3">
-          <p className="text-[13px] text-noorix-muted m-0 mb-[14px] leading-[1.6] max-w-[72ch]">
+        <div className="pt-1 pb-2 shrink-0">
+          <p className="text-[12px] text-noorix-muted m-0 mb-2 leading-snug max-w-[85ch]">
             {t('payrollGrossFixedPackageHint')}
           </p>
-          <div className="grid gap-4 [grid-template-columns:minmax(0,1fr)_minmax(0,1.2fr)]">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="text-[12px] font-semibold text-noorix-muted mb-1.5 block">{t('payrollMonth')}</label>
               <Input
@@ -487,25 +487,25 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2.5 flex-wrap pt-[14px] pb-[10px] shrink-0">
-          <span className="text-[14px] font-bold">{t('employeesList')} ({items.length})</span>
-          <Button type="button" onClick={isEditMode ? loadEditingItems : initItems}>
+        <div className="flex items-center justify-between gap-2 flex-wrap pt-2 pb-1.5 shrink-0">
+          <span className="text-[13px] font-bold">{t('employeesList')} ({items.length})</span>
+          <Button type="button" size="sm" onClick={isEditMode ? loadEditingItems : initItems}>
             {t('refresh') || 'تحديث'}
           </Button>
         </div>
 
-        <div className="prfm-modal-scroll">
-          <table>
+        <div className="prfm-modal-scroll min-w-0">
+          <table className="payroll-run-table">
             <thead>
               <tr>
-                <th className="min-w-[200px]">{t('employeeName')}</th>
-                <th>{t('payrollAdvanceDates')}</th>
-                <th>{t('grossSalary')}</th>
-                <th>{t('payrollAllowances')}</th>
-                <th>{t('payrollDeductions')}</th>
-                <th>{t('payrollAdvances')}</th>
-                <th className="text-center">{t('payrollDeferAdvanceDeduct')}</th>
-                <th>{t('netSalary')}</th>
+                <th className="w-[24%] min-w-0">{t('employeeName')}</th>
+                <th className="w-[11%] min-w-0">{t('payrollAdvanceDates')}</th>
+                <th className="w-[10%] min-w-0">{t('grossSalary')}</th>
+                <th className="w-[9%] min-w-0">{t('payrollAllowances')}</th>
+                <th className="w-[9%] min-w-0">{t('payrollDeductions')}</th>
+                <th className="w-[9%] min-w-0">{t('payrollAdvances')}</th>
+                <th className="w-[10%] min-w-0 text-center">{t('payrollDeferAdvanceDeduct')}</th>
+                <th className="w-[10%] min-w-0">{t('netSalary')}</th>
               </tr>
             </thead>
             <tbody>
@@ -514,56 +514,67 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 const included = idx >= 0;
                 return (
                   <tr key={emp.id}>
-                    <td>
-                      <label className="nx-checkbox nx-checkbox--tight">
+                    <td className="min-w-0">
+                      <label className="nx-checkbox nx-checkbox--tight min-w-0">
                         <input
                           type="checkbox"
                           checked={included}
                           onChange={() => toggleInclude(emp)}
                           aria-label={t('employeeName')}
                         />
-                        <span className={included ? 'font-semibold' : 'font-normal'}>{employeeDisplayName(emp, lang)}</span>
+                        <span
+                          className={cn(
+                            'min-w-0 truncate block',
+                            included ? 'font-semibold' : 'font-normal',
+                          )}
+                          title={employeeDisplayName(emp, lang)}
+                        >
+                          {employeeDisplayName(emp, lang)}
+                        </span>
                       </label>
                     </td>
                     {included ? (
                       <>
-                        <td className="text-noorix-muted text-[12px] max-w-[160px] nx-line-145 truncate" title={items[idx].advanceDates || ''}>
-                          {items[idx].advanceDates || '—'}
+                        <td className="text-noorix-muted text-[11px] min-w-0 nx-line-145 align-top" title={items[idx].advanceDates || ''}>
+                          <span className="line-clamp-2 break-words">{items[idx].advanceDates || '—'}</span>
                         </td>
-                        <td className="font-semibold text-[14px] whitespace-nowrap nx-font-numbers">{hrFmt(items[idx].grossSalary)}</td>
-                        <td>
+                        <td className="font-semibold text-[12px] whitespace-nowrap nx-font-numbers text-end">{hrFmt(items[idx].grossSalary)}</td>
+                        <td className="text-end">
                           <Input
                             type="number"
                             inputMode="decimal"
                             step={1}
                             min={0}
-                            className="prfm-modal-num"
+                            size="sm"
+                            className="max-w-[4.5rem] ms-auto tabular-nums !py-1 !px-2"
                             value={items[idx].allowancesAdd ?? 0}
                             onChange={(e) => updateItem(idx, 'allowancesAdd', e.target.value)}
                             onFocus={selectInput}
                             aria-label={t('payrollAllowances')}
                           />
                         </td>
-                        <td>
+                        <td className="text-end">
                           <Input
                             type="number"
                             inputMode="decimal"
                             step={1}
                             min={0}
-                            className="prfm-modal-num"
+                            size="sm"
+                            className="max-w-[4.5rem] ms-auto tabular-nums !py-1 !px-2"
                             value={items[idx].deductions ?? 0}
                             onChange={(e) => updateItem(idx, 'deductions', e.target.value)}
                             onFocus={selectInput}
                             aria-label={t('payrollDeductions')}
                           />
                         </td>
-                        <td>
+                        <td className="text-end">
                           <Input
                             type="number"
                             inputMode="decimal"
                             step={1}
                             min={0}
-                            className="prfm-modal-num"
+                            size="sm"
+                            className="max-w-[4.5rem] ms-auto tabular-nums !py-1 !px-2"
                             value={items[idx].advancesDeduct ?? 0}
                             onChange={(e) => updateItem(idx, 'advancesDeduct', e.target.value)}
                             disabled={items[idx].deferAdvances}
@@ -571,8 +582,8 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             aria-label={t('payrollAdvances')}
                           />
                         </td>
-                        <td className="text-center">
-                          <label className="nx-checkbox nx-checkbox--cell-center">
+                        <td className="text-center px-1">
+                          <label className="nx-checkbox nx-checkbox--cell-center inline-flex justify-center">
                             <input
                               type="checkbox"
                               checked={!!items[idx].deferAdvances}
@@ -581,7 +592,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             />
                           </label>
                         </td>
-                        <td className="font-extrabold text-[14px] whitespace-nowrap nx-font-numbers">{hrFmt(items[idx].netSalary)}</td>
+                        <td className="font-extrabold text-[12px] whitespace-nowrap nx-font-numbers text-end">{hrFmt(items[idx].netSalary)}</td>
                       </>
                     ) : (
                       <td colSpan={7} className="text-noorix-muted text-[13px]">

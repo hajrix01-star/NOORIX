@@ -3220,6 +3220,46 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
+/* ========== مسيرة راتب — جدول مضغوط، بدون تمرير داخلي للجدول ========== */
+.nx-modal.payroll-run-form-drawer,
+.nx-drawer-panel.payroll-run-form-drawer {
+  max-height: min(96vh, 920px);
+}
+.nx-modal.payroll-run-form-drawer > div.overflow-y-auto,
+.nx-drawer-panel.payroll-run-form-drawer > div.overflow-y-auto {
+  overflow-x: hidden;
+}
+.payroll-run-form-drawer .prfm-modal-form {
+  overflow: visible;
+  min-height: 0;
+}
+.payroll-run-form-drawer .prfm-modal-scroll {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+}
+.payroll-run-form-drawer .payroll-run-table {
+  table-layout: fixed;
+  width: 100%;
+  font-size: 12px;
+}
+.payroll-run-form-drawer .payroll-run-table thead th {
+  padding: 6px 5px;
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: normal !important;
+  word-break: normal;
+  vertical-align: bottom;
+  hyphens: auto;
+}
+.payroll-run-form-drawer .prfm-modal-scroll tbody td {
+  padding: 4px 5px;
+}
+
 /* ========== تحسينات عامة للـ modal-overlay على الجوال ========== */
 /* يجعل النوافذ ذات noorix-surface-card تدعم التمرير على الشاشات الصغيرة */
 @media (max-width: 600px) {
