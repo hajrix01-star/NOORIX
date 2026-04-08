@@ -17,6 +17,7 @@ import {
   getDocuments,
   getInvoices,
   getDeductions,
+  getMovements,
   uploadDocumentFile,
   downloadDocument,
   deleteEmployee,
@@ -32,6 +33,7 @@ import {
   SAUDI_STANDARD_HOURS,
 } from './utils/employeeSalaryMath';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
+import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovementModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildLeaveRequestStatusMap, buildResidencyRecordStatusMap } from '../../constants/badgeMaps';
@@ -45,10 +47,15 @@ export default function EmployeeProfileScreen() {
   const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
+  const canRecordCareer =
+    Array.isArray(userPermissions) &&
+    userPermissions.includes('EMPLOYEES_WRITE') &&
+    userPermissions.includes('HR_WRITE');
   const activeCompany = companies?.find((c) => c.id === companyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
   const [showAdvance, setShowAdvance] = useState(false);
+  const [careerModal, setCareerModal] = useState(null);
   const [docModal, setDocModal] = useState(null);
   const { showToast } = useToast();
   const [uploading, setUploading] = useState(false);
@@ -138,6 +145,60 @@ export default function EmployeeProfileScreen() {
     enabled: !!companyId && !!id,
   });
 
+  const { data: movements = [] } = useQuery({
+    queryKey: ['movements', companyId, id],
+    queryFn: async () => {
+      const res = await getMovements(companyId, id);
+      if (!res?.success) return [];
+      const d = res.data;
+      return Array.isArray(d) ? d : [];
+    },
+    enabled: !!companyId && !!id,
+  });
+
+  const careerTableRows = useMemo(() => {
+    const labelFor = (mt) => {
+      if (mt === 'promotion') return t('movementTypePromotion');
+      if (mt === 'raise') return t('movementTypeRaise');
+      return t('movementTypeOther');
+    };
+    return movements.map((m) => {
+      let changeSummary = '—';
+      if (m.movementType === 'promotion') {
+        const a = m.previousValue || '—';
+        const b = m.newValue || '—';
+        changeSummary = `${a} → ${b}`;
+      } else if (m.movementType === 'raise') {
+        const a =
+          m.previousValue != null && String(m.previousValue).trim() !== ''
+            ? hrFmt(Number(m.previousValue))
+            : '—';
+        const b =
+          m.newValue != null && String(m.newValue).trim() !== ''
+            ? hrFmt(Number(m.newValue))
+            : '—';
+        const inc =
+          m.amount != null && Number(m.amount) > 0 ? ` (+${hrFmt(Number(m.amount))})` : '';
+        changeSummary = `${a} → ${b}${inc}`;
+      } else {
+        const parts = [m.previousValue, m.newValue].filter(Boolean);
+        changeSummary =
+          parts.length > 0
+            ? parts.join(' → ')
+            : m.amount != null
+              ? hrFmt(Number(m.amount))
+              : '—';
+      }
+      return {
+        id: m.id,
+        effectiveDate: m.effectiveDate,
+        typeLabel: labelFor(m.movementType),
+        changeSummary,
+        notes: m.notes || '—',
+      };
+    });
+  }, [movements, t]);
+
   const advances = invoicesData?.items ?? [];
   const customAllowanceTotal = React.useMemo(
     () => customAllowances.reduce((sum, row) => sum + (Number(row.amount) || 0), 0),
@@ -221,6 +282,7 @@ export default function EmployeeProfileScreen() {
     queryClient.invalidateQueries({ queryKey: ['documents', companyId, id] });
     queryClient.invalidateQueries({ queryKey: ['invoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['deductions', companyId, id] });
+    queryClient.invalidateQueries({ queryKey: ['movements', companyId, id] });
   };
 
   const handleUploadDoc = async (e) => {
@@ -274,6 +336,9 @@ export default function EmployeeProfileScreen() {
     cancelled: { color: 'gray',  label: t('cancelled')           },
     active:    { color: 'amber', label: t('advanceOutstanding')  },
   };
+  const canShowCareerActions =
+    canRecordCareer && ['active', 'on_leave'].includes(employee.status);
+
   const overtimeTotal = overtimePay(employee, customAllowanceTotal);
   const total = totalSalary(employee, customAllowanceTotal);
   const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
@@ -350,6 +415,66 @@ export default function EmployeeProfileScreen() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* الترقيات وزيادات الراتب */}
+      <div className="noorix-surface-card noorix-table-frame overflow-hidden employee-profile-layout__wide">
+        <div className="nx-section-header">
+          <span className="nx-section-header__title">{t('careerRecordTitle')}</span>
+          <div className="nx-section-header__actions flex flex-wrap items-center gap-2">
+            {canShowCareerActions && (
+              <>
+                <Button size="sm" onClick={() => setCareerModal('promotion')}>
+                  {t('movementTypePromotion')}
+                </Button>
+                <Button size="sm" variant="primary" onClick={() => setCareerModal('raise')}>
+                  {t('movementTypeRaise')}
+                </Button>
+              </>
+            )}
+            <span className="nx-pill nx-pill--blue nx-pill--sm">{careerTableRows.length}</span>
+          </div>
+        </div>
+        <SmartTable
+          compact
+          showRowNumbers
+          rowNumberWidth="1%"
+          innerPadding={8}
+          columns={[
+            {
+              key: 'effectiveDate',
+              label: t('careerEffectiveDate'),
+              width: '14%',
+              render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
+            },
+            { key: 'typeLabel', label: t('movementTypeLabel'), width: '16%', render: (v) => v },
+            {
+              key: 'changeSummary',
+              label: t('careerChangeSummary'),
+              width: '32%',
+              render: (v) => (
+                <span className="nx-cell-ellipsis text-[13px]" title={v || ''}>
+                  {v || '—'}
+                </span>
+              ),
+            },
+            {
+              key: 'notes',
+              label: t('invoiceNotesColumn'),
+              width: '36%',
+              render: (v) => (
+                <span className="nx-cell-ellipsis" title={v || ''}>
+                  {v || '—'}
+                </span>
+              ),
+            },
+          ]}
+          data={careerTableRows}
+          total={careerTableRows.length}
+          page={1}
+          pageSize={50}
+          emptyMessage={t('noDataInPeriod')}
+        />
       </div>
 
       {/* السجل المالي */}
@@ -535,6 +660,21 @@ export default function EmployeeProfileScreen() {
             showToast(t('advancePaid'), 'success');
           }}
           onClose={() => setShowAdvance(false)}
+        />
+      )}
+      {careerModal && (
+        <EmployeeCareerMovementModal
+          kind={careerModal}
+          employee={employee}
+          companyId={companyId}
+          onClose={() => setCareerModal(null)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['movements', companyId, id] });
+            queryClient.invalidateQueries({ queryKey: ['employee', id, companyId] });
+            queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
+            queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+            showToast(t('careerMovementSaved'), 'success');
+          }}
         />
       )}
     </ScreenShell>

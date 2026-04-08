@@ -31,6 +31,7 @@ function invalidateHrQueries(qc, companyId) {
   qc.invalidateQueries({ queryKey: ['leaves', companyId] });
   qc.invalidateQueries({ queryKey: ['deductions', companyId] });
   qc.invalidateQueries({ queryKey: ['custom-allowances', companyId] });
+  qc.invalidateQueries({ queryKey: ['movements', companyId] });
 }
 
 function Field({ id, label, children, error }) {
