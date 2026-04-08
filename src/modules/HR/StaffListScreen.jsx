@@ -5,6 +5,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
@@ -26,7 +27,6 @@ import {
 import { Badge, Button, Modal, Input, ScreenShell, cn } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import { HRActionsCell } from './components/HRActionsCell';
-import Toast from '../../components/Toast';
 import { StaffFormModal } from './components/StaffFormModal';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
@@ -42,7 +42,7 @@ export default function StaffListScreen({ embedded }) {
   const { activeCompanyId, companies, userPermissions } = useApp();
   const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [advanceEmployee, setAdvanceEmployee] = useState(null);
@@ -146,15 +146,15 @@ export default function StaffListScreen({ embedded }) {
     if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
     const res = await deleteEmployee(row.id, companyId);
     if (!res?.success) {
-      setToast({ visible: true, message: res?.error || t('updateFailed'), type: 'error' });
+      showToast(res?.error || t('updateFailed'), 'error');
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['employees'] });
     queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
     queryClient.invalidateQueries({ queryKey: ['employee', row.id, companyId] });
     invalidateOnFinancialMutation(queryClient);
-    setToast({ visible: true, message: t('employeeDeletedPermanent'), type: 'success' });
-  }, [companyId, t, queryClient, lang]);
+    showToast(t('employeeDeletedPermanent'), 'success');
+  }, [companyId, t, queryClient, lang, showToast]);
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
@@ -215,8 +215,8 @@ export default function StaffListScreen({ embedded }) {
                     body: { status: 'archived', notes: composeEmployeeNotes(parsed.notesText, parsed.meta) },
                   },
                   {
-                    onSuccess: () => setToast({ visible: true, message: t('employeeArchived'), type: 'success' }),
-                    onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+                    onSuccess: () => showToast(t('employeeArchived'), 'success'),
+                    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
                   },
                 );
               }
@@ -230,8 +230,8 @@ export default function StaffListScreen({ embedded }) {
                     body: { status: 'active', notes: composeEmployeeNotes(parsed.notesText, parsed.meta) },
                   },
                   {
-                    onSuccess: () => setToast({ visible: true, message: t('employeeRestored'), type: 'success' }),
-                    onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+                    onSuccess: () => showToast(t('employeeRestored'), 'success'),
+                    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
                   },
                 );
               }
@@ -239,7 +239,7 @@ export default function StaffListScreen({ embedded }) {
           onPermanentDelete={canDeleteEmployee ? handlePermanentDelete : undefined}
         />
       ) },
-  ], [t, lang, STATUS_MAP, viewMode, navigate, update, canDeleteEmployee, handlePermanentDelete]);
+  ], [t, lang, STATUS_MAP, viewMode, navigate, update, canDeleteEmployee, handlePermanentDelete, showToast]);
 
   async function handleExportExcel() {
     if (!companyId) return;
@@ -247,7 +247,7 @@ export default function StaffListScreen({ embedded }) {
     try {
       const res = await getEmployeesBulk(companyId, viewMode);
       if (!res?.success) {
-        setToast({ visible: true, message: res?.error || t('saveFailed'), type: 'error' });
+        showToast(res?.error || t('saveFailed'), 'error');
         return;
       }
       const rows = (res.data || []).map((e) => {
@@ -269,7 +269,7 @@ export default function StaffListScreen({ embedded }) {
       });
       exportToExcel(rows, 'employees.xlsx');
     } catch (e) {
-      setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+      showToast(e?.message || t('saveFailed'), 'error');
     } finally {
       setExporting(false);
     }
@@ -326,7 +326,7 @@ export default function StaffListScreen({ embedded }) {
       ? payload
       : { employeeBody: payload, customAllowances: [] };
     if (!companyId) {
-      setToast({ visible: true, message: t('pleaseSelectCompany'), type: 'error' });
+      showToast(t('pleaseSelectCompany'), 'error');
       return;
     }
     if (editingEmployee) {
@@ -337,13 +337,13 @@ export default function StaffListScreen({ embedded }) {
             try {
               if (res?.success === false) throw new Error(res?.error || t('updateFailed'));
               await syncCustomAllowanceRows(editingEmployee.id, customRows);
-              setToast({ visible: true, message: t('employeeUpdated'), type: 'success' });
+              showToast(t('employeeUpdated'), 'success');
               setEditingEmployee(null);
             } catch (e) {
-              setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+              showToast(e?.message || t('saveFailed'), 'error');
             }
           },
-          onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+          onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
         },
       );
     } else {
@@ -353,13 +353,13 @@ export default function StaffListScreen({ embedded }) {
             if (res?.success === false) throw new Error(res?.error || t('addFailed'));
             const employeeId = res?.data?.id || res?.id;
             await syncCustomAllowanceRows(employeeId, customRows);
-            setToast({ visible: true, message: t('employeeAdded'), type: 'success' });
+            showToast(t('employeeAdded'), 'success');
             setShowForm(false);
           } catch (e) {
-            setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' });
+            showToast(e?.message || t('saveFailed'), 'error');
           }
         },
-        onError: (e) => setToast({ visible: true, message: e?.message || t('addFailed'), type: 'error' }),
+        onError: (e) => showToast(e?.message || t('addFailed'), 'error'),
       });
     }
   }
@@ -427,8 +427,6 @@ export default function StaffListScreen({ embedded }) {
 
       {companyId && (
         <>
-          <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
           <ImportExportModal
             isOpen={showImportExport}
             onClose={() => setShowImportExport(false)}
@@ -442,7 +440,7 @@ export default function StaffListScreen({ embedded }) {
             onImportSuccess={(count) => {
               queryClient.invalidateQueries({ queryKey: ['employees'] });
               queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
-              setToast({ visible: true, message: `تم استيراد ${count} موظف بنجاح`, type: 'success' });
+              showToast(`تم استيراد ${count} موظف بنجاح`, 'success');
             }}
           />
 
@@ -529,7 +527,7 @@ export default function StaffListScreen({ embedded }) {
           createAdvance={createAdvance}
           onSuccess={() => {
             invalidateOnFinancialMutation(queryClient);
-            setToast({ visible: true, message: t('advancePaid'), type: 'success' });
+            showToast(t('advancePaid'), 'success');
           }}
           onClose={() => setAdvanceEmployee(null)}
         />
@@ -547,7 +545,7 @@ export default function StaffListScreen({ embedded }) {
               variant="danger"
               onClick={() => {
                 if (!terminationForm.reason?.trim()) {
-                  setToast({ visible: true, message: t('terminationReasonPlaceholder'), type: 'error' });
+                  showToast(t('terminationReasonPlaceholder'), 'error');
                   return;
                 }
                 const parsed = parseEmployeeNotesMeta(terminatingEmployee.notes);
@@ -560,8 +558,8 @@ export default function StaffListScreen({ embedded }) {
                 update.mutate(
                   { id: terminatingEmployee.id, body: { status: 'terminated', notes: composeEmployeeNotes(parsed.notesText, meta) } },
                   {
-                    onSuccess: () => { setToast({ visible: true, message: t('employeeTerminated'), type: 'success' }); setTerminatingEmployee(null); },
-                    onError: (e) => setToast({ visible: true, message: e?.message || t('updateFailed'), type: 'error' }),
+                    onSuccess: () => { showToast(t('employeeTerminated'), 'success'); setTerminatingEmployee(null); },
+                    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
                   },
                 );
               }}

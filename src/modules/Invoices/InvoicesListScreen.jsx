@@ -8,6 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp }         from '../../context/AppContext';
+import { useToast }       from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useInvoices }    from '../../hooks/useInvoices';
 import { useSuppliers }   from '../../hooks/useSuppliers';
@@ -19,7 +20,6 @@ import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilter
 import SmartTable         from '../../components/common/SmartTable';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
 import { InvoiceEditModal } from './components/InvoiceEditModal';
-import Toast              from '../../components/Toast';
 import ImportExportModal  from '../../components/ImportExportModal';
 import { formatInvoiceForExport } from '../../utils/importTemplates';
 import DayCloseReportModal from './components/DayCloseReportModal';
@@ -81,7 +81,7 @@ export default function InvoicesListScreen() {
   const companyId           = activeCompanyId ?? '';
   const dateFilter          = useDateFilter();
   const queryClient         = useQueryClient();
-  const [toast, setToast]   = useState({ visible: false, message: '', type: 'success' });
+  const { showToast }       = useToast();
   const [editingInvoice, setEditingInvoice]   = useState(null);
   const [viewingInvoice, setViewingInvoice]   = useState(null);
   const [filterKind, setFilterKind] = useState('');
@@ -182,13 +182,13 @@ export default function InvoicesListScreen() {
               queryClient.invalidateQueries({ queryKey: ['invoices'] });
               queryClient.invalidateQueries({ queryKey: ['vaults'] });
               queryClient.invalidateQueries({ queryKey: ['ledger'] });
-              setToast({ visible: true, message: t('invoiceDeleted'), type: 'success' });
-            } else setToast({ visible: true, message: res.error || t('deleteFailed'), type: 'error' });
+              showToast(t('invoiceDeleted'), 'success');
+            } else showToast(res.error || t('deleteFailed'), 'error');
           }}
         />
       ),
     },
-  ], [userRole, companyId, queryClient, t, STATUS_MAP, KIND_MAP]);
+  ], [userRole, companyId, queryClient, t, STATUS_MAP, KIND_MAP, showToast]);
 
   const { suppliers } = useSuppliers(companyId);
 
@@ -292,17 +292,16 @@ export default function InvoicesListScreen() {
               queryClient.invalidateQueries({ queryKey: ['invoices'] });
               queryClient.invalidateQueries({ queryKey: ['vaults'] });
               queryClient.invalidateQueries({ queryKey: ['ledger'] });
-              setToast({ visible: true, message: t('invoiceDeleted'), type: 'success' });
-            } else setToast({ visible: true, message: res.error || t('deleteFailed'), type: 'error' });
+              showToast(t('invoiceDeleted'), 'success');
+            } else showToast(res.error || t('deleteFailed'), 'error');
           }}
         />
       </div>
     </div>
-  ), [KIND_MAP, STATUS_MAP, userRole, companyId, queryClient, t]);
+  ), [KIND_MAP, STATUS_MAP, userRole, companyId, queryClient, t, showToast]);
 
   return (
     <ScreenShell>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
       <div>
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('invoicesTitle')}</h1>
       </div>
@@ -355,7 +354,7 @@ export default function InvoicesListScreen() {
         }}
         onImportSuccess={(count) => {
           invalidateOnFinancialMutation(queryClient);
-          setToast({ visible: true, message: `تم استيراد ${count} فاتورة بنجاح`, type: 'success' });
+          showToast(`تم استيراد ${count} فاتورة بنجاح`, 'success');
         }}
       />
 
