@@ -407,25 +407,22 @@ export default function PurchasesBatchScreen() {
         </div>
       </header>
 
-      {/* ── التبويبات (ScreenTabs — موحّد مع بقية النظام) ── */}
-      {hasCompany && (
-        <ScreenTabs
-          variant="underline"
-          items={purchaseBatchTabItems}
-          value={activeTab}
-          onChange={setActiveTab}
-        />
-      )}
-
       {!hasCompany && (
         <div className="noorix-surface-card text-center text-noorix-muted text-[14px] p-6">
           {t('pleaseSelectCompany')}
         </div>
       )}
 
-      {/* ── تبويب: إدخال دفعة جديدة ── */}
-      {activeTab === 'entry' && hasCompany && (
-        <div className="noorix-surface-card rounded-xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      {hasCompany && (
+        <ScreenTabs
+          items={purchaseBatchTabItems}
+          value={activeTab}
+          onChange={setActiveTab}
+          contentClassName="nx-tab-content p-0 min-h-0"
+          animateContent={false}
+        >
+      {activeTab === 'entry' && (
+        <div>
           {/* شريط الأدوات */}
           <div className="batch-purchases-entry-toolbar border-b border-noorix-border bg-noorix-bg">
             <div className="batch-purchases-entry-toolbar__control">
@@ -555,9 +552,8 @@ export default function PurchasesBatchScreen() {
         </div>
       )}
 
-      {/* ── تبويب: الدفعات المحفوظة — جدول مثل الفواتير ── */}
-      {activeTab === 'history' && hasCompany && (
-        <div className="flex flex-col gap-4">
+      {activeTab === 'history' && (
+        <div className="flex flex-col gap-4 p-4">
           <DateFilterBar filter={dateFilter} />
 
           <SmartTable
@@ -593,6 +589,8 @@ export default function PurchasesBatchScreen() {
             stickyActionColumn={false}
           />
         </div>
+      )}
+        </ScreenTabs>
       )}
 
       {printingBatch && (

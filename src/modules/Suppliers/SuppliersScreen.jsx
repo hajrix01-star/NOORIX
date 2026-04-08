@@ -38,17 +38,15 @@ export default function SuppliersScreen() {
       )}
 
       {companyId && (
-        <>
-          <ScreenTabs
-            variant="underline"
-            items={supplierTabItems}
-            value={activeTab}
-            onChange={setActiveTab}
-          />
-
+        <ScreenTabs
+          items={supplierTabItems}
+          value={activeTab}
+          onChange={setActiveTab}
+          contentClassName="nx-tab-content"
+        >
           {activeTab === 'suppliers'  && <SuppliersTab  companyId={companyId} />}
           {activeTab === 'categories' && <CategoriesTab companyId={companyId} />}
-        </>
+        </ScreenTabs>
       )}
     </ScreenShell>
   );

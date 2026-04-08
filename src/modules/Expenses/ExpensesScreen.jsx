@@ -95,15 +95,12 @@ export default function ExpensesScreen() {
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>
       </div>
 
-      <div className="noorix-surface-card overflow-hidden p-0">
-        <ScreenTabs
-          variant="underline"
-          items={expenseTabItems}
-          value={activeTab}
-          onChange={setActiveTab}
-        />
-        <div className="nx-tab-content">
-
+      <ScreenTabs
+        items={expenseTabItems}
+        value={activeTab}
+        onChange={setActiveTab}
+        contentClassName="nx-tab-content"
+      >
       {activeTab === 'lines' && (
         <ExpenseLineList
           companyId={companyId}
@@ -149,8 +146,7 @@ export default function ExpensesScreen() {
           </div>
         </div>
       )}
-        </div>
-      </div>
+      </ScreenTabs>
 
       {selectedLineId && (
         <ExpenseLineDetailModal

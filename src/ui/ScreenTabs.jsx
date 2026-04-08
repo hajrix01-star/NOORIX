@@ -1,10 +1,14 @@
 /**
- * ScreenTabs — شريط تبويبات موحّد للأقسام (نمط underline أو segmented)
+ * ScreenTabs — شريط تبويبات موحّد للأقسام
+ *
+ * - **connected** (افتراضي): ينفّذ عبر `ConnectedTabStrip` — مصدر واحد للتصميم (سباركلاين، strut، إلخ).
+ * - **underline** / **segmented**: للأشرطة المخصّصة أو المدمجة في جداول/مودالات.
  *
  * items[].label يقبل ReactNode (نص، أيقونة، إلخ)
  */
 import React from 'react';
 import Button from './Button';
+import ConnectedTabStrip from './ConnectedTabStrip';
 import { cn } from './cn';
 
 /**
@@ -16,29 +20,50 @@ import { cn } from './cn';
  *   items: ScreenTabItem[];
  *   value: string;
  *   onChange: (id: string) => void;
- *   variant?: 'underline' | 'segmented';
+ *   variant?: 'connected' | 'underline' | 'segmented';
  *   fadeWrap?: boolean;
  *   className?: string;
  *   barClassName?: string;
  *   buttonSize?: 'auto' | 'sm' | 'md' | 'lg';
  *   getTabClassName?: (item: ScreenTabItem, active: boolean) => string | undefined;
- *   omitDefaultBarClasses?: boolean — عند true لا يُضاف nx-tab-bar / nx-segmented-tab-bar (لأشرطة مخصّصة مثل الإعدادات)
+ *   omitDefaultBarClasses?: boolean;
+ *   children?: React.ReactNode — مطلوب مع variant="connected" (محتوى التبويبات)
+ *   contentClassName?: string — غلاف المحتوى داخل ConnectedTabStrip (مثل nx-tab-content)
+ *   shellClassName?: string — على الكرت الخارجي للـ connected (يُدمج مع className)
+ *   animateContent?: boolean — افتراضي true للـ connected
  * }} props
  */
 export default function ScreenTabs({
   items,
   value,
   onChange,
-  variant = 'underline',
+  variant = 'connected',
   fadeWrap = true,
   className,
   barClassName,
   buttonSize = 'auto',
   getTabClassName,
   omitDefaultBarClasses = false,
+  children,
+  contentClassName,
+  shellClassName,
+  animateContent = true,
 }) {
-  /* dir="ltr" على الشريط فقط: ترتيب التبويبات يطابق ترتيب المصفوفة (يسار→يمين)
-     ولا يعكسه اتجاه الصفحة RTL؛ نص كل تبويب يبقى عربي/إنجليزي طبيعي داخل الزر */
+  if (variant === 'connected') {
+    return (
+      <ConnectedTabStrip
+        items={items}
+        value={value}
+        onChange={onChange}
+        animateContent={animateContent}
+        contentClassName={contentClassName}
+        shellClassName={cn(className, shellClassName)}
+      >
+        {children}
+      </ConnectedTabStrip>
+    );
+  }
+
   const bar = (
     <div
       role="tablist"
@@ -56,7 +81,6 @@ export default function ScreenTabs({
             key={item.id}
             type="button"
             variant="raw"
-            /* sm/md تفرض h-* و px ضيّقة وتقصّ الحروف العربية داخل segmented */
             size={variant === 'segmented' ? 'auto' : buttonSize}
             role="tab"
             aria-selected={active}
@@ -67,7 +91,9 @@ export default function ScreenTabs({
               variant === 'segmented' && active && 'nx-tab-btn--segmented-active',
               getTabClassName?.(item, active),
             )}
-            onClick={() => onChange(item.id)}
+            onClick={() => {
+              if (item.id !== value) onChange(item.id);
+            }}
             data-active={active ? 'true' : 'false'}
           >
             {item.label}
@@ -82,7 +108,6 @@ export default function ScreenTabs({
     return <div className={className}>{bar}</div>;
   }
 
-  /* segmented: بدون nx-tab-bar-fade-wrap — الـ ::after يغطي آخر تبويب (مثل «شهري») ولا حاجة لتلاشي التمرير هنا */
   const shellClass =
     variant === 'segmented'
       ? cn(

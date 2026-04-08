@@ -529,14 +529,14 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       )}
 
       <ScreenTabs
-        variant="underline"
-        fadeWrap={false}
         className="mb-4"
+        fadeWrap={false}
         items={sheetTabItems}
         value={activeTab}
         onChange={setActiveTab}
-      />
-
+        contentClassName="nx-tab-content p-1 sm:p-4"
+        animateContent={false}
+      >
       {/* ?? EXPORT TAB ??????????????????????????????????????????????? */}
       {activeTab === 'export' && (
         <div className="flex flex-col gap-4">
@@ -747,6 +747,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           )}
         </div>
       )}
+      </ScreenTabs>
     </AdaptiveSheet>
   );
 }

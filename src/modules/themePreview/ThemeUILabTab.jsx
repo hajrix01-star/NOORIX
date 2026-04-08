@@ -5,11 +5,11 @@ import React, { useMemo, useState } from 'react';
 import {
   Badge,
   Button,
-  ConnectedTabStrip,
   Divider,
   Input,
   KebabMenu,
   Modal,
+  ScreenTabs,
   SmartTable,
 } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
@@ -114,14 +114,14 @@ export default function ThemeUILabTab() {
         title={t('themePreviewLab3Title')}
         hint={t('themePreviewLab3Hint')}
       >
-        <ConnectedTabStrip
+        <ScreenTabs
           items={demoTabItems}
           value={demoTab}
           onChange={setDemoTab}
           contentClassName="p-4"
         >
           <p className="text-[13px] text-noorix-muted m-0">{t(lab3ContentKey)}</p>
-        </ConnectedTabStrip>
+        </ScreenTabs>
       </LabBlock>
 
       <LabBlock

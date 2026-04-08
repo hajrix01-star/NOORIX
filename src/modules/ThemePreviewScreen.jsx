@@ -82,39 +82,41 @@ export default function ThemePreviewScreen() {
         <p className="text-[13px] text-noorix-muted m-0 mt-1">{t('themePreviewDesc')}</p>
       </div>
 
-      <div className="noorix-surface-card overflow-hidden p-0 border border-noorix-border rounded-xl shadow-sm">
-        <ScreenTabs variant="underline" items={tabItems} value={activeTab} onChange={setActiveTab} />
-        <div className="nx-tab-content p-4 md:p-5">
-          {activeTab === 'cards' && (
-            <div className="flex flex-col gap-5">
-              <p className="text-[14px] text-noorix-muted m-0">{t('themePreviewCardsIntro')}</p>
-              <div className="grid gap-5 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
-                {CARD_STYLES.map((item) => (
-                  <CardPreview
-                    key={item.id}
-                    styleId={item.id}
-                    nameAr={item.nameAr}
-                    nameEn={item.nameEn}
-                    descAr={item.descAr}
-                    descEn={item.descEn}
-                    isSelected={currentStyle === item.id}
-                    onSelect={handleSelect}
-                    lang={lang}
-                  />
-                ))}
-              </div>
-              <div className="p-4 bg-noorix-bg-muted rounded-xl text-[13px] text-noorix-muted">
-                <strong className="text-noorix-text">
-                  {t('themePreviewCurrent')} #{currentStyle}
-                </strong>
-                {' — '}
-                {t('themePreviewCardsFooter')}
-              </div>
+      <ScreenTabs
+        items={tabItems}
+        value={activeTab}
+        onChange={setActiveTab}
+        contentClassName="nx-tab-content p-4 md:p-5"
+      >
+        {activeTab === 'cards' && (
+          <div className="flex flex-col gap-5">
+            <p className="text-[14px] text-noorix-muted m-0">{t('themePreviewCardsIntro')}</p>
+            <div className="grid gap-5 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+              {CARD_STYLES.map((item) => (
+                <CardPreview
+                  key={item.id}
+                  styleId={item.id}
+                  nameAr={item.nameAr}
+                  nameEn={item.nameEn}
+                  descAr={item.descAr}
+                  descEn={item.descEn}
+                  isSelected={currentStyle === item.id}
+                  onSelect={handleSelect}
+                  lang={lang}
+                />
+              ))}
             </div>
-          )}
-          {activeTab === 'uilab' && <ThemeUILabTab />}
-        </div>
-      </div>
+            <div className="p-4 bg-noorix-bg-muted rounded-xl text-[13px] text-noorix-muted">
+              <strong className="text-noorix-text">
+                {t('themePreviewCurrent')} #{currentStyle}
+              </strong>
+              {' — '}
+              {t('themePreviewCardsFooter')}
+            </div>
+          </div>
+        )}
+        {activeTab === 'uilab' && <ThemeUILabTab />}
+      </ScreenTabs>
     </ScreenShell>
   );
 }

@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
-import { ConnectedTabStrip, ScreenShell } from '../../ui';
+import { ScreenShell, ScreenTabs } from '../../ui';
 import { useEmployees } from '../../hooks/useEmployees';
 import { getResidencies } from '../../services/api';
 import StaffListScreen from './StaffListScreen';
@@ -89,8 +89,7 @@ export default function HRMainScreen() {
         )}
       </div>
 
-      {/* ── تبويبات متصلة (نفس نمط معرض التجارب ref #3) ── */}
-      <ConnectedTabStrip
+      <ScreenTabs
         items={hrTabItems}
         value={activeTab}
         onChange={setActiveTab}
@@ -103,7 +102,7 @@ export default function HRMainScreen() {
         {activeTab === 'residency' && <ResidencyTab />}
         {activeTab === 'salaryCalc' && <SalaryCalcTab />}
         {activeTab === 'eosCalc'   && <EOSCalcTab />}
-      </ConnectedTabStrip>
+      </ScreenTabs>
 
     </ScreenShell>
   );

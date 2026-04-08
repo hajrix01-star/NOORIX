@@ -77,23 +77,17 @@ export default function DashboardScreen() {
         </div>
       </div>
 
-      {/* بطاقة التبويبات */}
-      <div className="bg-noorix-surface border border-noorix-border rounded-xl shadow-sm overflow-hidden noorix-surface-card">
-        {/* شريط التبويبات */}
-        <ScreenTabs
-          variant="underline"
-          items={dashboardTabItems}
-          value={activeTab}
-          onChange={setActiveTab}
-        />
-
-        <div className="p-4 nx-tab-content">
-          {activeTab === 'overview'    && <DashboardOverviewTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
-          {activeTab === 'calendar'    && <DashboardCalendarTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
-          {activeTab === 'specialDays' && <DashboardSpecialDaysTab companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} />}
-          {activeTab === 'appSales'    && <DashboardAppSalesTab    companyId={activeCompanyId} year={year} filter={filter} />}
-        </div>
-      </div>
+      <ScreenTabs
+        items={dashboardTabItems}
+        value={activeTab}
+        onChange={setActiveTab}
+        contentClassName="p-4 nx-tab-content"
+      >
+        {activeTab === 'overview'    && <DashboardOverviewTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
+        {activeTab === 'calendar'    && <DashboardCalendarTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
+        {activeTab === 'specialDays' && <DashboardSpecialDaysTab companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} />}
+        {activeTab === 'appSales'    && <DashboardAppSalesTab    companyId={activeCompanyId} year={year} filter={filter} />}
+      </ScreenTabs>
     </ScreenShell>
   );
 }

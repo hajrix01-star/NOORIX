@@ -4,7 +4,7 @@ import { cn } from './cn';
 
 /**
  * شريط تبويبات متصل — زوايا علوية ناعمة، فواصل عمودية، سباركلاين للنشط أسفل التسمية، انتقال للمحتوى.
- * يُستخدم في الموارد البشرية ومعرض التجارب (ref #3).
+ * يُستدعى عادةً عبر `ScreenTabs` (variant الافتراضي `connected`) — لا تستورد هذا المكوّن مباشرة في شاشات أقسام جديدة.
  * تسميات التبويب: طبقة strut بـ font-bold مخفية + طبقة مرئية (bold/semibold) لثبات العرض.
  *
  * @param {{ id: string; label: React.ReactNode }[]} items
@@ -38,6 +38,7 @@ export default function ConnectedTabStrip({
           'border-b border-noorix-border',
         )}
         role="tablist"
+        dir="ltr"
       >
         {items.map((item) => {
           const active = value === item.id;
