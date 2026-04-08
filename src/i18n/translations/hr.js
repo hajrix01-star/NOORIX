@@ -237,8 +237,16 @@ export default {
   deletePayrollRunConfirm: { ar: 'هل تريد حذف مسيرة الراتب هذه؟', en: 'Do you want to delete this payroll run?' },
   payrollMonthExists: { ar: 'مسيرة لهذا الشهر موجودة مسبقاً', en: 'Payroll run for this month already exists' },
   payrollGrossFixedPackageHint: {
-    ar: 'الإجمالي الافتراضي = الراتب + البدلات + البدلات المخصصة + أجر الأوفر تايم المحسوب تلقائياً (ساعات اليوم فوق 8 × أيام الدوام المخزنة لكل موظف: 26 أو 30…). يمكنك التعديل يدوياً أو إضافة مبالغ في عمود البدلات.',
-    en: 'Default gross = salary + allowances + custom allowances + auto overtime (daily hours over 8 × each employee’s stored work days: 26 or 30…). Edit manually or use the Allowances column as needed.',
+    ar: 'الإجمالي الافتراضي = (الراتب + البدلات + المخصصة + الأوفر تايم) مضروباً في نسبة أيام العمل في الشهر (من تاريخ الالتحاق حتى نهاية الشهر أو تاريخ نهاية الخدمة إن وُجد). الخصم الآلي للإجازات: أيام الإجازة غير المدفوعة المعتمدة فقط؛ الإجازة السنوية والمرضية لا تُخصم آلياً. أيام الدوام لحساب الخصم من [NOORIX_WD:…] في نظام الدوام. يمكنك التعديل يدوياً.',
+    en: 'Default gross = (salary + allowances + custom + auto overtime) × calendar days employed in the month (join date through month end, or termination date if set). Auto leave deduction applies only to approved unpaid leave; annual/sick are not auto-deducted. Work days for that split come from [NOORIX_WD:…] on the schedule. You can edit amounts manually.',
+  },
+  payrollEmploymentProrationNote: {
+    ar: 'تناسب مدة العمل: {0} من {1} يوم',
+    en: 'Work proration: {0} of {1} calendar days',
+  },
+  payrollUnpaidLeaveDeductionNote: {
+    ar: 'خصم إجازة غير مدفوعة ({0} يوم): {1}',
+    en: 'Unpaid leave deduction ({0} d): {1}',
   },
   overtimeWorkDaysPerMonth: { ar: 'أيام العمل لحساب الأوفر تايم (شهرياً)', en: 'Work days for monthly overtime' },
   overtimeWorkDaysHelp: {
