@@ -51,7 +51,7 @@ export default function ConnectedTabStrip({
               className={cn(
                 /* grid: مركز النص في الصف العلوي؛ السباركلاين صف ثابت — size=auto يزيل h-9 من الزر */
                 '!grid !h-full min-h-[39px] grid-cols-1 grid-rows-[minmax(36px,1fr)_3px] sm:grid-rows-[minmax(38px,1fr)_3px] self-stretch shrink-0 rounded-none',
-                'border-0 border-e border-noorix-border last:border-e-0',
+                'border-0 border-e border-noorix-border-strong last:border-e-0',
                 'text-[14px] leading-normal whitespace-nowrap',
                 'transition-all duration-200 ease-out',
                 active

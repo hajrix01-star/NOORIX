@@ -20,6 +20,7 @@
   --color-noorix-muted:    var(--noorix-text-muted);
   --color-noorix-muted2:   var(--noorix-text-muted-2);
   --color-noorix-border:   var(--noorix-border);
+  --color-noorix-border-strong: var(--noorix-border-strong);
   --color-noorix-surface:  var(--noorix-bg-surface);
   --color-noorix-bg:       var(--noorix-bg-page);
   --color-noorix-bg-muted: var(--noorix-bg-muted);
