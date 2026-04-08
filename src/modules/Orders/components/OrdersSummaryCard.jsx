@@ -9,8 +9,8 @@ import { fmt } from '../../../utils/format';
 function SectionBlock({ title, received, spent, result, receivedLabel, spentLabel, resultLabel, accentColor }) {
   const resNum = Number(result ?? 0);
   return (
-    <div className="border border-noorix-border overflow-hidden bg-noorix-surface flex flex-col rounded-[14px]" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-      <div className="h-[3px]" style={{ background: accentColor || 'var(--noorix-accent-blue)' }} />
+    <div className="noorix-surface-card flex min-w-0 flex-col overflow-hidden">
+      <div className="h-1" style={{ background: accentColor || 'var(--noorix-accent-blue)' }} aria-hidden />
       <div className="pt-[14px] px-4 pb-3">
         <div className="text-[11px] font-bold text-noorix-muted mb-3 uppercase tracking-[0.04em]">
           {title}
@@ -53,15 +53,18 @@ export function OrdersSummaryCard({ summary = {}, cashSalesTotal = 0, isLoading 
 
   if (isLoading) {
     return (
-      <div className="border border-noorix-border bg-noorix-surface p-6 text-center text-noorix-muted rounded-[14px]">
+      <div className="noorix-surface-card p-6 text-center text-noorix-muted">
         {t('loading')}
       </div>
     );
   }
 
   return (
-    <div className="border border-noorix-border bg-noorix-surface overflow-hidden rounded-[14px]" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-      <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, var(--noorix-accent-blue), var(--noorix-accent-green))' }} />
+    <div className="noorix-surface-card overflow-hidden">
+      <div
+        className="h-1 bg-gradient-to-r from-noorix-blue to-noorix-green"
+        aria-hidden
+      />
       <div className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="text-[13px] font-bold text-noorix-muted tracking-[0.04em]">

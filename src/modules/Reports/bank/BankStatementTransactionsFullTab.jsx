@@ -184,7 +184,7 @@ export default function BankStatementTransactionsFullTab({
       </div>
 
       {/* ── الجدول ── */}
-      <div className="overflow-auto rounded-xl border border-noorix-border" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+      <div className="noorix-surface-card overflow-auto p-0">
         <table className="w-full text-[12px] min-w-[780px]" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr className="bg-noorix-bg-muted border-b-2 border-noorix-border">

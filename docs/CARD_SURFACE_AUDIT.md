@@ -26,7 +26,17 @@ Use this list when adding or reviewing screens so surfaces stay aligned with **d
 ```bash
 rg "noorix-surface-card.*(border border-noorix-border|rounded-xl|shadow-sm)" src
 rg "noorix-surface-card" src --glob "*.jsx" | rg "style=.*boxShadow"
+rg "boxShadow:\\s*['\"]0 " src --glob "*.jsx"
+rg "0 1px 4px" src --glob "*.jsx"
 ```
+
+## ما يُستثنى عادةً (ليس «كرت قسم»)
+
+- **منبثقات / قوائم**: `SupplierSelect`, `ProductSearchInput`, قائمة إجراءات `VaultCard`, `AppHeader` — ظل أقوى للطفو فوق الصفحة.
+- **رسوم Recharts**: `ChartTooltip` / `style` داخل `DashboardOverviewTab` وغيرها — أدوات عائمة وليست كروت سطح.
+- **محادثة ذكية**: فقاعات الرسائل — نمط محادثة وليس KPI.
+- **ThemePreviewScreen** — معاينة أشكال الكرت 1–10 عمداً.
+- **Toast** — إشعار عائم.
 
 ## References
 

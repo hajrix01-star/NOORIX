@@ -146,7 +146,7 @@ export default function TreasuryScreen() {
         <>
           {/* ── بطاقة الملخص الإجمالي (للشهر/الفترة المحددة) ── */}
           {vaultsList.length > 0 && (
-            <div className="grid gap-0 rounded-xl bg-noorix-surface overflow-hidden border border-noorix-border [grid-template-columns:repeat(auto-fit,minmax(120px,1fr))]">
+            <div className="noorix-surface-card grid gap-0 overflow-hidden p-0 [grid-template-columns:repeat(auto-fit,minmax(120px,1fr))]">
               <div className="text-[11px] text-noorix-muted border-b border-noorix-border py-2 px-5 col-span-full">
                 {dateFilter?.label || t('allMonths')}
               </div>

@@ -122,7 +122,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
 
       <div className="flex flex flex-col gap-2.5">
         {specialDaysList.map((sp) => (
-          <div key={sp.id} className="flex items-center gap-12 p-3.5 bg-noorix-surface border border-noorix-border rounded-lg">
+          <div key={sp.id} className="noorix-surface-card flex items-center gap-12 p-3.5">
             <div className="w-3 h-3 rounded-md shrink-0" style={{ background: sp.color || '#8b5cf6' }} />
             {editingId === sp.id ? (
               <>

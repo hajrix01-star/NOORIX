@@ -205,7 +205,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
       {preview && (
         <div className="flex flex flex-wrap gap-[18px] items-start">
-          <div className="p-4 rounded-xl bg-noorix-surface border border-noorix-border flex-[1_1_280px] min-w-0">
+          <div className="noorix-surface-card flex-[1_1_280px] min-w-0 p-4">
             <div className="flex items-center justify-between mb-3">
               <span className="font-semibold text-[14px]">{isAr ? 'صورة الفاتورة' : 'Invoice Image'}</span>
               <Button className="modal-close-btn w-7 h-7"
@@ -284,7 +284,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
               )}
 
               {activeItems.length > 0 && (
-                <div className="p-4 rounded-xl bg-noorix-surface border border-noorix-border">
+                <div className="noorix-surface-card p-4">
                   <div className="font-semibold text-[14px] mb-3">
                     {t('ocrItems')} ({activeItems.length})
                   </div>

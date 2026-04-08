@@ -149,19 +149,14 @@ const VaultCard = memo(function VaultCard({
     /* لا overflow:hidden هنا — ضروري حتى تبرز قائمة الإجراءات (position:absolute) */
     <div
       onClick={() => onClick(vault)}
-      className="flex flex-col bg-noorix-surface cursor-pointer border border-noorix-border rounded-[14px] relative"
-      style={{
-        opacity: isArchived ? 0.65 : 1,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-        transition: 'box-shadow 150ms',
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.13)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
+      className="noorix-surface-card relative flex cursor-pointer flex-col transition-[box-shadow] duration-150 hover:[box-shadow:var(--noorix-card-shadow-hover)]"
+      style={{ opacity: isArchived ? 0.65 : 1 }}
     >
-      {/* شريط لوني علوي — نستخدم border-radius للزوايا بدل overflow:hidden */}
-      <div className="h-[3px] rounded-t-[14px]" style={{
-        background: isArchived ? 'var(--noorix-border)' : accentColor,
-      }} />
+      <div
+        className="h-1 rounded-t-[var(--noorix-card-radius)]"
+        style={{ background: isArchived ? 'var(--noorix-border)' : accentColor }}
+        aria-hidden
+      />
 
       {/* هيدر الكرت */}
       <div className="flex items-center justify-between gap-2.5 pt-[14px] px-4 pb-3">

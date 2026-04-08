@@ -138,7 +138,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       </div>
 
       {adding && (
-        <div className="rounded-xl bg-noorix-surface mb-4 p-5 border border-noorix-border">
+        <div className="noorix-surface-card mb-4 p-5">
           <div className="font-semibold mb-3 text-[14px]">{t('ocrAddSupplier')}</div>
           <SupplierForm onSave={handleCreate} onCancel={() => setAdding(false)} loading={saving} />
         </div>
@@ -154,7 +154,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
           {filtered.map((s) => (
             <div key={s.id}>
               {editing?.id === s.id ? (
-                <div className="bg-noorix-surface p-4 rounded-lg border border-noorix-border">
+                <div className="noorix-surface-card p-4">
                   <SupplierForm initial={s} onSave={handleUpdate} onCancel={() => setEditing(null)} loading={saving} />
                 </div>
               ) : (

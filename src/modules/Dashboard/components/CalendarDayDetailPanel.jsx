@@ -38,7 +38,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
   if (!dateStr) return null;
 
   return (
-    <div className="flex flex-col gap-3 p-4 bg-noorix-surface border border-noorix-border rounded-lg flex-[0_0_280px] min-w-[260px]">
+    <div className="noorix-surface-card flex min-w-[260px] flex-[0_0_280px] flex-col gap-3 p-4">
       <div className="flex flex items-center justify-between">
         <h4 className="m-0 text-[15px] font-bold">{formatSaudiDate(dateStr)}</h4>
         {onPrint && (

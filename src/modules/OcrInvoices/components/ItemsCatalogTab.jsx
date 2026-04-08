@@ -183,7 +183,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
 
       {/* Duplicate groups */}
       {dupGroups !== null && (
-        <div className="rounded-xl bg-noorix-surface mb-4 p-4 border border-noorix-border">
+        <div className="noorix-surface-card mb-4 p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="font-semibold text-[14px] text-noorix-text">
               {dupGroups.length === 0
@@ -222,7 +222,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
       )}
 
       {adding && (
-        <div className="rounded-xl bg-noorix-surface mb-4 p-5 border border-noorix-border">
+        <div className="noorix-surface-card mb-4 p-5">
           <div className="font-semibold mb-3 text-[14px]">{t('ocrAddItem')}</div>
           <ItemForm onSave={handleCreate} onCancel={() => setAdding(false)} loading={saving} />
         </div>
@@ -238,7 +238,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
           {filtered.map((item) => (
             <div key={item.id}>
               {editing?.id === item.id ? (
-                <div className="bg-noorix-surface p-4 rounded-lg border border-noorix-border">
+                <div className="noorix-surface-card p-4">
                   <ItemForm initial={item} onSave={handleUpdate} onCancel={() => setEditing(null)} loading={saving} />
                 </div>
               ) : (

@@ -98,7 +98,7 @@ export default function BankStatementDetailView({
   return (
     <div className="grid gap-5">
       {/* ── رأس الصفحة: زر الرجوع + أدوات ── */}
-      <div className="nx-page-header border border-noorix-border rounded-xl py-[14px] px-[18px] bg-noorix-surface" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+      <div className="nx-page-header noorix-surface-card py-[14px] px-[18px]">
         <Button onClick={onBack}>← {t('bankBackToList')}</Button>
         <div className="nx-toolbar">
           <Button
