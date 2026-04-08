@@ -3,7 +3,7 @@ import Button from './Button';
 import { cn } from './cn';
 
 /**
- * شريط تبويبات متصل — زوايا علوية ناعمة، فواصل عمودية، سباركلاين للنشط، انتقال للمحتوى.
+ * شريط تبويبات متصل — زوايا علوية ناعمة، فواصل عمودية، سباركلاين للنشط أسفل التسمية، انتقال للمحتوى.
  * يُستخدم في الموارد البشرية ومعرض التجارب (ref #3).
  *
  * @param {{ id: string; label: React.ReactNode }[]} items
@@ -48,7 +48,7 @@ export default function ConnectedTabStrip({
               role="tab"
               aria-selected={active}
               className={cn(
-                '!flex !flex-col !items-stretch !justify-start !h-auto !min-h-0 rounded-none shrink-0',
+                '!flex !flex-col !items-stretch !justify-between !h-auto !min-h-0 rounded-none shrink-0',
                 'border-0 border-e border-noorix-border last:border-e-0',
                 'text-[13px] leading-normal whitespace-nowrap',
                 'transition-all duration-200 ease-out',
@@ -58,6 +58,9 @@ export default function ConnectedTabStrip({
               )}
               onClick={() => onChange(item.id)}
             >
+              <span className="flex min-h-[40px] flex-1 items-center justify-center px-4 py-2.5">
+                {item.label}
+              </span>
               <span
                 className={cn(
                   'block h-[3px] w-full shrink-0 transition-opacity duration-200',
@@ -65,9 +68,6 @@ export default function ConnectedTabStrip({
                 )}
                 aria-hidden
               />
-              <span className="flex min-h-[40px] items-center justify-center px-4 py-2.5">
-                {item.label}
-              </span>
             </Button>
           );
         })}
