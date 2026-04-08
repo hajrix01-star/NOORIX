@@ -7,7 +7,8 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { chatQuery, getExpenseLines, getEmployees, getVaults } from '../../services/api';
+import { chatQuery, getExpenseLines, getEmployees, getVaults, createCustomAllowance } from '../../services/api';
+import { rejectIfApiFailed, getApiErrorMessage } from '../../utils/apiResponse';
 import { getStoredUser } from '../../services/authStore';
 import { PERMISSIONS, hasPermission } from '../../constants/permissions';
 import { HrQuickEntrySheet } from './HrQuickEntrySheet';
@@ -336,12 +337,16 @@ export default function SmartChatScreen() {
     create.mutate(employeeBody, {
       onSuccess: async (res, empBody) => {
         try {
-          if (res?.success === false) throw new Error(res?.error);
           const empId = res?.data?.id || res?.id;
           for (const row of customAllowances) {
             if (row.nameAr && row.amount > 0) {
-              const { createCustomAllowance } = await import('../../services/api');
-              await createCustomAllowance({ companyId: activeCompanyId, employeeId: empId, nameAr: row.nameAr, amount: row.amount });
+              const allowRes = await createCustomAllowance({
+                companyId: activeCompanyId,
+                employeeId: empId,
+                nameAr: row.nameAr,
+                amount: row.amount,
+              });
+              rejectIfApiFailed(allowRes, getApiErrorMessage(allowRes, t('saveFailed')));
             }
           }
           showToast(t('employeeAdded'), 'success');

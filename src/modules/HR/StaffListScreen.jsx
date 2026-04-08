@@ -12,6 +12,7 @@ import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
+import { rejectIfApiFailed, getApiErrorMessage } from '../../utils/apiResponse';
 import { hrFmt } from './utils/hrFmt';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
@@ -282,12 +283,10 @@ export default function StaffListScreen({ embedded }) {
 
   async function syncCustomAllowanceRows(employeeId, desiredRows = []) {
     if (!companyId || !employeeId) {
-      throw new Error('تعذر حفظ البدلات لعدم توفر معرف الموظف.');
+      throw new Error(t('customAllowanceMissingEmployeeId'));
     }
     const res = await getCustomAllowances(companyId, employeeId);
-    if (res?.success === false) {
-      throw new Error(res?.error || 'فشل تحميل البدلات الحالية.');
-    }
+    rejectIfApiFailed(res, getApiErrorMessage(res, t('loadingError')));
     const currentRows = Array.isArray(res?.data) ? res.data : (res?.data?.items ?? []);
     const currentById = new Map(currentRows.map((row) => [row.id, row]));
     const desiredIds = new Set(desiredRows.filter((row) => row.id).map((row) => row.id));
@@ -298,9 +297,7 @@ export default function StaffListScreen({ embedded }) {
         && (desiredRow.nameAr !== currentRow.nameAr || !moneyAmountsEqual(desiredRow.amount, currentRow.amount));
       if (!desiredIds.has(currentRow.id) || changed) {
         const delRes = await deleteCustomAllowance(currentRow.id, companyId);
-        if (delRes?.success === false) {
-          throw new Error(delRes?.error || `فشل حذف البدلة: ${currentRow.nameAr}`);
-        }
+        rejectIfApiFailed(delRes, getApiErrorMessage(delRes, t('deleteFailed')));
       }
     }
 
@@ -315,9 +312,7 @@ export default function StaffListScreen({ embedded }) {
           nameAr: row.nameAr,
           amount: roundMoney2(row.amount),
         });
-        if (createRes?.success === false) {
-          throw new Error(createRes?.error || `فشل حفظ البدلة: ${row.nameAr}`);
-        }
+        rejectIfApiFailed(createRes, getApiErrorMessage(createRes, t('saveFailed')));
       }
     }
 
@@ -338,9 +333,8 @@ export default function StaffListScreen({ embedded }) {
       update.mutate(
         { id: editingEmployee.id, body: employeeBody },
         {
-          onSuccess: async (res) => {
+          onSuccess: async () => {
             try {
-              if (res?.success === false) throw new Error(res?.error || t('updateFailed'));
               await syncCustomAllowanceRows(editingEmployee.id, customRows);
               showToast(t('employeeUpdated'), 'success');
               setEditingEmployee(null);
@@ -355,7 +349,6 @@ export default function StaffListScreen({ embedded }) {
       create.mutate(employeeBody, {
         onSuccess: async (res) => {
           try {
-            if (res?.success === false) throw new Error(res?.error || t('addFailed'));
             const employeeId = res?.data?.id || res?.id;
             await syncCustomAllowanceRows(employeeId, customRows);
             showToast(t('employeeAdded'), 'success');

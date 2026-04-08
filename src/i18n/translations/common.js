@@ -60,6 +60,10 @@ export default {
   expenseBatchSelectVault: { ar: 'اختر الخزينة', en: 'Select a vault' },
   expenseBatchNoValidRows: { ar: 'لا توجد صفوف صالحة', en: 'No valid rows' },
   saveFailedGeneric: { ar: 'فشل الحفظ', en: 'Save failed' },
+  customAllowanceMissingEmployeeId: {
+    ar: 'تعذر حفظ البدلات المخصصة دون معرف موظف.',
+    en: 'Cannot save custom allowances without an employee id.',
+  },
   deletedSuccessfully: { ar: 'تم الحذف', en: 'Deleted successfully' },
   confirmDelete: { ar: 'هل تريد حذف هذا العنصر؟', en: 'Are you sure you want to delete this item?' },
   note: { ar: 'ملاحظة', en: 'Note' },

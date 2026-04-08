@@ -26,6 +26,7 @@
 
 - [x] استبدال `useMutation` المباشر في الخطافات والشاشات المذكورة في سجل Git لهذا التغيير بـ `useApiMutation` حيث ينطبق.
 - [x] مسارات إضافية: حذف فاتورة من `InvoicesListScreen`، حفظ `InvoiceEditModal`، الحذف النهائي للموظف من `StaffListScreen` و`EmployeeProfileScreen`.
+- [x] مسارات متعددة الخطوات (مزامنة بدلات، إلغاء دفعة مشتريات، استيراد مورد، بدلات من المحادثة): استخدام `rejectIfApiFailed` / `getApiErrorMessage` من `apiResponse.js` بدل تكرار `if (!res.success)`.
 - [x] `ToastContext` مع منطق تقليل التكرار.
 - [x] `apiResponse.js` + اختبارات Vitest.
 - [x] مفاتيح ترجمة مساعدة للرسائل المشتركة.

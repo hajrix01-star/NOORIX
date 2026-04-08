@@ -8,6 +8,7 @@ import { Button, Badge, Input, ScreenTabs, ScreenShell } from '../../ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
+import { rejectIfApiFailed, getApiErrorMessage } from '../../utils/apiResponse';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { createInvoiceBatch, updateInvoice, getPurchaseBatchSummaries, fetchAllInvoicesForBatch } from '../../services/api';
@@ -165,7 +166,7 @@ export default function PurchasesBatchScreen() {
       for (const inv of invoices) {
         if (inv.status === 'active') {
           const res = await updateInvoice(inv.id, { status: 'cancelled' }, companyId);
-          if (!res?.success) throw new Error(res?.error || t('cancelFailed'));
+          rejectIfApiFailed(res, getApiErrorMessage(res, t('cancelFailed')));
         }
       }
       invalidateOnFinancialMutation(queryClient);
