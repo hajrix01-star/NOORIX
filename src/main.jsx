@@ -7,6 +7,7 @@ import { applyBranding } from './utils/appBranding';
 import { readStoredLanguage } from './utils/storedLanguage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import App from './App';
 import './index.css';
 
@@ -53,7 +54,9 @@ ReactDOM.createRoot(container).render(
         {/* future flags تُقلّل تحذيرات React Router v7 وتحسّن الأداء */}
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
-            <App />
+            <ToastProvider>
+              <App />
+            </ToastProvider>
           </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>

@@ -60,6 +60,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
           <td>${hrFmt(before)}</td>
           <td>${hrFmt(deductionsAll)}</td>
           <td>${hrFmt(row.netSalary ?? 0)}</td>
+          <td class="signature-cell">&nbsp;</td>
         </tr>
       `;
     }).join('');
@@ -82,6 +83,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
             table { width:100%; border-collapse:collapse; margin-top:12px; font-size:12px; }
             th, td { border:1px solid #cbd5e1; padding:8px; text-align:right; }
             th { background:#f1f5f9; }
+            .signature-cell { min-height:44px; min-width:110px; vertical-align:middle; }
             .summary { margin-top:16px; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
             .card { border:1px solid #cbd5e1; border-radius:8px; padding:10px; }
             .label { font-size:12px; color:#475569; margin-bottom:4px; }
@@ -108,6 +110,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
                 <th>${t('payrollTotalBeforeDeductions')}</th>
                 <th>${t('payrollTotalDeductionsAll')}</th>
                 <th>${t('payrollTotalAfterDeductions')}</th>
+                <th>${t('payrollEmployeeSignature')}</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
@@ -149,12 +152,26 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
     { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: '8%', minWidth: 76, render: (v) => hrFmt(v ?? 0) },
     { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: '11%', minWidth: 96, render: (_, row) => hrFmt(Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0)) },
     { key: 'netSalary', label: t('netSalary'), numeric: true, width: '11%', minWidth: 90, render: (v) => hrFmt(v) },
+    {
+      key: 'employeeSignature',
+      label: t('payrollEmployeeSignature'),
+      width: '12%',
+      minWidth: 110,
+      render: () => (
+        <span
+          className="inline-block min-w-[100px] min-h-[36px] border-b border-dashed border-noorix-border align-bottom"
+          aria-hidden
+        />
+      ),
+    },
   ];
 
   const footerCells = (
     <>
+      <td className="py-2 px-2" aria-hidden />
       <td colSpan={8} className="text-[13px] font-bold text-noorix-muted py-2 px-3">{t('payrollTotalAfterDeductions')}</td>
       <td className="text-[14px] py-2 px-3 font-black text-right nx-font-numbers text-noorix-green">{hrFmt(totalNet)}</td>
+      <td className="py-2 px-2" aria-hidden />
     </>
   );
 

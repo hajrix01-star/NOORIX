@@ -220,6 +220,7 @@ export default {
   selectEmployee: { ar: 'اختر الموظف', en: 'Select employee' },
   calculate: { ar: 'حساب', en: 'Calculate' },
   printPayroll: { ar: 'طباعة المسيرة', en: 'Print payroll' },
+  payrollEmployeeSignature: { ar: 'توقيع الموظف (استلام)', en: 'Employee signature (receipt)' },
   payrollAdvanceDates: { ar: 'تواريخ السلف', en: 'Advance dates' },
   payrollAutoAdvanceDeduct: { ar: 'خصم السلف الآلي', en: 'Automatic advance deduction' },
   payrollDeferAdvanceDeduct: { ar: 'تأجيل خصم السلف لهذا الشهر', en: 'Defer advance deduction this month' },

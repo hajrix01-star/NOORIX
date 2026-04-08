@@ -2,7 +2,7 @@
  * LeaveTab — الإجازات (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getLeaves, updateLeaveStatus } from '../../../services/api';
@@ -12,7 +12,8 @@ import { useTableFilter } from '../../../hooks/useTableFilter';
 import SmartTable from '../../../components/common/SmartTable';
 import { LeaveFormModal } from '../components/LeaveFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
-import Toast from '../../../components/Toast';
+import { useToast } from '../../../context/ToastContext';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, Input, ScreenShell } from '../../../ui';
 import { buildLeaveRequestStatusMap } from '../../../constants/badgeMaps';
@@ -32,7 +33,7 @@ export default function LeaveTab() {
   const companyId = activeCompanyId ?? '';
   const [year, setYear] = useState(new Date().getFullYear());
   const [showAdd, setShowAdd] = useState(false);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -47,13 +48,11 @@ export default function LeaveTab() {
     enabled: !!companyId,
   });
 
-  const updateStatusMutation = useMutation({
+  const updateStatusMutation = useApiMutation({
     mutationFn: ({ id, status }) => updateLeaveStatus(id, companyId, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leaves', companyId] });
-      setToast({ visible: true, message: t('leaveAdded'), type: 'success' });
-    },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
+    invalidateQueries: [['leaves', companyId]],
+    successToast: () => t('leaveAdded'),
+    errorToast: (e) => e?.message || t('saveFailed'),
   });
 
   const items = useMemo(() => (data ?? []).map((l) => ({
@@ -142,8 +141,6 @@ export default function LeaveTab() {
 
   return (
     <ScreenShell>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>
@@ -197,7 +194,7 @@ export default function LeaveTab() {
           companyId={companyId}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['leaves', companyId] });
-            setToast({ visible: true, message: t('leaveAdded'), type: 'success' });
+            showToast(t('leaveAdded'), 'success');
           }}
           onClose={() => setShowAdd(false)}
         />

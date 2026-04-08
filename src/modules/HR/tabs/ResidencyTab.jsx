@@ -2,7 +2,7 @@
  * ResidencyTab — الإقامات (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -13,7 +13,8 @@ import { useTableFilter } from '../../../hooks/useTableFilter';
 import SmartTable from '../../../components/common/SmartTable';
 import { ResidencyFormModal } from '../components/ResidencyFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
-import Toast from '../../../components/Toast';
+import { useToast } from '../../../context/ToastContext';
+import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, Input, ScreenShell } from '../../../ui';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
@@ -39,7 +40,7 @@ export default function ResidencyTab() {
   const companyId = activeCompanyId ?? '';
   const [showAdd, setShowAdd] = useState(false);
   const [editingResidency, setEditingResidency] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const { showToast } = useToast();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -54,14 +55,14 @@ export default function ResidencyTab() {
     enabled: !!companyId,
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useApiMutation({
     mutationFn: (id) => deleteResidency(id, companyId),
+    invalidateQueries: [['residencies', companyId]],
+    successToast: () => t('residencyDeleted'),
+    errorToast: (e) => e?.message || t('saveFailed'),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['residencies', companyId] });
-      setToast({ visible: true, message: t('residencyDeleted'), type: 'success' });
       setEditingResidency(null);
     },
-    onError: (e) => setToast({ visible: true, message: e?.message || t('saveFailed'), type: 'error' }),
   });
 
   const items = useMemo(() => (data ?? []).map((r) => ({
@@ -160,8 +161,6 @@ export default function ResidencyTab() {
 
   return (
     <ScreenShell>
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
-
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           {expiringCount > 0 && (
@@ -220,7 +219,7 @@ export default function ResidencyTab() {
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['residencies', companyId] });
             invalidateOnFinancialMutation(queryClient);
-            setToast({ visible: true, message: t('residencyAdded'), type: 'success' });
+            showToast(t('residencyAdded'), 'success');
           }}
           onClose={() => setShowAdd(false)}
         />
@@ -232,7 +231,7 @@ export default function ResidencyTab() {
           companyId={companyId}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['residencies', companyId] });
-            setToast({ visible: true, message: t('residencyUpdated'), type: 'success' });
+            showToast(t('residencyUpdated'), 'success');
             setEditingResidency(null);
           }}
           onClose={() => setEditingResidency(null)}
