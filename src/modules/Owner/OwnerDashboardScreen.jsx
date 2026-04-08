@@ -2,7 +2,7 @@
  * OwnerDashboardScreen — لوحة المالك
  * مؤشرات شاملة: المبيعات الشهرية لكل شركة، الأرباح المجمعة، توزيع الأرباح
  */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Button, Input } from '../../ui';
 import { useApp } from '../../context/AppContext';
@@ -11,6 +11,7 @@ import { EN_MONTHS } from '../Reports/reportHelpers';
 import { fmt } from '../../utils/format';
 import { CARD_BORDER_RADIUS } from '../../utils/cardStyles';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
+import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 
 const COLORS = ['var(--noorix-accent-green)', 'var(--noorix-accent-blue)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-violet)', 'var(--noorix-accent-red)', '#0891b2', 'var(--noorix-accent-violet)', 'var(--noorix-accent-green)'];
 
@@ -29,12 +30,7 @@ export default function OwnerDashboardScreen() {
   const [selectedCompanyIds, setSelectedCompanyIds] = useState(() => new Set(companies?.map((c) => c.id) || []));
 
   const companyList = companies?.filter((c) => !c.isArchived) || [];
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 700);
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 700);
-    window.addEventListener('resize', handler, { passive: true });
-    return () => window.removeEventListener('resize', handler);
-  }, []);
+  const isMobile = useIsNarrow700();
   const allSelected = selectedCompanyIds.size === 0;
   const idsToFetch = allSelected ? companyList.map((c) => c.id) : [...selectedCompanyIds];
   const { reportsByCompany, isLoading, isError, error } = useOwnerReports({ companyIds: idsToFetch, year });

@@ -8,6 +8,8 @@ export default {
   dashboardAppSales: { ar: 'مبيعات التطبيق', en: 'App Sales' },
   dashboardPlaceholder: { ar: 'سيتم إضافة المحتوى قريباً.', en: 'Content will be added soon.' },
   dashboardSalesTimeline: { ar: 'خط زمني للمبيعات', en: 'Sales timeline' },
+  dashboardTimelineDaily: { ar: 'يومي', en: 'Daily' },
+  dashboardTimelineMonthly: { ar: 'شهري', en: 'Monthly' },
   dashboardSalesTarget: { ar: 'هدف المبيعات', en: 'Sales target' },
   dashboardSetTarget: { ar: 'تعيين الهدف', en: 'Set target' },
   dashboardTargetAchieved: { ar: 'تحقق الهدف', en: 'Target achieved' },

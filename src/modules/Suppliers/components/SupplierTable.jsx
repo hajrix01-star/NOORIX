@@ -4,9 +4,10 @@
  *        selectedIds (Set), onSelectChange(id,bool), onSelectAll(bool),
  *        onBulkDelete
  */
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Badge, Button } from '../../../ui';
+import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
 
 const sName = (s, lang) => (lang === 'en' ? s?.nameEn || s?.nameAr : s?.nameAr || s?.nameEn) || '—';
 
@@ -72,15 +73,7 @@ export const SupplierTable = memo(function SupplierTable({
 }) {
   const { t, lang } = useTranslation();
 
-  const mq = typeof window !== 'undefined' ? window.matchMedia('(max-width: 700px)') : null;
-  const [isMobile, setIsMobile] = useState(mq?.matches ?? false);
-  useEffect(() => {
-    if (!mq) return;
-    const handler = (e) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const isMobile = useIsNarrow700();
 
   const allSelected    = suppliers.length > 0 && selectedIds.size === suppliers.length;
   const someSelected   = selectedIds.size > 0 && !allSelected;

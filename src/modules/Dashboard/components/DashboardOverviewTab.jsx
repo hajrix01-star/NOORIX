@@ -16,11 +16,24 @@ import PeriodAnalyticsStrip from '../../Reports/PeriodAnalyticsStrip';
 import { useSales } from '../../../hooks/useSales';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
+import { ScreenTabs } from '../../../ui';
 
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 function lastDayOfMonth(year, month) { return new Date(year, month, 0).getDate(); }
+
+/** شهر السنة الحالية بتوقيت السعودية (للافتراض عند «كل الأشهر» + عرض يومي) */
+function getSaudiYearMonth() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit',
+  }).formatToParts(new Date());
+  const m = {};
+  for (const p of parts) {
+    if (p.type !== 'literal') m[p.type] = p.value;
+  }
+  return { year: parseInt(m.year, 10), month: parseInt(m.month, 10) };
+}
 function ymd(y, m, d) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 function fmtAxis(n) {
   if (n >= 1e6) return `${(n/1e6).toFixed(1)}M`;
@@ -131,14 +144,19 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const canPeriodAnalytics = (userPermissions || []).includes(PERMISSIONS.REPORTS_READ);
   const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
 
-  const month    = selectedMonth ? Number(selectedMonth) : 1;
-  const lastDay  = lastDayOfMonth(year, month);
-  const dailyStart = selectedMonth ? ymd(year, month, 1)      : null;
-  const dailyEnd   = selectedMonth ? ymd(year, month, lastDay) : null;
+  const [timelineGrain, setTimelineGrain] = useState(() => (selectedMonth != null ? 'daily' : 'monthly'));
 
-  /* ── بيانات التقويم اليومية ── */
+  const saudiYM = getSaudiYearMonth();
+  /** شهر المخطط اليومي: من الفلتر أو (سنة حالية → شهر السعودية) وإلا يناير */
+  const chartMonthForDaily =
+    selectedMonth != null ? selectedMonth : (year === saudiYM.year ? saudiYM.month : 1);
+  const lastDayChart = lastDayOfMonth(year, chartMonthForDaily);
+  const dailyStart = timelineGrain === 'daily' ? ymd(year, chartMonthForDaily, 1) : null;
+  const dailyEnd   = timelineGrain === 'daily' ? ymd(year, chartMonthForDaily, lastDayChart) : null;
+
+  /* ── بيانات المبيعات اليومية (للمخطط اليومي وقسم القنوات عند العرض اليومي) ── */
   const { summaries: dailySummaries } = useSales({
-    companyId, startDate: dailyStart, endDate: dailyEnd, enabled: !!selectedMonth,
+    companyId, startDate: dailyStart, endDate: dailyEnd, enabled: timelineGrain === 'daily',
   });
 
   /* ── بيانات السنة الكاملة لتوزيع القنوات ── */
@@ -185,20 +203,18 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   /* ── بيانات الرسم البياني للأداء (Recharts) ── */
   const performanceData = useMemo(() => {
-    if (selectedMonth) {
-      /* عرض يومي للشهر المختار */
+    if (timelineGrain === 'daily') {
       const byDay = new Map();
       (dailySummaries || []).forEach((s) => {
         const d = String(s.transactionDate || '').slice(0, 10);
         const dayNum = parseInt(d.slice(8, 10), 10);
         byDay.set(dayNum, (byDay.get(dayNum) || 0) + Number(s.totalAmount || 0));
       });
-      return Array.from({ length: lastDay }, (_, i) => ({
+      return Array.from({ length: lastDayChart }, (_, i) => ({
         label: String(i + 1),
         [t('annualSales')]: byDay.get(i + 1) || 0,
       }));
     }
-    /* عرض سنوي */
     const sg = report?.groups?.find((r) => r.key === 'sales');
     const pg = report?.groups?.find((r) => r.key === 'purchases');
     const eg = report?.groups?.find((r) => r.key === 'expenses');
@@ -208,11 +224,11 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       [t('annualPurchases')]: Number(pg?.months?.[i] || 0),
       [t('annualExpenses')]:  Number(eg?.months?.[i] || 0),
     }));
-  }, [report, selectedMonth, dailySummaries, lastDay, lang, t]);
+  }, [report, timelineGrain, dailySummaries, lastDayChart, lang, t]);
 
   /* ── بيانات توزيع القنوات ── */
   const channelData = useMemo(() => {
-    const src = selectedMonth ? (dailySummaries || []) : (yearSummaries || []);
+    const src = timelineGrain === 'daily' ? (dailySummaries || []) : (yearSummaries || []);
     const map = {};
     src.forEach((s) =>
       (s.channels || []).forEach((ch) => {
@@ -226,7 +242,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     return Object.entries(map)
       .map(([name, value]) => ({ name, value, pct: ((value / total) * 100).toFixed(1) }))
       .sort((a, b) => b.value - a.value);
-  }, [yearSummaries, dailySummaries, selectedMonth, lang]);
+  }, [yearSummaries, dailySummaries, timelineGrain, lang]);
 
   const perfTotal = useMemo(() =>
     performanceData.reduce((s, p) => s + Number(p[t('annualSales')] || 0), 0),
@@ -237,7 +253,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const salesSeries   = t('annualSales');
   const purchSeries   = t('annualPurchases');
   const expSeries     = t('annualExpenses');
-  const isAnnualChart = !selectedMonth;
+  const isAnnualChart = timelineGrain === 'monthly';
 
   /* ── حالة إخفاء/إظهار الخطوط — يجب أن تكون قبل أي return مشروط ── */
   const [hiddenSeries, setHiddenSeries] = useState(new Set());
@@ -254,6 +270,17 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     { key: purchSeries,  label: t('annualPurchases'), color: '#2563eb', gradId: 'gradPurch', disabled: !isAnnualChart },
     { key: expSeries,    label: t('annualExpenses'),  color: '#d97706', gradId: 'gradExp',   disabled: !isAnnualChart },
   ], [salesSeries, purchSeries, expSeries, isAnnualChart, t]);
+
+  const timelineMonthName =
+    lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : MONTH_NAMES_EN[chartMonthForDaily - 1];
+
+  const timelineTabItems = useMemo(
+    () => [
+      { id: 'monthly', label: t('dashboardTimelineMonthly') },
+      { id: 'daily', label: t('dashboardTimelineDaily') },
+    ],
+    [t],
+  );
 
   /* ── حالة: لا شركة ── */
   if (!companyId) {
@@ -397,11 +424,21 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
             <div>
               <div className="text-[14px] font-bold text-noorix-text">{t('dashboardSalesTimeline')}</div>
               <div className="text-[12px] text-noorix-muted mt-0.5">
-                {filter?.label || year}{selectedMonth ? ` — ${monthName}` : ''}
+                {timelineGrain === 'monthly'
+                  ? String(year)
+                  : `${timelineMonthName} — ${year}`}
               </div>
             </div>
-            {/* أزرار إخفاء/إظهار الخطوط */}
+            {/* يومي / شهري + إخفاء/إظهار الخطوط */}
             <div className="flex items-center gap-2 flex-wrap">
+              <ScreenTabs
+                variant="segmented"
+                items={timelineTabItems}
+                value={timelineGrain}
+                onChange={setTimelineGrain}
+                buttonSize="sm"
+                className="shrink-0"
+              />
               {SERIES.map((s) => {
                 const hidden   = hiddenSeries.has(s.key);
                 const disabled = s.disabled;
@@ -485,7 +522,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           <div className="noorix-surface-card p-5 flex flex-col">
             <div className="text-[14px] font-bold text-noorix-text mb-1">{t('reportChannels')}</div>
             <div className="text-[12px] text-noorix-muted mb-4">
-              {selectedMonth ? monthName : year}
+              {timelineGrain === 'daily' ? timelineMonthName : year}
             </div>
 
             <ResponsiveContainer width="100%" height={180}>

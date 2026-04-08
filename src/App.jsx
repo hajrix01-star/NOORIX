@@ -12,6 +12,8 @@ import AppSidebar from './components/AppSidebar';
 import AppHeader from './components/AppHeader';
 import LoadingFallback from './components/LoadingFallback';
 import { prefetchRouteChunk } from './utils/routePrefetch';
+import { STORAGE_KEYS, CARD_STYLE_KEY } from './constants/storageKeys';
+import { readStoredLanguage, writeStoredLanguage } from './utils/storedLanguage';
 
 const DashboardScreen = React.lazy(() => import('./modules/Dashboard/DashboardScreen'));
 const DailySalesScreen = React.lazy(() => import('./modules/Sales/DailySalesScreen'));
@@ -34,13 +36,10 @@ const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
 const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvoicesScreen'));
 
-const LANG_KEY           = 'noorix-lang';
-const CARD_STYLE_KEY     = 'noorix-card-style';
-const ACTIVE_COMPANY_KEY = 'noorix-active-company';
 function getInitialLanguage() {
   if (typeof window === 'undefined') return 'ar';
-  const stored = localStorage.getItem(LANG_KEY);
-  if (stored === 'ar' || stored === 'en') return stored;
+  const stored = readStoredLanguage();
+  if (stored) return stored;
   const lang =
     navigator.language ||
     navigator.userLanguage ||
@@ -139,7 +138,7 @@ export default function App() {
   const [activeCompany, _setActiveCompany] = useState(() => {
     // استعادة الشركة المختارة من localStorage عند تحديث الصفحة
     try {
-      const saved = localStorage.getItem(ACTIVE_COMPANY_KEY);
+      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_COMPANY);
       if (saved) return saved;
     } catch (_) {}
     return singleCompanyId || (companiesList[0]?.id ?? '');
@@ -147,14 +146,14 @@ export default function App() {
   const setActiveCompany = useCallback((id) => {
     startCompanyTransition(() => {
       _setActiveCompany(id);
-      try { localStorage.setItem(ACTIVE_COMPANY_KEY, id); } catch (_) {}
+      try { localStorage.setItem(STORAGE_KEYS.ACTIVE_COMPANY, id); } catch (_) {}
     });
   }, [startCompanyTransition]);
   useEffect(() => {
     // انتظر بيانات API الحقيقية — لا تعتمد على JWT الذي قد لا يحوي كل الشركات
     if (!Array.isArray(companiesFromApi) || companiesFromApi.length === 0) return;
 
-    const savedId = (() => { try { return localStorage.getItem(ACTIVE_COMPANY_KEY); } catch { return null; } })();
+    const savedId = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_COMPANY); } catch { return null; } })();
 
     if (savedId && companiesFromApi.some((c) => c.id === savedId)) {
       // الشركة المحفوظة صالحة في API → استعدها دائماً
@@ -195,7 +194,7 @@ export default function App() {
     document.documentElement.classList.add('dir-switching');
     setLanguage((prev) => {
       const next = prev === 'ar' ? 'en' : 'ar';
-      try { localStorage.setItem(LANG_KEY, next); } catch (_) {}
+      writeStoredLanguage(next);
       return next;
     });
     requestAnimationFrame(() => {

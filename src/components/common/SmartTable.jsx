@@ -2,8 +2,9 @@
  * SmartTable — مكون الجداول المركزي لنظام نوركس
  * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards
  */
-import React, { memo, useCallback, useState, useEffect } from 'react';
+import React, { memo, useCallback } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
+import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import Button from '../../ui/Button';
 import Input  from '../../ui/Input';
 
@@ -65,18 +66,9 @@ const SmartTable = memo(function SmartTable({
 }) {
   const { t } = useTranslation();
 
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches
-  );
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(max-width: 700px)');
-    const handler = (e) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
+  const isNarrow = useIsNarrow700();
 
-  const showCards    = isMobile && typeof renderMobileCard === 'function';
+  const showCards    = isNarrow && typeof renderMobileCard === 'function';
   const safePageSize = Math.max(1, pageSize);
   const totalPages   = Math.max(1, Math.ceil(total / safePageSize));
   const colCount     = columns.length;

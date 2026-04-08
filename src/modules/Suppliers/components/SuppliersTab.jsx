@@ -3,7 +3,8 @@
  * يدعم: إضافة، تعديل، حذف، تحديد متعدد، حذف جماعي،
  *        استيراد CSV، تصدير CSV، تنزيل نموذج.
  */
-import React, { useState, memo, useEffect, useCallback } from 'react';
+import React, { useState, memo, useCallback } from 'react';
+import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
 import { useSuppliers }        from '../../../hooks/useSuppliers';
 import { useCategories }       from '../../../hooks/useCategories';
 import { useTranslation }      from '../../../i18n/useTranslation';
@@ -21,16 +22,10 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   /* ── حالة ── */
   const [showForm,        setShowForm]        = useState(false);
   const [search,          setSearch]          = useState('');
-  const [debouncedQ,      setDebouncedQ]      = useState('');
+  const debouncedQ = useDebouncedValue(search.trim(), 300);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [selectedIds,     setSelectedIds]     = useState(new Set());
   const [toast,           setToast]           = useState({ visible: false, message: '', type: 'success' });
-
-  /* debounce البحث */
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQ(search.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
 
   /* ── بيانات ── */
   const { suppliers, isLoading, create, update, remove } = useSuppliers(companyId, { pageSize: 500, q: debouncedQ || undefined });

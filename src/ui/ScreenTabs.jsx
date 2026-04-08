@@ -21,6 +21,8 @@ import { cn } from './cn';
  *   className?: string;
  *   barClassName?: string;
  *   buttonSize?: 'auto' | 'sm' | 'md' | 'lg';
+ *   getTabClassName?: (item: ScreenTabItem, active: boolean) => string | undefined;
+ *   omitDefaultBarClasses?: boolean — عند true لا يُضاف nx-tab-bar / nx-segmented-tab-bar (لأشرطة مخصّصة مثل الإعدادات)
  * }} props
  */
 export default function ScreenTabs({
@@ -32,13 +34,18 @@ export default function ScreenTabs({
   className,
   barClassName,
   buttonSize = 'auto',
+  getTabClassName,
+  omitDefaultBarClasses = false,
 }) {
+  /* dir="ltr" على الشريط فقط: ترتيب التبويبات يطابق ترتيب المصفوفة (يسار→يمين)
+     ولا يعكسه اتجاه الصفحة RTL؛ نص كل تبويب يبقى عربي/إنجليزي طبيعي داخل الزر */
   const bar = (
     <div
       role="tablist"
+      dir="ltr"
       className={cn(
-        variant === 'underline' && 'nx-tab-bar',
-        variant === 'segmented' && 'nx-segmented-tab-bar',
+        variant === 'underline' && !omitDefaultBarClasses && 'nx-tab-bar',
+        variant === 'segmented' && !omitDefaultBarClasses && 'nx-segmented-tab-bar',
         barClassName,
       )}
     >
@@ -57,8 +64,10 @@ export default function ScreenTabs({
               variant === 'underline' && active && 'nx-tab-btn--active',
               variant === 'segmented' && 'nx-tab-btn--segmented',
               variant === 'segmented' && active && 'nx-tab-btn--segmented-active',
+              getTabClassName?.(item, active),
             )}
             onClick={() => onChange(item.id)}
+            data-active={active ? 'true' : 'false'}
           >
             {item.label}
           </Button>

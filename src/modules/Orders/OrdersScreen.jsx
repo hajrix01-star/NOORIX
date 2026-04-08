@@ -64,7 +64,7 @@ export default function OrdersScreen() {
       {companyId && (
         <>
           {/* تبويبات */}
-          <div className="orders-screen-tab-strip" role="tablist">
+          <div className="orders-screen-tab-strip" role="tablist" dir="ltr">
             {tabs.map((tab) => (
               <Button
                 key={tab.id}

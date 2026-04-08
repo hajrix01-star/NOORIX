@@ -4,6 +4,7 @@
  * يدعم: تصدير Excel، PDF، طباعة احترافية (اسم الشركة + شعار)
  */
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
@@ -54,7 +55,7 @@ export default function DailySalesScreen() {
   const [listPage, setListPage] = useState(1);
   const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
   const [searchInput, setSearchInput] = useState(qInit);
-  const [debouncedQ, setDebouncedQ] = useState(qInit.trim());
+  const debouncedQRaw = useDebouncedValue(searchInput.trim(), 300);
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
   const [exportBusy, setExportBusy] = useState(false);
@@ -78,14 +79,8 @@ export default function DailySalesScreen() {
   } = useSalesChannels(companyId);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(searchInput.trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchInput]);
-
-  useEffect(() => {
     if (salesFullHistory) return;
     setSearchInput('');
-    setDebouncedQ('');
   }, [salesFullHistory, companyId]);
 
   useEffect(() => {
@@ -97,7 +92,7 @@ export default function DailySalesScreen() {
     dateFilter.setRangeEnd(end);
   }, [salesFullHistory, companyId]);
 
-  const debouncedQEffective = salesFullHistory ? debouncedQ : '';
+  const debouncedQEffective = salesFullHistory ? debouncedQRaw : '';
 
   useEffect(() => {
     setListPage(1);
@@ -346,7 +341,7 @@ export default function DailySalesScreen() {
         companyId,
         dateFilter.startDate,
         dateFilter.endDate,
-        debouncedQ,
+        debouncedQEffective,
         sortKey,
         sortDir,
       );
@@ -374,7 +369,7 @@ export default function DailySalesScreen() {
         companyId,
         dateFilter.startDate,
         dateFilter.endDate,
-        debouncedQ,
+        debouncedQEffective,
         sortKey,
         sortDir,
       );
@@ -403,7 +398,7 @@ export default function DailySalesScreen() {
         companyId,
         dateFilter.startDate,
         dateFilter.endDate,
-        debouncedQ,
+        debouncedQEffective,
         sortKey,
         sortDir,
       );

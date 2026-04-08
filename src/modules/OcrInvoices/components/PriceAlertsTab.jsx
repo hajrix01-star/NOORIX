@@ -3,6 +3,8 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { bulkDeletePriceHistory } from '../services/ocrApi';
 import { formatSaudiDate } from '../../../utils/saudiDate';
+import { OCR_DISMISSED_ALERTS_KEY } from '../../../constants/storageKeys';
+import { readJsonStorage, writeJsonStorage } from '../../../utils/jsonStorage';
 
 const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
@@ -95,9 +97,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
   const [comparing, setComparing]   = useState(null);
   const [selected,  setSelected]    = useState(new Set());
   const [deleting,  setDeleting]    = useState(false);
-  const [dismissed, setDismissed]   = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('noorix-dismissed-alerts') || '[]')); } catch { return new Set(); }
-  });
+  const [dismissed, setDismissed]   = useState(() => new Set(readJsonStorage(OCR_DISMISSED_ALERTS_KEY, [])));
   const [search, setSearch]   = useState('');
   const [sortBy, setSortBy]   = useState('pct');
   const dir = isAr ? 'rtl' : 'ltr';
@@ -122,7 +122,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
     const next = new Set([...dismissed, ...selected]);
     setDismissed(next);
     setSelected(new Set());
-    try { localStorage.setItem('noorix-dismissed-alerts', JSON.stringify([...next])); } catch {}
+    writeJsonStorage(OCR_DISMISSED_ALERTS_KEY, [...next]);
   };
 
   const handleBulkDeleteHistory = async () => {

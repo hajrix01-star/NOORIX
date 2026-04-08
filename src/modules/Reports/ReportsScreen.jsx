@@ -1,7 +1,7 @@
 ﻿/**
  * ReportsScreen — التقرير العام (ربح وخسارة شهري)
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PERMISSIONS } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -10,6 +10,7 @@ import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
 import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
 import { Button, Input, ScreenTabs } from '../../ui';
+import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import {
   EN_MONTHS,
   CARD_COLORS,
@@ -64,12 +65,7 @@ export default function ReportsScreen() {
     ];
   }, [t, lang]);
 
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 700);
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 700);
-    window.addEventListener('resize', handler, { passive: true });
-    return () => window.removeEventListener('resize', handler);
-  }, []);
+  const isMobile = useIsNarrow700();
 
   function toggleGroup(collapseKey) {
     setCollapsedGroups((prev) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));

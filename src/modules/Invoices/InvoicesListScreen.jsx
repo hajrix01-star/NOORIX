@@ -3,6 +3,7 @@
  * يعتمد على: useInvoices | SmartTable | DateFilterBar | format | saudiDate
  */
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
@@ -93,12 +94,7 @@ export default function InvoicesListScreen() {
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
   const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
   const [searchText, setSearchText] = useState(qInit);
-  const [debouncedQ, setDebouncedQ] = useState(qInit.trim());
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ((searchText || '').trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchText]);
+  const debouncedQ = useDebouncedValue((searchText || '').trim(), 300);
 
   useEffect(() => {
     setPage(1);

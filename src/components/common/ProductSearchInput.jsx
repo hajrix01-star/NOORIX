@@ -5,6 +5,7 @@
  * يدعم debounce 300ms، loading state، RTL، وجوال (font-size ≥ 16px)
  */
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { fmt } from '../../utils/format';
@@ -41,13 +42,12 @@ export function ProductSearchInput({
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const debouncedQuery = useDebouncedValue(query, 300);
   const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);
   const [dropdownRect, setDropdownRect] = useState(null);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
-  const debounceRef = useRef(null);
 
   const selectedProduct = value ? productsById?.get(value) : null;
   const displayValue = selectedProduct ? (selectedProduct.nameAr || selectedProduct.nameEn || '') : '';
@@ -155,8 +155,6 @@ export function ProductSearchInput({
           setQuery(val);
           setOpen(true);
           if (value) onChange?.('');
-          clearTimeout(debounceRef.current);
-          debounceRef.current = setTimeout(() => setDebouncedQuery(val), 300);
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}

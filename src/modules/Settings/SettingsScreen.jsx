@@ -4,11 +4,12 @@
  * - على الديسكتوب: شريط تبويبات أفقي
  */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useIsMobile640 } from '../../hooks/useMediaQuery';
 import { useQuery }        from '@tanstack/react-query';
 import { getCompanies }    from '../../services/api';
 import { useApp }          from '../../context/AppContext';
 import { useTranslation }  from '../../i18n/useTranslation';
-import { Input, Button }   from '../../ui';
+import { Input, ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
 import { hasPermission }   from '../../constants/permissions';
 import CompaniesTab        from './components/CompaniesTab';
 import UsersTab            from './components/UsersTab';
@@ -17,17 +18,6 @@ import TaxSettingsTab      from './components/TaxSettingsTab';
 import AISettingsTab       from './components/AISettingsTab';
 import BackupTab           from './components/BackupTab';
 import AppBrandingTab      from './components/AppBrandingTab';
-
-function useIsMobile() {
-  const [mobile, setMobile] = useState(() => window.innerWidth < 640);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)');
-    const handler = (e) => setMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return mobile;
-}
 
 export default function SettingsScreen() {
   const { t }           = useTranslation();
@@ -39,8 +29,8 @@ export default function SettingsScreen() {
     ? appContext.setActiveCompany : () => {};
 
   const [activeTab, setActiveTab] = useState('companies');
-  const isMobile = useIsMobile();
-  const activeTabRef = useRef(null);
+  const isMobile = useIsMobile640();
+  const tabBarRef = useRef(null);
 
   const TABS_BASE = useMemo(() => [
     { id: 'companies', label: t('companiesTab') },
@@ -57,11 +47,10 @@ export default function SettingsScreen() {
     [userRole, userPermissions, TABS_BASE],
   );
 
-  // تمرير التبويب النشط للمنتصف (ديسكتوب فقط)
   useEffect(() => {
-    if (!isMobile && activeTabRef.current) {
-      activeTabRef.current.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
-    }
+    if (isMobile || !tabBarRef.current) return;
+    const el = tabBarRef.current.querySelector('[data-active="true"]');
+    el?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
   }, [activeTab, isMobile]);
 
   const { data: companiesData = [] } = useQuery({
@@ -77,11 +66,11 @@ export default function SettingsScreen() {
   const activeLabel = TABS.find((t) => t.id === activeTab)?.label || '';
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
 
       {/* ── عنوان الصفحة ── */}
       <div>
-        <h1 className="text-[20px] font-bold text-noorix-text m-0">الإعدادات</h1>
+        <ScreenTitle>الإعدادات</ScreenTitle>
         <p className="text-[13px] text-noorix-muted m-0">
           إدارة الشركات، المستخدمين، الأدوار والصلاحيات، وربط الذكاء الاصطناعي.
         </p>
@@ -109,21 +98,18 @@ export default function SettingsScreen() {
 
         {/* ══ ديسكتوب: شريط تبويبات ═══════════════════════════════════════ */}
         {!isMobile && (
-          <div className="noorix-settings-tabstrip" role="tablist">
-            {TABS.map((tab) => (
-              <Button
-                key={tab.id}
-                ref={activeTab === tab.id ? activeTabRef : null}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                className="noorix-settings-tab"
-                onClick={() => setActiveTab(tab.id)}
-                data-active={activeTab === tab.id ? 'true' : 'false'}
-              >
-                {tab.label}
-              </Button>
-            ))}
+          <div ref={tabBarRef}>
+            <ScreenTabs
+              omitDefaultBarClasses
+              fadeWrap={false}
+              variant="underline"
+              barClassName="noorix-settings-tabstrip"
+              getTabClassName={() => 'noorix-settings-tab'}
+              items={TABS.map((tab) => ({ id: tab.id, label: tab.label }))}
+              value={activeTab}
+              onChange={setActiveTab}
+              buttonSize="auto"
+            />
           </div>
         )}
 
@@ -138,6 +124,6 @@ export default function SettingsScreen() {
           {activeTab === 'branding'  && <AppBrandingTab />}
         </div>
       </div>
-    </div>
+    </ScreenShell>
   );
 }

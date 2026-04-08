@@ -1,17 +1,18 @@
 ﻿/**
  * ReportsDetailModal — تفاصيل بند تقرير ربح وخسارة (AdaptiveSheet: مودال على العريض، لوح على الضيق)
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { amountText, moneyText, percentText, truncateText } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button, AdaptiveSheet } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
+import { useIsMobile640 } from '../../hooks/useMediaQuery';
 
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }) {
   const navigate = useNavigate();
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches);
+  const isMobile = useIsMobile640();
   const { data, isLoading, error } = useReportDetails({
     companyId,
     year,
@@ -55,14 +56,6 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     const total = points.reduce((sum, point) => sum + Number(point.amount || 0), 0);
     return String(total / points.length);
   }, [trend]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(max-width: 640px)');
-    const handler = (e) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
 
   const modalTitle = data
     ? `${t('reportDetails')} — ${lang === 'en' ? data.titleEn : data.titleAr}${data.monthLabel ? ` • ${data.monthLabel}` : ''}`

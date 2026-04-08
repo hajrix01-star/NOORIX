@@ -4,6 +4,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import ChangePasswordModal from './ChangePasswordModal';
 import Toast from './Toast';
 import { Button } from '../ui';
+import { useIsNarrow768 } from '../hooks/useMediaQuery';
 
 const ROLE_KEYS = {
   owner:       'roleOwner',
@@ -92,8 +93,6 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
   const roleColor    = ROLE_COLORS[role] || 'var(--noorix-accent-green)';
   const displayName  = user?.nameAr || user?.nameEn || user?.email || t('userDefault');
   const email        = user?.email || '';
-  const isMobile     = typeof window !== 'undefined' && window.innerWidth <= 768;
-
   /* ── القائمة المنسدلة ── */
   const dropdown = open && (
     <div
@@ -220,7 +219,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
       </Button>
 
       {/* backdrop جوال */}
-      {open && isMobile && createPortal(
+      {open && isMobileLayout && createPortal(
         <div
           aria-hidden="true"
           onClick={() => setOpen(false)}

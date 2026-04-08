@@ -25,14 +25,15 @@ import { BatchRow } from './components/BatchRow';
 import { BatchEditPanel } from './components/BatchEditPanel';
 import { BatchPrintSheet } from './components/BatchPrintSheet';
 import { BatchSummaryBar } from './components/BatchSummaryBar';
+import { SUPPLIER_BOOKMARKS_KEY } from '../../constants/storageKeys';
+import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 const PAGE_SIZE = 50;
 
-
 /* ── Bookmarks ────────────────────────────────────────────────── */
-const BM_KEY = 'noorix_supplier_bookmarks_v1';
-const loadBookmarks = () => { try { return JSON.parse(localStorage.getItem(BM_KEY) || '[]'); } catch { return []; } };
-const saveBookmarks = (arr) => localStorage.setItem(BM_KEY, JSON.stringify(arr));
+const loadBookmarks = () => readJsonStorage(SUPPLIER_BOOKMARKS_KEY, []);
+const saveBookmarks = (arr) => { writeJsonStorage(SUPPLIER_BOOKMARKS_KEY, arr); };
 
 /* ── Row factory ──────────────────────────────────────────────── */
 const EMPTY_ROW = () => ({
@@ -85,11 +86,7 @@ export default function PurchasesBatchScreen() {
   }, [activeVaults, batchVaultId]);
 
   const [batchSearchInput, setBatchSearchInput] = useState('');
-  const [debouncedBatchQ, setDebouncedBatchQ] = useState('');
-  useEffect(() => {
-    const tm = setTimeout(() => setDebouncedBatchQ(batchSearchInput.trim()), 300);
-    return () => clearTimeout(tm);
-  }, [batchSearchInput]);
+  const debouncedBatchQ = useDebouncedValue(batchSearchInput.trim(), 300);
 
   const { data: batchSummaryData, isLoading: batchesLoading, isError: batchesError, error: batchesErr } = useQuery({
     queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ],

@@ -2,6 +2,7 @@
  * StaffListScreen — قائمة الموظفين (احترافي كامل)
  */
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -67,15 +68,10 @@ export default function StaffListScreen({ embedded }) {
 
   const [listPage, setListPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
+  const debouncedQ = useDebouncedValue(searchInput.trim(), 300);
   const [sortKey, setSortKey] = useState('joinDate');
   const [sortDir, setSortDir] = useState('desc');
   const [exporting, setExporting] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(searchInput.trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchInput]);
 
   useEffect(() => {
     setListPage(1);

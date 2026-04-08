@@ -22,6 +22,8 @@ export { default as Spinner   } from './Spinner';
 export { default as Divider   } from './Divider';
 export { default as FormRow   } from './FormRow';
 export { default as ScreenTabs } from './ScreenTabs';
+export { default as ScreenShell } from './ScreenShell';
+export { default as ScreenTitle } from './ScreenTitle';
 
 /**
  * SmartTable — الجدول الذكي المركزي
