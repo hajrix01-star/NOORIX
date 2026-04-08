@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUiDir } from '../hooks/useUiDir';
 import Button from './Button';
 import { cn } from './cn';
 
@@ -23,6 +24,7 @@ export default function ConnectedTabStrip({
   contentClassName,
   shellClassName,
 }) {
+  const uiDir = useUiDir();
   return (
     <div
       className={cn(
@@ -38,7 +40,7 @@ export default function ConnectedTabStrip({
           'border-b border-noorix-border',
         )}
         role="tablist"
-        dir="ltr"
+        dir={uiDir}
       >
         {items.map((item) => {
           const active = value === item.id;

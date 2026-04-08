@@ -28,7 +28,7 @@ function SectionTitle({ children }) {
 }
 
 export default function DayCloseReportModal({ companyId, isOpen, onClose, defaultDateYmd }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { companies, activeCompanyId } = useApp();
   const [dateStr, setDateStr] = useState(() => defaultDateYmd || saudiTodayYmd());
 
@@ -168,7 +168,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
       <div
         className="day-close-print-root w-full"
-        dir="rtl"
+        dir={lang === 'ar' ? 'rtl' : 'ltr'}
         style={{
           position: 'relative',
         }}

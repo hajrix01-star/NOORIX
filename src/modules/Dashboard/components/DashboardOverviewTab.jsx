@@ -392,7 +392,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                 <SparkLine data={sparkData} color={accentColor} />
               </div>
 
-              <div className="mt-3 flex items-center justify-between gap-2 border-t border-noorix-border pt-3" dir="ltr">
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-noorix-border pt-3">
                 <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
                 {!isSales && pctNum != null ? (
                   <span

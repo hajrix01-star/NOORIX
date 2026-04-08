@@ -7,6 +7,7 @@
  * items[].label يقبل ReactNode (نص، أيقونة، إلخ)
  */
 import React from 'react';
+import { useUiDir } from '../hooks/useUiDir';
 import Button from './Button';
 import ConnectedTabStrip from './ConnectedTabStrip';
 import { cn } from './cn';
@@ -49,6 +50,8 @@ export default function ScreenTabs({
   shellClassName,
   animateContent = true,
 }) {
+  const uiDir = useUiDir();
+
   if (variant === 'connected') {
     return (
       <ConnectedTabStrip
@@ -67,7 +70,7 @@ export default function ScreenTabs({
   const bar = (
     <div
       role="tablist"
-      dir="ltr"
+      dir={uiDir}
       className={cn(
         variant === 'underline' && !omitDefaultBarClasses && 'nx-tab-bar',
         variant === 'segmented' && !omitDefaultBarClasses && 'nx-segmented-tab-bar',

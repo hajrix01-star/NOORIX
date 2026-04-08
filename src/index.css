@@ -2614,11 +2614,7 @@ input:focus, select:focus, textarea:focus {
   color: #fff;
 }
 .ndfb-mode-btn + .ndfb-mode-btn {
-  border-right: 1px solid var(--noorix-border);
-}
-[dir='rtl'] .ndfb-mode-btn + .ndfb-mode-btn {
-  border-right: none;
-  border-left: 1px solid var(--noorix-border);
+  border-inline-start: 1px solid var(--noorix-border);
 }
 
 /* حقول الفلتر — السنة والشهر في سطر واحد دائماً */

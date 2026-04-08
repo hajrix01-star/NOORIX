@@ -30,7 +30,7 @@ function ymd(y, m, d) {
 // ——— مكوّن الواجهة ———
 
 export default function DateFilterBar({ filter }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const MODES = [
     { id: 'month', label: t('dateFilterMonth') },
     { id: 'day',   label: t('dateFilterDay') },
@@ -52,7 +52,7 @@ export default function DateFilterBar({ filter }) {
   const years = [now.year - 1, now.year];
 
   return (
-    <div className="noorix-date-filter-bar" dir="rtl">
+    <div className="noorix-date-filter-bar" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* مجموعة أزرار الوضع — raw لتفادي حدود/زوايا nx-btn فوق بعضها */}
       <div className="ndfb-mode-group">
         {MODES.map((m) => (
