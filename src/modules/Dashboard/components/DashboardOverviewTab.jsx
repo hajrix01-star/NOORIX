@@ -16,7 +16,8 @@ import PeriodAnalyticsStrip from '../../Reports/PeriodAnalyticsStrip';
 import { useSales } from '../../../hooks/useSales';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
-import { ScreenTabs } from '../../../ui';
+import { Button, cn } from '../../../ui';
+import { useUiDir } from '../../../hooks/useUiDir';
 
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -140,6 +141,7 @@ const PIE_COLORS = ['#2563eb','#16a34a','#d97706','#7c3aed','#db2777','#0891b2',
 
 export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }) {
   const { t, lang } = useTranslation();
+  const uiDir = useUiDir();
   const { userPermissions } = useApp();
   const canPeriodAnalytics = (userPermissions || []).includes(PERMISSIONS.REPORTS_READ);
   const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
@@ -273,14 +275,6 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   const timelineMonthName =
     lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : MONTH_NAMES_EN[chartMonthForDaily - 1];
-
-  const timelineTabItems = useMemo(
-    () => [
-      { id: 'monthly', label: t('dashboardTimelineMonthly') },
-      { id: 'daily', label: t('dashboardTimelineDaily') },
-    ],
-    [t],
-  );
 
   /* ── حالة: لا شركة ── */
   if (!companyId) {
@@ -431,13 +425,46 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
             </div>
             {/* يومي / شهري + إخفاء/إظهار الخطوط */}
             <div className="flex items-center gap-2 flex-wrap">
-              <ScreenTabs
-                variant="segmented"
-                items={timelineTabItems}
-                value={timelineGrain}
-                onChange={setTimelineGrain}
-                className="shrink-0"
-              />
+              <div
+                role="tablist"
+                dir={uiDir}
+                className="inline-flex shrink-0 items-stretch rounded-lg border border-noorix-border bg-noorix-bg-muted p-0.5"
+              >
+                <Button
+                  type="button"
+                  role="tab"
+                  aria-selected={timelineGrain === 'monthly'}
+                  variant="raw"
+                  size="auto"
+                  className={cn(
+                    'min-h-9 rounded-md px-3 py-1.5 text-[12px] font-semibold sm:min-h-8 sm:py-1',
+                    timelineGrain === 'monthly'
+                      ? 'bg-noorix-surface text-noorix-text shadow-sm'
+                      : 'text-noorix-muted hover:bg-noorix-surface/60 hover:text-noorix-text',
+                  )}
+                  data-active={timelineGrain === 'monthly' ? 'true' : 'false'}
+                  onClick={() => setTimelineGrain('monthly')}
+                >
+                  {t('dashboardTimelineMonthly')}
+                </Button>
+                <Button
+                  type="button"
+                  role="tab"
+                  aria-selected={timelineGrain === 'daily'}
+                  variant="raw"
+                  size="auto"
+                  className={cn(
+                    'min-h-9 rounded-md px-3 py-1.5 text-[12px] font-semibold sm:min-h-8 sm:py-1',
+                    timelineGrain === 'daily'
+                      ? 'bg-noorix-surface text-noorix-text shadow-sm'
+                      : 'text-noorix-muted hover:bg-noorix-surface/60 hover:text-noorix-text',
+                  )}
+                  data-active={timelineGrain === 'daily' ? 'true' : 'false'}
+                  onClick={() => setTimelineGrain('daily')}
+                >
+                  {t('dashboardTimelineDaily')}
+                </Button>
+              </div>
               {SERIES.map((s) => {
                 const hidden   = hiddenSeries.has(s.key);
                 const disabled = s.disabled;
