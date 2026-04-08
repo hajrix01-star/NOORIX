@@ -5,6 +5,7 @@ import { cn } from './cn';
 /**
  * شريط تبويبات متصل — زوايا علوية ناعمة، فواصل عمودية، سباركلاين للنشط أسفل التسمية، انتقال للمحتوى.
  * يُستخدم في الموارد البشرية ومعرض التجارب (ref #3).
+ * تسميات التبويب: طبقة strut بـ font-bold مخفية + طبقة مرئية (bold/semibold) لثبات العرض.
  *
  * @param {{ id: string; label: React.ReactNode }[]} items
  * @param {string} value
@@ -52,8 +53,8 @@ export default function ConnectedTabStrip({
                 /* grid: مركز النص في الصف العلوي؛ السباركلاين صف ثابت — size=auto يزيل h-9 من الزر */
                 '!grid !h-full min-h-[39px] grid-cols-1 grid-rows-[minmax(36px,1fr)_3px] sm:grid-rows-[minmax(38px,1fr)_3px] self-stretch shrink-0 rounded-none',
                 'border-0 border-e border-noorix-border-strong last:border-e-0',
-                'text-[14px] font-semibold leading-normal whitespace-nowrap',
-                /* لا transition-all — يقلل الاهتزاز مع الظلال؛ وزن موحّد يمنع انزياح العرض عند تبديل النشط */
+                'text-[14px] leading-normal whitespace-nowrap',
+                /* انتقال محدود — لا يشمل font-weight لتفادي اهتزاز الرسم */
                 'transition-[background-color,color,box-shadow] duration-200 ease-out',
                 active
                   ? 'relative z-[1] bg-noorix-surface text-noorix-text shadow-[0_6px_18px_-4px_rgba(10,31,68,0.14)]'
@@ -63,8 +64,22 @@ export default function ConnectedTabStrip({
                 if (item.id !== value) onChange(item.id);
               }}
             >
-              <span className="flex h-full min-h-0 w-full items-center justify-center px-3 py-0 text-center">
-                {item.label}
+              <span className="grid h-full min-h-0 w-full place-items-center px-3 py-0">
+                <span
+                  aria-hidden
+                  className="invisible col-start-1 row-start-1 font-bold leading-normal whitespace-nowrap"
+                >
+                  {item.label}
+                </span>
+                <span
+                  className={cn(
+                    'col-start-1 row-start-1 flex min-h-0 w-full min-w-0 items-center justify-center text-center leading-normal whitespace-nowrap',
+                    'transition-[color] duration-200 ease-out',
+                    active ? 'font-bold' : 'font-semibold',
+                  )}
+                >
+                  {item.label}
+                </span>
               </span>
               <span
                 className={cn(
