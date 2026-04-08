@@ -45,12 +45,14 @@ export default function ConnectedTabStrip({
               key={item.id}
               type="button"
               variant="raw"
+              size="auto"
               role="tab"
               aria-selected={active}
               className={cn(
-                '!flex !flex-col !items-stretch !justify-between !h-auto !min-h-0 rounded-none shrink-0',
+                /* grid: مركز النص في الصف العلوي؛ السباركلاين صف ثابت — size=auto يزيل h-9 من الزر */
+                '!grid !h-full min-h-[39px] grid-cols-1 grid-rows-[minmax(36px,1fr)_3px] sm:grid-rows-[minmax(38px,1fr)_3px] self-stretch shrink-0 rounded-none',
                 'border-0 border-e border-noorix-border last:border-e-0',
-                'text-[14px] leading-snug whitespace-nowrap',
+                'text-[14px] leading-normal whitespace-nowrap',
                 'transition-all duration-200 ease-out',
                 active
                   ? 'relative z-[1] bg-noorix-surface text-noorix-text font-bold shadow-[0_6px_18px_-4px_rgba(10,31,68,0.14)]'
@@ -58,7 +60,7 @@ export default function ConnectedTabStrip({
               )}
               onClick={() => onChange(item.id)}
             >
-              <span className="flex min-h-[36px] flex-1 items-center justify-center px-3 py-1.5 sm:min-h-[38px] sm:py-2">
+              <span className="flex h-full min-h-0 w-full items-center justify-center px-3 py-0 text-center">
                 {item.label}
               </span>
               <span
