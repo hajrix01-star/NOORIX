@@ -95,8 +95,8 @@ export default {
   themePreviewLab2Primary: { ar: 'إجراء رئيسي', en: 'Primary action' },
   themePreviewLab3Title: { ar: 'تبويبات داخل كرت', en: 'Tabs inside card' },
   themePreviewLab3Hint: {
-    ar: 'نصوص تبويب بسيطة (Button raw) + فاصل · — بدون شريط underline أو تباعد كبير',
-    en: 'Plain text tabs (Button raw) + dot separators — no underline bar or wide spacing',
+    ar: 'حبات بحدود + nowrap + تمرير أفقي — يمنع تداخل العناوين',
+    en: 'Bordered chips, nowrap, horizontal scroll — avoids overlapping titles',
   },
   themePreviewLab3ContentA: { ar: 'محتوى التبويب الأول (وهمي).', en: 'First tab placeholder content.' },
   themePreviewLab3ContentB: { ar: 'محتوى التبويب الثاني (وهمي).', en: 'Second tab placeholder content.' },

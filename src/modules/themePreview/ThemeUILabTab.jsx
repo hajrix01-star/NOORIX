@@ -101,28 +101,31 @@ export default function ThemeUILabTab() {
         title={t('themePreviewLab3Title')}
         hint={t('themePreviewLab3Hint')}
       >
-        <div className="noorix-surface-card border border-noorix-border rounded-xl p-2">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0 text-[13px] leading-none" role="tablist">
-            {demoTabItems.map((item, i) => (
-              <React.Fragment key={item.id}>
-                {i > 0 ? <span className="text-noorix-border select-none" aria-hidden>·</span> : null}
-                <Button
-                  type="button"
-                  variant="raw"
-                  role="tab"
-                  aria-selected={demoTab === item.id}
-                  className={cn(
-                    'min-h-0 h-auto py-0 px-0 text-[13px] font-normal rounded-none shadow-none',
-                    demoTab === item.id ? 'text-noorix-text' : 'text-noorix-muted',
-                  )}
-                  onClick={() => setDemoTab(item.id)}
-                >
-                  {item.label}
-                </Button>
-              </React.Fragment>
+        <div className="noorix-surface-card border border-noorix-border rounded-xl p-3">
+          <div
+            className="flex flex-nowrap items-stretch gap-2 overflow-x-auto text-[13px] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            role="tablist"
+          >
+            {demoTabItems.map((item) => (
+              <Button
+                key={item.id}
+                type="button"
+                variant="raw"
+                role="tab"
+                aria-selected={demoTab === item.id}
+                className={cn(
+                  'shrink-0 whitespace-nowrap rounded-lg border px-3 py-2 min-h-[40px] sm:min-h-0 text-[13px] font-medium leading-normal shadow-none',
+                  demoTab === item.id
+                    ? 'border-noorix-border bg-noorix-bg-muted text-noorix-text'
+                    : 'border-noorix-border/70 bg-noorix-bg text-noorix-muted hover:border-noorix-border hover:text-noorix-text',
+                )}
+                onClick={() => setDemoTab(item.id)}
+              >
+                {item.label}
+              </Button>
             ))}
           </div>
-          <p className="text-[13px] text-noorix-muted m-0 mt-2">
+          <p className="text-[13px] text-noorix-muted m-0 mt-3">
             {demoTab === 'a' ? t('themePreviewLab3ContentA') : t('themePreviewLab3ContentB')}
           </p>
         </div>

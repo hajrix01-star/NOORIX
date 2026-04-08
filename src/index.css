@@ -4208,7 +4208,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 0;
+    /* فصل بصري بين العناوين — يمنع التلاصق والشعور بتداخل النصوص */
+    gap: 6px;
     border-bottom: 1px solid var(--noorix-border);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -4257,10 +4258,11 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 20px;
+    padding: 10px 16px;
     font-size: 14px;
     font-weight: 500;
     font-family: var(--noorix-font-primary);
+    line-height: 1.45;
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
@@ -4288,7 +4290,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 2px;
+    gap: 6px;
     min-width: 100%;
     width: max-content;
     overflow-x: auto;
@@ -4307,6 +4309,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     border-bottom: none;
     border-radius: 0.5rem;
     margin: 0;
+    border: 1px solid transparent;
     /* حشو أفقي أوفر للعربي — الحروف تتجاوز صندوق الإيمو أحياناً فتُقصّ مع الزوايا */
     padding: 0.5rem 1.125rem;
     min-height: 2.25rem;
@@ -4314,11 +4317,17 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     line-height: 1.45;
     overflow: visible;
   }
+  .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) {
+    border-color: var(--noorix-border-muted);
+    background: var(--noorix-bg-muted);
+  }
   .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) {
     color: var(--noorix-text);
     background: var(--noorix-bg-muted);
+    border-color: var(--noorix-border);
   }
   .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active {
+    border-color: transparent;
     background: var(--noorix-accent-green);
     color: #fff;
     font-weight: 700;
