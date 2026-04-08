@@ -164,7 +164,6 @@ export default function SmartChatScreen() {
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [visibleMessageCount, setVisibleMessageCount] = useState(CHAT_PAGE_SIZE);
 
-  const messagesEndRef = useRef(null);
   const messagesScrollRef = useRef(null);
   const skipScrollToEndRef = useRef(false);
   const inputRef = useRef(null);
@@ -296,7 +295,11 @@ export default function SmartChatScreen() {
 
   useEffect(() => {
     if (skipScrollToEndRef.current) return;
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const scroller = messagesScrollRef.current;
+    if (!scroller) return;
+    requestAnimationFrame(() => {
+      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+    });
   }, [displayedMessages, loading]);
 
   const handleSend = async (text) => {
@@ -490,7 +493,6 @@ export default function SmartChatScreen() {
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         <div className="noorix-chat-input-bar">
@@ -616,7 +618,7 @@ export default function SmartChatScreen() {
         side="start"
         className="smartchat-commands-drawer"
       >
-        <div className="noorix-chat-commands-panel-content" dir={isAr ? 'rtl' : 'ltr'}>
+        <div ref={commandsPanelRef} className="noorix-chat-commands-panel-content" dir={isAr ? 'rtl' : 'ltr'}>
           {filteredGroups.map((g) => (
             <div key={g.id} className="noorix-chat-commands-group">
               <div className="noorix-chat-commands-group-label">

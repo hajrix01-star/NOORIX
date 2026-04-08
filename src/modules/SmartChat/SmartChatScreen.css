@@ -345,6 +345,7 @@ html.dark .noorix-chat-commands-panel.noorix-light-sheet {
   gap: 18px;
   min-height: 0;
   scroll-behavior: smooth;
+  overscroll-behavior: contain;
 }
 
 /* ─── زر تحميل رسائل أقدم ─── */

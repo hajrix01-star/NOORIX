@@ -3068,8 +3068,10 @@ input:focus, select:focus, textarea:focus {
 /* ========== المحادثة الذكية — عمود يملأ ارتفاع المنطقة الرئيسية ========== */
 body.noorix-page-smart-chat .app-main__content {
   min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 body.noorix-page-smart-chat .noorix-smart-chat-root {
