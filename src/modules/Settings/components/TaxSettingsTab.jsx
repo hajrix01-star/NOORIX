@@ -82,7 +82,7 @@ export default function TaxSettingsTab() {
       <div className="noorix-surface-card p-5">
         <div className="flex flex flex-col gap-3">
           {/* مفتاح التفعيل */}
-          <div className="flex items-center justify-between border border-noorix-border rounded-xl bg-noorix-surface py-3 px-[14px]">
+          <div className="flex items-center justify-between rounded-xl border border-noorix-border bg-noorix-bg-muted py-3 px-[14px]">
             <label className="block text-[14px] font-semibold m-0">تفعيل ضريبة القيمة المضافة للمبيعات</label>
             <label className="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green">
               <input

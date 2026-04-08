@@ -145,9 +145,7 @@ export default function BankStatementTransactionsFullTab({
         </Input>
 
         {/* إحصاء */}
-        <div
-          className="flex items-center gap-10 text-[12px] rounded-lg px-3 py-1 bg-noorix-surface border border-noorix-border"
-        >
+        <div className="noorix-surface-card flex items-center gap-10 px-3 py-1 text-[12px]">
           <span className="text-noorix-muted">النتائج:</span>
           <span className="font-bold">{filteredTransactions.length}</span>
           <span className="text-noorix-muted">عملية</span>

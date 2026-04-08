@@ -612,7 +612,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           </div>
         </div>
 
-        <div className="rounded-xl border border-noorix-border bg-noorix-surface p-3 md:p-4 mt-2 shrink-0">
+        <div className="noorix-surface-card mt-2 shrink-0 p-3 md:p-4">
           <div className="text-[12px] font-semibold text-noorix-muted mb-2">
             {t('payrollRunPayVaultSection')}
           </div>
