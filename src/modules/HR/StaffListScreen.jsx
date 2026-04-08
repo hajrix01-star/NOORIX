@@ -12,7 +12,7 @@ import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
-import { rejectIfApiFailed, getApiErrorMessage } from '../../utils/apiResponse';
+import { rejectIfApiFailed } from '../../utils/apiResponse';
 import { hrFmt } from './utils/hrFmt';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
@@ -286,7 +286,7 @@ export default function StaffListScreen({ embedded }) {
       throw new Error(t('customAllowanceMissingEmployeeId'));
     }
     const res = await getCustomAllowances(companyId, employeeId);
-    rejectIfApiFailed(res, getApiErrorMessage(res, t('loadingError')));
+    rejectIfApiFailed(res, t('loadingError'));
     const currentRows = Array.isArray(res?.data) ? res.data : (res?.data?.items ?? []);
     const currentById = new Map(currentRows.map((row) => [row.id, row]));
     const desiredIds = new Set(desiredRows.filter((row) => row.id).map((row) => row.id));
@@ -297,7 +297,7 @@ export default function StaffListScreen({ embedded }) {
         && (desiredRow.nameAr !== currentRow.nameAr || !moneyAmountsEqual(desiredRow.amount, currentRow.amount));
       if (!desiredIds.has(currentRow.id) || changed) {
         const delRes = await deleteCustomAllowance(currentRow.id, companyId);
-        rejectIfApiFailed(delRes, getApiErrorMessage(delRes, t('deleteFailed')));
+        rejectIfApiFailed(delRes, t('deleteFailed'));
       }
     }
 
@@ -312,7 +312,7 @@ export default function StaffListScreen({ embedded }) {
           nameAr: row.nameAr,
           amount: roundMoney2(row.amount),
         });
-        rejectIfApiFailed(createRes, getApiErrorMessage(createRes, t('saveFailed')));
+        rejectIfApiFailed(createRes, t('saveFailed'));
       }
     }
 

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../context/ToastContext';
-import { getApiErrorMessage, rejectIfApiFailed } from '../utils/apiResponse';
+import { rejectIfApiFailed } from '../utils/apiResponse';
 
 /**
  * طبقة رفيعة فوق useMutation:
@@ -35,7 +35,7 @@ export function useApiMutation(options) {
   const wrappedMutationFn = async (variables) => {
     const result = await rawMutationFn(variables);
     if (rejectOnApiFailure) {
-      rejectIfApiFailed(result, getApiErrorMessage(result));
+      rejectIfApiFailed(result);
     }
     return result;
   };

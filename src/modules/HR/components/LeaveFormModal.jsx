@@ -9,7 +9,7 @@ import { getEmployees } from '../../../services/api';
 import { createLeave } from '../../../services/api';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
-import { assertApiOk, getApiErrorMessage } from '../../../utils/apiResponse';
+import { assertApiOk } from '../../../utils/apiResponse';
 
 const TYPE_MAP = {
   annual: 'leaveAnnual',
@@ -91,7 +91,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
         notes: notes || undefined,
       };
       const res = await createLeave(payload);
-      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      assertApiOk(res, t('saveFailed'));
       onSuccess?.();
       onClose?.();
     } catch (err) {

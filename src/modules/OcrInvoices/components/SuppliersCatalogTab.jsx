@@ -5,7 +5,7 @@ import {
   createOcrSupplier, updateOcrSupplier, deleteOcrSupplier, addSupplierAlias,
   bulkDeleteOcrSuppliers,
 } from '../services/ocrApi';
-import { assertApiOk, getApiErrorMessage } from '../../../utils/apiResponse';
+import { assertApiOk } from '../../../utils/apiResponse';
 
 function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
   const { t } = useTranslation();
@@ -62,7 +62,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     setSaving(true);
     try {
       const res = await createOcrSupplier(data);
-      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      assertApiOk(res, t('saveFailed'));
       setAdding(false);
       onRefresh();
     } catch (e) {
@@ -76,7 +76,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     setSaving(true);
     try {
       const res = await updateOcrSupplier(editing.id, data);
-      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      assertApiOk(res, t('saveFailed'));
       setEditing(null);
       onRefresh();
     } catch (e) {

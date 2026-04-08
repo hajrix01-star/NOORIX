@@ -11,7 +11,7 @@ import BankStatementTransactionsFullTab from './BankStatementTransactionsFullTab
 import BankStatementReconciliationTab from './BankStatementReconciliationTab';
 import BankStatementSalesCompareTab from './BankStatementSalesCompareTab';
 import { exportBankStatementExcel, printBankStatement } from './bankStatementExportPrint';
-import { assertApiOk, getApiErrorMessage } from '../../../utils/apiResponse';
+import { assertApiOk } from '../../../utils/apiResponse';
 
 export default function BankStatementDetailView({
   statementId,
@@ -60,7 +60,7 @@ export default function BankStatementDetailView({
     if (!newCategoryName.trim()) return;
     try {
       const catRes = await createCategory({ nameAr: newCategoryName.trim(), nameEn: newCategoryName.trim() });
-      assertApiOk(catRes, getApiErrorMessage(catRes, t('saveFailed')));
+      assertApiOk(catRes, t('saveFailed'));
       setNewCategoryName('');
       onRefresh?.();
       showToast(t('savedSuccessfully') || 'OK');

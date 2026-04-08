@@ -2675,7 +2675,7 @@ input:focus, select:focus, textarea:focus {
 
 /* صف فيه DateFilterBar + أزرار — لا يوسّع الفلتر بـ space-between */
 .nx-page-header.nx-page-header--filter-row {
-  align-items: center;
+  align-items: flex-end;
   justify-content: flex-start;
   gap: 12px;
 }
@@ -4248,7 +4248,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   /* ─── شريط الأدوات ─── */
   .nx-toolbar {
     display: flex;
-    align-items: center;
+    /* flex-end: حقول بها label فوق الحقل تبقى متماثلة مع الأزرار على سطر القواعد */
+    align-items: flex-end;
     gap: 8px;
     flex-wrap: wrap;
     flex-shrink: 0;

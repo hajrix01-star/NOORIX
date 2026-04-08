@@ -33,6 +33,10 @@ describe('assertApiOk', () => {
     expect(() => assertApiOk({ success: false, error: 'Z' }, 'fb')).toThrow('Z');
   });
 
+  it('uses fallback when API omits error text', () => {
+    expect(() => assertApiOk({ success: false }, 'custom-fallback')).toThrow('custom-fallback');
+  });
+
   it('returns the result when ok or success key missing', () => {
     const ok = { success: true, data: 42 };
     expect(assertApiOk(ok, 'fb')).toBe(ok);

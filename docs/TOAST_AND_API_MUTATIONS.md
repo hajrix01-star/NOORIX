@@ -21,7 +21,7 @@
 1. **شاشات ونماذج**: عند استخدام TanStack Query للطفرات، فضّل `useApiMutation` مع `successToast` / `errorToast` (أو `showErrorToast: false` إذا كان العرض داخل النموذج فقط).
 2. **خطافات بيانات مشتركة** (`useEmployees`, `useOrders`, …): غالباً `showErrorToast: false` و`successToast` غير مُعرّف — الشاشة تتولى الرسائل؛ المهم هو **رفض** `success: false` تلقائياً.
 3. **استجابات بلا حقل `success`**: `rejectIfApiFailed` / `assertApiOk` لا يفعلان شيئاً؛ يمكن إرجاع `data` فقط من `mutationFn` كما في دفعات المشتريات بعد التحقق اليدوي على الاستجابة الكاملة.
-4. **`assertApiOk(result, fallback)`**: بعد `await` في نماذج أو استيراد — يرفض `success === false` ثم يعيد `result` للمتابعة.
+4. **`assertApiOk(result, fallback)`**: بعد `await` — يستدعي `rejectIfApiFailed(result, fallback)` (نفس استخراج الرسالة من الـ API) ثم يعيد `result`. لا تلف `fallback` بـ `getApiErrorMessage` مسبقاً.
 5. **i18n**: مفاتيح عامة في `src/i18n/translations/common.js` مثل `apiRequestFailed`, `saveFailedGeneric`, `expenseBatchSelectVault`.
 
 ## قائمة تحقق (مكتملة في الكود الحالي)

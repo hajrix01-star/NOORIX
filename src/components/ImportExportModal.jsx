@@ -24,7 +24,7 @@ import {
 } from '../services/api';
 import { Button, AdaptiveSheet, ScreenTabs } from '../ui';
 import { useTranslation } from '../i18n/useTranslation';
-import { getApiErrorMessage, rejectIfApiFailed } from '../utils/apiResponse';
+import { rejectIfApiFailed } from '../utils/apiResponse';
 
 const ENTITY_CONFIG = {
   invoices: {
@@ -414,7 +414,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           const rowNum = slice[idx].rowNum;
           if (res.status === 'fulfilled') {
             try {
-              rejectIfApiFailed(res.value, getApiErrorMessage(res.value, t('importErrorUnknown')));
+              rejectIfApiFailed(res.value, t('importErrorUnknown'));
               succeeded++;
             } catch (e) {
               failed++;
@@ -477,7 +477,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
         const r = validResults[i];
         try {
           const sumRes = await createDailySalesSummary({ ...r.payload, companyId });
-          rejectIfApiFailed(sumRes, getApiErrorMessage(sumRes, t('importErrorUnknown')));
+          rejectIfApiFailed(sumRes, t('importErrorUnknown'));
           succeeded++;
         } catch (err) {
           failed++;

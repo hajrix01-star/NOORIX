@@ -6,7 +6,7 @@ import {
   findDuplicateItems, mergeOcrItems, bulkDeleteOcrItems,
 } from '../services/ocrApi';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import { assertApiOk, getApiErrorMessage } from '../../../utils/apiResponse';
+import { assertApiOk } from '../../../utils/apiResponse';
 
 function ItemForm({ initial = {}, onSave, onCancel, loading }) {
   const { t } = useTranslation();
@@ -81,7 +81,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
     setSaving(true);
     try {
       const res = await createOcrItem(data);
-      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      assertApiOk(res, t('saveFailed'));
       setAdding(false);
       onRefresh();
     } catch (e) {
@@ -95,7 +95,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
     setSaving(true);
     try {
       const res = await updateOcrItem(editing.id, data);
-      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      assertApiOk(res, t('saveFailed'));
       setEditing(null);
       onRefresh();
     } catch (e) {
@@ -130,7 +130,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
     setMerging(`${keepId}-${mergeId}`);
     try {
       const res = await mergeOcrItems(keepId, mergeId);
-      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      assertApiOk(res, t('saveFailed'));
       onRefresh();
       handleFindDuplicates();
     } catch (e) {

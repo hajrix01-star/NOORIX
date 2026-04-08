@@ -47,6 +47,6 @@ export function rejectIfApiFailed(result, fallbackMessage = 'Request failed') {
  * @throws {Error & { apiResult?: unknown }}
  */
 export function assertApiOk(result, fallbackMessage = 'Request failed') {
-  rejectIfApiFailed(result, getApiErrorMessage(result, fallbackMessage));
+  rejectIfApiFailed(result, fallbackMessage);
   return result;
 }

@@ -20,7 +20,7 @@ import { HRActionsCell } from '../components/HRActionsCell';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
-import { getApiErrorMessage, rejectIfApiFailed } from '../../../utils/apiResponse';
+import { rejectIfApiFailed } from '../../../utils/apiResponse';
 
 const PAGE_SIZE = 50;
 
@@ -169,7 +169,7 @@ export default function AdvancesTab() {
             if (!window.confirm(t('deleteAdvance'))) return;
             updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res) => {
               try {
-                rejectIfApiFailed(res, getApiErrorMessage(res, t('saveFailed')));
+                rejectIfApiFailed(res, t('saveFailed'));
                 invalidateOnFinancialMutation(queryClient);
                 showToast(t('advanceDeleted'), 'success');
               } catch (e) {
@@ -375,7 +375,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
         transactionDate: date,
         notes,
       }, companyId);
-      rejectIfApiFailed(res, getApiErrorMessage(res, t('saveFailed')));
+      rejectIfApiFailed(res, t('saveFailed'));
       onSaved?.();
     } catch (e) {
       onError?.(e?.message || t('saveFailed'));
@@ -426,7 +426,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
       if (settlementType === 'defer') {
         const deferNote = `${advance?.notes || ''}\n[ADV_DEFER] ${deferMonth || ''}`.trim();
         const res = await updateInvoice(advance.id, { notes: deferNote }, companyId);
-        rejectIfApiFailed(res, getApiErrorMessage(res, t('saveFailed')));
+        rejectIfApiFailed(res, t('saveFailed'));
         onSaved?.();
         return;
       }
@@ -444,7 +444,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
         settledAt: fullySettled ? settleDate : undefined,
         notes,
       }, companyId);
-      rejectIfApiFailed(invRes, getApiErrorMessage(invRes, t('saveFailed')));
+      rejectIfApiFailed(invRes, t('saveFailed'));
 
       if (applyToSalary) {
         const dRes = await createDeduction({
@@ -456,7 +456,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
           referenceId: advance.id,
           notes: `خصم سلفة (${advance.invoiceNumber || advance.id})`,
         });
-        rejectIfApiFailed(dRes, getApiErrorMessage(dRes, t('saveFailed')));
+        rejectIfApiFailed(dRes, t('saveFailed'));
       }
       onSaved?.();
     } catch (e) {

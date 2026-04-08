@@ -11,7 +11,7 @@ import { hrFmt } from '../utils/hrFmt';
 import SmartTable from '../../../components/common/SmartTable';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Badge, Button, AdaptiveSheet } from '../../../ui';
-import { getApiErrorMessage, rejectIfApiFailed } from '../../../utils/apiResponse';
+import { rejectIfApiFailed } from '../../../utils/apiResponse';
 
 const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
@@ -25,7 +25,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
     queryKey: ['payroll-run', runId, companyId],
     queryFn: async () => {
       const res = await getPayrollRun(runId, companyId);
-      rejectIfApiFailed(res, getApiErrorMessage(res, t('loadingError')));
+      rejectIfApiFailed(res, t('loadingError'));
       return res.data;
     },
     enabled: !!runId && !!companyId,

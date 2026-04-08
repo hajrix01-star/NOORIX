@@ -8,8 +8,8 @@
 |--------|-----|
 | `useApiMutation` | طفرة واحدة (أو نتيجة واحدة واضحة) + toast / إبطال كاش |
 | `rejectIfApiFailed(res, fallback)` | بعد `await` عندما تريد رمي خطأ فقط |
-| `assertApiOk(res, fallback)` | بعد `await` عندما تريد المتابعة بـ `res` إن نجح |
-| `getApiErrorMessage(res, fallback)` | بناء رسالة موحّدة للعرض أو كـ fallback |
+| `assertApiOk(res, fallback)` | بعد `await` — يرفض `success === false` (الرسالة: `error`/`message` من الـ API أو `fallback`) ثم يعيد `res` |
+| `getApiErrorMessage(res, fallback)` | عند بناء نص للعرض يدوياً (toast/نموذج) دون رمي |
 
 الملفات: `src/utils/apiResponse.js`، الاختبارات `src/utils/apiResponse.test.js`، التوثيق `docs/TOAST_AND_API_MUTATIONS.md`.
 

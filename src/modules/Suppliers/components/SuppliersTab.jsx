@@ -10,7 +10,7 @@ import { useCategories }       from '../../../hooks/useCategories';
 import { useTranslation }      from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { createSupplier }      from '../../../services/api';
-import { rejectIfApiFailed, getApiErrorMessage } from '../../../utils/apiResponse';
+import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { SupplierForm }        from './SupplierForm';
 import { SupplierTable }       from './SupplierTable';
 import { SupplierEditModal }   from './SupplierEditModal';
@@ -102,7 +102,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   /* ── استيراد مورد واحد (يُستدعى من ImportExport) ── */
   async function handleImportOne(body) {
     const res = await createSupplier(body);
-    rejectIfApiFailed(res, getApiErrorMessage(res, t('addFailed')));
+    rejectIfApiFailed(res, t('addFailed'));
     return res.data;
   }
 

@@ -126,7 +126,7 @@ export default function ReportsScreen() {
         <div className="flex-1 min-w-0">
           <h2 className="font-bold m-0 text-[18px]">{t('reportGeneral')}</h2>
         </div>
-        <div className="flex items-center flex-wrap gap-2 flex-[0_1_auto]">
+        <div className="flex items-end flex-wrap gap-2 flex-[0_1_auto]">
           <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </Input>
