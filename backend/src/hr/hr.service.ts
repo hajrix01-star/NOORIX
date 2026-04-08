@@ -105,6 +105,96 @@ export class HRService {
     return run;
   }
 
+  private saudiDateYmd(): string {
+    const d = nowSaudi();
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${day}`;
+  }
+
+  private parseAdvanceDeferMonth(notes?: string | null): string {
+    const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
+    return m ? m[1] : '';
+  }
+
+  /**
+   * تخصيم السلف من فواتير السلف وربطها بالمسيرة (نفس منطق صرف المسيرة).
+   * يُستدعى عند اعتماد المسيرة أو عند الصرف إن لم تُطبَّق من قبل.
+   */
+  private async applyPayrollAdvanceSettlements(
+    db: Pick<TenantPrismaService, 'invoice' | 'employeeDeduction'>,
+    run: {
+      companyId: string;
+      runNumber: string;
+      payrollMonth: Date;
+      items: Array<{
+        employeeId: string;
+        advancesDeduct: Prisma.Decimal | null;
+        employee: { name: string | null } | null;
+      }>;
+    },
+    txDate: string,
+    tenantId: string,
+  ): Promise<void> {
+    const runMonth = `${run.payrollMonth.getFullYear()}-${String(run.payrollMonth.getMonth() + 1).padStart(2, '0')}`;
+
+    for (const item of run.items) {
+      let remainingToDeduct = Number(item.advancesDeduct ?? 0);
+      if (remainingToDeduct <= 0) continue;
+
+      const advances = await db.invoice.findMany({
+        where: {
+          companyId: run.companyId,
+          employeeId: item.employeeId,
+          kind: 'advance',
+          status: 'active',
+        },
+        orderBy: { transactionDate: 'asc' },
+      });
+
+      for (const adv of advances) {
+        if (remainingToDeduct <= 0) break;
+        const deferMonth = this.parseAdvanceDeferMonth(adv.notes);
+        if (deferMonth && deferMonth > runMonth) continue;
+
+        const total = Number(adv.totalAmount ?? 0);
+        const settled = Number(adv.settledAmount ?? 0);
+        const remaining = Math.max(0, total - settled);
+        if (remaining <= 0) continue;
+
+        const allocate = Math.min(remainingToDeduct, remaining);
+        const newSettled = settled + allocate;
+        const fullySettled = newSettled >= total;
+        const settleNote = `${adv.notes || ''}\n[ADV_PAYROLL] run=${run.runNumber}, amount=${allocate}, date=${txDate}`.trim();
+
+        await db.invoice.update({
+          where: { id: adv.id },
+          data: {
+            settledAmount: new Prisma.Decimal(newSettled),
+            settledAt: fullySettled ? new Date(`${txDate}T00:00:00.000Z`) : adv.settledAt ?? null,
+            notes: settleNote,
+          },
+        });
+
+        await db.employeeDeduction.create({
+          data: {
+            tenantId,
+            companyId: run.companyId,
+            employeeId: item.employeeId,
+            deductionType: 'advance',
+            amount: new Prisma.Decimal(allocate),
+            transactionDate: new Date(`${txDate}T00:00:00.000Z`),
+            notes: `خصم سلفة تلقائي من مسير ${run.runNumber} - سلفة ${adv.invoiceNumber}`,
+            referenceId: adv.id,
+          },
+        });
+
+        remainingToDeduct -= allocate;
+      }
+    }
+  }
+
   /** صافي السطر = max(0, إجمالي + بدلات إضافية − خصومات − سلف) — يطابق الواجهة. */
   private assertPayrollItemsNetConsistent(items: PayrollRunItemDto[]): void {
     const EPS = 0.02;
@@ -223,13 +313,46 @@ export class HRService {
   ) {
     const existing = await this.prisma.payrollRun.findFirst({
       where: { id, companyId },
+      include: { items: { include: { employee: true } } },
     });
     if (!existing) throw new NotFoundException(`مسيرة الرواتب ${id} غير موجودة.`);
 
-    const updated = await this.prisma.payrollRun.update({
-      where: { id },
-      data: { status: dto.status },
-    });
+    const shouldApplyAdvances =
+      dto.status === 'completed' &&
+      existing.status === 'draft' &&
+      !existing.advanceSettlementsAppliedAt;
+
+    let updated: Awaited<ReturnType<typeof this.prisma.payrollRun.update>>;
+
+    if (shouldApplyAdvances) {
+      const tenantId = TenantContext.getTenantId();
+      const txDate = this.saudiDateYmd();
+      updated = await this.prisma.withTenant(async (tx) => {
+        await this.applyPayrollAdvanceSettlements(
+          tx,
+          {
+            companyId: existing.companyId,
+            runNumber: existing.runNumber,
+            payrollMonth: existing.payrollMonth,
+            items: existing.items,
+          },
+          txDate,
+          tenantId,
+        );
+        return tx.payrollRun.update({
+          where: { id },
+          data: {
+            status: 'completed',
+            advanceSettlementsAppliedAt: new Date(),
+          },
+        });
+      });
+    } else {
+      updated = await this.prisma.payrollRun.update({
+        where: { id },
+        data: { status: dto.status },
+      });
+    }
 
     await this.audit.log({
       companyId,
@@ -451,65 +574,22 @@ export class HRService {
 
     const results = await this.financialCore.processOutflowBatch(dtos, userId);
 
-    const runMonth = `${run.payrollMonth.getFullYear()}-${String(run.payrollMonth.getMonth() + 1).padStart(2, '0')}`;
-    const parseDeferredMonth = (notes?: string | null) => {
-      const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
-      return m ? m[1] : '';
-    };
-
-    for (const item of run.items) {
-      let remainingToDeduct = Number(item.advancesDeduct ?? 0);
-      if (remainingToDeduct <= 0) continue;
-
-      const advances = await this.prisma.invoice.findMany({
-        where: {
+    if (!run.advanceSettlementsAppliedAt) {
+      await this.applyPayrollAdvanceSettlements(
+        this.prisma,
+        {
           companyId: run.companyId,
-          employeeId: item.employeeId,
-          kind: 'advance',
-          status: 'active',
+          runNumber: run.runNumber,
+          payrollMonth: run.payrollMonth,
+          items: run.items,
         },
-        orderBy: { transactionDate: 'asc' },
+        txDate,
+        tenantId,
+      );
+      await this.prisma.payrollRun.update({
+        where: { id: run.id },
+        data: { advanceSettlementsAppliedAt: new Date() },
       });
-
-      for (const adv of advances) {
-        if (remainingToDeduct <= 0) break;
-        const deferMonth = parseDeferredMonth(adv.notes);
-        if (deferMonth && deferMonth > runMonth) continue;
-
-        const total = Number(adv.totalAmount ?? 0);
-        const settled = Number(adv.settledAmount ?? 0);
-        const remaining = Math.max(0, total - settled);
-        if (remaining <= 0) continue;
-
-        const allocate = Math.min(remainingToDeduct, remaining);
-        const newSettled = settled + allocate;
-        const fullySettled = newSettled >= total;
-        const settleNote = `${adv.notes || ''}\n[ADV_PAYROLL] run=${run.runNumber}, amount=${allocate}, date=${txDate}`.trim();
-
-        await this.prisma.invoice.update({
-          where: { id: adv.id },
-          data: {
-            settledAmount: new Prisma.Decimal(newSettled),
-            settledAt: fullySettled ? new Date(`${txDate}T00:00:00.000Z`) : adv.settledAt ?? null,
-            notes: settleNote,
-          },
-        });
-
-        await this.prisma.employeeDeduction.create({
-          data: {
-            tenantId,
-            companyId: run.companyId,
-            employeeId: item.employeeId,
-            deductionType: 'advance',
-            amount: new Prisma.Decimal(allocate),
-            transactionDate: new Date(`${txDate}T00:00:00.000Z`),
-            notes: `خصم سلفة تلقائي من مسير ${run.runNumber} - سلفة ${adv.invoiceNumber}`,
-            referenceId: adv.id,
-          },
-        });
-
-        remainingToDeduct -= allocate;
-      }
     }
 
     await this.audit.log({

@@ -434,6 +434,8 @@ model PayrollRun {
   employeeCount   Int      @map("employee_count")
   status          String   @default("draft")        // draft | completed
   notes           String?
+  /// عند الاعتماد: تسوية خصم السلف على فواتير السلف (يُمنع التكرار عند صرف المسيرة لاحقاً)
+  advanceSettlementsAppliedAt DateTime? @map("advance_settlements_applied_at")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt      @map("updated_at")
 
