@@ -2,8 +2,8 @@
  * FinancialCoreService — المحرك المالي الموحد (Single Entry Point)
  *
  * ═══════════════════════════════════════════════════════════════
- * القاعدة الذهبية: كل عملية مالية = فاتورة + قيد + تحديث + تدقيق
- *                  في transaction واحدة لا تتجزأ.
+ * القاعدة الذهبية: كل عملية صرف = فاتورة + قيد (أو أكثر عند تعدد الخزائن)
+ *                  + تخصيصات خزنة + تدقيق — في transaction واحدة لا تتجزأ.
  * ═══════════════════════════════════════════════════════════════
  *
  * العمليات المدعومة:
@@ -115,6 +115,10 @@ export class FinancialCoreService {
   async processOutflow(dto: OutflowDto, callerUserId?: string) {
     const tenantId = this._resolveTenantId();
     if (dto.idempotencyKey) {
+      const vaultSplitsSig =
+        dto.vaultSplits?.length ?
+          [...dto.vaultSplits].map((s) => `${s.vaultId}:${s.amount}`).sort().join('|')
+        : '';
       const keyHash = this.idempotency.hashKey('processOutflow', {
         companyId:             dto.companyId,
         kind:                  dto.kind,
@@ -123,6 +127,7 @@ export class FinancialCoreService {
         supplierId:            dto.supplierId,
         supplierInvoiceNumber: dto.supplierInvoiceNumber,
         vaultId:               dto.vaultId,
+        vaultSplitsSig,
         employeeId:            dto.employeeId,
         idempotencyKey:        dto.idempotencyKey,
       });
@@ -145,14 +150,14 @@ export class FinancialCoreService {
       const invoiceNumber = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
       await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
 
-      if (dto.vaultId) {
-        await this._assertVaultUsableForPaymentOutflow(tx, dto.companyId, dto.vaultId);
-      }
+      const splits = await this._resolveOutflowVaultSplits(tx, dto.companyId, dto);
+      const debitAccountId =
+        dto.debitAccountId ?? (await this._getDefaultExpenseAccount(tx, dto.companyId, dto.kind));
+      /** خزنة واحدة على الفاتورة فقط عند سداد أحادي — عند التعدد null لتجنب التضليل */
+      const invoiceVaultId = splits.length === 1 ? splits[0].vaultId : null;
 
-      // ── [A] Resolve Accounts ─────────────────────────────
-      const creditAccountId = await this._getVaultAccount(tx, dto.companyId, dto.vaultId);
-      const debitAccountId  = dto.debitAccountId
-        ?? await this._getDefaultExpenseAccount(tx, dto.companyId, dto.kind);
+      const referenceType =
+        dto.kind === 'salary' ? 'salary' : dto.kind === 'advance' ? 'advance' : 'invoice';
 
       // ── [B] Create Invoice ───────────────────────────────
       const invoice = await tx.invoice.create({
@@ -172,36 +177,46 @@ export class FinancialCoreService {
           transactionDate:       txDate,
           invoiceDate:           dto.invoiceDate ? new Date(dto.invoiceDate) : null,
           entryDate,
-          vaultId:               dto.vaultId || null,
+          vaultId:               invoiceVaultId,
           batchId:               dto.batchId ?? null,
           notes:                 dto.notes ?? null,
           status:                'active',
         },
       });
 
-      // ── [C] Create LedgerEntry (القيد المزدوج) ──────────
-      // Outflow: debit = حساب المصروف | credit = حساب الخزنة (كلاهما نفس المبلغ)
-      validateJournalBalance(
-        [{ amount: dto.totalAmount }],   // debit:  expense / asset
-        [{ amount: dto.totalAmount }],   // credit: vault
-      );
-      const ledgerEntry = await tx.ledgerEntry.create({
-        data: {
-          tenantId,
-          companyId:       dto.companyId,
-          debitAccountId,
-          creditAccountId,
-          amount:          new Prisma.Decimal(dto.totalAmount),
-          transactionDate: txDate,
-          entryDate,
-          referenceType:   dto.kind === 'salary' ? 'salary' : dto.kind === 'advance' ? 'advance' : 'invoice',
-          referenceId:     invoice.id,
-          vaultId:         dto.vaultId || null,
-          employeeId:      dto.employeeId ?? null,
-          createdById:     userId,
-          status:          'active',
-        },
-      });
+      // ── [C] قيود + تخصيصات خزنة (قيد لكل جزء) ───────────
+      const ledgerEntries: Awaited<ReturnType<typeof tx.ledgerEntry.create>>[] = [];
+      for (const split of splits) {
+        const creditAccountId = await this._getVaultAccount(tx, dto.companyId, split.vaultId);
+        validateJournalBalance([{ amount: split.amount }], [{ amount: split.amount }]);
+        const ledgerEntry = await tx.ledgerEntry.create({
+          data: {
+            tenantId,
+            companyId:       dto.companyId,
+            debitAccountId,
+            creditAccountId,
+            amount:          split.amount,
+            transactionDate: txDate,
+            entryDate,
+            referenceType,
+            referenceId:     invoice.id,
+            vaultId:         split.vaultId,
+            employeeId:      dto.employeeId ?? null,
+            createdById:     userId,
+            status:          'active',
+          },
+        });
+        ledgerEntries.push(ledgerEntry);
+
+        await tx.invoiceVaultAllocation.create({
+          data: {
+            tenantId,
+            invoiceId: invoice.id,
+            vaultId:   split.vaultId,
+            amount:    split.amount,
+          },
+        });
+      }
 
       // ── [D] Create AuditLog (بصمة المستخدم) ─────────────
       await tx.auditLog.create({
@@ -217,7 +232,7 @@ export class FinancialCoreService {
         },
       });
 
-      return { invoice, ledgerEntry };
+      return { invoice, ledgerEntry: ledgerEntries[0]!, ledgerEntries };
     });
   }
 
@@ -254,18 +269,13 @@ export class FinancialCoreService {
         const { entryDate, txDate } = this._buildDates(dto.transactionDate);
         const serial = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
         await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
-        if (dto.vaultId) {
-          await this._assertVaultUsableForPaymentOutflow(tx, dto.companyId, dto.vaultId);
-        }
-        const creditAccountId = await this._getVaultAccount(tx, dto.companyId, dto.vaultId);
-        const debitAccountId  = dto.debitAccountId
-          ?? await this._getDefaultExpenseAccount(tx, dto.companyId, dto.kind);
 
-        // صمام التوازن لكل عنصر في الدفعة
-        validateJournalBalance(
-          [{ amount: dto.totalAmount }],
-          [{ amount: dto.totalAmount }],
-        );
+        const splits = await this._resolveOutflowVaultSplits(tx, dto.companyId, dto);
+        const debitAccountId =
+          dto.debitAccountId ?? (await this._getDefaultExpenseAccount(tx, dto.companyId, dto.kind));
+        const invoiceVaultId = splits.length === 1 ? splits[0].vaultId : null;
+        const referenceType =
+          dto.kind === 'salary' ? 'salary' : dto.kind === 'advance' ? 'advance' : 'invoice';
 
         const invoice = await tx.invoice.create({
           data: {
@@ -284,30 +294,42 @@ export class FinancialCoreService {
             transactionDate: txDate,
             invoiceDate:     dto.invoiceDate ? new Date(dto.invoiceDate) : null,
             entryDate,
-            vaultId:         dto.vaultId || null,
+            vaultId:         invoiceVaultId,
             batchId:         dto.batchId ?? null,
             notes:           dto.notes ?? null,
             status:          'active',
           },
         });
 
-        await tx.ledgerEntry.create({
-          data: {
-            tenantId,
-            companyId:       dto.companyId,
-            debitAccountId,
-            creditAccountId,
-            amount:          new Prisma.Decimal(dto.totalAmount),
-            transactionDate: txDate,
-            entryDate,
-            referenceType:   dto.kind === 'salary' ? 'salary' : dto.kind === 'advance' ? 'advance' : 'invoice',
-            referenceId:     invoice.id,
-            vaultId:         dto.vaultId || null,
-            employeeId:      dto.employeeId ?? null,
-            createdById:     userId,
-            status:          'active',
-          },
-        });
+        for (const split of splits) {
+          const creditAccountId = await this._getVaultAccount(tx, dto.companyId, split.vaultId);
+          validateJournalBalance([{ amount: split.amount }], [{ amount: split.amount }]);
+          await tx.ledgerEntry.create({
+            data: {
+              tenantId,
+              companyId:       dto.companyId,
+              debitAccountId,
+              creditAccountId,
+              amount:          split.amount,
+              transactionDate: txDate,
+              entryDate,
+              referenceType,
+              referenceId:     invoice.id,
+              vaultId:         split.vaultId,
+              employeeId:      dto.employeeId ?? null,
+              createdById:     userId,
+              status:          'active',
+            },
+          });
+          await tx.invoiceVaultAllocation.create({
+            data: {
+              tenantId,
+              invoiceId: invoice.id,
+              vaultId:   split.vaultId,
+              amount:    split.amount,
+            },
+          });
+        }
 
         await tx.auditLog.create({
           data: {
@@ -1024,6 +1046,62 @@ export class FinancialCoreService {
         throw new BadRequestException(`الخزينة «${v.nameAr}» ليست قناة بيع مفعّلة.`);
       }
     }
+  }
+
+  /**
+   * يحلّ خزنة/خزائن السداد: vaultSplits (مجموعها = الإجمالي)، أو vaultId، أو خزنة السداد الافتراضية.
+   * يدمج صفوفاً مكررة لنفس الخزنة.
+   */
+  private async _resolveOutflowVaultSplits(
+    tx: TxClient,
+    companyId: string,
+    dto: OutflowDto,
+  ): Promise<Array<{ vaultId: string; amount: Prisma.Decimal }>> {
+    const total = new Prisma.Decimal(String(dto.totalAmount));
+
+    if (dto.vaultSplits != null && dto.vaultSplits.length > 0) {
+      const merged = new Map<string, Prisma.Decimal>();
+      for (const s of dto.vaultSplits) {
+        const vid = (s.vaultId || '').trim();
+        if (!vid) {
+          throw new BadRequestException('معرف الخزنة مطلوب في كل جزء من توزيع السداد');
+        }
+        const amt = new Prisma.Decimal(String(s.amount));
+        if (amt.lte(0)) {
+          throw new BadRequestException('كل جزء من توزيع الخزائن يجب أن يكون أكبر من صفر');
+        }
+        merged.set(vid, (merged.get(vid) ?? new Prisma.Decimal(0)).plus(amt));
+      }
+      const splits = [...merged.entries()].map(([vaultId, amount]) => ({ vaultId, amount }));
+      const sum = splits.reduce((acc, x) => acc.plus(x.amount), new Prisma.Decimal(0));
+      if (!sum.equals(total)) {
+        throw new BadRequestException(
+          `مجموع توزيع الخزائن (${sum.toFixed(4)}) يجب أن يساوي إجمالي الفاتورة (${total.toFixed(4)})`,
+        );
+      }
+      for (const s of splits) {
+        await this._assertVaultUsableForPaymentOutflow(tx, companyId, s.vaultId);
+      }
+      return splits;
+    }
+
+    if (dto.vaultId) {
+      await this._assertVaultUsableForPaymentOutflow(tx, companyId, dto.vaultId);
+      return [{ vaultId: dto.vaultId, amount: total }];
+    }
+
+    const defaultVault = await tx.vault.findFirst({
+      where:   { companyId, isActive: true, isArchived: false, showAsPaymentMethod: true },
+      select:  { id: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!defaultVault) {
+      throw new BadRequestException(
+        `لا توجد خزينة متاحة للسداد للشركة ${companyId}. أضف خزينة أو فعّل «الظهور كطريقة سداد» من شاشة الخزائن.`,
+      );
+    }
+    await this._assertVaultUsableForPaymentOutflow(tx, companyId, defaultVault.id);
+    return [{ vaultId: defaultVault.id, amount: total }];
   }
 
   /** أي صرف (مشتريات، مصاريف، رواتب، سلف، …): خزنة غير مؤرشفة ومفعّل لها الظهور كسداد */

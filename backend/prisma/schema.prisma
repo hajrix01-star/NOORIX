@@ -754,11 +754,30 @@ model Vault {
   invoices      Invoice[]
   salesChannels DailySalesChannel[]
   payrollItemVaults PayrollRunItemVault[]
+  invoiceVaultAllocations InvoiceVaultAllocation[]
 
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, isArchived])
   @@map("vaults")
+}
+
+/// توزيع سداد فاتورة صرف واحدة على أكثر من خزنة (قيد لكل جزء)
+model InvoiceVaultAllocation {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  invoiceId String   @map("invoice_id")
+  vaultId   String   @map("vault_id")
+  amount    Decimal  @map("amount") @db.Decimal(18, 4)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  vault   Vault   @relation(fields: [vaultId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@index([vaultId])
+  @@map("invoice_vault_allocations")
 }
 
 model Invoice {
@@ -795,6 +814,7 @@ model Invoice {
   employee      Employee?           @relation(fields: [employeeId],  references: [id], onDelete: SetNull)
   expenseLine   ExpenseLine?        @relation(fields: [expenseLineId], references: [id], onDelete: SetNull)
   dailySalesSummary DailySalesSummary? @relation(fields: [dailySalesSummaryId], references: [id], onDelete: SetNull)
+  vaultAllocations InvoiceVaultAllocation[]
 
   @@unique([companyId, invoiceNumber])
   @@index([tenantId])

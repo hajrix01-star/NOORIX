@@ -9,9 +9,13 @@ import {
   IsDateString,
   ValidateIf,
   Allow,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsAmountConsistent } from '../../common/validators/amount-consistency.validator';
+import { InvoiceVaultSplitDto } from './invoice-vault-split.dto';
 
 const INVOICE_KINDS = [
   'purchase',
@@ -96,6 +100,17 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsString()
   vaultId?: string;
+
+  /**
+   * سداد من عدة خزائن — مجموع amount يجب أن يساوي totalAmount.
+   * عند الإرسال يُتجاهل vaultId.
+   */
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(2, { message: 'توزيع الخزائن يتطلب خزنتين على الأقل' })
+  @ValidateNested({ each: true })
+  @Type(() => InvoiceVaultSplitDto)
+  vaultSplits?: InvoiceVaultSplitDto[];
 
   @IsOptional()
   @IsString()

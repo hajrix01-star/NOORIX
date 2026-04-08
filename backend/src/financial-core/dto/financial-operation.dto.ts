@@ -6,6 +6,12 @@ export interface SalesChannelDto {
   amount: string;
 }
 
+/** توزيع السداد على أكثر من خزنة — مجموع المبالغ يجب أن يساوي totalAmount */
+export interface OutflowVaultSplitDto {
+  vaultId: string;
+  amount: string;
+}
+
 export interface OutflowDto {
   companyId: string;
   supplierId?: string;
@@ -23,6 +29,8 @@ export interface OutflowDto {
   transactionDate: string;
   invoiceDate?: string;
   vaultId?: string;
+  /** عند الإرسال يُتجاهل vaultId إن وُجد (يُستنتج من الأجزاء) */
+  vaultSplits?: OutflowVaultSplitDto[];
   batchId?: string;
   debitAccountId?: string;
   notes?: string;

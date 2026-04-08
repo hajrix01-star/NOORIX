@@ -56,6 +56,11 @@ export class InvoiceService {
       net = netDec.toFixed(4);
       tax = taxDec.toFixed(4);
     }
+    const vaultSplits =
+      dto.vaultSplits?.length ?
+        dto.vaultSplits.map((s) => ({ vaultId: s.vaultId, amount: String(s.amount) }))
+      : undefined;
+
     return this.financialCore.processOutflow(
       {
         companyId:       dto.companyId,
@@ -72,7 +77,8 @@ export class InvoiceService {
           ? dto.transactionDate
           : new Date(dto.transactionDate).toISOString().slice(0, 10),
         invoiceDate:     dto.invoiceDate ? String(dto.invoiceDate) : undefined,
-        vaultId:         dto.vaultId ?? undefined,
+        vaultId:         vaultSplits ? undefined : (dto.vaultId ?? undefined),
+        vaultSplits,
         batchId:         dto.batchId  ?? undefined,
         debitAccountId:  dto.debitAccountId ?? undefined,
         idempotencyKey:  dto.idempotencyKey ?? undefined,
@@ -235,7 +241,11 @@ export class InvoiceService {
   async findOne(id: string, companyId: string) {
     return this.prisma.invoice.findFirstOrThrow({
       where:   { id, companyId },
-      include: { supplier: true, vault: true },
+      include: {
+        supplier: true,
+        vault:    true,
+        vaultAllocations: { include: { vault: { select: { id: true, nameAr: true, nameEn: true, type: true } } } },
+      },
     });
   }
 
@@ -359,6 +369,10 @@ export class InvoiceService {
           supplier: true,
           employee: { select: { id: true, name: true } },
           expenseLine: { select: { id: true, nameAr: true, kind: true } },
+          vault: { select: { id: true, nameAr: true, nameEn: true, type: true } },
+          vaultAllocations: {
+            include: { vault: { select: { id: true, nameAr: true, nameEn: true, type: true } } },
+          },
         },
       }),
       this.prisma.invoice.count({ where }),
@@ -454,6 +468,11 @@ export class InvoiceService {
           employee:    { select: { id: true, name: true } },
           expenseLine: { select: { id: true, nameAr: true, kind: true } },
           vault:       { select: { id: true, nameAr: true, type: true, paymentMethod: true } },
+          vaultAllocations: {
+            include: {
+              vault: { select: { id: true, nameAr: true, nameEn: true, type: true, paymentMethod: true } },
+            },
+          },
         },
       }),
       this.prisma.dailySalesSummary.findMany({
@@ -529,15 +548,30 @@ export class InvoiceService {
       .sort((a, b) => new Decimal(b.total).cmp(a.total));
 
     const payTotals = new Map<string, Decimal>();
+    const addPayLabel = (label: string, amountStr: string) => {
+      const cur = payTotals.get(label) ?? new Decimal(0);
+      payTotals.set(label, cur.plus(amountStr));
+    };
     for (const inv of invoiceRows) {
       if (inv.status !== 'active') continue;
       if (inv.kind === 'sale') continue;
+      const alloc = inv.vaultAllocations ?? [];
+      if (alloc.length > 0) {
+        for (const a of alloc) {
+          const v = a.vault;
+          const label =
+            (v?.paymentMethod && String(v.paymentMethod).trim()) ||
+            (v?.nameAr && String(v.nameAr).trim()) ||
+            '—';
+          addPayLabel(label, a.amount.toString());
+        }
+        continue;
+      }
       const label =
         (inv.vault?.paymentMethod && String(inv.vault.paymentMethod).trim()) ||
         (inv.vault?.nameAr && String(inv.vault.nameAr).trim()) ||
         '—';
-      const cur = payTotals.get(label) ?? new Decimal(0);
-      payTotals.set(label, cur.plus(inv.totalAmount.toString()));
+      addPayLabel(label, inv.totalAmount.toString());
     }
     const outflowByPaymentMethod = [...payTotals.entries()]
       .map(([label, dec]) => ({ label, total: dec.toFixed(4) }))
@@ -566,23 +600,44 @@ export class InvoiceService {
     const cashDayOut      = cashVaultsDay.reduce((s, v) => s.plus(v.totalOut), new Decimal(0)).toNumber();
     const cashBalanceEod  = cashVaultsAsOf.reduce((s, v) => s.plus(v.balance), new Decimal(0)).toNumber();
 
-    const operations = invoiceRows.map((inv) => ({
-      id:              inv.id,
-      invoiceNumber:   inv.invoiceNumber,
-      kind:            inv.kind,
-      status:          inv.status,
-      totalAmount:     inv.totalAmount.toString(),
-      netAmount:       inv.netAmount.toString(),
-      taxAmount:       inv.taxAmount.toString(),
-      transactionDate: inv.transactionDate,
-      notes:           inv.notes,
-      supplierName:    inv.supplier?.nameAr || inv.supplier?.nameEn || null,
-      employeeName:    inv.employee?.name || null,
-      expenseLineName: inv.expenseLine?.nameAr || null,
-      vaultName:       inv.vault?.nameAr || null,
-      vaultType:       inv.vault?.type || null,
-      paymentChannel:  inv.vault?.paymentMethod?.trim() || inv.vault?.nameAr || null,
-    }));
+    const operations = invoiceRows.map((inv) => {
+      const alloc = inv.vaultAllocations ?? [];
+      let vaultName: string | null = null;
+      let paymentChannel: string | null = null;
+      if (alloc.length > 1) {
+        vaultName = alloc
+          .map((a) => {
+            const n = a.vault?.nameAr || a.vault?.nameEn || '—';
+            return `${n}: ${a.amount.toString()}`;
+          })
+          .join(' · ');
+        paymentChannel = vaultName;
+      } else if (alloc.length === 1) {
+        vaultName = alloc[0].vault?.nameAr || alloc[0].vault?.nameEn || null;
+        paymentChannel =
+          alloc[0].vault?.paymentMethod?.trim() || alloc[0].vault?.nameAr || null;
+      } else {
+        vaultName = inv.vault?.nameAr || null;
+        paymentChannel = inv.vault?.paymentMethod?.trim() || inv.vault?.nameAr || null;
+      }
+      return {
+        id:              inv.id,
+        invoiceNumber:   inv.invoiceNumber,
+        kind:            inv.kind,
+        status:          inv.status,
+        totalAmount:     inv.totalAmount.toString(),
+        netAmount:       inv.netAmount.toString(),
+        taxAmount:       inv.taxAmount.toString(),
+        transactionDate: inv.transactionDate,
+        notes:           inv.notes,
+        supplierName:    inv.supplier?.nameAr || inv.supplier?.nameEn || null,
+        employeeName:    inv.employee?.name || null,
+        expenseLineName: inv.expenseLine?.nameAr || null,
+        vaultName,
+        vaultType:       inv.vault?.type || alloc[0]?.vault?.type || null,
+        paymentChannel,
+      };
+    });
 
     const salesLite = salesSummaries.map((s) => ({
       id:              s.id,
