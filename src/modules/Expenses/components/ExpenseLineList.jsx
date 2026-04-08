@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
-import { Button, Badge, Input } from '../../../ui';
+import { Button, Badge } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 
 const KIND_LABELS = {
@@ -16,16 +16,11 @@ const KIND_LABELS = {
 };
 
 export default function ExpenseLineList({
-  companyId,
   expenseLines,
   isLoading,
-  filterKind,
-  onFilterKindChange,
   onLineClick,
-  onCreateLine,
   onEditLine,
   onDeleteLine,
-  onRefresh,
 }) {
   const { t, lang } = useTranslation();
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
@@ -126,25 +121,18 @@ export default function ExpenseLineList({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <Input
-          type="select"
-          value={filterKind}
-          onChange={(e) => onFilterKindChange(e.target.value)}
-        >
-          <option value="">{t('allTypes')}</option>
-          <option value="fixed_expense">{t('fixedExpense')}</option>
-          <option value="expense">{t('variableExpense')}</option>
-        </Input>
-        <Button variant="primary" className="whitespace-nowrap shrink-0" onClick={onCreateLine}>
-          {t('addExpenseLine')}
-        </Button>
-        <Button className="whitespace-nowrap shrink-0" onClick={onRefresh}>
-          {t('refresh')}
-        </Button>
-        <Button className="whitespace-nowrap shrink-0" onClick={handlePrint} disabled={!tableData.length}>{t('print')}</Button>
-        <Button className="whitespace-nowrap shrink-0" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>{t('exportExcel')}</Button>
-        <Button className="whitespace-nowrap shrink-0" onClick={() => exportTableToPdf({ data: exportData, title: t('expenseLinesPrintTitle'), filename: 'expense-lines.pdf' })} disabled={!tableData.length}>{t('exportPdf')}</Button>
+      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
+        <div className="nx-toolbar w-full justify-end sm:w-auto">
+          <Button size="sm" className="whitespace-nowrap shrink-0" onClick={handlePrint} disabled={!tableData.length}>
+            {t('print')}
+          </Button>
+          <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>
+            {t('exportExcel')}
+          </Button>
+          <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => exportTableToPdf({ data: exportData, title: t('expenseLinesPrintTitle'), filename: 'expense-lines.pdf' })} disabled={!tableData.length}>
+            {t('exportPdf')}
+          </Button>
+        </div>
       </div>
 
       <SmartTable

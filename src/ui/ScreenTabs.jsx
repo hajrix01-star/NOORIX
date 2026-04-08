@@ -32,6 +32,7 @@ import { cn } from './cn';
  *   contentClassName?: string — غلاف المحتوى داخل ConnectedTabStrip (مثل nx-tab-content)
  *   shellClassName?: string — على الكرت الخارجي للـ connected (يُدمج مع className)
  *   animateContent?: boolean — افتراضي true للـ connected
+ *   tabBarEnd?: React.ReactNode — مع variant connected: محتوى بجانب التبويبات (نفس الصف على sm+)
  * }} props
  */
 export default function ScreenTabs({
@@ -49,6 +50,7 @@ export default function ScreenTabs({
   contentClassName,
   shellClassName,
   animateContent = true,
+  tabBarEnd,
 }) {
   const uiDir = useUiDir();
 
@@ -61,6 +63,7 @@ export default function ScreenTabs({
         animateContent={animateContent}
         contentClassName={contentClassName}
         shellClassName={cn(className, shellClassName)}
+        tabBarEnd={tabBarEnd}
       >
         {children}
       </ConnectedTabStrip>
