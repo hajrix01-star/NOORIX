@@ -144,17 +144,26 @@ export default function LeaveTab() {
     <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="nx-toolbar">
-        <label className="text-[13px] font-semibold">{t('dateFilterYear')}</label>
-        <Input type="select" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
-          {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </Input>
-        <div className="flex gap-2 flex-1 min-w-0">
-          <Button onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>{t('exportExcel')}</Button>
+      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
+        <div className="nx-toolbar min-w-0 flex-1">
+          <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>
+          <Input type="select" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
+            {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </Input>
+          <Button size="sm" onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>{t('exportExcel')}</Button>
         </div>
-        <Button variant="primary" onClick={() => setShowAdd(true)}>
+        <Input
+          type="search"
+          value={searchText}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('searchPlaceholder')}
+          size="sm"
+          className="w-full min-w-0 lg:max-w-xs lg:flex-1"
+          aria-label={t('searchPlaceholder')}
+        />
+        <Button variant="primary" size="sm" className="shrink-0" onClick={() => setShowAdd(true)}>
           {t('addLeave')}
         </Button>
       </div>
@@ -175,6 +184,7 @@ export default function LeaveTab() {
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
         searchValue={searchText}
         onSearchChange={setSearch}
+        showSearchInHeader={false}
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={toggleSort}

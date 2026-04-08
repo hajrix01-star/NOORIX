@@ -62,28 +62,20 @@ export default function HRMainScreen() {
   return (
     <ScreenShell>
 
-      {/* ── ترويسة الصفحة — على الجوال: العنوان ثم الكروت بعرض تلقائي ── */}
-      <div className="nx-page-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
-        </div>
+      {/* ── ترويسة — شارات مدمجة بارتفاع السطر لتجنب تشتيت بصري عن شريط أدوات التبويبات ── */}
+      <div className="nx-page-header flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <h1 className="text-[20px] font-bold text-noorix-text m-0 min-w-0">{t('staffTitle')}</h1>
         {companyId && (
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
-            <div className="noorix-stat-card noorix-stat-card--green px-4 py-2 w-auto min-w-[140px] shrink-0">
-              <div className="noorix-stat-card__stripe" />
-              <div className="noorix-stat-card__body">
-                <div className="noorix-stat-card__label">{t('hrStatsActive')}</div>
-                <div className="noorix-stat-card__value text-[22px]">{activeCount}</div>
-              </div>
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-1.5 text-[13px]">
+              <span className="text-noorix-muted shrink-0">{t('hrStatsActive')}</span>
+              <span className="font-bold tabular-nums text-noorix-green">{activeCount}</span>
+            </span>
             {expiringCount > 0 && (
-              <div className="noorix-stat-card noorix-stat-card--amber px-4 py-2 w-auto min-w-[140px] shrink-0">
-                <div className="noorix-stat-card__stripe" />
-                <div className="noorix-stat-card__body">
-                  <div className="noorix-stat-card__label">{t('hrStatsResidencyExpiring')}</div>
-                  <div className="noorix-stat-card__value text-[22px]">{expiringCount}</div>
-                </div>
-              </div>
+              <span className="inline-flex items-center gap-2 rounded-lg border border-noorix-amber/40 bg-noorix-amber/10 px-3 py-1.5 text-[13px] text-noorix-amber">
+                <span className="shrink-0">{t('hrStatsResidencyExpiring')}</span>
+                <span className="font-bold tabular-nums">{expiringCount}</span>
+              </span>
             )}
           </div>
         )}

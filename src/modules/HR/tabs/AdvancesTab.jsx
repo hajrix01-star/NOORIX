@@ -248,28 +248,41 @@ export default function AdvancesTab() {
     <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="nx-toolbar mb-2 flex items-center justify-end">
-        <Input type="select" value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
-          <option value="">{t('advancesFilterEmployee')} — {t('advancesFilterAll')}</option>
-          {employeeOptions.map((name) => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </Input>
-        <Input type="select" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}>
-          <option value="">{t('advancesFilterMonth')} — {t('advancesFilterAll')}</option>
-          {monthOptions.map((month) => (
-            <option key={month} value={month}>{month}</option>
-          ))}
-        </Input>
-        <Input type="select" value={settlementFilter} onChange={(e) => setSettlementFilter(e.target.value)}>
-          <option value="all">{t('advancesFilterSettlement')} — {t('advancesFilterAll')}</option>
-          <option value="outstanding">{t('advancesFilterOutstandingOnly')}</option>
-          <option value="settled">{t('advancesFilterSettledOnly')}</option>
-        </Input>
-        <Button onClick={() => exportToExcel(exportData, 'advances.xlsx')}>{t('exportExcel')}</Button>
-        <Button variant="primary" onClick={() => setShowAdvance(true)}>
-          {t('payAdvance')}
-        </Button>
+      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
+        <div className="nx-toolbar min-w-0 flex-1">
+          <Input type="select" value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
+            <option value="">{t('advancesFilterEmployee')} — {t('advancesFilterAll')}</option>
+            {employeeOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </Input>
+          <Input type="select" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}>
+            <option value="">{t('advancesFilterMonth')} — {t('advancesFilterAll')}</option>
+            {monthOptions.map((month) => (
+              <option key={month} value={month}>{month}</option>
+            ))}
+          </Input>
+          <Input type="select" value={settlementFilter} onChange={(e) => setSettlementFilter(e.target.value)}>
+            <option value="all">{t('advancesFilterSettlement')} — {t('advancesFilterAll')}</option>
+            <option value="outstanding">{t('advancesFilterOutstandingOnly')}</option>
+            <option value="settled">{t('advancesFilterSettledOnly')}</option>
+          </Input>
+        </div>
+        <Input
+          type="search"
+          value={searchText}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('searchPlaceholder')}
+          size="sm"
+          className="w-full min-w-0 lg:max-w-xs lg:flex-1"
+          aria-label={t('searchPlaceholder')}
+        />
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Button size="sm" onClick={() => exportToExcel(exportData, 'advances.xlsx')}>{t('exportExcel')}</Button>
+          <Button variant="primary" size="sm" onClick={() => setShowAdvance(true)}>
+            {t('payAdvance')}
+          </Button>
+        </div>
       </div>
 
       <SmartTable
@@ -288,6 +301,7 @@ export default function AdvancesTab() {
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
         searchValue={searchText}
         onSearchChange={setSearch}
+        showSearchInHeader={false}
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={toggleSort}

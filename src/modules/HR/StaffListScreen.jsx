@@ -261,7 +261,7 @@ export default function StaffListScreen({ embedded }) {
           jobTitle: e.jobTitle,
           joinDate: formatSaudiDate(e.joinDate),
           totalSalary: hrFmt(ts),
-          status: statusStyles[e.status]?.label || e.status,
+          status: STATUS_MAP[e.status]?.label || e.status,
           terminationReason: meta.terminationReason || '',
           terminationClause: meta.terminationClause || '',
           terminationDate: meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
@@ -439,8 +439,8 @@ export default function StaffListScreen({ embedded }) {
             }}
           />
 
-          <div className="nx-page-header mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap gap-2 flex-1 min-w-0">
+          <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+            <div className="nx-toolbar min-w-0 flex-1">
               <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => setViewMode('active')}>{t('activeEmployeesList')}</Button>
               <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => setViewMode('terminated')}>{t('terminatedEmployeesList')}</Button>
               <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => setViewMode('archived')}>{t('archivedEmployeesList')}</Button>
@@ -453,7 +453,16 @@ export default function StaffListScreen({ embedded }) {
                 {t('importExportLabel')}
               </Button>
             </div>
-            <Button variant="primary" onClick={() => { setEditingEmployee(null); setShowForm(true); }}>
+            <Input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              size="sm"
+              className="w-full min-w-0 sm:max-w-xs sm:flex-1"
+              aria-label={t('searchPlaceholder')}
+            />
+            <Button variant="primary" size="sm" className="shrink-0" onClick={() => { setEditingEmployee(null); setShowForm(true); }}>
               {t('addEmployee')}
             </Button>
           </div>
@@ -476,6 +485,7 @@ export default function StaffListScreen({ embedded }) {
             badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
             searchValue={searchInput}
             onSearchChange={setSearchInput}
+            showSearchInHeader={false}
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={toggleSort}

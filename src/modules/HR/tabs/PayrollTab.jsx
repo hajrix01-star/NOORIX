@@ -213,18 +213,27 @@ export default function PayrollTab() {
     <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="nx-toolbar">
-        <label className="text-[13px] font-semibold">{t('dateFilterYear')}</label>
-        <Input type="select" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
-          {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </Input>
-        <div className="flex flex flex-wrap gap-2 flex-1 min-w-0">
-          <Button onClick={handleExportExcel}>{t('exportExcel')}</Button>
-          <Button onClick={handlePrint}>{t('printPayroll')}</Button>
+      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
+        <div className="nx-toolbar min-w-0 flex-1">
+          <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>
+          <Input type="select" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
+            {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </Input>
+          <Button size="sm" onClick={handleExportExcel}>{t('exportExcel')}</Button>
+          <Button size="sm" onClick={handlePrint}>{t('printPayroll')}</Button>
         </div>
-        <Button variant="primary" onClick={() => setShowCreate(true)}>
+        <Input
+          type="search"
+          value={searchText}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('searchPlaceholder')}
+          size="sm"
+          className="w-full min-w-0 lg:max-w-xs lg:flex-1"
+          aria-label={t('searchPlaceholder')}
+        />
+        <Button variant="primary" size="sm" className="shrink-0" onClick={() => setShowCreate(true)}>
           {t('createPayrollRun')}
         </Button>
       </div>
@@ -250,6 +259,7 @@ export default function PayrollTab() {
         }
         searchValue={searchText}
         onSearchChange={setSearch}
+        showSearchInHeader={false}
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={toggleSort}

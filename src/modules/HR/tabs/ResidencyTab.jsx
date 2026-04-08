@@ -15,7 +15,7 @@ import { ResidencyFormModal } from '../components/ResidencyFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, ScreenShell } from '../../../ui';
+import { Button, Badge, Input, ScreenShell } from '../../../ui';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
@@ -162,16 +162,25 @@ export default function ResidencyTab() {
     <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
-      <div className="nx-toolbar">
-        {expiringCount > 0 && (
-          <span className="rounded-lg text-[13px] font-semibold px-3 py-1.5 bg-noorix-amber/15 text-noorix-amber">
-            {t('residencyExpiringSoon')}: {expiringCount}
-          </span>
-        )}
-        <div className="flex gap-2 flex-1 min-w-0">
-          <Button onClick={() => exportToExcel(exportData, 'residencies.xlsx')}>{t('exportExcel')}</Button>
+      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
+        <div className="nx-toolbar min-w-0 flex-1">
+          {expiringCount > 0 && (
+            <span className="rounded-lg text-[13px] font-semibold px-3 py-1.5 bg-noorix-amber/15 text-noorix-amber shrink-0">
+              {t('residencyExpiringSoon')}: {expiringCount}
+            </span>
+          )}
+          <Button size="sm" onClick={() => exportToExcel(exportData, 'residencies.xlsx')}>{t('exportExcel')}</Button>
         </div>
-        <Button variant="primary" onClick={() => setShowAdd(true)}>
+        <Input
+          type="search"
+          value={searchText}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('searchPlaceholder')}
+          size="sm"
+          className="w-full min-w-0 lg:max-w-xs lg:flex-1"
+          aria-label={t('searchPlaceholder')}
+        />
+        <Button variant="primary" size="sm" className="shrink-0" onClick={() => setShowAdd(true)}>
           {t('addResidency')}
         </Button>
       </div>
@@ -197,6 +206,7 @@ export default function ResidencyTab() {
         }
         searchValue={searchText}
         onSearchChange={setSearch}
+        showSearchInHeader={false}
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={toggleSort}

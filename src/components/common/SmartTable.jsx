@@ -49,6 +49,8 @@ const SmartTable = memo(function SmartTable({
   badge,
   searchValue,
   onSearchChange,
+  /** عند false يبقى البحث تحت سيطرة الشاشة (حقل خارجي) مع الإبقاء على عنوان/شارة الجدول */
+  showSearchInHeader = true,
   emptyMessage,
   sortKey,
   sortDir        = 'desc',
@@ -80,6 +82,7 @@ const SmartTable = memo(function SmartTable({
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
+  const showTableHeaderRow = Boolean(title || badge || (onSearchChange && showSearchInHeader));
 
   return (
     <div
@@ -87,11 +90,11 @@ const SmartTable = memo(function SmartTable({
       style={{ padding: innerPadding }}
     >
       {/* ── رأس الجدول ── */}
-      {(title || badge || onSearchChange) && (
+      {showTableHeaderRow && (
         <div className="flex items-center gap-2.5 flex-wrap px-4 py-2.5 border-b border-noorix-border">
           {title && <span className="font-bold text-[15px] shrink-0">{title}</span>}
           {badge && <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">{badge}</div>}
-          {onSearchChange && (
+          {onSearchChange && showSearchInHeader && (
             <Input
               type="search"
               value={searchValue ?? ''}
