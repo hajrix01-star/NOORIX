@@ -90,11 +90,12 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         {/* النوع */}
         <div>
           <label className="text-[13px] font-semibold mb-1.5 block">{t('vaultType')}</label>
-          <div className="vault-type-grid grid grid-cols-3 gap-2">
+          <div className="vault-type-grid grid grid-cols-4 gap-2">
             {VAULT_TYPES.map((vt) => (
               <Button
                 key={vt.value}
                 type="button"
+                size="auto"
                 className="nx-vault-type-btn"
                 onClick={() => set('type', vt.value)}
                 style={form.type === vt.value ? {
@@ -106,13 +107,14 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                 <span className="flex h-[22px] min-h-[22px] items-center justify-center text-current [&_svg]:shrink-0" aria-hidden>
                   {VAULT_TYPE_SVGS[vt.value] ?? VAULT_TYPE_SVGS.bank}
                 </span>
-                <span>{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].trim()}</span>
+                <span className="text-center">{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].split('/')[0].trim()}</span>
               </Button>
             ))}
 
             {/* نوع مخصص */}
             <Button
               type="button"
+              size="auto"
               className="nx-vault-type-btn"
               onClick={() => set('type', 'custom')}
               style={isCustom ? { border: '2px solid #64748b', background: 'var(--noorix-muted-10)', color: 'var(--noorix-text-muted)' } : undefined}
