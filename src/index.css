@@ -3255,6 +3255,10 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   word-break: normal;
   vertical-align: bottom;
   hyphens: auto;
+  text-align: center;
+}
+.payroll-run-form-drawer .payroll-run-table tbody td {
+  text-align: center;
 }
 .payroll-run-form-drawer .prfm-modal-scroll tbody td {
   padding: 4px 5px;

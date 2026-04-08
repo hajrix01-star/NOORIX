@@ -30,6 +30,23 @@ function extractAdvanceDates(notes) {
   return String(notes || '').replace('تواريخ السلف:', '').trim();
 }
 
+/** إزالة وسم تأجيل خصم السلف من ملاحظات سطر المسيرة (للعرض/الحفظ) */
+function stripPayrollAdvDeferSegment(notes) {
+  return String(notes || '')
+    .replace(/\s*\[ADV_DEFER\]\s*\d{4}-\d{2}\s*/g, '')
+    .replace(/^\s*\|\s*/g, '')
+    .replace(/\s*\|\s*$/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function withPayrollAdvDeferSegment(notes, monthYm) {
+  const base = stripPayrollAdvDeferSegment(notes);
+  const tag = `[ADV_DEFER] ${monthYm}`;
+  if (!base) return tag;
+  return `${base} | ${tag}`;
+}
+
 function getDefaultPayrollMonth() {
   const base = new Date();
   base.setDate(1);
@@ -267,9 +284,11 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     [payrollMonth, defaultMonth, allowanceTotals, unpaidLeaveDaysByEmployee, advancesByEmployee, lang, t],
   );
 
-  const initItems = () => {
+  const initItems = React.useCallback(() => {
     setItems(eligibleEmployees.map(buildLineForEmployee));
-  };
+  }, [eligibleEmployees, buildLineForEmployee]);
+
+  const prevPayrollMonthForInitRef = React.useRef(payrollMonth);
 
   const loadEditingItems = React.useCallback(() => {
     if (!editingRun) return;
@@ -299,11 +318,20 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   React.useEffect(() => {
     if (isEditMode) return;
-    if (eligibleEmployees.length > 0 && (items.length === 0 || monthStr)) {
+    if (eligibleEmployees.length === 0) return;
+
+    if (items.length === 0) {
       initItems();
+      prevPayrollMonthForInitRef.current = payrollMonth;
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eligibleEmployees.length, monthStr, advancesByEmployee, allowanceTotals, unpaidLeaveDaysByEmployee, isEditMode, buildLineForEmployee]);
+
+    const monthChanged = prevPayrollMonthForInitRef.current !== payrollMonth;
+    if (monthChanged) {
+      initItems();
+      prevPayrollMonthForInitRef.current = payrollMonth;
+    }
+  }, [isEditMode, eligibleEmployees.length, payrollMonth, items.length, initItems]);
 
   React.useEffect(() => {
     if (!isEditMode || !editingRun) return;
@@ -324,25 +352,30 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     });
   };
 
-  const toggleDefer = (idx) => {
-    setItems((prev) => {
-      const next = [...prev];
-      const row = { ...next[idx] };
-      row.deferAdvances = !row.deferAdvances;
-      if (row.deferAdvances) {
-        row.advancesDeduct = 0;
-      } else {
-        const advMeta = getAdvanceMetaForEmployee(row.employeeId);
-        row.advancesDeduct = Number(advMeta.dueAmount || 0);
-      }
-      const g = row.grossSalary ?? 0;
-      const add = row.allowancesAdd ?? 0;
-      const ded = row.deductions ?? 0;
-      const adv = row.advancesDeduct ?? 0;
-      row.netSalary = Math.max(0, g + add - ded - adv);
-      next[idx] = row;
-      return next;
-    });
+  const toggleDefer = (employeeId) => {
+    setItems((prev) =>
+      prev.map((row) => {
+        if (row.employeeId !== employeeId) return row;
+        const nextRow = { ...row };
+        const turningOn = !nextRow.deferAdvances;
+        nextRow.deferAdvances = turningOn;
+        if (turningOn) {
+          nextRow.advancesDeduct = 0;
+          nextRow.notes = monthStr ? withPayrollAdvDeferSegment(row.notes, monthStr) : row.notes;
+        } else {
+          const advMeta = getAdvanceMetaForEmployee(nextRow.employeeId);
+          nextRow.advancesDeduct = Number(advMeta.dueAmount || 0);
+          const stripped = stripPayrollAdvDeferSegment(row.notes);
+          nextRow.notes = stripped || undefined;
+        }
+        const g = nextRow.grossSalary ?? 0;
+        const add = nextRow.allowancesAdd ?? 0;
+        const ded = nextRow.deductions ?? 0;
+        const adv = nextRow.advancesDeduct ?? 0;
+        nextRow.netSalary = Math.max(0, g + add - ded - adv);
+        return nextRow;
+      }),
+    );
   };
 
   const toggleInclude = (emp) => {
@@ -456,9 +489,6 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     >
       <form className="prfm-modal-form" onSubmit={handleSubmit}>
         <div className="pt-1 pb-2 shrink-0">
-          <p className="text-[12px] text-noorix-muted m-0 mb-2 leading-snug max-w-[85ch]">
-            {t('payrollGrossFixedPackageHint')}
-          </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="text-[12px] font-semibold text-noorix-muted mb-1.5 block">{t('payrollMonth')}</label>
@@ -498,14 +528,14 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           <table className="payroll-run-table">
             <thead>
               <tr>
-                <th className="w-[24%] min-w-0">{t('employeeName')}</th>
-                <th className="w-[11%] min-w-0">{t('payrollAdvanceDates')}</th>
-                <th className="w-[10%] min-w-0">{t('grossSalary')}</th>
-                <th className="w-[9%] min-w-0">{t('payrollAllowances')}</th>
-                <th className="w-[9%] min-w-0">{t('payrollDeductions')}</th>
-                <th className="w-[9%] min-w-0">{t('payrollAdvances')}</th>
+                <th className="w-[24%] min-w-0 text-center">{t('employeeName')}</th>
+                <th className="w-[11%] min-w-0 text-center">{t('payrollAdvanceDates')}</th>
+                <th className="w-[10%] min-w-0 text-center">{t('grossSalary')}</th>
+                <th className="w-[9%] min-w-0 text-center">{t('payrollAllowances')}</th>
+                <th className="w-[9%] min-w-0 text-center">{t('payrollDeductions')}</th>
+                <th className="w-[9%] min-w-0 text-center">{t('payrollAdvances')}</th>
                 <th className="w-[10%] min-w-0 text-center">{t('payrollDeferAdvanceDeduct')}</th>
-                <th className="w-[10%] min-w-0">{t('netSalary')}</th>
+                <th className="w-[10%] min-w-0 text-center">{t('netSalary')}</th>
               </tr>
             </thead>
             <tbody>
@@ -514,8 +544,8 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 const included = idx >= 0;
                 return (
                   <tr key={emp.id}>
-                    <td className="min-w-0">
-                      <label className="nx-checkbox nx-checkbox--tight min-w-0">
+                    <td className="min-w-0 text-center">
+                      <label className="nx-checkbox nx-checkbox--tight min-w-0 justify-center">
                         <input
                           type="checkbox"
                           checked={included}
@@ -535,46 +565,46 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                     </td>
                     {included ? (
                       <>
-                        <td className="text-noorix-muted text-[11px] min-w-0 nx-line-145 align-top" title={items[idx].advanceDates || ''}>
-                          <span className="line-clamp-2 break-words">{items[idx].advanceDates || '—'}</span>
+                        <td className="text-noorix-muted text-[11px] min-w-0 nx-line-145 align-top text-center" title={items[idx].advanceDates || ''}>
+                          <span className="line-clamp-2 break-words inline-block max-w-full text-center">{items[idx].advanceDates || '—'}</span>
                         </td>
-                        <td className="font-semibold text-[12px] whitespace-nowrap nx-font-numbers text-end">{hrFmt(items[idx].grossSalary)}</td>
-                        <td className="text-end">
+                        <td className="font-semibold text-[12px] whitespace-nowrap nx-font-numbers text-center">{hrFmt(items[idx].grossSalary)}</td>
+                        <td className="text-center">
                           <Input
                             type="number"
                             inputMode="decimal"
                             step={1}
                             min={0}
                             size="sm"
-                            className="max-w-[4.5rem] ms-auto tabular-nums !py-1 !px-2"
+                            className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
                             value={items[idx].allowancesAdd ?? 0}
                             onChange={(e) => updateItem(idx, 'allowancesAdd', e.target.value)}
                             onFocus={selectInput}
                             aria-label={t('payrollAllowances')}
                           />
                         </td>
-                        <td className="text-end">
+                        <td className="text-center">
                           <Input
                             type="number"
                             inputMode="decimal"
                             step={1}
                             min={0}
                             size="sm"
-                            className="max-w-[4.5rem] ms-auto tabular-nums !py-1 !px-2"
+                            className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
                             value={items[idx].deductions ?? 0}
                             onChange={(e) => updateItem(idx, 'deductions', e.target.value)}
                             onFocus={selectInput}
                             aria-label={t('payrollDeductions')}
                           />
                         </td>
-                        <td className="text-end">
+                        <td className="text-center">
                           <Input
                             type="number"
                             inputMode="decimal"
                             step={1}
                             min={0}
                             size="sm"
-                            className="max-w-[4.5rem] ms-auto tabular-nums !py-1 !px-2"
+                            className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
                             value={items[idx].advancesDeduct ?? 0}
                             onChange={(e) => updateItem(idx, 'advancesDeduct', e.target.value)}
                             disabled={items[idx].deferAdvances}
@@ -587,15 +617,15 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             <input
                               type="checkbox"
                               checked={!!items[idx].deferAdvances}
-                              onChange={() => toggleDefer(idx)}
+                              onChange={() => toggleDefer(emp.id)}
                               aria-label={t('payrollDeferAdvanceDeduct')}
                             />
                           </label>
                         </td>
-                        <td className="font-extrabold text-[12px] whitespace-nowrap nx-font-numbers text-end">{hrFmt(items[idx].netSalary)}</td>
+                        <td className="font-extrabold text-[12px] whitespace-nowrap nx-font-numbers text-center">{hrFmt(items[idx].netSalary)}</td>
                       </>
                     ) : (
-                      <td colSpan={7} className="text-noorix-muted text-[13px]">
+                      <td colSpan={7} className="text-noorix-muted text-[13px] text-center">
                         —
                       </td>
                     )}
