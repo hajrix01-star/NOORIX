@@ -18,7 +18,8 @@ import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, AdaptiveSheet, Input } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn } from '../../../ui';
+import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 
@@ -98,7 +99,7 @@ export default function AdvancesTab() {
   const totalAmount = sumAmounts(allFilteredData.filter((r) => r.status !== 'cancelled'), 'totalAmount');
   const outstandingCount = allFilteredData.filter((r) => r.status !== 'cancelled' && r.settlementStatus !== 'settled').length;
 
-  const statusColorMap = { cancelled: 'gray', settled: 'red', partial: 'blue', outstanding: 'amber' };
+  const settlementMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
@@ -152,19 +153,10 @@ export default function AdvancesTab() {
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
       render: (_, row) => (
         <Badge
-          color={statusColorMap[row.settlementStatus] || 'amber'}
+          {...Badge.fromStatus(row.settlementStatus, settlementMap)}
           size="sm"
-          className="shrink-0"
-          style={{ textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none' }}
-        >
-          {row.settlementStatus === 'cancelled'
-            ? t('cancelled')
-            : row.settlementStatus === 'settled'
-              ? t('advanceSettled')
-              : row.settlementStatus === 'partial'
-                ? t('advanceStatusPartial')
-                : t('advanceOutstanding')}
-        </Badge>
+          className={cn('shrink-0', row.settlementStatus === 'settled' && 'line-through')}
+        />
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
@@ -182,7 +174,7 @@ export default function AdvancesTab() {
           }}
         />
       ) },
-  ], [t]);
+  ], [t, settlementMap, queryClient]);
 
   const footerCells = (
     <>
@@ -212,25 +204,19 @@ export default function AdvancesTab() {
           : t('advanceOutstanding'),
   }));
 
-  const settlementLabels = { settled: t('advanceSettled'), partial: t('advanceStatusPartial'), outstanding: t('advanceOutstanding'), cancelled: t('cancelled') };
-
   const renderMobileCard = useCallback((row) => {
-    const sLabel = settlementLabels[row.settlementStatus] || row.settlementStatus;
     const settled = row.settlementStatus === 'settled';
     return (
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
-          <span className="font-bold text-[15px]" style={{ textDecoration: settled ? 'line-through' : 'none', color: settled ? 'var(--noorix-accent-red)' : 'var(--noorix-text)' }}>
+          <span className={cn('font-bold text-[15px]', settled && 'line-through text-noorix-red')}>
             {row.employeeName}
           </span>
           <Badge
-            color={statusColorMap[row.settlementStatus] || 'amber'}
+            {...Badge.fromStatus(row.settlementStatus, settlementMap)}
             size="sm"
-            className="shrink-0"
-            style={{ textDecoration: settled ? 'line-through' : 'none' }}
-          >
-            {sLabel}
-          </Badge>
+            className={cn('shrink-0', settled && 'line-through')}
+          />
         </div>
         <div className="text-[11px] text-noorix-muted mb-2">{formatSaudiDate(row.transactionDate)}</div>
         <div className="grid grid-cols-3 rounded-lg gap-1.5 bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
@@ -256,11 +242,10 @@ export default function AdvancesTab() {
         </div>
       </div>
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t]);
+  }, [t, settlementMap]);
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-toolbar mb-2 flex items-center justify-end">
@@ -350,7 +335,7 @@ export default function AdvancesTab() {
           onError={(msg) => setToast({ visible: true, message: msg, type: 'error' })}
         />
       )}
-    </div>
+    </ScreenShell>
   );
 }
 

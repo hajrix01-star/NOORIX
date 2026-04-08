@@ -25,6 +25,7 @@ export { default as ScreenTabs } from './ScreenTabs';
 export { default as ScreenShell } from './ScreenShell';
 export { default as ScreenTitle } from './ScreenTitle';
 export { default as KebabMenu } from './KebabMenu';
+export { default as FilterScrollStrip } from './FilterScrollStrip';
 
 /**
  * SmartTable — الجدول الذكي المركزي

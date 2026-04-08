@@ -7,7 +7,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { KebabMenu } from '../../ui';
 
 export const InvoiceActionsCell = memo(function InvoiceActionsCell({
-  row, userRole, userPermissions, companyId: _companyId, onView, onPrint, onEdit, onDelete,
+  row, userRole, userPermissions, onView, onPrint, onEdit, onDelete,
 }) {
   const { t } = useTranslation();
 

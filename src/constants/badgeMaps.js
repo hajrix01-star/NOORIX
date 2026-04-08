@@ -44,3 +44,39 @@ export function buildEmployeeHrStatusMap(t) {
     archived: { color: 'gray', label: t('statusArchived') },
   };
 }
+
+/** طلبات الإجازة — تبويب الإجازات + ملف الموظف */
+export function buildLeaveRequestStatusMap(t) {
+  return {
+    pending: { color: 'amber', label: t('statusPending') },
+    approved: { color: 'green', label: t('statusApproved') },
+    rejected: { color: 'red', label: t('statusRejected') },
+  };
+}
+
+/** مسيرات الرواتب */
+export function buildPayrollRunStatusMap(t) {
+  return {
+    draft: { color: 'gray', label: t('payrollDraft') },
+    completed: { color: 'green', label: t('payrollPaid') },
+  };
+}
+
+/** سجل الإقامة — expired / renewed / active */
+export function buildResidencyRecordStatusMap(t) {
+  return {
+    expired: { color: 'red', label: t('statusExpired') },
+    renewed: { color: 'green', label: t('statusRenewed') },
+    active: { color: 'blue', label: t('statusActive') },
+  };
+}
+
+/** تسوية السلفية — تبويب السلف */
+export function buildAdvanceSettlementStatusMap(t) {
+  return {
+    cancelled: { color: 'gray', label: t('cancelled') },
+    settled: { color: 'red', label: t('advanceSettled') },
+    partial: { color: 'blue', label: t('advanceStatusPartial') },
+    outstanding: { color: 'amber', label: t('advanceOutstanding') },
+  };
+}

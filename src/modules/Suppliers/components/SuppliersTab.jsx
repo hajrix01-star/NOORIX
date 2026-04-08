@@ -14,7 +14,7 @@ import { SupplierForm }        from './SupplierForm';
 import { SupplierTable }       from './SupplierTable';
 import { SupplierEditModal }   from './SupplierEditModal';
 import SupplierImportExport    from './SupplierImportExport';
-import { Button, Input }       from '../../../ui';
+import { Button, Input, ScreenShell } from '../../../ui';
 
 export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   const { t } = useTranslation();
@@ -106,7 +106,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
       <Toast
         visible={toast.visible}
         message={toast.message}
@@ -175,7 +175,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
         onClose={() => setEditingSupplier(null)}
         isSaving={update.isPending}
       />
-    </div>
+    </ScreenShell>
   );
 });
 

@@ -625,10 +625,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           onChange={(e) => setImportNameAr(e.target.value)}
         />
 
-        <label
-          className="nx-checkbox text-[13px] text-noorix-text mt-3 mb-4"
-          className="leading-[1.5]"
-        >
+        <label className="nx-checkbox text-[13px] text-noorix-text mt-3 mb-4 leading-[1.5]">
           <input
             type="checkbox"
             checked={importConfirmed}
@@ -742,10 +739,7 @@ export default function BackupTab({ activeCompanies = [] }) {
 
               <details className="text-[12px]">
                 <summary className="cursor-pointer font-bold">{t('backupReportRawJson')}</summary>
-                <pre
-                  className="text-[11px] bg-noorix-bg-muted p-3 overflow-auto nx-ltr mt-2.5 rounded-lg"
-                  className="max-h-[220px] text-left"
-                >
+                <pre className="text-[11px] bg-noorix-bg-muted p-3 overflow-auto nx-ltr mt-2.5 rounded-lg max-h-[220px] text-left">
                   {JSON.stringify(reportModal.payload, null, 2)}
                 </pre>
               </details>
@@ -836,10 +830,7 @@ export default function BackupTab({ activeCompanies = [] }) {
 
               <details className="text-[12px]">
                 <summary className="cursor-pointer font-bold">{t('backupReportRawJson')}</summary>
-                <pre
-                  className="text-[11px] bg-noorix-bg-muted p-3 overflow-auto nx-ltr mt-2.5 rounded-lg"
-                  className="max-h-[220px] text-left"
-                >
+                <pre className="text-[11px] bg-noorix-bg-muted p-3 overflow-auto nx-ltr mt-2.5 rounded-lg max-h-[220px] text-left">
                   {JSON.stringify(importReportModal, null, 2)}
                 </pre>
               </details>

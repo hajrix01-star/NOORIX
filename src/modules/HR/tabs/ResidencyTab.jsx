@@ -15,7 +15,8 @@ import { ResidencyFormModal } from '../components/ResidencyFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge } from '../../../ui';
+import { Button, Badge, ScreenShell } from '../../../ui';
+import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 const EXPIRY_DAYS = 90;
@@ -28,7 +29,9 @@ function isExpiringSoon(expiryDate) {
   return diff >= 0 && diff <= EXPIRY_DAYS;
 }
 
-const statusColorMap = { expired: 'red', renewed: 'green' };
+function residencyStatusKey(v) {
+  return v === 'expired' || v === 'renewed' ? v : 'active';
+}
 
 export default function ResidencyTab() {
   const { t, lang } = useTranslation();
@@ -66,6 +69,7 @@ export default function ResidencyTab() {
     employeeName: employeeDisplayName(r.employee || { name: r.employeeName }, lang),
   })), [data, lang]);
   const expiringCount = items.filter((r) => isExpiringSoon(r.expiryDate)).length;
+  const residencyStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
 
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
     useTableFilter(items, {
@@ -99,9 +103,7 @@ export default function ResidencyTab() {
       } },
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
       render: (v) => (
-        <Badge color={statusColorMap[v] || 'blue'} size="sm">
-          {v === 'expired' ? t('statusExpired') : v === 'renewed' ? t('statusRenewed') : t('statusActive')}
-        </Badge>
+        <Badge {...Badge.fromStatus(residencyStatusKey(v), residencyStatusMap)} size="sm" />
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
@@ -114,29 +116,24 @@ export default function ResidencyTab() {
           }}
         />
       ) },
-  ], [t, deleteMutation]);
+  ], [t, deleteMutation, residencyStatusMap]);
 
   const exportData = allFilteredData.map((r) => ({
     employeeName: r.employeeName || '—',
     iqamaNumber: r.iqamaNumber || '—',
     issueDate: formatSaudiDate(r.issueDate),
     expiryDate: formatSaudiDate(r.expiryDate),
-    status: r.status === 'expired' ? t('statusExpired') : r.status === 'renewed' ? t('statusRenewed') : t('statusActive'),
+    status: residencyStatusMap[residencyStatusKey(r.status)]?.label || r.status,
     expiringSoon: isExpiringSoon(r.expiryDate) ? t('residencyExpiringSoon') : '—',
   }));
 
   const renderMobileCard = useCallback((row) => {
     const soon = isExpiringSoon(row.expiryDate);
-    const statusLabel = row.status === 'expired'
-      ? t('statusExpired')
-      : row.status === 'renewed'
-        ? t('statusRenewed')
-        : t('statusActive');
     return (
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="font-bold text-[14px]">{row.employeeName}</span>
-          <Badge color={statusColorMap[row.status] || 'blue'} size="sm" className="shrink-0">{statusLabel}</Badge>
+          <Badge {...Badge.fromStatus(residencyStatusKey(row.status), residencyStatusMap)} size="sm" className="shrink-0" />
         </div>
         {row.iqamaNumber && (
           <div className="text-[12px] text-noorix-muted mb-2 nx-font-numbers">{row.iqamaNumber}</div>
@@ -159,10 +156,10 @@ export default function ResidencyTab() {
         </div>
       </div>
     );
-  }, [t, deleteMutation]);
+  }, [t, deleteMutation, residencyStatusMap]);
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-toolbar">
@@ -231,6 +228,6 @@ export default function ResidencyTab() {
           onClose={() => setEditingResidency(null)}
         />
       )}
-    </div>
+    </ScreenShell>
   );
 }

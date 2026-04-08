@@ -14,7 +14,8 @@ import { LeaveFormModal } from '../components/LeaveFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input } from '../../../ui';
+import { Button, Badge, Input, ScreenShell } from '../../../ui';
+import { buildLeaveRequestStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 
@@ -24,14 +25,6 @@ const TYPE_MAP = {
   unpaid: 'leaveUnpaid',
   other: 'leaveOther',
 };
-
-const STATUS_MAP = {
-  pending: { bg: 'var(--noorix-yellow-10)', color: 'var(--color-noorix-amber)', labelKey: 'statusPending' },
-  approved: { bg: 'var(--noorix-green-10)', color: 'var(--noorix-accent-green)', labelKey: 'statusApproved' },
-  rejected: { bg: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)', labelKey: 'statusRejected' },
-};
-
-const statusColorMap = { pending: 'amber', approved: 'green', rejected: 'red' };
 
 export default function LeaveTab() {
   const { t, lang } = useTranslation();
@@ -67,11 +60,7 @@ export default function LeaveTab() {
     ...l,
     employeeName: employeeDisplayName(l.employee || { name: l.employeeName }, lang),
   })), [data, lang]);
-  const statusStyles = useMemo(() => ({
-    pending: { bg: STATUS_MAP.pending.bg, color: STATUS_MAP.pending.color, label: t(STATUS_MAP.pending.labelKey) },
-    approved: { bg: STATUS_MAP.approved.bg, color: STATUS_MAP.approved.color, label: t(STATUS_MAP.approved.labelKey) },
-    rejected: { bg: STATUS_MAP.rejected.bg, color: STATUS_MAP.rejected.color, label: t(STATUS_MAP.rejected.labelKey) },
-  }), [t]);
+  const leaveStatusMap = useMemo(() => buildLeaveRequestStatusMap(t), [t]);
 
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
     useTableFilter(items, {
@@ -95,9 +84,7 @@ export default function LeaveTab() {
       render: (v) => <span className="nx-cell-num">{v ?? '—'}</span> },
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
       render: (v) => (
-        <Badge color={statusColorMap[v] || 'gray'} size="sm">
-          {statusStyles[v]?.label || v}
-        </Badge>
+        <Badge {...Badge.fromStatus(v, leaveStatusMap)} size="sm" />
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
@@ -108,7 +95,7 @@ export default function LeaveTab() {
           onReject={row.status === 'pending' ? () => updateStatusMutation.mutate({ id: row.id, status: 'rejected' }) : undefined}
         />
       ) },
-  ], [t, statusStyles, updateStatusMutation]);
+  ], [t, leaveStatusMap, updateStatusMutation]);
 
   const exportData = allFilteredData.map((r) => ({
     employeeName: r.employeeName || '—',
@@ -116,16 +103,15 @@ export default function LeaveTab() {
     startDate: formatSaudiDate(r.startDate),
     endDate: formatSaudiDate(r.endDate),
     daysCount: r.daysCount ?? '—',
-    status: statusStyles[r.status]?.label || r.status,
+    status: leaveStatusMap[r.status]?.label || r.status,
   }));
 
   const renderMobileCard = useCallback((row) => {
-    const ss = statusStyles[row.status] || { label: row.status };
     return (
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="font-bold text-[14px]">{row.employeeName}</span>
-          <Badge color={statusColorMap[row.status] || 'gray'} size="sm" className="shrink-0">{ss.label}</Badge>
+          <Badge {...Badge.fromStatus(row.status, leaveStatusMap)} size="sm" className="shrink-0" />
         </div>
         <div className="text-[13px] text-noorix-muted mb-2">
           {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
@@ -152,10 +138,10 @@ export default function LeaveTab() {
         )}
       </div>
     );
-  }, [statusStyles, t, updateStatusMutation]);
+  }, [leaveStatusMap, t, updateStatusMutation]);
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-toolbar">
@@ -206,6 +192,6 @@ export default function LeaveTab() {
           onClose={() => setShowAdd(false)}
         />
       )}
-    </div>
+    </ScreenShell>
   );
 }

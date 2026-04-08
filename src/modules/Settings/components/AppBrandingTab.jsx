@@ -214,12 +214,11 @@ export default function AppBrandingTab() {
             type="text"
             value={color}
             onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
-            className="text-[13px]"
-            className="w-[100px] min-w-0 font-mono"
+            className="text-[13px] w-[100px] min-w-0 font-mono"
             placeholder="#0a1f44"
             maxLength={7}
           />
-          <span className="text-[12px] text-noorix-muted" className="shrink">???? ?? ???? ??????? ??? Android ???? PWA</span>
+          <span className="text-[12px] text-noorix-muted shrink">???? ?? ???? ??????? ??? Android ???? PWA</span>
         </div>
       </div>
 

@@ -191,11 +191,42 @@ const items = useMemo(() => TABS.map((x) => ({ id: x.id, label: t(x.labelKey) })
 <ScreenTabs variant="underline" items={items} value={activeTab} onChange={setActiveTab} />
 ```
 
+- **`omitDefaultBarClasses`** + **`barClassName`** + **`getTabClassName`** — لأشرطة مخصّصة (إعدادات، طلبات، بنك، OCR) بدون إضافة `nx-tab-bar` الافتراضي.
+- **`data-active`** على أزرار التبويب — للتمرير والأنماط مثل `.noorix-settings-tab[data-active="true"]`.
+
+---
+
+## جذر الشاشة والعنوان — `ScreenShell` / `ScreenTitle`
+
+```jsx
+import { ScreenShell, ScreenTitle } from '../../ui';
+
+<ScreenShell>
+  <ScreenTitle>{t('title')}</ScreenTitle>
+  …
+</ScreenShell>
+```
+
+---
+
+## قائمة إجراءات الصف (كباب) — `KebabMenu`
+
+```jsx
+import { KebabMenu } from '../../ui';
+
+<KebabMenu
+  ariaLabel={t('actions')}
+  items={[
+    { key: 'edit', label: t('edit'), onClick: () => onEdit(row), hidden: !canEdit, style: { color: 'var(--noorix-accent-green)' } },
+  ]}
+/>
+```
+
 ---
 
 ## الاستيراد الصحيح
 
 ```jsx
-import { Button, Input, Card, Badge, Modal, Drawer, AdaptiveSheet, Spinner, SmartTable, ScreenTabs, Divider, FormRow, cn } from '../../ui';
+import { Button, Input, Card, Badge, Modal, Drawer, AdaptiveSheet, Spinner, SmartTable, ScreenTabs, ScreenShell, ScreenTitle, KebabMenu, Divider, FormRow, cn } from '../../ui';
 // cn — دمج classes بأمان (clsx + tailwind-merge)
 ```

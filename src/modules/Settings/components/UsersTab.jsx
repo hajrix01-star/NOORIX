@@ -8,7 +8,7 @@ import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import Toast from '../../../components/Toast';
 import SmartTable from '../../../components/common/SmartTable';
-import { Button, Badge, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Badge, Input, AdaptiveSheet, ScreenShell } from '../../../ui';
 
 export default function UsersTab({ userRole, activeCompanies = [] }) {
   const { t } = useTranslation();
@@ -82,7 +82,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   ];
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="flex items-center justify-end">
@@ -186,6 +186,6 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
           </div>
         )}
       />
-    </div>
+    </ScreenShell>
   );
 }

@@ -17,16 +17,10 @@ import { PayrollRunFormModal } from '../components/PayrollRunFormModal';
 import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import Toast from '../../../components/Toast';
-import { Button, Badge, Input } from '../../../ui';
+import { Button, Badge, Input, ScreenShell } from '../../../ui';
+import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
-
-const STATUS_MAP = {
-  draft: { bg: 'var(--noorix-muted-10)', color: 'var(--noorix-text-muted)', labelKey: 'payrollDraft' },
-  completed: { bg: 'var(--noorix-green-10)', color: 'var(--noorix-accent-green)', labelKey: 'payrollPaid' },
-};
-
-const statusColorMap = { draft: 'gray', completed: 'green' };
 
 export default function PayrollTab() {
   const { t } = useTranslation();
@@ -103,10 +97,7 @@ export default function PayrollTab() {
   }, [deleteRunMutation, t]);
 
   const items = data ?? [];
-  const statusStyles = useMemo(() => ({
-    draft: { bg: STATUS_MAP.draft.bg, color: STATUS_MAP.draft.color, label: t(STATUS_MAP.draft.labelKey) },
-    completed: { bg: STATUS_MAP.completed.bg, color: STATUS_MAP.completed.color, label: t(STATUS_MAP.completed.labelKey) },
-  }), [t]);
+  const payrollStatusMap = useMemo(() => buildPayrollRunStatusMap(t), [t]);
 
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
     useTableFilter(items, {
@@ -130,9 +121,7 @@ export default function PayrollTab() {
       render: (v) => <span className="nx-cell-num font-bold text-[13px]">{hrFmt(v)}</span> },
     { key: 'status', label: t('payrollStatus'), width: 120, minWidth: 110,
       render: (v) => (
-        <Badge color={statusColorMap[v] || 'gray'} size="sm">
-          {statusStyles[v]?.label || v}
-        </Badge>
+        <Badge {...Badge.fromStatus(v, payrollStatusMap)} size="sm" />
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
@@ -146,7 +135,7 @@ export default function PayrollTab() {
           onPay={row.status === 'completed' ? () => issuePaymentMutation.mutate({ id: row.id }) : undefined}
         />
       ) },
-  ], [t, statusStyles, updateStatusMutation, issuePaymentMutation, handleDeleteDraft]);
+  ], [t, payrollStatusMap, updateStatusMutation, issuePaymentMutation, handleDeleteDraft]);
 
   const footerCells = (
     <>
@@ -162,16 +151,15 @@ export default function PayrollTab() {
     month: r.month,
     grossTotal: hrFmt(r.grossTotal),
     netTotal: hrFmt(r.netTotal),
-    status: statusStyles[r.status]?.label || r.status,
+    status: payrollStatusMap[r.status]?.label || r.status,
   }));
 
   const renderMobileCard = useCallback((row) => {
-    const ss = statusStyles[row.status] || { label: row.status };
     return (
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="nx-cell-num nx-cell-accent text-[14px]">{row.runNumber}</span>
-          <Badge color={statusColorMap[row.status] || 'gray'} size="sm" className="shrink-0">{ss.label}</Badge>
+          <Badge {...Badge.fromStatus(row.status, payrollStatusMap)} size="sm" className="shrink-0" />
         </div>
         {row.month && <div className="nx-cell-muted mb-2">{row.month}</div>}
           <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
@@ -197,7 +185,7 @@ export default function PayrollTab() {
         </div>
       </div>
     );
-  }, [statusStyles, t, updateStatusMutation, issuePaymentMutation, handleDeleteDraft]);
+  }, [payrollStatusMap, t, updateStatusMutation, issuePaymentMutation, handleDeleteDraft]);
 
   function handleExportExcel() {
     exportToExcel(exportData, `payroll-runs-${year}.xlsx`);
@@ -205,7 +193,7 @@ export default function PayrollTab() {
 
   function handlePrint() {
     const rows = allFilteredData.map((r) =>
-      `<tr><td>${(r.runNumber || '').replace(/</g, '&lt;')}</td><td>${(r.month || '').replace(/</g, '&lt;')}</td><td>${hrFmt(r.grossTotal)}</td><td>${hrFmt(r.netTotal)}</td><td>${(statusStyles[r.status]?.label || r.status).replace(/</g, '&lt;')}</td></tr>`
+      `<tr><td>${(r.runNumber || '').replace(/</g, '&lt;')}</td><td>${(r.month || '').replace(/</g, '&lt;')}</td><td>${hrFmt(r.grossTotal)}</td><td>${hrFmt(r.netTotal)}</td><td>${(payrollStatusMap[r.status]?.label || r.status).replace(/</g, '&lt;')}</td></tr>`
     ).join('');
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('hrTabPayroll') || '').replace(/</g, '&lt;')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;color:#1a1a1a;line-height:1.6}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}.header h1{margin:8px 0 4px;font-size:20px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}@media print{body{padding:0}}</style></head><body>
@@ -222,7 +210,7 @@ export default function PayrollTab() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onDismiss={() => setToast((p) => ({ ...p, visible: false }))} />
 
       <div className="nx-toolbar">
@@ -305,6 +293,6 @@ export default function PayrollTab() {
           onClose={() => setDetailRunId(null)}
         />
       )}
-    </div>
+    </ScreenShell>
   );
 }

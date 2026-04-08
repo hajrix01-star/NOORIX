@@ -4,7 +4,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button, Input } from '../../ui';
+import { Button, Input, ScreenShell, ScreenTitle } from '../../ui';
 import { useApp } from '../../context/AppContext';
 import { useOwnerReports } from '../../hooks/useOwnerReports';
 import { EN_MONTHS } from '../Reports/reportHelpers';
@@ -168,20 +168,20 @@ export default function OwnerDashboardScreen() {
 
   if (companyList.length === 0) {
     return (
-      <div className="flex flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('ownerDashboard')}</h1>
+      <ScreenShell>
+        <ScreenTitle>{t('ownerDashboard')}</ScreenTitle>
         <div className="noorix-surface-card text-center text-noorix-muted mt-4 p-8">
           {t('pleaseSelectCompany')}
         </div>
-      </div>
+      </ScreenShell>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
       <div className="nx-page-header">
         <div className="nx-page-header__titles">
-          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('ownerDashboard')}</h1>
+          <ScreenTitle>{t('ownerDashboard')}</ScreenTitle>
           <p className="text-[13px] text-noorix-muted m-0">{t('ownerDashboardDesc')}</p>
         </div>
         <div className="nx-toolbar">
@@ -394,6 +394,6 @@ export default function OwnerDashboardScreen() {
           </div>
         </>
       )}
-    </div>
+    </ScreenShell>
   );
 }

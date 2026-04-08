@@ -436,7 +436,6 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                 items={timelineTabItems}
                 value={timelineGrain}
                 onChange={setTimelineGrain}
-                buttonSize="sm"
                 className="shrink-0"
               />
               {SERIES.map((s) => {

@@ -488,13 +488,13 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
   }
 
   async function handleDownloadErrorReport() {
-    const rows = progress.errors.map((e) => ({ '??? ????': e.rowNum, '?????': e.message }));
+    const rows = progress.errors.map((e) => ({ row: e.rowNum, message: e.message }));
     await exportToExcel(rows, 'import-errors.xlsx');
   }
 
   async function handleDownloadWarningsReport() {
     const list = progress.warnings || [];
-    const rows = list.map((w) => ({ '??? ????': w.rowNum, '???????': w.message }));
+    const rows = list.map((w) => ({ row: w.rowNum, message: w.message }));
     await exportToExcel(rows, 'import-warnings.xlsx');
   }
 
@@ -502,8 +502,8 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     const rows = validationResults
       .filter((r) => !r.valid || r.warnings.length > 0)
       .flatMap((r) => [
-        ...r.errors.map((msg) => ({ '??? ????': r.rowNum, '?????': '???', '?????': msg })),
-        ...r.warnings.map((msg) => ({ '??? ????': r.rowNum, '?????': '?????', '?????': msg })),
+        ...r.errors.map((msg) => ({ row: r.rowNum, level: 'error', message: msg })),
+        ...r.warnings.map((msg) => ({ row: r.rowNum, level: 'warning', message: msg })),
       ]);
     await exportToExcel(rows, 'validation-errors.xlsx');
   }

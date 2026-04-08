@@ -56,7 +56,8 @@ export default function ScreenTabs({
             key={item.id}
             type="button"
             variant="raw"
-            size={buttonSize}
+            /* sm/md تفرض h-* و px ضيّقة وتقصّ الحروف العربية داخل segmented */
+            size={variant === 'segmented' ? 'auto' : buttonSize}
             role="tab"
             aria-selected={active}
             className={cn(

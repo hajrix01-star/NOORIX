@@ -1,7 +1,7 @@
 ﻿/**
  * EmployeeProfileScreen — صفحة ملف الموظف الموسعة (جداول احترافية)
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
@@ -33,6 +33,7 @@ import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
 import Toast from '../../components/Toast';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
+import { buildLeaveRequestStatusMap, buildResidencyRecordStatusMap } from '../../constants/badgeMaps';
 
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
@@ -55,6 +56,9 @@ export default function EmployeeProfileScreen() {
   const { data: employee, isLoading, error } = useEmployee(id, companyId);
   const { createAdvance } = useEmployees(companyId, { includeTerminated: true });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId, id);
+
+  const leaveProfileStatusMap = useMemo(() => buildLeaveRequestStatusMap(t), [t]);
+  const residencyProfileStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
 
   const { data: leaves = [] } = useQuery({
     queryKey: ['leaves', companyId, id],
@@ -260,22 +264,11 @@ export default function EmployeeProfileScreen() {
     archived:   { color: 'gray',   label: t('statusArchived')   },
     on_leave:   { color: 'amber',  label: t('statusOnLeave')    },
   };
-  const LEAVE_STATUS_MAP = {
-    pending:  { color: 'amber', label: t('statusPending')   },
-    approved: { color: 'green', label: t('statusApproved')  },
-    rejected: { color: 'red',   label: t('statusRejected')  },
-  };
   const ADVANCE_STATUS_MAP = {
     settled:   { color: 'green', label: t('advanceSettled')      },
     cancelled: { color: 'gray',  label: t('cancelled')           },
     active:    { color: 'amber', label: t('advanceOutstanding')  },
   };
-  const RESIDENCY_STATUS_MAP = {
-    expired: { color: 'red',   label: t('statusExpired') },
-    renewed: { color: 'green', label: t('statusRenewed') },
-    active:  { color: 'blue',  label: t('statusActive')  },
-  };
-
   const overtimeTotal = overtimePay(employee, customAllowanceTotal);
   const total = totalSalary(employee, customAllowanceTotal);
   const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
@@ -401,7 +394,7 @@ export default function EmployeeProfileScreen() {
             { key: 'startDate', label: t('startDate'), width: '18%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
             { key: 'endDate',   label: t('endDate'),   width: '18%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
             { key: 'daysCount', label: t('daysCount'), numeric: true, width: '12%', render: (v) => <span className="nx-cell-num">{v ?? '—'}</span> },
-            { key: 'status',    label: t('status'),    width: '18%', render: (v) => <Badge {...Badge.fromStatus(v, LEAVE_STATUS_MAP)} size="sm" /> },
+            { key: 'status',    label: t('status'),    width: '18%', render: (v) => <Badge {...Badge.fromStatus(v, leaveProfileStatusMap)} size="sm" /> },
           ]}
           data={leaves}
           total={leaves.length}
@@ -450,7 +443,7 @@ export default function EmployeeProfileScreen() {
             { key: 'iqamaNumber', label: t('iqamaNumber'), width: '25%', render: (v) => <span className="nx-cell-num">{v || '—'}</span> },
             { key: 'issueDate',   label: t('startDate'),   width: '25%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
             { key: 'expiryDate',  label: t('expiryDate'),  width: '25%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
-            { key: 'status',      label: t('status'),       width: '24%', render: (v) => <Badge {...Badge.fromStatus(v, RESIDENCY_STATUS_MAP)} size="sm" /> },
+            { key: 'status',      label: t('status'),       width: '24%', render: (v) => <Badge {...Badge.fromStatus(v, residencyProfileStatusMap)} size="sm" /> },
           ]}
           data={residencies}
           total={residencies.length}

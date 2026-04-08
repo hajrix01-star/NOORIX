@@ -6,7 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
 import { ScreenTabs } from '../../ui';
-import { getEmployees, getResidencies } from '../../services/api';
+import { useEmployees } from '../../hooks/useEmployees';
+import { getResidencies } from '../../services/api';
 import StaffListScreen from './StaffListScreen';
 import PayrollTab from './tabs/PayrollTab';
 import LeaveTab from './tabs/LeaveTab';
@@ -33,15 +34,7 @@ export default function HRMainScreen() {
   const companyId = activeCompanyId ?? '';
   const [activeTab, setActiveTab] = useState('employees');
 
-  const { data: employees = [] } = useQuery({
-    queryKey: ['employees', companyId, false],
-    queryFn: async () => {
-      const res = await getEmployees(companyId, false);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : [];
-    },
-    enabled: !!companyId,
-  });
+  const { employees } = useEmployees(companyId, { includeTerminated: false, fetchEnabled: !!companyId });
 
   const { data: residencies = [] } = useQuery({
     queryKey: ['residencies', companyId],

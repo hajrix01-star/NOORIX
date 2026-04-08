@@ -5,6 +5,7 @@
 import React from 'react';
 import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
+import { ScreenShell, ScreenTitle } from '../../ui';
 
 const REPORT_SUB_LINKS = [
   { to: '/reports/general', labelKey: 'reportGeneralReport' },
@@ -16,9 +17,9 @@ export default function ReportsLayout() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <ScreenShell>
       <div>
-        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('reports')}</h1>
+        <ScreenTitle>{t('reports')}</ScreenTitle>
       </div>
 
       <div className="noorix-surface-card p-0 overflow-hidden">
@@ -49,7 +50,7 @@ export default function ReportsLayout() {
           <Outlet />
         </div>
       </div>
-    </div>
+    </ScreenShell>
   );
 }
 
