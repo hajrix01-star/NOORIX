@@ -344,7 +344,7 @@ export default function PurchasesBatchScreen() {
           };
         }),
       });
-      if (!res.success) throw new Error(res.error || t('saveFailed'));
+      rejectIfApiFailed(res, getApiErrorMessage(res, t('saveFailed')));
       return res.data ?? { batchId: 'B-' + Date.now(), count: valid.length };
     },
     successToast: (data) => t('savedInvoicesCount', data.count, data.batchId),

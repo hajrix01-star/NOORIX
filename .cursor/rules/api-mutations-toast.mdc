@@ -23,5 +23,5 @@ globs: src/**/*.jsx,src/**/*.js
 
 ## عقد الاستجابة
 
-- دوال **`rejectIfApiFailed` / `getApiErrorMessage`** في `src/utils/apiResponse.js` — استخدمها عند إضافة طبقات API جديدة أو اختبارات، أو في **حلقات/مزامنة متعددة الخطوات** حيث لا يصلح `useApiMutation` لكل خطوة.
+- دوال **`rejectIfApiFailed` / `getApiErrorMessage` / `assertApiOk`** في `src/utils/apiResponse.js` — للطفرات اليدوية، **حلقات**، `Promise.allSettled`، ونماذج `async/await` حيث لا يصلح `useApiMutation` لكل خطوة. **`assertApiOk(res, fallback)`** = رفض ثم إرجاع `res` للاستمرار.
 - التوثيق الكامل: **`docs/TOAST_AND_API_MUTATIONS.md`**.

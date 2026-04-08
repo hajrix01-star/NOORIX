@@ -7,6 +7,7 @@ import { fmt, sumAmounts } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { Button, AdaptiveSheet, Input } from '../../../ui';
+import { getApiErrorMessage, rejectIfApiFailed } from '../../../utils/apiResponse';
 
 const inputBase = {
   width: '100%', padding: '6px 8px', borderRadius: 6, fontSize: 12,
@@ -48,7 +49,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
     try {
       for (const inv of invoices) {
         const res = await onSaveInvoice(inv);
-        if (!res?.success) throw new Error(res?.error || 'فشل التحديث');
+        rejectIfApiFailed(res, getApiErrorMessage(res, t('saveFailed')));
       }
       onClose?.();
     } catch (e) {

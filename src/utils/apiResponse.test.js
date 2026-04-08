@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getApiErrorMessage, rejectIfApiFailed } from './apiResponse';
+import { assertApiOk, getApiErrorMessage, rejectIfApiFailed } from './apiResponse';
 
 describe('getApiErrorMessage', () => {
   it('uses error then message then fallback', () => {
@@ -25,5 +25,18 @@ describe('rejectIfApiFailed', () => {
     expect(() => rejectIfApiFailed({ success: true })).not.toThrow();
     expect(() => rejectIfApiFailed({ data: 1 })).not.toThrow();
     expect(() => rejectIfApiFailed(null)).not.toThrow();
+  });
+});
+
+describe('assertApiOk', () => {
+  it('throws like rejectIfApiFailed when success is false', () => {
+    expect(() => assertApiOk({ success: false, error: 'Z' }, 'fb')).toThrow('Z');
+  });
+
+  it('returns the result when ok or success key missing', () => {
+    const ok = { success: true, data: 42 };
+    expect(assertApiOk(ok, 'fb')).toBe(ok);
+    const raw = { id: 1 };
+    expect(assertApiOk(raw, 'fb')).toBe(raw);
   });
 });

@@ -11,6 +11,7 @@ import { createResidency, updateResidency, createInvoice } from '../../../servic
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { assertApiOk, getApiErrorMessage } from '../../../utils/apiResponse';
 
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'statusActive' },
@@ -69,7 +70,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
           status,
           notes: notes || undefined,
         }, cid);
-        if (!res?.success) throw new Error(res?.error || 'فشل تحديث الإقامة');
+        assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
       } else {
         const res = await createResidency({
           companyId: cid,
@@ -80,7 +81,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
           status,
           notes: notes || undefined,
         });
-        if (!res?.success) throw new Error(res?.error || 'فشل إضافة الإقامة');
+        assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
 
         if (createInvoiceForResidency && invoiceAmount && parseFloat(invoiceAmount) > 0) {
           const vId = vaultId;
@@ -105,7 +106,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose })
             vaultId: vId,
             notes,
           });
-          if (!invRes?.success) throw new Error(invRes?.error || 'فشل إصدار فاتورة الإقامة');
+          assertApiOk(invRes, getApiErrorMessage(invRes, t('saveFailed')));
         }
       }
       onSuccess?.();

@@ -46,6 +46,7 @@ import {
   updateOrderProduct,
 } from '../../../services/api';
 import { Button, Input } from '../../../ui';
+import { assertApiOk, getApiErrorMessage } from '../../../utils/apiResponse';
 
 export function ItemsManageTab({ companyId }) {
   const { t } = useTranslation();
@@ -207,7 +208,7 @@ export function ItemsManageTab({ companyId }) {
       let catsAdded = 0;
       if (missingCats.length) {
         const batchRes = await createOrderCategoriesBatch(companyId, missingCats.map((nameAr) => ({ nameAr })));
-        if (!batchRes?.success) throw new Error(batchRes?.error || t('addFailed'));
+        assertApiOk(batchRes, getApiErrorMessage(batchRes, t('addFailed')));
         catsAdded = missingCats.length;
         catRes = await getOrderCategories(companyId);
         (catRes?.data ?? []).forEach((c) => catMap.set(String(c.nameAr ?? '').trim().toLowerCase(), c.id));
@@ -236,7 +237,7 @@ export function ItemsManageTab({ companyId }) {
         const chunk = updateTasks.slice(i, i + CHUNK);
         const results = await Promise.all(chunk.map(({ id, body }) => updateOrderProduct(id, body, companyId)));
         for (const r of results) {
-          if (!r?.success) throw new Error(r?.error || t('updateFailed'));
+          assertApiOk(r, getApiErrorMessage(r, t('updateFailed')));
         }
         updated += chunk.length;
       }
@@ -256,7 +257,7 @@ export function ItemsManageTab({ companyId }) {
       let added = 0;
       if (productsPayload.length) {
         const batchRes = await createOrderProductsBatch(companyId, productsPayload);
-        if (!batchRes?.success) throw new Error(batchRes?.error || t('addFailed'));
+        assertApiOk(batchRes, getApiErrorMessage(batchRes, t('addFailed')));
         added = productsPayload.length;
       }
 

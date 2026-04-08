@@ -37,3 +37,16 @@ export function rejectIfApiFailed(result, fallbackMessage = 'Request failed') {
     throw err;
   }
 }
+
+/**
+ * يتحقق من `success !== false` ثم يعيد النتيجة؛ مفيد بعد `await` في نماذج واستيراد متوازي.
+ *
+ * @param {unknown} result
+ * @param {string} [fallbackMessage]
+ * @returns {unknown}
+ * @throws {Error & { apiResult?: unknown }}
+ */
+export function assertApiOk(result, fallbackMessage = 'Request failed') {
+  rejectIfApiFailed(result, getApiErrorMessage(result, fallbackMessage));
+  return result;
+}

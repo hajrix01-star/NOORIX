@@ -8,7 +8,7 @@ import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { chatQuery, getExpenseLines, getEmployees, getVaults, createCustomAllowance } from '../../services/api';
-import { rejectIfApiFailed, getApiErrorMessage } from '../../utils/apiResponse';
+import { rejectIfApiFailed } from '../../utils/apiResponse';
 import { getStoredUser } from '../../services/authStore';
 import { PERMISSIONS, hasPermission } from '../../constants/permissions';
 import { HrQuickEntrySheet } from './HrQuickEntrySheet';
@@ -346,7 +346,7 @@ export default function SmartChatScreen() {
                 nameAr: row.nameAr,
                 amount: row.amount,
               });
-              rejectIfApiFailed(allowRes, getApiErrorMessage(allowRes, t('saveFailed')));
+              rejectIfApiFailed(allowRes, t('saveFailed'));
             }
           }
           showToast(t('employeeAdded'), 'success');

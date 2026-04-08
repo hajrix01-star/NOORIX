@@ -5,6 +5,7 @@ import {
   createOcrSupplier, updateOcrSupplier, deleteOcrSupplier, addSupplierAlias,
   bulkDeleteOcrSuppliers,
 } from '../services/ocrApi';
+import { assertApiOk, getApiErrorMessage } from '../../../utils/apiResponse';
 
 function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
   const { t } = useTranslation();
@@ -59,16 +60,30 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
 
   const handleCreate = async (data) => {
     setSaving(true);
-    const res = await createOcrSupplier(data);
-    setSaving(false);
-    if (res.success) { setAdding(false); onRefresh(); }
+    try {
+      const res = await createOcrSupplier(data);
+      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      setAdding(false);
+      onRefresh();
+    } catch (e) {
+      alert(e?.message || t('saveFailed'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleUpdate = async (data) => {
     setSaving(true);
-    const res = await updateOcrSupplier(editing.id, data);
-    setSaving(false);
-    if (res.success) { setEditing(null); onRefresh(); }
+    try {
+      const res = await updateOcrSupplier(editing.id, data);
+      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      setEditing(null);
+      onRefresh();
+    } catch (e) {
+      alert(e?.message || t('saveFailed'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id) => {

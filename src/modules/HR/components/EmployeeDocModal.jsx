@@ -7,6 +7,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import Decimal from 'decimal.js';
 import { uploadDocumentFile } from '../../../services/api';
+import { assertApiOk, getApiErrorMessage } from '../../../utils/apiResponse';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import {
   parseWorkHours,
@@ -514,7 +515,7 @@ export function SalaryCertificateModal({ employee, customAllowances = [], compan
         fileBaseName,
         html: printRef.current?.innerHTML || '',
       });
-      if (!res?.success) throw new Error(res?.error || 'فشل الحفظ');
+      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
       onSaved?.();
       onClose?.();
     } catch (err) {
@@ -599,7 +600,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
         fileBaseName,
         html: printRef.current?.innerHTML || '',
       });
-      if (!res?.success) throw new Error(res?.error || 'فشل الحفظ');
+      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
       onSaved?.();
       onClose?.();
     } catch (err) {
@@ -734,7 +735,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
         fileBaseName,
         html: printRef.current?.innerHTML || '',
       });
-      if (!res?.success) throw new Error(res?.error || 'فشل الحفظ');
+      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
       onSaved?.();
       onClose?.();
     } catch (err) {

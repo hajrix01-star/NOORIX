@@ -20,6 +20,7 @@ import { HRActionsCell } from '../components/HRActionsCell';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
+import { getApiErrorMessage, rejectIfApiFailed } from '../../../utils/apiResponse';
 
 const PAGE_SIZE = 50;
 
@@ -167,10 +168,14 @@ export default function AdvancesTab() {
           onDelete={() => {
             if (!window.confirm(t('deleteAdvance'))) return;
             updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res) => {
-              if (!res?.success) throw new Error(res?.error || t('saveFailed'));
-              invalidateOnFinancialMutation(queryClient);
-              showToast(t('advanceDeleted'), 'success');
-            }).catch((e) => showToast(e?.message || t('saveFailed'), 'error'));
+              try {
+                rejectIfApiFailed(res, getApiErrorMessage(res, t('saveFailed')));
+                invalidateOnFinancialMutation(queryClient);
+                showToast(t('advanceDeleted'), 'success');
+              } catch (e) {
+                showToast(e?.message || t('saveFailed'), 'error');
+              }
+            });
           }}
         />
       ) },
@@ -370,7 +375,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
         transactionDate: date,
         notes,
       }, companyId);
-      if (!res?.success) throw new Error(res?.error || t('saveFailed'));
+      rejectIfApiFailed(res, getApiErrorMessage(res, t('saveFailed')));
       onSaved?.();
     } catch (e) {
       onError?.(e?.message || t('saveFailed'));
@@ -421,7 +426,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
       if (settlementType === 'defer') {
         const deferNote = `${advance?.notes || ''}\n[ADV_DEFER] ${deferMonth || ''}`.trim();
         const res = await updateInvoice(advance.id, { notes: deferNote }, companyId);
-        if (!res?.success) throw new Error(res?.error || t('saveFailed'));
+        rejectIfApiFailed(res, getApiErrorMessage(res, t('saveFailed')));
         onSaved?.();
         return;
       }
@@ -439,7 +444,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
         settledAt: fullySettled ? settleDate : undefined,
         notes,
       }, companyId);
-      if (!invRes?.success) throw new Error(invRes?.error || t('saveFailed'));
+      rejectIfApiFailed(invRes, getApiErrorMessage(invRes, t('saveFailed')));
 
       if (applyToSalary) {
         const dRes = await createDeduction({
@@ -451,7 +456,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
           referenceId: advance.id,
           notes: `خصم سلفة (${advance.invoiceNumber || advance.id})`,
         });
-        if (!dRes?.success) throw new Error(dRes?.error || t('saveFailed'));
+        rejectIfApiFailed(dRes, getApiErrorMessage(dRes, t('saveFailed')));
       }
       onSaved?.();
     } catch (e) {

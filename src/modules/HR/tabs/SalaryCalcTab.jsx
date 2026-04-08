@@ -120,13 +120,7 @@ export default function SalaryCalcTab() {
   const netSalary = calculatedTotal.minus(deduction);
 
   const updateMutation = useApiMutation({
-    mutationFn: async ({ id, body }) => {
-      const res = await updateEmployee(id, body, companyId);
-      if (!res?.success) {
-        throw new Error(res?.error || t('updateFailed') || 'فشل تحديث الراتب');
-      }
-      return res.data;
-    },
+    mutationFn: async ({ id, body }) => updateEmployee(id, body, companyId),
     invalidateQueries: [['employees']],
     successToast: () => t('salaryCalcUpdated') || 'تم تحديث الراتب بنجاح',
     errorToast: (e) => e?.message || t('saveFailed'),

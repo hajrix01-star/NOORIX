@@ -23,6 +23,7 @@ import {
   deleteEmployee,
 } from '../../services/api';
 import { formatSaudiDate } from '../../utils/saudiDate';
+import { assertApiOk, getApiErrorMessage } from '../../utils/apiResponse';
 import { hrFmt } from './utils/hrFmt';
 import { Badge, Button, ScreenShell } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
@@ -296,7 +297,7 @@ export default function EmployeeProfileScreen() {
         documentType: 'other',
         file,
       });
-      if (!res?.success) throw new Error(res?.error || 'فشل الرفع');
+      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
       invalidateAll();
       showToast(t('documentUploaded'), 'success');
     } catch (err) {

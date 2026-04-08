@@ -21,6 +21,7 @@ import {
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, AdaptiveSheet, Input, cn } from '../../../ui';
+import { getApiErrorMessage, rejectIfApiFailed } from '../../../utils/apiResponse';
 
 function parseDeferredMonth(notes) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -505,7 +506,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       const res = isEditMode
         ? await updatePayrollRun(runId, cid, payload)
         : await createPayrollRun(payload);
-      if (!res?.success) throw new Error(res?.error || (isEditMode ? 'فشل تعديل المسيرة' : 'فشل إنشاء المسيرة'));
+      rejectIfApiFailed(res, getApiErrorMessage(res, t('saveFailed')));
       onCreate?.();
       onClose?.();
     } catch (err) {

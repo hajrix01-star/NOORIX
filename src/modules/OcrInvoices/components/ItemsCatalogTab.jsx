@@ -6,6 +6,7 @@ import {
   findDuplicateItems, mergeOcrItems, bulkDeleteOcrItems,
 } from '../services/ocrApi';
 import { formatSaudiDate } from '../../../utils/saudiDate';
+import { assertApiOk, getApiErrorMessage } from '../../../utils/apiResponse';
 
 function ItemForm({ initial = {}, onSave, onCancel, loading }) {
   const { t } = useTranslation();
@@ -78,16 +79,30 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
 
   const handleCreate = async (data) => {
     setSaving(true);
-    const res = await createOcrItem(data);
-    setSaving(false);
-    if (res.success) { setAdding(false); onRefresh(); }
+    try {
+      const res = await createOcrItem(data);
+      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      setAdding(false);
+      onRefresh();
+    } catch (e) {
+      alert(e?.message || t('saveFailed'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleUpdate = async (data) => {
     setSaving(true);
-    const res = await updateOcrItem(editing.id, data);
-    setSaving(false);
-    if (res.success) { setEditing(null); onRefresh(); }
+    try {
+      const res = await updateOcrItem(editing.id, data);
+      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
+      setEditing(null);
+      onRefresh();
+    } catch (e) {
+      alert(e?.message || t('saveFailed'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -113,12 +128,15 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
   const handleMerge = async (keepId, mergeId) => {
     if (!window.confirm('هل تريد دمج هذين الصنفين؟ سيتم الاحتفاظ بالصنف الأول وحذف الثاني.')) return;
     setMerging(`${keepId}-${mergeId}`);
-    const res = await mergeOcrItems(keepId, mergeId);
-    setMerging(null);
-    if (res.success) {
+    try {
+      const res = await mergeOcrItems(keepId, mergeId);
+      assertApiOk(res, getApiErrorMessage(res, t('saveFailed')));
       onRefresh();
-      // تحديث مجموعات التكرار
       handleFindDuplicates();
+    } catch (e) {
+      alert(e?.message || t('saveFailed'));
+    } finally {
+      setMerging(null);
     }
   };
 
