@@ -24,6 +24,7 @@ export { default as FormRow   } from './FormRow';
 export { default as ScreenTabs } from './ScreenTabs';
 export { default as ScreenShell } from './ScreenShell';
 export { default as ScreenTitle } from './ScreenTitle';
+export { default as KebabMenu } from './KebabMenu';
 
 /**
  * SmartTable — الجدول الذكي المركزي

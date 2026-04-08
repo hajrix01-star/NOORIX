@@ -33,6 +33,7 @@ import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNo
 import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
 import { overtimePay, totalSalary } from './utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
+import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 
@@ -101,12 +102,7 @@ export default function StaffListScreen({ embedded }) {
   const listTotal = pagedResult?.total ?? 0;
   const pagedItems = pagedResult?.items ?? [];
 
-  const STATUS_MAP = useMemo(() => ({
-    active:     { color: 'green', label: t('statusActive')     },
-    on_leave:   { color: 'amber', label: t('statusOnLeave')    },
-    terminated: { color: 'red',   label: t('statusTerminated') },
-    archived:   { color: 'gray',  label: t('statusArchived')   },
-  }), [t]);
+  const STATUS_MAP = useMemo(() => buildEmployeeHrStatusMap(t), [t]);
 
   const allowanceTotals = useMemo(() => {
     const map = new Map();

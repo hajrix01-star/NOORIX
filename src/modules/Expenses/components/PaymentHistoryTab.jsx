@@ -12,16 +12,11 @@ import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Badge, Input } from '../../../ui';
-
-const KIND_LABELS = { fixed_expense: 'ثابت', expense: 'متغير' };
-
-const KIND_STATUS_MAP = {
-  fixed_expense: { color: 'gray',  label: 'ثابت' },
-  expense:       { color: 'amber', label: 'متغير' },
-};
+import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 
 export default function PaymentHistoryTab({ companyId, dateFilter: externalDateFilter }) {
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
+  const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
   const internalDateFilter = useDateFilter();
   const dateFilter = externalDateFilter ?? internalDateFilter;
   const [filterKind, setFilterKind] = useState('');
@@ -53,18 +48,18 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       'رقم فاتورة المورد': inv.supplierInvoiceNumber || '—',
       'المورد': (lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—',
       'بند المصروف': inv.expenseLine?.nameAr || inv.expenseLine?.nameEn || '—',
-      'النوع': KIND_LABELS[inv.kind] || inv.kind,
+      'النوع': kindBadgeMap[inv.kind]?.label || inv.kind,
       'التاريخ': formatSaudiDate(inv.transactionDate),
       'الصافي': Number(inv.netAmount || 0),
       'الضريبة': Number(inv.taxAmount || 0),
       'الإجمالي': Number(inv.totalAmount || 0),
     })),
-    [activeItems],
+    [activeItems, kindBadgeMap, lang],
   );
 
   function handlePrint() {
     const rows = activeItems.map((inv) =>
-      `<tr><td>${(inv.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplier?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(inv.expenseLine?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(KIND_LABELS[inv.kind] || inv.kind).replace(/</g, '&lt;')}</td><td>${formatSaudiDate(inv.transactionDate).replace(/</g, '&lt;')}</td><td>${fmt(inv.netAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.taxAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.totalAmount).replace(/</g, '&lt;')}</td></tr>`,
+      `<tr><td>${(inv.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplier?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(inv.expenseLine?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${String(kindBadgeMap[inv.kind]?.label || inv.kind).replace(/</g, '&lt;')}</td><td>${formatSaudiDate(inv.transactionDate).replace(/</g, '&lt;')}</td><td>${fmt(inv.netAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.taxAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.totalAmount).replace(/</g, '&lt;')}</td></tr>`,
     ).join('');
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>سجل المدفوعات</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}@media print{body{padding:0}}</style></head><body>
@@ -80,7 +75,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     }
   }
 
-  const columns = [
+  const columns = useMemo(() => [
     { key: 'invoiceNumber', label: 'رقم السند',
       render: (_, row) => <span className="nx-cell-num font-semibold">{row.invoiceNumber || '—'}</span> },
     { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد',
@@ -90,7 +85,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     { key: 'expenseLineName', label: 'بند المصروف',
       render: (_, row) => <span>{row.expenseLine?.nameAr || row.expenseLine?.nameEn || '—'}</span> },
     { key: 'kind', label: 'النوع',
-      render: (v) => <Badge {...Badge.fromStatus(v, KIND_STATUS_MAP)} size="sm" /> },
+      render: (v) => <Badge {...Badge.fromStatus(v, kindBadgeMap)} size="sm" /> },
     { key: 'transactionDate', label: 'التاريخ',
       render: (v) => <span className="nx-cell-muted">{formatSaudiDate(v)}</span> },
     { key: 'netAmount', label: 'الصافي', numeric: true,
@@ -99,7 +94,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       render: (v) => <span className="nx-cell-num text-noorix-amber">{fmt(v)}</span> },
     { key: 'totalAmount', label: 'الإجمالي', numeric: true,
       render: (v) => <span className="nx-cell-num font-bold">{fmt(v)}</span> },
-  ];
+  ], [lang, kindBadgeMap]);
 
   if (isError) {
     return (

@@ -8,15 +8,11 @@ import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
 import { Button, Badge, Input } from '../../../ui';
+import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 
 const KIND_LABELS = {
   fixed_expense: { label: 'ثابت', bg: 'var(--noorix-muted-12)', color: 'var(--noorix-text-muted)' },
   expense: { label: 'متغير', bg: 'var(--noorix-amber-12)', color: 'var(--noorix-accent-amber)' },
-};
-
-const KIND_STATUS_MAP = {
-  fixed_expense: { color: 'gray',  label: 'ثابت' },
-  expense:       { color: 'amber', label: 'متغير' },
 };
 
 export default function ExpenseLineList({
@@ -32,6 +28,7 @@ export default function ExpenseLineList({
   onRefresh,
 }) {
   const { t, lang } = useTranslation();
+  const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
 
   const columns = useMemo(() => [
     { key: 'nameAr', label: 'اسم البند', sortable: true,
@@ -45,7 +42,7 @@ export default function ExpenseLineList({
         </Button>
       ) },
     { key: 'kind', label: 'النوع', sortable: true,
-      render: (v) => <Badge {...Badge.fromStatus(v, KIND_STATUS_MAP)} size="sm" /> },
+      render: (v) => <Badge {...Badge.fromStatus(v, kindBadgeMap)} size="sm" /> },
     { key: 'categoryName', label: 'الفئة', sortable: true,
       render: (v) => <span className="nx-cell-ellipsis">{v || '—'}</span> },
     { key: 'supplierName', label: 'المورد', sortable: true,
@@ -59,7 +56,7 @@ export default function ExpenseLineList({
           <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); onDeleteLine?.(row); }}>حذف</Button>
         </span>
       ) },
-  ], [onLineClick, onEditLine, onDeleteLine]);
+  ], [onLineClick, onEditLine, onDeleteLine, kindBadgeMap]);
 
   const tableData = useMemo(() =>
     expenseLines.map((line) => ({
@@ -93,7 +90,7 @@ export default function ExpenseLineList({
           >
             {row.nameAr || row.nameEn || '—'}
           </Button>
-          <Badge {...Badge.fromStatus(row.kind, KIND_STATUS_MAP)} size="sm" />
+          <Badge {...Badge.fromStatus(row.kind, kindBadgeMap)} size="sm" />
         </div>
         <div className="text-[12px] text-noorix-muted mb-2 flex flex flex-wrap gap-2.5">
           {row.categoryName && row.categoryName !== '—' && <span>{row.categoryName}</span>}
@@ -106,7 +103,7 @@ export default function ExpenseLineList({
         </div>
       </div>
     );
-  }, [onLineClick, onEditLine, onDeleteLine]);
+  }, [onLineClick, onEditLine, onDeleteLine, kindBadgeMap]);
 
   function handlePrint() {
     const rows = tableData.map((r) =>

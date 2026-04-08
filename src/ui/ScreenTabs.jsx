@@ -81,10 +81,11 @@ export default function ScreenTabs({
     return <div className={className}>{bar}</div>;
   }
 
+  /* segmented: بدون nx-tab-bar-fade-wrap — الـ ::after يغطي آخر تبويب (مثل «شهري») ولا حاجة لتلاشي التمرير هنا */
   const shellClass =
     variant === 'segmented'
       ? cn(
-          'relative nx-tab-bar-fade-wrap bg-noorix-surface rounded-xl border border-noorix-border p-1',
+          'relative bg-noorix-surface rounded-xl border border-noorix-border p-1',
           className,
         )
       : cn('relative nx-tab-bar-fade-wrap', className);

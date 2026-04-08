@@ -23,6 +23,7 @@ import Toast              from '../../components/Toast';
 import ImportExportModal  from '../../components/ImportExportModal';
 import { formatInvoiceForExport } from '../../utils/importTemplates';
 import DayCloseReportModal from './components/DayCloseReportModal';
+import { buildActiveCancelledStatusMap, buildInvoiceKindBadgeMap } from '../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 
@@ -137,25 +138,12 @@ export default function InvoicesListScreen() {
     if (expenseLineId) setUrlExtra((p) => ({ ...p, expenseLineId }));
     if (q) {
       setSearchText(q);
-      setDebouncedQ(q.trim());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- نقرأ فقط دوال فلتر التاريخ المستقرة
   }, [searchParams]);
 
-  const STATUS_MAP = useMemo(() => ({
-    active:    { color: 'green', label: t('statusActive')    },
-    cancelled: { color: 'red',   label: t('statusCancelled') },
-  }), [t]);
-
-  const KIND_MAP = useMemo(() => ({
-    purchase:      { color: 'blue',   label: t('categoryTypes')                        },
-    expense:       { color: 'amber',  label: t('categoryTypeExpense')                  },
-    fixed_expense: { color: 'gray',   label: t('fixedExpenseType') || 'مصروف ثابت'    },
-    hr_expense:    { color: 'violet', label: t('invoiceKindHrExpense') || 'إقامة/HR'  },
-    salary:        { color: 'green',  label: t('totalSalary') || 'راتب'               },
-    advance:       { color: 'amber',  label: t('quickAdvance') || 'سلفية'             },
-    sale:          { color: 'sky',    label: t('categoryTypeSale')                     },
-  }), [t]);
+  const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
+  const KIND_MAP = useMemo(() => buildInvoiceKindBadgeMap(t), [t]);
 
   const columns = useMemo(() => [
     { key: 'invoiceNumber', label: t('documentNumber'), shrink: true, width: '15%',

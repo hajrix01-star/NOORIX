@@ -1,8 +1,9 @@
 ﻿import React, { useState, useMemo, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVaults, createVault, updateVault, archiveVault, deleteVault } from '../../services/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { updateVault } from '../../services/api';
 import { useApp }         from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
+import { useVaults } from '../../hooks/useVaults';
 import Toast              from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import { fmt, sumAmounts } from '../../utils/format';
@@ -31,17 +32,16 @@ export default function TreasuryScreen() {
   const notify = (message, type = 'success') =>
     setToast({ visible: true, message, type });
 
-  const { data: vaultsList = [], isLoading, isFetching, isError: vaultsError } = useQuery({
-    queryKey: ['vaults', companyId, includeArchived, startDate, endDate],
-    queryFn:  async () => {
-      const res = await getVaults(companyId, includeArchived, startDate, endDate);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الخزائن');
-      const d = res?.data;
-      return Array.isArray(d) ? d : (d?.items ?? []);
-    },
-    // بدون إبقاء بيانات شركة سابقة — يمنع خلط الخزائن عند تبديل الشركة
-    enabled: !!companyId,
-  });
+  const {
+    vaultsList = [],
+    isLoading,
+    isFetching,
+    isError: vaultsError,
+    create: createMut,
+    update: updateMut,
+    archive: archiveMut,
+    remove: removeMut,
+  } = useVaults({ companyId, includeArchived, startDate, endDate });
 
   useEffect(() => {
     setSelectedVault(null);
@@ -51,18 +51,6 @@ export default function TreasuryScreen() {
   }, [companyId]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['vaults', companyId] });
-
-  const createMutation = useMutation({
-    mutationFn: (body) => createVault({ ...body, companyId }),
-    onSuccess: () => { invalidate(); setShowAddForm(false); setSaveError(''); notify(t('vaultAdded')); },
-    onError:   (e) => setSaveError(e?.message || t('addFailed')),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, body }) => updateVault(id, body),
-    onSuccess: () => { invalidate(); setEditVault(null); setSaveError(''); notify(t('editSuccess')); },
-    onError:   (e) => setSaveError(e?.message || t('updateFailed')),
-  });
 
   const toggleSalesMutation = useMutation({
     mutationFn: (v) => updateVault(v.id, { isSalesChannel: !v.isSalesChannel }),
@@ -76,25 +64,12 @@ export default function TreasuryScreen() {
     onError:   (e) => notify(e?.message || t('updateFailed'), 'error'),
   });
 
-  const archiveMutation = useMutation({
-    mutationFn: (id) => archiveVault(id),
-    onSuccess: (_, id) => {
-      const v = vaultsList.find((x) => x.id === id);
-      invalidate();
-      notify(v?.isArchived ? t('vaultRestored') : t('vaultArchived'));
-    },
-    onError: (e) => notify(e?.message || t('operationFailed'), 'error'),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id) => deleteVault(id),
-    onSuccess: () => { invalidate(); notify(t('vaultDeleted')); },
-    onError:   (e) => notify(e?.message || t('cannotDeleteVaultWithMovements'), 'error'),
-  });
-
   const handleDelete = (v) => {
     if (!window.confirm(t('deleteVaultConfirm', v.nameAr))) return;
-    deleteMutation.mutate(v.id);
+    removeMut.mutate(v.id, {
+      onSuccess: () => notify(t('vaultDeleted')),
+      onError: (e) => notify(e?.message || t('cannotDeleteVaultWithMovements'), 'error'),
+    });
   };
 
   const salesChannels  = useMemo(() => vaultsList.filter((v) => v.isActive !== false && v.isSalesChannel && !v.isArchived), [vaultsList]);
@@ -112,7 +87,10 @@ export default function TreasuryScreen() {
     onEdit:               (x) => { setEditVault(x); setSaveError(''); },
     onToggleSalesChannel: (x) => toggleSalesMutation.mutate(x),
     onTogglePaymentMethod: (x) => togglePaymentMethodMutation.mutate(x),
-    onArchive:            (x) => archiveMutation.mutate(x.id),
+    onArchive:            (x) => archiveMut.mutate(x.id, {
+      onSuccess: () => notify(x?.isArchived ? t('vaultRestored') : t('vaultArchived')),
+      onError: (e) => notify(e?.message || t('operationFailed'), 'error'),
+    }),
     onDelete:             handleDelete,
     onClick:              (x) => setSelectedVault(x),
   });
@@ -260,15 +238,27 @@ export default function TreasuryScreen() {
       {showAddForm && (
         <VaultFormModal initial={null}
           onClose={() => { setShowAddForm(false); setSaveError(''); }}
-          onSave={(form) => createMutation.mutate(form)}
-          isSaving={createMutation.isPending} saveError={saveError} />
+          onSave={(form) => createMut.mutate(
+            form,
+            {
+              onSuccess: () => { setShowAddForm(false); setSaveError(''); notify(t('vaultAdded')); },
+              onError: (e) => setSaveError(e?.message || t('addFailed')),
+            },
+          )}
+          isSaving={createMut.isPending} saveError={saveError} />
       )}
 
       {editVault && (
         <VaultFormModal initial={editVault}
           onClose={() => { setEditVault(null); setSaveError(''); }}
-          onSave={(form) => updateMutation.mutate({ id: editVault.id, body: form })}
-          isSaving={updateMutation.isPending} saveError={saveError} />
+          onSave={(form) => updateMut.mutate(
+            { id: editVault.id, body: form },
+            {
+              onSuccess: () => { setEditVault(null); setSaveError(''); notify(t('editSuccess')); },
+              onError: (e) => setSaveError(e?.message || t('updateFailed')),
+            },
+          )}
+          isSaving={updateMut.isPending} saveError={saveError} />
       )}
     </div>
   );

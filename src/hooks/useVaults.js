@@ -14,15 +14,20 @@ import {
 } from '../services/api';
 
 /**
- * @param {{ companyId: string, includeArchived?: boolean }} params
+ * @param {{ companyId: string, includeArchived?: boolean, startDate?: string|null, endDate?: string|null }} params
  */
-export function useVaults({ companyId, includeArchived = false }) {
+export function useVaults({ companyId, includeArchived = false, startDate = null, endDate = null }) {
   const queryClient = useQueryClient();
 
-  const { data: vaultsList = [], isLoading } = useQuery({
-    queryKey: ['vaults', companyId, includeArchived],
+  const { data: vaultsList = [], isLoading, isFetching, isError } = useQuery({
+    queryKey: ['vaults', companyId, includeArchived, startDate ?? '', endDate ?? ''],
     queryFn: async () => {
-      const res = await getVaults(companyId, includeArchived);
+      const res = await getVaults(
+        companyId,
+        includeArchived,
+        startDate || undefined,
+        endDate || undefined,
+      );
       if (!res?.success) throw new Error(res?.error || 'فشل تحميل الخزائن');
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
@@ -80,6 +85,8 @@ export function useVaults({ companyId, includeArchived = false }) {
     salesChannels,
     paymentVaults,
     isLoading: isLoading || paymentVaultsLoading,
+    isFetching,
+    isError,
     create:  createMutation,
     update:  updateMutation,
     archive: archiveMutation,

@@ -28,6 +28,7 @@ import { BatchSummaryBar } from './components/BatchSummaryBar';
 import { SUPPLIER_BOOKMARKS_KEY } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { buildActiveCancelledPartialStatusMap } from '../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 
@@ -99,11 +100,7 @@ export default function PurchasesBatchScreen() {
   });
 
   // ── بيانات جدول الدفعات — ملخص من السيرفر (كل الدفعات في الفترة) ──
-  const statusBadgeMap = useMemo(() => ({
-    active:    { color: 'green', label: t('statusActive') },
-    cancelled: { color: 'red',   label: t('statusCancelled') },
-    partial:   { color: 'amber', label: t('statusPartial') || 'جزئي' },
-  }), [t]);
+  const statusBadgeMap = useMemo(() => buildActiveCancelledPartialStatusMap(t), [t]);
 
   const batchesTableData = useMemo(() => {
     const list = batchSummaryData?.batches || [];

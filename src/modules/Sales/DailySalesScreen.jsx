@@ -27,6 +27,7 @@ import { SalesEntryModal } from './components/SalesEntryModal';
 import ImportExportModal from '../../components/ImportExportModal';
 import { formatSalesForExport } from '../../utils/importTemplates';
 import { hasPermission, PERMISSIONS } from '../../constants/permissions';
+import { buildActiveCancelledStatusMap } from '../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 
@@ -226,10 +227,7 @@ export default function DailySalesScreen() {
   const hasCompany = !!companyId;
 
   // ── بيانات الجدول ──
-  const STATUS_MAP = useMemo(() => ({
-    active:    { color: 'green', label: t('statusActive')    },
-    cancelled: { color: 'red',   label: t('statusCancelled') },
-  }), [t]);
+  const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
 
   const tableData = useMemo(() => pagedSummaries.map((s) => {
     const total = Number(s.totalAmount || 0);
