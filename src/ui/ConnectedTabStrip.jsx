@@ -31,7 +31,7 @@ export default function ConnectedTabStrip({
     >
       <div
         className={cn(
-          'nx-connected-tab-strip flex flex-nowrap items-stretch overflow-x-auto text-[13px]',
+          'nx-connected-tab-strip flex flex-nowrap items-stretch overflow-x-auto text-[14px]',
           'bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
           '[-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
           'border-b border-noorix-border',
@@ -50,15 +50,15 @@ export default function ConnectedTabStrip({
               className={cn(
                 '!flex !flex-col !items-stretch !justify-between !h-auto !min-h-0 rounded-none shrink-0',
                 'border-0 border-e border-noorix-border last:border-e-0',
-                'text-[13px] leading-normal whitespace-nowrap',
+                'text-[14px] leading-snug whitespace-nowrap',
                 'transition-all duration-200 ease-out',
                 active
-                  ? 'relative z-[1] bg-noorix-surface text-noorix-text font-semibold shadow-[0_6px_18px_-4px_rgba(10,31,68,0.14)]'
-                  : 'z-0 bg-noorix-bg-muted/90 text-noorix-muted font-medium shadow-none hover:z-[1] hover:bg-noorix-surface hover:text-noorix-text hover:shadow-[0_3px_10px_-2px_rgba(10,31,68,0.1)]',
+                  ? 'relative z-[1] bg-noorix-surface text-noorix-text font-bold shadow-[0_6px_18px_-4px_rgba(10,31,68,0.14)]'
+                  : 'z-0 bg-noorix-bg-muted/90 text-noorix-muted font-semibold shadow-none hover:z-[1] hover:bg-noorix-surface hover:text-noorix-text hover:shadow-[0_3px_10px_-2px_rgba(10,31,68,0.1)]',
               )}
               onClick={() => onChange(item.id)}
             >
-              <span className="flex min-h-[40px] flex-1 items-center justify-center px-4 py-2.5">
+              <span className="flex min-h-[36px] flex-1 items-center justify-center px-3 py-1.5 sm:min-h-[38px] sm:py-2">
                 {item.label}
               </span>
               <span
