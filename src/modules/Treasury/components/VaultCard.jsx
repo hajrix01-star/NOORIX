@@ -14,8 +14,8 @@ export function parseVaultType(type) {
   return { isCustom: false, emoji: null };
 }
 
-/* ── أيقونات SVG ───────────────────────────────────────────── */
-const ICONS = {
+/* ── أيقونات SVG (مشتركة مع نموذج الخزينة) ─────────────────── */
+export const VAULT_TYPE_SVGS = {
   cash: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
       <rect x="2" y="6" width="20" height="12" rx="2"/>
@@ -167,7 +167,7 @@ const VaultCard = memo(function VaultCard({
           }}>
             {isCustom
               ? <span className="text-[20px] leading-none">{customEmoji}</span>
-              : (ICONS[vault.type] || ICONS.bank)}
+              : (VAULT_TYPE_SVGS[vault.type] || VAULT_TYPE_SVGS.bank)}
           </div>
           <div className="min-w-0">
             <div className="font-bold text-[14px] truncate">

@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS, TYPE_BG } from '../constants/treasuryConstants';
-import { parseVaultType } from './VaultCard';
+import { parseVaultType, VAULT_TYPE_SVGS } from './VaultCard';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 const ICON_CHARS = ['ن','ب','ح','خ','م','ص','ر','ك','ع','و','س','ت','ا','A','B','C','D','E','F','G','H','$','%','#','@','&'];
@@ -10,6 +10,13 @@ const EMPTY = {
   nameAr: '', nameEn: '', type: 'cash', isSalesChannel: false, showAsPaymentMethod: true, paymentMethod: '', notes: '',
 };
 
+function sanitizeCustomEmoji(ch) {
+  if (ch == null || ch === '') return 'خ';
+  const s = String(ch);
+  if (/^\d$/u.test(s)) return 'خ';
+  return s;
+}
+
 function initForm(initial) {
   if (!initial) return { ...EMPTY };
   const { isCustom, emoji } = parseVaultType(initial.type || 'cash');
@@ -17,7 +24,7 @@ function initForm(initial) {
     nameAr:         initial.nameAr         || '',
     nameEn:         initial.nameEn         || '',
     type:           isCustom ? 'custom' : (initial.type || 'cash'),
-    customEmoji:    isCustom ? emoji : 'خ',
+    customEmoji:    isCustom ? sanitizeCustomEmoji(emoji) : 'خ',
     isSalesChannel: initial.isSalesChannel ?? false,
     showAsPaymentMethod: initial.showAsPaymentMethod !== false,
     paymentMethod:  initial.paymentMethod  || '',
@@ -41,7 +48,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
     e.preventDefault();
     const saved = { ...form };
     if (saved.type === 'custom') {
-      saved.type = `custom:${saved.customEmoji || 'خ'}`;
+      saved.type = `custom:${sanitizeCustomEmoji(saved.customEmoji)}`;
     }
     delete saved.customEmoji;
     onSave(saved);
@@ -87,6 +94,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
             {VAULT_TYPES.map((vt) => (
               <Button
                 key={vt.value}
+                type="button"
                 className="nx-vault-type-btn"
                 onClick={() => set('type', vt.value)}
                 style={form.type === vt.value ? {
@@ -95,18 +103,21 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                   color: TYPE_COLORS[vt.value],
                 } : undefined}
               >
-                <span className="text-[16px] font-extrabold">{vt.icon}</span>
+                <span className="flex h-[22px] min-h-[22px] items-center justify-center text-current [&_svg]:shrink-0" aria-hidden>
+                  {VAULT_TYPE_SVGS[vt.value] ?? VAULT_TYPE_SVGS.bank}
+                </span>
                 <span>{(vt.labelKey ? t(vt.labelKey) : vt.label || '').split('(')[0].trim()}</span>
               </Button>
             ))}
 
             {/* نوع مخصص */}
             <Button
+              type="button"
               className="nx-vault-type-btn"
               onClick={() => set('type', 'custom')}
               style={isCustom ? { border: '2px solid #64748b', background: 'var(--noorix-muted-10)', color: 'var(--noorix-text-muted)' } : undefined}
             >
-              <span className="font-extrabold text-[18px]">{form.customEmoji || 'خ'}</span>
+              <span className="flex h-[22px] min-h-[22px] items-center justify-center font-extrabold text-[18px] leading-none">{sanitizeCustomEmoji(form.customEmoji)}</span>
               <span>{t('vaultTypeCustom') || 'مخصص'}</span>
             </Button>
           </div>

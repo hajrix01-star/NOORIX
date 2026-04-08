@@ -1,8 +1,8 @@
 // Labels resolved via useTranslation in components (vaultTypeCash, vaultTypeBank, vaultTypeApp, paymentCash, etc.)
 export const VAULT_TYPES = [
-  { value: 'cash', labelKey: 'vaultTypeCash', icon: 'ن' },
-  { value: 'bank', labelKey: 'vaultTypeBank', icon: 'ب' },
-  { value: 'app',  labelKey: 'vaultTypeApp',  icon: 'ح' },
+  { value: 'cash', labelKey: 'vaultTypeCash' },
+  { value: 'bank', labelKey: 'vaultTypeBank' },
+  { value: 'app',  labelKey: 'vaultTypeApp' },
 ];
 
 export const PAYMENT_METHODS = [
