@@ -1,0 +1,27 @@
+---
+description: Toast مركزي و useApiMutation — عقد الطفرات مع الـ API
+alwaysApply: false
+globs: src/**/*.jsx,src/**/*.js
+---
+
+# Noorix — الطفرات و Toast
+
+## إلزامي للطفرات الجديدة التي تستدعي الـ backend (JSON فيه `success`)
+
+- استخدم **`useApiMutation`** من `src/hooks/useApiMutation.js` بدلاً من `useMutation` مباشرة، ما لم يكن السبب موثّقاً (مثلاً منطق خاص لا يمر بنفس العقد).
+- الإشعارات العائمة: **`useToast()`** من `src/context/ToastContext.jsx` — لا `useState` + `<Toast />` محلي في شاشات الأقسام.
+
+## خيارات شائعة
+
+| الحالة | الإعداد |
+|--------|---------|
+| شاشة تعرض toast نجاح/خطأ | `successToast` / `errorToast` (نص أو `(data) => …`) |
+| خطأ داخل النموذج فقط | `showErrorToast: false` + `onError` يحدّث state |
+| خطاف بيانات؛ الشاشة تُظهر الرسالة | `showErrorToast: false` (وغالباً بدون `successToast`) |
+| إبطال كاش بعد النجاح | `invalidateQueries: [['key', id], …]` أو `{ predicate }` |
+| استجابة اختبار لا تستخدم `success: false` كرفض | `rejectOnApiFailure: false` |
+
+## عقد الاستجابة
+
+- دوال **`rejectIfApiFailed` / `getApiErrorMessage`** في `src/utils/apiResponse.js` — استخدمها عند إضافة طبقات API جديدة أو اختبارات.
+- التوثيق الكامل: **`docs/TOAST_AND_API_MUTATIONS.md`**.
