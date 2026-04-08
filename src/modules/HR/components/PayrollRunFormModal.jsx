@@ -67,6 +67,21 @@ function monthRange(dateStr) {
   return { start, end };
 }
 
+/** تجميع خزائن بنود المسيرة القديمة (قبل مستوى المسيرة) للعرض في الحقل العام */
+function aggregateLegacyItemVaultSplits(items) {
+  const map = new Map();
+  for (const row of items || []) {
+    for (const vs of row.vaultSplits || []) {
+      const id = vs.vaultId || vs.vault?.id;
+      if (!id) continue;
+      map.set(id, (map.get(id) || 0) + Number(vs.amount));
+    }
+  }
+  return [...map.entries()]
+    .map(([vaultId, amount]) => ({ vaultId, amount }))
+    .sort((a, b) => a.vaultId.localeCompare(b.vaultId));
+}
+
 function ceilAmount(value) {
   return Math.max(0, Math.ceil(Number(value) || 0));
 }
@@ -81,6 +96,10 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   const [payrollMonth, setPayrollMonth] = useState(defaultMonth);
   const [notes, setNotes] = useState('');
+  const [runPayVaultId, setRunPayVaultId] = useState('');
+  const [runPaySecondVaultId, setRunPaySecondVaultId] = useState('');
+  const [runPaySecondAmount, setRunPaySecondAmount] = useState('');
+  const [runPaySecondEnabled, setRunPaySecondEnabled] = useState(false);
   const [items, setItems] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -207,6 +226,11 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     return Array.from(map.values());
   }, [eligibleEmployees, items, employees]);
 
+  const totalNet = useMemo(
+    () => items.reduce((s, i) => s + (i.netSalary ?? 0), 0),
+    [items],
+  );
+
   const advancesByEmployee = useMemo(() => {
     const map = new Map();
     for (const inv of advances || []) {
@@ -282,10 +306,6 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
         deferAdvances: false,
         advanceDates: advanceDatesLabel,
         notes: notesParts.join(' | '),
-        payVaultId: '',
-        paySecondVaultId: '',
-        paySecondAmount: '',
-        paySecondEnabled: false,
       };
     },
     [payrollMonth, defaultMonth, allowanceTotals, unpaidLeaveDaysByEmployee, advancesByEmployee, lang, t],
@@ -307,19 +327,6 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       const employeeName = employeeDisplayName(row.employee || { name: row.employeeName }, lang);
       const advanceDates = extractAdvanceDates(row.notes);
       const advancesDeduct = Number(row.advancesDeduct ?? 0);
-      const vs = row.vaultSplits || [];
-      let payVaultId = '';
-      let paySecondVaultId = '';
-      let paySecondAmount = '';
-      let paySecondEnabled = false;
-      if (vs.length >= 2) {
-        payVaultId = vs[0].vaultId || vs[0].vault?.id || '';
-        paySecondVaultId = vs[1].vaultId || vs[1].vault?.id || '';
-        paySecondAmount = String(Number(vs[1].amount) || '');
-        paySecondEnabled = true;
-      } else if (vs.length === 1) {
-        payVaultId = vs[0].vaultId || vs[0].vault?.id || '';
-      }
       return {
         employeeId,
         employeeName,
@@ -331,13 +338,40 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
         deferAdvances: advancesDeduct <= 0 && !!parseDeferredMonth(row.notes),
         advanceDates,
         notes: row.notes || '',
-        payVaultId,
-        paySecondVaultId,
-        paySecondAmount,
-        paySecondEnabled,
       };
     });
     setItems(loadedItems);
+
+    const rvs = editingRun.runVaultSplits || [];
+    if (rvs.length >= 2) {
+      setRunPayVaultId(rvs[0].vaultId || rvs[0].vault?.id || '');
+      setRunPaySecondVaultId(rvs[1].vaultId || rvs[1].vault?.id || '');
+      setRunPaySecondAmount(String(Number(rvs[1].amount) || ''));
+      setRunPaySecondEnabled(true);
+    } else if (rvs.length === 1) {
+      setRunPayVaultId(rvs[0].vaultId || rvs[0].vault?.id || '');
+      setRunPaySecondVaultId('');
+      setRunPaySecondAmount('');
+      setRunPaySecondEnabled(false);
+    } else {
+      const agg = aggregateLegacyItemVaultSplits(editingRun.items);
+      if (agg.length === 1) {
+        setRunPayVaultId(agg[0].vaultId);
+        setRunPaySecondVaultId('');
+        setRunPaySecondAmount('');
+        setRunPaySecondEnabled(false);
+      } else if (agg.length === 2) {
+        setRunPayVaultId(agg[0].vaultId);
+        setRunPaySecondVaultId(agg[1].vaultId);
+        setRunPaySecondAmount(String(agg[1].amount));
+        setRunPaySecondEnabled(true);
+      } else {
+        setRunPayVaultId('');
+        setRunPaySecondVaultId('');
+        setRunPaySecondAmount('');
+        setRunPaySecondEnabled(false);
+      }
+    }
   }, [defaultMonth, editingRun, lang]);
 
   React.useEffect(() => {
@@ -376,26 +410,12 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     });
   };
 
-  const setPayField = (idx, field, value) => {
-    setItems((prev) => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], [field]: value };
-      return next;
-    });
-  };
-
-  const togglePaySecondVault = (idx) => {
-    setItems((prev) => {
-      const next = [...prev];
-      const row = { ...next[idx] };
-      row.paySecondEnabled = !row.paySecondEnabled;
-      if (!row.paySecondEnabled) {
-        row.paySecondVaultId = '';
-        row.paySecondAmount = '';
-      }
-      next[idx] = row;
-      return next;
-    });
+  const toggleRunPaySecondVault = () => {
+    if (runPaySecondEnabled) {
+      setRunPaySecondVaultId('');
+      setRunPaySecondAmount('');
+    }
+    setRunPaySecondEnabled(!runPaySecondEnabled);
   };
 
   const toggleDefer = (employeeId) => {
@@ -434,8 +454,6 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     }
   };
 
-  const isIncluded = (empId) => items.some((i) => i.employeeId === empId);
-
   const handleSubmit = async (e) => {
     e?.preventDefault?.();
     setError('');
@@ -447,12 +465,10 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       setError(t('payrollMonthExists') || 'مسيرة لهذا الشهر موجودة مسبقاً');
       return;
     }
-    for (const i of items) {
-      if (!i.paySecondEnabled) continue;
-      const net = Number(i.netSalary ?? 0);
-      const v1 = (i.payVaultId || '').trim();
-      const v2 = (i.paySecondVaultId || '').trim();
-      const a2 = parseFloat(i.paySecondAmount);
+    if (runPaySecondEnabled) {
+      const v1 = (runPayVaultId || '').trim();
+      const v2 = (runPaySecondVaultId || '').trim();
+      const a2 = parseFloat(runPaySecondAmount);
       if (!v1 || !v2) {
         setError(t('payrollSplitVaultsIncomplete'));
         return;
@@ -461,47 +477,47 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
         setError(t('invoiceVaultsMustDiffer'));
         return;
       }
-      if (Number.isNaN(a2) || a2 <= 0 || a2 >= net - 0.001) {
+      if (Number.isNaN(a2) || a2 <= 0 || a2 >= totalNet - 0.001) {
         setError(t('payrollSplitVaultsIncomplete'));
         return;
       }
     }
     setSubmitting(true);
     try {
-      const itemsPayload = items.map((i) => {
-        const base = {
-          employeeId: i.employeeId,
-          grossSalary: i.grossSalary,
-          allowancesAdd: i.allowancesAdd,
-          deductions: i.deductions,
-          advancesDeduct: i.advancesDeduct,
-          netSalary: i.netSalary,
-          notes: i.notes || undefined,
-        };
-        const net = Number(i.netSalary ?? 0);
-        const v1 = (i.payVaultId || '').trim();
-        const v2 = (i.paySecondVaultId || '').trim();
-        const a2 = parseFloat(i.paySecondAmount);
-        if (v1 && i.paySecondEnabled && v2 && !Number.isNaN(a2) && a2 > 0 && a2 < net - 0.001) {
-          const a1 = Math.round((net - a2) * 100) / 100;
-          if (a1 > 0 && v1 !== v2) {
-            return { ...base, vaultSplits: [{ vaultId: v1, amount: a1 }, { vaultId: v2, amount: a2 }] };
-          }
+      const itemsPayload = items.map((i) => ({
+        employeeId: i.employeeId,
+        grossSalary: i.grossSalary,
+        allowancesAdd: i.allowancesAdd,
+        deductions: i.deductions,
+        advancesDeduct: i.advancesDeduct,
+        netSalary: i.netSalary,
+        notes: i.notes || undefined,
+      }));
+
+      let vaultSplits = [];
+      const v1 = (runPayVaultId || '').trim();
+      const v2 = (runPaySecondVaultId || '').trim();
+      const a2 = parseFloat(runPaySecondAmount);
+      if (runPaySecondEnabled && v1 && v2 && !Number.isNaN(a2) && a2 > 0 && a2 < netAll - 0.001) {
+        const a1 = Math.round((netAll - a2) * 100) / 100;
+        if (a1 > 0 && v1 !== v2) {
+          vaultSplits = [{ vaultId: v1, amount: a1 }, { vaultId: v2, amount: a2 }];
         }
-        if (v1) {
-          return { ...base, vaultSplits: [{ vaultId: v1, amount: net }] };
-        }
-        return base;
-      });
+      } else if (v1) {
+        vaultSplits = [{ vaultId: v1, amount: totalNet }];
+      }
+
       const payload = isEditMode ? {
         payrollMonth: `${payrollMonth}T00:00:00.000Z`,
         items: itemsPayload,
         notes: notes || undefined,
+        vaultSplits,
       } : {
         companyId: cid,
         payrollMonth: `${payrollMonth}T00:00:00.000Z`,
         items: itemsPayload,
         notes: notes || undefined,
+        vaultSplits,
       };
       const res = isEditMode
         ? await updatePayrollRun(runId, cid, payload)
@@ -515,8 +531,6 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       setSubmitting(false);
     }
   };
-
-  const totalNet = items.reduce((s, i) => s + (i.netSalary ?? 0), 0);
 
   const selectInput = (e) => {
     try {
@@ -598,6 +612,64 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           </div>
         </div>
 
+        <div className="rounded-xl border border-noorix-border bg-noorix-surface p-3 md:p-4 mt-2 shrink-0">
+          <div className="text-[12px] font-semibold text-noorix-muted mb-2">
+            {t('payrollRunPayVaultSection')}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
+            <Input
+              type="select"
+              label={t('payrollPayVaultCol')}
+              className="prfm-modal-field"
+              value={runPayVaultId}
+              onChange={(e) => setRunPayVaultId(e.target.value)}
+            >
+              <option value="">{t('payrollPayVaultDefault')}</option>
+              {paymentVaults.map((v) => (
+                <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
+              ))}
+            </Input>
+            <div className="sm:col-span-2 flex flex-col gap-2">
+              {!runPaySecondEnabled ? (
+                <Button type="button" size="sm" variant="ghost" className="self-start" onClick={toggleRunPaySecondVault}>
+                  {t('payrollAddSecondVaultShort')}
+                </Button>
+              ) : (
+                <div className="flex flex-col sm:flex-row flex-wrap gap-2 items-stretch sm:items-end">
+                  <Input
+                    type="select"
+                    label={t('secondVaultSelectLabel')}
+                    className="prfm-modal-field min-w-[10rem] flex-1"
+                    value={runPaySecondVaultId}
+                    onChange={(e) => setRunPaySecondVaultId(e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {paymentVaults.map((v) => (
+                      <option key={v.id} value={v.id} disabled={v.id === runPayVaultId}>
+                        {v.nameAr || v.nameEn || v.id}
+                      </option>
+                    ))}
+                  </Input>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0.01"
+                    label={t('payrollSecondVaultAmountShort')}
+                    className="prfm-modal-field max-w-[8rem] tabular-nums ltr"
+                    value={runPaySecondAmount}
+                    onChange={(e) => setRunPaySecondAmount(e.target.value)}
+                  />
+                  <span className="text-[11px] text-noorix-muted self-center">{t('payrollPayVaultSplitHint')}</span>
+                  <Button type="button" size="sm" variant="ghost" onClick={toggleRunPaySecondVault}>
+                    {t('payrollRemoveVaultSplit')}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between gap-2 flex-wrap pt-2 pb-1.5 shrink-0">
           <span className="text-[13px] font-bold">{t('employeesList')} ({items.length})</span>
           <Button type="button" size="sm" onClick={isEditMode ? loadEditingItems : initItems}>
@@ -609,15 +681,14 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
           <table className="payroll-run-table">
             <thead>
               <tr>
-                <th className="w-[24%] min-w-0 text-start">{t('employeeName')}</th>
-                <th className="w-[11%] min-w-0 text-center">{t('payrollAdvanceDates')}</th>
-                <th className="w-[10%] min-w-0 text-center">{t('grossSalary')}</th>
-                <th className="w-[9%] min-w-0 text-center">{t('payrollAllowances')}</th>
-                <th className="w-[9%] min-w-0 text-center">{t('payrollDeductions')}</th>
-                <th className="w-[9%] min-w-0 text-center">{t('payrollAdvances')}</th>
-                <th className="w-[10%] min-w-0 text-center">{t('payrollDeferAdvanceDeduct')}</th>
-                <th className="w-[12%] min-w-[6.5rem] text-center">{t('payrollPayVaultCol')}</th>
-                <th className="w-[10%] min-w-0 text-center">{t('netSalary')}</th>
+                <th className="w-[26%] min-w-0 text-start">{t('employeeName')}</th>
+                <th className="w-[12%] min-w-0 text-center">{t('payrollAdvanceDates')}</th>
+                <th className="w-[11%] min-w-0 text-center">{t('grossSalary')}</th>
+                <th className="w-[10%] min-w-0 text-center">{t('payrollAllowances')}</th>
+                <th className="w-[10%] min-w-0 text-center">{t('payrollDeductions')}</th>
+                <th className="w-[10%] min-w-0 text-center">{t('payrollAdvances')}</th>
+                <th className="w-[11%] min-w-0 text-center">{t('payrollDeferAdvanceDeduct')}</th>
+                <th className="w-[12%] min-w-0 text-center">{t('netSalary')}</th>
               </tr>
             </thead>
             <tbody>
@@ -706,79 +777,12 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             />
                           </label>
                         </td>
-                        <td className="align-top text-center px-1 py-1 min-w-0">
-                          <div className="flex flex-col gap-1 items-stretch max-w-[9rem] mx-auto">
-                            <Input
-                              type="select"
-                              size="sm"
-                              className="!text-[10px] !py-1 !min-h-0"
-                              value={items[idx].payVaultId || ''}
-                              onChange={(e) => setPayField(idx, 'payVaultId', e.target.value)}
-                              aria-label={t('payrollPayVaultCol')}
-                            >
-                              <option value="">{t('payrollPayVaultDefault')}</option>
-                              {paymentVaults.map((v) => (
-                                <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
-                              ))}
-                            </Input>
-                            {!items[idx].paySecondEnabled ? (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                className="!text-[10px] !min-h-7 !py-0"
-                                onClick={() => togglePaySecondVault(idx)}
-                              >
-                                {t('payrollAddSecondVaultShort')}
-                              </Button>
-                            ) : (
-                              <>
-                                <Input
-                                  type="select"
-                                  size="sm"
-                                  className="!text-[10px] !py-1 !min-h-0"
-                                  value={items[idx].paySecondVaultId || ''}
-                                  onChange={(e) => setPayField(idx, 'paySecondVaultId', e.target.value)}
-                                  aria-label={t('secondVaultSelectLabel')}
-                                >
-                                  <option value="">—</option>
-                                  {paymentVaults.map((v) => (
-                                    <option key={v.id} value={v.id} disabled={v.id === items[idx].payVaultId}>
-                                      {v.nameAr || v.nameEn || v.id}
-                                    </option>
-                                  ))}
-                                </Input>
-                                <Input
-                                  type="number"
-                                  inputMode="decimal"
-                                  step="0.01"
-                                  min="0.01"
-                                  size="sm"
-                                  className="!text-[10px] tabular-nums ltr !py-1"
-                                  placeholder={t('payrollSecondVaultAmountShort')}
-                                  value={items[idx].paySecondAmount || ''}
-                                  onChange={(e) => setPayField(idx, 'paySecondAmount', e.target.value)}
-                                />
-                                <span className="text-[9px] text-noorix-muted leading-tight">{t('payrollPayVaultSplitHint')}</span>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  className="!text-[10px] !min-h-7"
-                                  onClick={() => togglePaySecondVault(idx)}
-                                >
-                                  {t('payrollRemoveVaultSplit')}
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </td>
                         <td className="font-extrabold text-[12px] whitespace-nowrap text-center">
                           <span className="payroll-run-cell-num nx-font-numbers">{hrFmt(items[idx].netSalary)}</span>
                         </td>
                       </>
                     ) : (
-                      <td colSpan={8} className="text-noorix-muted text-[13px] text-center">
+                      <td colSpan={7} className="text-noorix-muted text-[13px] text-center">
                         —
                       </td>
                     )}

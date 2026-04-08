@@ -676,6 +676,20 @@ export class BackupLogicalImportService {
           });
         }
 
+        for (const v of arr<Record<string, unknown>>(data.payrollRunVaults ?? [])) {
+          const prid = payrollRunMap.get(String(v.payrollRunId));
+          const vid = vaultMap.get(String(v.vaultId));
+          if (!prid || !vid) continue;
+          await tx.payrollRunVault.create({
+            data: {
+              id: this.nid(),
+              payrollRunId: prid,
+              vaultId: vid,
+              amount: dec(v.amount),
+            },
+          });
+        }
+
         for (const row of arr<Record<string, unknown>>(data.leaves)) {
           const eid = employeeMap.get(String(row.employeeId));
           if (!eid) continue;

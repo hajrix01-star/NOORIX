@@ -441,6 +441,8 @@ model PayrollRun {
 
   company Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
   items   PayrollRunItem[]
+  /// توزيع صرف المسيرة على خزائن (مستوى المسيرة — فاتورة صرف واحدة عند الإصدار)
+  runVaultSplits PayrollRunVault[]
 
   @@unique([companyId, runNumber])
   @@index([tenantId])
@@ -482,6 +484,21 @@ model PayrollRunItemVault {
   @@unique([payrollItemId, vaultId])
   @@index([payrollItemId])
   @@map("payroll_run_item_vaults")
+}
+
+/// خزائن دفع مسيرة الرواتب (إجمالي المسيرة — ليس لكل موظف)
+model PayrollRunVault {
+  id           String   @id @default(cuid())
+  payrollRunId String   @map("payroll_run_id")
+  vaultId      String   @map("vault_id")
+  amount       Decimal  @map("amount") @db.Decimal(18, 4)
+
+  payrollRun PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  vault      Vault      @relation(fields: [vaultId], references: [id], onDelete: Restrict)
+
+  @@unique([payrollRunId, vaultId])
+  @@index([payrollRunId])
+  @@map("payroll_run_vaults")
 }
 
 // ── الإجازات ───────────────────────────────────────────────
@@ -754,6 +771,7 @@ model Vault {
   invoices      Invoice[]
   salesChannels DailySalesChannel[]
   payrollItemVaults PayrollRunItemVault[]
+  payrollRunVaults  PayrollRunVault[]
   invoiceVaultAllocations InvoiceVaultAllocation[]
 
   @@index([tenantId])

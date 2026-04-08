@@ -106,6 +106,10 @@ ALTER TABLE payroll_run_items FORCE ROW LEVEL SECURITY;
 ALTER TABLE payroll_run_item_vaults ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payroll_run_item_vaults FORCE ROW LEVEL SECURITY;
 
+-- Payroll Run Vaults (فرعي — يرث من payroll_runs)
+ALTER TABLE payroll_run_vaults ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payroll_run_vaults FORCE ROW LEVEL SECURITY;
+
 -- Leaves
 ALTER TABLE leaves ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leaves FORCE ROW LEVEL SECURITY;
@@ -409,6 +413,32 @@ CREATE POLICY tenant_isolation_modify ON payroll_run_item_vaults
       SELECT 1 FROM payroll_run_items pri
       JOIN payroll_runs pr ON pr.id = pri.payroll_run_id
       WHERE pri.id = payroll_item_id AND pr.tenant_id = current_tenant_id()
+    )
+  );
+
+-- Payroll Run Vaults (يرث من payroll_runs)
+DROP POLICY IF EXISTS tenant_isolation_select ON payroll_run_vaults;
+DROP POLICY IF EXISTS tenant_isolation_modify ON payroll_run_vaults;
+CREATE POLICY tenant_isolation_select ON payroll_run_vaults
+  FOR SELECT TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM payroll_runs pr
+      WHERE pr.id = payroll_run_id AND pr.tenant_id = current_tenant_id()
+    )
+  );
+CREATE POLICY tenant_isolation_modify ON payroll_run_vaults
+  FOR ALL TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM payroll_runs pr
+      WHERE pr.id = payroll_run_id AND pr.tenant_id = current_tenant_id()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM payroll_runs pr
+      WHERE pr.id = payroll_run_id AND pr.tenant_id = current_tenant_id()
     )
   );
 

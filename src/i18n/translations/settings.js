@@ -133,6 +133,7 @@ export default {
   backupStat_dailySalesChannels: { ar: 'قنوات مبيعات يومية', en: 'Daily sales channels' },
   backupStat_payrollRunItems: { ar: 'بنود مسيرة', en: 'Payroll items' },
   backupStat_payrollRunItemVaults: { ar: 'خزائن بنود مسيرة', en: 'Payroll item vaults' },
+  backupStat_payrollRunVaults: { ar: 'خزائن مسيرة (إجمالي)', en: 'Payroll run vaults' },
   aiDesc: { ar: 'الذكاء المستخدم: ربط النظام بمزود الذكاء الاصطناعي — قريباً.', en: 'AI integration: Connect system to AI provider — coming soon.' },
   cannotConnectServer: { ar: 'لا يمكن الاتصال بالسيرفر.', en: 'Cannot connect to server.' },
   noCompanies: { ar: 'لا توجد شركات', en: 'No companies' },

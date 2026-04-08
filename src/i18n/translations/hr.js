@@ -224,6 +224,10 @@ export default {
   payrollAdvanceDates: { ar: 'تواريخ السلف', en: 'Advance dates' },
   payrollAutoAdvanceDeduct: { ar: 'خصم السلف الآلي', en: 'Automatic advance deduction' },
   payrollDeferAdvanceDeduct: { ar: 'تأجيل خصم السلف لهذا الشهر', en: 'Defer advance deduction this month' },
+  payrollRunPayVaultSection: {
+    ar: 'خزائن صرف المسيرة (فاتورة صرف واحدة لمجموع الرواتب — يمكن التقسيم بين خزنتين)',
+    en: 'Payroll payment vaults (one expense invoice for the full run — split across up to two vaults)',
+  },
   payrollPayVaultCol: { ar: 'سداد من', en: 'Pay from' },
   payrollPayVaultDefault: { ar: '— افتراضي النظام —', en: '— System default —' },
   payrollAddSecondVaultShort: { ar: '+ خزنة', en: '+ Vault' },
@@ -231,8 +235,8 @@ export default {
   payrollSecondVaultAmountShort: { ar: 'مبلغ 2', en: 'Amt 2' },
   payrollPayVaultSplitHint: { ar: 'الباقي من الخزنة الأولى', en: 'Remainder from first vault' },
   payrollSplitVaultsIncomplete: {
-    ar: 'أكمل خزنتي السداد والمبلغ لكل موظف فعّلت له التقسيم',
-    en: 'Complete both vaults and amount for each employee with split enabled',
+    ar: 'أكمل خزنتي السداد والمبلغ عند تفعيل التقسيم، وتأكد أن المبلغ الثاني أقل من إجمالي صافي المسيرة',
+    en: 'Complete both vaults and the split amount when split is enabled; the second amount must be less than total net payroll',
   },
   payrollTotalBeforeDeductions: { ar: 'الإجمالي قبل الخصم', en: 'Total before deductions' },
   payrollTotalDeductionsAll: { ar: 'إجمالي الخصومات', en: 'Total deductions' },

@@ -118,6 +118,12 @@ export async function buildCompanyLogicalSnapshot(
           where: { payrollItemId: { in: payrollItemIds } },
         })
       : [];
+  const payrollRunVaults =
+    payrollRunIds.length > 0
+      ? await prisma.payrollRunVault.findMany({
+          where: { payrollRunId: { in: payrollRunIds } },
+        })
+      : [];
 
   const counts: Record<string, number> = {
     suppliers: suppliers.length,
@@ -152,6 +158,7 @@ export async function buildCompanyLogicalSnapshot(
     dailySalesChannels: dailySalesChannels.length,
     payrollRunItems: payrollRunItems.length,
     payrollRunItemVaults: payrollRunItemVaults.length,
+    payrollRunVaults: payrollRunVaults.length,
   };
 
   const data: Record<string, unknown> = {
@@ -188,6 +195,7 @@ export async function buildCompanyLogicalSnapshot(
     dailySalesChannels,
     payrollRunItems,
     payrollRunItemVaults,
+    payrollRunVaults,
   };
 
   return {

@@ -93,6 +93,7 @@ export class HRService {
     const run = await this.prisma.payrollRun.findFirst({
       where: { id, companyId },
       include: {
+        runVaultSplits: { include: { vault: true } },
         items: {
           include: {
             employee: true,
@@ -195,6 +196,20 @@ export class HRService {
     }
   }
 
+  /** مجموع أجزاء الخزائن يجب أن يطابق صافي المسيرة (مجموع صافي السطور). */
+  private assertPayrollRunVaultSplitsMatchTotal(
+    splits: Array<{ amount: number | string }>,
+    totalAmount: number,
+  ): void {
+    const EPS = 0.02;
+    const sum = splits.reduce((s, x) => s + Number(x.amount), 0);
+    if (!Number.isFinite(sum) || !Number.isFinite(totalAmount) || Math.abs(sum - totalAmount) > EPS) {
+      throw new BadRequestException(
+        `مجموع توزيع الخزائن (${Number(sum).toFixed(2)}) يجب أن يساوي إجمالي صافي المسيرة (${Number(totalAmount).toFixed(2)}).`,
+      );
+    }
+  }
+
   /** صافي السطر = max(0, إجمالي + بدلات إضافية − خصومات − سلف) — يطابق الواجهة. */
   private assertPayrollItemsNetConsistent(items: PayrollRunItemDto[]): void {
     const EPS = 0.02;
@@ -232,8 +247,6 @@ export class HRService {
     }
 
     const runNumber = await this.generateRunNumber(dto.companyId);
-    const splitVaultIds = dto.items.flatMap((it) => (it.vaultSplits ?? []).map((vs) => vs.vaultId));
-    await this.assertVaultsUsableForPayment(dto.companyId, splitVaultIds);
 
     let totalAmount = 0;
     const itemsData: Array<{
@@ -244,7 +257,6 @@ export class HRService {
       advancesDeduct: Prisma.Decimal;
       netSalary: Prisma.Decimal;
       notes?: string;
-      vaultSplits?: { vaultId: string; amount: Prisma.Decimal }[];
     }> = [];
 
     for (const item of dto.items) {
@@ -258,11 +270,13 @@ export class HRService {
         advancesDeduct: new Prisma.Decimal(item.advancesDeduct ?? 0),
         netSalary: new Prisma.Decimal(item.netSalary),
         notes: item.notes,
-        vaultSplits: item.vaultSplits?.map((vs) => ({
-          vaultId: vs.vaultId,
-          amount: new Prisma.Decimal(vs.amount),
-        })),
       });
+    }
+
+    const splitVaultIds = (dto.vaultSplits ?? []).map((vs) => vs.vaultId);
+    await this.assertVaultsUsableForPayment(dto.companyId, splitVaultIds);
+    if (dto.vaultSplits?.length) {
+      this.assertPayrollRunVaultSplitsMatchTotal(dto.vaultSplits, totalAmount);
     }
 
     const run = await this.prisma.payrollRun.create({
@@ -284,11 +298,16 @@ export class HRService {
             advancesDeduct: it.advancesDeduct,
             netSalary: it.netSalary,
             notes: it.notes,
-            vaultSplits: it.vaultSplits?.length
-              ? { create: it.vaultSplits.map((vs) => ({ vaultId: vs.vaultId, amount: vs.amount })) }
-              : undefined,
           })),
         },
+        runVaultSplits: dto.vaultSplits?.length
+          ? {
+              create: dto.vaultSplits.map((vs) => ({
+                vaultId: vs.vaultId,
+                amount: new Prisma.Decimal(vs.amount),
+              })),
+            }
+          : undefined,
       },
       include: { items: { include: { employee: true } } },
     });
@@ -395,8 +414,6 @@ export class HRService {
 
     if (dto.items) {
       this.assertPayrollItemsNetConsistent(dto.items);
-      const splitVaultIds = dto.items.flatMap((it) => (it.vaultSplits ?? []).map((vs) => vs.vaultId));
-      await this.assertVaultsUsableForPayment(companyId, splitVaultIds);
 
       let totalAmount = 0;
       data.employeeCount = dto.items.length;
@@ -412,18 +429,44 @@ export class HRService {
             advancesDeduct: new Prisma.Decimal(item.advancesDeduct ?? 0),
             netSalary: new Prisma.Decimal(item.netSalary),
             notes: item.notes,
-            vaultSplits: item.vaultSplits?.length
-              ? {
-                create: item.vaultSplits.map((vs) => ({
-                  vaultId: vs.vaultId,
-                  amount: new Prisma.Decimal(vs.amount),
-                })),
-              }
-              : undefined,
           };
         }),
       };
       data.totalAmount = new Prisma.Decimal(totalAmount);
+
+      const splitVaultIds = (dto.vaultSplits ?? []).map((vs) => vs.vaultId);
+      await this.assertVaultsUsableForPayment(companyId, splitVaultIds);
+      if (dto.vaultSplits?.length) {
+        this.assertPayrollRunVaultSplitsMatchTotal(dto.vaultSplits, totalAmount);
+      }
+      data.runVaultSplits =
+        dto.vaultSplits !== undefined
+          ? dto.vaultSplits.length
+            ? {
+                deleteMany: {},
+                create: dto.vaultSplits.map((vs) => ({
+                  vaultId: vs.vaultId,
+                  amount: new Prisma.Decimal(vs.amount),
+                })),
+              }
+            : { deleteMany: {} }
+          : { deleteMany: {} };
+    } else if (dto.vaultSplits !== undefined) {
+      const totalAmount = Number(existing.totalAmount);
+      const splitVaultIds = dto.vaultSplits.map((vs) => vs.vaultId);
+      await this.assertVaultsUsableForPayment(companyId, splitVaultIds);
+      if (dto.vaultSplits.length) {
+        this.assertPayrollRunVaultSplitsMatchTotal(dto.vaultSplits, totalAmount);
+      }
+      data.runVaultSplits = dto.vaultSplits.length
+        ? {
+            deleteMany: {},
+            create: dto.vaultSplits.map((vs) => ({
+              vaultId: vs.vaultId,
+              amount: new Prisma.Decimal(vs.amount),
+            })),
+          }
+        : { deleteMany: {} };
     }
 
     const updated = await this.prisma.payrollRun.update({
@@ -483,6 +526,7 @@ export class HRService {
     const run = await this.prisma.payrollRun.findFirst({
       where: { id: dto.payrollRunId },
       include: {
+        runVaultSplits: true,
         items: {
           include: {
             employee: true,
@@ -497,80 +541,85 @@ export class HRService {
     }
 
     const txDate = dto.transactionDate.slice(0, 10);
-    const outflows: Array<{
-      companyId: string;
-      employeeId: string;
-      invoiceNumber: string;
-      kind: string;
-      totalAmount: string;
-      netAmount: string;
-      taxAmount: string;
-      transactionDate: string;
-      vaultId?: string;
-      batchId?: string;
-      notes?: string;
-    }> = [];
+    const totalStr = String(run.totalAmount);
+    const totalDec = new Prisma.Decimal(run.totalAmount);
 
-    let invSeq = 0;
-    for (const item of run.items) {
-      const netStr = String(item.netSalary);
-      if (item.vaultSplits?.length) {
-        for (const vs of item.vaultSplits) {
-          const amt = String(vs.amount);
-          if (Number(amt) <= 0) continue;
-          invSeq++;
-          outflows.push({
-            companyId: run.companyId,
-            employeeId: item.employeeId,
-            invoiceNumber: `SAL-${run.runNumber}-${String(invSeq).padStart(3, '0')}`,
-            kind: 'salary',
-            totalAmount: amt,
-            netAmount: amt,
-            taxAmount: '0',
-            transactionDate: txDate,
-            vaultId: vs.vaultId,
-            batchId: run.id,
-            notes: `راتب ${item.employee?.name ?? ''} - ${run.runNumber}`,
-          });
-        }
-      } else {
-        const defaultVault = await this.prisma.vault.findFirst({
-          where: { companyId: run.companyId, isActive: true, isArchived: false, showAsPaymentMethod: true },
-          select: { id: true },
-        });
-        if (!defaultVault) {
-          throw new BadRequestException('لا توجد خزنة نشطة. يرجى تحديد توزيع الخزائن للمسيرة أو إنشاء خزنة.');
-        }
-        invSeq++;
-        outflows.push({
-          companyId: run.companyId,
-          employeeId: item.employeeId,
-          invoiceNumber: `SAL-${run.runNumber}-${String(invSeq).padStart(3, '0')}`,
-          kind: 'salary',
-          totalAmount: netStr,
-          netAmount: netStr,
-          taxAmount: '0',
-          transactionDate: txDate,
-          vaultId: defaultVault.id,
-          batchId: run.id,
-          notes: `راتب ${item.employee?.name ?? ''} - ${run.runNumber}`,
-        });
-      }
+    const defaultVault = await this.prisma.vault.findFirst({
+      where: {
+        companyId: run.companyId,
+        isActive: true,
+        isArchived: false,
+        showAsPaymentMethod: true,
+      },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!defaultVault) {
+      throw new BadRequestException(
+        'لا توجد خزنة نشطة. يرجى تحديد توزيع الخزائن للمسيرة أو إنشاء خزنة.',
+      );
     }
 
-    const dtos = outflows.map((o) => ({
-      companyId: o.companyId,
-      employeeId: o.employeeId,
-      invoiceNumber: o.invoiceNumber,
-      kind: o.kind,
-      totalAmount: o.totalAmount,
-      netAmount: o.netAmount,
-      taxAmount: o.taxAmount,
-      transactionDate: o.transactionDate,
-      vaultId: o.vaultId,
-      batchId: o.batchId,
-      notes: o.notes,
-    }));
+    let vaultSplitsOut: Array<{ vaultId: string; amount: string }>;
+
+    if (run.runVaultSplits?.length) {
+      vaultSplitsOut = run.runVaultSplits.map((vs) => ({
+        vaultId: vs.vaultId,
+        amount: String(vs.amount),
+      }));
+      const sumDec = run.runVaultSplits.reduce(
+        (a, vs) => a.plus(new Prisma.Decimal(vs.amount)),
+        new Prisma.Decimal(0),
+      );
+      if (sumDec.minus(totalDec).abs().gt(0.02)) {
+        throw new BadRequestException('مجموع توزيع خزائن المسيرة لا يطابق إجمالي المسيرة.');
+      }
+    } else {
+      const merged = new Map<string, Prisma.Decimal>();
+      for (const item of run.items) {
+        const net = new Prisma.Decimal(item.netSalary);
+        if (item.vaultSplits?.length) {
+          for (const vs of item.vaultSplits) {
+            const amt = new Prisma.Decimal(vs.amount);
+            if (amt.lte(0)) continue;
+            const prev = merged.get(vs.vaultId) ?? new Prisma.Decimal(0);
+            merged.set(vs.vaultId, prev.plus(amt));
+          }
+        } else {
+          const vid = defaultVault.id;
+          const prev = merged.get(vid) ?? new Prisma.Decimal(0);
+          merged.set(vid, prev.plus(net));
+        }
+      }
+      const splits = [...merged.entries()].map(([vaultId, amount]) => ({ vaultId, amount }));
+      if (!splits.length) {
+        throw new BadRequestException('لا يمكن إصدار دفع لمسيرة بلا بيانات.');
+      }
+      const sumDec = splits.reduce((a, x) => a.plus(x.amount), new Prisma.Decimal(0));
+      if (sumDec.minus(totalDec).abs().gt(0.02)) {
+        throw new BadRequestException('تعذر مواءمة توزيع الخزائن مع إجمالي المسيرة.');
+      }
+      vaultSplitsOut = splits.map((s) => ({
+        vaultId: s.vaultId,
+        amount: s.amount.toString(),
+      }));
+    }
+
+    const dtos = [
+      {
+        companyId: run.companyId,
+        employeeId: undefined as string | undefined,
+        invoiceNumber: `SAL-${run.runNumber}`,
+        kind: 'salary',
+        totalAmount: totalStr,
+        netAmount: totalStr,
+        taxAmount: '0',
+        transactionDate: txDate,
+        batchId: run.id,
+        vaultSplits: vaultSplitsOut,
+        notes: `مسيرة رواتب ${run.runNumber} (${run.employeeCount} موظف)`,
+      },
+    ];
 
     const results = await this.financialCore.processOutflowBatch(dtos, userId);
 

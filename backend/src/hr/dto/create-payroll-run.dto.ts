@@ -9,7 +9,8 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class PayrollItemVaultSplitDto {
+/** توزيع خزائن على مستوى مسيرة الرواتب (فاتورة صرف واحدة) */
+export class PayrollRunVaultSplitDto {
   @IsString()
   vaultId: string;
 
@@ -54,12 +55,6 @@ export class PayrollRunItemDto {
   @IsOptional()
   @IsString()
   notes?: string;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PayrollItemVaultSplitDto)
-  vaultSplits?: PayrollItemVaultSplitDto[];
 }
 
 export class CreatePayrollRunDto {
@@ -77,4 +72,11 @@ export class CreatePayrollRunDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  /** يجب أن يعادل مجموعها صافي المسيرة (مجموع صافي الموظفين) */
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PayrollRunVaultSplitDto)
+  vaultSplits?: PayrollRunVaultSplitDto[];
 }
