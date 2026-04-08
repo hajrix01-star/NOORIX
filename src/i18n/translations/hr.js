@@ -237,8 +237,8 @@ export default {
   deletePayrollRunConfirm: { ar: 'هل تريد حذف مسيرة الراتب هذه؟', en: 'Do you want to delete this payroll run?' },
   payrollMonthExists: { ar: 'مسيرة لهذا الشهر موجودة مسبقاً', en: 'Payroll run for this month already exists' },
   payrollGrossFixedPackageHint: {
-    ar: 'الإجمالي الافتراضي = (الراتب + البدلات + المخصصة + الأوفر تايم) مضروباً في نسبة أيام العمل في الشهر (من تاريخ الالتحاق حتى نهاية الشهر أو تاريخ نهاية الخدمة إن وُجد). الخصم الآلي للإجازات: أيام الإجازة غير المدفوعة المعتمدة فقط؛ الإجازة السنوية والمرضية لا تُخصم آلياً. أيام الدوام لحساب الخصم من [NOORIX_WD:…] في نظام الدوام. يمكنك التعديل يدوياً.',
-    en: 'Default gross = (salary + allowances + custom + auto overtime) × calendar days employed in the month (join date through month end, or termination date if set). Auto leave deduction applies only to approved unpaid leave; annual/sick are not auto-deducted. Work days for that split come from [NOORIX_WD:…] on the schedule. You can edit amounts manually.',
+    ar: '',
+    en: '',
   },
   payrollEmploymentProrationNote: {
     ar: 'تناسب مدة العمل: {0} من {1} يوم',

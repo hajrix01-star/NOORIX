@@ -568,7 +568,9 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                         <td className="text-noorix-muted text-[11px] min-w-0 nx-line-145 align-top text-center" title={items[idx].advanceDates || ''}>
                           <span className="line-clamp-2 break-words inline-block max-w-full text-center">{items[idx].advanceDates || '—'}</span>
                         </td>
-                        <td className="font-semibold text-[12px] whitespace-nowrap nx-font-numbers text-center">{hrFmt(items[idx].grossSalary)}</td>
+                        <td className="font-semibold text-[12px] whitespace-nowrap text-center">
+                          <span className="payroll-run-cell-num nx-font-numbers">{hrFmt(items[idx].grossSalary)}</span>
+                        </td>
                         <td className="text-center">
                           <Input
                             type="number"
@@ -622,7 +624,9 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             />
                           </label>
                         </td>
-                        <td className="font-extrabold text-[12px] whitespace-nowrap nx-font-numbers text-center">{hrFmt(items[idx].netSalary)}</td>
+                        <td className="font-extrabold text-[12px] whitespace-nowrap text-center">
+                          <span className="payroll-run-cell-num nx-font-numbers">{hrFmt(items[idx].netSalary)}</span>
+                        </td>
                       </>
                     ) : (
                       <td colSpan={7} className="text-noorix-muted text-[13px] text-center">

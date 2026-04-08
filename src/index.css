@@ -3247,21 +3247,46 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   width: 100%;
   font-size: 12px;
 }
-.payroll-run-form-drawer .payroll-run-table thead th {
+/* تفوق صريح على .prfm-modal-scroll thead th { text-align: right } وعلى وضع RTL */
+.nx-modal.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table thead th,
+.nx-drawer-panel.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table thead th {
   padding: 6px 5px;
   font-size: 11px;
   line-height: 1.25;
   white-space: normal !important;
   word-break: normal;
-  vertical-align: bottom;
+  vertical-align: middle;
   hyphens: auto;
-  text-align: center;
+  text-align: center !important;
 }
-.payroll-run-form-drawer .payroll-run-table tbody td {
-  text-align: center;
+.nx-modal.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table tbody td,
+.nx-drawer-panel.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table tbody td {
+  text-align: center !important;
+  vertical-align: middle !important;
 }
 .payroll-run-form-drawer .prfm-modal-scroll tbody td {
   padding: 4px 5px;
+}
+/* أرقام معزولة اتجاهياً وتبدو متوسطة في الخلية */
+.payroll-run-form-drawer .payroll-run-cell-num {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: center;
+  min-width: 0;
+}
+.payroll-run-form-drawer .payroll-run-table tbody td .nx-checkbox {
+  justify-content: center;
+  width: 100%;
+}
+.payroll-run-form-drawer .payroll-run-table tbody td .nx-checkbox--tight {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+.payroll-run-form-drawer .payroll-run-table tbody td input[type='number'] {
+  display: block;
+  margin-inline: auto !important;
+  text-align: center !important;
 }
 
 /* ========== تحسينات عامة للـ modal-overlay على الجوال ========== */
