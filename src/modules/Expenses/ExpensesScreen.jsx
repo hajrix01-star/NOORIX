@@ -1,39 +1,22 @@
 ﻿/**
  * ExpensesScreen — المصاريف الثابتة والمتغيرة
- * 4 تبويبات: أصناف المصاريف، تسجيل مصروف، إدخال جماعي، سجل المدفوعات
+ * نفس إيقاع الموارد البشرية: nx-page-header، تبويبات متصلة، محتوى تبويب داخل ScreenShell embedded + pt-4
  */
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import {
-  getExpenseLines,
-  deactivateExpenseLine,
-} from '../../services/api';
-import { useCategories } from '../../hooks/useCategories';
-import { useSuppliers } from '../../hooks/useSuppliers';
-import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
-import { fmt, sumAmounts } from '../../utils/format';
-import { Button, Input, ScreenTabs, ScreenShell } from '../../ui';
+import { getExpenseLines, deactivateExpenseLine } from '../../services/api';
+import { Button, ScreenTabs, ScreenShell, cn } from '../../ui';
 import Toast from '../../components/Toast';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
-import SmartTable from '../../components/common/SmartTable';
 import ExpenseLineList from './components/ExpenseLineList';
 import ExpenseLineDetailModal from './components/ExpenseLineDetailModal';
 import ExpenseLineFormModal from './components/ExpenseLineFormModal';
 import ExpenseFormModal from './components/ExpenseFormModal';
 import ExpenseBatchTable from './components/ExpenseBatchTable';
 import PaymentHistoryTab from './components/PaymentHistoryTab';
-
-const REFRESH_ICON = (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-    <path d="M21 3v5h-5" />
-    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-    <path d="M3 21v-5h5" />
-  </svg>
-);
 
 const TABS = [
   { id: 'lines', labelKey: 'expenseLinesTab' },
@@ -73,9 +56,18 @@ export default function ExpensesScreen() {
   const handleLineClick = (line) => setSelectedLineId(line?.id ?? null);
   const handleCloseDetail = () => setSelectedLineId(null);
 
-  const handleCreateLine = () => { setEditingLine(null); setShowFormModal(true); };
-  const handleEditLine = (line) => { setEditingLine(line); setShowFormModal(true); };
-  const handleCloseForm = () => { setShowFormModal(false); setEditingLine(null); };
+  const handleCreateLine = () => {
+    setEditingLine(null);
+    setShowFormModal(true);
+  };
+  const handleEditLine = (line) => {
+    setEditingLine(line);
+    setShowFormModal(true);
+  };
+  const handleCloseForm = () => {
+    setShowFormModal(false);
+    setEditingLine(null);
+  };
 
   const handleDeleteLine = (line) => {
     if (!confirm(`هل تريد إلغاء تفعيل بند المصروف "${line.nameAr || line.nameEn}"؟\n(لن يُحذف حذفاً نهائياً، بل سيُستبعد من القوائم النشطة)`)) return;
@@ -105,107 +97,100 @@ export default function ExpensesScreen() {
 
   return (
     <ScreenShell>
-      <div>
-        <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>
+      <div className="nx-page-header flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('fixedAndVariableExpenses')}</h1>
+          <p className="text-[13px] text-noorix-muted m-0 mt-1">{t('expensesDesc')}</p>
+        </div>
+        {companyId && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-1.5 text-[13px]">
+              <span className="text-noorix-muted shrink-0">{t('expenseLinesTab')}</span>
+              <span className="font-bold tabular-nums text-noorix-blue">{expenseLines.length}</span>
+            </span>
+          </div>
+        )}
       </div>
 
       <ScreenTabs
         items={expenseTabItems}
         value={activeTab}
         onChange={setActiveTab}
-        contentClassName="nx-tab-content"
-        tabBarEnd={
-          !companyId
-            ? null
-            : activeTab === 'lines'
-              ? (
-                  <div className="nx-toolbar !flex-nowrap max-w-full min-w-0 justify-end">
-                    <div className="w-[min(100%,11rem)] shrink-0">
-                      <Input
-                        type="select"
-                        size="sm"
-                        value={filterKind}
-                        onChange={(e) => setFilterKind(e.target.value)}
-                        className="w-full"
-                        aria-label={t('allTypes')}
-                      >
-                        <option value="">{t('allTypes')}</option>
-                        <option value="fixed_expense">{t('fixedExpense')}</option>
-                        <option value="expense">{t('variableExpense')}</option>
-                      </Input>
-                    </div>
-                    <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={handleCreateLine}>
-                      {t('addExpenseLine')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="shrink-0 whitespace-nowrap"
-                      icon={REFRESH_ICON}
-                      onClick={() => queryClient.invalidateQueries({ queryKey: ['expense-lines'] })}
-                    >
-                      {t('refresh')}
-                    </Button>
-                  </div>
-                )
-              : activeTab === 'entry'
-                ? (
-                    <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={() => setShowExpenseForm(true)}>
-                      {t('expenseRecordNew')}
-                    </Button>
-                  )
-                : null
-        }
+        contentClassName="nx-tab-content min-h-[200px]"
       >
-      {activeTab === 'lines' && (
-        <ExpenseLineList
-          expenseLines={expenseLines}
-          isLoading={linesLoading}
-          onLineClick={handleLineClick}
-          onEditLine={handleEditLine}
-          onDeleteLine={handleDeleteLine}
-        />
-      )}
+        {activeTab === 'lines' && (
+          !companyId ? (
+            <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
+          ) : (
+            <ExpenseLineList
+              embedded
+              expenseLines={expenseLines}
+              isLoading={linesLoading}
+              filterKind={filterKind}
+              onFilterKindChange={setFilterKind}
+              onCreateLine={handleCreateLine}
+              onRefresh={() => queryClient.invalidateQueries({ queryKey: ['expense-lines'] })}
+              onLineClick={handleLineClick}
+              onEditLine={handleEditLine}
+              onDeleteLine={handleDeleteLine}
+            />
+          )
+        )}
 
-      {activeTab === 'entry' && companyId && showExpenseForm && (
-        <ExpenseFormModal
-          companyId={companyId}
-          onClose={() => setShowExpenseForm(false)}
-          onSaved={() => {
-            setShowExpenseForm(false);
+        {activeTab === 'entry' && (
+          <ScreenShell embedded className={cn('pt-4')}>
+            {!companyId ? (
+              <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
+            ) : (
+              <>
+                <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+                  <p className="m-0 min-w-0 flex-1 text-[13px] text-noorix-muted">{t('expensesDesc')}</p>
+                  <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={() => setShowExpenseForm(true)}>
+                    {t('expenseRecordNew')}
+                  </Button>
+                </div>
+                {showExpenseForm && (
+                  <ExpenseFormModal
+                    companyId={companyId}
+                    onClose={() => setShowExpenseForm(false)}
+                    onSaved={() => {
+                      setShowExpenseForm(false);
+                      invalidateOnFinancialMutation(queryClient);
+                      queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
+                      showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </ScreenShell>
+        )}
+
+        {activeTab === 'batch' && (
+          <ExpenseBatchTable embedded companyId={companyId} onSaved={() => {
             invalidateOnFinancialMutation(queryClient);
             queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
             showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
           }}
-        />
-      )}
+          />
+        )}
 
-      {activeTab === 'entry' && !companyId && (
-        <p className="m-0 text-[13px] text-noorix-muted">{t('pleaseSelectCompany')}</p>
-      )}
-
-      {activeTab === 'entry' && companyId && !showExpenseForm && (
-        <p className="m-0 text-[13px] text-noorix-muted">{t('expensesDesc')}</p>
-      )}
-
-      {activeTab === 'batch' && (
-        <ExpenseBatchTable
-          companyId={companyId}
-          onSaved={() => {
-            invalidateOnFinancialMutation(queryClient);
-            queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
-            showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
-          }}
-        />
-      )}
-
-      {activeTab === 'payments' && (
-        <div>
-          <DateFilterBar filter={dateFilter} />
-          <div className="mt-4">
-            <PaymentHistoryTab companyId={companyId} dateFilter={dateFilter} />
-          </div>
-        </div>
-      )}
+        {activeTab === 'payments' && (
+          <ScreenShell embedded className={cn('pt-4')}>
+            {!companyId ? (
+              <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
+            ) : (
+              <>
+                <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-3">
+                  <div className="min-w-0 flex-1">
+                    <DateFilterBar filter={dateFilter} />
+                  </div>
+                </div>
+                <PaymentHistoryTab companyId={companyId} dateFilter={dateFilter} />
+              </>
+            )}
+          </ScreenShell>
+        )}
       </ScreenTabs>
 
       {selectedLineId && (

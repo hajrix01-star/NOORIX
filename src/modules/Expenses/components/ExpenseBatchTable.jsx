@@ -12,7 +12,7 @@ import { fmt, calcReverseVat } from '../../../utils/format';
 import Toast from '../../../components/Toast';
 import SmartTable from '../../../components/common/SmartTable';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input } from '../../../ui';
+import { Button, Input, ScreenShell, cn } from '../../../ui';
 
 const EMPTY_ROW = () => ({
   key: `${Date.now()}-${Math.random()}`,
@@ -22,7 +22,7 @@ const EMPTY_ROW = () => ({
   notes: '',
 });
 
-export default function ExpenseBatchTable({ companyId, onSaved }) {
+export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
   const { lang, t } = useTranslation();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
@@ -132,6 +132,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       render: (_, row) => (
         <Input
           type="select"
+          size="sm"
           value={row.expenseLineId}
           onChange={(e) => updateRow(row.index - 1, { expenseLineId: e.target.value })}
         >
@@ -152,6 +153,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       render: (v, row) => (
         <Input
           type="text"
+          size="sm"
           value={v}
           onChange={(e) => updateRow(row.index - 1, { supplierInvoiceNumber: e.target.value })}
           placeholder="مطلوب للفواتير الخاضعة للضريبة"
@@ -180,6 +182,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       render: (v, row) => (
         <Input
           type="text"
+          size="sm"
           value={v}
           onChange={(e) => updateRow(row.index - 1, { notes: e.target.value })}
           placeholder="اختياري"
@@ -198,9 +201,17 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
     },
   ];
 
+  if (!companyId) {
+    return (
+      <ScreenShell embedded={!!embedded} className={cn(embedded && 'pt-4')}>
+        <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
+      </ScreenShell>
+    );
+  }
+
   return (
-    <div>
-      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
+    <ScreenShell embedded={!!embedded} className={cn(embedded && 'pt-4')}>
+      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between lg:gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <Input
             label="تاريخ العملية"
@@ -209,7 +220,7 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
             value={batchDate}
             onChange={(e) => setBatchDate(e.target.value)}
           />
-          <div className="min-w-0 w-full sm:w-[min(100%,14rem)] sm:flex-1 sm:max-w-xs">
+          <div className="min-w-0 w-full sm:w-[min(100%,14rem)] sm:max-w-xs">
             <Input
               label="الخزينة *"
               type="select"
@@ -224,12 +235,21 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
             </Input>
           </div>
         </div>
-        <Button size="sm" className="shrink-0 whitespace-nowrap self-end sm:self-auto" onClick={addRow}>
+        <Button size="sm" className="shrink-0 whitespace-nowrap self-end lg:self-auto" onClick={addRow}>
           {t('expenseBatchAddRow')}
         </Button>
       </div>
 
-      <SmartTable columns={columns} data={tableData} keyExtractor={(r) => r.key} />
+      <SmartTable
+        compact
+        innerPadding={8}
+        columns={columns}
+        data={tableData}
+        keyExtractor={(r) => r.key}
+        title={t('expenseBatchTab')}
+        badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{rows.length}</span>}
+        showSearchInHeader={false}
+      />
 
       <div className="noorix-summary-bar noorix-summary-bar--4 mt-4">
         <div className="noorix-summary-bar__item">
@@ -263,6 +283,6 @@ export default function ExpenseBatchTable({ companyId, onSaved }) {
       </Button>
 
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onClose={() => setToast((p) => ({ ...p, visible: false }))} />
-    </div>
+    </ScreenShell>
   );
 }

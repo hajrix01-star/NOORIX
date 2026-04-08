@@ -1,6 +1,6 @@
 ﻿/**
  * PaymentHistoryTab — سجل المدفوعات (ثابت + متغير)
- * يعرض كل فواتير المصاريف في جدول واحد مع فلترة التاريخ والنوع
+ * محاذاة جداول/أشرطة HR: شريط mb-3 min-h-11، SmartTable compact + innerPadding 8 + عنوان + شارة
  */
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -54,8 +54,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       'الضريبة': Number(inv.taxAmount || 0),
       'الإجمالي': Number(inv.totalAmount || 0),
     })),
-    [activeItems, kindBadgeMap, lang],
-  );
+  [activeItems, kindBadgeMap, lang]);
 
   function handlePrint() {
     const rows = activeItems.map((inv) =>
@@ -76,24 +75,24 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   }
 
   const columns = useMemo(() => [
-    { key: 'invoiceNumber', label: 'رقم السند',
-      render: (_, row) => <span className="nx-cell-num font-semibold">{row.invoiceNumber || '—'}</span> },
-    { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد',
-      render: (_, row) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '—'}</span> },
-    { key: 'supplierName', label: 'المورد',
-      render: (_, row) => <span>{(lang === 'en' ? row.supplier?.nameEn || row.supplier?.nameAr : row.supplier?.nameAr || row.supplier?.nameEn) || '—'}</span> },
-    { key: 'expenseLineName', label: 'بند المصروف',
-      render: (_, row) => <span>{row.expenseLine?.nameAr || row.expenseLine?.nameEn || '—'}</span> },
-    { key: 'kind', label: 'النوع',
+    { key: 'invoiceNumber', label: 'رقم السند', minWidth: 110,
+      render: (_, row) => <span className="nx-cell-num nx-cell-bold text-[13px]">{row.invoiceNumber || '—'}</span> },
+    { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد', minWidth: 120,
+      render: (_, row) => <span className="nx-cell-num nx-cell-muted text-[13px]">{row.supplierInvoiceNumber || '—'}</span> },
+    { key: 'supplierName', label: 'المورد', minWidth: 130,
+      render: (_, row) => <span className="text-[13px]">{(lang === 'en' ? row.supplier?.nameEn || row.supplier?.nameAr : row.supplier?.nameAr || row.supplier?.nameEn) || '—'}</span> },
+    { key: 'expenseLineName', label: 'بند المصروف', minWidth: 140,
+      render: (_, row) => <span className="text-[13px]">{row.expenseLine?.nameAr || row.expenseLine?.nameEn || '—'}</span> },
+    { key: 'kind', label: 'النوع', width: 110, minWidth: 100,
       render: (v) => <Badge {...Badge.fromStatus(v, kindBadgeMap)} size="sm" /> },
-    { key: 'transactionDate', label: 'التاريخ',
-      render: (v) => <span className="nx-cell-muted">{formatSaudiDate(v)}</span> },
-    { key: 'netAmount', label: 'الصافي', numeric: true,
-      render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v)}</span> },
-    { key: 'taxAmount', label: 'الضريبة', numeric: true,
-      render: (v) => <span className="nx-cell-num text-noorix-amber">{fmt(v)}</span> },
-    { key: 'totalAmount', label: 'الإجمالي', numeric: true,
-      render: (v) => <span className="nx-cell-num font-bold">{fmt(v)}</span> },
+    { key: 'transactionDate', label: 'التاريخ', minWidth: 110,
+      render: (v) => <span className="nx-cell-muted-sm text-[13px]">{formatSaudiDate(v)}</span> },
+    { key: 'netAmount', label: 'الصافي', numeric: true, minWidth: 100,
+      render: (v) => <span className="nx-cell-num nx-cell-num--green text-[13px]">{fmt(v)}</span> },
+    { key: 'taxAmount', label: 'الضريبة', numeric: true, minWidth: 100,
+      render: (v) => <span className="nx-cell-num text-noorix-amber text-[13px]">{fmt(v)}</span> },
+    { key: 'totalAmount', label: 'الإجمالي', numeric: true, minWidth: 100,
+      render: (v) => <span className="nx-cell-num font-bold text-[13px]">{fmt(v)}</span> },
   ], [lang, kindBadgeMap]);
 
   if (isError) {
@@ -107,16 +106,19 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   return (
     <div>
       {!externalDateFilter && (
-        <div className="flex items-center gap-12 mb-3 flex-wrap">
-          <DateFilterBar filter={dateFilter} />
-          <label className="nx-checkbox">
+        <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-3">
+          <div className="min-w-0 flex-1">
+            <DateFilterBar filter={dateFilter} />
+          </div>
+          <label className="nx-checkbox text-[13px] shrink-0">
             <input type="checkbox" checked={showAllDates} onChange={(e) => setShowAllDates(e.target.checked)} />
             عرض الكل (بدون فلتر تاريخ)
           </label>
         </div>
       )}
-      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
-        <div className="nx-toolbar !flex-nowrap w-full justify-end sm:w-auto">
+
+      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+        <div className="nx-toolbar min-w-0 flex-1">
           <div className="w-full min-w-0 sm:w-[min(100%,14rem)] shrink-0">
             <Input
               type="select"
@@ -132,37 +134,41 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
             </Input>
           </div>
           <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!activeItems.length}>
-            طباعة
+            {t('print')}
           </Button>
           <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>
-            Excel
+            {t('exportExcel')}
           </Button>
           <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', filename: 'payment-history.pdf' })} disabled={!activeItems.length}>
-            PDF
+            {t('exportPdf')}
           </Button>
         </div>
       </div>
-      <div className="mt-2">
-        <SmartTable
-          columns={columns}
-          data={activeItems}
-          showRowNumbers
-          rowNumberWidth="1%"
-          isLoading={isLoading}
-          emptyMessage="لا توجد مدفوعات في الفترة المحددة."
-          keyExtractor={(row) => row.id}
-          footer={
-            activeItems.length > 0 ? (
-              <div className="flex items-center justify-between p-4 rounded-lg mt-3 gap-3 flex-wrap bg-[var(--noorix-bg-page)]">
-                <span className="text-[14px] text-noorix-muted">عدد السجلات: <strong>{activeItems.length}</strong></span>
-                <span className="text-[14px]">الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
-                <span className="text-[14px]">الضريبة: <strong className="nx-cell-num text-noorix-amber">{fmt(totalTax)}</strong></span>
-                <span className="nx-cell-num text-[16px] font-bold">الإجمالي: {fmt(totalAmount)} ر.س</span>
-              </div>
-            ) : null
-          }
-        />
-      </div>
+
+      <SmartTable
+        compact
+        showRowNumbers
+        rowNumberWidth="1%"
+        innerPadding={8}
+        columns={columns}
+        data={activeItems}
+        isLoading={isLoading}
+        title={t('paymentHistoryTab')}
+        badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{activeItems.length}</span>}
+        showSearchInHeader={false}
+        emptyMessage="لا توجد مدفوعات في الفترة المحددة."
+        keyExtractor={(row) => row.id}
+        footer={
+          activeItems.length > 0 ? (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-noorix-bg-muted p-4">
+              <span className="text-[13px] text-noorix-muted">عدد السجلات: <strong className="text-noorix-text">{activeItems.length}</strong></span>
+              <span className="text-[13px]">الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
+              <span className="text-[13px]">الضريبة: <strong className="nx-cell-num text-noorix-amber">{fmt(totalTax)}</strong></span>
+              <span className="nx-cell-num text-[14px] font-bold">الإجمالي: {fmt(totalAmount)} ر.س</span>
+            </div>
+          ) : null
+        }
+      />
     </div>
   );
 }
