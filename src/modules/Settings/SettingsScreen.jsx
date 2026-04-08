@@ -1,7 +1,7 @@
 /**
  * SettingsScreen — الشاشة الرئيسية للإعدادات
  * - على الجوال (< 640px): قائمة منسدلة select بدلاً من شريط تبويبات
- * - على الديسكتوب: شريط تبويبات أفقي
+ * - على الديسكتوب: تبويبات متصلة (نفس النظام العام — ScreenTabs / ConnectedTabStrip)
  */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useIsMobile640 } from '../../hooks/useMediaQuery';
@@ -47,6 +47,11 @@ export default function SettingsScreen() {
     [userRole, userPermissions, TABS_BASE],
   );
 
+  const tabItems = useMemo(
+    () => TABS.map((tab) => ({ id: tab.id, label: tab.label })),
+    [TABS],
+  );
+
   useEffect(() => {
     if (isMobile || !tabBarRef.current) return;
     const el = tabBarRef.current.querySelector('[data-active="true"]');
@@ -63,7 +68,19 @@ export default function SettingsScreen() {
     retry:           false,
   });
   const activeCompanies = companiesData.filter((c) => !c.isArchived);
-  const activeLabel = TABS.find((t) => t.id === activeTab)?.label || '';
+  const activeLabel = TABS.find((x) => x.id === activeTab)?.label || '';
+
+  const tabPanels = (
+    <>
+      {activeTab === 'companies' && <CompaniesTab onCompanyCreated={(id) => setActiveCompany(id)} />}
+      {activeTab === 'tax'       && <TaxSettingsTab />}
+      {activeTab === 'users'     && <UsersTab userRole={userRole} activeCompanies={activeCompanies} />}
+      {activeTab === 'roles'     && <RolesTab userRole={userRole} language={language} />}
+      {activeTab === 'backup'    && <BackupTab activeCompanies={activeCompanies} />}
+      {activeTab === 'ai'        && <AISettingsTab />}
+      {activeTab === 'branding'  && <AppBrandingTab />}
+    </>
+  );
 
   return (
     <ScreenShell>
@@ -76,10 +93,8 @@ export default function SettingsScreen() {
         </p>
       </div>
 
-      <div className="noorix-surface-card noorix-settings-card">
-
-        {/* ══ جوال: قائمة منسدلة ══════════════════════════════════════════ */}
-        {isMobile && (
+      {isMobile ? (
+        <div className="noorix-surface-card border border-noorix-border rounded-xl shadow-sm overflow-hidden noorix-settings-card">
           <div className="noorix-settings-mobile-nav">
             <div className="noorix-settings-mobile-nav__label">{activeLabel}</div>
             <Input
@@ -94,36 +109,24 @@ export default function SettingsScreen() {
             </Input>
             <span className="noorix-settings-mobile-nav__chevron">▾</span>
           </div>
-        )}
-
-        {/* ══ ديسكتوب: شريط تبويبات ═══════════════════════════════════════ */}
-        {!isMobile && (
-          <div ref={tabBarRef}>
-            <ScreenTabs
-              omitDefaultBarClasses
-              fadeWrap={false}
-              variant="underline"
-              barClassName="noorix-settings-tabstrip"
-              getTabClassName={() => 'noorix-settings-tab'}
-              items={TABS.map((tab) => ({ id: tab.id, label: tab.label }))}
-              value={activeTab}
-              onChange={setActiveTab}
-              buttonSize="auto"
-            />
+          <div className="noorix-settings-tab-body">
+            {tabPanels}
           </div>
-        )}
-
-        {/* ══ محتوى التبويب ═══════════════════════════════════════════════ */}
-        <div className="noorix-settings-tab-body">
-          {activeTab === 'companies' && <CompaniesTab onCompanyCreated={(id) => setActiveCompany(id)} />}
-          {activeTab === 'tax'       && <TaxSettingsTab />}
-          {activeTab === 'users'     && <UsersTab userRole={userRole} activeCompanies={activeCompanies} />}
-          {activeTab === 'roles'     && <RolesTab userRole={userRole} language={language} />}
-          {activeTab === 'backup'    && <BackupTab activeCompanies={activeCompanies} />}
-          {activeTab === 'ai'        && <AISettingsTab />}
-          {activeTab === 'branding'  && <AppBrandingTab />}
         </div>
-      </div>
+      ) : (
+        <div ref={tabBarRef}>
+          <ScreenTabs
+            items={tabItems}
+            value={activeTab}
+            onChange={setActiveTab}
+            shellClassName="noorix-settings-card"
+            contentClassName="noorix-settings-tab-body"
+            animateContent={false}
+          >
+            {tabPanels}
+          </ScreenTabs>
+        </div>
+      )}
     </ScreenShell>
   );
 }

@@ -52,6 +52,7 @@ export default function ConnectedTabStrip({
               size="auto"
               role="tab"
               aria-selected={active}
+              data-active={active ? 'true' : 'false'}
               className={cn(
                 /* grid: مركز النص في الصف العلوي؛ السباركلاين صف ثابت — size=auto يزيل h-9 من الزر */
                 '!grid !h-full min-h-[39px] grid-cols-1 grid-rows-[minmax(36px,1fr)_3px] sm:grid-rows-[minmax(38px,1fr)_3px] self-stretch shrink-0 rounded-none',

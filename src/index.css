@@ -2059,54 +2059,11 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   إعدادات — التبويبات والتنقل
-   - ديسكتوب (≥ 640px): شريط تبويبات أفقي
-   - جوال    (< 640px): قائمة منسدلة select محلية (100% موثوقة)
+   إعدادات — التنقل
+   - ديسكتوب: ScreenTabs connected (نظام عام) + .noorix-settings-card على الكرت
+   - جوال: قائمة منسدلة select محلية (100% موثوقة)
 ══════════════════════════════════════════════════════════════════════════ */
 .noorix-settings-card { overflow: hidden; }
-
-/* ── شريط التبويبات (ديسكتوب فقط) ─────────────────────────────────── */
-.noorix-settings-tabstrip {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--noorix-border);
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  flex-shrink: 0;
-}
-.noorix-settings-tabstrip::-webkit-scrollbar { display: none; }
-
-.noorix-settings-tab {
-  margin: 0;
-  border-radius: 0;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--noorix-text-muted);
-  font-weight: 500;
-  white-space: nowrap;
-  flex-shrink: 0;
-  padding: 12px 16px;
-  font-size: 13px;
-  font-family: var(--noorix-font-primary);
-  cursor: pointer;
-  transition: background 140ms, color 140ms, border-color 140ms;
-  min-height: 44px;
-}
-.noorix-settings-tab[data-active="true"] {
-  border-bottom-color: var(--noorix-accent-green);
-  background: var(--noorix-green-7);
-  color: var(--noorix-accent-green);
-  font-weight: 700;
-}
-.noorix-settings-tab:hover:not([data-active="true"]) {
-  background: var(--noorix-bg-muted);
-  color: var(--noorix-text);
-}
 
 /* ── القائمة المنسدلة (جوال < 640px) ────────────────────────────────── */
 .noorix-settings-mobile-nav {
