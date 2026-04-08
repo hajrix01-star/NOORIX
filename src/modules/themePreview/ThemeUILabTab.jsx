@@ -5,12 +5,12 @@ import React, { useMemo, useState } from 'react';
 import {
   Badge,
   Button,
+  ConnectedTabStrip,
   Divider,
   Input,
   KebabMenu,
   Modal,
   SmartTable,
-  cn,
 } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -114,56 +114,14 @@ export default function ThemeUILabTab() {
         title={t('themePreviewLab3Title')}
         hint={t('themePreviewLab3Hint')}
       >
-        <div className="noorix-surface-card border border-noorix-border rounded-xl overflow-hidden p-0 shadow-sm">
-          <div
-            className={cn(
-              'ui-lab-tab-strip flex flex-nowrap items-stretch overflow-x-auto text-[13px]',
-              'bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
-              '[-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
-              'border-b border-noorix-border',
-            )}
-            role="tablist"
-          >
-            {demoTabItems.map((item) => {
-              const active = demoTab === item.id;
-              return (
-                <Button
-                  key={item.id}
-                  type="button"
-                  variant="raw"
-                  role="tab"
-                  aria-selected={active}
-                  className={cn(
-                    '!flex !flex-col !items-stretch !justify-start !h-auto !min-h-0 rounded-none shrink-0',
-                    'border-0 border-e border-noorix-border last:border-e-0',
-                    'text-[13px] leading-normal whitespace-nowrap',
-                    'transition-all duration-200 ease-out',
-                    active
-                      ? 'relative z-[1] bg-noorix-surface text-noorix-text font-semibold shadow-[0_6px_18px_-4px_rgba(10,31,68,0.14)]'
-                      : 'z-0 bg-noorix-bg-muted/90 text-noorix-muted font-medium shadow-none hover:z-[1] hover:bg-noorix-surface hover:text-noorix-text hover:shadow-[0_3px_10px_-2px_rgba(10,31,68,0.1)]',
-                  )}
-                  onClick={() => setDemoTab(item.id)}
-                >
-                  <span
-                    className={cn(
-                      'block h-[3px] w-full shrink-0 transition-opacity duration-200',
-                      active ? 'ui-lab-tab-sparkline' : 'bg-transparent',
-                    )}
-                    aria-hidden
-                  />
-                  <span className="flex min-h-[40px] items-center justify-center px-4 py-2.5">
-                    {item.label}
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
-          <div className="border-t border-noorix-border/60 bg-noorix-surface/30 p-4">
-            <p key={demoTab} className="ui-lab-tab-content-swap text-[13px] text-noorix-muted m-0">
-              {t(lab3ContentKey)}
-            </p>
-          </div>
-        </div>
+        <ConnectedTabStrip
+          items={demoTabItems}
+          value={demoTab}
+          onChange={setDemoTab}
+          contentClassName="p-4"
+        >
+          <p className="text-[13px] text-noorix-muted m-0">{t(lab3ContentKey)}</p>
+        </ConnectedTabStrip>
       </LabBlock>
 
       <LabBlock

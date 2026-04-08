@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
-import { ScreenTabs, ScreenShell } from '../../ui';
+import { ConnectedTabStrip, ScreenShell } from '../../ui';
 import { useEmployees } from '../../hooks/useEmployees';
 import { getResidencies } from '../../services/api';
 import StaffListScreen from './StaffListScreen';
@@ -89,25 +89,21 @@ export default function HRMainScreen() {
         )}
       </div>
 
-      {/* ── تبويبات segmented: عناوين طويلة وعدد كبير — حدود وحبات أوضح من underline ── */}
-      <div className="noorix-surface-card overflow-hidden p-0">
-        <ScreenTabs
-          variant="segmented"
-          className="rounded-none border-0 border-b border-noorix-border bg-noorix-bg-muted p-3 shadow-none"
-          items={hrTabItems}
-          value={activeTab}
-          onChange={setActiveTab}
-        />
-        <div className="nx-tab-content min-h-[200px]">
-          {activeTab === 'employees' && <StaffListScreen embedded />}
-          {activeTab === 'payroll'   && <PayrollTab />}
-          {activeTab === 'leave'     && <LeaveTab />}
-          {activeTab === 'advances'  && <AdvancesTab />}
-          {activeTab === 'residency' && <ResidencyTab />}
-          {activeTab === 'salaryCalc' && <SalaryCalcTab />}
-          {activeTab === 'eosCalc'   && <EOSCalcTab />}
-        </div>
-      </div>
+      {/* ── تبويبات متصلة (نفس نمط معرض التجارب ref #3) ── */}
+      <ConnectedTabStrip
+        items={hrTabItems}
+        value={activeTab}
+        onChange={setActiveTab}
+        contentClassName="nx-tab-content min-h-[200px]"
+      >
+        {activeTab === 'employees' && <StaffListScreen embedded />}
+        {activeTab === 'payroll'   && <PayrollTab />}
+        {activeTab === 'leave'     && <LeaveTab />}
+        {activeTab === 'advances'  && <AdvancesTab />}
+        {activeTab === 'residency' && <ResidencyTab />}
+        {activeTab === 'salaryCalc' && <SalaryCalcTab />}
+        {activeTab === 'eosCalc'   && <EOSCalcTab />}
+      </ConnectedTabStrip>
 
     </ScreenShell>
   );

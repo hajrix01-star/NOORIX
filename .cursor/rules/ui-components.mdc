@@ -181,7 +181,8 @@ className="text-[20px]"    // 20px — عنوان صفحة
 شريط تبويبات موحّد من `src/ui/ScreenTabs.jsx` — **لا تكرر** يدوياً `nx-tab-bar` + حلقات `Button` في شاشات جديدة. الشريط يستخدم **`dir="ltr"`** على حاوية `tablist` حتى لا يعكس اتجاه الصفحة RTL ترتيب التبويبات عن ترتيب `items` (فيظهر الخلط بين العنوان والمحتوى).
 
 - **`variant="underline"`** — شريط سفلي (لوحة، مصاريف، موردين، مودالات، إلخ). يدعم `fadeWrap` (افتراضي `true`) و`barClassName` عند الحاجة.
-- **`variant="segmented"`** — حبات داخل كرت لعدد **قليل** من التبويبات القصيرة؛ على الجوال مع تبويبات كثيرة/نص طويل يُفضَّل **`underline`** داخل `noorix-surface-card overflow-hidden p-0` + `nx-tab-content` (نمط المصاريف / الموارد البشرية). الألوان عبر `.nx-tab-btn--segmented` في `index.css`.
+- **`variant="segmented"`** — حبات داخل كرت لعدد **قليل** من التبويبات القصيرة؛ على الجوال مع تبويبات كثيرة/نص طويل يُفضَّل **`underline`** داخل `noorix-surface-card overflow-hidden p-0` + `nx-tab-content` (نمط المصاريف). الألوان عبر `.nx-tab-btn--segmented` في `index.css`.
+- **`ConnectedTabStrip`** (`src/ui/ConnectedTabStrip.jsx`) — شريط تبويبات **متصل** مع سباركلاين للنشط وانتقال محتوى؛ **الموارد البشرية** ومعرض التجارب ref #3. الأنماط: `.nx-connected-tab-strip`، `.nx-connected-tab-sparkline` في `index.css`.
 
 ```jsx
 import { ScreenTabs } from '../../ui';
@@ -231,7 +232,7 @@ import { KebabMenu } from '../../ui';
 ## الاستيراد الصحيح
 
 ```jsx
-import { Button, Input, Card, Badge, Modal, Drawer, AdaptiveSheet, Spinner, SmartTable, ScreenTabs, ScreenShell, ScreenTitle, KebabMenu, Divider, FormRow, cn } from '../../ui';
+import { Button, Input, Card, Badge, Modal, Drawer, AdaptiveSheet, Spinner, SmartTable, ScreenTabs, ConnectedTabStrip, ScreenShell, ScreenTitle, KebabMenu, Divider, FormRow, cn } from '../../ui';
 // عند الحاجة: SCREEN_SHELL_PAGE_CLASS, SCREEN_SHELL_EMBEDDED_CLASS من '../../ui'
 // cn — دمج classes بأمان (clsx + tailwind-merge)
 ```
