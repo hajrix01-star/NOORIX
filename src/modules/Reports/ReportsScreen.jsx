@@ -227,7 +227,7 @@ export default function ReportsScreen() {
 
           {!isLoading && !error && report && visibleRows.length > 0 && (
             <div className="max-w-[min(100%,1400px)] mx-auto">
-              <div className="noorix-surface-card overflow-hidden rounded-xl p-0" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+              <div className="noorix-surface-card overflow-hidden p-0">
                 {isMobile && (
                   <ScreenTabs
                     variant="underline"

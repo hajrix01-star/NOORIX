@@ -71,7 +71,7 @@ export default function AISettingsTab() {
 
       {/* ─── بطاقة الحالة والتشخيص ─── */}
       <div
-        className="noorix-surface-card border border-noorix-border rounded-lg p-5"
+        className="noorix-surface-card p-5"
         style={{ background: 'var(--noorix-bg)' }}
       >
         {/* شريط الحالة: أونلاين / أوفلاين */}

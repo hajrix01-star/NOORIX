@@ -90,8 +90,18 @@ className="noorix-btn"
 **الكلاسات المتبقية من المرحلة الانتقالية (مسموح حتى اكتمال الهجرة):**
 - `nx-cell-*` — أنماط خلايا الجدول
 - `nx-mc__*` — بطاقات الجوال
-- `noorix-surface-card` — يُستخدم في طباعة التقارير
+- `noorix-surface-card` — **غلاف كرت السطح الافتراضي** في الشاشات (حدود + ظل + نصف قطر من `--noorix-card-*`؛ يُذكر في قواعد الطباعة حيث يلزم)
 - `app-sidebar*`, `app-nav-*` — منظومة السايدبار
+
+### كروت السطح — مصدر واحد (إلزامي في كود جديد)
+
+- **المصدر:** متغيرات CSS في `src/index.css`: `--noorix-card-radius`, `--noorix-card-shadow`, `--noorix-card-shadow-hover`، والصنف **`.noorix-surface-card`**.
+- **في React:** استخدم **`Card`** / **`SurfaceCard`** من `../../ui`، أو **`noorix-surface-card`** على الغلاف الخارجي.
+- **الجداول:** **`SmartTable`** فقط لإطار الجدول الموحّد (`noorix-table-frame`).
+- **ممنوع على نفس عقدة `noorix-surface-card`:** إضافة `border border-noorix-border` + `rounded-xl` + `shadow-sm` أو `style={{ boxShadow: '…' }}` — يكرّر ما يوفّره الصنف ويتعارض مع `data-card-style`.
+- **استثناءات موثّقة:** حالات `border-dashed` للفراغ (لا شركة / لا خزينة)، شريط دعوة مميّز، أو **`noorix-auth-card`** مع **`noorix-surface-card`** لشاشة تسجيل الدخول فقط.
+- **OCR:** `.ocr-card` و`.ocr-stat-card` في `index.css` مربوطان بنفس التوكنات — لا تكرّر ظلالاً يدوية فوقها.
+- **مراجعة دورية:** قائمة التدقيق في **`docs/CARD_SURFACE_AUDIT.md`**.
 
 ### 5. الجداول — SmartTable إلزامي
 
@@ -165,8 +175,11 @@ className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
 // شاشة كاملة
 className="flex flex-col gap-4 p-4 lg:p-6"
 
-// بطاقة سطح
-className="bg-noorix-surface border border-noorix-border rounded-xl shadow-sm"
+// غلاف كرت سطح (يفضّل المكوّن أو الصنف الموحّد)
+import { Card } from '../../ui';
+<Card>…</Card>
+// أو
+className="noorix-surface-card p-4 …"
 
 // حجم نصي
 className="text-[13px]"    // 13px — نص عادي

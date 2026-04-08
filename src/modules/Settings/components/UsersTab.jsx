@@ -94,7 +94,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
       </div>
 
       {showForm && (
-        <div className="noorix-surface-card p-5 rounded-[14px]">
+        <div className="noorix-surface-card p-5">
           <h4 className="text-[14px] m-0 mb-4">{t('newUser')}</h4>
           <form onSubmit={(e) => { e.preventDefault(); if (!form.email?.trim() || !form.password?.trim()) return; createMutation.mutate({ email: form.email.trim(), password: form.password, nameAr: form.nameAr?.trim(), nameEn: form.nameEn?.trim(), roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c) => c.id) }); }}>
             <div className="grid gap-3 mb-[14px] max-w-[400px]">

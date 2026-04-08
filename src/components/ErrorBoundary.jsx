@@ -37,7 +37,7 @@ export class ErrorBoundary extends React.Component {
           style={{ direction: 'rtl' }}
         >
           <div
-            className="noorix-surface-card p-5 rounded-xl border border-noorix-border max-w-[420px]"
+            className="noorix-surface-card max-w-[420px] p-5"
           >
             <div className="text-[20px] mb-3">⚠️</div>
             <h2 className="m-0 text-[16px] text-noorix-text mb-2">

@@ -196,7 +196,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
 
           {data.kind === 'invoices' && (
             <div className="w-full max-w-[1200px] mx-auto">
-              <div className="noorix-surface-card overflow-hidden rounded-xl p-0" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+              <div className="noorix-surface-card overflow-hidden p-0">
                 <div className="nx-section-header">
                   <div>
                     <div className="text-[13px] font-extrabold">{t('reportSmartSummary')}</div>

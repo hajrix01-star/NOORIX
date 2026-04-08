@@ -31,7 +31,7 @@ export default function ConnectedTabStrip({
   return (
     <div
       className={cn(
-        'noorix-surface-card border border-noorix-border rounded-xl overflow-hidden p-0 shadow-sm',
+        'noorix-surface-card overflow-hidden p-0',
         shellClassName,
       )}
     >

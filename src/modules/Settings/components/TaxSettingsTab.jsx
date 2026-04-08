@@ -79,7 +79,7 @@ export default function TaxSettingsTab() {
         </p>
       </div>
 
-      <div className="noorix-surface-card p-5 rounded-xl">
+      <div className="noorix-surface-card p-5">
         <div className="flex flex flex-col gap-3">
           {/* مفتاح التفعيل */}
           <div className="flex items-center justify-between border border-noorix-border rounded-xl bg-noorix-surface py-3 px-[14px]">

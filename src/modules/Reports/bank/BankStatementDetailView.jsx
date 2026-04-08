@@ -146,7 +146,7 @@ export default function BankStatementDetailView({
 
       {/* ── التبويبات ── */}
       <div
-        className="noorix-surface-card overflow-hidden border border-noorix-border p-0"
+        className="noorix-surface-card overflow-hidden p-0"
       >
         <ScreenTabs
           omitDefaultBarClasses

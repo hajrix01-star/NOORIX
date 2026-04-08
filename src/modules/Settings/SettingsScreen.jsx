@@ -94,7 +94,7 @@ export default function SettingsScreen() {
       </div>
 
       {isMobile ? (
-        <div className="noorix-surface-card border border-noorix-border rounded-xl shadow-sm overflow-hidden noorix-settings-card">
+        <div className="noorix-surface-card overflow-hidden noorix-settings-card">
           <div className="noorix-settings-mobile-nav">
             <div className="noorix-settings-mobile-nav__label">{activeLabel}</div>
             <Input

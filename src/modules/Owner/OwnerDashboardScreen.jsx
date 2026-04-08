@@ -4,12 +4,11 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button, Input, ScreenShell, ScreenTitle } from '../../ui';
+import { Button, Input, ScreenShell, ScreenTitle, cn } from '../../ui';
 import { useApp } from '../../context/AppContext';
 import { useOwnerReports } from '../../hooks/useOwnerReports';
 import { EN_MONTHS } from '../Reports/reportHelpers';
 import { fmt } from '../../utils/format';
-import { CARD_BORDER_RADIUS } from '../../utils/cardStyles';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 
@@ -210,7 +209,7 @@ export default function OwnerDashboardScreen() {
       </div>
 
       {/* اختيار الشركات — أزرار عين */}
-      <div className="noorix-surface-card border border-noorix-border" style={{ padding: isMobile ? 12 : 16, borderRadius: CARD_BORDER_RADIUS }}>
+      <div className={cn('noorix-surface-card', isMobile ? 'p-3' : 'p-4')}>
         <div className="font-bold mb-3">{t('ownerSelectCompanies')}</div>
         <div className="flex items-center flex flex-wrap gap-2">
           <Button onClick={selectAll} size="sm">{t('ownerAllCompanies')}</Button>
@@ -254,16 +253,16 @@ export default function OwnerDashboardScreen() {
         <>
           {/* كروت الإجماليات + النسب */}
           <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-            <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div className="h-[3px] bg-noorix-green" />
+            <div className="noorix-surface-card relative overflow-hidden">
+              <div className="h-1 bg-noorix-green" aria-hidden />
               <div className="p-4">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('ownerTotalSales')}</div>
                 <div className="text-[20px] font-extrabold nx-font-numbers">{fmt(aggregated.totalSales, 2)} ﷼</div>
                 <div className="text-[10px] text-noorix-muted mt-1">100%</div>
               </div>
             </div>
-            <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div className="h-[3px] bg-noorix-red" />
+            <div className="noorix-surface-card relative overflow-hidden">
+              <div className="h-1 bg-noorix-red" aria-hidden />
               <div className="p-4">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('purchasesToSalesRatio')}</div>
                 <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
@@ -272,8 +271,8 @@ export default function OwnerDashboardScreen() {
                 <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalPurchases, 2)} ﷼</div>
               </div>
             </div>
-            <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div className="h-[3px] bg-noorix-red" />
+            <div className="noorix-surface-card relative overflow-hidden">
+              <div className="h-1 bg-noorix-red" aria-hidden />
               <div className="p-4">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('annualExpenses')} {t('sectionToSalesRatio')}</div>
                 <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
@@ -282,11 +281,19 @@ export default function OwnerDashboardScreen() {
                 <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalExpenses, 2)} ﷼</div>
               </div>
             </div>
-            <div className="border border-noorix-border overflow-hidden bg-noorix-surface" style={{ borderRadius: CARD_BORDER_RADIUS }}>
-              <div style={{ height: 3, background: aggregated.totalNetProfit >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)' }} />
+            <div className="noorix-surface-card relative overflow-hidden">
+              <div
+                className={cn('h-1', aggregated.totalNetProfit >= 0 ? 'bg-noorix-blue' : 'bg-noorix-red')}
+                aria-hidden
+              />
               <div className="p-4">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('ownerTotalNetProfit')}</div>
-                <div className="text-[20px] font-extrabold nx-font-numbers" style={{ color: aggregated.totalNetProfit >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)' }}>
+                <div
+                  className={cn(
+                    'text-[20px] font-extrabold nx-font-numbers',
+                    aggregated.totalNetProfit >= 0 ? 'text-noorix-blue' : 'text-noorix-red',
+                  )}
+                >
                   {fmt(aggregated.totalNetProfit, 2)} ﷼
                 </div>
                 <div className="text-[10px] text-noorix-muted mt-1">
@@ -297,7 +304,7 @@ export default function OwnerDashboardScreen() {
           </div>
 
           {/* المبيعات الشهرية — رسم بياني */}
-          <div className="noorix-surface-card border border-noorix-border" style={{ padding: isMobile ? 12 : 24, borderRadius: CARD_BORDER_RADIUS }}>
+          <div className={cn('noorix-surface-card', isMobile ? 'p-3' : 'p-6')}>
             <div className="text-[16px] font-bold mb-5">{t('ownerMonthlySales')} — {year}{selectedMonthNum ? ` (${EN_MONTHS[selectedMonthNum - 1]})` : ''}</div>
             <div className="flex gap-0 min-h-[220px]">
               <div className="shrink-0 flex flex-col w-12 justify-between pt-1 pb-7">
@@ -355,7 +362,7 @@ export default function OwnerDashboardScreen() {
           </div>
 
           {/* توزيع الأرباح */}
-          <div className="noorix-surface-card p-4 border border-noorix-border" style={{ borderRadius: CARD_BORDER_RADIUS }}>
+          <div className="noorix-surface-card p-4">
             <div className="text-[16px] font-bold mb-3.5">{t('ownerProfitDistribution')}</div>
             <div className="flex flex-col gap-3">
               {aggregated.byCompany

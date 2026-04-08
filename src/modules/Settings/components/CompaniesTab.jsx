@@ -104,7 +104,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
       )}
 
       {isEmpty && !isLoading && !showAddForm && (
-        <div className="noorix-surface-card text-center rounded-xl p-8 border-2 border-dashed border-noorix-border">
+        <div className="noorix-surface-card text-center p-8 border-2 border-dashed border-noorix-border">
           <div className="text-[40px] mb-3">—</div>
           <h3 className="m-0 mb-2 text-[18px]">لا توجد شركات</h3>
           <p className="m-0 text-[14px] text-noorix-muted">اضغط "إضافة شركة" لإنشاء شركتك الأولى.</p>
@@ -124,7 +124,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
       </div>
 
       {showAddForm && (
-        <div className="noorix-surface-card p-5 rounded-xl border border-noorix-border">
+        <div className="noorix-surface-card p-5">
           <h3 className="m-0 mb-4 text-[16px]">إضافة شركة جديدة</h3>
           <form onSubmit={(e) => { e.preventDefault(); if (!nameAr.trim()) return; addMutation.mutate({ nameAr: nameAr.trim(), nameEn: nameEn.trim() || undefined, taxNumber: taxNumber.trim() || undefined, phone: phone.trim() || undefined, address: address.trim() || undefined, email: email.trim() || undefined, logoUrl: logoUrl.trim() || undefined }); }}
             className="grid gap-3 max-w-[480px]">

@@ -1180,6 +1180,12 @@ a { color: inherit; text-decoration: none; }
   box-shadow: var(--noorix-card-shadow);
   transition: box-shadow var(--noorix-transition), transform var(--noorix-transition);
 }
+
+/* استثناء موثّق: بطاقة تسجيل الدخول — نصف قطر أكبر وظل أقوى فوق نفس التوكنات */
+.noorix-auth-card {
+  border-radius: 20px;
+  box-shadow: 0 20px 60px var(--noorix-navy-12);
+}
 @media (max-width: 640px) {
   .noorix-surface-card { border-radius: var(--noorix-card-radius); }
   /* كثافة الجوال: كروت بحشو nx-p-* داخل المحتوى الرئيسي */
@@ -3501,25 +3507,27 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   align-items: center;
   gap: 2px;
   padding: 14px 10px;
-  border-radius: 12px;
+  border-radius: var(--noorix-card-radius);
   background: var(--noorix-bg-surface);
   border: 1px solid var(--noorix-border);
+  box-shadow: var(--noorix-card-shadow);
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
   font-family: inherit;
 }
 .ocr-stat-card:hover {
   border-color: var(--noorix-accent-blue);
-  box-shadow: 0 2px 12px var(--noorix-blue-8);
+  box-shadow: var(--noorix-card-shadow-hover);
 }
 .ocr-stat-num   { font-size: 22px; font-weight: 800; color: var(--noorix-text); line-height: 1; }
 .ocr-stat-label { font-size: 11px; color: var(--noorix-text-muted); }
 
-/* ── Main card ── */
+/* ── Main card — نفس منظومة كروت السطح ── */
 .ocr-card {
   background: var(--noorix-bg-surface);
-  border-radius: 14px;
+  border-radius: var(--noorix-card-radius);
   border: 1px solid var(--noorix-border);
+  box-shadow: var(--noorix-card-shadow);
   overflow: hidden;
 }
 

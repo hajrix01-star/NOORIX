@@ -252,7 +252,7 @@ export default function ThemeUILabTab() {
         title={t('themePreviewLab12Title')}
         hint={t('themePreviewLab12Hint')}
       >
-        <div className="noorix-surface-card nx-empty-state border border-noorix-border rounded-xl">
+        <div className="noorix-surface-card nx-empty-state">
           {t('themePreviewLab12Empty')}
         </div>
       </LabBlock>

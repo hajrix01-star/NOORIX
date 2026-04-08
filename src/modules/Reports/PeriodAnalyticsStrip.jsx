@@ -49,7 +49,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
 
   return (
     <div
-      className="noorix-surface-card grid gap-3.5 border border-noorix-border py-[14px] px-4"
+      className="noorix-surface-card grid gap-3.5 py-[14px] px-4"
       style={{ border: '1px solid var(--noorix-blue-15)', background: 'linear-gradient(135deg, var(--noorix-blue-4) 0%, var(--noorix-bg-surface) 48%)' }}
     >
       <div className="flex flex items-center justify-between flex flex-wrap gap-3">

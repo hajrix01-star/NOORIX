@@ -304,10 +304,10 @@ export default function RolesTab({ userRole, language }) {
       ) : (
         <div className="grid gap-3">
           {roles.map((role) => (
-            <div key={role.id} className="noorix-surface-card p-4 rounded-xl cursor-pointer border border-noorix-border transition-shadow duration-150"
+            <div
+              key={role.id}
+              className="noorix-surface-card cursor-pointer p-4 transition-[box-shadow] duration-150 hover:[box-shadow:var(--noorix-card-shadow-hover)]"
               onClick={() => openEdit(role)}
-              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
             >
               <div className="flex gap-3 flex-wrap justify-between items-start">
                 <div className="flex-1 min-w-0 min-w-[200px]">
