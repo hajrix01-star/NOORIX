@@ -46,6 +46,17 @@ const TABLE_ROWS = [
   { id: '2', name: 'عنصر ب', qty: 1, price: '250.50' },
 ];
 
+/** مرجع رقم 3 — تبويبات التجربة: مفتاح محتوى لكل id */
+const LAB3_DEMO_TAB_DEFS = [
+  { id: 'a', labelKey: 'themePreviewLabDemoTabA', contentKey: 'themePreviewLab3ContentA' },
+  { id: 'b', labelKey: 'themePreviewLabDemoTabB', contentKey: 'themePreviewLab3ContentB' },
+  { id: 'c', labelKey: 'themePreviewLabDemoTabC', contentKey: 'themePreviewLab3ContentC' },
+  { id: 'd', labelKey: 'themePreviewLabDemoTabD', contentKey: 'themePreviewLab3ContentD' },
+  { id: 'e', labelKey: 'themePreviewLabDemoTabE', contentKey: 'themePreviewLab3ContentE' },
+  { id: 'f', labelKey: 'themePreviewLabDemoTabF', contentKey: 'themePreviewLab3ContentF' },
+  { id: 'g', labelKey: 'themePreviewLabDemoTabG', contentKey: 'themePreviewLab3ContentG' },
+];
+
 export default function ThemeUILabTab() {
   const { t } = useTranslation();
   const dateFilter = useDateFilter();
@@ -53,12 +64,14 @@ export default function ThemeUILabTab() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const demoTabItems = useMemo(
-    () => [
-      { id: 'a', label: t('themePreviewLabDemoTabA') },
-      { id: 'b', label: t('themePreviewLabDemoTabB') },
-    ],
+    () => LAB3_DEMO_TAB_DEFS.map((row) => ({ id: row.id, label: t(row.labelKey) })),
     [t],
   );
+
+  const lab3ContentKey = useMemo(() => {
+    const row = LAB3_DEMO_TAB_DEFS.find((x) => x.id === demoTab);
+    return row?.contentKey ?? 'themePreviewLab3ContentA';
+  }, [demoTab]);
 
   const tableColumns = useMemo(
     () => [
@@ -143,7 +156,7 @@ export default function ThemeUILabTab() {
           </div>
           <div className="p-4">
             <p className="text-[13px] text-noorix-muted m-0">
-              {demoTab === 'a' ? t('themePreviewLab3ContentA') : t('themePreviewLab3ContentB')}
+              {t(lab3ContentKey)}
             </p>
           </div>
         </div>
