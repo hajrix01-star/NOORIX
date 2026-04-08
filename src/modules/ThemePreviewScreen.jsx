@@ -1,11 +1,12 @@
 ﻿/**
- * ThemePreviewScreen — معاينة الثيم واختيار أشكال الكروت
- * 10 أشكال احترافية للكروت — اختيار واحد لتطبيقه على النظام كاملاً
+ * ThemePreviewScreen — معاينة الثيم: أشكال الكروت + معرض مكوّنات مرقّم للمرجعية
  */
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import { useApp } from '../context/AppContext';
 import { CARD_STYLES, CARD_STYLE_KEY } from '../constants/cardStyles';
+import { ScreenShell, ScreenTitle, ScreenTabs } from '../ui';
+import ThemeUILabTab from './themePreview/ThemeUILabTab';
 
 function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSelect, lang }) {
   const name = lang === 'ar' ? nameAr : nameEn;
@@ -54,10 +55,18 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
 }
 
 export default function ThemePreviewScreen() {
-  const { t } = useTranslation();
-  const { cardStyle, setCardStyle, language } = useApp();
-  const lang = language || 'ar';
+  const { t, lang } = useTranslation();
+  const { cardStyle, setCardStyle } = useApp();
   const currentStyle = cardStyle ?? 1;
+  const [activeTab, setActiveTab] = useState('cards');
+
+  const tabItems = useMemo(
+    () => [
+      { id: 'cards', label: t('themePreviewTabCards') },
+      { id: 'uilab', label: t('themePreviewTabUILab') },
+    ],
+    [t],
+  );
 
   const handleSelect = (id) => {
     setCardStyle(id);
@@ -67,37 +76,45 @@ export default function ThemePreviewScreen() {
   };
 
   return (
-    <div className="p-6 max-w-[1200px]">
-      <div className="mb-6">
-        <h1 className="font-extrabold m-0 text-[22px]">{t('themePreview')}</h1>
-        <p className="mt-2 text-noorix-muted text-[14px]">
-          {lang === 'ar' ? 'اختر شكلاً للكروت لتطبيقه على النظام كاملاً. اضغط على أي كرت لتحديده.' : 'Select a card style to apply across the entire system. Click any card to select it.'}
-        </p>
+    <ScreenShell className="max-w-[1200px]">
+      <div>
+        <ScreenTitle>{t('themePreview')}</ScreenTitle>
+        <p className="text-[13px] text-noorix-muted m-0 mt-1">{t('themePreviewDesc')}</p>
       </div>
 
-      <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
-        {CARD_STYLES.map((item) => (
-          <CardPreview
-            key={item.id}
-            styleId={item.id}
-            nameAr={item.nameAr}
-            nameEn={item.nameEn}
-            descAr={item.descAr}
-            descEn={item.descEn}
-            isSelected={currentStyle === item.id}
-            onSelect={handleSelect}
-            lang={lang}
-          />
-        ))}
+      <div className="noorix-surface-card overflow-hidden p-0 border border-noorix-border rounded-xl shadow-sm">
+        <ScreenTabs variant="underline" items={tabItems} value={activeTab} onChange={setActiveTab} />
+        <div className="nx-tab-content p-4 md:p-5">
+          {activeTab === 'cards' && (
+            <div className="flex flex-col gap-5">
+              <p className="text-[14px] text-noorix-muted m-0">{t('themePreviewCardsIntro')}</p>
+              <div className="grid gap-5 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+                {CARD_STYLES.map((item) => (
+                  <CardPreview
+                    key={item.id}
+                    styleId={item.id}
+                    nameAr={item.nameAr}
+                    nameEn={item.nameEn}
+                    descAr={item.descAr}
+                    descEn={item.descEn}
+                    isSelected={currentStyle === item.id}
+                    onSelect={handleSelect}
+                    lang={lang}
+                  />
+                ))}
+              </div>
+              <div className="p-4 bg-noorix-bg-muted rounded-xl text-[13px] text-noorix-muted">
+                <strong className="text-noorix-text">
+                  {t('themePreviewCurrent')} #{currentStyle}
+                </strong>
+                {' — '}
+                {t('themePreviewCardsFooter')}
+              </div>
+            </div>
+          )}
+          {activeTab === 'uilab' && <ThemeUILabTab />}
+        </div>
       </div>
-
-      <div className="p-4 bg-noorix-bg-muted rounded-xl text-[13px] text-noorix-muted mt-6">
-        <strong className="text-noorix-text">
-          {lang === 'ar' ? `الشكل المحدد حاليًا: #${currentStyle}` : `Current selection: #${currentStyle}`}
-        </strong>
-        {' — '}
-        {lang === 'ar' ? 'سيُطبَّق على جميع الكروت والجداول في لوحة التحكم، التقارير، الخزائن، الفواتير، وغيرها.' : 'Will be applied to all cards and tables in Dashboard, Reports, Vaults, Invoices, and more.'}
-      </div>
-    </div>
+    </ScreenShell>
   );
 }

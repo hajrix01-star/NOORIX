@@ -45,6 +45,25 @@
 
 شاشات كانت تستخدم `ScreenShell` مسبقاً (إعدادات، تقارير فرعية، إلخ) لم تُغيَّر في هذه الدفعة.
 
+## معرض المكوّنات المرقّم (`/theme-preview` → تبويب «معرض المكوّنات»)
+
+للطلبات مثل: «طبّق مثل **رقم 7** في شاشة X». المراجع ثابتة في الكود (`ThemeUILabTab.jsx` + `id="ui-lab-N"`):
+
+| الرقم | ماذا يمثل |
+|------|-----------|
+| 1 | عنوان صفحة + وصف (نمط `ScreenTitle` + نص ثانوي) |
+| 2 | `nx-page-header` + أزرار `sm` و`gap-2` |
+| 3 | `noorix-surface-card` + `p-0` + `ScreenTabs` underline + `nx-tab-content` |
+| 4 | أزرار `Button` بأحجام وألوان شائعة |
+| 5 | حقول `Input` في شبكة |
+| 6 | `Badge` |
+| 7 | `Divider` |
+| 8 | `Modal` + `KebabMenu` |
+| 9 | `SmartTable` ببيانات وهمية |
+| 10 | `DateFilterBar` |
+| 11 | `noorix-stat-card` |
+| 12 | `noorix-surface-card` + `nx-empty-state` |
+
 ## التحقق
 
 ```bash
