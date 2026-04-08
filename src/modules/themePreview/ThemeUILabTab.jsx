@@ -19,7 +19,7 @@ function LabBlock({ num, title, hint, children }) {
   return (
     <section
       id={`ui-lab-${num}`}
-      className="bg-noorix-surface border border-noorix-border rounded-xl shadow-sm overflow-hidden scroll-mt-4"
+      className="noorix-surface-card overflow-hidden scroll-mt-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-noorix-border bg-noorix-bg-muted/60 px-4 py-2.5">
         <div className="flex items-center gap-3 min-w-0">

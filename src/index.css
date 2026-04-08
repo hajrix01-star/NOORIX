@@ -120,6 +120,10 @@
   --noorix-border:      #dde3ec;
   --noorix-border-muted:rgba(148,163,184,0.22);
   --noorix-border-strong:rgba(100,130,170,0.45);
+  /* كروت السطح — نفس مظهر KPI في لوحة التحكم */
+  --noorix-card-radius: 12px;
+  --noorix-card-shadow: 0 2px 8px rgba(15, 23, 42, 0.07), 0 10px 28px rgba(15, 23, 42, 0.11);
+  --noorix-card-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.09), 0 14px 36px rgba(15, 23, 42, 0.13);
   /* سايدبار */
   --noorix-sidebar-bg:     linear-gradient(180deg,#1b3f73 0%,#123159 55%,#0a1f44 100%);
   --noorix-sidebar-text:   #ffffff;
@@ -1170,14 +1174,14 @@ a { color: inherit; text-decoration: none; }
 
 /* ========== بطاقات ========== */
 .noorix-surface-card {
-  border-radius: 8px;
+  border-radius: var(--noorix-card-radius);
   background-color: var(--noorix-bg-surface);
   border: 1px solid var(--noorix-border);
-  box-shadow: 0 1px 3px rgba(10,31,68,0.04), 0 4px 16px rgba(10,31,68,0.06);
+  box-shadow: var(--noorix-card-shadow);
   transition: box-shadow var(--noorix-transition), transform var(--noorix-transition);
 }
 @media (max-width: 640px) {
-  .noorix-surface-card { border-radius: 8px; }
+  .noorix-surface-card { border-radius: var(--noorix-card-radius); }
   /* كثافة الجوال: كروت بحشو nx-p-* داخل المحتوى الرئيسي */
   .app-main .noorix-surface-card.nx-p-24 { padding: 14px 12px; }
   .app-main .noorix-surface-card.nx-p-20 { padding: 12px 10px; }
@@ -1196,18 +1200,18 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ========== أشكال الكروت الاحترافية (1–10) — تطبيق حسب data-card-style ========== */
-/* 1. بسيط نظيف — Minimal Clean */
+/* 1. بسيط نظيف — نفس كروت لوحة التحكم (الافتراضي) */
 html[data-card-style="1"] .noorix-surface-card,
 html[data-card-style="1"] .noorix-table-frame,
 html[data-card-style="1"] .noorix-exec-card,
 html[data-card-style="1"] .noorix-stat-card {
-  border-radius: 14px;
+  border-radius: var(--noorix-card-radius);
   border: 1px solid var(--noorix-border);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 3px 10px rgba(10,31,68,0.05);
+  box-shadow: var(--noorix-card-shadow);
 }
 html[data-card-style="1"] .noorix-exec-card:hover,
 html[data-card-style="1"] .noorix-stat-card:hover {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.06), 0 6px 18px rgba(10,31,68,0.08);
+  box-shadow: var(--noorix-card-shadow-hover);
 }
 /* 2. مرتفع ناعم — Elevated Soft */
 html[data-card-style="2"] .noorix-surface-card,
@@ -1315,11 +1319,11 @@ html[data-card-style="10"] .noorix-stat-card {
 
 /* ========== إطار موحد للجداول — NOORIX UI MANIFESTO ========== */
 .noorix-table-frame {
-  border-radius: 12px;
+  border-radius: var(--noorix-card-radius);
   overflow: hidden;
   border: 1px solid var(--noorix-border);
   background: var(--noorix-bg-surface);
-  box-shadow: var(--noorix-shadow);
+  box-shadow: var(--noorix-card-shadow);
   width: 100%;
   max-width: 100%;
 }
@@ -1523,19 +1527,19 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-stat-card {
   background: var(--noorix-bg-surface);
   border: 1px solid var(--noorix-border);
-  border-radius: 14px;
+  border-radius: var(--noorix-card-radius);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 3px 10px rgba(10,31,68,0.05);
+  box-shadow: var(--noorix-card-shadow);
   display: flex;
   flex-direction: column;
   min-width: 130px;
   transition: box-shadow var(--noorix-transition), transform var(--noorix-transition);
 }
 .noorix-stat-card:hover {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.07), 0 8px 24px rgba(10,31,68,0.09);
+  box-shadow: var(--noorix-card-shadow-hover);
   transform: translateY(-2px);
 }
-.noorix-stat-card__stripe { height: 3px; }
+.noorix-stat-card__stripe { height: 4px; }
 .noorix-stat-card--blue   .noorix-stat-card__stripe { background: var(--noorix-accent-blue); }
 .noorix-stat-card--green  .noorix-stat-card__stripe { background: var(--noorix-accent-green); }
 .noorix-stat-card--amber  .noorix-stat-card__stripe { background: var(--noorix-accent-amber); }
@@ -1573,11 +1577,11 @@ html[data-card-style="10"] .noorix-stat-card {
 /* ── Summary Bar: شريط إحصاء أفقي متعدد الخانات ─────────── */
 .noorix-summary-bar {
   display: grid;
-  border-radius: 12px;
+  border-radius: var(--noorix-card-radius);
   border: 1px solid var(--noorix-border);
   background: var(--noorix-bg-surface);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: var(--noorix-card-shadow);
 }
 .noorix-summary-bar--5 { grid-template-columns: repeat(5, 1fr); }
 .noorix-summary-bar--4 { grid-template-columns: repeat(4, 1fr); }
@@ -1750,9 +1754,9 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 .noorix-exec-card {
   background: var(--noorix-bg-surface);
-  border-radius: 14px;
+  border-radius: var(--noorix-card-radius);
   border: 1px solid var(--noorix-border);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: var(--noorix-card-shadow);
   overflow: hidden;
   min-width: 0;
   display: flex;
@@ -1760,13 +1764,13 @@ html[data-card-style="10"] .noorix-stat-card {
   transition: box-shadow 150ms, transform 150ms;
 }
 .noorix-exec-card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  box-shadow: var(--noorix-card-shadow-hover);
   transform: translateY(-1px);
 }
 
 /* الشريط اللوني العلوي — نفس طريقة VaultCard */
 .noorix-exec-card__stripe {
-  height: 3px;
+  height: 4px;
   width: 100%;
   flex-shrink: 0;
 }

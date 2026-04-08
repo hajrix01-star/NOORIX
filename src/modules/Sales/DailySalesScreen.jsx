@@ -538,13 +538,13 @@ export default function DailySalesScreen() {
       {salesFullHistory && <DateFilterBar filter={dateFilter} />}
 
       {!hasCompany && (
-        <div className="bg-noorix-surface border border-noorix-border rounded-xl p-8 text-center text-noorix-muted text-[14px]">
+        <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
           {t('pleaseSelectCompany')}
         </div>
       )}
 
       {hasCompany && !salesViewSummariesList && (
-        <div className="bg-noorix-surface border border-noorix-border rounded-xl p-8 text-center text-noorix-muted text-[14px]">
+        <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
           {t('salesSummariesHiddenByRole')}
         </div>
       )}

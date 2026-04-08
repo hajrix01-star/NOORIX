@@ -7,12 +7,13 @@ import { cn } from './cn';
 
 const PAD = { none: '', sm: 'p-3', md: 'p-4 lg:p-5', lg: 'p-5 lg:p-6' };
 
-const STRIPE_COLOR = {
-  blue:   'border-t-noorix-blue',
-  green:  'border-t-noorix-green',
-  red:    'border-t-noorix-red',
-  amber:  'border-t-noorix-amber',
-  violet: 'border-t-noorix-violet',
+/** شريط علوي h-1 — نفس كروت لوحة التحكم */
+const STRIPE_TOP = {
+  blue:   'bg-noorix-blue',
+  green:  'bg-noorix-green',
+  red:    'bg-noorix-red',
+  amber:  'bg-noorix-amber',
+  violet: 'bg-noorix-violet',
 };
 
 const STAT_COLOR = {
@@ -28,9 +29,9 @@ export function SurfaceCard({ padding = 'md', className = '', children, onClick,
   return (
     <div
       className={cn(
-        'bg-noorix-surface rounded-xl border border-noorix-border shadow-sm noorix-surface-card',
+        'noorix-surface-card min-w-0',
         PAD[padding] ?? PAD.md,
-        onClick && 'cursor-pointer hover:shadow-md transition-shadow',
+        onClick && 'cursor-pointer hover:[box-shadow:var(--noorix-card-shadow-hover)]',
         className,
       )}
       onClick={onClick}
@@ -45,13 +46,18 @@ export function ExecCard({ stripe = 'blue', title, subtitle, value, icon, footer
   return (
     <div
       className={cn(
-        'bg-noorix-surface rounded-xl border border-noorix-border shadow-sm border-t-4',
-        STRIPE_COLOR[stripe] ?? STRIPE_COLOR.blue,
-        'noorix-exec-card',
+        'noorix-exec-card relative',
         className,
       )}
       {...rest}
     >
+      <span
+        className={cn(
+          'pointer-events-none absolute inset-x-0 top-0 z-[1] h-1',
+          STRIPE_TOP[stripe] ?? STRIPE_TOP.blue,
+        )}
+        aria-hidden
+      />
       <div className="flex items-center gap-2.5 p-3.5 pb-2">
         {icon && <span className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-noorix-bg-muted" aria-hidden="true">{icon}</span>}
         <div className="min-w-0">
@@ -72,7 +78,7 @@ export function StatCard({ color = 'blue', label, value, delta, icon, className 
   const palette = STAT_COLOR[color] ?? STAT_COLOR.blue;
   return (
     <div
-      className={cn('bg-noorix-surface rounded-xl border border-noorix-border shadow-sm p-4 noorix-stat-card', className)}
+      className={cn('noorix-stat-card p-4', className)}
       {...rest}
     >
       <div className="flex items-center gap-3">

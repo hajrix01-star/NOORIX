@@ -291,10 +291,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     <div className="noorix-calendar-layout">
       {/* ── التقويم ── */}
       <div
-        className="noorix-calendar-card nx-surface overflow-hidden p-4 w-full max-w-[760px] min-w-0"
-        style={{
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-        }}
+        className="noorix-calendar-card noorix-surface-card overflow-hidden p-4 w-full max-w-[760px] min-w-0"
       >
         <div className="flex items-center justify-between flex flex-wrap gap-2 mb-3">
           <div className="text-[13px] font-bold" style={{ color: CARD_COLORS.sales.accent }}>

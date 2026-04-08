@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useSales } from '../../../hooks/useSales';
-import { CARD_COLORS, CARD_BORDER_RADIUS } from '../../../utils/cardStyles';
+import { CARD_COLORS } from '../../../utils/cardStyles';
 import { fmt } from '../../../utils/format';
 import { EN_MONTHS } from '../../../modules/Reports/reportHelpers';
 
@@ -94,7 +94,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
 
   if (yearTotal === 0) {
     return (
-      <div className="rounded-xl border border-noorix-border bg-noorix-surface text-center text-noorix-muted p-12" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+      <div className="noorix-surface-card text-center text-noorix-muted p-12">
         <div className="mb-3 text-[40px] opacity-25"></div>
         <div className="text-[14px]">{t('noDataInPeriod')}</div>
       </div>
@@ -104,9 +104,13 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
   return (
     <div className="flex flex flex-col gap-6">
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
-        <div className="nx-surface overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-          <div className="h-[3px]" style={{ background: CARD_COLORS.sales.accent }} />
-          <div className="p-4 bg-noorix-surface">
+        <div className="noorix-surface-card relative overflow-hidden">
+          <span
+            className="pointer-events-none absolute inset-x-0 top-0 h-1 z-[1]"
+            style={{ background: CARD_COLORS.sales.accent }}
+            aria-hidden
+          />
+          <div className="relative p-4">
             <div className="text-[12px] font-bold mb-2" style={{ color: CARD_COLORS.sales.accent }}>{t('dashboardAppSalesRatio')}</div>
             <div className="text-[28px] font-black nx-font-numbers" style={{ color: CARD_COLORS.sales.accent }}>
               {fmt(appPercent, 1)}%
@@ -124,7 +128,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
       </div>
 
       {appByChannel.length > 0 && (
-        <div className="nx-surface overflow-hidden p-5" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div className="noorix-surface-card overflow-hidden p-5">
           <div className="text-[14px] font-bold mb-4">{t('reportChannels')} — {t('dashboardAppSales')}</div>
           <div className="flex flex flex-col gap-2.5">
             {appByChannel.map((ch) => {
@@ -140,7 +144,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
         </div>
       )}
 
-      <div className="nx-surface overflow-hidden p-5" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+      <div className="noorix-surface-card overflow-hidden p-5">
         <div className="text-[14px] font-bold mb-4" style={{ color: CARD_COLORS.sales.accent }}>{t('dashboardAppSalesChart')}</div>
           <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <div className="grid gap-2 items-end min-h-[100px] min-w-[360px] [grid-template-columns:repeat(12,minmax(36px,1fr))]">
