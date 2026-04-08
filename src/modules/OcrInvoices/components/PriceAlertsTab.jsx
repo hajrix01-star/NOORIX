@@ -4,7 +4,7 @@ import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { bulkDeletePriceHistory } from '../services/ocrApi';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { OCR_DISMISSED_ALERTS_KEY } from '../../../constants/storageKeys';
-import { readJsonStorage, writeJsonStorage } from '../../../utils/jsonStorage';
+import { readJsonStorage, writeJsonStorage, removeJsonStorage } from '../../../utils/jsonStorage';
 
 const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
@@ -268,7 +268,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
       )}
 
       {dismissed.size > 0 && (
-      <Button onClick={() => { setDismissed(new Set()); try { localStorage.removeItem('noorix-dismissed-alerts'); } catch {} }}
+      <Button onClick={() => { setDismissed(new Set()); removeJsonStorage(OCR_DISMISSED_ALERTS_KEY); }}
         className="self-center">
         {isAr ? `إظهار ${dismissed.size} تنبيه مخفي` : `Show ${dismissed.size} dismissed`}
       </Button>
