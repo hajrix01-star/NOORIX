@@ -120,9 +120,14 @@ export default function PayrollTab() {
     onSuccess: () => invalidateOnFinancialMutation(queryClient),
   });
 
-  const handleDeleteDraft = useCallback((id) => {
-    if (!window.confirm(t('deletePayrollRunConfirm') || 'هل تريد حذف مسيرة الراتب هذه؟')) return;
-    deleteRunMutation.mutate({ id });
+  const handleDeletePayrollRun = useCallback((row) => {
+    const st = String(row?.status || '').toLowerCase();
+    const msg =
+      st === 'draft'
+        ? (t('deletePayrollRunConfirm') || 'هل تريد حذف مسيرة الراتب هذه؟')
+        : (t('deletePayrollRunConfirmCompleted') || t('deletePayrollRunConfirm'));
+    if (!window.confirm(msg)) return;
+    deleteRunMutation.mutate({ id: row.id });
   }, [deleteRunMutation, t]);
 
   const items = data ?? [];
@@ -159,12 +164,12 @@ export default function PayrollTab() {
           type="payroll"
           onView={() => setDetailRunId(row.id)}
           onEdit={String(row.status || '').toLowerCase() === 'draft' ? () => setEditingRunId(row.id) : undefined}
-          onDelete={String(row.status || '').toLowerCase() === 'draft' && canDeletePayroll ? () => handleDeleteDraft(row.id) : undefined}
+          onDelete={canDeletePayroll ? () => handleDeletePayrollRun(row) : undefined}
           onApprove={String(row.status || '').toLowerCase() === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
           onPay={String(row.status || '').toLowerCase() === 'completed' ? () => openPayModal(row) : undefined}
         />
       ) },
-  ], [t, payrollStatusMap, updateStatusMutation, handleDeleteDraft, openPayModal, canDeletePayroll]);
+  ], [t, payrollStatusMap, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll]);
 
   const footerCells = (
     <>
@@ -207,14 +212,14 @@ export default function PayrollTab() {
             type="payroll"
             onView={() => setDetailRunId(row.id)}
             onEdit={String(row.status || '').toLowerCase() === 'draft' ? () => setEditingRunId(row.id) : undefined}
-            onDelete={String(row.status || '').toLowerCase() === 'draft' && canDeletePayroll ? () => handleDeleteDraft(row.id) : undefined}
+            onDelete={canDeletePayroll ? () => handleDeletePayrollRun(row) : undefined}
             onApprove={String(row.status || '').toLowerCase() === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
             onPay={String(row.status || '').toLowerCase() === 'completed' ? () => openPayModal(row) : undefined}
           />
         </div>
       </div>
     );
-  }, [payrollStatusMap, t, updateStatusMutation, handleDeleteDraft, openPayModal, canDeletePayroll]);
+  }, [payrollStatusMap, t, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll]);
 
   function handleExportExcel() {
     exportToExcel(exportData, `payroll-runs-${year}.xlsx`);

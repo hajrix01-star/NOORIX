@@ -2,7 +2,8 @@
  * HRController — مسارات الموارد البشرية
  *
  * الصلاحيات: HR_READ, HR_WRITE, HR_DELETE
- * حذف مسيرة رواتب: أدوار المالك / المشرف العام / manager فقط (@Roles PAYROLL_RUN_DELETE_ROLES)
+ * حذف مسيرة رواتب: أدوار المالك / المشرف العام / manager فقط (@Roles PAYROLL_RUN_DELETE_ROLES).
+ * مسودة: حذف مباشر. مكتملة: إلغاء فواتير الراتب المرتبطة + عكس تسويات السلف ثم حذف السجل.
  * companyId: من @Query أو @Headers('x-company-id')
  */
 import {

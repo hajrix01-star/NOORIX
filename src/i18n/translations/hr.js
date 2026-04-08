@@ -255,6 +255,10 @@ export default {
   payrollUpdated: { ar: 'تم تعديل مسيرة الراتب بنجاح', en: 'Payroll run updated successfully' },
   payrollDeleted: { ar: 'تم حذف مسيرة الراتب', en: 'Payroll run deleted' },
   deletePayrollRunConfirm: { ar: 'هل تريد حذف مسيرة الراتب هذه؟', en: 'Do you want to delete this payroll run?' },
+  deletePayrollRunConfirmCompleted: {
+    ar: 'المسيرة معتمدة أو مُصروفة: سُيُلغى صرف الرواتب في المحاسبة (فواتير الراتب المرتبطة)، وتُعكس تسويات السلف المرتبطة بها، ثم يُحذف السجل نهائياً. لا يمكن التراجع. هل تتابع؟',
+    en: 'This run is approved or paid: linked salary payout invoices will be cancelled in accounting, advance settlements tied to this run will be reversed, then the record will be removed permanently. This cannot be undone. Continue?',
+  },
   payrollMonthExists: { ar: 'مسيرة لهذا الشهر موجودة مسبقاً', en: 'Payroll run for this month already exists' },
   payrollEmploymentProrationNote: {
     ar: 'تناسب مدة العمل: {0} من {1} يوم',

@@ -196,6 +196,65 @@ export class HRService {
     }
   }
 
+  /**
+   * عكس تسويات السلف المرتبطة بمسيرة (قبل حذف سجل المسيرة).
+   * يطابق منطق prisma/delete-payroll-run-company-month.js
+   */
+  private async reversePayrollAdvanceSettlementsForDelete(
+    db: Pick<TenantPrismaService, 'invoice' | 'employeeDeduction'>,
+    companyId: string,
+    runNumber: string,
+  ): Promise<void> {
+    const deductions = await db.employeeDeduction.findMany({
+      where: {
+        companyId,
+        deductionType: 'advance',
+        notes: { contains: `مسير ${runNumber}` },
+      },
+    });
+
+    const esc = runNumber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const advLineRe = new RegExp(`^\\[ADV_PAYROLL\\] run=${esc},`);
+
+    for (const d of deductions) {
+      if (!d.referenceId) continue;
+      const inv = await db.invoice.findFirst({
+        where: { id: d.referenceId, companyId, kind: 'advance' },
+      });
+      if (!inv) continue;
+
+      const prevSettled = Number(inv.settledAmount ?? 0);
+      const deductAmt = Number(d.amount);
+      const newSettled = Math.max(0, prevSettled - deductAmt);
+      const total = Number(inv.totalAmount ?? 0);
+      const newNotes = String(inv.notes || '')
+        .split('\n')
+        .filter((line) => !advLineRe.test(line.trim()))
+        .join('\n')
+        .trim();
+
+      const eps = 0.02;
+      await db.invoice.update({
+        where: { id: inv.id },
+        data: {
+          settledAmount: new Prisma.Decimal(newSettled),
+          settledAt: newSettled >= total - eps ? inv.settledAt : null,
+          notes: newNotes || null,
+        },
+      });
+    }
+
+    if (deductions.length) {
+      await db.employeeDeduction.deleteMany({
+        where: {
+          companyId,
+          deductionType: 'advance',
+          notes: { contains: `مسير ${runNumber}` },
+        },
+      });
+    }
+  }
+
   /** مجموع أجزاء الخزائن يجب أن يطابق صافي المسيرة (مجموع صافي السطور). */
   private assertPayrollRunVaultSplitsMatchTotal(
     splits: Array<{ amount: number | string }>,
@@ -503,11 +562,51 @@ export class HRService {
       where: { id, companyId },
     });
     if (!existing) throw new NotFoundException(`مسيرة الرواتب ${id} غير موجودة.`);
-    if (existing.status === 'completed') {
-      throw new BadRequestException('لا يمكن حذف مسيرة مكتملة.');
+
+    if (existing.status === 'draft') {
+      await this.prisma.payrollRun.delete({ where: { id } });
+      await this.audit.log({
+        companyId,
+        userId,
+        action: 'delete',
+        entity: 'payroll_run',
+        entityId: id,
+        oldValue: { runNumber: existing.runNumber, status: 'draft' },
+      });
+      return { deleted: true, id };
     }
 
-    await this.prisma.payrollRun.delete({ where: { id } });
+    if (existing.status !== 'completed') {
+      throw new BadRequestException('لا يمكن حذف مسيرة بهذه الحالة.');
+    }
+
+    const salaryInvoices = await this.prisma.invoice.findMany({
+      where: {
+        companyId,
+        batchId: id,
+        kind: 'salary',
+      },
+    });
+
+    let cancelledSalaryCount = 0;
+    for (const inv of salaryInvoices) {
+      if (inv.status === 'cancelled') continue;
+      await this.financialCore.cancelOperation(
+        {
+          companyId,
+          referenceType: 'salary',
+          referenceId: inv.id,
+          reason: `حذف مسيرة رواتب ${existing.runNumber}`,
+        },
+        userId,
+      );
+      cancelledSalaryCount += 1;
+    }
+
+    await this.prisma.withTenant(async (tx) => {
+      await this.reversePayrollAdvanceSettlementsForDelete(tx, companyId, existing.runNumber);
+      await tx.payrollRun.delete({ where: { id } });
+    });
 
     await this.audit.log({
       companyId,
@@ -515,10 +614,19 @@ export class HRService {
       action: 'delete',
       entity: 'payroll_run',
       entityId: id,
-      oldValue: { runNumber: existing.runNumber },
+      oldValue: {
+        runNumber: existing.runNumber,
+        status: 'completed',
+        salaryInvoicesFound: salaryInvoices.length,
+        salaryInvoicesCancelled: cancelledSalaryCount,
+      },
     });
 
-    return { deleted: true, id };
+    return {
+      deleted: true,
+      id,
+      cancelledSalaryInvoices: cancelledSalaryCount,
+    };
   }
 
   async issuePayrollPayment(dto: IssuePayrollPaymentDto, userId?: string) {
