@@ -179,24 +179,20 @@ export default function ReportsScreen() {
                 const c = CARD_COLORS[card.key];
                 const accent = isProfitCard ? (val >= 0 ? c.accent : c.accentLoss) : c.accent;
                 return (
-                  <div
-                    key={card.key}
-                    style={{
-                      borderRadius: 14,
-                      border: '1px solid var(--noorix-border)',
-                      background: 'var(--noorix-bg-surface)',
-                      overflow: 'hidden',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                    }}
-                  >
-                    <div style={{ height: 3, background: accent }} />
-                    <div className="p-4 bg-noorix-surface">
-                      <div style={{ fontSize: 12, color: accent, marginBottom: 8, fontWeight: 700 }}>{card.label}</div>
-                      <div style={{ fontSize: 24, fontWeight: 900, color: accent, fontFamily: 'var(--noorix-font-numbers)' }}>
+                  <div key={card.key} className="noorix-surface-card relative min-w-0 overflow-hidden">
+                    <div className="h-1" style={{ background: accent }} aria-hidden />
+                    <div className="p-4">
+                      <div className="mb-2 text-[12px] font-bold" style={{ color: accent }}>
+                        {card.label}
+                      </div>
+                      <div
+                        className="text-[24px] font-black nx-font-numbers leading-tight"
+                        style={{ color: accent }}
+                      >
                         {moneyText(getCardValue(card.key))}
                       </div>
                       {profitPct != null && (
-                        <div style={{ fontSize: 12, color: accent, marginTop: 6, opacity: 0.9 }}>
+                        <div className="mt-1.5 text-[12px] opacity-90" style={{ color: accent }}>
                           {t('reportProfitMargin')}: {profitPct}%
                         </div>
                       )}
