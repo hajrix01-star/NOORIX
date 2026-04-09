@@ -203,7 +203,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
         </div>
         <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
           <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalAmount')}</div>
-          <div className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}><FmtNum n={totals.amount} /> SR</div>
+          <div dir="ltr" className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}><FmtNum n={totals.amount} /> SR</div>
         </div>
       </div>
 

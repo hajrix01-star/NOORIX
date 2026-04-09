@@ -1726,6 +1726,8 @@ html[data-card-style="10"] .noorix-stat-card {
   font-weight: 700;
   color: var(--noorix-text);
   text-align: left;
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 .noorix-result-panel__row--highlight {
   background: var(--noorix-green-4);

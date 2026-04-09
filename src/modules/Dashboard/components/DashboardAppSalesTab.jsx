@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useSales } from '../../../hooks/useSales';
-import { CARD_COLORS } from '../../../utils/cardStyles';
+import { KPI_CARD_SPARKLINE_COLORS } from '../../../constants/kpiCardTheme';
 import { fmt } from '../../../utils/format';
 import { EN_MONTHS } from '../../../modules/Reports/reportHelpers';
 import { FmtNum, MetricCard } from '../../../ui';

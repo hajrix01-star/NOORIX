@@ -121,7 +121,7 @@ export function SalesEntryModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-green-12)' }}>
               <span className="text-[11px] text-noorix-muted mb-1">{t('total')}</span>
-              <span className="text-[20px] font-black nx-font-numbers" style={{ color: 'var(--noorix-accent-green)' }}><FmtNum n={savedSummary.totalAmount} /></span>
+              <span dir="ltr" className="text-[20px] font-black nx-font-numbers" style={{ color: 'var(--noorix-accent-green)' }}><FmtNum n={savedSummary.totalAmount} /></span>
               <span className="nx-sar">SR</span>
             </div>
             <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-blue-8)' }}>

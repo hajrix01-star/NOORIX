@@ -279,12 +279,12 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
             </div>
             <div>
               <div className="text-[10px] text-noorix-muted mb-0.5">{t('orderTotalAmount')}</div>
-              <div className="text-[13px] font-bold nx-font-numbers text-noorix-navy"><FmtNum n={Number(o.totalAmount ?? 0)} /> SR</div>
+              <div dir="ltr" className="text-[13px] font-bold nx-font-numbers text-noorix-navy"><FmtNum n={Number(o.totalAmount ?? 0)} /> SR</div>
             </div>
             {pettyGiven != null && (
               <div>
                 <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersPettyCashGiven')}</div>
-                <div className="text-[13px] nx-font-numbers text-noorix-blue"><FmtNum n={pettyGiven} /> SR</div>
+                <div dir="ltr" className="text-[13px] nx-font-numbers text-noorix-blue"><FmtNum n={pettyGiven} /> SR</div>
               </div>
             )}
             {cumRem != null && (

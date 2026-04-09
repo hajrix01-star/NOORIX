@@ -442,15 +442,15 @@ export default function DailySalesScreen() {
       <div className="grid grid-cols-3 gap-2 mt-1">
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('total')}</div>
-          <div className="text-[13px] font-bold text-noorix-green ltr"><FmtNum n={row.totalAmount} /></div>
+          <div dir="ltr" className="text-[13px] font-bold text-noorix-green"><FmtNum n={row.totalAmount} /></div>
         </div>
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('customers')}</div>
-          <div className="text-[13px] font-bold text-noorix-blue ltr">{row.customerCount ?? 0}</div>
+          <div className="text-[13px] font-bold text-noorix-blue">{row.customerCount ?? 0}</div>
         </div>
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('avgPerOrder')}</div>
-          <div className="text-[13px] font-bold text-noorix-violet ltr"><FmtNum n={row.avgPerCustomer} /></div>
+          <div dir="ltr" className="text-[13px] font-bold text-noorix-violet"><FmtNum n={row.avgPerCustomer} /></div>
         </div>
       </div>
       <div className="flex justify-end mt-1">

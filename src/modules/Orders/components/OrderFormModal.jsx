@@ -189,7 +189,7 @@ export function OrderFormModal({
           <div className="flex items-center flex-wrap gap-4 justify-center mb-5">
             <div className="text-center">
               <div className="text-[11px] text-noorix-muted">{t('total')}</div>
-              <div className="text-[18px] nx-font-numbers text-noorix-green font-[900]"><FmtNum n={savedOrder.totalAmount ?? 0} /> ?</div>
+              <div dir="ltr" className="text-[18px] nx-font-numbers text-noorix-green font-[900]"><FmtNum n={savedOrder.totalAmount ?? 0} /> ?</div>
             </div>
           </div>
           <div className="flex flex-col gap-2.5 items-center">

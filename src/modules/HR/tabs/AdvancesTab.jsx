@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AdvancesTab — السلفيات (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
@@ -447,7 +447,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
         {parsedCount > 1 && installmentAmt && (
           <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-noorix-bg-muted border border-noorix-border">
             <span className="text-[13px] text-noorix-muted">{t('installmentAmount')}</span>
-            <span className="text-[15px] font-bold text-noorix-blue ltr">
+            <span dir="ltr" className="text-[15px] font-bold text-noorix-blue">
               <FmtNum n={installmentAmt} /> <span className="nx-sar">SR</span>
             </span>
           </div>
