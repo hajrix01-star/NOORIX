@@ -56,8 +56,8 @@ export default function OwnerDashboardScreen() {
 
   const companyList = companies?.filter((c) => !c.isArchived) || [];
   const isMobile = useIsNarrow700();
-  const allSelected = selectedCompanyIds.size === 0;
-  const idsToFetch = allSelected ? companyList.map((c) => c.id) : [...selectedCompanyIds];
+  const allSelected = selectedCompanyIds.size === companyList.length && companyList.length > 0;
+  const idsToFetch = [...selectedCompanyIds];
   const { reportsByCompany, isLoading, isError, error } = useOwnerReports({ companyIds: idsToFetch, year });
 
   const toggleCompany = (id) => {
