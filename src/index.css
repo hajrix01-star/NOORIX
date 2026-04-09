@@ -2792,29 +2792,40 @@ input:focus, select:focus, textarea:focus {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 10px 16px;
   align-items: center;
   border-bottom: 1px solid var(--noorix-border);
+  font-size: 13px;
+  transition: background 0.12s;
 }
 .employee-profile-salary-row:last-child {
   border-bottom: none;
 }
-.employee-profile-salary-row--total {
+.employee-profile-salary-row:not(.employee-profile-salary-row--total):hover {
   background: var(--noorix-bg-muted);
+}
+.employee-profile-salary-row--total {
+  background: color-mix(in srgb, var(--noorix-green) 8%, transparent);
+  border-top: 2px solid color-mix(in srgb, var(--noorix-green) 30%, transparent);
 }
 .employee-profile-salary-row__label {
   font-weight: 500;
+  color: var(--noorix-text);
 }
 .employee-profile-salary-row__label--strong {
   font-weight: 700;
+  color: var(--noorix-text);
 }
 .employee-profile-salary-row__amount {
   font-family: var(--noorix-font-numbers);
   text-align: end;
   font-weight: 600;
+  color: var(--noorix-text);
 }
 .employee-profile-salary-row__amount--total {
   font-weight: 800;
+  font-size: 15px;
+  color: var(--noorix-accent-green);
 }
 .employee-profile-header-bar {
   max-width: 1160px;

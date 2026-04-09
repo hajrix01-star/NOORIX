@@ -25,8 +25,7 @@ import {
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { assertApiOk } from '../../utils/apiResponse';
 import { hrFmt } from './utils/hrFmt';
-import { Badge, Button, ScreenShell } from '../../ui';
-import SmartTable from '../../components/common/SmartTable';
+import { Badge, Button, ScreenShell, Spinner, SmartTable, cn } from '../../ui';
 import {
   parseWorkHours,
   overtimePay,
@@ -40,6 +39,24 @@ import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildLeaveRequestStatusMap, buildResidencyRecordStatusMap } from '../../constants/badgeMaps';
 
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
+
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] || '') + (parts[1][0] || '');
+  return (parts[0] || '').slice(0, 2) || '?';
+}
+
+function ProfileInfoRow({ label, value, accent = false }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-noorix-border last:border-0">
+      <span className="text-[12px] text-noorix-muted shrink-0">{label}</span>
+      <span className={cn('text-[13px] font-medium text-end', accent ? 'text-noorix-red' : 'text-noorix-text')}>
+        {value || '—'}
+      </span>
+    </div>
+  );
+}
 
 export default function EmployeeProfileScreen() {
   const { id } = useParams();
@@ -316,13 +333,23 @@ export default function EmployeeProfileScreen() {
     }
   };
 
-  if (isLoading) return <div className="p-6">{t('loading')}</div>;
+  if (isLoading) {
+    return (
+      <ScreenShell>
+        <div className="flex items-center justify-center py-20">
+          <Spinner size="lg" />
+        </div>
+      </ScreenShell>
+    );
+  }
   if (error || !employee) {
     return (
-      <div className="p-6 grid gap-3">
-        <p className="nx-cell-muted">{t('noEmployees')}</p>
-        <div><Button onClick={() => navigate('/hr')}>← العودة للقائمة</Button></div>
-      </div>
+      <ScreenShell>
+        <div className="noorix-surface-card p-8 flex flex-col items-center gap-4 text-center">
+          <p className="text-noorix-muted text-[14px] m-0">{t('noEmployees')}</p>
+          <Button onClick={() => navigate('/hr')}>{t('employeeProfileBack')}</Button>
+        </div>
+      </ScreenShell>
     );
   }
 
@@ -391,28 +418,51 @@ export default function EmployeeProfileScreen() {
       <div className="employee-profile-layout">
       {/* معلومات أساسية */}
       <div className="noorix-surface-card p-6">
-        <h1 className="nx-page-title mb-4">{employeeDisplayName(employee, lang)}</h1>
-        <p className="nx-cell-muted m-0">{employee.jobTitle || '—'}</p>
-        <p className="text-[13px] mt-2 mb-0">{t('employeeSerial')}: {employee.employeeSerial || '—'}</p>
-        <p className="text-[13px] mt-1 mb-0">{t('joinDate')}: {formatSaudiDate(employee.joinDate)}</p>
-        <div className="mt-2.5">
-          <Badge {...Badge.fromStatus(employee.status, EMP_STATUS_MAP)} />
+        <div className="flex items-start gap-4 mb-5">
+          <div className="w-14 h-14 rounded-full bg-noorix-blue flex items-center justify-center text-white text-[20px] font-bold shrink-0 select-none">
+            {getInitials(employeeDisplayName(employee, lang))}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h2 className="text-[18px] font-bold text-noorix-text m-0 leading-snug">
+                {employeeDisplayName(employee, lang)}
+              </h2>
+              <Badge {...Badge.fromStatus(employee.status, EMP_STATUS_MAP)} />
+            </div>
+            <p className="text-noorix-muted text-[13px] m-0">{employee.jobTitle || '—'}</p>
+          </div>
+        </div>
+        <div className="border-t border-noorix-border pt-1">
+          <ProfileInfoRow label={t('employeeSerial')} value={employee.employeeSerial} />
+          <ProfileInfoRow label={t('joinDate')} value={formatSaudiDate(employee.joinDate)} />
+          {employee.workHours ? (
+            <ProfileInfoRow label={t('workHours')} value={String(employee.workHours)} />
+          ) : null}
+          {employee.status === 'terminated' && employee.terminationDate ? (
+            <ProfileInfoRow label={t('terminationDate')} value={formatSaudiDate(employee.terminationDate)} accent />
+          ) : null}
         </div>
       </div>
 
       {/* تفاصيل الراتب */}
       <div className="noorix-surface-card p-6">
-        <h2 className="text-[18px] font-bold text-noorix-text mb-4">{t('totalSalary')}</h2>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <h2 className="text-[16px] font-bold text-noorix-text m-0">{t('salaryBreakdown')}</h2>
+          <div className="text-end shrink-0">
+            <div className="text-[11px] text-noorix-muted mb-0.5">{t('totalSalary')}</div>
+            <div className="text-[22px] font-bold text-noorix-green ltr">{hrFmt(total)}</div>
+          </div>
+        </div>
         <div className="border border-noorix-border rounded-xl overflow-hidden">
-          {salaryRows.map((row, idx) => (
+          {salaryRows.filter((r) => !r.total).map((row, idx) => (
             <div
               key={`${row.label}-${idx}`}
-              className={`employee-profile-salary-row${row.total ? ' employee-profile-salary-row--total' : ''}`}
+              className="employee-profile-salary-row"
             >
-              <div className={row.total || row.strong ? 'employee-profile-salary-row__label employee-profile-salary-row__label--strong' : 'employee-profile-salary-row__label'}>{row.label}</div>
-              <div className={row.total ? 'employee-profile-salary-row__amount employee-profile-salary-row__amount--total' : 'employee-profile-salary-row__amount'}>
-                {hrFmt(row.amount)}
+              <div className={row.strong ? 'employee-profile-salary-row__label employee-profile-salary-row__label--strong' : 'employee-profile-salary-row__label'}>
+                {row.label}
               </div>
+              <div className="employee-profile-salary-row__amount">{hrFmt(row.amount)}</div>
             </div>
           ))}
         </div>
@@ -491,7 +541,7 @@ export default function EmployeeProfileScreen() {
           innerPadding={8}
           columns={[
             { key: 'date',      label: t('transactionDate'),            width: '12%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
-            { key: 'typeLabel', label: t('status') || 'النوع',         width: '18%', render: (v) => v },
+            { key: 'typeLabel', label: t('operationType'),              width: '18%', render: (v) => v },
             { key: 'amount',    label: t('advanceAmount') || 'المبلغ', numeric: true, width: '15%', render: (v) => (
               <span className={`nx-cell-num${v < 0 ? ' nx-cell-num--red' : ''}`}>{hrFmt(v)}</span>
             ) },
@@ -545,9 +595,10 @@ export default function EmployeeProfileScreen() {
           rowNumberWidth="1%"
           innerPadding={8}
           columns={[
-            { key: 'totalAmount',     label: t('advanceAmount'),    numeric: true, width: '25%', render: (v) => <span className="nx-cell-num nx-cell-bold">{hrFmt(v)}</span> },
-            { key: 'transactionDate', label: t('transactionDate'),                width: '25%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
-            { key: 'status',          label: t('status'),                         width: '25%', render: (v) => <Badge {...Badge.fromStatus(v, ADVANCE_STATUS_MAP)} size="sm" /> },
+            { key: 'totalAmount',     label: t('advanceAmount'),    numeric: true, width: '20%', render: (v) => <span className="nx-cell-num nx-cell-bold">{hrFmt(v)}</span> },
+            { key: 'transactionDate', label: t('transactionDate'),                width: '20%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'status',          label: t('status'),                         width: '20%', render: (v) => <Badge {...Badge.fromStatus(v, ADVANCE_STATUS_MAP)} size="sm" /> },
+            { key: 'notes',           label: t('invoiceNotesColumn'),             width: '40%', render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
           ]}
           data={advances}
           total={advances.length}
@@ -585,7 +636,7 @@ export default function EmployeeProfileScreen() {
       {/* المستندات */}
       <div className="noorix-surface-card noorix-table-frame overflow-hidden">
         <div className="nx-section-header">
-          <span className="nx-section-header__title">{t('addDocument')}</span>
+          <span className="nx-section-header__title">{t('employeeDocuments')}</span>
           <div className="nx-section-header__actions">
             <input ref={docFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" className="hidden" onChange={handleUploadDoc} />
             <Button size="sm" disabled={uploading} loading={uploading} onClick={() => docFileRef.current?.click()}>
