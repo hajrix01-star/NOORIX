@@ -175,12 +175,16 @@ const SmartTable = memo(function SmartTable({
                 {columns.map((col) => {
                   const align = getAlign(col);
                   const isSorted = sortKey === col.key;
-                  const shrink = col.shrink === true;
+                  // numeric columns without an explicit width shrink automatically
+                  const shrink = col.shrink === true || (col.numeric === true && !col.width);
                   const actionSticky = col.key === 'actions' && stickyActionColumn;
+                  // noorix-cell-truncate adds white-space:nowrap which expands cells in auto layout
+                  // only apply it in fixed layout (where width is enforced) or when col.maxWidth bounds it
+                  const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
                   return (
                     <th
                       key={col.key}
-                      className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-th-shrink' : ''}${!col.numeric && col.key !== 'actions' && !shrink ? ' noorix-cell-truncate' : ''}`}
+                      className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-th-shrink' : ''}${shouldTruncate ? ' noorix-cell-truncate' : ''}`}
                       style={{
                         padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: align,
                         width: col.width ?? (shrink ? '1%' : undefined),
@@ -228,12 +232,13 @@ const SmartTable = memo(function SmartTable({
                     const value  = row[col.key];
                     const align  = getAlign(col);
                     const family = col.numeric ? 'var(--noorix-font-numbers)' : undefined;
-                    const shrink = col.shrink === true;
+                    const shrink = col.shrink === true || (col.numeric === true && !col.width);
                     const actionSticky = col.key === 'actions' && stickyActionColumn;
+                    const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
                     return (
                       <td
                         key={col.key}
-                        className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-td-shrink' : ''}${!col.numeric && col.key !== 'actions' && !shrink ? ' noorix-cell-truncate' : ''}`}
+                        className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-td-shrink' : ''}${shouldTruncate ? ' noorix-cell-truncate' : ''}`}
                         style={{
                           padding: cellPad.td,
                           fontSize: cellFs,
