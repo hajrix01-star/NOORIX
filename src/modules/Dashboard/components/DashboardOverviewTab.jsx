@@ -480,7 +480,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                     <span className="text-noorix-text truncate">{ch.name}</span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <FmtNum n={ch.value, 0} className="nx-font-numbers font-bold text-noorix-text" />
+                    <FmtNum n={ch.value} className="nx-font-numbers font-bold text-noorix-text" />
                     <span className="text-noorix-muted">({ch.pct}%)</span>
                   </div>
                 </div>
