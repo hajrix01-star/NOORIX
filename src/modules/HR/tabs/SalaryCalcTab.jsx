@@ -106,8 +106,21 @@ export default function SalaryCalcTab() {
   const editableAllowances = housing.plus(transport).plus(other);
   const customAllowanceTotal = toDecimal(emp ? (allowanceTotals.get(emp.id) || 0) : 0);
   const totalAllowances = editableAllowances.plus(customAllowanceTotal);
-  const { basic: basicNum, inverseWarning } = emp
-    ? basicSalaryFromTargetTotalInclusiveOvertime(emp, allowanceTotals.get(emp.id) || 0, totalTarget.toNumber())
+  /*
+   * نمرر نسخة مؤقتة من emp تعكس قيم الـ UI الحالية (ساعات، أيام، بدلات)
+   * حتى يعمل الحساب العكسي بالأرقام التي يراها المستخدم لا ما في الداتابيز.
+   */
+  const empForInverse = emp ? {
+    ...emp,
+    workHours:         String(hours),
+    workSchedule:      mergeOvertimeWorkDaysIntoSchedule(emp.workSchedule || '', workDays),
+    housingAllowance:  housing.toNumber(),
+    transportAllowance: transport.toNumber(),
+    otherAllowance:    other.toNumber(),
+  } : null;
+
+  const { basic: basicNum, inverseWarning } = empForInverse
+    ? basicSalaryFromTargetTotalInclusiveOvertime(empForInverse, allowanceTotals.get(emp.id) || 0, totalTarget.toNumber())
     : { basic: 0, inverseWarning: false };
   const basic = toDecimal(basicNum);
   const actualWage = basic.plus(totalAllowances);
