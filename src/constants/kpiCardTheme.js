@@ -1,13 +1,44 @@
 /**
- * kpiCardTheme.js — المصدر الواحد لألوان جميع الكروت في النظام
+ * kpiCardTheme.js — مرآة Design Tokens
  *
- * أي تغيير في الألوان يتم هنا وينعكس على كل الشاشات تلقائياً:
- *  - كروت KPI (لوحة التحكم + المالك + التقارير + مبيعات التطبيق)
- *  - كروت الخزائن (نقدي / بنك / تطبيق)
+ * المصدر الحقيقي الوحيد: @theme في src/index.css (--color-nx-*)
+ *
+ * هذا الملف يوفّر الألوان بصيغتين:
+ *
+ *  1. CSS variables → للـ MetricCard + inline styles + CSS contexts
+ *     KPI_CARD_SPARKLINE_COLORS  /  VAULT_TYPE_COLORS
+ *
+ *  2. Hex literals → للـ Recharts الذي لا يدعم var() كـ stroke/fill
+ *     KPI_RECHARTS_COLORS  /  VAULT_RECHARTS_COLORS
+ *
+ * ⚠️ عند تغيير أي لون: غيّره في @theme أولاً ثم حدّث الـ hex هنا.
  */
 
-/* ── كروت KPI المالية ────────────────────────────────────────── */
+/* ══ CSS variables (للكروت والـ inline styles) ══════════════════ */
+
 export const KPI_CARD_SPARKLINE_COLORS = {
+  sales:       'var(--color-nx-sales)',
+  grossProfit: 'var(--color-nx-profit)',
+  netProfit:   'var(--color-nx-net-profit)',
+  purchases:   'var(--color-nx-purchases)',
+  expenses:    'var(--color-nx-expenses)',
+};
+
+export const VAULT_TYPE_COLORS = {
+  cash: 'var(--color-nx-vault-cash)',
+  bank: 'var(--color-nx-vault-bank)',
+  app:  'var(--color-nx-vault-app)',
+};
+
+export const VAULT_TYPE_BG = {
+  cash: 'color-mix(in srgb, var(--color-nx-vault-cash) 10%, transparent)',
+  bank: 'color-mix(in srgb, var(--color-nx-vault-bank) 10%, transparent)',
+  app:  'color-mix(in srgb, var(--color-nx-vault-app)  10%, transparent)',
+};
+
+/* ══ Hex literals (للـ Recharts فقط) ════════════════════════════ */
+
+export const KPI_RECHARTS_COLORS = {
   sales:       '#185FA5',
   grossProfit: '#3B6D11',
   netProfit:   '#854F0B',
@@ -15,20 +46,13 @@ export const KPI_CARD_SPARKLINE_COLORS = {
   expenses:    '#A32D2D',
 };
 
-/* ── كروت الخزائن ────────────────────────────────────────────── */
-export const VAULT_TYPE_COLORS = {
+export const VAULT_RECHARTS_COLORS = {
   cash: '#16a34a',
   bank: '#2563eb',
   app:  '#7c3aed',
 };
 
-export const VAULT_TYPE_BG = {
-  cash: 'rgba(22,163,74,0.10)',
-  bank: 'rgba(37,99,235,0.10)',
-  app:  'rgba(124,58,237,0.10)',
-};
-
-/** @deprecated استخدم KPI_CARD_TOP_BAR_CLASS عبر MetricCard.color مباشرة */
+/** @deprecated — استُبدل بـ MetricCard.color prop مباشرة */
 export const KPI_CARD_TOP_BAR_CLASS = {
   sales:       'bg-[#185FA5]',
   grossProfit: 'bg-[#3B6D11]',

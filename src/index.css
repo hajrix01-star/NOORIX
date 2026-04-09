@@ -32,6 +32,26 @@
   --color-white-45:        rgba(255,255,255,0.45);
   --color-white-92:        rgba(255,255,255,0.92);
 
+  /* ── ألوان المؤشرات والكروت (Design Tokens) ──────────────────
+   * المصدر الوحيد الحقيقي للألوان في النظام.
+   * تتولد منها تلقائياً:
+   *   • Tailwind classes: text-nx-sales / bg-nx-sales / border-nx-sales …
+   *   • CSS variables:    var(--color-nx-sales)
+   * للـ Recharts (يحتاج hex): استخدم KPI_RECHARTS_COLORS من kpiCardTheme.js
+   * ─────────────────────────────────────────────────────────── */
+
+  /* كروت KPI المالية */
+  --color-nx-sales:      #185FA5;
+  --color-nx-profit:     #3B6D11;
+  --color-nx-net-profit: #854F0B;
+  --color-nx-purchases:  #888780;
+  --color-nx-expenses:   #A32D2D;
+
+  /* كروت الخزائن */
+  --color-nx-vault-cash: #16a34a;
+  --color-nx-vault-bank: #2563eb;
+  --color-nx-vault-app:  #7c3aed;
+
   /* خط Cairo */
   --font-cairo: 'Cairo', system-ui, sans-serif;
   --font-sans:  'Cairo', system-ui, sans-serif;

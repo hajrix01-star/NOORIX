@@ -3,7 +3,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS } from '../constants/treasuryConstants';
-import { VAULT_TYPE_COLORS } from '../../../constants/kpiCardTheme';
+import { VAULT_TYPE_COLORS, VAULT_TYPE_BG } from '../../../constants/kpiCardTheme';
 import { Badge, Button, FmtNum, MetricCard } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
@@ -169,7 +169,7 @@ const VaultCard = memo(function VaultCard({
           <div
             className="flex items-center justify-center w-[38px] h-[38px] rounded-[10px] shrink-0"
             style={{
-              background: isArchived ? 'var(--noorix-bg-muted)' : accentColor + '14',
+              background: isArchived ? 'var(--noorix-bg-muted)' : (VAULT_TYPE_BG[vault.type] || 'var(--noorix-bg-muted)'),
               color: isArchived ? 'var(--noorix-text-muted)' : accentColor,
             }}
           >
