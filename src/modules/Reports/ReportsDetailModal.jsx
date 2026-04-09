@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { amountText, moneyText, percentText, truncateText } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
-import { Button, AdaptiveSheet } from '../../ui';
+import { Button, AdaptiveSheet, MetricCard } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import { useIsMobile640 } from '../../hooks/useMediaQuery';
 
@@ -93,24 +93,24 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
       {!isLoading && !error && data && (
         <>
           <div className="grid gap-3 mb-4 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
-            <div className="noorix-surface-card p-3.5">
-              <div className="text-[12px] text-noorix-muted">{data.month ? t('selectedMonth') : t('reportBreakdown')}</div>
-              <div className="mt-1.5 nx-font-numbers font-extrabold text-[20px]">{moneyText(data.contextAmount)}</div>
-            </div>
+            <MetricCard color="var(--color-nx-purchases)">
+              <MetricCard.Header label={data.month ? t('selectedMonth') : t('reportBreakdown')} />
+              <MetricCard.Value value={moneyText(data.contextAmount)} />
+            </MetricCard>
             {data.kind === 'invoices' && (
               <>
-                <div className="noorix-surface-card p-3.5">
-                  <div className="text-[12px] text-noorix-muted">{t('reportAnnualTotal')}</div>
-                  <div className="mt-1.5 nx-font-numbers font-extrabold text-[20px]">{moneyText(data.annualAmount)}</div>
-                </div>
-                <div className="noorix-surface-card p-3.5">
-                  <div className="text-[12px] text-noorix-muted">{t('reportSalesShare')}</div>
-                  <div className="mt-1.5 nx-font-numbers font-extrabold text-[20px]">{percentText(data.contextPercentOfSales)}</div>
-                </div>
-                <div className="noorix-surface-card p-3.5">
-                  <div className="text-[12px] text-noorix-muted">{t('reportInvoicesCount')}</div>
-                  <div className="mt-1.5 nx-font-numbers font-extrabold text-[20px]">{Number(data.invoiceCount || 0).toLocaleString('en')}</div>
-                </div>
+                <MetricCard color="var(--color-nx-sales)">
+                  <MetricCard.Header label={t('reportAnnualTotal')} />
+                  <MetricCard.Value value={moneyText(data.annualAmount)} />
+                </MetricCard>
+                <MetricCard color="var(--color-nx-net-profit)">
+                  <MetricCard.Header label={t('reportSalesShare')} />
+                  <MetricCard.Value value={percentText(data.contextPercentOfSales)} />
+                </MetricCard>
+                <MetricCard color="var(--color-nx-purchases)">
+                  <MetricCard.Header label={t('reportInvoicesCount')} />
+                  <MetricCard.Value value={Number(data.invoiceCount || 0).toLocaleString('en')} />
+                </MetricCard>
               </>
             )}
           </div>
@@ -127,20 +127,24 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                 </div>
               </div>
               <div className="grid gap-2.5 mb-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
-                <div className="border border-noorix-border rounded-xl px-3 py-2">
-                  <div className="text-[11px] text-noorix-muted">{t('reportMonthlyAverage')}</div>
-                  <div className="mt-1 font-extrabold nx-font-numbers">{moneyText(averageAmount)}</div>
-                </div>
-                <div className="border border-noorix-border rounded-xl px-3 py-2">
-                  <div className="text-[11px] text-noorix-muted">{t('reportTopMonth')}</div>
-                  <div className="mt-1 font-extrabold">{peakPoint?.label || '—'}</div>
-                  <div className="text-[12px] nx-font-numbers text-noorix-muted mt-1">{moneyText(peakPoint?.amount)}</div>
-                </div>
-                <div className="border border-noorix-border rounded-xl px-3 py-2">
-                  <div className="text-[11px] text-noorix-muted">{t('selectedMonth')}</div>
-                  <div className="mt-1 font-extrabold">{data?.monthLabel || t('allMonths')}</div>
-                  <div className="text-[12px] nx-font-numbers text-noorix-muted mt-1">{moneyText(data?.contextAmount)}</div>
-                </div>
+                <MetricCard color="var(--color-nx-purchases)">
+                  <MetricCard.Header label={t('reportMonthlyAverage')} />
+                  <MetricCard.Value value={moneyText(averageAmount)} />
+                </MetricCard>
+                <MetricCard color="var(--color-nx-profit)">
+                  <MetricCard.Header label={t('reportTopMonth')} />
+                  <MetricCard.Value value={peakPoint?.label || '—'} />
+                  <MetricCard.Section>
+                    <span className="text-[12px] text-noorix-muted">{moneyText(peakPoint?.amount)}</span>
+                  </MetricCard.Section>
+                </MetricCard>
+                <MetricCard color="var(--color-nx-sales)">
+                  <MetricCard.Header label={t('selectedMonth')} />
+                  <MetricCard.Value value={data?.monthLabel || t('allMonths')} />
+                  <MetricCard.Section>
+                    <span className="text-[12px] text-noorix-muted">{moneyText(data?.contextAmount)}</span>
+                  </MetricCard.Section>
+                </MetricCard>
               </div>
               <div className="grid gap-2 mb-4">
                 {(trend.points || []).map((point) => {
@@ -150,10 +154,10 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     <div key={point.month} className="grid gap-2.5 items-center [grid-template-columns:52px_1fr_120px_78px]">
                       <div className="text-[12px] text-noorix-muted">{point.label}</div>
                       <div className="bg-noorix-bg-muted overflow-hidden rounded-full h-3">
-                        <div className="h-full rounded-full" style={{ width, background: amount >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }} />
+                        <div className="h-full rounded-full" style={{ width, background: amount >= 0 ? 'var(--color-nx-profit)' : 'var(--color-nx-expenses)' }} />
                       </div>
                       <div className="text-end nx-font-numbers font-bold">{moneyText(point.amount)}</div>
-                      <div className="text-end nx-font-numbers text-[12px] text-teal-600">{percentText(point.percentOfSales)}</div>
+                      <div className="text-end nx-font-numbers text-[12px] text-nx-profit">{percentText(point.percentOfSales)}</div>
                     </div>
                   );
                 })}
@@ -173,7 +177,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   >
                     <div className="text-[11px] text-noorix-muted mb-1.5">{point.label}</div>
                     <div className="text-[13px] font-extrabold nx-font-numbers">{amountText(point.amount)}</div>
-                    <div className="text-[11px] mt-1 text-teal-600">{percentText(point.percentOfSales)}</div>
+                    <div className="text-[11px] mt-1 text-nx-profit">{percentText(point.percentOfSales)}</div>
                   </div>
                 ))}
               </div>
@@ -230,7 +234,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     { key: 'netAmount', label: t('reportNetAmount'), numeric: true,
                       render: (v) => <span className="nx-font-numbers font-bold">{amountText(v)}</span> },
                     { key: 'percentOfSales', label: t('reportSalesShare'),
-                      render: (_, item) => <span className="nx-font-numbers text-teal-600">{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
+                      render: (_, item) => <span className="nx-font-numbers text-nx-profit">{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
                     { key: 'notes', label: t('notes'),
                       render: (v) => <span className="text-noorix-muted truncate">{truncateText(v)}</span> },
                   ]}
