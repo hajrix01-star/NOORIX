@@ -28,6 +28,32 @@ export default function BankStatementDetailView({
   const vm = useBankStatementView(statementId, companyId, t);
   const [newCategoryName, setNewCategoryName] = useState('');
 
+  const txCount = vm.statement?.transactions?.length ?? 0;
+  const detailTabItems = useMemo(
+    () => [
+      { id: 'analysis', label: t('bankTabAnalysis') },
+      {
+        id: 'transactions',
+        label: (
+          <>
+            {t('bankTabTransactions')}
+            <span
+              className={cn(
+                'noorix-bank-detail-tab__count',
+                vm.activeTab === 'transactions' && 'noorix-bank-detail-tab__count--active',
+              )}
+            >
+              {txCount}
+            </span>
+          </>
+        ),
+      },
+      { id: 'reconciliation', label: t('bankTabReconciliation') },
+      { id: 'sales', label: t('bankTabSalesCompare') },
+    ],
+    [t, vm.activeTab, txCount],
+  );
+
   if (vm.isLoading) {
     return (
       <div className="text-center text-noorix-muted p-12">
@@ -68,32 +94,6 @@ export default function BankStatementDetailView({
       showToast(e?.message || 'Error', 'error');
     }
   };
-
-  const txCount = stmt.transactions?.length ?? 0;
-  const detailTabItems = useMemo(
-    () => [
-      { id: 'analysis', label: t('bankTabAnalysis') },
-      {
-        id: 'transactions',
-        label: (
-          <>
-            {t('bankTabTransactions')}
-            <span
-              className={cn(
-                'noorix-bank-detail-tab__count',
-                vm.activeTab === 'transactions' && 'noorix-bank-detail-tab__count--active',
-              )}
-            >
-              {txCount}
-            </span>
-          </>
-        ),
-      },
-      { id: 'reconciliation', label: t('bankTabReconciliation') },
-      { id: 'sales', label: t('bankTabSalesCompare') },
-    ],
-    [t, vm.activeTab, txCount],
-  );
 
   return (
     <div className="grid gap-5">
