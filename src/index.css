@@ -88,11 +88,11 @@
 .nx-connected-tab-sparkline {
   background: linear-gradient(
     90deg,
-    var(--noorix-accent-green),
-    var(--noorix-accent-violet),
-    var(--noorix-accent-blue),
-    var(--noorix-accent-violet),
-    var(--noorix-accent-green)
+    #185FA5,
+    #3B6D11,
+    #854F0B,
+    #3B6D11,
+    #185FA5
   );
   background-size: 240% 100%;
   animation: nx-connected-tab-sparkline-move 4.5s ease-in-out infinite;
