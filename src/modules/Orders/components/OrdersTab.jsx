@@ -165,6 +165,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         key: 'orderType',
         label: t('orderType'),
         align: 'center',
+        shrink: true,
         render: (v) => {
           const isExt = v === 'external';
           return (
@@ -179,12 +180,14 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         label: t('ordersTotalItems'),
         numeric: true,
         align: 'center',
+        shrink: true,
         render: (items) => (items ?? []).length,
       },
       {
         key: 'pettyCashAmount',
         label: t('ordersPettyCashGiven'),
         align: 'center',
+        shrink: true,
         render: (v, o) =>
           o.orderType === 'external' && v != null ? (
             <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{fmt(Number(v), 2)} ﷼</span>
@@ -197,12 +200,14 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         label: t('orderTotalAmount') || t('ordersDelegatePurchases'),
         numeric: true,
         align: 'center',
+        shrink: true,
         render: (v) => <span className="nx-cell-num font-bold whitespace-nowrap">{fmt(Number(v ?? 0), 2)} ﷼</span>,
       },
       {
         key: 'id',
         label: t('ordersCumulativeRemaining'),
         align: 'center',
+        shrink: true,
         render: (_, o) => {
           const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
           if (cumRem == null) return <span className="nx-cell-muted">—</span>;
@@ -422,55 +427,51 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
 
       <OrdersSummaryCard summary={summary} cashSalesTotal={cashSalesTotal} isLoading={summaryLoading} />
 
-      <div className="noorix-surface-card min-w-0 max-w-full">
-        {ordersError ? (
-          <div className="text-center text-noorix-red p-10">⚠ {ordersError?.message || t('loadingError')}</div>
-        ) : isLoading ? (
-          <div className="text-center text-noorix-muted p-10">{t('loading')}</div>
-        ) : orders.length === 0 ? (
-          <div className="text-center text-noorix-muted p-10">{t('ordersNoOrdersInPeriod')}</div>
-        ) : dateFilteredOrders.length === 0 ? (
-          <div className="text-center text-noorix-muted p-10">{t('ordersNoOrdersInRange')}</div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="text-center text-noorix-muted p-10">{t('noDataInPeriod')}</div>
-        ) : (
-          <SmartTable
-            compact={false}
-            tableLayout="auto"
-            stickyActionColumn={false}
-            tableMinWidth={960}
-            innerPadding={0}
-            columns={ordersColumns}
-            data={filteredOrders}
-            total={filteredOrders.length}
-            page={1}
-            pageSize={Math.max(filteredOrders.length, 1)}
-            footerCells={ordersFooterCells}
-            renderMobileCard={ordersRenderMobileCard}
-            badge={
-              <div className="noorix-print-hide flex flex-wrap items-center gap-2 w-full min-w-0">
-                <span className="text-[13px] font-semibold text-noorix-muted shrink-0">{t('ordersFilterByType')}:</span>
-                <div className="nx-toolbar flex-wrap">
-                  {['all', 'external', 'internal'].map((v) => (
-                    <Button
-                      key={v}
-                      type="button"
-                      size="sm"
-                      variant={orderTypeFilter === v ? 'primary' : 'ghost'}
-                      onClick={() => setOrderTypeFilter(v)}
-                    >
-                      {v === 'all' ? t('ordersFilterAll') : v === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
-                    </Button>
-                  ))}
-                </div>
-                <span className="text-[14px] font-bold nx-font-numbers ms-auto shrink-0">
-                  {t('ordersFilteredTotal')}: {fmt(filteredTotal, 2)} ﷼
-                </span>
-              </div>
-            }
-          />
-        )}
-      </div>
+      <SmartTable
+        compact={false}
+        tableLayout="auto"
+        stickyActionColumn={false}
+        tableMinWidth={960}
+        innerPadding={0}
+        isLoading={isLoading}
+        isError={!!ordersError}
+        errorMessage={ordersError?.message || t('loadingError')}
+        emptyMessage={
+          orders.length === 0
+            ? t('ordersNoOrdersInPeriod')
+            : dateFilteredOrders.length === 0
+              ? t('ordersNoOrdersInRange')
+              : t('noDataInPeriod')
+        }
+        columns={ordersColumns}
+        data={filteredOrders}
+        total={filteredOrders.length}
+        page={1}
+        pageSize={Math.max(filteredOrders.length, 1)}
+        footerCells={ordersFooterCells}
+        renderMobileCard={ordersRenderMobileCard}
+        badge={
+          <div className="noorix-print-hide flex flex-wrap items-center gap-2 w-full min-w-0">
+            <span className="text-[13px] font-semibold text-noorix-muted shrink-0">{t('ordersFilterByType')}:</span>
+            <div className="nx-toolbar flex-wrap">
+              {['all', 'external', 'internal'].map((v) => (
+                <Button
+                  key={v}
+                  type="button"
+                  size="sm"
+                  variant={orderTypeFilter === v ? 'primary' : 'ghost'}
+                  onClick={() => setOrderTypeFilter(v)}
+                >
+                  {v === 'all' ? t('ordersFilterAll') : v === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
+                </Button>
+              ))}
+            </div>
+            <span className="text-[14px] font-bold nx-font-numbers ms-auto shrink-0">
+              {t('ordersFilteredTotal')}: {fmt(filteredTotal, 2)} ﷼
+            </span>
+          </div>
+        }
+      />
 
       {showModal && (
         <OrderFormModal
