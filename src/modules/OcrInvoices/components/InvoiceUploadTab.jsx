@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+﻿import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input } from '../../../ui';
 import { extractInvoice, saveOcrInvoice } from '../services/ocrApi';
@@ -248,19 +248,19 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                     {extracted.subtotalAmount?.value && (
                       <div className="flex items-center justify-between bg-noorix-bg-muted border-b border-noorix-border py-2 px-3">
                         <span className="text-[13px] text-noorix-muted">{isAr ? 'المجموع قبل الضريبة' : 'Subtotal'}</span>
-                        <span className="text-[13px] font-semibold">{extracted.subtotalAmount.value.toLocaleString('en-US')} <span className="nx-sar">SR</span></span>
+                        <span className="text-[13px] font-semibold">{extracted.subtotalAmount.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} <span className="nx-sar">SR</span></span>
                       </div>
                     )}
                     {extracted.vatAmount?.value && (
                       <div className="flex items-center justify-between border-b border-noorix-border py-2 px-3">
                         <span className="text-[13px] text-noorix-muted">{isAr ? 'ضريبة القيمة المضافة' : 'VAT (15%)'}</span>
-                        <span className="text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-amber)' }}>{extracted.vatAmount.value.toLocaleString('en-US')} <span className="nx-sar">SR</span></span>
+                        <span className="text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-amber)' }}>{extracted.vatAmount.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} <span className="nx-sar">SR</span></span>
                       </div>
                     )}
                     {extracted.totalAmount?.value && (
                       <div className="flex items-center justify-between bg-noorix-bg-muted py-[10px] px-3">
                         <span className="text-[13px] font-bold">{isAr ? 'الإجمالي شامل الضريبة' : 'Total (inc. VAT)'}</span>
-                        <span className="text-[13px] font-bold">{extracted.totalAmount.value.toLocaleString('en-US')} <span className="nx-sar">SR</span></span>
+                        <span className="text-[13px] font-bold">{extracted.totalAmount.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} <span className="nx-sar">SR</span></span>
                       </div>
                     )}
                   </div>

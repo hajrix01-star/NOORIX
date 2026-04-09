@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { bulkDeletePriceHistory } from '../services/ocrApi';
@@ -6,7 +6,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { OCR_DISMISSED_ALERTS_KEY } from '../../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage, removeJsonStorage } from '../../../utils/jsonStorage';
 
-const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
 
 function MiniImageViewer({ src }) {

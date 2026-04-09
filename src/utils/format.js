@@ -10,16 +10,17 @@ export { sumAmounts } from './math-engine';
 
 /**
  * تنسيق رقم مالي — أرقام إنجليزية مع فواصل الآلاف.
- * يتعامل مع null/undefined/NaN بأمان بإرجاع '0.0'.
+ * يعرض الكسر العشري فقط إذا وُجد، بحد أقصى خانتين (قابل للتعيين).
+ * مثال: 100 → "100" | 100.5 → "100.5" | 100.55 → "100.55"
  * @param {number|Decimal|null|undefined} n - القيمة
- * @param {number} decimals - عدد الخانات العشرية (1 افتراضي، 2 للمبالغ الدقيقة)
+ * @param {number} maxDecimals - الحد الأقصى للخانات العشرية (2 افتراضي)
  */
-export function fmt(n, decimals = 1) {
+export function fmt(n, maxDecimals = 2) {
   const raw = n instanceof Decimal ? n.toNumber() : Number(n ?? 0);
   const num = Number.isFinite(raw) ? raw : 0;
   return num.toLocaleString('en', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxDecimals,
   });
 }
 
@@ -30,7 +31,11 @@ export function calcReverseVat(totalInclusive, isTaxable) {
   try {
     const { net, tax } = splitTaxFromTotal(totalInclusive, isTaxable);
     if (net.lte(0) && tax.lte(0)) return { net: '', tax: '' };
-    return { net: net.toFixed(1), tax: tax.toFixed(1) };
+    const smartStr = (d) => {
+      const v = d.toNumber();
+      return v.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    };
+    return { net: smartStr(net), tax: smartStr(tax) };
   } catch {
     return { net: '', tax: '' };
   }
