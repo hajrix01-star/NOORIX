@@ -16,9 +16,9 @@ import PeriodAnalyticsStrip from '../../Reports/PeriodAnalyticsStrip';
 import { useSales } from '../../../hooks/useSales';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
-import { Button, cn, FmtNum, SparkLine } from '../../../ui';
+import { Button, cn, FmtNum, MetricCard } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
-import { KPI_CARD_SPARKLINE_COLORS, KPI_CARD_TOP_BAR_CLASS } from '../../../constants/kpiCardTheme';
+import { KPI_CARD_SPARKLINE_COLORS } from '../../../constants/kpiCardTheme';
 
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -270,74 +270,40 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           let badgeTone = 'neutral';
           let arrow = '';
           if (isProfit && pctNum != null) {
-            if (pctNum > 0) {
-              badgeTone = 'positive';
-              arrow = '↑ ';
-            } else if (pctNum < 0) {
-              badgeTone = 'negative';
-              arrow = '↓ ';
-            } else {
-              badgeTone = 'zero';
-              arrow = '';
-            }
+            if (pctNum > 0) { badgeTone = 'positive'; arrow = '↑ '; }
+            else if (pctNum < 0) { badgeTone = 'negative'; arrow = '↓ '; }
           } else if (!isSales && pctNum != null) {
-            badgeTone = 'zero';
-            arrow = '↓ ';
+            badgeTone = 'zero'; arrow = '↓ ';
           }
 
           const badgeClass =
-            badgeTone === 'positive'
-              ? 'bg-[#eaf3de] text-[#3B6D11]'
-              : badgeTone === 'negative'
-                ? 'bg-[#FCEBEB] text-[#A32D2D]'
-                : 'bg-noorix-bg-muted text-noorix-muted';
+            badgeTone === 'positive' ? 'bg-[#eaf3de] text-[#3B6D11]' :
+            badgeTone === 'negative' ? 'bg-[#FCEBEB] text-[#A32D2D]' :
+            'bg-noorix-bg-muted text-noorix-muted';
 
           const periodLabel = filter?.label || String(year);
-          const currencySuffix = 'SR';
 
           return (
-            <div
-              key={card.key}
-              className="noorix-surface-card relative flex min-h-[168px] min-w-0 flex-col overflow-hidden p-4"
-            >
-              <span
-                className={`pointer-events-none absolute inset-x-0 top-0 h-1 ${KPI_CARD_TOP_BAR_CLASS[card.key] || KPI_CARD_TOP_BAR_CLASS.sales}`}
-                aria-hidden
-              />
-
-              <div className="text-[12px] font-medium text-noorix-muted">{card.label}</div>
-
-              <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-                <span
-                  dir="ltr"
-                  className="nx-font-numbers text-[22px] font-bold leading-tight tracking-[-0.5px] text-noorix-text text-start"
-                >
-                  {amountText(rawVal)}
-                </span>
-                <span className="text-[12px] font-medium text-noorix-muted">{currencySuffix}</span>
-              </div>
-
-              <div className="mt-3 min-h-[36px] w-full min-w-0 flex-1">
-                <SparkLine data={sparkData} color={accentColor} />
-              </div>
-
-              <div className="mt-3 flex items-center justify-between gap-2 border-t border-noorix-border pt-3">
+            <MetricCard key={card.key} color={accentColor} className="min-h-[168px]">
+              <MetricCard.Header label={card.label} />
+              <MetricCard.Value value={amountText(rawVal)} currency="SR" />
+              <MetricCard.Spark data={sparkData} color={accentColor} grow />
+              <MetricCard.Footer className="mt-3 border-t border-noorix-border pt-3 pb-3">
                 <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
                 {!isSales && pctNum != null ? (
                   <span
                     className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
                     title={`${card.badgeLabel}: ${arrow}${Math.abs(pctNum)}%`}
                   >
-                    {arrow}
-                    {Math.abs(pctNum)}%
+                    {arrow}{Math.abs(pctNum)}%
                   </span>
                 ) : (
                   <span className="max-w-[min(100%,140px)] truncate text-end text-[11px] font-medium text-noorix-muted">
                     {card.badgeLabel}
                   </span>
                 )}
-              </div>
-            </div>
+              </MetricCard.Footer>
+            </MetricCard>
           );
         })}
       </div>

@@ -3,7 +3,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS } from '../constants/treasuryConstants';
-import { Badge, Button, FmtNum, SparkLine } from '../../../ui';
+import { Badge, Button, FmtNum, MetricCard } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
 export function parseVaultType(type) {
@@ -151,66 +151,62 @@ const VaultCard = memo(function VaultCard({
   const displayName = vaultDisplayName(vault, lang);
   const subName     = lang === 'en' ? (vault.nameAr || typeLabel) : (vault.nameEn || typeLabel);
 
-  return (
-    /* لا overflow:hidden هنا — ضروري حتى تبرز قائمة الإجراءات (position:absolute) */
-    <div
-      onClick={() => onClick(vault)}
-      className="noorix-surface-card relative flex cursor-pointer flex-col transition-[box-shadow] duration-150 hover:[box-shadow:var(--noorix-card-shadow-hover)]"
-      style={{ opacity: isArchived ? 0.65 : 1 }}
-    >
-      <div
-        className="h-1 rounded-t-[var(--noorix-card-radius)]"
-        style={{ background: isArchived ? 'var(--noorix-border)' : accentColor }}
-        aria-hidden
-      />
+  const hasBadges = vault.isSalesChannel || vault.account?.code || isArchived || vault.showAsPaymentMethod === false;
 
-      {/* هيدر الكرت */}
-      <div className="flex items-center justify-between gap-2.5 pt-[14px] px-4 pb-3">
-        <div className="flex items-center gap-10 min-w-0">
-          <div className="flex items-center justify-center w-[38px] h-[38px] rounded-[10px] shrink-0" style={{
-            background: isArchived ? 'var(--noorix-bg-muted)' : accentColor + '14',
-            color: isArchived ? 'var(--noorix-text-muted)' : accentColor,
-          }}>
+  return (
+    /* MetricCard يدير: الحاوية + الشريط العلوي + الشفافية + hover shadow */
+    <MetricCard
+      color={accentColor}
+      isArchived={isArchived}
+      onClick={() => onClick(vault)}
+    >
+      {/* الهيدر: أيقونة + اسم + قائمة إجراءات */}
+      <MetricCard.Header
+        label={displayName}
+        subLabel={subName}
+        icon={
+          <div
+            className="flex items-center justify-center w-[38px] h-[38px] rounded-[10px] shrink-0"
+            style={{
+              background: isArchived ? 'var(--noorix-bg-muted)' : accentColor + '14',
+              color: isArchived ? 'var(--noorix-text-muted)' : accentColor,
+            }}
+          >
             {isCustom
               ? <span className="text-[20px] leading-none">{customEmoji}</span>
               : (VAULT_TYPE_SVGS[vault.type] || VAULT_TYPE_SVGS.bank)}
           </div>
-          <div className="min-w-0">
-            <div className="font-bold text-[14px] truncate">
-              {displayName}
-            </div>
-            <div className="text-[11px] text-noorix-muted mt-px">
-              {subName}
-            </div>
-          </div>
-        </div>
-
-        <ActionMenu vault={vault} t={t} lang={lang} onEdit={onEdit} onToggleSalesChannel={onToggleSalesChannel} onTogglePaymentMethod={onTogglePaymentMethod} onArchive={onArchive} onDelete={onDelete} />
-      </div>
+        }
+        actions={
+          <ActionMenu
+            vault={vault} t={t} lang={lang}
+            onEdit={onEdit}
+            onToggleSalesChannel={onToggleSalesChannel}
+            onTogglePaymentMethod={onTogglePaymentMethod}
+            onArchive={onArchive}
+            onDelete={onDelete}
+          />
+        }
+      />
 
       {/* الرصيد */}
-      <div className="text-center pt-[2px] px-4 pb-4">
-        <div className="text-[11px] text-noorix-muted mb-1 uppercase tracking-[0.04em]">
-          {t('balance')}
-        </div>
-        <div className="font-extrabold text-[26px] tracking-[-0.5px]" style={{
-          fontFamily: 'var(--noorix-font-numbers)',
-          color: balance < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
-        }}>
-          {balance < 0 ? '−' : ''}<FmtNum n={Math.abs(balance)} />
-          <span className="nx-sar mr-1">SR</span>
-        </div>
-      </div>
+      <MetricCard.Value
+        label={t('balance')}
+        value={balance}
+        currency="SR"
+        align="center"
+        size="lg"
+        prefix={balance < 0 ? '−' : ''}
+        color={balance < 0 ? 'var(--noorix-accent-red)' : undefined}
+      />
 
-      {/* سباركلاين اتجاه الرصيد */}
-      <div className="w-full px-4 pb-3">
-        <SparkLine data={sparkData} color={isArchived ? 'var(--noorix-text-muted)' : accentColor} height={32} />
-      </div>
+      {/* سباركلاين اتجاه الرصيد خلال الفترة */}
+      <MetricCard.Spark data={sparkData} color={accentColor} height={32} />
 
-      <div className="mx-4 h-px" style={{ background: 'var(--noorix-border)' }} />
+      <MetricCard.Divider />
 
       {/* وارد / صادر */}
-      <div className="grid grid-cols-2 gap-2 py-3 px-4">
+      <MetricCard.Section className="grid grid-cols-2 gap-2 py-3">
         <div>
           <div className="flex items-center gap-4 text-noorix-muted text-[10px] mb-[3px]">
             <svg viewBox="0 0 12 12" fill="none" stroke="#16a34a" strokeWidth="2" width="10" height="10">
@@ -233,11 +229,11 @@ const VaultCard = memo(function VaultCard({
             <FmtNum n={totalOut} /> <span className="nx-sar">SR</span>
           </div>
         </div>
-      </div>
+      </MetricCard.Section>
 
-      {/* فوتر: شارات الحالة */}
-      {(vault.isSalesChannel || vault.account?.code || isArchived || vault.showAsPaymentMethod === false) && (
-        <div className="flex items-center flex flex-wrap gap-1.5 border-t border-noorix-border py-2 px-4">
+      {/* شارات الحالة (عند وجودها) */}
+      {hasBadges && (
+        <MetricCard.Footer className="flex-wrap gap-1.5 border-t border-noorix-border py-2">
           {vault.isSalesChannel && (
             <Badge color="green" size="sm">{t('salesChannel')}</Badge>
           )}
@@ -255,9 +251,9 @@ const VaultCard = memo(function VaultCard({
           {isArchived && (
             <Badge color="amber" size="sm">{t('archived')}</Badge>
           )}
-        </div>
+        </MetricCard.Footer>
       )}
-    </div>
+    </MetricCard>
   );
 });
 

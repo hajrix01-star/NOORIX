@@ -29,6 +29,7 @@ export { default as KebabMenu } from './KebabMenu';
 export { default as FilterScrollStrip } from './FilterScrollStrip';
 export { FmtNum } from './FmtNum';
 export { default as SparkLine } from './SparkLine';
+export { default as MetricCard } from './MetricCard';
 
 /**
  * SmartTable — الجدول الذكي المركزي
