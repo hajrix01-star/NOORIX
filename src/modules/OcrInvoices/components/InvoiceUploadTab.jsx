@@ -78,16 +78,30 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
   const readFile = useCallback((file) => {
     if (!file || !file.type.startsWith('image/')) return;
-    setMimeType(file.type);
     const reader = new FileReader();
     reader.onload = (e) => {
-      const dataUrl = e.target.result;
-      setPreview(dataUrl);
-      const base64 = dataUrl.split(',')[1];
-      setBase64(base64);
-      setExtracted(null);
-      setError(null);
-      setSuccess(false);
+      const img = new Image();
+      img.onload = () => {
+        // ضغط الصورة: حد أقصى 1600px مع جودة 0.82 — يكفي للـ OCR ويقلل الحجم >80%
+        const MAX = 1600;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+          else                { width  = Math.round((width  * MAX) / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width  = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.82);
+        setPreview(compressed);
+        setBase64(compressed.split(',')[1]);
+        setMimeType('image/jpeg');
+        setExtracted(null);
+        setError(null);
+        setSuccess(false);
+      };
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   }, []);
