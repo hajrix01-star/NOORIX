@@ -262,12 +262,11 @@ export default function OwnerDashboardScreen() {
             return (
               <Button
                 key={c.id}
-                className="owner-company-card flex items-center gap-1.5 text-[12px]"
+                variant="raw"
+                className="owner-company-card flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-lg"
                 onClick={() => toggleCompany(c.id)}
                 title={isVisible ? (lang === 'ar' ? 'إخفاء' : 'Hide') : (lang === 'ar' ? 'عرض' : 'Show')}
                 style={{
-                  padding: '6px 10px',
-                  borderRadius: 8,
                   border: `1px solid ${isVisible ? COLORS[i % COLORS.length] : 'var(--noorix-border)'}`,
                   background: isVisible ? `${COLORS[i % COLORS.length]}18` : 'var(--noorix-bg-muted)',
                   color: isVisible ? COLORS[i % COLORS.length] : 'var(--noorix-text-muted)',
@@ -294,56 +293,50 @@ export default function OwnerDashboardScreen() {
 
       {!isLoading && !isError && idsToFetch.length > 0 && (
         <>
-          {/* كروت الإجماليات + النسب */}
-          <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-            <div className="noorix-surface-card relative overflow-hidden">
-              <div className="h-1 bg-noorix-green" aria-hidden />
-              <div className="p-4">
-                <div className="text-[11px] text-noorix-muted mb-1">{t('ownerTotalSales')}</div>
-                <div className="text-[20px] font-extrabold nx-font-numbers">{fmt(aggregated.totalSales, 2)} <span className="nx-sar">SR</span></div>
-                <div className="text-[10px] text-noorix-muted mt-1">100%</div>
-              </div>
-            </div>
-            <div className="noorix-surface-card relative overflow-hidden">
-              <div className="h-1 bg-noorix-red" aria-hidden />
-              <div className="p-4">
-                <div className="text-[11px] text-noorix-muted mb-1">{t('purchasesToSalesRatio')}</div>
-                <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
-                  {aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) : '—'}%
+          {/* كروت KPI */}
+          <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
+            {[
+              { key: 'sales',     label: t('ownerTotalSales'),     value: aggregated.totalSales },
+              { key: 'purchases', label: t('annualPurchases'),     value: aggregated.totalPurchases },
+              { key: 'expenses',  label: t('annualExpenses'),      value: aggregated.totalExpenses },
+              { key: 'netProfit', label: t('ownerTotalNetProfit'), value: aggregated.totalNetProfit },
+            ].map((card) => {
+              const pctNum = card.key !== 'sales' && aggregated.totalSales > 0
+                ? Number(((card.value / aggregated.totalSales) * 100).toFixed(1))
+                : null;
+              const isProfit = card.key === 'netProfit';
+              const badgeClass = isProfit && pctNum != null
+                ? (pctNum >= 0 ? 'bg-[#eaf3de] text-[#3B6D11]' : 'bg-[#FCEBEB] text-[#A32D2D]')
+                : 'bg-noorix-bg-muted text-noorix-muted';
+              const arrow = isProfit && pctNum != null ? (pctNum >= 0 ? '↑ ' : '↓ ') : '';
+              return (
+                <div key={card.key} className="noorix-surface-card relative flex min-h-[168px] min-w-0 flex-col overflow-hidden p-4">
+                  <span className={`pointer-events-none absolute inset-x-0 top-0 h-1 ${KPI_CARD_TOP_BAR_CLASS[card.key]}`} aria-hidden />
+                  <div className="text-[12px] font-medium text-noorix-muted">{card.label}</div>
+                  <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                    <span dir="ltr" className="nx-font-numbers text-[22px] font-bold leading-tight tracking-[-0.5px] text-noorix-text text-start">
+                      {fmt(card.value, 2)}
+                    </span>
+                    <span className="text-[12px] font-medium text-noorix-muted">SR</span>
+                  </div>
+                  <div className="mt-3 min-h-[36px] w-full min-w-0 flex-1">
+                    <SparkLine data={aggregatedMonthly.map((m) => m[card.key])} color={KPI_CARD_SPARKLINE_COLORS[card.key]} />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-noorix-border pt-3">
+                    <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">
+                      {year}{selectedMonthNum ? ` — ${EN_MONTHS[selectedMonthNum - 1]}` : ''}
+                    </span>
+                    {pctNum != null ? (
+                      <span className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}>
+                        {arrow}{Math.abs(pctNum)}%
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium text-noorix-muted">100%</span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalPurchases, 2)} <span className="nx-sar">SR</span></div>
-              </div>
-            </div>
-            <div className="noorix-surface-card relative overflow-hidden">
-              <div className="h-1 bg-noorix-red" aria-hidden />
-              <div className="p-4">
-                <div className="text-[11px] text-noorix-muted mb-1">{t('annualExpenses')} {t('sectionToSalesRatio')}</div>
-                <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
-                  {aggregated.totalSales > 0 ? fmt((aggregated.totalExpenses / aggregated.totalSales) * 100, 1) : '—'}%
-                </div>
-                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalExpenses, 2)} <span className="nx-sar">SR</span></div>
-              </div>
-            </div>
-            <div className="noorix-surface-card relative overflow-hidden">
-              <div
-                className={cn('h-1', aggregated.totalNetProfit >= 0 ? 'bg-noorix-blue' : 'bg-noorix-red')}
-                aria-hidden
-              />
-              <div className="p-4">
-                <div className="text-[11px] text-noorix-muted mb-1">{t('ownerTotalNetProfit')}</div>
-                <div
-                  className={cn(
-                    'text-[20px] font-extrabold nx-font-numbers',
-                    aggregated.totalNetProfit >= 0 ? 'text-noorix-blue' : 'text-noorix-red',
-                  )}
-                >
-                  {fmt(aggregated.totalNetProfit, 2)} <span className="nx-sar">SR</span>
-                </div>
-                <div className="text-[10px] text-noorix-muted mt-1">
-                  {aggregated.totalSales > 0 ? fmt((aggregated.totalNetProfit / aggregated.totalSales) * 100, 1) + '%' : '—'}
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
 
           {/* المبيعات الشهرية — رسم بياني */}
@@ -395,8 +388,8 @@ export default function OwnerDashboardScreen() {
               {idsToFetch.map((companyId, i) => {
                 const c = companyList.find((x) => x.id === companyId);
                 return (
-                  <div key={companyId} className="flex items-center gap-6">
-                    <span style={{ width: 10, height: 10, borderRadius: 2, background: COLORS[i % COLORS.length] }} />
+                  <div key={companyId} className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
                     <span className="text-[12px]">{lang === 'ar' ? c?.nameAr || c?.nameEn : c?.nameEn || c?.nameAr}</span>
                   </div>
                 );
@@ -419,7 +412,7 @@ export default function OwnerDashboardScreen() {
                     <div key={item.companyId}>
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <div className="flex items-center gap-8 min-w-0">
-                          <span className="shrink-0" style={{ width: 8, height: 8, borderRadius: 2, background: COLORS[i % COLORS.length] }} />
+                          <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
                           <span className="text-[13px] font-semibold truncate">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-8 shrink-0">
