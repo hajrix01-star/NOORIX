@@ -6,7 +6,7 @@
  */
 import React, { memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Badge, Button, SmartTable } from '../../../ui';
+import { Badge, Button, SmartTable, KebabMenu } from '../../../ui';
 
 const sName = (s, lang) => (lang === 'en' ? s?.nameEn || s?.nameAr : s?.nameAr || s?.nameEn) || '—';
 
@@ -50,15 +50,6 @@ function CB({ checked, indeterminate, onChange, ariaLabel }) {
   );
 }
 
-/* ── أزرار الإجراء ── */
-function ActionBtns({ onEdit, onDelete, t }) {
-  return (
-    <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-      <Button size="sm" onClick={onEdit}>✎ {t('edit')}</Button>
-      <Button size="sm" variant="danger" onClick={onDelete}>× {t('delete')}</Button>
-    </div>
-  );
-}
 
 export const SupplierTable = memo(function SupplierTable({
   suppliers = [],
@@ -90,6 +81,7 @@ export const SupplierTable = memo(function SupplierTable({
       key: 'select',
       shrink: true,
       width: 44,
+      align: 'center',
       label: (
         <CB
           checked={allSelected}
@@ -109,28 +101,47 @@ export const SupplierTable = memo(function SupplierTable({
     {
       key: 'nameAr',
       label: t('name'),
+      minWidth: 160,
       render: (_, row) => <span className="font-bold">{sName(row, lang)}</span>,
     },
     {
       key: 'nameEn',
       label: t('nameEnCol'),
+      minWidth: 140,
       render: (_, row) => (
         <span className="nx-cell-muted">
           {lang === 'en' ? (row.nameAr || '—') : (row.nameEn || '—')}
         </span>
       ),
     },
-    { key: 'taxNumber', label: t('taxNumber'), numeric: true, width: 150, minWidth: 140 },
-    { key: 'phone',     label: t('phone'), shrink: true },
+    {
+      key: 'taxNumber',
+      label: t('taxNumber'),
+      numeric: true,
+      align: 'center',
+      shrink: true,
+      minWidth: 145,
+      render: (v) => <span className="nx-cell-num whitespace-nowrap">{v || '—'}</span>,
+    },
+    {
+      key: 'phone',
+      label: t('phone'),
+      align: 'center',
+      shrink: true,
+      minWidth: 110,
+      render: (v) => <span className="nx-cell-muted whitespace-nowrap">{v || '—'}</span>,
+    },
     {
       key: 'supplierCategoryId',
       label: t('category'),
+      align: 'center',
+      shrink: true,
       render: (_, row) => {
         const cat  = flatCategories.find((c) => c.id === row.supplierCategoryId);
-        if (!cat) return '—';
+        if (!cat) return <span className="nx-cell-muted">—</span>;
         const icon = cat?.icon || cat?.account?.icon || '';
         return (
-          <span className="flex items-center gap-1">
+          <span className="flex items-center justify-center gap-1">
             {icon && <span className="text-[14px]">{icon}</span>}
             <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
               {cat.nameAr}
@@ -143,15 +154,24 @@ export const SupplierTable = memo(function SupplierTable({
     {
       key: 'supplierType',
       label: t('type'),
+      align: 'center',
       shrink: true,
       render: (_, row) => <TypeBadge type={row.supplierType || 'purchases'} />,
     },
     {
       key: 'actions',
       label: t('actions'),
+      align: 'center',
       shrink: true,
+      width: '1%',
       render: (_, row) => (
-        <ActionBtns onEdit={() => onEdit?.(row)} onDelete={() => onDelete?.(row)} t={t} />
+        <KebabMenu
+          ariaLabel={t('actions')}
+          items={[
+            { key: 'edit',   label: t('edit'),   style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
+            { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' },   onClick: () => onDelete?.(row) },
+          ]}
+        />
       ),
     },
   ];
@@ -173,7 +193,11 @@ export const SupplierTable = memo(function SupplierTable({
       columns={columns}
       data={suppliers}
       badge={badge}
-      tableMinWidth={560}
+      compact={false}
+      tableLayout="auto"
+      stickyActionColumn={false}
+      tableMinWidth={860}
+      innerPadding={0}
       getRowStyle={(row) =>
         selectedIds.has(row.id) ? { background: 'var(--noorix-green-4)' } : undefined
       }
