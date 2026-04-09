@@ -10,6 +10,9 @@ import { updateInvoice } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
+// أنواع النظام: لا مورد، لا تغيير نوع، لا رقم فاتورة إلزامي
+const SYSTEM_KINDS = new Set(['salary', 'advance', 'hr_expense', 'fixed_expense']);
+
 export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClose }) {
   const { t } = useTranslation();
   const [form, setForm] = useState({
@@ -23,6 +26,9 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
     notes: '',
   });
   const [error, setError] = useState('');
+
+  const isSystemKind = SYSTEM_KINDS.has(invoice?.kind);
+  const hasSupplier = !isSystemKind;
 
   const saveMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateInvoice(id, body, companyId),
@@ -64,7 +70,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
   async function handleSave() {
     setError('');
     const total = parseFloat(form.totalAmount);
-    if (!form.supplierInvoiceNumber?.trim()) {
+    if (hasSupplier && !form.supplierInvoiceNumber?.trim()) {
       setError(t('invoiceNumberRequired'));
       return;
     }
@@ -72,19 +78,22 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
       setError(t('totalMustBePositiveShort'));
       return;
     }
-    saveMutation.mutate({
-      id: invoice.id,
-      body: {
-        supplierId: form.supplierId || undefined,
-        supplierInvoiceNumber: form.supplierInvoiceNumber.trim(),
-        kind: form.kind,
-        totalAmount: total,
-        netAmount: parseFloat(form.netAmount) || 0,
-        taxAmount: parseFloat(form.taxAmount) || 0,
-        transactionDate: form.transactionDate || undefined,
-        notes: form.notes?.trim() || undefined,
-      },
-    });
+    const body = {
+      totalAmount: total,
+      transactionDate: form.transactionDate || undefined,
+      notes: form.notes?.trim() || undefined,
+    };
+    if (hasSupplier) {
+      body.supplierId = form.supplierId || undefined;
+      body.supplierInvoiceNumber = form.supplierInvoiceNumber.trim();
+      body.kind = form.kind;
+      body.netAmount = parseFloat(form.netAmount) || 0;
+      body.taxAmount = parseFloat(form.taxAmount) || 0;
+    } else {
+      body.netAmount = total;
+      body.taxAmount = 0;
+    }
+    saveMutation.mutate({ id: invoice.id, body });
   }
 
   if (!invoice) return null;
@@ -119,33 +128,37 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
           </div>
         )}
 
-        <div>
-          <label className="text-[12px] font-semibold mb-1 block">{t('supplier')}</label>
-          <SupplierSelect
-            suppliers={suppliers}
-            value={form.supplierId}
-            onChange={(v) => updateField('supplierId', v)}
-            bookmarkedIds={[]}
-            placeholder={t('selectSupplier')}
-          />
-        </div>
+        {hasSupplier && (
+          <>
+            <div>
+              <label className="text-[12px] font-semibold mb-1 block">{t('supplier')}</label>
+              <SupplierSelect
+                suppliers={suppliers}
+                value={form.supplierId}
+                onChange={(v) => updateField('supplierId', v)}
+                bookmarkedIds={[]}
+                placeholder={t('selectSupplier')}
+              />
+            </div>
 
-        <Input
-          label={`${t('supplierInvoiceNumber')} *`}
-          value={form.supplierInvoiceNumber}
-          onChange={(e) => updateField('supplierInvoiceNumber', e.target.value)}
-          placeholder={t('invoiceNumberPlaceholder')}
-        />
+            <Input
+              label={`${t('supplierInvoiceNumber')} *`}
+              value={form.supplierInvoiceNumber}
+              onChange={(e) => updateField('supplierInvoiceNumber', e.target.value)}
+              placeholder={t('invoiceNumberPlaceholder')}
+            />
 
-        <Input
-          type="select"
-          label={t('kind')}
-          value={form.kind}
-          onChange={(e) => updateField('kind', e.target.value)}
-        >
-          <option value="purchase">{t('purchaseType')}</option>
-          <option value="expense">{t('expenseType')}</option>
-        </Input>
+            <Input
+              type="select"
+              label={t('kind')}
+              value={form.kind}
+              onChange={(e) => updateField('kind', e.target.value)}
+            >
+              <option value="purchase">{t('purchaseType')}</option>
+              <option value="expense">{t('expenseType')}</option>
+            </Input>
+          </>
+        )}
 
         <div>
           <Input
@@ -157,7 +170,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
             onChange={(e) => updateField('totalAmount', e.target.value)}
             style={{ fontFamily: 'var(--noorix-font-numbers)' }}
           />
-          {form.totalAmount && parseFloat(form.totalAmount) > 0 && (
+          {hasSupplier && form.totalAmount && parseFloat(form.totalAmount) > 0 && (
             <div className="text-[12px] text-noorix-muted mt-1">
               {t('netShort')}: {form.netAmount} | {t('tax')}: {form.taxAmount}
             </div>
