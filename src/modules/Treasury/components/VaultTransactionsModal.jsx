@@ -11,7 +11,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
-import { Button, AdaptiveSheet } from '../../../ui';
+import { Button, AdaptiveSheet , FmtNum } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
@@ -122,8 +122,8 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     { key: 'documentNumber', label: t('documentNumber'), render: (_, r) => <span className="nx-cell-num">{r.documentNumber || r.referenceId || '—'}</span> },
     { key: 'transactionDate', label: t('date'), render: (v) => <span className="text-[12px]">{formatSaudiDate(v)}</span> },
     { key: 'referenceType', label: t('type'), render: (v) => <span className="text-[12px]">{v || '—'}</span> },
-    { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <span className="text-noorix-green nx-font-numbers">{fmt(v)}</span> : <span>—</span> },
-    { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <span className="text-noorix-red nx-font-numbers">{fmt(v)}</span> : <span>—</span> },
+    { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <FmtNum n={v} className="text-noorix-green nx-font-numbers" /> : <span>—</span> },
+    { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <FmtNum n={v} className="text-noorix-red nx-font-numbers" /> : <span>—</span> },
   ];
 
   const renderMobileCard = useCallback((row) => (

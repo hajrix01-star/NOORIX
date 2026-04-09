@@ -26,7 +26,7 @@ import {
   getEmployeesPaged,
   getEmployeesBulk,
 } from '../../services/api';
-import { Badge, Button, Modal, Input, ScreenShell, cn } from '../../ui';
+import { Badge, Button, Modal, Input, ScreenShell, cn , FmtNum } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import { HRActionsCell } from './components/HRActionsCell';
 import { StaffFormModal } from './components/StaffFormModal';
@@ -181,7 +181,7 @@ export default function StaffListScreen({ embedded }) {
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125, minWidth: 120,
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140, minWidth: 130,
-      render: (_, row) => <span className="nx-cell-num text-[13px]">{hrFmt(row.totalSalary)}</span> },
+      render: (_, row) => <FmtNum n={row.totalSalary} className="nx-cell-num text-[13px]" /> },
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
       render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     ...(viewMode === 'terminated' || viewMode === 'archived'
@@ -384,7 +384,7 @@ export default function StaffListScreen({ embedded }) {
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('totalSalary')}</div>
-          <div className="nx-mc__stat-value">{hrFmt(row.totalSalary)} <span className="nx-sar">SR</span></div>
+          <div className="nx-mc__stat-value"><FmtNum n={row.totalSalary} /> <span className="nx-sar">SR</span></div>
         </div>
       </div>
       <div className="nx-mc__actions">

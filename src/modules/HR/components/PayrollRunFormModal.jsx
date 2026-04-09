@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PayrollRunFormModal — إنشاء/تعديل مسيرة راتب
  */
 import React, { useState, useMemo } from 'react';
@@ -19,7 +19,7 @@ import {
 } from '../utils/payrollAttendanceMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../utils/moneyInput';
-import { Button, AdaptiveSheet, Input, cn } from '../../../ui';
+import { Button, AdaptiveSheet, Input, cn , FmtNum } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 
 function parseDeferredMonth(notes) {
@@ -587,7 +587,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                           <span className="line-clamp-2 break-words inline-block max-w-full text-center">{items[idx].advanceDates || '—'}</span>
                         </td>
                         <td className="font-semibold text-[12px] whitespace-nowrap text-center">
-                          <span className="payroll-run-cell-num nx-font-numbers">{hrFmt(items[idx].grossSalary)}</span>
+                          <FmtNum n={items[idx].grossSalary} className="payroll-run-cell-num nx-font-numbers" />
                         </td>
                         <td className="text-center">
                           <Input
@@ -643,7 +643,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                           </label>
                         </td>
                         <td className="font-extrabold text-[12px] whitespace-nowrap text-center">
-                          <span className="payroll-run-cell-num nx-font-numbers">{hrFmt(items[idx].netSalary)}</span>
+                          <FmtNum n={items[idx].netSalary} className="payroll-run-cell-num nx-font-numbers" />
                         </td>
                       </>
                     ) : (

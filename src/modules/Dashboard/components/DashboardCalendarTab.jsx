@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DashboardCalendarTab — تقويم حراري للمبيعات
  * أهداف احترافية | تحديد أيام متعددة → إضافة كأيام خاصة | ملاحظة لكل يوم
  */
@@ -9,7 +9,7 @@ import { useSales } from '../../../hooks/useSales';
 import { CARD_COLORS, CARD_BORDER_RADIUS } from '../../../utils/cardStyles';
 import { fmt } from '../../../utils/format';
 import CalendarDayDetailPanel from './CalendarDayDetailPanel';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, Input, Modal , FmtNum } from '../../../ui';
 import {
   getStoredTargets,
   setStoredTargets,
@@ -467,7 +467,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           </div>
           {targets.overall != null && (
             <div className="text-noorix-muted mt-2 border-t border-noorix-border pt-2 text-[10px]">
-              {t('dashboardSalesTarget')}: {fmt(targets.overall)} <span className="nx-sar">SR</span>
+              {t('dashboardSalesTarget')}: <FmtNum n={targets.overall} /> <span className="nx-sar">SR</span>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PayrollTab — مسيرات الرواتب (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
@@ -19,7 +19,7 @@ import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, Input, ScreenShell, Modal } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, Modal , FmtNum } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 
@@ -168,9 +168,9 @@ export default function PayrollTab() {
     { key: 'month', label: t('payrollMonth'), sortable: true, width: 130, minWidth: 120,
       render: (v) => <span className="text-[13px]">{v || '—'}</span> },
     { key: 'grossTotal', label: t('payrollGross'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v) => <span className="nx-cell-num text-[13px]">{hrFmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num text-[13px]" /> },
     { key: 'netTotal', label: t('payrollNet'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v) => <span className="nx-cell-num font-bold text-[13px]">{hrFmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num font-bold text-[13px]" /> },
     { key: 'status', label: t('payrollStatus'), width: 120, minWidth: 110,
       render: (v) => (
         <Badge {...Badge.fromStatus(v, payrollStatusMap)} size="sm" />

@@ -25,7 +25,7 @@ import {
   basicSalaryFromTargetTotalInclusiveOvertime,
 } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, FormRow } from '../../../ui';
+import { Button, Input, FormRow , FmtNum } from '../../../ui';
 
 function toDecimal(value) {
   return new Decimal(value || 0);
@@ -354,7 +354,7 @@ export default function SalaryCalcTab() {
           ))}
           <div className="noorix-result-panel__row noorix-result-panel__row--highlight">
             <span className="noorix-result-panel__row-label">{t('salaryCalcNetSalary')}</span>
-            <span className="noorix-result-panel__row-value">{hrFmt(netSalary.toNumber())} <span className="nx-sar">SR</span></span>
+            <span className="noorix-result-panel__row-value"><FmtNum n={netSalary.toNumber()} /> <span className="nx-sar">SR</span></span>
           </div>
         </div>
         {inverseWarning && (

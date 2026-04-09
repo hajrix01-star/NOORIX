@@ -1,4 +1,4 @@
-﻿/**
+/**
  * BatchEditPanel — عرض دفعة وتعديل/حذف فواتيرها
  */
 import React, { useState } from 'react';
@@ -6,7 +6,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { Button, AdaptiveSheet, Input } from '../../../ui';
+import { Button, AdaptiveSheet, Input , FmtNum } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 
 const inputBase = {
@@ -123,7 +123,7 @@ export function BatchEditPanel({ batch, suppliers, companyId, onSaveInvoice, onC
                 </td>
                 <td className="p-1.5">
                   {inv.status === 'cancelled' ? (
-                    <span className="nx-cell-num">{fmt(inv.totalAmount)}</span>
+                    <FmtNum n={inv.totalAmount} className="nx-cell-num" />
                   ) : (
                     <Input
                       type="number"

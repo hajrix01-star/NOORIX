@@ -9,7 +9,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
-import { Button, AdaptiveSheet } from '../../../ui';
+import { Button, AdaptiveSheet , FmtNum } from '../../../ui';
 
 const KIND_LABELS = { fixed_expense: 'ثابت', expense: 'متغير' };
 
@@ -56,7 +56,7 @@ export default function ExpenseLineDetailModal({
     { key: 'transactionDate', label: 'التاريخ',
       render: (v) => <span className="nx-cell-muted">{formatSaudiDate(v) || '—'}</span> },
     { key: 'totalAmount', label: 'المبلغ',
-      render: (v) => <span className="nx-cell-num nx-cell-num--green font-semibold">{fmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green font-semibold" /> },
     { key: 'vaultName', label: 'الخزنة',
       render: (_, row) => <span className="nx-cell-muted">{row.vaultName || row.vault?.nameAr || '—'}</span> },
     { key: 'notes', label: 'ملاحظات',
@@ -118,7 +118,7 @@ export default function ExpenseLineDetailModal({
         </p>
       )}
       <p className="text-[14px] font-semibold mt-0 mb-4">
-        إجمالي المدفوع في الفترة: <span className="nx-cell-num nx-cell-num--green">{fmt(totalPaid)}</span>
+        إجمالي المدفوع في الفترة: <FmtNum n={totalPaid} className="nx-cell-num nx-cell-num--green" />
       </p>
       <SmartTable
         columns={paymentColumns}

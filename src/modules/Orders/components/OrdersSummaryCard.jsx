@@ -5,6 +5,7 @@
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
+import { FmtNum } from '../../../ui';
 
 function SectionBlock({ title, received, spent, result, receivedLabel, spentLabel, resultLabel, accentColor }) {
   const resNum = Number(result ?? 0);
@@ -18,7 +19,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-noorix-muted">{receivedLabel}</span>
-            <span className="nx-font-numbers font-bold text-[13px] text-noorix-green">{fmt(Number(received ?? 0))}</span>
+            <FmtNum n={Number(received ?? 0)} className="nx-font-numbers font-bold text-[13px] text-noorix-green" />
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-noorix-muted">{spentLabel}</span>
@@ -34,7 +35,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
         <div className="font-extrabold nx-font-numbers text-[22px] tracking-[-0.5px]" style={{
           color: resNum < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
         }}>
-          {resNum < 0 ? '−' : ''}{fmt(Math.abs(resNum))}
+          {resNum < 0 ? '−' : ''}<FmtNum n={Math.abs(resNum)} />
           <span className="nx-sar">SR</span>
         </div>
       </div>

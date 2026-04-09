@@ -12,7 +12,7 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { fmt, calcReverseVat } from '../../../utils/format';
 import SmartTable from '../../../components/common/SmartTable';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, ScreenShell, cn } from '../../../ui';
+import { Button, Input, ScreenShell, cn , FmtNum } from '../../../ui';
 
 const EMPTY_ROW = () => ({
   key: `${Date.now()}-${Math.random()}`,
@@ -173,8 +173,8 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         />
       ),
     },
-    { key: 'net', label: 'الصافي', numeric: true, render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v)}</span> },
-    { key: 'tax', label: 'الضريبة', numeric: true, render: (v) => <span className="nx-cell-num text-noorix-amber">{fmt(v)}</span> },
+    { key: 'net', label: 'الصافي', numeric: true, render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
+    { key: 'tax', label: 'الضريبة', numeric: true, render: (v) => <FmtNum n={v} className="nx-cell-num text-noorix-amber" /> },
     {
       key: 'notes',
       label: 'ملاحظات',

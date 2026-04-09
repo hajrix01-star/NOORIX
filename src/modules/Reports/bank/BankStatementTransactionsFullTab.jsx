@@ -1,4 +1,4 @@
-﻿/**
+/**
  * جدول العمليات الكامل — فرز، تصفية، تصنيف، ملاحظات
  * واجهة محترفة مع تمييز لوني وعرض واضح للأرقام
  */
@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getTxKey } from './bankAnalysisUtils';
 import { FALLBACK_CATEGORIES } from './bankAnalysisUtils';
-import { Button, Input, SmartTable } from '../../../ui';
+import { Button, Input, SmartTable , FmtNum } from '../../../ui';
 
 export default function BankStatementTransactionsFullTab({
   statement,
@@ -315,10 +315,10 @@ export default function BankStatementTransactionsFullTab({
               {t('bankColumnTotalsFiltered')} ({filteredTransactions.length} عملية)
             </td>
             <td className="text-right" style={{ padding: '10px 12px' }}>
-              <span className="nx-ltr inline-block text-noorix-red text-[13px] font-extrabold">{fmt(columnTotals.debit)}</span>
+              <FmtNum n={columnTotals.debit} className="nx-ltr inline-block text-noorix-red text-[13px] font-extrabold" />
             </td>
             <td className="text-right" style={{ padding: '10px 12px' }}>
-              <span className="nx-ltr inline-block text-noorix-green text-[13px] font-extrabold">{fmt(columnTotals.credit)}</span>
+              <FmtNum n={columnTotals.credit} className="nx-ltr inline-block text-noorix-green text-[13px] font-extrabold" />
             </td>
             <td colSpan={2} className="text-right text-[12px]" style={{ padding: '10px 12px' }}>
               <span

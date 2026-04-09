@@ -18,7 +18,7 @@ import { formatSaudiDate, getSaudiToday } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
-import { Badge, Button, ScreenShell } from '../../ui';
+import { Badge, Button, ScreenShell , FmtNum } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
 import { SalesActionsCell } from '../../components/common/SalesActionsCell';
@@ -269,9 +269,9 @@ export default function DailySalesScreen() {
     { key: 'customerCount', label: t('customers'), numeric: true, sortable: true, width: '7%',
       render: (v) => <span className="nx-cell-num nx-cell-num--blue">{v ?? 0}</span> },
     { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '10%',
-      render: (v) => <span className="nx-cell-num nx-cell-num--green nx-cell-bold">{fmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green nx-cell-bold" /> },
     { key: 'avgPerCustomer', label: t('avgPerOrder'), numeric: true, sortable: false, width: '7%',
-      render: (v) => <span className="nx-cell-num nx-cell-num--violet">{fmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', label: t('statusLabel'), width: '8%',
       render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     { key: 'actions', label: t('actions'), align: 'center', width: '8%',

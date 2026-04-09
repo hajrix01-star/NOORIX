@@ -16,7 +16,7 @@ import PeriodAnalyticsStrip from '../../Reports/PeriodAnalyticsStrip';
 import { useSales } from '../../../hooks/useSales';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
-import { Button, cn } from '../../../ui';
+import { Button, cn , FmtNum } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
 import { KPI_CARD_SPARKLINE_COLORS, KPI_CARD_TOP_BAR_CLASS } from '../../../constants/kpiCardTheme';
 
@@ -563,7 +563,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                     <span className="text-noorix-text truncate">{ch.name}</span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="nx-font-numbers font-bold text-noorix-text">{fmt(ch.value, 0)}</span>
+                    <FmtNum n={ch.value, 0} className="nx-font-numbers font-bold text-noorix-text" />
                     <span className="text-noorix-muted">({ch.pct}%)</span>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * تبويب التحليل — رسوم بيانية احترافية وبطاقات قابلة للإضافة/الحذف
  */
 import React, { useMemo, useState } from 'react';
@@ -19,7 +19,7 @@ import {
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { AVAILABLE_ANALYSIS_CARDS } from '../../../hooks/useBankStatementView';
-import { Button } from '../../../ui';
+import { Button , FmtNum } from '../../../ui';
 import {
   buildDailyChartData,
   buildDepositsByCategory,
@@ -78,16 +78,16 @@ function DailyTooltip({ active, payload, label }) {
     <div className="text-[12px] nx-rtl nx-recharts-tooltip-shell">
       <div className="font-bold text-noorix-text mb-1.5">{label}</div>
       <div className="text-noorix-green mb-1">
-        إيداعات: <span className="nx-num-bold">{fmt(deposits)}</span>
+        إيداعات: <FmtNum n={deposits} className="nx-num-bold" />
       </div>
       <div className="text-noorix-red mb-1">
-        سحوبات: <span className="nx-num-bold">{fmt(withdrawals)}</span>
+        سحوبات: <FmtNum n={withdrawals} className="nx-num-bold" />
       </div>
       <div
         className="font-bold nx-recharts-tooltip-footer"
         style={{ color: deposits - withdrawals >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)' }}
       >
-        الصافي: <span className="inline-block ltr">{fmt(deposits - withdrawals)}</span>
+        الصافي: <FmtNum n={deposits - withdrawals} className="inline-block ltr" />
       </div>
     </div>
   );
@@ -105,15 +105,15 @@ function PieTooltip({ active, payload, pieMode, t }) {
         <>
           <div className="text-noorix-red mb-[3px]">
             {t('bankStatementColDebit')}:{' '}
-            <span className="nx-num-bold">{fmt(p.debit)}</span>
+            <FmtNum n={p.debit} className="nx-num-bold" />
           </div>
           <div className="text-noorix-green mb-[3px]">
             {t('bankStatementColCredit')}:{' '}
-            <span className="nx-num-bold">{fmt(p.credit)}</span>
+            <FmtNum n={p.credit} className="nx-num-bold" />
           </div>
           <div className="font-bold mb-1 nx-recharts-tooltip-footer--loose">
             {t('bankPieCenterVolume')}:{' '}
-            <span className="inline-block ltr">{fmt(d.value)}</span>
+            <FmtNum n={d.value} className="inline-block ltr" />
           </div>
         </>
       ) : (
@@ -518,7 +518,7 @@ export default function BankStatementAnalysisCardsTab({
                             {item.name}
                           </span>
                           <span className="text-noorix-muted shrink-0 text-[12px]">{item.percent}%</span>
-                          <span className="font-extrabold nx-ltr shrink-0 text-[13px]">{fmt(item.value)}</span>
+                          <FmtNum n={item.value} className="font-extrabold nx-ltr shrink-0 text-[13px]" />
                         </div>
                         {pieMode === 'combined' ? (
                           <div className="flex items-center justify-between gap-2 text-[11px] text-noorix-muted ps-5">

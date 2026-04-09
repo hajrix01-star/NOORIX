@@ -8,7 +8,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
-import { Button, Input } from '../../ui';
+import { Button, Input , FmtNum } from '../../ui';
 import { TAX_REPORT_STORAGE_PREFIX } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 
@@ -334,15 +334,15 @@ export default function TaxReportTab() {
                 </tr>
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3">{fmt(outputTotal)} <span className="nx-sar">SR</span></td>
+                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3"><FmtNum n={outputTotal} /> <span className="nx-sar">SR</span></td>
                 </tr>
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3">{fmt(inputTotal)} <span className="nx-sar">SR</span></td>
+                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3"><FmtNum n={inputTotal} /> <span className="nx-sar">SR</span></td>
                 </tr>
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers font-bold py-[10px] px-3">{fmt(netVat)} <span className="nx-sar">SR</span></td>
+                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers font-bold py-[10px] px-3"><FmtNum n={netVat} /> <span className="nx-sar">SR</span></td>
                 </tr>
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td>
@@ -359,7 +359,7 @@ export default function TaxReportTab() {
                 <tr className="bg-[var(--noorix-blue-8)] border-t-2 border-noorix-blue">
                   <td className="font-extrabold p-3">{lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td>
                   <td colSpan={3} className="text-end nx-font-numbers font-extrabold p-3" style={{ color: netPayable >= 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-accent-green)' }}>
-                    {fmt(netPayable)} <span className="nx-sar">SR</span> {netPayable >= 0 ? (lang === 'ar' ? '(مستحقة)' : '(payable)') : (lang === 'ar' ? '(مطالب بها)' : '(refundable)')}
+                    <FmtNum n={netPayable} /> <span className="nx-sar">SR</span> {netPayable >= 0 ? (lang === 'ar' ? '(مستحقة)' : '(payable)') : (lang === 'ar' ? '(مطالب بها)' : '(refundable)')}
                   </td>
                 </tr>
               </tbody>

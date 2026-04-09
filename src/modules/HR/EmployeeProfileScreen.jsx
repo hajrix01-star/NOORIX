@@ -1,4 +1,4 @@
-﻿/**
+/**
  * EmployeeProfileScreen — صفحة ملف الموظف الموسعة (جداول احترافية)
  */
 import React, { useState, useMemo } from 'react';
@@ -26,7 +26,7 @@ import {
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { assertApiOk } from '../../utils/apiResponse';
 import { hrFmt } from './utils/hrFmt';
-import { Badge, Button, ScreenShell, Spinner, SmartTable, cn } from '../../ui';
+import { Badge, Button, ScreenShell, Spinner, SmartTable, cn , FmtNum } from '../../ui';
 import {
   parseWorkHours,
   overtimePay,
@@ -584,13 +584,13 @@ export default function EmployeeProfileScreen() {
             { key: 'payrollRun.payrollMonth', label: t('payrollMonth'), width: '14%',
               render: (_, row) => <span className="nx-cell-muted-sm">{formatSaudiDate(row.payrollRun?.payrollMonth)}</span> },
             { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: '12%',
-              render: (v) => <span className="nx-cell-num">{hrFmt(v)}</span> },
+              render: (v) => <FmtNum n={v} className="nx-cell-num" /> },
             { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: '11%',
               render: (v) => <span className="nx-cell-num" style={{ color: Number(v) > 0 ? 'var(--noorix-accent-red)' : undefined }}>{hrFmt(v)}</span> },
             { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: '11%',
               render: (v) => <span className="nx-cell-num" style={{ color: Number(v) > 0 ? 'var(--color-noorix-amber)' : undefined }}>{hrFmt(v)}</span> },
             { key: 'netSalary', label: t('netSalary'), numeric: true, width: '12%',
-              render: (v) => <span className="nx-cell-num font-bold text-noorix-green">{hrFmt(v)}</span> },
+              render: (v) => <FmtNum n={v} className="nx-cell-num font-bold text-noorix-green" /> },
             { key: 'payrollRun.status', label: t('payrollStatus'), width: '12%',
               render: (_, row) => <Badge {...Badge.fromStatus(row.payrollRun?.status, payrollRunStatusMap)} size="sm" /> },
             { key: 'notes', label: t('invoiceNotesColumn'), width: '14%',
@@ -640,7 +640,7 @@ export default function EmployeeProfileScreen() {
           rowNumberWidth="1%"
           innerPadding={8}
           columns={[
-            { key: 'totalAmount',     label: t('advanceAmount'),    numeric: true, width: '18%', render: (v) => <span className="nx-cell-num nx-cell-bold">{hrFmt(v)}</span> },
+            { key: 'totalAmount',     label: t('advanceAmount'),    numeric: true, width: '18%', render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" /> },
             { key: 'transactionDate', label: t('transactionDate'),                width: '16%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
             { key: 'installmentCount', label: t('installmentInfo'),               width: '20%', render: (_, row) => {
               if (!row.installmentCount || row.installmentCount <= 1) return <span className="nx-cell-muted-sm">—</span>;

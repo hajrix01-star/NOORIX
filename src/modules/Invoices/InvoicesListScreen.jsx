@@ -16,7 +16,7 @@ import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDate, formatSaudiDateISO } from '../../utils/saudiDate';
 import { updateInvoice, getInvoices, deleteInvoice } from '../../services/api';
-import { Badge, Button, Modal, Input, FilterScrollStrip, ScreenShell } from '../../ui';
+import { Badge, Button, Modal, Input, FilterScrollStrip, ScreenShell , FmtNum } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable         from '../../components/common/SmartTable';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
@@ -83,7 +83,7 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
                 return (
                   <li key={a.id} className="flex justify-between gap-2 text-[13px] text-noorix-text">
                     <span className="truncate">{vn || '—'}</span>
-                    <span className="ltr font-semibold shrink-0">{fmt(a.amount)} <span className="nx-sar">SR</span></span>
+                    <span className="ltr font-semibold shrink-0"><FmtNum n={a.amount} /> <span className="nx-sar">SR</span></span>
                   </li>
                 );
               })}
@@ -213,11 +213,11 @@ export default function InvoicesListScreen() {
       },
     },
     { key: 'netAmount',     label: t('net'),    numeric: true, shrink: true, width: '5%',
-      render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
     { key: 'taxAmount',     label: t('tax'),    numeric: true, shrink: true, width: '5%',
-      render: (v) => <span className="nx-cell-num nx-cell-num--amber">{fmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--amber" /> },
     { key: 'totalAmount',   label: t('total'),  numeric: true, shrink: true, width: '7%',
-      render: (v) => <span className="nx-cell-num nx-cell-bold">{fmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" /> },
     { key: 'transactionDate', label: t('date'), sortable: true, shrink: true, width: '6%',
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span> },
     { key: 'status',        label: t('statusLabel'), shrink: true, width: '6%',
@@ -424,7 +424,7 @@ export default function InvoicesListScreen() {
                 <span className="noorix-exec-card__title">{t('inbound')} — {t('categoryTypeSale')}</span>
               </div>
               <div className="noorix-exec-card__total">
-                <span className="noorix-exec-card__amount">{fmt(Number(serverInflow.total))}</span>
+                <FmtNum n={Number(serverInflow.total)} className="noorix-exec-card__amount" />
                 <span className="noorix-exec-card__currency">SR</span>
               </div>
               <div className="noorix-exec-card__divider" />
@@ -435,11 +435,11 @@ export default function InvoicesListScreen() {
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('net')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverInflow.net))} <span className="nx-sar">SR</span></span>
+                  <span className="noorix-exec-card__stat-value"><FmtNum n={Number(serverInflow.net)} /> <span className="nx-sar">SR</span></span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('tax')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverInflow.tax))} <span className="nx-sar">SR</span></span>
+                  <span className="noorix-exec-card__stat-value"><FmtNum n={Number(serverInflow.tax)} /> <span className="nx-sar">SR</span></span>
                 </div>
               </div>
             </div>
@@ -456,7 +456,7 @@ export default function InvoicesListScreen() {
                 <span className="noorix-exec-card__title">{t('outbound')} — {t('purchases')} / {t('categoryTypeExpense')}</span>
               </div>
               <div className="noorix-exec-card__total">
-                <span className="noorix-exec-card__amount">{fmt(Number(serverOutflow.total))}</span>
+                <FmtNum n={Number(serverOutflow.total)} className="noorix-exec-card__amount" />
                 <span className="noorix-exec-card__currency">SR</span>
               </div>
               <div className="noorix-exec-card__divider" />
@@ -467,11 +467,11 @@ export default function InvoicesListScreen() {
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('net')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverOutflow.net))} <span className="nx-sar">SR</span></span>
+                  <span className="noorix-exec-card__stat-value"><FmtNum n={Number(serverOutflow.net)} /> <span className="nx-sar">SR</span></span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('tax')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverOutflow.tax))} <span className="nx-sar">SR</span></span>
+                  <span className="noorix-exec-card__stat-value"><FmtNum n={Number(serverOutflow.tax)} /> <span className="nx-sar">SR</span></span>
                 </div>
               </div>
             </div>

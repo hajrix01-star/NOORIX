@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { createMovement, updateEmployee } from '../../../services/api';
@@ -241,11 +241,11 @@ export function EmployeeCareerMovementModal({
               <div className="text-[13px] rounded-lg px-3 py-2 bg-noorix-bg-muted border border-noorix-border space-y-1">
                 <div>
                   <span className="text-noorix-muted">{t('careerRaisePreviewTotal')}: </span>
-                  <span className="font-semibold text-noorix-text ltr">{hrFmt(raisePreview.newTarget)}</span>
+                  <FmtNum n={raisePreview.newTarget} className="font-semibold text-noorix-text ltr" />
                 </div>
                 <div className="text-[12px] text-noorix-muted">
                   {t('careerRaiseImpliedBasic')}:{' '}
-                  <span className="font-medium text-noorix-text ltr">{hrFmt(raisePreview.basic)}</span>
+                  <FmtNum n={raisePreview.basic} className="font-medium text-noorix-text ltr" />
                 </div>
               </div>
             ) : null}

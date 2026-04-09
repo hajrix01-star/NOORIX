@@ -7,6 +7,7 @@ import { useSales } from '../../../hooks/useSales';
 import { CARD_COLORS } from '../../../utils/cardStyles';
 import { fmt } from '../../../utils/format';
 import { EN_MONTHS } from '../../../modules/Reports/reportHelpers';
+import { FmtNum } from '../../../ui';
 
 function ymd(y, m, d) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -116,7 +117,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
               {fmt(appPercent, 1)}%
             </div>
             <div className="text-[12px] text-noorix-muted mt-1.5">
-              {fmt(yearApp)} / {fmt(yearTotal)} <span className="nx-sar">SR</span>
+              {fmt(yearApp)} / <FmtNum n={yearTotal} /> <span className="nx-sar">SR</span>
             </div>
             {yearApp === 0 && (
               <div className="mt-2 text-[11px] font-semibold text-noorix-amber">

@@ -14,7 +14,7 @@ import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { hrFmt } from '../utils/hrFmt';
 import { parseWorkHours } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input } from '../../../ui';
+import { Button, Input , FmtNum } from '../../../ui';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -309,7 +309,7 @@ export default function EOSCalcTab() {
           )}
           <div className="noorix-result-panel__row">
             <span className="noorix-result-panel__row-label">{t('eosCalcFullAward')}</span>
-            <span className="noorix-result-panel__row-value">{hrFmt(fullAward.toNumber())} <span className="nx-sar">SR</span></span>
+            <span className="noorix-result-panel__row-value"><FmtNum n={fullAward.toNumber()} /> <span className="nx-sar">SR</span></span>
           </div>
           <div className="noorix-result-panel__row">
             <span className="noorix-result-panel__row-label">{t('eosCalcEligibilityFactor')}</span>
@@ -317,7 +317,7 @@ export default function EOSCalcTab() {
           </div>
           <div className="noorix-result-panel__row noorix-result-panel__row--highlight">
             <span className="noorix-result-panel__row-label">{t('eosCalcResult')}</span>
-            <span className="noorix-result-panel__row-value">{hrFmt(eosAmount.toNumber())} <span className="nx-sar">SR</span></span>
+            <span className="noorix-result-panel__row-value"><FmtNum n={eosAmount.toNumber()} /> <span className="nx-sar">SR</span></span>
           </div>
         </div>
         <div className="noorix-result-panel__note">

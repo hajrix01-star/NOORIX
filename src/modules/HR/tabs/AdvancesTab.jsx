@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AdvancesTab — السلفيات (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
@@ -18,7 +18,7 @@ import SmartTable from '../../../components/common/SmartTable';
 import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn , FmtNum } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 
@@ -448,7 +448,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
           <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-noorix-bg-muted border border-noorix-border">
             <span className="text-[13px] text-noorix-muted">{t('installmentAmount')}</span>
             <span className="text-[15px] font-bold text-noorix-blue ltr">
-              {hrFmt(installmentAmt)} <span className="nx-sar">SR</span>
+              <FmtNum n={installmentAmt} /> <span className="nx-sar">SR</span>
             </span>
           </div>
         )}

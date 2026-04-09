@@ -11,7 +11,7 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { fmt } from '../../../utils/format';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 
 export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }) {
   const { t, lang } = useTranslation();
@@ -153,7 +153,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
           <div className="flex items-center justify-between px-1 py-2 rounded-lg bg-noorix-bg-muted border border-noorix-border">
             <span className="text-[13px] text-noorix-muted">{t('installmentAmount') || 'مبلغ الدفعة'}</span>
             <span className="text-[15px] font-bold text-noorix-blue ltr">
-              {fmt(installmentAmt)} <span className="nx-sar">SR</span>
+              <FmtNum n={installmentAmt} /> <span className="nx-sar">SR</span>
             </span>
           </div>
         )}

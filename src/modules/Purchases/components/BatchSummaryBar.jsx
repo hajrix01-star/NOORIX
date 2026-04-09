@@ -5,6 +5,7 @@
 import React, { memo } from 'react';
 import { fmt } from '../../../utils/format';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { FmtNum } from '../../../ui';
 
 export const BatchSummaryBar = memo(function BatchSummaryBar({ count, net, tax, total }) {
   const { t } = useTranslation();
@@ -16,15 +17,15 @@ export const BatchSummaryBar = memo(function BatchSummaryBar({ count, net, tax, 
       </div>
       <div className="noorix-summary-bar__item">
         <div className="noorix-summary-bar__label">{t('net')}</div>
-        <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(net)} <span className="nx-sar">SR</span></div>
+        <div className="noorix-summary-bar__value noorix-summary-bar__value--green"><FmtNum n={net} /> <span className="nx-sar">SR</span></div>
       </div>
       <div className="noorix-summary-bar__item">
         <div className="noorix-summary-bar__label">{t('tax15')}</div>
-        <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(tax)} <span className="nx-sar">SR</span></div>
+        <div className="noorix-summary-bar__value noorix-summary-bar__value--amber"><FmtNum n={tax} /> <span className="nx-sar">SR</span></div>
       </div>
       <div className="noorix-summary-bar__item">
         <div className="noorix-summary-bar__label">{t('total')}</div>
-        <div className="noorix-summary-bar__value">{fmt(total)} <span className="nx-sar">SR</span></div>
+        <div className="noorix-summary-bar__value"><FmtNum n={total} /> <span className="nx-sar">SR</span></div>
       </div>
     </div>
   );

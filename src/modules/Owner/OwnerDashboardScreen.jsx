@@ -4,7 +4,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button, Input, ScreenShell, ScreenTitle, cn } from '../../ui';
+import { Button, Input, ScreenShell, ScreenTitle, cn , FmtNum } from '../../ui';
 import { useApp } from '../../context/AppContext';
 import { useOwnerReports } from '../../hooks/useOwnerReports';
 import { EN_MONTHS } from '../Reports/reportHelpers';
@@ -417,7 +417,7 @@ export default function OwnerDashboardScreen() {
                         </div>
                         <div className="flex items-center gap-8 shrink-0">
                           <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor /* dynamic: profit/loss color */ }}>
-                            {fmt(item.netProfit)} <span className="nx-sar">SR</span>
+                            <FmtNum n={item.netProfit} /> <span className="nx-sar">SR</span>
                           </span>
                           <span className="text-[11px] text-noorix-muted text-end min-w-[38px]">
                             {aggregated.totalNetProfit !== 0 ? `${fmt(pct, 1)}%` : '—'}

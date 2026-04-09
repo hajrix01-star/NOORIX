@@ -3,7 +3,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS } from '../constants/treasuryConstants';
-import { Badge, Button } from '../../../ui';
+import { Badge, Button , FmtNum } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
 export function parseVaultType(type) {
@@ -208,7 +208,7 @@ const VaultCard = memo(function VaultCard({
             {t('inbound')}
           </div>
           <div className="text-[13px] font-bold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
-            {fmt(totalIn)} <span className="nx-sar">SR</span>
+            <FmtNum n={totalIn} /> <span className="nx-sar">SR</span>
           </div>
         </div>
         <div className="text-left pr-2" style={{ borderRight: '1px solid var(--noorix-border)' }}>
@@ -219,7 +219,7 @@ const VaultCard = memo(function VaultCard({
             </svg>
           </div>
           <div className="text-[13px] font-bold text-noorix-text text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
-            {fmt(totalOut)} <span className="nx-sar">SR</span>
+            <FmtNum n={totalOut} /> <span className="nx-sar">SR</span>
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import SmartTable from '../../../components/common/SmartTable';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, Input } from '../../../ui';
+import { Button, Badge, Input , FmtNum } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 
 export default function PaymentHistoryTab({ companyId, dateFilter: externalDateFilter }) {
@@ -88,11 +88,11 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     { key: 'transactionDate', label: 'التاريخ', minWidth: 110,
       render: (v) => <span className="nx-cell-muted-sm text-[13px]">{formatSaudiDate(v)}</span> },
     { key: 'netAmount', label: 'الصافي', numeric: true, minWidth: 100,
-      render: (v) => <span className="nx-cell-num nx-cell-num--green text-[13px]">{fmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green text-[13px]" /> },
     { key: 'taxAmount', label: 'الضريبة', numeric: true, minWidth: 100,
-      render: (v) => <span className="nx-cell-num text-noorix-amber text-[13px]">{fmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num text-noorix-amber text-[13px]" /> },
     { key: 'totalAmount', label: 'الإجمالي', numeric: true, minWidth: 100,
-      render: (v) => <span className="nx-cell-num font-bold text-[13px]">{fmt(v)}</span> },
+      render: (v) => <FmtNum n={v} className="nx-cell-num font-bold text-[13px]" /> },
   ], [lang, kindBadgeMap]);
 
   if (isError) {
@@ -164,7 +164,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
               <span className="text-[13px] text-noorix-muted">عدد السجلات: <strong className="text-noorix-text">{activeItems.length}</strong></span>
               <span className="text-[13px]">الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
               <span className="text-[13px]">الضريبة: <strong className="nx-cell-num text-noorix-amber">{fmt(totalTax)}</strong></span>
-              <span className="nx-cell-num text-[14px] font-bold">الإجمالي: {fmt(totalAmount)} <span className="nx-sar">SR</span></span>
+              <span className="nx-cell-num text-[14px] font-bold">الإجمالي: <FmtNum n={totalAmount} /> <span className="nx-sar">SR</span></span>
             </div>
           ) : null
         }
