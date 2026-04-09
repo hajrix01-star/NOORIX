@@ -28,6 +28,7 @@ import React from 'react';
 import { cn } from './cn';
 import SparkLine from './SparkLine';
 import { fmt } from '../utils/format';
+import { FmtNum } from './FmtNum';
 
 /* ══ Root ═══════════════════════════════════════════════════════════ */
 function MetricCard({ color, isArchived = false, onClick, className, children }) {
@@ -97,7 +98,9 @@ MetricCard.Value = function MetricCardValue({
   prefix,
   className,
 }) {
-  const display = typeof value === 'number' ? fmt(Math.abs(value)) : value;
+  const isNum = typeof value === 'number';
+  const absVal = isNum ? Math.abs(value) : null;
+  const strDisplay = !isNum ? value : null;
   return (
     <div
       className={cn(
@@ -121,7 +124,7 @@ MetricCard.Value = function MetricCardValue({
         style={{ color: color || undefined, fontFamily: 'var(--noorix-font-numbers)' }}
       >
         {prefix}
-        {display}
+        {isNum ? <FmtNum n={absVal} /> : strDisplay}
         {currency && <span className="nx-sar">{currency}</span>}
       </div>
     </div>

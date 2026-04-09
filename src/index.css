@@ -1612,6 +1612,8 @@ html[data-card-style="10"] .noorix-stat-card {
   color: var(--noorix-text);
   font-family: var(--noorix-font-numbers);
   white-space: nowrap;
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 .noorix-summary-bar__value--green  { color: var(--noorix-accent-green); }
 .noorix-summary-bar__value--blue   { color: var(--noorix-accent-blue); }

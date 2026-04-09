@@ -157,7 +157,7 @@ export default function TreasuryScreen() {
               ].map(({ label, value, color, sign }, i) => (
                 <div key={label} className="text-center p-4" style={{ borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none' }}>
                   <div className="text-[11px] text-noorix-muted mb-1.5 tracking-[0.03em]">{label}</div>
-                  <div className="font-extrabold text-[20px] nx-font-numbers" style={{ color }}>
+                  <div dir="ltr" className="font-extrabold text-[20px] nx-font-numbers" style={{ color }}>
                     {sign}<FmtNum n={Math.abs(value)} />
                     <span className="nx-sar me-[3px]">SR</span>
                   </div>

@@ -214,7 +214,7 @@ const VaultCard = memo(function VaultCard({
             </svg>
             {t('inbound')}
           </div>
-          <div className="text-[13px] font-bold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <div dir="ltr" className="text-[13px] font-bold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
             <FmtNum n={totalIn} /> <span className="nx-sar">SR</span>
           </div>
         </div>
@@ -225,7 +225,7 @@ const VaultCard = memo(function VaultCard({
               <path d="M6 2v8M2 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <div className="text-[13px] font-bold text-noorix-text text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <div dir="ltr" className="text-[13px] font-bold text-noorix-text text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
             <FmtNum n={totalOut} /> <span className="nx-sar">SR</span>
           </div>
         </div>

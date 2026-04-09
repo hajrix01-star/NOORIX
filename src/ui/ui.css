@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ui.css — نظام مكوّنات نووريكس الذري
  * يتضمن: Button | Input | Card | Badge | Modal | Spinner | Divider | FormRow | Table
  * ─────────────────────────────────────
@@ -1369,6 +1369,8 @@
 .nx-cell-num {
   font-family: var(--noorix-font-numbers);
   white-space: nowrap;
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .nx-cell-num--blue   { color: var(--noorix-accent-blue); }
@@ -1439,6 +1441,8 @@
   font-size: 14px;
   font-weight: 700;
   font-family: var(--noorix-font-numbers);
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .nx-mc__actions {

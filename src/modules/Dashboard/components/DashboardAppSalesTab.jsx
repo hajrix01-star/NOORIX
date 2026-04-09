@@ -7,7 +7,7 @@ import { useSales } from '../../../hooks/useSales';
 import { CARD_COLORS } from '../../../utils/cardStyles';
 import { fmt } from '../../../utils/format';
 import { EN_MONTHS } from '../../../modules/Reports/reportHelpers';
-import { FmtNum } from '../../../ui';
+import { FmtNum, MetricCard } from '../../../ui';
 
 function ymd(y, m, d) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -105,27 +105,27 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
   return (
     <div className="flex flex flex-col gap-6">
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
-        <div className="noorix-surface-card relative overflow-hidden">
-          <span
-            className="pointer-events-none absolute inset-x-0 top-0 h-1 z-[1]"
-            style={{ background: CARD_COLORS.sales.accent }}
-            aria-hidden
-          />
-          <div className="relative p-4">
-            <div className="text-[12px] font-bold mb-2" style={{ color: CARD_COLORS.sales.accent }}>{t('dashboardAppSalesRatio')}</div>
-            <div className="text-[28px] font-black nx-font-numbers" style={{ color: CARD_COLORS.sales.accent }}>
+        <MetricCard color={CARD_COLORS.sales.accent}>
+          <div className="p-4 flex flex-col gap-1">
+            <div className="text-[12px] font-bold" style={{ color: CARD_COLORS.sales.accent }}>
+              {t('dashboardAppSalesRatio')}
+            </div>
+            <div
+              className="text-[28px] font-black nx-font-numbers leading-tight"
+              style={{ color: CARD_COLORS.sales.accent, fontFamily: 'var(--noorix-font-numbers)' }}
+            >
               {fmt(appPercent, 1)}%
             </div>
-            <div className="text-[12px] text-noorix-muted mt-1.5">
+            <div className="text-[12px] text-noorix-muted mt-0.5">
               <FmtNum n={yearApp} /> / <FmtNum n={yearTotal} /> <span className="nx-sar">SR</span>
             </div>
             {yearApp === 0 && (
-              <div className="mt-2 text-[11px] font-semibold text-noorix-amber">
+              <div className="mt-1 text-[11px] font-semibold text-noorix-amber">
                 {t('dashboardNoAppSales')}
               </div>
             )}
           </div>
-        </div>
+        </MetricCard>
       </div>
 
       {appByChannel.length > 0 && (

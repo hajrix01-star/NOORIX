@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ReportsScreen — التقرير العام (ربح وخسارة شهري)
  */
 import React, { useMemo, useState } from 'react';
@@ -9,9 +9,9 @@ import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
 import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
-import { Button, Input, ScreenTabs, ScreenShell, cn } from '../../ui';
+import { Button, Input, ScreenTabs, ScreenShell, cn, MetricCard } from '../../ui';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
-import { KPI_CARD_TOP_BAR_CLASS } from '../../constants/kpiCardTheme';
+import { KPI_CARD_SPARKLINE_COLORS } from '../../constants/kpiCardTheme';
 import {
   EN_MONTHS,
   PERCENT_COLOR,
@@ -181,37 +181,25 @@ export default function ReportsScreen() {
                   const profitPct = (card.key === 'grossProfit' || card.key === 'netProfit') ? getCardProfitPercent(card.key) : null;
                   const val = Number(getCardValue(card.key) || 0);
                   const isProfitCard = card.key === 'grossProfit' || card.key === 'netProfit';
-                  const barClass = KPI_CARD_TOP_BAR_CLASS[card.key] || KPI_CARD_TOP_BAR_CLASS.sales;
+                  const accentColor = KPI_CARD_SPARKLINE_COLORS[card.key] || KPI_CARD_SPARKLINE_COLORS.sales;
                   const periodLabel = selectedMonthNumber
                     ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} · ${year}`
                     : String(year);
                   const valueNegative = isProfitCard && val < 0;
                   return (
-                    <div
+                    <MetricCard
                       key={`${year}-${selectedMonth || 'all'}-${card.key}`}
-                      className="noorix-surface-card relative flex min-h-[120px] min-w-0 flex-col overflow-hidden p-4"
+                      color={accentColor}
+                      className="min-h-[120px]"
                     >
-                      <span
-                        className={cn('pointer-events-none absolute inset-x-0 top-0 h-1', barClass)}
-                        aria-hidden
+                      <MetricCard.Header label={card.label} />
+                      <MetricCard.Value
+                        value={amountText(getCardValue(card.key))}
+                        currency="SR"
+                        color={valueNegative ? 'var(--noorix-accent-red)' : undefined}
                       />
-                      <div className="text-[12px] font-medium text-noorix-muted">{card.label}</div>
-                      <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-                        <span
-                          dir="ltr"
-                          className={cn(
-                            'nx-font-numbers text-start text-[22px] font-bold leading-tight tracking-[-0.5px]',
-                            valueNegative ? 'text-noorix-red' : 'text-noorix-text',
-                          )}
-                        >
-                          {amountText(getCardValue(card.key))}
-                        </span>
-                        <span className="text-[12px] font-medium text-noorix-muted">
-                          SR
-                        </span>
-                      </div>
-                      <div className="min-h-[24px] flex-1" aria-hidden />
-                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-noorix-border pt-3">
+                      <MetricCard.Spark data={[]} color={accentColor} grow />
+                      <MetricCard.Footer className="mt-3 border-t border-noorix-border pt-3 pb-3">
                         <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
                         {profitPct != null && (
                           <span
@@ -225,8 +213,8 @@ export default function ReportsScreen() {
                             {t('reportProfitMargin')}: {profitPct}%
                           </span>
                         )}
-                      </div>
-                    </div>
+                      </MetricCard.Footer>
+                    </MetricCard>
                   );
                 })}
               </div>

@@ -32,7 +32,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
         <div className="text-[10px] text-noorix-muted mb-1 uppercase tracking-[0.04em]">
           {resultLabel}
         </div>
-        <div className="font-extrabold nx-font-numbers text-[22px] tracking-[-0.5px]" style={{
+        <div dir="ltr" className="font-extrabold nx-font-numbers text-[22px] tracking-[-0.5px]" style={{
           color: resNum < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
         }}>
           {resNum < 0 ? '−' : ''}<FmtNum n={Math.abs(resNum)} />
