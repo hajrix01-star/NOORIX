@@ -21,7 +21,7 @@ import { exportToExcel } from '../../../utils/exportUtils';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
-import { Button, Badge, AdaptiveSheet, SmartTable } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, SmartTable, KebabMenu } from '../../../ui';
 
 function buildWhatsAppText(order, t) {
   const lines = (order.items || []).map((it) => {
@@ -221,20 +221,16 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         width: '1%',
         shrink: true,
         render: (_, o) => (
-          <div className="nx-toolbar justify-center">
-            <Button size="sm" onClick={() => handleView(o)} title={t('ordersViewOrder')}>
-              {t('view')}
-            </Button>
-            <Button size="sm" onClick={() => handleWhatsApp(o)} title={t('sendWhatsApp')}>
-              {t('sendWhatsApp')}
-            </Button>
-            <Button size="sm" onClick={() => handleEdit(o)} title={t('edit')}>
-              {t('edit')}
-            </Button>
-            <Button size="sm" variant="danger" onClick={() => handleDelete(o)} title={t('delete')}>
-              {t('delete')}
-            </Button>
-          </div>
+          <KebabMenu
+            ariaLabel={t('actions')}
+            menuMaxHeight={320}
+            items={[
+              { key: 'view', label: t('view'), style: { color: 'var(--noorix-text)' }, onClick: () => handleView(o) },
+              { key: 'wa', label: t('sendWhatsApp'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleWhatsApp(o) },
+              { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleEdit(o) },
+              { key: 'del', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDelete(o) },
+            ]}
+          />
         ),
       },
     ],
@@ -296,19 +292,17 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
               </div>
             )}
           </div>
-          <div className="nx-toolbar justify-end flex-wrap">
-            <Button size="sm" onClick={() => handleView(o)}>
-              {t('view')}
-            </Button>
-            <Button size="sm" onClick={() => handleWhatsApp(o)}>
-              {t('sendWhatsApp')}
-            </Button>
-            <Button size="sm" onClick={() => handleEdit(o)}>
-              {t('edit')}
-            </Button>
-            <Button size="sm" variant="danger" onClick={() => handleDelete(o)}>
-              {t('delete')}
-            </Button>
+          <div className="flex justify-end">
+            <KebabMenu
+              ariaLabel={t('actions')}
+              menuMaxHeight={320}
+              items={[
+                { key: 'view', label: t('view'), style: { color: 'var(--noorix-text)' }, onClick: () => handleView(o) },
+                { key: 'wa', label: t('sendWhatsApp'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleWhatsApp(o) },
+                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleEdit(o) },
+                { key: 'del', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDelete(o) },
+              ]}
+            />
           </div>
         </div>
       );
@@ -412,7 +406,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
   const printDate = `${year}/${String(month).padStart(2, '0')}`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       <div className="noorix-print-header hidden print:block">
         {companyName} — {t('ordersTab')} — {printDate}
       </div>
@@ -428,7 +422,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
 
       <OrdersSummaryCard summary={summary} cashSalesTotal={cashSalesTotal} isLoading={summaryLoading} />
 
-      <div className="noorix-surface-card overflow-auto">
+      <div className="noorix-surface-card min-w-0 max-w-full">
         {ordersError ? (
           <div className="text-center text-noorix-red p-10">⚠ {ordersError?.message || t('loadingError')}</div>
         ) : isLoading ? (
@@ -442,7 +436,9 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         ) : (
           <SmartTable
             compact={false}
-            tableMinWidth={1000}
+            tableLayout="auto"
+            stickyActionColumn={false}
+            tableMinWidth={960}
             innerPadding={0}
             columns={ordersColumns}
             data={filteredOrders}

@@ -50,7 +50,7 @@ export default function OrdersScreen() {
   ];
 
   return (
-    <ScreenShell>
+    <ScreenShell className="min-w-0">
       <div>
         <ScreenTitle>{t('ordersTitle')}</ScreenTitle>
       </div>
