@@ -2,7 +2,7 @@
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
-import { Input, Button, AdaptiveSheet } from '../../../ui';
+import { Input, Button, AdaptiveSheet, FmtNum } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 
 /* ── ثوابت ──────────────────────────────────────────────────────────── */
