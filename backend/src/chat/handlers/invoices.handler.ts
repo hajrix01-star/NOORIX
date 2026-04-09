@@ -29,7 +29,7 @@ export const invoicesHandler: ChatHandler = {
       }
       const supp = last.supplier ? ` (${last.supplier.nameAr})` : '';
       return {
-        answerAr: `آخر فاتورة: ${last.invoiceNumber}${supp} — ${Number(last.totalAmount).toLocaleString('en')} SA — ${last.transactionDate.toLocaleDateString('en-GB')}`,
+        answerAr: `آخر فاتورة: ${last.invoiceNumber}${supp} — ${Number(last.totalAmount).toLocaleString('en')} SR — ${last.transactionDate.toLocaleDateString('en-GB')}`,
         answerEn: `Last invoice: ${last.invoiceNumber}${last.supplier ? ` (${last.supplier.nameEn || last.supplier.nameAr})` : ''} — ${Number(last.totalAmount).toLocaleString('en')} SAR — ${last.transactionDate.toLocaleDateString('en-GB')}`,
       };
     }

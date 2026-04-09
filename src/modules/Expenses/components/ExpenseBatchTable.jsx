@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ExpenseBatchTable — إدخال جماعي لمصاريف (ثابت/متغير)
  * كل صف: بند مصروف، رقم فاتورة، مبلغ، ملاحظات
  */
@@ -260,15 +260,15 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         </div>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">الصافي</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(summary.totalNet)} SA</div>
+          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(summary.totalNet)} SR</div>
         </div>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">الضريبة</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(summary.totalTax)} SA</div>
+          <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(summary.totalTax)} SR</div>
         </div>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">الإجمالي</div>
-          <div className="noorix-summary-bar__value">{fmt(summary.total)} SA</div>
+          <div className="noorix-summary-bar__value">{fmt(summary.total)} SR</div>
         </div>
       </div>
       <Button

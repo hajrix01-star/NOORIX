@@ -37,7 +37,7 @@ export default {
   batchCount: { ar: '{0} دفعة', en: '{0} batches' },
   totalBatches: { ar: 'الإجمالي ({0} دفعة)', en: 'Total ({0} batches)' },
   statusPartial: { ar: 'جزئي', en: 'Partial' },
-  batchSummary: { ar: '{0} فاتورة — إجمالي: {1} SA', en: '{0} invoices — Total: {1} SA' },
+  batchSummary: { ar: '{0} فاتورة — إجمالي: {1} SR', en: '{0} invoices — Total: {1} SR' },
   batchPrintSubtitle: { ar: 'التاريخ: {0} — {1} فاتورة', en: 'Date: {0} — {1} invoices' },
   cancelled: { ar: 'ملغاة', en: 'Cancelled' },
   totalSum: { ar: 'المجموع ({0})', en: 'Total ({0})' },

@@ -11,8 +11,34 @@ import { EN_MONTHS } from '../Reports/reportHelpers';
 import { fmt } from '../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
+import { KPI_CARD_SPARKLINE_COLORS, KPI_CARD_TOP_BAR_CLASS } from '../../constants/kpiCardTheme';
 
 const COLORS = ['var(--noorix-accent-green)', 'var(--noorix-accent-blue)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-violet)', 'var(--noorix-accent-red)', '#0891b2', 'var(--noorix-accent-violet)', 'var(--noorix-accent-green)'];
+
+function SparkLine({ data = [], color = '#185FA5' }) {
+  const W = 100; const H = 36; const pad = 3;
+  const nums = (data || []).map((v) => Number(v || 0));
+  const empty = !nums.length || nums.every((v) => v === 0);
+  if (empty) {
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="36" className="block">
+        <line x1={pad} y1={H / 2} x2={W - pad} y2={H / 2} className="stroke-noorix-border" strokeWidth="1" strokeDasharray="5 5" vectorEffect="non-scaling-stroke" />
+      </svg>
+    );
+  }
+  const max = Math.max(...nums); const min = Math.min(...nums);
+  const range = Math.max(max - min, 1e-9); const n = nums.length;
+  const xs = nums.map((_, i) => (n === 1 ? W / 2 : pad + (i / (n - 1)) * (W - 2 * pad)));
+  const ys = nums.map((v) => pad + (1 - (v - min) / range) * (H - 2 * pad));
+  const points = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
+  const fillPoints = `${points} ${xs[n - 1]},${H} ${xs[0]},${H}`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="36" className="block">
+      <polygon points={fillPoints} fill={color} fillOpacity={0.08} />
+      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
 
 function formatAxisValue(n) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
@@ -104,6 +130,23 @@ export default function OwnerDashboardScreen() {
     });
     return { totalSales, totalPurchases, totalExpenses, totalNetProfit, byCompany };
   }, [reportsByCompany, companyList, lang, selectedMonthNum]);
+
+  const aggregatedMonthly = useMemo(() => {
+    const months = Array.from({ length: 12 }, () => ({ sales: 0, purchases: 0, expenses: 0, netProfit: 0 }));
+    Object.values(reportsByCompany).forEach((report) => {
+      const salesG = report?.groups?.find((r) => r.key === 'sales');
+      const purchG = report?.groups?.find((r) => r.key === 'purchases');
+      const expG   = report?.groups?.find((r) => r.key === 'expenses');
+      const netRow = report?.summaryRows?.find((r) => r.key === 'netProfit');
+      for (let i = 0; i < 12; i++) {
+        months[i].sales     += Number(salesG?.months?.[i] || 0);
+        months[i].purchases += Number(purchG?.months?.[i] || 0);
+        months[i].expenses  += Number(expG?.months?.[i]   || 0);
+        months[i].netProfit += Number(netRow?.months?.[i] || 0);
+      }
+    });
+    return months;
+  }, [reportsByCompany]);
 
   const chartData = useMemo(() => {
     let months = EN_MONTHS.map((_, i) => ({ month: i + 1, label: EN_MONTHS[i], byCompany: {} }));
@@ -257,7 +300,7 @@ export default function OwnerDashboardScreen() {
               <div className="h-1 bg-noorix-green" aria-hidden />
               <div className="p-4">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('ownerTotalSales')}</div>
-                <div className="text-[20px] font-extrabold nx-font-numbers">{fmt(aggregated.totalSales, 2)} <span className="nx-sar">SA</span></div>
+                <div className="text-[20px] font-extrabold nx-font-numbers">{fmt(aggregated.totalSales, 2)} <span className="nx-sar">SR</span></div>
                 <div className="text-[10px] text-noorix-muted mt-1">100%</div>
               </div>
             </div>
@@ -268,7 +311,7 @@ export default function OwnerDashboardScreen() {
                 <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) : '—'}%
                 </div>
-                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalPurchases, 2)} <span className="nx-sar">SA</span></div>
+                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalPurchases, 2)} <span className="nx-sar">SR</span></div>
               </div>
             </div>
             <div className="noorix-surface-card relative overflow-hidden">
@@ -278,7 +321,7 @@ export default function OwnerDashboardScreen() {
                 <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalExpenses / aggregated.totalSales) * 100, 1) : '—'}%
                 </div>
-                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalExpenses, 2)} <span className="nx-sar">SA</span></div>
+                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalExpenses, 2)} <span className="nx-sar">SR</span></div>
               </div>
             </div>
             <div className="noorix-surface-card relative overflow-hidden">
@@ -294,7 +337,7 @@ export default function OwnerDashboardScreen() {
                     aggregated.totalNetProfit >= 0 ? 'text-noorix-blue' : 'text-noorix-red',
                   )}
                 >
-                  {fmt(aggregated.totalNetProfit, 2)} <span className="nx-sar">SA</span>
+                  {fmt(aggregated.totalNetProfit, 2)} <span className="nx-sar">SR</span>
                 </div>
                 <div className="text-[10px] text-noorix-muted mt-1">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalNetProfit / aggregated.totalSales) * 100, 1) + '%' : '—'}
@@ -336,7 +379,7 @@ export default function OwnerDashboardScreen() {
                                   background: COLORS[i % COLORS.length],
                                   borderRadius: '2px 2px 0 0',
                                 }}
-                                title={`${companyList.find((c) => c.id === companyId)?.nameAr || companyId}: ${fmt(amt, 2)} SA`}
+                                title={`${companyList.find((c) => c.id === companyId)?.nameAr || companyId}: ${fmt(amt, 2)} SR`}
                               />
                             );
                           })}
@@ -381,7 +424,7 @@ export default function OwnerDashboardScreen() {
                         </div>
                         <div className="flex items-center gap-8 shrink-0">
                           <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor /* dynamic: profit/loss color */ }}>
-                            {fmt(item.netProfit, 2)} <span className="nx-sar">SA</span>
+                            {fmt(item.netProfit, 2)} <span className="nx-sar">SR</span>
                           </span>
                           <span className="text-[11px] text-noorix-muted text-end min-w-[38px]">
                             {aggregated.totalNetProfit !== 0 ? `${fmt(pct, 1)}%` : '—'}

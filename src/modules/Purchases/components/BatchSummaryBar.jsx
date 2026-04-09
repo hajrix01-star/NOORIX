@@ -16,15 +16,15 @@ export const BatchSummaryBar = memo(function BatchSummaryBar({ count, net, tax, 
       </div>
       <div className="noorix-summary-bar__item">
         <div className="noorix-summary-bar__label">{t('net')}</div>
-        <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(net)} <span className="nx-sar">SA</span></div>
+        <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(net)} <span className="nx-sar">SR</span></div>
       </div>
       <div className="noorix-summary-bar__item">
         <div className="noorix-summary-bar__label">{t('tax15')}</div>
-        <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(tax)} <span className="nx-sar">SA</span></div>
+        <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(tax)} <span className="nx-sar">SR</span></div>
       </div>
       <div className="noorix-summary-bar__item">
         <div className="noorix-summary-bar__label">{t('total')}</div>
-        <div className="noorix-summary-bar__value">{fmt(total)} <span className="nx-sar">SA</span></div>
+        <div className="noorix-summary-bar__value">{fmt(total)} <span className="nx-sar">SR</span></div>
       </div>
     </div>
   );

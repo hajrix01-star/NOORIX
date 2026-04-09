@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ThemePreviewScreen — معاينة الثيم: أشكال الكروت + معرض مكوّنات مرقّم للمرجعية
  */
 import React, { useMemo, useState } from 'react';
@@ -47,7 +47,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
         <div className="text-[12px] text-noorix-muted mt-1">{desc}</div>
       </div>
       <div className="flex gap-2 mt-3">
-        <span className="text-[11px] font-semibold text-noorix-green py-1 px-2 rounded-md" style={{ background: 'var(--noorix-green-10)' }}>12,500 SA</span>
+        <span className="text-[11px] font-semibold text-noorix-green py-1 px-2 rounded-md" style={{ background: 'var(--noorix-green-10)' }}>12,500 SR</span>
         <span className="text-[11px] bg-noorix-bg-muted text-noorix-muted py-1 px-2 rounded-md">مثال</span>
       </div>
     </div>

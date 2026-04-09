@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SalaryCalcTab — حاسبة الرواتب (عكسية + ديناميكية)
  *
  * مراجع قانونية:
@@ -277,7 +277,7 @@ export default function SalaryCalcTab() {
           <option value="">— {t('salaryCalcSelectOrEnter') || 'اختر أو أدخل يدوياً'} —</option>
           {employees.map((e) => (
             <option key={e.id} value={e.id}>
-              {employeeDisplayName(e, lang, e.id)} — {hrFmt(computeTargetFromCurrentEmployee(e, new Decimal(allowanceTotals.get(e.id) || 0), parseWorkHours(e.workHours), parseOvertimeWorkDaysPerMonth(e)).toNumber())} SA
+              {employeeDisplayName(e, lang, e.id)} — {hrFmt(computeTargetFromCurrentEmployee(e, new Decimal(allowanceTotals.get(e.id) || 0), parseWorkHours(e.workHours), parseOvertimeWorkDaysPerMonth(e)).toNumber())} SR
               {e.workHours ? ` (${parseWorkHours(e.workHours)} ${t('salaryCalcHour')})` : ''}
             </option>
           ))}
@@ -337,15 +337,15 @@ export default function SalaryCalcTab() {
         <div className="noorix-result-panel__stripe" />
         <div className="noorix-result-panel__body">
           {[
-            { label: t('salaryCalcGross'),               value: `${hrFmt(totalTarget.toNumber())} SA` },
-            { label: t('salaryCalcBasic'),               value: `${hrFmt(basic.toNumber())} SA` },
-            { label: t('salaryCalcAllowances'),          value: `${hrFmt(editableAllowances.toNumber())} SA` },
-            { label: t('salaryCalcAdditionalAllowances'), value: `${hrFmt(customAllowanceTotal.toNumber())} SA` },
-            { label: t('salaryCalcDeduction'),           value: `${hrFmt(deduction.toNumber())} SA` },
-            { label: t('salaryCalcHourlyRate'),          value: `${hrFmt(hourlyRate.toNumber())} SA/${t('salaryCalcHour')}` },
-            { label: t('salaryCalcBasicHourlyRate'),     value: `${hrFmt(basicHourlyRate.toNumber())} SA/${t('salaryCalcHour')}` },
-            { label: `${t('salaryCalcOvertimeRate')} (م107)`, value: `${hrFmt(overtimeRate.toNumber())} SA/${t('salaryCalcHour')}` },
-            { label: t('salaryCalcOvertimePay'),         value: `${hrFmt(overtimePay.toNumber())} SA` },
+            { label: t('salaryCalcGross'),               value: `${hrFmt(totalTarget.toNumber())} SR` },
+            { label: t('salaryCalcBasic'),               value: `${hrFmt(basic.toNumber())} SR` },
+            { label: t('salaryCalcAllowances'),          value: `${hrFmt(editableAllowances.toNumber())} SR` },
+            { label: t('salaryCalcAdditionalAllowances'), value: `${hrFmt(customAllowanceTotal.toNumber())} SR` },
+            { label: t('salaryCalcDeduction'),           value: `${hrFmt(deduction.toNumber())} SR` },
+            { label: t('salaryCalcHourlyRate'),          value: `${hrFmt(hourlyRate.toNumber())} SR/${t('salaryCalcHour')}` },
+            { label: t('salaryCalcBasicHourlyRate'),     value: `${hrFmt(basicHourlyRate.toNumber())} SR/${t('salaryCalcHour')}` },
+            { label: `${t('salaryCalcOvertimeRate')} (م107)`, value: `${hrFmt(overtimeRate.toNumber())} SR/${t('salaryCalcHour')}` },
+            { label: t('salaryCalcOvertimePay'),         value: `${hrFmt(overtimePay.toNumber())} SR` },
           ].map(({ label, value }) => (
             <div key={label} className="noorix-result-panel__row">
               <span className="noorix-result-panel__row-label">{label}</span>
@@ -354,7 +354,7 @@ export default function SalaryCalcTab() {
           ))}
           <div className="noorix-result-panel__row noorix-result-panel__row--highlight">
             <span className="noorix-result-panel__row-label">{t('salaryCalcNetSalary')}</span>
-            <span className="noorix-result-panel__row-value">{hrFmt(netSalary.toNumber())} <span className="nx-sar">SA</span></span>
+            <span className="noorix-result-panel__row-value">{hrFmt(netSalary.toNumber())} <span className="nx-sar">SR</span></span>
           </div>
         </div>
         {inverseWarning && (

@@ -27,7 +27,7 @@ export const salesHandler: ChatHandler = {
       });
       const total = new Decimal(agg._sum.amount ?? 0).toFixed(2);
       return {
-        answerAr: `مبيعات ${period.labelAr}: ${Number(total).toLocaleString('en')} SA`,
+        answerAr: `مبيعات ${period.labelAr}: ${Number(total).toLocaleString('en')} SR`,
         answerEn: `Sales ${period.labelEn}: ${Number(total).toLocaleString('en')} SAR`,
       };
     }
@@ -37,7 +37,7 @@ export const salesHandler: ChatHandler = {
     const report = await reportsService.getGeneralProfitLoss(companyId, ctx.year);
     const total = report?.cards?.sales ?? '0';
     return {
-      answerAr: `مبيعات السنة ${ctx.year}: ${Number(total).toLocaleString('en')} SA`,
+      answerAr: `مبيعات السنة ${ctx.year}: ${Number(total).toLocaleString('en')} SR`,
       answerEn: `Sales for ${ctx.year}: ${Number(total).toLocaleString('en')} SAR`,
     };
   },

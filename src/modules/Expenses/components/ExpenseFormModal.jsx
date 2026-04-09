@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ExpenseFormModal — نموذج تسجيل مصروف (إصدار فاتورة)
  * افتراضياً: خزنة واحدة للمبلغ كاملاً. اختياري: إضافة خزنة ثانية بمبلغ محدد (الباقي من الأولى).
  */
@@ -266,7 +266,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           label="ملاحظات (للخدمة ورقمها)"
           value={form.notes}
           onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-          placeholder="مثال: كهرباء - عداد 12345 - 1,200 SA"
+          placeholder="مثال: كهرباء - عداد 12345 - 1,200 SR"
           rows={3}
         />
       </form>

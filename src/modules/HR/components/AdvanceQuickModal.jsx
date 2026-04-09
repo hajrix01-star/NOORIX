@@ -152,7 +152,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
           <div className="flex items-center justify-between px-1 py-2 rounded-lg bg-noorix-bg-muted border border-noorix-border">
             <span className="text-[13px] text-noorix-muted">{t('installmentAmount') || 'مبلغ الدفعة'}</span>
             <span className="text-[15px] font-bold text-noorix-blue ltr">
-              {installmentAmt.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="nx-sar">SA</span>
+              {installmentAmt.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="nx-sar">SR</span>
             </span>
           </div>
         )}

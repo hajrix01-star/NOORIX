@@ -1,0 +1,54 @@
+---
+description: قاعدة العملة — SR فقط بخط أصغر من الأرقام
+alwaysApply: true
+---
+# قاعدة العملة في Noorix
+
+## الممنوع تماماً
+
+```jsx
+// ❌ مرفوض — رمز الريال العربي
+﷼
+
+// ❌ مرفوض — كلمة ريال
+ريال
+
+// ❌ مرفوض — اختصار عربي
+ر.س
+
+// ❌ مرفوض — الاختصار الدولي الطويل
+SAR
+
+// ❌ مرفوض — SA (القديم)
+SA
+```
+
+## المسموح الوحيد — SR بخط أصغر
+
+```jsx
+// ✅ في JSX بعد رقم — استخدم span بكلاس nx-sar
+{fmt(amount, 2)} <span className="nx-sar">SR</span>
+
+// ✅ في template literals أو strings (لا يمكن إضافة span)
+`${fmt(amount, 2)} SR`
+
+// ✅ في ملفات الطباعة HTML
+`${fmt(n)} SR`
+
+// ✅ في i18n translations
+{ ar: 'الإجمالي {0} SR', en: 'Total {0} SR' }
+```
+
+## الكلاس `.nx-sar` (src/index.css)
+
+```css
+.nx-sar {
+  font-size: 0.72em;   /* أصغر من الرقم المجاور */
+  font-weight: 400;
+  color: var(--noorix-text-muted);
+  letter-spacing: 0.03em;
+  margin-inline-start: 2px;
+}
+```
+
+**القاعدة:** لا تستخدم ﷼ أو ريال أو ر.س أو SAR أو SA في أي ملف جديد أو معدَّل. فقط **SR** — وفي JSX يكون داخل `<span className="nx-sar">SR</span>`.

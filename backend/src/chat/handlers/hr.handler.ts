@@ -48,7 +48,7 @@ export const hrHandler: ChatHandler = {
         return { answerAr: 'لا توجد مسيرات رواتب.', answerEn: 'No payroll runs found.' };
       }
       return {
-        answerAr: `آخر مسيرة: ${last.runNumber} — ${Number(last.totalAmount).toLocaleString('en')} SA — ${last.employeeCount} موظف`,
+        answerAr: `آخر مسيرة: ${last.runNumber} — ${Number(last.totalAmount).toLocaleString('en')} SR — ${last.employeeCount} موظف`,
         answerEn: `Last payroll: ${last.runNumber} — ${Number(last.totalAmount).toLocaleString('en')} SAR — ${last.employeeCount} employees`,
       };
     }
@@ -102,7 +102,7 @@ export const hrHandler: ChatHandler = {
       });
       const total = Number(sum._sum.netAmount || 0);
       return {
-        answerAr: `سلفيات الموظفين في ${year}: ${count} فاتورة${open > 0 ? ` (غير مسددة بالكامل: ${open})` : ''} — إجمالي المبالغ: ${total.toLocaleString('en')} SA`,
+        answerAr: `سلفيات الموظفين في ${year}: ${count} فاتورة${open > 0 ? ` (غير مسددة بالكامل: ${open})` : ''} — إجمالي المبالغ: ${total.toLocaleString('en')} SR`,
         answerEn: `Employee advances in ${year}: ${count} invoice(s)${open > 0 ? ` (not fully settled: ${open})` : ''} — total: ${total.toLocaleString('en')} SAR`,
       };
     }
@@ -118,7 +118,7 @@ export const hrHandler: ChatHandler = {
       });
       const total = Number(sum._sum.amount || 0);
       return {
-        answerAr: `سجلات خصومات الموظفين في ${year}: ${count} — إجمالي المبالغ: ${total.toLocaleString('en')} SA`,
+        answerAr: `سجلات خصومات الموظفين في ${year}: ${count} — إجمالي المبالغ: ${total.toLocaleString('en')} SR`,
         answerEn: `Employee deduction records in ${year}: ${count} — total: ${total.toLocaleString('en')} SAR`,
       };
     }

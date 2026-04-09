@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ReportsScreen — التقرير العام (ربح وخسارة شهري)
  */
 import React, { useMemo, useState } from 'react';
@@ -207,7 +207,7 @@ export default function ReportsScreen() {
                           {amountText(getCardValue(card.key))}
                         </span>
                         <span className="text-[12px] font-medium text-noorix-muted">
-                          SA
+                          SR
                         </span>
                       </div>
                       <div className="min-h-[24px] flex-1" aria-hidden />

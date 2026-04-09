@@ -1832,7 +1832,7 @@ html[data-card-style="10"] .noorix-stat-card {
   letter-spacing: 0.02em;
 }
 
-/* currency label — SA بخط صغير بعد الأرقام */
+/* currency label — SR بخط صغير (0.72em) بعد الأرقام */
 .nx-sar {
   font-size: 0.72em;
   font-weight: 400;

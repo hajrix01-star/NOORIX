@@ -19,7 +19,7 @@ export const reportsHandler: ChatHandler = {
     const gross = report?.cards?.grossProfit ?? '0';
     const net = report?.cards?.netProfit ?? '0';
     return {
-      answerAr: `ملخص الربح والخسارة ${year}:\n• المبيعات: ${Number(sales).toLocaleString('en')} SA\n• المشتريات: ${Number(purchases).toLocaleString('en')} SA\n• المصروفات: ${Number(expenses).toLocaleString('en')} SA\n• الربح الإجمالي: ${Number(gross).toLocaleString('en')} SA\n• الربح الصافي: ${Number(net).toLocaleString('en')} SA`,
+      answerAr: `ملخص الربح والخسارة ${year}:\n• المبيعات: ${Number(sales).toLocaleString('en')} SR\n• المشتريات: ${Number(purchases).toLocaleString('en')} SR\n• المصروفات: ${Number(expenses).toLocaleString('en')} SR\n• الربح الإجمالي: ${Number(gross).toLocaleString('en')} SR\n• الربح الصافي: ${Number(net).toLocaleString('en')} SR`,
       answerEn: `P&L Summary ${year}:\n• Sales: ${Number(sales).toLocaleString('en')} SAR\n• Purchases: ${Number(purchases).toLocaleString('en')} SAR\n• Expenses: ${Number(expenses).toLocaleString('en')} SAR\n• Gross Profit: ${Number(gross).toLocaleString('en')} SAR\n• Net Profit: ${Number(net).toLocaleString('en')} SAR`,
     };
   },

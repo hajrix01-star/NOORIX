@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DashboardCalendarTab — تقويم حراري للمبيعات
  * أهداف احترافية | تحديد أيام متعددة → إضافة كأيام خاصة | ملاحظة لكل يوم
  */
@@ -218,8 +218,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px}table{width:100%;border-collapse:collapse}td,th{padding:8px 12px;border:1px solid #ddd;text-align:right}th{background:#2563eb;color:#fff;font-weight:700}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}.target{background:var(--noorix-blue-8);padding:12px;border-radius:8px;margin:12px 0}.achieved{color:#16a34a}@media print{body{padding:0}}</style></head><body>
 <div class="header"><h1 style="margin:0;font-size:20px">${(companyName || '').replace(/</g, '&lt;')}</h1><p style="margin:8px 0 0;font-size:14px">${(t('dashboardCalendar') || '').replace(/</g, '&lt;')} — ${dateStr.replace(/</g, '&lt;')}</p></div>
-<div class="target"><strong>${(t('dashboardSalesTarget') || '').replace(/</g, '&lt;')}:</strong> ${dayTarget != null ? fmt(dayTarget, 2) : '—'} SA &nbsp;|&nbsp; <strong>${(t('total') || '').replace(/</g, '&lt;')}:</strong> <span class="${achieved ? 'achieved' : ''}">${fmt(totalAmount, 2)} SA</span>${achieved ? ' ✓' : ''}</div>
-<table><thead><tr><th>${(t('summaryNumber') || '').replace(/</g, '&lt;')}</th><th>${(t('salesChannels') || '').replace(/</g, '&lt;')}</th><th>${(t('customers') || '').replace(/</g, '&lt;')}</th><th>${(t('total') || '').replace(/</g, '&lt;')}</th></tr></thead><tbody>${rows || '<tr><td colspan="4">' + (t('noDataInPeriod') || '').replace(/</g, '&lt;') + '</td></tr>'}</tbody><tfoot><tr style="font-weight:700;background:var(--noorix-blue-8)"><td colspan="3">${(t('total') || '').replace(/</g, '&lt;')}</td><td style="text-align:right">${fmt(totalAmount, 2)} SA</td></tr></tfoot></table></body></html>`;
+<div class="target"><strong>${(t('dashboardSalesTarget') || '').replace(/</g, '&lt;')}:</strong> ${dayTarget != null ? fmt(dayTarget, 2) : '—'} SR &nbsp;|&nbsp; <strong>${(t('total') || '').replace(/</g, '&lt;')}:</strong> <span class="${achieved ? 'achieved' : ''}">${fmt(totalAmount, 2)} SR</span>${achieved ? ' ✓' : ''}</div>
+<table><thead><tr><th>${(t('summaryNumber') || '').replace(/</g, '&lt;')}</th><th>${(t('salesChannels') || '').replace(/</g, '&lt;')}</th><th>${(t('customers') || '').replace(/</g, '&lt;')}</th><th>${(t('total') || '').replace(/</g, '&lt;')}</th></tr></thead><tbody>${rows || '<tr><td colspan="4">' + (t('noDataInPeriod') || '').replace(/</g, '&lt;') + '</td></tr>'}</tbody><tfoot><tr style="font-weight:700;background:var(--noorix-blue-8)"><td colspan="3">${(t('total') || '').replace(/</g, '&lt;')}</td><td style="text-align:right">${fmt(totalAmount, 2)} SR</td></tr></tfoot></table></body></html>`;
     const w = window.open('', '_blank');
     if (w) {
       w.document.write(html);

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ui.css — نظام مكوّنات نووريكس الذري
  * يتضمن: Button | Input | Card | Badge | Modal | Spinner | Divider | FormRow | Table
  * ─────────────────────────────────────
@@ -1952,7 +1952,7 @@
   text-overflow: ellipsis;
 }
 
-/* صف الرقم: SA + القيمة الكبيرة + باج % */
+/* صف الرقم: SR + القيمة الكبيرة + باج % */
 .nx-kpi-card__num-row {
   display: flex;
   align-items: center;
@@ -1961,7 +1961,7 @@
   min-width: 0;
 }
 
-/* وسم العملة SA */
+/* وسم العملة SR */
 .nx-kpi-card__sar {
   font-size: 11px;
   font-weight: 700;

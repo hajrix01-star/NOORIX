@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DashboardOverviewTab — نظرة عامة: كروت KPI + رسم بياني للأداء + توزيع القنوات
  * تصميم 2026 — sparklines، Recharts AreaChart، PieChart
  */
@@ -342,7 +342,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                 : 'bg-noorix-bg-muted text-noorix-muted';
 
           const periodLabel = filter?.label || String(year);
-          const currencySuffix = 'SA';
+          const currencySuffix = 'SR';
 
           return (
             <div

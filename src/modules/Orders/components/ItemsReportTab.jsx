@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ItemsReportTab — تقارير الأصناف والفئات
  * فلاتر، رسوم بيانية، تاريخ الشراء، تصدير
  */
@@ -92,7 +92,7 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
                 <td className="py-2 px-[10px]">{formatSaudiDate(h.orderDate)}</td>
                 <td className="py-2 px-[10px] nx-cell-num">{fmt(h.quantity, 2)}</td>
                 <td className="py-2 px-[10px] nx-cell-num">{fmt(h.unitPrice, 2)}</td>
-                <td className="py-2 px-[10px] nx-cell-num nx-cell-num--green">{fmt(h.amount, 2)} SA</td>
+                <td className="py-2 px-[10px] nx-cell-num nx-cell-num--green">{fmt(h.amount, 2)} SR</td>
               </tr>
             ))}
           </tbody>
@@ -203,7 +203,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
         </div>
         <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
           <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalAmount')}</div>
-          <div className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} SA</div>
+          <div className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} SR</div>
         </div>
       </div>
 
@@ -263,7 +263,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
             key: 'amount',
             label: t('total'),
             numeric: true,
-            render: (v) => <span className="nx-cell-num--green">{fmt(v ?? 0, 2)} SA</span>,
+            render: (v) => <span className="nx-cell-num--green">{fmt(v ?? 0, 2)} SR</span>,
           },
           { key: 'orderCount', label: t('ordersOrderCount'), numeric: true, render: (v) => v ?? 0 },
         ]}
@@ -274,7 +274,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
           <>
             <td colSpan={3} className="font-bold text-[12px] text-noorix-muted" style={{ padding: '8px 12px' }}>{t('total')}</td>
             <td className="font-bold text-right" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity, 2)}</td>
-            <td className="font-bold text-right text-noorix-green" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} SA</td>
+            <td className="font-bold text-right text-noorix-green" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} SR</td>
             <td style={{ padding: '8px 12px' }} />
           </>
         ) : null}
@@ -284,7 +284,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
               <Button variant="ghost" type="button" onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })} className="font-bold text-noorix-blue underline text-[13px]">
                 {r.productNameAr || r.productNameEn || '—'}
               </Button>
-              <span className="nx-cell-num text-noorix-green font-bold text-[13px]">{fmt(r.amount ?? 0, 2)} SA</span>
+              <span className="nx-cell-num text-noorix-green font-bold text-[13px]">{fmt(r.amount ?? 0, 2)} SR</span>
             </div>
             <div className="flex gap-3 text-[12px] text-noorix-muted">
               {r.categoryNameAr && <span>{r.categoryNameAr}</span>}

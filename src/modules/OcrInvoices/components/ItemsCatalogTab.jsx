@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import {
@@ -280,7 +280,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
         <div dir={dir}>
           {lowestPrice != null && (
             <p className="text-[12px] font-semibold mt-0 mb-3" style={{ color: 'var(--noorix-accent-green)' }}>
-              {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} <span className="nx-sar">SA</span>
+              {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} <span className="nx-sar">SR</span>
             </p>
           )}
 
@@ -327,7 +327,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                         </div>
                       </div>
                       <div className="font-bold text-[15px]" style={{ color: isLowest ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>
-                        {Number(h.price).toLocaleString('en-US')} <span className="nx-sar">SA</span>
+                        {Number(h.price).toLocaleString('en-US')} <span className="nx-sar">SR</span>
                       </div>
                     </div>
                   );

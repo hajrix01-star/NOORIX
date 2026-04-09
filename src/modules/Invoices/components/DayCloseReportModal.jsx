@@ -1,4 +1,4 @@
-﻿/**
+/**
  * تقرير نهاية اليوم — جداول موحّدة + طباعة نظيفة (بدون قوالب التطبيق)
  */
 import React, { useMemo, useState, useEffect } from 'react';
@@ -238,22 +238,22 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
               <div className="day-close-screen-only dc-kpi-grid">
                 <div className="dc-kpi-card dc-kpi-card--in">
                   <div className="dc-kpi-card__label">{t('inbound')} — {t('categoryTypeSale')}</div>
-                  <div className="dc-kpi-card__val">{fmt(Number(data.sums?.inflow?.total || 0), 2)} SA</div>
+                  <div className="dc-kpi-card__val">{fmt(Number(data.sums?.inflow?.total || 0), 2)} SR</div>
                   <div className="dc-kpi-card__sub">{data.sums?.inflow?.count ?? 0} {t('dayCloseOperations')}</div>
                 </div>
                 <div className="dc-kpi-card dc-kpi-card--out">
                   <div className="dc-kpi-card__label">{t('outbound')}</div>
-                  <div className="dc-kpi-card__val">{fmt(Number(data.sums?.outflow?.total || 0), 2)} SA</div>
+                  <div className="dc-kpi-card__val">{fmt(Number(data.sums?.outflow?.total || 0), 2)} SR</div>
                   <div className="dc-kpi-card__sub">{data.sums?.outflow?.count ?? 0} {t('dayCloseOperations')}</div>
                 </div>
                 <div className="dc-kpi-card dc-kpi-card--cash">
                   <div className="dc-kpi-card__label">{t('dayCloseNetDayCash')}</div>
-                  <div className="dc-kpi-card__val">{fmt(Number(data.cash?.netDay ?? 0), 2)} SA</div>
+                  <div className="dc-kpi-card__val">{fmt(Number(data.cash?.netDay ?? 0), 2)} SR</div>
                   <div className="dc-kpi-card__sub">{t('dayCloseCashVaultsOnly')}</div>
                 </div>
                 <div className="dc-kpi-card dc-kpi-card--bal">
                   <div className="dc-kpi-card__label">{t('dayCloseCashRemainingEod')}</div>
-                  <div className="dc-kpi-card__val">{fmt(Number(data.cash?.balanceEndOfDayCashVaults ?? 0), 2)} SA</div>
+                  <div className="dc-kpi-card__val">{fmt(Number(data.cash?.balanceEndOfDayCashVaults ?? 0), 2)} SR</div>
                   <div className="dc-kpi-card__sub">{t('dayCloseEodDefinition')}</div>
                 </div>
               </div>
@@ -312,7 +312,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 <div>
                   <strong>{t('dayCloseTransfers')}</strong>
                   {' — '}
-                  {data.transfers?.count ?? 0} / {fmt(Number(data.transfers?.volume || 0), 2)} SA
+                  {data.transfers?.count ?? 0} / {fmt(Number(data.transfers?.volume || 0), 2)} SR
                 </div>
               </div>
 
@@ -324,7 +324,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                       <tr>
                         <th>{t('type')}</th>
                         <th className="dc-num">{t('dayCloseCount')}</th>
-                        <th className="dc-num">{t('total')} (SA)</th>
+                        <th className="dc-num">{t('total')} (SR)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -350,7 +350,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                       <tr>
                         <th>{t('category')}</th>
                         <th className="dc-num">{t('dayCloseCount')}</th>
-                        <th className="dc-num">{t('total')} (SA)</th>
+                        <th className="dc-num">{t('total')} (SR)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -375,7 +375,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                     <thead>
                       <tr>
                         <th>{t('vault')}</th>
-                        <th className="dc-num">{t('total')} (SA)</th>
+                        <th className="dc-num">{t('total')} (SR)</th>
                       </tr>
                     </thead>
                     <tbody>

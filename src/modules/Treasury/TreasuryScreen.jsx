@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { updateVault } from '../../services/api';
 import { useApp }         from '../../context/AppContext';
@@ -159,7 +159,7 @@ export default function TreasuryScreen() {
                   <div className="text-[11px] text-noorix-muted mb-1.5 tracking-[0.03em]">{label}</div>
                   <div className="font-extrabold text-[20px] nx-font-numbers" style={{ color }}>
                     {sign}{fmt(Math.abs(value))}
-                    <span className="nx-sar me-[3px]">SA</span>
+                    <span className="nx-sar me-[3px]">SR</span>
                   </div>
                 </div>
               ))}
