@@ -54,7 +54,7 @@ export const KPI_RECHARTS_COLORS = {
 export const VAULT_RECHARTS_COLORS = {
   cash: '#3B6D11',  /* = --color-nx-profit */
   bank: '#185FA5',  /* = --color-nx-sales  */
-  app:  '#7c3aed',  /* = --color-nx-app    */
+  app:  '#c2410c',  /* = --color-nx-app    */
 };
 
 /** @deprecated — استُبدل بـ MetricCard.color prop مباشرة */

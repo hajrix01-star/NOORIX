@@ -54,7 +54,7 @@
   --color-nx-net-profit: #854F0B;   /* صافي ربح                    */
   --color-nx-purchases:  #888780;   /* مشتريات                     */
   --color-nx-expenses:   #A32D2D;   /* مصاريف · سحوبات             */
-  --color-nx-app:        #7c3aed;   /* خزينة تطبيق · رقمي         */
+  --color-nx-app:        #c2410c;   /* خزينة تطبيق · رقمي         */
 
   /* خط Cairo */
   --font-cairo: 'Cairo', system-ui, sans-serif;
