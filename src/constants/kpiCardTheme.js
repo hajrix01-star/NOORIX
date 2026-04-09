@@ -57,11 +57,3 @@ export const VAULT_RECHARTS_COLORS = {
   app:  '#c2410c',  /* = --color-nx-app    */
 };
 
-/** @deprecated — استُبدل بـ MetricCard.color prop مباشرة */
-export const KPI_CARD_TOP_BAR_CLASS = {
-  sales:       'bg-[#185FA5]',
-  grossProfit: 'bg-[#3B6D11]',
-  netProfit:   'bg-[#854F0B]',
-  purchases:   'bg-[#888780]',
-  expenses:    'bg-[#A32D2D]',
-};

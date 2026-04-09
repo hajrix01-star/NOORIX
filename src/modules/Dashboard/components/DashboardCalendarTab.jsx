@@ -6,7 +6,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useSales } from '../../../hooks/useSales';
-import { CARD_COLORS, CARD_BORDER_RADIUS } from '../../../utils/cardStyles';
+import { CARD_COLORS } from '../../../utils/cardStyles';
 import { fmt } from '../../../utils/format';
 import CalendarDayDetailPanel from './CalendarDayDetailPanel';
 import { Button, Input, Modal , FmtNum } from '../../../ui';

@@ -96,14 +96,6 @@ export function useTableFilter(data = [], {
     setPage(1);
   }, []);
 
-  // ── إعادة الضبط ───────────────────────────────────────────
-  const reset = useCallback(() => {
-    setSearch('');
-    setPage(1);
-    setSortKey(defaultSortKey);
-    setSortDir(defaultSortDir);
-  }, [defaultSortKey, defaultSortDir]);
-
   return {
     searchText,
     setSearch: handleSearch,
@@ -116,6 +108,5 @@ export function useTableFilter(data = [], {
     sortKey,
     sortDir,
     toggleSort,
-    reset,
   };
 }

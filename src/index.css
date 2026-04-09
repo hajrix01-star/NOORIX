@@ -2018,8 +2018,7 @@ input:focus, select:focus, textarea:focus {
 
   body { font-size: max(12px, 14px); }
   .noorix-table tbody td, .noorix-table thead th { font-size: max(12px, 14px); }
-  .app-nav-link, .ndfb-mode-btn, .noorix-btn-nav { font-size: max(12px, 13px); }
-  .noorix-btn-nav { min-height: 44px; padding: 10px 14px; }
+  .app-nav-link, .ndfb-mode-btn { font-size: max(12px, 13px); }
   /* 16px يمنع iOS من تكبير الصفحة عند التركيز على حقل الإدخال */
   input, select, textarea { font-size: 16px !important; }
   .noorix-table-scroll-wrapper { -webkit-overflow-scrolling: touch; }

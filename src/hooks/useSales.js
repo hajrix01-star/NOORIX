@@ -7,7 +7,6 @@ import {
   getDailySalesSummaries,
   createDailySalesSummary,
   updateDailySalesSummary,
-  cancelDailySalesSummary,
   deleteDailySalesSummary,
 } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
@@ -58,12 +57,6 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
     showErrorToast: false,
   });
 
-  const cancelMutation = useApiMutation({
-    mutationFn: ({ id, companyId: cid }) => cancelDailySalesSummary(id, cid),
-    onSuccess: invalidate,
-    showErrorToast: false,
-  });
-
   const deleteMutation = useApiMutation({
     mutationFn: ({ id, companyId: cid }) => deleteDailySalesSummary(id, cid),
     onSuccess: invalidate,
@@ -77,7 +70,6 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
     error,
     createSummary: createMutation,
     updateSummary: updateMutation,
-    cancelSummary: cancelMutation,
     deleteSummary: deleteMutation,
   };
 }

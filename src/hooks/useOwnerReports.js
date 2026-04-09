@@ -28,7 +28,6 @@ export function useOwnerReports({ companyIds, year }) {
     }, {});
 
   return {
-    queries,
     isLoading,
     isError,
     error,

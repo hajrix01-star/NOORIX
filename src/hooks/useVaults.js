@@ -2,7 +2,6 @@
  * useVaults — جلب الخزائن وCRUD كامل (إضافة/تعديل/أرشفة/حذف).
  * إبطال الكاش مركزي عبر دالة invalidate واحدة.
  */
-import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
 import {
@@ -47,14 +46,6 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
     enabled: !!companyId,
   });
 
-  const salesChannels = useMemo(
-    () =>
-      vaultsList.filter(
-        (v) => v.isActive !== false && v.isSalesChannel && !v.isArchived,
-      ),
-    [vaultsList],
-  );
-
   const invalidate = () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ['vaults', companyId] }),
@@ -87,7 +78,6 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
 
   return {
     vaultsList,
-    salesChannels,
     paymentVaults,
     isLoading: isLoading || paymentVaultsLoading,
     isFetching,

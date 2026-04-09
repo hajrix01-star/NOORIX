@@ -111,20 +111,6 @@ export async function downloadInvoiceTemplate() {
 
 // ─── Employee Template ───────────────────────────────────────────────────────
 
-export const EMPLOYEE_TEMPLATE_COLUMNS = [
-  'الاسم بالعربية',                  // required
-  'الاسم بالإنجليزية',               // optional
-  'رقم الإقامة',                     // optional
-  'المسمى الوظيفي',                   // optional
-  'الراتب الأساسي',                   // required  number >= 0
-  'بدل السكن',                       // optional  number >= 0
-  'بدل النقل',                       // optional  number >= 0
-  'بدلات أخرى',                      // optional  number >= 0
-  'تاريخ الالتحاق',                   // required  YYYY-MM-DD or DD/MM/YYYY
-  'ساعات العمل',                     // optional  text
-  'ملاحظات',                         // optional
-];
-
 export async function downloadEmployeeTemplate() {
   const rows = [
     {

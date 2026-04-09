@@ -2,8 +2,6 @@
  * ترجمات عامة: التطبيق، تسجيل الدخول، القائمة الجانبية، التاريخ
  */
 export default {
-  appTitle: { ar: 'لوحة Noorix', en: 'Noorix Dashboard' },
-  appSubtitle: { ar: 'إدارة المبيعات والمالية اليومية بنمط احترافي.', en: 'Daily sales and finance management, professional style.' },
   appTagline: { ar: 'منصة إدارة الأعمال المالية', en: 'Business Finance Management Platform' },
   loading: { ar: 'جاري التحميل...', en: 'Loading...' },
   loadingError: { ar: 'فشل تحميل البيانات', en: 'Failed to load data' },

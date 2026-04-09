@@ -9,7 +9,6 @@ import {
   getEmployee,
   createEmployee,
   updateEmployee,
-  terminateEmployee,
 } from '../services/api';
 import { createAdvance } from '../services/financialApi';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
@@ -53,17 +52,6 @@ export function useEmployees(companyId, { includeTerminated = false, fetchEnable
     showErrorToast: false,
   });
 
-  const terminateMutation = useApiMutation({
-    mutationFn: (id) => terminateEmployee(id, companyId),
-    invalidateQueries: [
-      ['employees', companyId],
-      ['employees-paged', companyId],
-      ['invoices'],
-      ['vaults'],
-    ],
-    showErrorToast: false,
-  });
-
   const advanceMutation = useApiMutation({
     mutationFn: createAdvance,
     invalidateQueries: [
@@ -81,7 +69,6 @@ export function useEmployees(companyId, { includeTerminated = false, fetchEnable
     isLoading,
     create: createMutation,
     update: updateMutation,
-    terminate: terminateMutation,
     createAdvance: advanceMutation,
   };
 }

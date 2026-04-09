@@ -1,11 +1,7 @@
 /**
  * reportHelpers — دوال مساعدة لتقارير ربح وخسارة
  */
-import { CARD_COLORS } from '../../utils/cardStyles';
-
 export const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-export { CARD_COLORS };
 
 export const PERCENT_COLOR = '#0d9488';
 
