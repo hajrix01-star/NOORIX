@@ -57,12 +57,29 @@ function serviceComponents(joinDate, endDate) {
   return { years, months, days };
 }
 
+/**
+ * نسبة الاستحقاق حسب سبب إنهاء الخدمة — م84 و م85 نظام العمل السعودي
+ *
+ * قبل التعديل (خاطئ):
+ *   resignation < 5  → ثلث   (كان يمنح الثلثين عند 5 سنوات بالضبط)
+ *   resignation < 10 → ثلثان
+ *   أسباب القوة القاهرة والعاملة المتزوجة = غير موجودة
+ *
+ * بعد التعديل (صحيح — مطابق للإنفوجرافيك الرسمي للوزارة):
+ *   resignation ≤ 5  → ثلث   (يشمل 5 سنوات بالضبط = "لا تزيد على خمس")
+ *   resignation > 5 و < 10 → ثلثان
+ *   force_majeure / maternity → كاملة (حالات استثنائية — م85)
+ */
 function getEligibilityFactor(reason, serviceYears) {
-  if (reason === 'article80') return new Decimal(0);
-  if (reason === 'employer' || reason === 'article81') return new Decimal(1);
-  if (serviceYears < 2) return new Decimal(0);
-  if (serviceYears < 5) return new Decimal(1).div(3);
-  if (serviceYears < 10) return new Decimal(2).div(3);
+  if (reason === 'article80')                          return new Decimal(0);
+  if (reason === 'employer'  ||
+      reason === 'article81' ||
+      reason === 'force_majeure' ||
+      reason === 'maternity')                          return new Decimal(1);
+  // استقالة عادية — م85
+  if (serviceYears < 2)   return new Decimal(0);
+  if (serviceYears <= 5)  return new Decimal(1).div(3);   // ← كان < 5 (خطأ)
+  if (serviceYears < 10)  return new Decimal(2).div(3);
   return new Decimal(1);
 }
 
@@ -205,7 +222,14 @@ export default function EOSCalcTab() {
                 <div class="row"><span class="row-label">تاريخ التعيين</span><span class="row-val">${jd || '—'}</span></div>
                 <div class="row"><span class="row-label">تاريخ نهاية الخدمة</span><span class="row-val">${ed || '—'}</span></div>
                 <div class="row"><span class="row-label">آخر أجر فعلي</span><span class="row-val">${hrFmt(sal.toNumber())} SR</span></div>
-                <div class="row"><span class="row-label">سبب الانتهاء</span><span class="row-val">${t(terminationReason === 'employer' ? 'eosCalcReasonEmployer' : terminationReason === 'resignation' ? 'eosCalcReasonResignation' : terminationReason === 'article81' ? 'eosCalcReasonArticle81' : 'eosCalcReasonArticle80')}</span></div>
+                <div class="row"><span class="row-label">سبب الانتهاء</span><span class="row-val">${
+  terminationReason === 'employer'      ? 'إنهاء من صاحب العمل (م84 — كاملة)' :
+  terminationReason === 'resignation'   ? 'استقالة (م85 — نسبة حسب المدة)' :
+  terminationReason === 'article81'     ? 'م81 — ترك مبرر (كاملة)' :
+  terminationReason === 'force_majeure' ? 'قوة قاهرة (م85 — كاملة)' :
+  terminationReason === 'maternity'     ? 'عاملة / زواج أو وضع (م85 — كاملة)' :
+                                          'م80 — مخالفة جسيمة (لا استحقاق)'
+}</span></div>
                 <div class="row"><span class="row-label">مدة الخدمة بالأيام</span><span class="row-val">${serviceDays}</span></div>
                 <div class="row"><span class="row-label">مدة الخدمة</span><span class="row-val">${serviceComp.years} سنة ${serviceComp.months} شهر ${serviceComp.days} يوم</span></div>
                 <div class="row"><span class="row-label">سنوات الخدمة (إجمالي)</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} سنة</span></div>
@@ -226,7 +250,14 @@ export default function EOSCalcTab() {
                 <div class="row"><span class="row-label">Join date</span><span class="row-val">${jd || '—'}</span></div>
                 <div class="row"><span class="row-label">End of service date</span><span class="row-val">${ed || '—'}</span></div>
                 <div class="row"><span class="row-label">Last actual wage</span><span class="row-val">SAR ${hrFmt(sal.toNumber())}</span></div>
-                <div class="row"><span class="row-label">Termination reason</span><span class="row-val">${terminationReason === 'employer' ? 'By Employer' : terminationReason === 'resignation' ? 'Resignation' : terminationReason === 'article81' ? 'Article 81' : 'Article 80'}</span></div>
+                <div class="row"><span class="row-label">Termination reason</span><span class="row-val">${
+  terminationReason === 'employer'      ? 'By Employer (Art.84 — Full)' :
+  terminationReason === 'resignation'   ? 'Resignation (Art.85)' :
+  terminationReason === 'article81'     ? 'Art.81 — Justified Quit (Full)' :
+  terminationReason === 'force_majeure' ? 'Force Majeure (Art.85 — Full)' :
+  terminationReason === 'maternity'     ? 'Maternity/Marriage (Art.85 — Full)' :
+                                          'Art.80 — Gross Misconduct (None)'
+}</span></div>
                 <div class="row"><span class="row-label">Service days</span><span class="row-val">${serviceDays} days</span></div>
                 <div class="row"><span class="row-label">Service duration</span><span class="row-val">${serviceComp.years}y ${serviceComp.months}m ${serviceComp.days}d</span></div>
                 <div class="row"><span class="row-label">Service years (total)</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} yr</span></div>
@@ -304,10 +335,20 @@ export default function EOSCalcTab() {
 
       <div className="mb-5">
         <Input type="select" label={t('eosCalcReason')} value={terminationReason} onChange={(e) => setTerminationReason(e.target.value)}>
-          <option value="employer">{t('eosCalcReasonEmployer')}</option>
-          <option value="resignation">{t('eosCalcReasonResignation')}</option>
-          <option value="article81">{t('eosCalcReasonArticle81')}</option>
-          <option value="article80">{t('eosCalcReasonArticle80')}</option>
+          <optgroup label="— إنهاء من صاحب العمل (مكافأة كاملة)">
+            <option value="employer">{t('eosCalcReasonEmployer')}</option>
+            <option value="article81">{t('eosCalcReasonArticle81')}</option>
+          </optgroup>
+          <optgroup label="— استقالة (نسبة حسب المدة)">
+            <option value="resignation">{t('eosCalcReasonResignation')}</option>
+          </optgroup>
+          <optgroup label="— حالات استثنائية (مكافأة كاملة — م85)">
+            <option value="force_majeure">قوة قاهرة — ترك العمل لأسباب خارجة عن الإرادة</option>
+            <option value="maternity">عاملة — استقالة خلال 6 أشهر من الزواج أو 3 من الوضع</option>
+          </optgroup>
+          <optgroup label="— فسخ العقد بسبب الموظف">
+            <option value="article80">{t('eosCalcReasonArticle80')}</option>
+          </optgroup>
         </Input>
       </div>
 
@@ -361,7 +402,17 @@ export default function EOSCalcTab() {
           </div>
         </div>
         <div className="noorix-result-panel__note">
-          {eligibilityFactor.eq(0) ? t('eosCalcNoEntitlement') : t('eosCalcLegalNote')}
+          {terminationReason === 'article80' && 'م80: لا يستحق العامل مكافأة عند الفصل بسبب مخالفة جسيمة.'}
+          {terminationReason === 'employer'  && 'م84: مكافأة كاملة — إنهاء من صاحب العمل.'}
+          {terminationReason === 'article81' && 'م81: مكافأة كاملة — ترك مبرر قانونياً من العامل.'}
+          {terminationReason === 'force_majeure' && 'م85: مكافأة كاملة — قوة قاهرة خارجة عن الإرادة.'}
+          {terminationReason === 'maternity' && 'م85: مكافأة كاملة — العاملة التي أنهت العقد بعد الزواج أو الوضع.'}
+          {terminationReason === 'resignation' && (
+            serviceYears.lt(2)   ? 'م85: خدمة أقل من سنتين — لا استحقاق.' :
+            serviceYears.lte(5)  ? 'م85: خدمة 2–5 سنوات — ثلث المكافأة (لا تزيد على 5 سنوات).' :
+            serviceYears.lt(10)  ? 'م85: خدمة 5–10 سنوات — ثلثا المكافأة.' :
+                                   'م85: خدمة 10 سنوات فأكثر — مكافأة كاملة.'
+          )}
         </div>
       </div>
       <Button

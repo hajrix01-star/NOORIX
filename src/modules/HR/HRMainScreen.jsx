@@ -7,7 +7,9 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
 import { ScreenShell, ScreenTabs } from '../../ui';
 import { useEmployees } from '../../hooks/useEmployees';
-import { getResidencies } from '../../services/api';
+import { getResidencies, getLeaves, getInvoices } from '../../services/api';
+import { baseSalaryComponentsDecimal } from './utils/employeeSalaryMath';
+import HRSummaryCard from './components/HRSummaryCard';
 import StaffListScreen from './StaffListScreen';
 import PayrollTab from './tabs/PayrollTab';
 import LeaveTab from './tabs/LeaveTab';
@@ -27,6 +29,7 @@ const TABS = [
 ];
 
 const EXPIRY_DAYS = 90;
+const CURRENT_YEAR = new Date().getFullYear();
 
 export default function HRMainScreen() {
   const { t } = useTranslation();
@@ -34,7 +37,7 @@ export default function HRMainScreen() {
   const companyId = activeCompanyId ?? '';
   const [activeTab, setActiveTab] = useState('employees');
 
-  const { employees } = useEmployees(companyId, { includeTerminated: false, fetchEnabled: !!companyId });
+  const { employees, isLoading: empLoading } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: !!companyId });
 
   const { data: residencies = [] } = useQuery({
     queryKey: ['residencies', companyId],
@@ -44,15 +47,65 @@ export default function HRMainScreen() {
       return Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const activeCount = employees.filter((e) => e.status === 'active').length;
+  const { data: leavesData = [] } = useQuery({
+    queryKey: ['leaves', companyId, CURRENT_YEAR],
+    queryFn: async () => {
+      const res = await getLeaves(companyId, null, CURRENT_YEAR);
+      if (!res?.success) return [];
+      const d = res.data;
+      return Array.isArray(d) ? d : (d?.items ?? []);
+    },
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: advancesData = [] } = useQuery({
+    queryKey: ['invoices', companyId, 'advance'],
+    queryFn: async () => {
+      const res = await getInvoices(companyId, null, null, 1, 500);
+      if (!res?.success) return [];
+      const items = res.data?.items ?? [];
+      return items.filter((inv) => inv.kind === 'advance').map((i) => ({
+        ...i,
+        settlementStatus:
+          i.status === 'cancelled'
+            ? 'cancelled'
+            : Number(i.settledAmount ?? 0) >= Number(i.totalAmount ?? 0)
+              ? 'settled'
+              : 'outstanding',
+        remainingAmount: Math.max(0, Number(i.totalAmount ?? 0) - Number(i.settledAmount ?? 0)),
+      }));
+    },
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const activeEmployees = employees.filter((e) => e.status === 'active');
+  const terminatedCount = employees.filter((e) => e.status === 'terminated').length;
+  const activeCount = activeEmployees.length;
+
+  const monthlyPayrollTotal = useMemo(
+    () => activeEmployees.reduce((sum, emp) => sum + baseSalaryComponentsDecimal(emp).toNumber(), 0),
+    [activeEmployees],
+  );
+
   const expiringCount = residencies.filter((r) => {
     const exp = new Date(r.expiryDate);
     const now = new Date();
     const diff = (exp - now) / (24 * 60 * 60 * 1000);
     return diff >= 0 && diff <= EXPIRY_DAYS;
   }).length;
+
+  const pendingLeavesCount = leavesData.filter((l) => l.status === 'pending').length;
+
+  const outstandingAdvances = advancesData.filter(
+    (a) => a.status !== 'cancelled' && a.settlementStatus !== 'settled',
+  );
+  const outstandingAdvancesCount = outstandingAdvances.length;
+  const outstandingAdvancesAmount = outstandingAdvances.reduce((s, a) => s + a.remainingAmount, 0);
 
   const hrTabItems = useMemo(
     () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
@@ -62,24 +115,22 @@ export default function HRMainScreen() {
   return (
     <ScreenShell>
 
-      {/* ── ترويسة — شارات مدمجة بارتفاع السطر لتجنب تشتيت بصري عن شريط أدوات التبويبات ── */}
-      <div className="nx-page-header flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <h1 className="text-[20px] font-bold text-noorix-text m-0 min-w-0">{t('staffTitle')}</h1>
-        {companyId && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-1.5 text-[13px]">
-              <span className="text-noorix-muted shrink-0">{t('hrStatsActive')}</span>
-              <span className="font-bold tabular-nums text-noorix-green">{activeCount}</span>
-            </span>
-            {expiringCount > 0 && (
-              <span className="inline-flex items-center gap-2 rounded-lg border border-noorix-amber/40 bg-noorix-amber/10 px-3 py-1.5 text-[13px] text-noorix-amber">
-                <span className="shrink-0">{t('hrStatsResidencyExpiring')}</span>
-                <span className="font-bold tabular-nums">{expiringCount}</span>
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+      {/* ── ترويسة ── */}
+      <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
+
+      {/* ── كرت الملخص الشامل ── */}
+      {companyId && (
+        <HRSummaryCard
+          isLoading={empLoading}
+          activeCount={activeCount}
+          terminatedCount={terminatedCount}
+          monthlyPayrollTotal={monthlyPayrollTotal}
+          expiringResidencyCount={expiringCount}
+          pendingLeavesCount={pendingLeavesCount}
+          outstandingAdvancesCount={outstandingAdvancesCount}
+          outstandingAdvancesAmount={outstandingAdvancesAmount}
+        />
+      )}
 
       <ScreenTabs
         items={hrTabItems}
