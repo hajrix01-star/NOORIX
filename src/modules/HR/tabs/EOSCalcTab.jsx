@@ -4,6 +4,11 @@
  * مراجع قانونية:
  * - المادة 84: نصف شهر عن كل سنة من أول خمس سنوات، وشهر عن كل سنة بعدها.
  * - المادة 85: عند الاستقالة 0% قبل سنتين، 1/3 من سنتين إلى أقل من 5، 2/3 من 5 إلى أقل من 10، وكامل الاستحقاق بعد 10 سنوات.
+ *
+ * منهجية حساب مدة الخدمة (متوافقة مع حاسبة وزارة الموارد البشرية):
+ * - عدد الأيام = الفرق الفعلي بين التاريخين (بدون +1 — نحسب من يوم إلى يوم)
+ * - سنوات الخدمة = الأيام ÷ 365 (ليس ÷360 لأن 360 مخصص لحسابات الأجر اليومي م61 فقط)
+ * - أجر EOS = أساسي + بدلات (الأوفر تايم لا يدخل في حساب المكافأة)
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import Decimal from 'decimal.js';
@@ -18,13 +23,38 @@ import { Button, Input , FmtNum } from '../../../ui';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * عدد الأيام بين تاريخين (الفرق الفعلي — بدون +1).
+ * مثال: من 09-Jan إلى 09-Apr = 90 يوماً فعلياً.
+ */
 function calculateServiceDays(joinDate, endDate) {
   const start = new Date(joinDate);
   const end = new Date(endDate);
   start.setHours(0, 0, 0, 0);
   end.setHours(0, 0, 0, 0);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return 0;
-  return Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+  return Math.floor((end.getTime() - start.getTime()) / DAY_MS);
+}
+
+/**
+ * تفصيل مدة الخدمة بالسنوات والشهور والأيام (للعرض فقط).
+ */
+function serviceComponents(joinDate, endDate) {
+  const start = new Date(joinDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+    return { years: 0, months: 0, days: 0 };
+  }
+  let years  = end.getFullYear() - start.getFullYear();
+  let months = end.getMonth()    - start.getMonth();
+  let days   = end.getDate()     - start.getDate();
+  if (days < 0) {
+    months--;
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+  if (months < 0) { years--; months += 12; }
+  return { years, months, days };
 }
 
 function getEligibilityFactor(reason, serviceYears) {
@@ -78,8 +108,10 @@ export default function EOSCalcTab() {
     setLastSalary(total.toString());
   }, [selectedEmployee, employees, allowanceTotals]);
 
-  const serviceDays = jd && ed ? calculateServiceDays(jd, ed) : 0;
-  const serviceYears = new Decimal(serviceDays).div(360);
+  const serviceDays   = jd && ed ? calculateServiceDays(jd, ed) : 0;
+  const serviceComp   = jd && ed ? serviceComponents(jd, ed) : { years: 0, months: 0, days: 0 };
+  // ÷365 (وليس ÷360) لأن المعيار الوزاري لمدة الخدمة يعتمد السنة الميلادية
+  const serviceYears  = new Decimal(serviceDays).div(365);
   const firstFiveYears = Decimal.min(serviceYears, 5);
   const remainingYears = Decimal.max(serviceYears.minus(5), 0);
   const fullAward = sal.times(firstFiveYears).times(0.5).plus(sal.times(remainingYears));
@@ -175,7 +207,8 @@ export default function EOSCalcTab() {
                 <div class="row"><span class="row-label">آخر أجر فعلي</span><span class="row-val">${hrFmt(sal.toNumber())} SR</span></div>
                 <div class="row"><span class="row-label">سبب الانتهاء</span><span class="row-val">${t(terminationReason === 'employer' ? 'eosCalcReasonEmployer' : terminationReason === 'resignation' ? 'eosCalcReasonResignation' : terminationReason === 'article81' ? 'eosCalcReasonArticle81' : 'eosCalcReasonArticle80')}</span></div>
                 <div class="row"><span class="row-label">مدة الخدمة بالأيام</span><span class="row-val">${serviceDays}</span></div>
-                <div class="row"><span class="row-label">سنوات الخدمة</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} سنة</span></div>
+                <div class="row"><span class="row-label">مدة الخدمة</span><span class="row-val">${serviceComp.years} سنة ${serviceComp.months} شهر ${serviceComp.days} يوم</span></div>
+                <div class="row"><span class="row-label">سنوات الخدمة (إجمالي)</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} سنة</span></div>
                 <div class="row"><span class="row-label">نصف شهر × ${firstFiveYears.toDecimalPlaces(2)} سنة</span><span class="row-val">${hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())} SR</span></div>
                 ${remainingYears.gt(0) ? `<div class="row"><span class="row-label">شهر كامل × ${remainingYears.toDecimalPlaces(2)} سنة</span><span class="row-val">${hrFmt(sal.times(remainingYears).toNumber())} SR</span></div>` : ''}
                 <div class="row"><span class="row-label">المكافأة الكاملة</span><span class="row-val">${hrFmt(fullAward.toNumber())} SR</span></div>
@@ -195,7 +228,8 @@ export default function EOSCalcTab() {
                 <div class="row"><span class="row-label">Last actual wage</span><span class="row-val">SAR ${hrFmt(sal.toNumber())}</span></div>
                 <div class="row"><span class="row-label">Termination reason</span><span class="row-val">${terminationReason === 'employer' ? 'By Employer' : terminationReason === 'resignation' ? 'Resignation' : terminationReason === 'article81' ? 'Article 81' : 'Article 80'}</span></div>
                 <div class="row"><span class="row-label">Service days</span><span class="row-val">${serviceDays} days</span></div>
-                <div class="row"><span class="row-label">Service years</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} yr</span></div>
+                <div class="row"><span class="row-label">Service duration</span><span class="row-val">${serviceComp.years}y ${serviceComp.months}m ${serviceComp.days}d</span></div>
+                <div class="row"><span class="row-label">Service years (total)</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} yr</span></div>
                 <div class="row"><span class="row-label">Half-month × ${firstFiveYears.toDecimalPlaces(2)} yr</span><span class="row-val">SAR ${hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())}</span></div>
                 ${remainingYears.gt(0) ? `<div class="row"><span class="row-label">Full month × ${remainingYears.toDecimalPlaces(2)} yr</span><span class="row-val">SAR ${hrFmt(sal.times(remainingYears).toNumber())}</span></div>` : ''}
                 <div class="row"><span class="row-label">Full award</span><span class="row-val">SAR ${hrFmt(fullAward.toNumber())}</span></div>
@@ -285,8 +319,14 @@ export default function EOSCalcTab() {
             <span className="noorix-result-panel__row-value">{serviceDays}</span>
           </div>
           <div className="noorix-result-panel__row">
-            <span className="noorix-result-panel__row-label">{t('eosCalcYears')}</span>
-            <span className="noorix-result-panel__row-value">{serviceYears.toDecimalPlaces(2).toString()}</span>
+            <span className="noorix-result-panel__row-label">مدة الخدمة</span>
+            <span className="noorix-result-panel__row-value ltr">
+              {serviceComp.years} سنة {serviceComp.months} شهر {serviceComp.days} يوم
+            </span>
+          </div>
+          <div className="noorix-result-panel__row">
+            <span className="noorix-result-panel__row-label">{t('eosCalcYears')} (إجمالي)</span>
+            <span className="noorix-result-panel__row-value">{serviceYears.toDecimalPlaces(2).toString()} سنة</span>
           </div>
           {/* تفصيل حسابي: نصف شهر للخمس الأولى + شهر كامل لما بعدها — م84 */}
           <div className="noorix-result-panel__row text-[12px]" style={{ opacity: 0.82 }}>
