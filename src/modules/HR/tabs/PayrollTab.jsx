@@ -7,6 +7,7 @@ import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation'
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun } from '../../../services/api';
+import { useVaults } from '../../../hooks/useVaults';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
@@ -52,7 +53,13 @@ export default function PayrollTab() {
   const [detailRunId, setDetailRunId] = useState(null);
   const [payModalRun, setPayModalRun] = useState(null);
   const [payTransactionDate, setPayTransactionDate] = useState(() => getSaudiToday());
+  const [payVaultId, setPayVaultId] = useState('');
+  const [paySecondVaultId, setPaySecondVaultId] = useState('');
+  const [paySecondAmount, setPaySecondAmount] = useState('');
+  const [paySecondEnabled, setPaySecondEnabled] = useState(false);
+  const [payVaultError, setPayVaultError] = useState('');
   const { showToast } = useToast();
+  const { paymentVaults = [] } = useVaults({ companyId });
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -89,10 +96,11 @@ export default function PayrollTab() {
   });
 
   const issuePaymentMutation = useApiMutation({
-    mutationFn: ({ id, transactionDate }) =>
+    mutationFn: ({ id, transactionDate, vaultSplits }) =>
       issuePayrollPayment({
         payrollRunId: id,
         transactionDate: transactionDate || getSaudiToday(),
+        vaultSplits: vaultSplits?.length ? vaultSplits : undefined,
       }),
     invalidateQueries: [['payroll-runs', companyId]],
     successToast: () => t('payrollPaidSuccess') || 'تم صرف المسيرة بنجاح',
@@ -100,6 +108,11 @@ export default function PayrollTab() {
     onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
       setPayModalRun(null);
+      setPayVaultId('');
+      setPaySecondVaultId('');
+      setPaySecondAmount('');
+      setPaySecondEnabled(false);
+      setPayVaultError('');
     },
   });
 
@@ -108,8 +121,14 @@ export default function PayrollTab() {
       id: row.id,
       runNumber: row.runNumber,
       month: row.month,
+      netTotal: row.netTotal,
     });
     setPayTransactionDate(lastDayOfMonthBeforePayroll(row.monthRaw) || getSaudiToday());
+    setPayVaultId('');
+    setPaySecondVaultId('');
+    setPaySecondAmount('');
+    setPaySecondEnabled(false);
+    setPayVaultError('');
   }, []);
 
   const deleteRunMutation = useApiMutation({
@@ -343,7 +362,7 @@ export default function PayrollTab() {
           setPayModalRun(null);
         }}
         title={t('payrollPayConfirmTitle')}
-        size="sm"
+        size="md"
         footer={(
           <>
             <Button
@@ -360,9 +379,25 @@ export default function PayrollTab() {
               loading={issuePaymentMutation.isPending}
               onClick={() => {
                 if (!payModalRun || !payTransactionDate) return;
+                setPayVaultError('');
+                const netTotal = payModalRun.netTotal ?? 0;
+                let vaultSplits = [];
+                if (paySecondEnabled) {
+                  const v1 = payVaultId.trim();
+                  const v2 = paySecondVaultId.trim();
+                  const a2 = parseFloat(paySecondAmount);
+                  if (!v1 || !v2) { setPayVaultError(t('payrollSplitVaultsIncomplete')); return; }
+                  if (v1 === v2) { setPayVaultError(t('invoiceVaultsMustDiffer')); return; }
+                  if (Number.isNaN(a2) || a2 <= 0 || a2 >= netTotal - 0.001) { setPayVaultError(t('payrollSplitVaultsIncomplete')); return; }
+                  const a1 = Math.round((netTotal - a2) * 100) / 100;
+                  vaultSplits = [{ vaultId: v1, amount: a1 }, { vaultId: v2, amount: a2 }];
+                } else if (payVaultId.trim()) {
+                  vaultSplits = [{ vaultId: payVaultId.trim(), amount: netTotal }];
+                }
                 issuePaymentMutation.mutate({
                   id: payModalRun.id,
                   transactionDate: payTransactionDate,
+                  vaultSplits,
                 });
               }}
             >
@@ -371,18 +406,25 @@ export default function PayrollTab() {
           </>
         )}
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {payModalRun && (
-            <p className="m-0 text-[13px] text-noorix-text">
-              <span className="text-noorix-muted">{t('payrollRunNumber')}: </span>
-              <span className="font-semibold">{payModalRun.runNumber}</span>
-              {payModalRun.month && (
-                <>
-                  <span className="text-noorix-muted"> — {t('payrollMonth')}: </span>
-                  <span className="font-semibold">{payModalRun.month}</span>
-                </>
+            <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-noorix-border">
+              <span className="text-[13px] text-noorix-text">
+                <span className="text-noorix-muted">{t('payrollRunNumber')}: </span>
+                <span className="font-semibold">{payModalRun.runNumber}</span>
+                {payModalRun.month && (
+                  <>
+                    <span className="text-noorix-muted"> — {t('payrollMonth')}: </span>
+                    <span className="font-semibold">{payModalRun.month}</span>
+                  </>
+                )}
+              </span>
+              {payModalRun.netTotal != null && (
+                <span className="text-[16px] font-extrabold text-noorix-green ltr nx-font-numbers">
+                  {hrFmt(payModalRun.netTotal)}
+                </span>
               )}
-            </p>
+            </div>
           )}
           <div>
             <label className="mb-1.5 block text-[12px] font-semibold text-noorix-muted" htmlFor="payroll-issue-date">
@@ -395,6 +437,63 @@ export default function PayrollTab() {
               onChange={(e) => setPayTransactionDate(e.target.value)}
             />
           </div>
+
+          <div className="noorix-surface-card p-3 flex flex-col gap-2.5">
+            <p className="m-0 text-[11px] font-semibold text-noorix-muted">{t('payrollRunPayVaultSection')}</p>
+            <Input
+              type="select"
+              label={t('payrollPayVaultCol')}
+              value={payVaultId}
+              onChange={(e) => setPayVaultId(e.target.value)}
+            >
+              <option value="">{t('payrollPayVaultDefault')}</option>
+              {paymentVaults.map((v) => (
+                <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
+              ))}
+            </Input>
+            {!paySecondEnabled ? (
+              <Button type="button" size="sm" variant="ghost" className="self-start" onClick={() => setPaySecondEnabled(true)}>
+                {t('payrollAddSecondVaultShort')}
+              </Button>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Input
+                  type="select"
+                  label={t('secondVaultSelectLabel')}
+                  value={paySecondVaultId}
+                  onChange={(e) => setPaySecondVaultId(e.target.value)}
+                >
+                  <option value="">—</option>
+                  {paymentVaults.map((v) => (
+                    <option key={v.id} value={v.id} disabled={v.id === payVaultId}>
+                      {v.nameAr || v.nameEn || v.id}
+                    </option>
+                  ))}
+                </Input>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0.01"
+                  label={t('payrollSecondVaultAmountShort')}
+                  value={paySecondAmount}
+                  onChange={(e) => setPaySecondAmount(e.target.value)}
+                />
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  {paySecondAmount && payVaultId && (
+                    <span className="text-[11px] text-noorix-muted">{t('payrollPayVaultSplitHint')}</span>
+                  )}
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setPaySecondEnabled(false); setPaySecondVaultId(''); setPaySecondAmount(''); }}>
+                    {t('payrollRemoveVaultSplit')}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {payVaultError && (
+            <p className="m-0 text-[12px] font-semibold text-noorix-red">{payVaultError}</p>
+          )}
           <p className="m-0 text-[12px] text-noorix-muted leading-relaxed">{t('payrollPayDateHelp')}</p>
         </div>
       </Modal>

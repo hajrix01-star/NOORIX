@@ -674,7 +674,20 @@ export class HRService {
 
     let vaultSplitsOut: Array<{ vaultId: string; amount: string }>;
 
-    if (run.runVaultSplits?.length) {
+    // Priority 1: vaultSplits sent from the UI at payment time
+    if (dto.vaultSplits?.length) {
+      const splitVaultIds = dto.vaultSplits.map((vs) => vs.vaultId);
+      await this.assertVaultsUsableForPayment(run.companyId, splitVaultIds);
+      this.assertPayrollRunVaultSplitsMatchTotal(
+        dto.vaultSplits.map((vs) => ({ vaultId: vs.vaultId, amount: vs.amount })),
+        Number(totalDec),
+      );
+      vaultSplitsOut = dto.vaultSplits.map((vs) => ({
+        vaultId: vs.vaultId,
+        amount: String(vs.amount),
+      }));
+    // Priority 2: vaultSplits saved on the run (legacy, kept for backward compat)
+    } else if (run.runVaultSplits?.length) {
       vaultSplitsOut = run.runVaultSplits.map((vs) => ({
         vaultId: vs.vaultId,
         amount: String(vs.amount),
@@ -686,35 +699,9 @@ export class HRService {
       if (sumDec.minus(totalDec).abs().gt(0.02)) {
         throw new BadRequestException('مجموع توزيع خزائن المسيرة لا يطابق إجمالي المسيرة.');
       }
+    // Priority 3: fall back to default vault for full amount
     } else {
-      const merged = new Map<string, Prisma.Decimal>();
-      for (const item of run.items) {
-        const net = new Prisma.Decimal(item.netSalary);
-        if (item.vaultSplits?.length) {
-          for (const vs of item.vaultSplits) {
-            const amt = new Prisma.Decimal(vs.amount);
-            if (amt.lte(0)) continue;
-            const prev = merged.get(vs.vaultId) ?? new Prisma.Decimal(0);
-            merged.set(vs.vaultId, prev.plus(amt));
-          }
-        } else {
-          const vid = defaultVault.id;
-          const prev = merged.get(vid) ?? new Prisma.Decimal(0);
-          merged.set(vid, prev.plus(net));
-        }
-      }
-      const splits = [...merged.entries()].map(([vaultId, amount]) => ({ vaultId, amount }));
-      if (!splits.length) {
-        throw new BadRequestException('لا يمكن إصدار دفع لمسيرة بلا بيانات.');
-      }
-      const sumDec = splits.reduce((a, x) => a.plus(x.amount), new Prisma.Decimal(0));
-      if (sumDec.minus(totalDec).abs().gt(0.02)) {
-        throw new BadRequestException('تعذر مواءمة توزيع الخزائن مع إجمالي المسيرة.');
-      }
-      vaultSplitsOut = splits.map((s) => ({
-        vaultId: s.vaultId,
-        amount: s.amount.toString(),
-      }));
+      vaultSplitsOut = [{ vaultId: defaultVault.id, amount: totalStr }];
     }
 
     const dtos = [
