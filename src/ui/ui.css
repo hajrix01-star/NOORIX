@@ -1494,7 +1494,7 @@
 
 /* رأس قسم (header + badge) داخل بطاقة الجدول */
 .nx-section-header {
-  padding: 14px 20px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--noorix-border);
   display: flex;
   align-items: center;
@@ -1513,6 +1513,13 @@
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+/* SmartTable مدمج داخل noorix-surface-card — يحذف الإطار الداخلي المزدوج */
+.noorix-surface-card > .noorix-table-frame {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════

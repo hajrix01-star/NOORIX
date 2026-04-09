@@ -63,6 +63,7 @@ const SmartTable = memo(function SmartTable({
   tableLayout,
   rowNumberWidth,
   getRowClassName,
+  getRowStyle,
   renderMobileCard,
   stickyActionColumn = true,
 }) {
@@ -216,7 +217,7 @@ const SmartTable = memo(function SmartTable({
                 <tr
                   key={row.id ?? i}
                   className={`border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
-                  style={{ background: i % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent' }}
+                  style={{ background: i % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent', ...(typeof getRowStyle === 'function' ? getRowStyle(row, i) : null) }}
                 >
                   {showRowNumbers && (
                     <td className="text-center text-noorix-muted font-semibold" style={{ padding: cellPad.td, fontSize: cellFs, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36 }}>

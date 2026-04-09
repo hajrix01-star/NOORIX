@@ -469,7 +469,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* الترقيات وزيادات الراتب */}
-      <div className="noorix-surface-card noorix-table-frame overflow-hidden employee-profile-layout__wide">
+      <div className="noorix-surface-card overflow-hidden employee-profile-layout__wide">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('careerRecordTitle')}</span>
           <div className="nx-section-header__actions flex flex-wrap items-center gap-2">
@@ -528,7 +528,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* السجل المالي */}
-      <div className="noorix-surface-card noorix-table-frame overflow-hidden employee-profile-layout__wide">
+      <div className="noorix-surface-card overflow-hidden employee-profile-layout__wide">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('financialRecord') || 'السجل المالي'}</span>
         </div>
@@ -556,7 +556,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* الإجازات */}
-      <div className="noorix-surface-card noorix-table-frame overflow-hidden">
+      <div className="noorix-surface-card overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('hrTabLeave')}</span>
         </div>
@@ -581,7 +581,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* السلفيات */}
-      <div className="noorix-surface-card noorix-table-frame overflow-hidden">
+      <div className="noorix-surface-card overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('advancesList')}</span>
         </div>
@@ -605,7 +605,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* الإقامات */}
-      <div className="noorix-surface-card noorix-table-frame overflow-hidden">
+      <div className="noorix-surface-card overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('hrTabResidency')}</span>
         </div>
@@ -629,7 +629,7 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* المستندات */}
-      <div className="noorix-surface-card noorix-table-frame overflow-hidden">
+      <div className="noorix-surface-card overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('employeeDocuments')}</span>
           <div className="nx-section-header__actions">

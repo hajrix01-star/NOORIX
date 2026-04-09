@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getTxKey } from './bankAnalysisUtils';
 import { FALLBACK_CATEGORIES } from './bankAnalysisUtils';
-import { Button, Input } from '../../../ui';
+import { Button, Input, SmartTable } from '../../../ui';
 
 export default function BankStatementTransactionsFullTab({
   statement,
@@ -50,31 +50,6 @@ export default function BankStatementTransactionsFullTab({
     if (fromDb.length > 0) return fromDb;
     return FALLBACK_CATEGORIES.map((name) => ({ id: name, label: name }));
   }, [categories]);
-
-  const SortBtn = ({ label, sortKey }) => (
-    <Button
-      type="button"
-      style={{
-        background: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        fontWeight: 700,
-        fontSize: 12,
-        padding: '4px 0',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-        color: sortConfig.key === sortKey ? 'var(--noorix-accent-blue)' : 'inherit',
-        whiteSpace: 'nowrap',
-      }}
-      onClick={() => handleSort(sortKey)}
-    >
-      {label}
-      <span className="text-[10px]" style={{ opacity: sortConfig.key === sortKey ? 1 : 0.35 }}>
-        {sortConfig.key === sortKey ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}
-      </span>
-    </Button>
-  );
 
   const allSelected =
     filteredTransactions.length > 0 &&
@@ -182,231 +157,180 @@ export default function BankStatementTransactionsFullTab({
       </div>
 
       {/* ── الجدول ── */}
-      <div className="noorix-surface-card overflow-auto p-0">
-        <table className="w-full text-[12px] min-w-[780px]" style={{ borderCollapse: 'collapse' }}>
-          <thead>
-            <tr className="bg-noorix-bg-muted border-b-2 border-noorix-border">
-              <th className="w-9 p-2.5">
-                <label className="nx-checkbox">
-                  <input
-                    type="checkbox"
-                    aria-label={t('bankSelectAll')}
-                    checked={allSelected}
-                    onChange={toggleAllFiltered}
-                  />
-                </label>
-              </th>
-              <th className="p-2.5 text-right">
-                <SortBtn label={t('bankStatementDate')} sortKey="txDate" />
-              </th>
-              <th className="p-2.5 text-right">
-                <SortBtn label={t('bankStatementDescription')} sortKey="description" />
-              </th>
-              <th className="p-2.5 text-right whitespace-nowrap">
-                {t('bankStatementCategories')}
-              </th>
-              <th className="p-2.5 text-right">
-                <SortBtn label={t('bankStatementColDebit')} sortKey="debit" />
-              </th>
-              <th className="p-2.5 text-right">
-                <SortBtn label={t('bankStatementColCredit')} sortKey="credit" />
-              </th>
-              <th className="p-2.5 text-right">
-                <SortBtn label={t('bankStatementBalance')} sortKey="balance" />
-              </th>
-              <th className="p-2.5 text-right whitespace-nowrap">
-                {t('bankStatementAddNote')}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTransactions.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="text-center text-noorix-muted p-8">
-                  لا توجد عمليات تطابق الفلاتر المحددة.
-                </td>
-              </tr>
-            ) : (
-              filteredTransactions.map((tx, rowIdx) => {
-                const k = getTxKey(tx);
-                const catId = tx.categoryId || '';
-                const isDebit = Number(tx.debit) > 0;
-                const isCredit = Number(tx.credit) > 0;
-                const isSelected = selectedTxIds.has(k);
-
-                return (
-                  <tr
-                    key={k}
-                    style={{
-                      borderBottom: '1px solid var(--noorix-border)',
-                      background: isSelected
-                        ? 'var(--noorix-blue-6)'
-                        : rowIdx % 2 === 0
-                        ? 'transparent'
-                        : 'var(--noorix-bg-muted)',
-                      transition: 'background 0.15s',
-                    }}
+      <SmartTable
+        columns={[
+          {
+            key: 'select',
+            shrink: true,
+            width: 36,
+            label: (
+              <label className="nx-checkbox">
+                <input
+                  type="checkbox"
+                  aria-label={t('bankSelectAll')}
+                  checked={allSelected}
+                  onChange={toggleAllFiltered}
+                />
+              </label>
+            ),
+            render: (_, tx) => (
+              <label className="nx-checkbox">
+                <input
+                  type="checkbox"
+                  checked={selectedTxIds.has(getTxKey(tx))}
+                  onChange={() => toggleTxSelection(tx)}
+                />
+              </label>
+            ),
+          },
+          {
+            key: 'txDate',
+            label: t('bankStatementDate'),
+            shrink: true,
+            sortable: true,
+            render: (v) => <span className="whitespace-nowrap text-noorix-muted text-[11px]">{v}</span>,
+          },
+          {
+            key: 'description',
+            label: t('bankStatementDescription'),
+            sortable: true,
+            render: (v) => (
+              <div className="max-w-[280px] truncate text-[12px]" title={v}>{v}</div>
+            ),
+          },
+          {
+            key: 'categoryId',
+            label: t('bankStatementCategories'),
+            render: (catId, tx) =>
+              editingTxId === tx.id ? (
+                <div className="flex flex-col gap-1">
+                  <Input
+                    type="select"
+                    value={editingCategory}
+                    onChange={(e) => setEditingCategory(e.target.value)}
                   >
-                    {/* Checkbox */}
-                    <td className="py-2 px-[10px]">
-                      <label className="nx-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleTxSelection(tx)}
-                        />
-                      </label>
-                    </td>
-
-                    {/* التاريخ */}
-                    <td className="py-2 px-2.5 whitespace-nowrap text-noorix-muted text-[11px]">
-                      {tx.txDate}
-                    </td>
-
-                    {/* الوصف */}
-                    <td className="py-2 px-2.5 max-w-[280px]">
-                      <div
-                        className="overflow-hidden text-[12px] truncate"
-                        title={tx.description}
-                      >
-                        {tx.description}
-                      </div>
-                    </td>
-
-                    {/* الفئة */}
-                    <td className="py-2 px-2.5">
-                      {editingTxId === tx.id ? (
-                        <div className="flex flex-col gap-1">
-                          <Input
-                            type="select"
-                            value={editingCategory}
-                            onChange={(e) => setEditingCategory(e.target.value)}
-                          >
-                            <option value="">{t('uncategorized')}</option>
-                            {allCategoryOptions.map((c) => (
-                              <option key={c.id} value={c.id}>{c.label}</option>
-                            ))}
-                          </Input>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              disabled={updateCategoryMutation.isPending}
-                              onClick={() => handleCategoryChange(tx.id, editingCategory || null)}
-                            >
-                              {t('save')}
-                            </Button>
-                            <Button size="sm" onClick={() => setEditingTxId(null)}>{t('cancel')}</Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          className="text-start max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap block"
-                          onClick={() => {
-                            setEditingTxId(tx.id);
-                            setEditingCategory(catId);
-                          }}
-                        >
-                          {tx.category?.nameAr || tx.category?.nameEn || t('uncategorized')}
-                        </Button>
-                      )}
-                    </td>
-
-                    {/* السحب */}
-                    <td className="py-2 px-2.5 text-right">
-                      {isDebit ? (
-                        <span className="nx-ltr inline-block font-bold text-noorix-red px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-red-7)]">
-                          {fmt(Number(tx.debit))}
-                        </span>
-                      ) : (
-                        <span className="text-noorix-muted">—</span>
-                      )}
-                    </td>
-
-                    {/* الإيداع */}
-                    <td className="py-2 px-2.5 text-right">
-                      {isCredit ? (
-                        <span className="nx-ltr inline-block font-bold text-noorix-green px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-green-7)]">
-                          {fmt(Number(tx.credit))}
-                        </span>
-                      ) : (
-                        <span className="text-noorix-muted">—</span>
-                      )}
-                    </td>
-
-                    {/* الرصيد */}
-                    <td className="py-2 px-2.5 text-right nx-ltr text-[12px] text-noorix-muted">
-                      {tx.balance != null && Number(tx.balance) !== 0 ? fmt(Number(tx.balance)) : '—'}
-                    </td>
-
-                    {/* الملاحظة */}
-                    <td className="py-2 px-2.5">
-                      {editingNoteId === tx.id ? (
-                        <div className="flex flex-col gap-1">
-                          <Input
-                            value={editingNote}
-                            onChange={(e) => setEditingNote(e.target.value)}
-                            style={{
-                              fontSize: 11,
-                              padding: '4px 6px',
-                              borderRadius: 6,
-                              border: '1px solid var(--noorix-border)',
-                              width: 150,
-                            }}
-                          />
-                          <div className="flex gap-1">
-                            <Button variant="primary" size="sm" disabled={updateNoteMutation.isPending} onClick={() => handleNoteChange(tx.id)}>
-                              {t('save')}
-                            </Button>
-                            <Button size="sm" onClick={() => { setEditingNoteId(null); setEditingNote(''); }}>{t('cancel')}</Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          style={{ color: tx.note ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)' }}
-                          onClick={() => {
-                            setEditingNoteId(tx.id);
-                            setEditingNote(tx.note || '');
-                          }}
-                        >
-                          {tx.note ? `${(tx.note || '').slice(0, 20)}…` : '+ ملاحظة'}
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-          <tfoot>
-            <tr className="bg-noorix-bg-muted font-extrabold border-t-2 border-noorix-border">
-              <td colSpan={4} className="p-[10px_12px] text-[12px] text-noorix-muted">
-                {t('bankColumnTotalsFiltered')} ({filteredTransactions.length} عملية)
-              </td>
-              <td className="p-[10px_12px] text-right">
-                <span className="nx-ltr inline-block text-noorix-red text-[13px]">
-                  {fmt(columnTotals.debit)}
-                </span>
-              </td>
-              <td className="p-[10px_12px] text-right">
-                <span className="nx-ltr inline-block text-noorix-green text-[13px]">
-                  {fmt(columnTotals.credit)}
-                </span>
-              </td>
-              <td colSpan={2} className="p-[10px_12px] text-right text-[12px]">
-                <span
-                  className="nx-ltr inline-block font-[800]"
-                  style={{ color: columnTotals.credit - columnTotals.debit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)' }}
+                    <option value="">{t('uncategorized')}</option>
+                    {allCategoryOptions.map((c) => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </Input>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={updateCategoryMutation.isPending}
+                      onClick={() => handleCategoryChange(tx.id, editingCategory || null)}
+                    >
+                      {t('save')}
+                    </Button>
+                    <Button size="sm" onClick={() => setEditingTxId(null)}>{t('cancel')}</Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  className="text-start max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap block"
+                  onClick={() => { setEditingTxId(tx.id); setEditingCategory(catId || ''); }}
                 >
-                  {columnTotals.credit - columnTotals.debit >= 0 ? '+' : ''}{fmt(columnTotals.credit - columnTotals.debit)}
-                </span>
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+                  {tx.category?.nameAr || tx.category?.nameEn || t('uncategorized')}
+                </Button>
+              ),
+          },
+          {
+            key: 'debit',
+            label: t('bankStatementColDebit'),
+            sortable: true,
+            numeric: true,
+            render: (v) => Number(v) > 0 ? (
+              <span className="nx-ltr inline-block font-bold text-noorix-red px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-red-7)]">
+                {fmt(Number(v))}
+              </span>
+            ) : <span className="text-noorix-muted">—</span>,
+          },
+          {
+            key: 'credit',
+            label: t('bankStatementColCredit'),
+            sortable: true,
+            numeric: true,
+            render: (v) => Number(v) > 0 ? (
+              <span className="nx-ltr inline-block font-bold text-noorix-green px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-green-7)]">
+                {fmt(Number(v))}
+              </span>
+            ) : <span className="text-noorix-muted">—</span>,
+          },
+          {
+            key: 'balance',
+            label: t('bankStatementBalance'),
+            sortable: true,
+            numeric: true,
+            render: (v) => (
+              <span className="nx-ltr text-[12px] text-noorix-muted">
+                {v != null && Number(v) !== 0 ? fmt(Number(v)) : '—'}
+              </span>
+            ),
+          },
+          {
+            key: 'note',
+            label: t('bankStatementAddNote'),
+            render: (v, tx) =>
+              editingNoteId === tx.id ? (
+                <div className="flex flex-col gap-1">
+                  <Input
+                    value={editingNote}
+                    onChange={(e) => setEditingNote(e.target.value)}
+                    style={{ fontSize: 11, padding: '4px 6px', borderRadius: 6, border: '1px solid var(--noorix-border)', width: 150 }}
+                  />
+                  <div className="flex gap-1">
+                    <Button variant="primary" size="sm" disabled={updateNoteMutation.isPending} onClick={() => handleNoteChange(tx.id)}>
+                      {t('save')}
+                    </Button>
+                    <Button size="sm" onClick={() => { setEditingNoteId(null); setEditingNote(''); }}>{t('cancel')}</Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  style={{ color: v ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)' }}
+                  onClick={() => { setEditingNoteId(tx.id); setEditingNote(v || ''); }}
+                >
+                  {v ? `${(v || '').slice(0, 20)}…` : '+ ملاحظة'}
+                </Button>
+              ),
+          },
+        ]}
+        data={filteredTransactions}
+        tableMinWidth={780}
+        sortKey={sortConfig.key}
+        sortDir={sortConfig.direction}
+        onSort={handleSort}
+        emptyMessage="لا توجد عمليات تطابق الفلاتر المحددة."
+        getRowStyle={(tx) =>
+          selectedTxIds.has(getTxKey(tx))
+            ? { background: 'var(--noorix-blue-6)', transition: 'background 0.15s' }
+            : undefined
+        }
+        footerCells={
+          <>
+            <td colSpan={4} className="text-[12px] text-noorix-muted" style={{ padding: '10px 12px' }}>
+              {t('bankColumnTotalsFiltered')} ({filteredTransactions.length} عملية)
+            </td>
+            <td className="text-right" style={{ padding: '10px 12px' }}>
+              <span className="nx-ltr inline-block text-noorix-red text-[13px] font-extrabold">{fmt(columnTotals.debit)}</span>
+            </td>
+            <td className="text-right" style={{ padding: '10px 12px' }}>
+              <span className="nx-ltr inline-block text-noorix-green text-[13px] font-extrabold">{fmt(columnTotals.credit)}</span>
+            </td>
+            <td colSpan={2} className="text-right text-[12px]" style={{ padding: '10px 12px' }}>
+              <span
+                className="nx-ltr inline-block font-[800]"
+                style={{ color: columnTotals.credit - columnTotals.debit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)' }}
+              >
+                {columnTotals.credit - columnTotals.debit >= 0 ? '+' : ''}{fmt(columnTotals.credit - columnTotals.debit)}
+              </span>
+            </td>
+          </>
+        }
+      />
     </div>
   );
 }

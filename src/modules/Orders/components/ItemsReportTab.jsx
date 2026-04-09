@@ -10,7 +10,7 @@ import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Input, AdaptiveSheet, SmartTable } from '../../../ui';
 
 const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
 
@@ -227,64 +227,74 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
       )}
 
       {/* جدول */}
-      <div className="noorix-surface-card overflow-auto">
-        {isLoading ? (
-          <div className="text-center text-noorix-muted p-10">{t('loading')}</div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center text-noorix-muted p-10">{t('ordersNoItemsInPeriod')}</div>
-        ) : (
-            <div className="overflow-auto">
-            <table className="w-full border-collapse text-[13px]">
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-                  <th className="font-bold text-right py-[10px] px-3">{t('product')}</th>
-                  <th className="font-bold text-right py-[10px] px-3">{t('category')}</th>
-                  <th className="font-bold text-right py-[10px] px-3">{t('unit')}</th>
-                  <th className="font-bold text-right py-[10px] px-3">{t('quantity')}</th>
-                  <th className="font-bold text-right py-[10px] px-3">{t('total')}</th>
-                  <th className="font-bold text-right py-[10px] px-3">{t('ordersOrderCount')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r) => (
-                  <tr key={r.productId} className="border-b border-noorix-border">
-                    <td className="py-[10px] px-3">
-                      <Button
-                        variant="ghost"
-                        type="button"
-                        onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })}
-                        className="cursor-pointer text-[13px] font-semibold"
-                        style={{ background: 'none', border: 'none', color: 'var(--noorix-accent-blue)', textDecoration: 'underline' }}
-                      >
-                        {r.productNameAr || r.productNameEn || '—'}
-                      </Button>
-                    </td>
-                    <td className="py-[10px] px-3">
-                      {r.categoryId ? (
-                        <Button
-                          variant="ghost"
-                          type="button"
-                          onClick={() => setHistoryModal({ category: { id: r.categoryId, nameAr: r.categoryNameAr, nameEn: r.categoryNameEn } })}
-                          className="cursor-pointer text-[13px]"
-                          style={{ background: 'none', border: 'none', color: 'var(--noorix-accent-blue)', textDecoration: 'underline' }}
-                        >
-                          {r.categoryNameAr || r.categoryNameEn || '—'}
-                        </Button>
-                      ) : (
-                        <span className="nx-cell-muted">—</span>
-                      )}
-                    </td>
-                    <td className="nx-cell-muted py-[10px] px-3">{r.unit || '—'}</td>
-                    <td className="nx-cell-num py-[10px] px-3">{fmt(r.quantity ?? 0, 2)}</td>
-                    <td className="nx-cell-num nx-cell-num--green py-[10px] px-3">{fmt(r.amount ?? 0, 2)} ﷼</td>
-                    <td className="nx-cell-num py-[10px] px-3">{r.orderCount ?? 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <SmartTable
+        columns={[
+          {
+            key: 'productNameAr',
+            label: t('product'),
+            render: (_, r) => (
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })}
+                className="text-[13px] font-semibold text-noorix-blue underline"
+              >
+                {r.productNameAr || r.productNameEn || '—'}
+              </Button>
+            ),
+          },
+          {
+            key: 'categoryNameAr',
+            label: t('category'),
+            render: (_, r) => r.categoryId ? (
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setHistoryModal({ category: { id: r.categoryId, nameAr: r.categoryNameAr, nameEn: r.categoryNameEn } })}
+                className="text-[13px] text-noorix-blue underline"
+              >
+                {r.categoryNameAr || r.categoryNameEn || '—'}
+              </Button>
+            ) : <span className="nx-cell-muted">—</span>,
+          },
+          { key: 'unit', label: t('unit'), render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
+          { key: 'quantity', label: t('quantity'), numeric: true, render: (v) => fmt(v ?? 0, 2) },
+          {
+            key: 'amount',
+            label: t('total'),
+            numeric: true,
+            render: (v) => <span className="nx-cell-num--green">{fmt(v ?? 0, 2)} ﷼</span>,
+          },
+          { key: 'orderCount', label: t('ordersOrderCount'), numeric: true, render: (v) => v ?? 0 },
+        ]}
+        data={filtered}
+        isLoading={isLoading}
+        emptyMessage={t('ordersNoItemsInPeriod')}
+        footerCells={filtered.length > 0 ? (
+          <>
+            <td colSpan={3} className="font-bold text-[12px] text-noorix-muted" style={{ padding: '8px 12px' }}>{t('total')}</td>
+            <td className="font-bold text-right" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity, 2)}</td>
+            <td className="font-bold text-right text-noorix-green" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} ﷼</td>
+            <td style={{ padding: '8px 12px' }} />
+          </>
+        ) : null}
+        renderMobileCard={(r) => (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <Button variant="ghost" type="button" onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })} className="font-bold text-noorix-blue underline text-[13px]">
+                {r.productNameAr || r.productNameEn || '—'}
+              </Button>
+              <span className="nx-cell-num text-noorix-green font-bold text-[13px]">{fmt(r.amount ?? 0, 2)} ﷼</span>
+            </div>
+            <div className="flex gap-3 text-[12px] text-noorix-muted">
+              {r.categoryNameAr && <span>{r.categoryNameAr}</span>}
+              {r.unit && <span>{r.unit}</span>}
+              <span>{t('quantity')}: {fmt(r.quantity ?? 0, 2)}</span>
+              <span>{t('ordersOrderCount')}: {r.orderCount ?? 0}</span>
+            </div>
           </div>
         )}
-      </div>
+      />
 
       {historyModal && (
         <PurchaseHistoryModal

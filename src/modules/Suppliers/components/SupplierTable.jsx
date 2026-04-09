@@ -6,8 +6,7 @@
  */
 import React, { memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Badge, Button } from '../../../ui';
-import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
+import { Badge, Button, SmartTable } from '../../../ui';
 
 const sName = (s, lang) => (lang === 'en' ? s?.nameEn || s?.nameAr : s?.nameAr || s?.nameEn) || '—';
 
@@ -73,11 +72,9 @@ export const SupplierTable = memo(function SupplierTable({
 }) {
   const { t, lang } = useTranslation();
 
-  const isMobile = useIsNarrow700();
-
-  const allSelected    = suppliers.length > 0 && selectedIds.size === suppliers.length;
-  const someSelected   = selectedIds.size > 0 && !allSelected;
-  const hasSelection   = selectedIds.size > 0;
+  const allSelected  = suppliers.length > 0 && selectedIds.size === suppliers.length;
+  const someSelected = selectedIds.size > 0 && !allSelected;
+  const hasSelection = selectedIds.size > 0;
 
   if (suppliers.length === 0) {
     return (
@@ -88,163 +85,153 @@ export const SupplierTable = memo(function SupplierTable({
     );
   }
 
-  /* ── شريط الحذف الجماعي ── */
-  const BulkBar = hasSelection ? (
-    <div className="flex items-center flex flex-wrap gap-3 px-4 py-2" style={{ background: 'var(--noorix-red-7)', borderBottom: '1px solid var(--noorix-red-20)' }}>
-      <span className="text-[13px] font-bold flex-1 min-w-0" style={{ color: 'var(--noorix-accent-red)' }}>
-        تم تحديد {selectedIds.size} {selectedIds.size === 1 ? 'مورد' : 'موردين'}
-      </span>
-      <Button variant="danger" onClick={() => onBulkDelete?.()}>حذف المحددين</Button>
-      <Button onClick={() => onSelectAll?.(false)}>إلغاء التحديد</Button>
-    </div>
-  ) : null;
-
-  /* ══════════════════ عرض الجوال ══════════════════ */
-  if (isMobile) {
-    return (
-      <div className="noorix-surface-card" style={{ overflow: 'hidden' }}>
-        {/* رأس: عدد + تحديد الكل */}
-          <div className="flex items-center gap-8 px-4 py-2 border-b border-noorix-border">
-          <CB
-            checked={allSelected}
-            indeterminate={someSelected}
-            onChange={(v) => onSelectAll?.(v)}
-            ariaLabel="تحديد الكل"
-          />
-          <span className="text-[12px] text-noorix-muted flex-1 min-w-0">
-            {t('supplierCount', suppliers.length)}
+  const columns = [
+    {
+      key: 'select',
+      shrink: true,
+      width: 44,
+      label: (
+        <CB
+          checked={allSelected}
+          indeterminate={someSelected}
+          onChange={(v) => onSelectAll?.(v)}
+          ariaLabel="تحديد الكل"
+        />
+      ),
+      render: (_, row) => (
+        <CB
+          checked={selectedIds.has(row.id)}
+          onChange={(v) => onSelectChange?.(row.id, v)}
+          ariaLabel={`تحديد ${row.nameAr}`}
+        />
+      ),
+    },
+    {
+      key: 'nameAr',
+      label: t('name'),
+      render: (_, row) => <span className="font-bold">{sName(row, lang)}</span>,
+    },
+    {
+      key: 'nameEn',
+      label: t('nameEnCol'),
+      render: (_, row) => (
+        <span className="nx-cell-muted">
+          {lang === 'en' ? (row.nameAr || '—') : (row.nameEn || '—')}
+        </span>
+      ),
+    },
+    { key: 'taxNumber', label: t('taxNumber'), numeric: true },
+    { key: 'phone',     label: t('phone') },
+    {
+      key: 'supplierCategoryId',
+      label: t('category'),
+      render: (_, row) => {
+        const cat  = flatCategories.find((c) => c.id === row.supplierCategoryId);
+        if (!cat) return '—';
+        const icon = cat?.icon || cat?.account?.icon || '';
+        return (
+          <span className="flex items-center gap-1">
+            {icon && <span className="text-[14px]">{icon}</span>}
+            <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
+              {cat.nameAr}
+              {cat.account?.code && <span className="me-1 opacity-70">[{cat.account.code}]</span>}
+            </Badge>
           </span>
-        </div>
-
-        {BulkBar}
-
-        <div className="flex flex-col">
-          {suppliers.map((s) => {
-            const cat = flatCategories.find((c) => c.id === s.supplierCategoryId);
-            const icon = cat?.icon || cat?.account?.icon || '';
-            const checked = selectedIds.has(s.id);
-            return (
-              <div
-                key={s.id}
-                  className="px-4 py-3 border-b border-noorix-border"
-                  style={{ background: checked ? 'var(--noorix-green-4)' : 'transparent' }}
-              >
-                <div className="flex gap-2 items-start">
-                  {/* checkbox */}
-                  <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex mb-1 justify-between items-start">
-                      <div>
-                        <div className="font-bold text-[14px]">{sName(s, lang)}</div>
-                        {s.nameEn && s.nameAr && lang !== 'en' && <div className="nx-cell-muted">{s.nameEn}</div>}
-                        {s.nameAr && lang === 'en' && <div className="nx-cell-muted">{s.nameAr}</div>}
-                      </div>
-                      <TypeBadge type={s.supplierType || 'purchases'} />
-                    </div>
-                    {(s.phone || s.taxNumber) && (
-                      <div className="flex gap-3 text-[12px] text-noorix-muted mb-1">
-                        {s.phone && <span>{s.phone}</span>}
-                        {s.taxNumber && <span className="nx-cell-num">{s.taxNumber}</span>}
-                      </div>
-                    )}
-                    {cat && (
-                      <div className="mb-2">
-                        <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
-                          {icon && <span>{icon}</span>}{cat.nameAr}
-                        </Badge>
-                      </div>
-                    )}
-                    <ActionBtns onEdit={() => onEdit?.(s)} onDelete={() => onDelete?.(s)} t={t} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  /* ══════════════════ عرض الديسكتوب ══════════════════ */
-  const headers = [
-    { label: '', width: 40 },
-    { label: t('name') },
-    { label: t('nameEnCol') },
-    { label: t('taxNumber') },
-    { label: t('phone') },
-    { label: t('category') },
-    { label: t('type') },
-    { label: t('actions') },
+        );
+      },
+    },
+    {
+      key: 'supplierType',
+      label: t('type'),
+      shrink: true,
+      render: (_, row) => <TypeBadge type={row.supplierType || 'purchases'} />,
+    },
+    {
+      key: 'actions',
+      label: t('actions'),
+      shrink: true,
+      render: (_, row) => (
+        <ActionBtns onEdit={() => onEdit?.(row)} onDelete={() => onDelete?.(row)} t={t} />
+      ),
+    },
   ];
 
-  return (
-    <div className="noorix-surface-card noorix-table-frame overflow-hidden">
-      {/* رأس: عدد */}
-      <div className="flex items-center gap-8 text-[12px] text-noorix-muted px-4 py-2 border-b border-noorix-border">
-        <span className="flex-1 min-w-0">{t('supplierCount', suppliers.length)}</span>
-      </div>
-
-      {BulkBar}
-
-      <div className="overflow-x-auto">
-        <table className="noorix-table min-w-[560px]">
-          <thead>
-            <tr className="text-right">
-              {/* عمود التحديد */}
-              <th className="py-[9px] pe-1 ps-3 w-10">
-                <CB
-                  checked={allSelected}
-                  indeterminate={someSelected}
-                  onChange={(v) => onSelectAll?.(v)}
-                  ariaLabel="تحديد الكل"
-                />
-              </th>
-              {headers.slice(1).map((h) => (
-                <th key={h.label} className="font-bold text-[12px] py-[9px] px-3">{h.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {suppliers.map((s) => {
-              const cat     = flatCategories.find((c) => c.id === s.supplierCategoryId);
-              const icon    = cat?.icon || cat?.account?.icon || '';
-              const checked = selectedIds.has(s.id);
-              return (
-                <tr
-                  key={s.id}
-                  style={{ background: checked ? 'var(--noorix-green-4)' : 'transparent' }}
-                >
-                  <td className="py-1 pe-1 ps-3">
-                    <CB checked={checked} onChange={(v) => onSelectChange?.(s.id, v)} ariaLabel={`تحديد ${s.nameAr}`} />
-                  </td>
-                  <td className="font-bold py-[9px] px-3">{sName(s, lang)}</td>
-                  <td className="nx-cell-muted py-[9px] px-3">{lang === 'en' ? (s.nameAr || '—') : (s.nameEn || '—')}</td>
-                  <td className="nx-cell-num py-[9px] px-3">{s.taxNumber || '—'}</td>
-                  <td className="text-[12px] py-[9px] px-3">{s.phone || '—'}</td>
-                  <td className="text-[12px] py-[9px] px-3">
-                    {cat ? (
-                      <span className="flex items-center gap-6">
-                        {icon && <span className="text-[14px]">{icon}</span>}
-                        <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
-                          {cat.nameAr}
-                          {cat.account?.code && <span className="me-1 opacity-70">[{cat.account.code}]</span>}
-                        </Badge>
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="py-[9px] px-3">
-                    <TypeBadge type={s.supplierType || 'purchases'} />
-                  </td>
-                  <td className="py-[9px] px-3">
-                    <ActionBtns onEdit={() => onEdit?.(s)} onDelete={() => onDelete?.(s)} t={t} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+  const badge = hasSelection ? (
+    <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+      <span className="text-[13px] font-bold text-noorix-red flex-1 min-w-0">
+        تم تحديد {selectedIds.size} {selectedIds.size === 1 ? 'مورد' : 'موردين'}
+      </span>
+      <Button variant="danger" size="sm" onClick={() => onBulkDelete?.()}>حذف المحددين</Button>
+      <Button size="sm" onClick={() => onSelectAll?.(false)}>إلغاء التحديد</Button>
     </div>
+  ) : (
+    <span className="text-[12px] text-noorix-muted">{t('supplierCount', suppliers.length)}</span>
+  );
+
+  return (
+    <SmartTable
+      columns={columns}
+      data={suppliers}
+      badge={badge}
+      tableMinWidth={560}
+      getRowStyle={(row) =>
+        selectedIds.has(row.id) ? { background: 'var(--noorix-green-4)' } : undefined
+      }
+      renderMobileCard={(row) => {
+        const cat     = flatCategories.find((c) => c.id === row.supplierCategoryId);
+        const icon    = cat?.icon || cat?.account?.icon || '';
+        const checked = selectedIds.has(row.id);
+        return (
+          <div
+            style={{
+              background: checked ? 'var(--noorix-green-4)' : 'transparent',
+              margin: '-12px -16px',
+              padding: '12px 16px',
+            }}
+          >
+            <div className="flex gap-2 items-start">
+              <CB
+                checked={checked}
+                onChange={(v) => onSelectChange?.(row.id, v)}
+                ariaLabel={`تحديد ${row.nameAr}`}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex mb-1 justify-between items-start">
+                  <div>
+                    <div className="font-bold text-[14px]">{sName(row, lang)}</div>
+                    {row.nameEn && row.nameAr && lang !== 'en' && (
+                      <div className="nx-cell-muted">{row.nameEn}</div>
+                    )}
+                    {row.nameAr && lang === 'en' && (
+                      <div className="nx-cell-muted">{row.nameAr}</div>
+                    )}
+                  </div>
+                  <TypeBadge type={row.supplierType || 'purchases'} />
+                </div>
+                {(row.phone || row.taxNumber) && (
+                  <div className="flex gap-3 text-[12px] text-noorix-muted mb-1">
+                    {row.phone && <span>{row.phone}</span>}
+                    {row.taxNumber && <span className="nx-cell-num">{row.taxNumber}</span>}
+                  </div>
+                )}
+                {cat && (
+                  <div className="mb-2">
+                    <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
+                      {icon && <span>{icon}</span>}{cat.nameAr}
+                    </Badge>
+                  </div>
+                )}
+                <ActionBtns
+                  onEdit={() => onEdit?.(row)}
+                  onDelete={() => onDelete?.(row)}
+                  t={t}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      }}
+    />
   );
 });
 

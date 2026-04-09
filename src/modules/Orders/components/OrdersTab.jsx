@@ -527,36 +527,35 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           </div>
 
           <div className="text-[16px] font-bold mb-3">{t('orderItems')}</div>
-          <div className="border border-noorix-border overflow-x-auto rounded-[10px]">
-            <table className="w-full border-collapse text-[13px] min-w-[480px]">
-              <thead>
-                <tr className="bg-noorix-bg-muted border-b-2 border-noorix-border">
-                  <th className="text-end font-bold py-3 px-4">#</th>
-                  <th className="text-end font-bold py-3 px-4">{t('product')}</th>
-                  <th className="text-center font-bold py-3 px-4">{t('quantity')}</th>
-                  <th className="text-end font-bold py-3 px-4">{t('unitPrice')}</th>
-                  <th className="text-end font-bold py-3 px-4">{t('total')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(viewingOrder.items ?? []).map((it, idx) => (
-                  <tr key={idx} className="border-b border-noorix-border">
-                    <td className="nx-cell-muted py-3 px-4">{idx + 1}</td>
-                    <td className="py-3 px-4">{it.product?.nameAr || it.product?.nameEn || '—'}{[it.size, it.packaging, it.unit].filter(Boolean).length > 0 ? <span className="nx-cell-muted text-[12px]"> ({[it.size, it.packaging, it.unit].filter(Boolean).join(' / ')})</span> : ''}</td>
-                    <td className="nx-cell-num text-center py-3 px-4">{it.quantity}</td>
-                    <td className="nx-cell-num py-3 px-4">{fmt(it.unitPrice ?? 0, 2)} ﷼</td>
-                    <td className="nx-cell-num font-semibold py-3 px-4">{fmt(it.amount ?? 0, 2)} ﷼</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-noorix-bg-muted border-t-2 border-noorix-border">
-                  <td colSpan={4} className="font-bold text-end py-[14px] px-4">{t('total')}</td>
-                  <td className="nx-cell-num font-bold text-[15px] py-[14px] px-4">{fmt(viewingOrder.totalAmount ?? 0, 2)} ﷼</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <SmartTable
+            columns={[
+              { key: '_idx', label: '#', shrink: true, render: (_, _row, i) => <span className="nx-cell-muted">{i + 1}</span> },
+              {
+                key: 'product',
+                label: t('product'),
+                render: (_, it) => (
+                  <>
+                    {it.product?.nameAr || it.product?.nameEn || '—'}
+                    {[it.size, it.packaging, it.unit].filter(Boolean).length > 0 && (
+                      <span className="nx-cell-muted text-[12px]"> ({[it.size, it.packaging, it.unit].filter(Boolean).join(' / ')})</span>
+                    )}
+                  </>
+                ),
+              },
+              { key: 'quantity', label: t('quantity'), numeric: true, align: 'center' },
+              { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (v) => `${fmt(v ?? 0, 2)} ﷼` },
+              { key: 'amount',    label: t('total'),    numeric: true, render: (v) => <span className="font-semibold">{fmt(v ?? 0, 2)} ﷼</span> },
+            ]}
+            data={viewingOrder.items ?? []}
+            tableMinWidth={480}
+            showRowNumbers={false}
+            footerCells={
+              <>
+                <td colSpan={4} className="font-bold text-end" style={{ padding: '10px 16px' }}>{t('total')}</td>
+                <td className="nx-cell-num font-bold text-[15px]" style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt(viewingOrder.totalAmount ?? 0, 2)} ﷼</td>
+              </>
+            }
+          />
         </AdaptiveSheet>
       )}
     </div>
