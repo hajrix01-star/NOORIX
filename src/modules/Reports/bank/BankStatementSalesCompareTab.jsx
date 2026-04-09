@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
-import { FmtNum } from '../../../ui';
+import { FmtNum, MetricCard } from '../../../ui';
 
 export default function BankStatementSalesCompareTab({ statement, reconciliationStats, reconLoading }) {
   const { t } = useTranslation();
@@ -32,52 +32,32 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
     <div className="grid gap-4">
       <p className="text-[13px] text-noorix-muted m-0">{t('bankSalesCompareDescServer')}</p>
 
-      <div
-        className="grid gap-3"
-        style={{
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-        }}
-      >
-        <div className="noorix-surface-card p-4">
-          <div className="text-[12px] text-noorix-muted">{t('bankStatementBankCredits')}</div>
-          <div className="text-[20px] font-extrabold nx-ltr text-end" style={{ color: 'var(--noorix-accent-green)' }}>
-            <FmtNum n={bankCredits} />
-          </div>
-        </div>
-        <div className="noorix-surface-card p-4">
-          <div className="text-[12px] text-noorix-muted">{t('bankReconExpectedCredits')}</div>
-          <div className="text-[20px] font-extrabold nx-ltr text-end">
-            {reconLoading ? '…' : fmt(expected)}
-          </div>
-        </div>
-        <div className="noorix-surface-card p-4">
-          <div className="text-[12px] text-noorix-muted">{t('bankReconSalesBankTotal')}</div>
-          <div className="text-[18px] font-bold nx-ltr text-end">
-            {reconLoading ? '…' : fmt(salesBank)}
-          </div>
-          {saleCount != null && !reconLoading ? (
-            <div className="text-[11px] text-noorix-muted mt-1">
-              {t('bankSalesInvoiceCount', String(saleCount))}
-            </div>
-          ) : null}
-        </div>
-        <div className="noorix-surface-card p-4">
-          <div className="text-[12px] text-noorix-muted">{t('bankReconCashDeposits')}</div>
-          <div className="text-[18px] font-bold nx-ltr text-end">
-            {reconLoading ? '…' : fmt(cashDeposits)}
-          </div>
-        </div>
-        <div className="noorix-surface-card p-4">
-          <div className="text-[12px] text-noorix-muted">{t('bankSalesDifference')}</div>
-          <div
-            className="font-extrabold nx-ltr text-[20px] text-right"
-            style={{
-              color: reconLoading ? 'var(--noorix-text-muted)' : Math.abs(diff) < 1 ? 'var(--noorix-accent-green)' : '#ca8a04',
-            }}
-          >
-            {reconLoading ? '…' : fmt(diff)}
-          </div>
-        </div>
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+        <MetricCard color="var(--color-nx-profit)">
+          <MetricCard.Header label={t('bankStatementBankCredits')} />
+          <MetricCard.Value value={<FmtNum n={bankCredits} />} />
+        </MetricCard>
+        <MetricCard color="var(--color-nx-sales)">
+          <MetricCard.Header label={t('bankReconExpectedCredits')} />
+          <MetricCard.Value value={reconLoading ? '…' : fmt(expected)} />
+        </MetricCard>
+        <MetricCard color="var(--color-nx-sales)">
+          <MetricCard.Header label={t('bankReconSalesBankTotal')} />
+          <MetricCard.Value value={reconLoading ? '…' : fmt(salesBank)} />
+          {saleCount != null && !reconLoading && (
+            <MetricCard.Section>
+              <span className="text-[11px] text-noorix-muted">{t('bankSalesInvoiceCount', String(saleCount))}</span>
+            </MetricCard.Section>
+          )}
+        </MetricCard>
+        <MetricCard color="var(--color-nx-purchases)">
+          <MetricCard.Header label={t('bankReconCashDeposits')} />
+          <MetricCard.Value value={reconLoading ? '…' : fmt(cashDeposits)} />
+        </MetricCard>
+        <MetricCard color={reconLoading || Math.abs(diff) < 1 ? 'var(--color-nx-profit)' : 'var(--color-nx-net-profit)'}>
+          <MetricCard.Header label={t('bankSalesDifference')} />
+          <MetricCard.Value value={reconLoading ? '…' : fmt(diff)} />
+        </MetricCard>
       </div>
 
       <p className="text-[12px] text-noorix-muted m-0">{t('bankSalesCompareFootnote')}</p>

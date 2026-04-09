@@ -11,7 +11,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
   const resNum = Number(result ?? 0);
   return (
     <div className="noorix-surface-card flex min-w-0 flex-col overflow-hidden">
-      <div className="h-1" style={{ background: accentColor || 'var(--noorix-accent-blue)' }} aria-hidden />
+      <div className="h-1" style={{ background: accentColor || 'var(--color-nx-sales)' }} aria-hidden />
       <div className="pt-[14px] px-4 pb-3">
         <div className="text-[11px] font-bold text-noorix-muted mb-3 uppercase tracking-[0.04em]">
           {title}
@@ -33,7 +33,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
           {resultLabel}
         </div>
         <div dir="ltr" className="font-extrabold nx-font-numbers text-[22px] tracking-[-0.5px]" style={{
-          color: resNum < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
+          color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
         }}>
           {resNum < 0 ? '−' : ''}<FmtNum n={Math.abs(resNum)} />
           <span className="nx-sar">SR</span>
@@ -82,7 +82,7 @@ export function OrdersSummaryCard({ summary = {}, cashSalesTotal = 0, isLoading 
             receivedLabel={t('ordersReceived')}
             spentLabel={t('ordersDelegatePurchases')}
             resultLabel={t('ordersDelegateBalance')}
-            accentColor="#2563eb"
+            accentColor="var(--color-nx-sales)"
           />
           <SectionBlock
             title={t('ordersLocalCashSection')}
@@ -92,7 +92,7 @@ export function OrdersSummaryCard({ summary = {}, cashSalesTotal = 0, isLoading 
             receivedLabel={t('ordersCashSales')}
             spentLabel={t('ordersLocalPurchases')}
             resultLabel={t('ordersCashRemaining')}
-            accentColor="#16a34a"
+            accentColor="var(--color-nx-profit)"
           />
         </div>
       </div>
