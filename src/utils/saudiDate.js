@@ -27,12 +27,17 @@ export function formatSaudiDate(value) {
   if (!value) return '—';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-GB', {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: RIYADH_TZ,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-    timeZone: 'Asia/Riyadh',
-  });
+  }).formatToParts(d);
+  const year  = parts.find((p) => p.type === 'year')?.value;
+  const month = parts.find((p) => p.type === 'month')?.value;
+  const day   = parts.find((p) => p.type === 'day')?.value;
+  if (!year || !month || !day) return '—';
+  return `${day}-${month}-${year}`;
 }
 
 export function formatSaudiDateISO(value) {
@@ -57,7 +62,7 @@ export function formatSaudiDateTime(value) {
   if (!value) return '—';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '—';
-  return d.toLocaleString('en-GB', {
+  const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: RIYADH_TZ,
     year: 'numeric',
     month: '2-digit',
@@ -65,5 +70,12 @@ export function formatSaudiDateTime(value) {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-  });
+  }).formatToParts(d);
+  const year   = parts.find((p) => p.type === 'year')?.value;
+  const month  = parts.find((p) => p.type === 'month')?.value;
+  const day    = parts.find((p) => p.type === 'day')?.value;
+  const hour   = parts.find((p) => p.type === 'hour')?.value;
+  const minute = parts.find((p) => p.type === 'minute')?.value;
+  if (!year || !month || !day) return '—';
+  return `${day}-${month}-${year} ${hour}:${minute}`;
 }
