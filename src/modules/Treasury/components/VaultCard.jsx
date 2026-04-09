@@ -1,10 +1,9 @@
-﻿import React, { memo, useState, useRef, useEffect } from 'react';
-import { fmt } from '../../../utils/format';
+﻿import React, { memo } from 'react';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { VAULT_TYPES, PAYMENT_METHODS } from '../constants/treasuryConstants';
+import { PAYMENT_METHODS } from '../constants/treasuryConstants';
 import { VAULT_TYPE_COLORS, VAULT_TYPE_BG } from '../../../constants/kpiCardTheme';
-import { Badge, Button, FmtNum, MetricCard } from '../../../ui';
+import { Badge, FmtNum, MetricCard, KebabMenu } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
 export function parseVaultType(type) {
@@ -41,88 +40,25 @@ export const VAULT_TYPE_SVGS = {
   ),
 };
 
-/* ── قائمة الإجراءات — position:absolute لتجنب مشاكل fixed مع overflow ─── */
-function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod, onArchive, onDelete, t, lang }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+/* ── قائمة الإجراءات — KebabMenu موحّد ─────────────────────── */
+function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod, onArchive, onDelete, t }) {
   const isArchived = vault.isArchived;
-  const isRtl = lang !== 'en';
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler, true);
-    document.addEventListener('touchstart', handler, true);
-    return () => {
-      document.removeEventListener('mousedown', handler, true);
-      document.removeEventListener('touchstart', handler, true);
-    };
-  }, [open]);
-
   const paymentOn = vault.showAsPaymentMethod !== false;
+
   const items = [
-    { label: t('edit'),    action: () => { onEdit(vault); setOpen(false); }, color: 'var(--noorix-text)' },
-    { label: vault.isSalesChannel ? t('salesChannelEnabled') : t('salesChannel'),
-      action: () => { onToggleSalesChannel(vault); setOpen(false); }, color: 'var(--noorix-accent-green)' },
-    { label: paymentOn ? t('hidePaymentMethodOption') : t('showPaymentMethodOption'),
-      action: () => { onTogglePaymentMethod(vault); setOpen(false); }, color: 'var(--noorix-accent-blue)' },
-    { label: isArchived ? t('restore') : t('archive'),
-      action: () => { onArchive(vault); setOpen(false); }, color: 'var(--noorix-accent-amber)' },
-    { label: t('delete'), action: () => { onDelete(vault); setOpen(false); }, color: 'var(--noorix-accent-red)' },
+    { key: 'edit',    label: t('edit'),    onClick: () => onEdit(vault) },
+    { key: 'sales',   label: vault.isSalesChannel ? t('salesChannelEnabled') : t('salesChannel'),
+      onClick: () => onToggleSalesChannel(vault), style: { color: 'var(--noorix-accent-green)' } },
+    { key: 'pay',     label: paymentOn ? t('hidePaymentMethodOption') : t('showPaymentMethodOption'),
+      onClick: () => onTogglePaymentMethod(vault), style: { color: 'var(--noorix-accent-blue)' } },
+    { key: 'archive', label: isArchived ? t('restore') : t('archive'),
+      onClick: () => onArchive(vault), style: { color: 'var(--noorix-accent-amber)' } },
+    { key: 'delete',  label: t('delete'),  onClick: () => onDelete(vault), style: { color: 'var(--noorix-accent-red)' } },
   ];
 
   return (
-    <div
-      ref={ref}
-      className="relative"
-      style={{ zIndex: 10 }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <Button
-        type="button"
-        className="vault-card-menu-btn w-9 h-9 rounded-[10px] shrink-0"
-        onClick={(e) => { e.stopPropagation(); setOpen((p) => !p); }}
-        onTouchStart={(e) => e.stopPropagation()}
-        style={{
-          background: open ? 'var(--noorix-bg-muted)' : 'transparent',
-        }}
-        title={t('actions')}
-      >
-        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-          <circle cx="4" cy="10" r="1.8"/><circle cx="10" cy="10" r="1.8"/><circle cx="16" cy="10" r="1.8"/>
-        </svg>
-      </Button>
-
-      {open && (
-        <div
-          className="bg-noorix-surface border border-noorix-border rounded-xl absolute py-1.5 min-w-[160px] max-w-[220px]"
-          style={{
-            top: 'calc(100% + 4px)',
-            ...(isRtl ? { left: 0 } : { right: 0 }),
-            boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
-            width: 'max-content',
-            direction: isRtl ? 'rtl' : 'ltr',
-            zIndex: 100,
-          }}
-        >
-          {items.map(({ label, action, color }) => (
-            <Button
-              key={label}
-              variant="ghost"
-              className="vault-card-action-item w-full text-[13px] block py-[10px] px-4 whitespace-nowrap"
-              onClick={action}
-              style={{
-                textAlign: isRtl ? 'right' : 'left',
-                color,
-              }}
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
-      )}
+    <div onClick={(e) => e.stopPropagation()}>
+      <KebabMenu ariaLabel={t('actions')} items={items} menuWidth={200} />
     </div>
   );
 }
@@ -134,7 +70,6 @@ const VaultCard = memo(function VaultCard({
   const { t, lang } = useTranslation();
 
   const { isCustom, emoji: customEmoji } = parseVaultType(vault.type);
-  const typeInfo    = !isCustom ? (VAULT_TYPES.find((x) => x.value === vault.type) || VAULT_TYPES[0]) : null;
   const accentColor = !isCustom ? (VAULT_TYPE_COLORS[vault.type] || 'var(--noorix-text-muted)') : 'var(--noorix-text-muted)';
   const isArchived  = vault.isArchived;
   const balance     = Number(vault.balance ?? 0);
@@ -180,7 +115,7 @@ const VaultCard = memo(function VaultCard({
         }
         actions={
           <ActionMenu
-            vault={vault} t={t} lang={lang}
+            vault={vault} t={t}
             onEdit={onEdit}
             onToggleSalesChannel={onToggleSalesChannel}
             onTogglePaymentMethod={onTogglePaymentMethod}
