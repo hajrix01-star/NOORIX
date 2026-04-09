@@ -59,7 +59,7 @@ export function BatchPrintSheet({ batch, onClose }) {
           </p>
         </div>
 
-        <div className="noorix-table-frame noorix-surface-card" style={{ overflowX: 'auto', marginBottom: 16 }}>
+        <div className="noorix-table-frame" style={{ overflowX: 'auto', marginBottom: 16 }}>
           <table className="noorix-table" style={{ minWidth: 500 }}>
             <thead>
               <tr style={{ textAlign: 'right' }}>

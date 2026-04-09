@@ -87,7 +87,7 @@ const SmartTable = memo(function SmartTable({
 
   return (
     <div
-      className="noorix-table-frame overflow-hidden min-w-0"
+      className="noorix-table-frame min-w-0"
       style={{ padding: innerPadding }}
     >
       {/* ── رأس الجدول ── */}

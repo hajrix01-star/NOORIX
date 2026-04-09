@@ -1515,8 +1515,8 @@
   align-items: center;
 }
 
-/* SmartTable مدمج داخل noorix-surface-card — يحذف الإطار الداخلي المزدوج */
-.noorix-surface-card > .noorix-table-frame {
+/* SmartTable مدمج داخل noorix-surface-card — يحذف الإطار الداخلي المزدوج (أي عمق) */
+.noorix-surface-card .noorix-table-frame {
   border: none;
   box-shadow: none;
   border-radius: 0;
