@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PaymentHistoryTab — سجل المدفوعات (ثابت + متغير)
  * محاذاة جداول/أشرطة HR: شريط mb-3 min-h-11، SmartTable compact + innerPadding 8 + عنوان + شارة
  */
@@ -162,8 +162,8 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           activeItems.length > 0 ? (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-noorix-bg-muted p-4">
               <span className="text-[13px] text-noorix-muted">عدد السجلات: <strong className="text-noorix-text">{activeItems.length}</strong></span>
-              <span className="text-[13px]">الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
-              <span className="text-[13px]">الضريبة: <strong className="nx-cell-num text-noorix-amber">{fmt(totalTax)}</strong></span>
+              <span className="text-[13px]">الصافي: <strong className="nx-cell-num nx-cell-num--green"><FmtNum n={totalNet} /></strong></span>
+              <span className="text-[13px]">الضريبة: <strong className="nx-cell-num text-noorix-amber"><FmtNum n={totalTax} /></strong></span>
               <span className="nx-cell-num text-[14px] font-bold">الإجمالي: <FmtNum n={totalAmount} /> <span className="nx-sar">SR</span></span>
             </div>
           ) : null

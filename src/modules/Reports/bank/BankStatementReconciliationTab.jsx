@@ -4,6 +4,7 @@
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
+import { FmtNum } from '../../../ui';
 
 export default function BankStatementReconciliationTab({ balanceVerification, reconciliationStats, reconLoading }) {
   const { t } = useTranslation();
@@ -24,25 +25,25 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
         <div className="noorix-surface-card p-3.5">
           <div className="text-[12px] text-noorix-muted">{t('bankReconDepositsComputed')}</div>
           <div className="text-[18px] font-extrabold nx-ltr text-end">
-            {fmt(balanceVerification.totalDeposits)}
+            <FmtNum n={balanceVerification.totalDeposits} />
           </div>
         </div>
         <div className="noorix-surface-card p-3.5">
           <div className="text-[12px] text-noorix-muted">{t('bankReconDepositsStored')}</div>
           <div className="text-[18px] font-extrabold nx-ltr text-end">
-            {fmt(balanceVerification.stmtDeposits)}
+            <FmtNum n={balanceVerification.stmtDeposits} />
           </div>
         </div>
         <div className="noorix-surface-card p-3.5">
           <div className="text-[12px] text-noorix-muted">{t('bankReconWithdrawalsComputed')}</div>
           <div className="text-[18px] font-extrabold nx-ltr text-end">
-            {fmt(balanceVerification.totalWithdrawals)}
+            <FmtNum n={balanceVerification.totalWithdrawals} />
           </div>
         </div>
         <div className="noorix-surface-card p-3.5">
           <div className="text-[12px] text-noorix-muted">{t('bankReconWithdrawalsStored')}</div>
           <div className="text-[18px] font-extrabold nx-ltr text-end">
-            {fmt(balanceVerification.stmtWithdrawals)}
+            <FmtNum n={balanceVerification.stmtWithdrawals} />
           </div>
         </div>
       </div>
@@ -58,7 +59,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
           {okAgg ? t('bankReconAggregateOk') : t('bankReconAggregateDiff')}
           {!okAgg && (
             <span className="nx-ltr text-[12px] mt-1.5 block">
-              Δ dep {fmt(balanceVerification.depositsDiff)} / Δ wdr {fmt(balanceVerification.withdrawalsDiff)}
+              Δ dep <FmtNum n={balanceVerification.depositsDiff} /> / Δ wdr <FmtNum n={balanceVerification.withdrawalsDiff} />
             </span>
           )}
         </p>
@@ -78,7 +79,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
           <ul className="text-[12px] mt-2">
             {balanceVerification.balanceErrors.map((e, i) => (
               <li key={i}>
-                {e.date}: {t('bankReconExpected')} {fmt(e.expected)} / {t('bankReconActual')} {fmt(e.actual)}
+                {e.date}: {t('bankReconExpected')} <FmtNum n={e.expected} /> / {t('bankReconActual')} <FmtNum n={e.actual} />
               </li>
             ))}
           </ul>

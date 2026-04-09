@@ -23,7 +23,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-noorix-muted">{spentLabel}</span>
-            <span className="nx-font-numbers font-bold text-[13px] text-noorix-red">− {fmt(Number(spent ?? 0))}</span>
+            <span className="nx-font-numbers font-bold text-[13px] text-noorix-red">− <FmtNum n={Number(spent ?? 0)} /></span>
           </div>
         </div>
       </div>

@@ -149,8 +149,8 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   const footerCells = items.length > 0 ? (
     <>
       <td colSpan={4} className="font-bold p-2.5 bg-noorix-blue/6 border-t-2 border-noorix-border">{t('total')}</td>
-      <td className="font-bold text-end p-2.5 text-noorix-green nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border">{fmt(totalDebit)}</td>
-      <td className="font-bold text-end p-2.5 text-noorix-red nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border">{fmt(totalCredit)}</td>
+      <td className="font-bold text-end p-2.5 text-noorix-green nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border"><FmtNum n={totalDebit} /></td>
+      <td className="font-bold text-end p-2.5 text-noorix-red nx-font-numbers bg-noorix-blue/6 border-t-2 border-noorix-border"><FmtNum n={totalCredit} /></td>
     </>
   ) : null;
 

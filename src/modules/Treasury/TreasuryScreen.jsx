@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { updateVault } from '../../services/api';
 import { useApp }         from '../../context/AppContext';
@@ -10,7 +10,7 @@ import { fmt, sumAmounts } from '../../utils/format';
 import VaultCard          from './components/VaultCard';
 import VaultFormModal     from './components/VaultFormModal';
 import VaultTransactionsModal from './components/VaultTransactionsModal';
-import { Button, ScreenShell } from '../../ui';
+import { Button, ScreenShell, FmtNum } from '../../ui';
 
 export default function TreasuryScreen() {
   const { activeCompanyId } = useApp();
@@ -158,7 +158,7 @@ export default function TreasuryScreen() {
                 <div key={label} className="text-center p-4" style={{ borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none' }}>
                   <div className="text-[11px] text-noorix-muted mb-1.5 tracking-[0.03em]">{label}</div>
                   <div className="font-extrabold text-[20px] nx-font-numbers" style={{ color }}>
-                    {sign}{fmt(Math.abs(value))}
+                    {sign}<FmtNum n={Math.abs(value)} />
                     <span className="nx-sar me-[3px]">SR</span>
                   </div>
                 </div>

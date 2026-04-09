@@ -1,9 +1,9 @@
-import React, { memo, useState, useRef, useEffect } from 'react';
+﻿import React, { memo, useState, useRef, useEffect } from 'react';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS } from '../constants/treasuryConstants';
-import { Badge, Button , FmtNum } from '../../../ui';
+import { Badge, Button, FmtNum, SparkLine } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
 export function parseVaultType(type) {
@@ -140,6 +140,12 @@ const VaultCard = memo(function VaultCard({
   const totalIn     = Number(vault.totalIn ?? 0);
   const totalOut    = Number(vault.totalOut ?? 0);
 
+  /* بيانات السباركلاين: رصيد بداية الفترة ← منتصفها ← الرصيد الحالي */
+  const prevBalance = balance - totalIn + totalOut;
+  const sparkData = (totalIn > 0 || totalOut > 0)
+    ? [prevBalance, prevBalance + (totalIn - totalOut) * 0.4, prevBalance + (totalIn - totalOut) * 0.75, balance]
+    : [];
+
   const typeLabels  = { cash: t('vaultTypeCash'), bank: t('vaultTypeBank'), app: t('vaultTypeApp') };
   const typeLabel   = typeLabels[vault.type] || vault.type;
   const displayName = vaultDisplayName(vault, lang);
@@ -191,9 +197,14 @@ const VaultCard = memo(function VaultCard({
           fontFamily: 'var(--noorix-font-numbers)',
           color: balance < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
         }}>
-          {balance < 0 ? '−' : ''}{fmt(Math.abs(balance))}
+          {balance < 0 ? '−' : ''}<FmtNum n={Math.abs(balance)} />
           <span className="nx-sar mr-1">SR</span>
         </div>
+      </div>
+
+      {/* سباركلاين اتجاه الرصيد */}
+      <div className="w-full px-4 pb-3">
+        <SparkLine data={sparkData} color={isArchived ? 'var(--noorix-text-muted)' : accentColor} height={32} />
       </div>
 
       <div className="mx-4 h-px" style={{ background: 'var(--noorix-border)' }} />

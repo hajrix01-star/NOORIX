@@ -1,4 +1,4 @@
-/**
+﻿/**
  * جدول العمليات الكامل — فرز، تصفية، تصنيف، ملاحظات
  * واجهة محترفة مع تمييز لوني وعرض واضح للأرقام
  */
@@ -243,7 +243,7 @@ export default function BankStatementTransactionsFullTab({
             numeric: true,
             render: (v) => Number(v) > 0 ? (
               <span className="nx-ltr inline-block font-bold text-noorix-red px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-red-7)]">
-                {fmt(Number(v))}
+                <FmtNum n={Number(v)} />
               </span>
             ) : <span className="text-noorix-muted">—</span>,
           },
@@ -254,7 +254,7 @@ export default function BankStatementTransactionsFullTab({
             numeric: true,
             render: (v) => Number(v) > 0 ? (
               <span className="nx-ltr inline-block font-bold text-noorix-green px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-green-7)]">
-                {fmt(Number(v))}
+                <FmtNum n={Number(v)} />
               </span>
             ) : <span className="text-noorix-muted">—</span>,
           },
@@ -325,7 +325,7 @@ export default function BankStatementTransactionsFullTab({
                 className="nx-ltr inline-block font-[800]"
                 style={{ color: columnTotals.credit - columnTotals.debit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)' }}
               >
-                {columnTotals.credit - columnTotals.debit >= 0 ? '+' : ''}{fmt(columnTotals.credit - columnTotals.debit)}
+                {columnTotals.credit - columnTotals.debit >= 0 ? '+' : ''}<FmtNum n={columnTotals.credit - columnTotals.debit} />
               </span>
             </td>
           </>

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DashboardOverviewTab — نظرة عامة: كروت KPI + رسم بياني للأداء + توزيع القنوات
  * تصميم 2026 — sparklines، Recharts AreaChart، PieChart
  */
@@ -16,7 +16,7 @@ import PeriodAnalyticsStrip from '../../Reports/PeriodAnalyticsStrip';
 import { useSales } from '../../../hooks/useSales';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
-import { Button, cn , FmtNum } from '../../../ui';
+import { Button, cn, FmtNum, SparkLine } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
 import { KPI_CARD_SPARKLINE_COLORS, KPI_CARD_TOP_BAR_CLASS } from '../../../constants/kpiCardTheme';
 
@@ -43,55 +43,6 @@ function fmtAxis(n) {
   return String(Math.round(n));
 }
 
-/* ── Sparkline — polyline + تعبئة شفافة؛ بدون بيانات: خط متقطع ── */
-function SparkLine({ data = [], color = '#185FA5' }) {
-  const W = 100;
-  const H = 36;
-  const pad = 3;
-  const nums = (data || []).map((v) => Number(v || 0));
-  const empty = !nums.length || nums.every((v) => v === 0);
-
-  if (empty) {
-    return (
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="36" className="block">
-        <line
-          x1={pad}
-          y1={H / 2}
-          x2={W - pad}
-          y2={H / 2}
-          className="stroke-noorix-border"
-          strokeWidth="1"
-          strokeDasharray="5 5"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-    );
-  }
-
-  const max = Math.max(...nums);
-  const min = Math.min(...nums);
-  const range = Math.max(max - min, 1e-9);
-  const n = nums.length;
-  const xs = nums.map((_, i) => (n === 1 ? W / 2 : pad + (i / (n - 1)) * (W - 2 * pad)));
-  const ys = nums.map((v) => pad + (1 - (v - min) / range) * (H - 2 * pad));
-  const points = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
-  const fillPoints = `${points} ${xs[n - 1]},${H} ${xs[0]},${H}`;
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="36" className="block">
-      <polygon points={fillPoints} fill={color} fillOpacity={0.08} />
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
-}
 
 /* ── Custom Recharts Tooltip ── */
 function ChartTooltip({ active, payload, label }) {

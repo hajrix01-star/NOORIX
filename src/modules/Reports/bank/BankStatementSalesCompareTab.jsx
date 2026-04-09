@@ -4,6 +4,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
+import { FmtNum } from '../../../ui';
 
 export default function BankStatementSalesCompareTab({ statement, reconciliationStats, reconLoading }) {
   const { t } = useTranslation();
@@ -40,7 +41,7 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
         <div className="noorix-surface-card p-4">
           <div className="text-[12px] text-noorix-muted">{t('bankStatementBankCredits')}</div>
           <div className="text-[20px] font-extrabold nx-ltr text-end" style={{ color: 'var(--noorix-accent-green)' }}>
-            {fmt(bankCredits)}
+            <FmtNum n={bankCredits} />
           </div>
         </div>
         <div className="noorix-surface-card p-4">

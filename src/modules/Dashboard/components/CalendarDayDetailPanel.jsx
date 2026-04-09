@@ -7,7 +7,7 @@ import { useApp } from '../../../context/AppContext';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { Button, Input } from '../../../ui';
+import { Button, Input, FmtNum } from '../../../ui';
 
 export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, summaries, companyId, companyName, onPrint, dayNote, onSaveNote }) {
   const { t, lang } = useTranslation();
@@ -56,7 +56,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
             <span className="text-[10px]">{t('total')}</span>
             {achieved && <span className="text-[9px] font-bold px-1 rounded" style={{ background: 'var(--noorix-accent-green)', color: '#fff' }}>✓</span>}
           </div>
-          <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>{fmt(totalAmount)}</div>
+          <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}><FmtNum n={totalAmount} /></div>
           <div className="text-[9px] text-noorix-muted mt-0.5"><span className="nx-sar">SR</span></div>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
                   <td className="py-1.5 px-2">{s.summaryNumber || '—'}</td>
                   <td className="nx-cell-ellipsis py-1.5 px-2" title={chText || ''}>{chText || '—'}</td>
                   <td className="nx-cell-num py-1.5 px-2">{s.customerCount ?? 0}</td>
-                  <td className="nx-cell-num font-semibold text-noorix-green py-1.5 px-2">{fmt(Number(s.totalAmount || 0))}</td>
+                  <td className="nx-cell-num font-semibold text-noorix-green py-1.5 px-2"><FmtNum n={Number(s.totalAmount || 0)} /></td>
                 </tr>
               );
             })}

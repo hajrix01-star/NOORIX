@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+﻿import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
@@ -267,7 +267,7 @@ function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLight
         </div>
         <div className="inv-card-footer">
           <span className="inv-card-total">
-            {invoice.totalAmount ? `${fmt(invoice.totalAmount)} SR` : '—'}
+            {invoice.totalAmount ? <><FmtNum n={invoice.totalAmount} /> SR</> : '—'}
           </span>
           <span className="inv-card-items">
             {invoice.lines?.length || 0} {isAr ? 'صنف' : 'items'}

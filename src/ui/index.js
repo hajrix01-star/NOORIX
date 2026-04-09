@@ -28,6 +28,7 @@ export { default as ScreenTitle } from './ScreenTitle';
 export { default as KebabMenu } from './KebabMenu';
 export { default as FilterScrollStrip } from './FilterScrollStrip';
 export { FmtNum } from './FmtNum';
+export { default as SparkLine } from './SparkLine';
 
 /**
  * SmartTable — الجدول الذكي المركزي

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * تبويب التحليل — رسوم بيانية احترافية وبطاقات قابلة للإضافة/الحذف
  */
 import React, { useMemo, useState } from 'react';
@@ -117,7 +117,7 @@ function PieTooltip({ active, payload, pieMode, t }) {
           </div>
         </>
       ) : (
-        <div className="font-bold mb-1" style={{ color: p.fill }}>{fmt(d.value)}</div>
+        <div className="font-bold mb-1" style={{ color: p.fill }}><FmtNum n={d.value} /></div>
       )}
       <div className="text-noorix-muted">{p.percent}%</div>
       {p.count != null ? (
@@ -359,7 +359,7 @@ export default function BankStatementAnalysisCardsTab({
                           </div>
                         </td>
                         <td className="text-end nx-ltr font-extrabold text-noorix-red whitespace-nowrap nx-td-pad">
-                          {fmt(Number(tx.debit))}
+                          <FmtNum n={Number(tx.debit)} />
                         </td>
                         <td className="text-center nx-td-pad">
                           <Button size="sm" onClick={() => { setTypeFilter('debit'); setActiveTab('transactions'); }}>
@@ -439,12 +439,12 @@ export default function BankStatementAnalysisCardsTab({
                     {centerTitle}
                   </div>
                   <div className="font-extrabold text-noorix-text nx-ltr mt-1 text-[17px]">
-                    {fmt(centerMain)}
+                    <FmtNum n={centerMain} />
                   </div>
                   {pieMode === 'combined' && (pieGrandTotals.totalDebit > 0 || pieGrandTotals.totalCredit > 0) ? (
                     <div className="text-[10px] mt-[6px] leading-[1.35]">
-                      <div className="text-noorix-red nx-ltr">{fmt(pieGrandTotals.totalDebit)}</div>
-                      <div className="text-noorix-green nx-ltr">{fmt(pieGrandTotals.totalCredit)}</div>
+                      <div className="text-noorix-red nx-ltr"><FmtNum n={pieGrandTotals.totalDebit} /></div>
+                      <div className="text-noorix-green nx-ltr"><FmtNum n={pieGrandTotals.totalCredit} /></div>
                     </div>
                   ) : null}
                 </div>
@@ -523,10 +523,10 @@ export default function BankStatementAnalysisCardsTab({
                         {pieMode === 'combined' ? (
                           <div className="flex items-center justify-between gap-2 text-[11px] text-noorix-muted ps-5">
                             <span className="text-noorix-red">
-                              {t('bankStatementColDebit')}: <strong className="nx-ltr">{fmt(item.debit)}</strong>
+                              {t('bankStatementColDebit')}: <strong className="nx-ltr"><FmtNum n={item.debit} /></strong>
                             </span>
                             <span className="text-noorix-green">
-                              {t('bankStatementColCredit')}: <strong className="nx-ltr">{fmt(item.credit)}</strong>
+                              {t('bankStatementColCredit')}: <strong className="nx-ltr"><FmtNum n={item.credit} /></strong>
                             </span>
                           </div>
                         ) : null}
@@ -660,8 +660,8 @@ export default function BankStatementAnalysisCardsTab({
                   <td className="text-center nx-td-pad-10">
                     {categoryRows.reduce((s, r) => s + r.count, 0)}
                   </td>
-                  <td className="text-end nx-ltr text-noorix-red nx-td-pad-10">{fmt(totalDebit)}</td>
-                  <td className="text-end nx-ltr text-noorix-green nx-td-pad-10">{fmt(totalCredit)}</td>
+                  <td className="text-end nx-ltr text-noorix-red nx-td-pad-10"><FmtNum n={totalDebit} /></td>
+                  <td className="text-end nx-ltr text-noorix-green nx-td-pad-10"><FmtNum n={totalCredit} /></td>
                   <td className="text-noorix-muted nx-td-pad-10">100%</td>
                 </tr>
               </tfoot>
@@ -710,7 +710,7 @@ export default function BankStatementAnalysisCardsTab({
                           </div>
                         </td>
                         <td className="text-center text-noorix-muted nx-td-pad-9">{row.count}</td>
-                        <td className="text-end nx-ltr text-noorix-green font-bold nx-td-pad-9">{fmt(row.total)}</td>
+                        <td className="text-end nx-ltr text-noorix-green font-bold nx-td-pad-9"><FmtNum n={row.total} /></td>
                         <td className="nx-td-pad-9">
                           <div className="flex items-center gap-8">
                             <ProgressBar value={row.total} max={totalDep} color="#16a34a" />
@@ -725,7 +725,7 @@ export default function BankStatementAnalysisCardsTab({
                   <tr className="font-extrabold bg-noorix-bg-muted border-t-2 border-noorix-border">
                     <td colSpan={2} className="nx-td-pad-10">الإجمالي</td>
                     <td className="text-center nx-td-pad-10">{depositsByCategory.reduce((s, r) => s + r.count, 0)}</td>
-                    <td className="text-end nx-ltr text-noorix-green nx-td-pad-10">{fmt(totalDep)}</td>
+                    <td className="text-end nx-ltr text-noorix-green nx-td-pad-10"><FmtNum n={totalDep} /></td>
                     <td className="text-noorix-muted nx-td-pad-10">100%</td>
                   </tr>
                 </tfoot>
@@ -753,7 +753,7 @@ export default function BankStatementAnalysisCardsTab({
                   <div className="text-[11px] text-noorix-muted mt-1">عدد العمليات</div>
                 </div>
                 <div className="bg-noorix-bg-muted border border-noorix-border rounded-xl text-center py-3 px-3.5">
-                  <div className="text-[18px] font-extrabold text-noorix-green nx-ltr">{fmt(totalPOS)}</div>
+                  <div className="text-[18px] font-extrabold text-noorix-green nx-ltr"><FmtNum n={totalPOS} /></div>
                   <div className="text-[11px] text-noorix-muted mt-1">إجمالي المبيعات</div>
                 </div>
               </div>
@@ -778,7 +778,7 @@ export default function BankStatementAnalysisCardsTab({
                             <code className="nx-code-inline">…{term.terminalId.slice(-8)}</code>
                           </td>
                           <td className="text-center nx-td-pad">{term.count}</td>
-                          <td className="text-end nx-ltr font-extrabold text-noorix-green nx-td-pad">{fmt(term.total)}</td>
+                          <td className="text-end nx-ltr font-extrabold text-noorix-green nx-td-pad"><FmtNum n={term.total} /></td>
                           <td className="text-end nx-td-pad">
                             <div className="flex items-center justify-end gap-2">
                               <ProgressBar value={term.total} max={totalPOS} color={COLORS[i % COLORS.length]} />

@@ -10,7 +10,7 @@ import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
-import { Button, Input, AdaptiveSheet, SmartTable } from '../../../ui';
+import { Button, Input, AdaptiveSheet, SmartTable, FmtNum } from '../../../ui';
 
 const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
 
@@ -36,7 +36,7 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
             />
           </div>
           <span className="text-[12px] min-w-[60px] text-left" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
-            {fmt(r[valueKey])}
+            <FmtNum n={r[valueKey]} />
           </span>
         </div>
       ))}
@@ -91,8 +91,8 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
                 <td className="py-2 px-[10px]">{h.orderNumber}</td>
                 <td className="py-2 px-[10px]">{formatSaudiDate(h.orderDate)}</td>
                 <td className="py-2 px-[10px] nx-cell-num">{fmt(h.quantity)}</td>
-                <td className="py-2 px-[10px] nx-cell-num">{fmt(h.unitPrice)}</td>
-                <td className="py-2 px-[10px] nx-cell-num nx-cell-num--green">{fmt(h.amount)} SR</td>
+                <td className="py-2 px-[10px] nx-cell-num"><FmtNum n={h.unitPrice} /></td>
+                <td className="py-2 px-[10px] nx-cell-num nx-cell-num--green"><FmtNum n={h.amount} /> SR</td>
               </tr>
             ))}
           </tbody>
@@ -203,7 +203,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
         </div>
         <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
           <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalAmount')}</div>
-          <div className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount)} SR</div>
+          <div className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}><FmtNum n={totals.amount} /> SR</div>
         </div>
       </div>
 
@@ -263,7 +263,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
             key: 'amount',
             label: t('total'),
             numeric: true,
-            render: (v) => <span className="nx-cell-num--green">{fmt(v ?? 0)} SR</span>,
+            render: (v) => <span className="nx-cell-num--green"><FmtNum n={v ?? 0} /> SR</span>,
           },
           { key: 'orderCount', label: t('ordersOrderCount'), numeric: true, render: (v) => v ?? 0 },
         ]}
@@ -274,7 +274,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
           <>
             <td colSpan={3} className="font-bold text-[12px] text-noorix-muted" style={{ padding: '8px 12px' }}>{t('total')}</td>
             <td className="font-bold text-right" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity)}</td>
-            <td className="font-bold text-right text-noorix-green" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount)} SR</td>
+            <td className="font-bold text-right text-noorix-green" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}><FmtNum n={totals.amount} /> SR</td>
             <td style={{ padding: '8px 12px' }} />
           </>
         ) : null}
@@ -284,7 +284,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
               <Button variant="ghost" type="button" onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })} className="font-bold text-noorix-blue underline text-[13px]">
                 {r.productNameAr || r.productNameEn || '—'}
               </Button>
-              <span className="nx-cell-num text-noorix-green font-bold text-[13px]">{fmt(r.amount ?? 0)} SR</span>
+              <span className="nx-cell-num text-noorix-green font-bold text-[13px]"><FmtNum n={r.amount ?? 0} /> SR</span>
             </div>
             <div className="flex gap-3 text-[12px] text-noorix-muted">
               {r.categoryNameAr && <span>{r.categoryNameAr}</span>}

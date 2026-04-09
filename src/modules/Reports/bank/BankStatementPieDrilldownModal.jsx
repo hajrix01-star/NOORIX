@@ -4,7 +4,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { fmt } from '../../../utils/format';
 import { getTxKey, FALLBACK_CATEGORIES } from './bankAnalysisUtils';
-import { Button, AdaptiveSheet, Input } from '../../../ui';
+import { Button, AdaptiveSheet, Input, FmtNum } from '../../../ui';
 import SmartTable from '../../../components/common/SmartTable';
 
 export default function BankStatementPieDrilldownModal({
@@ -69,11 +69,11 @@ export default function BankStatementPieDrilldownModal({
         </span>
         <span className="flex items-center gap-6">
           <span className="w-[6px] h-[6px] rounded-full inline-block bg-noorix-red" />
-          {t('bankStatementColDebit')}: <strong className="nx-ltr inline-block text-noorix-red">{fmt(totals.debit)}</strong>
+          {t('bankStatementColDebit')}: <strong className="nx-ltr inline-block text-noorix-red"><FmtNum n={totals.debit} /></strong>
         </span>
         <span className="flex items-center gap-6">
           <span className="w-[6px] h-[6px] rounded-full inline-block bg-noorix-green" />
-          {t('bankStatementColCredit')}: <strong className="nx-ltr inline-block text-noorix-green">{fmt(totals.credit)}</strong>
+          {t('bankStatementColCredit')}: <strong className="nx-ltr inline-block text-noorix-green"><FmtNum n={totals.credit} /></strong>
         </span>
       </div>
 

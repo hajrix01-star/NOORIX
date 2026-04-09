@@ -1,10 +1,10 @@
-/**
+﻿/**
  * BatchPrintSheet — طباعة احترافية لدفعة الفواتير
  * عند الطباعة: يعرض الجدول والملخص فقط — بدون أزرار أو عناصر خارجية
  */
 import React, { useEffect } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Modal } from '../../../ui';
+import { Button, Modal, FmtNum } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 
@@ -82,9 +82,9 @@ export function BatchPrintSheet({ batch, onClose }) {
                   <td style={{ color: 'var(--noorix-text-muted)' }}>{inv.supplierInvoiceNumber || '—'}</td>
                   <td>{(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}</td>
                   <td>{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</td>
-                  <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}>{fmt(inv.netAmount)}</td>
-                  <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}>{fmt(inv.taxAmount)}</td>
-                  <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, textAlign: 'left' }}>{fmt(inv.totalAmount)}</td>
+                  <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}><FmtNum n={inv.netAmount} /></td>
+                  <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}><FmtNum n={inv.taxAmount} /></td>
+                  <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, textAlign: 'left' }}><FmtNum n={inv.totalAmount} /></td>
                   <td style={{ fontSize: 12 }}>{formatSaudiDate(inv.transactionDate)}</td>
                 </tr>
               ))}
@@ -92,9 +92,9 @@ export function BatchPrintSheet({ batch, onClose }) {
             <tfoot>
               <tr>
                 <td colSpan={5} style={{ fontWeight: 700 }}>{t('totalSum', activeInvoices.length)}</td>
-                <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}>{fmt(net)}</td>
-                <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}>{fmt(tax)}</td>
-                <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, textAlign: 'left' }}>{fmt(total)}</td>
+                <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}><FmtNum n={net} /></td>
+                <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}><FmtNum n={tax} /></td>
+                <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, textAlign: 'left' }}><FmtNum n={total} /></td>
                 <td />
               </tr>
             </tfoot>

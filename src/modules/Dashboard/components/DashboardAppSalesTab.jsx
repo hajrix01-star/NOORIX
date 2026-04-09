@@ -117,7 +117,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
               {fmt(appPercent, 1)}%
             </div>
             <div className="text-[12px] text-noorix-muted mt-1.5">
-              {fmt(yearApp)} / <FmtNum n={yearTotal} /> <span className="nx-sar">SR</span>
+              <FmtNum n={yearApp} /> / <FmtNum n={yearTotal} /> <span className="nx-sar">SR</span>
             </div>
             {yearApp === 0 && (
               <div className="mt-2 text-[11px] font-semibold text-noorix-amber">

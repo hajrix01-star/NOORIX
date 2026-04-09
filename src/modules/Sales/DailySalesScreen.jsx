@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DailySalesScreen — ملخص المبيعات اليومي
  * يعتمد على: useSales, useVaults (hooks) + SmartTable + utils/saudiDate, utils/format
  * يدعم: تصدير Excel، PDF، طباعة احترافية (اسم الشركة + شعار)
@@ -297,8 +297,8 @@ export default function DailySalesScreen() {
         ) : null}
       </td>
       <td className="nx-tfoot-num nx-cell-num--blue">{totalCustomers.toLocaleString('en')}</td>
-      <td className="nx-tfoot-num nx-cell-num--green">{fmt(totalAmountSum.toNumber())}</td>
-      <td className="nx-tfoot-num nx-cell-num--violet">{totalCustomers > 0 ? fmt(totalAmountSum.toNumber() / totalCustomers) : '0.00'}</td>
+      <td className="nx-tfoot-num nx-cell-num--green"><FmtNum n={totalAmountSum.toNumber()} /></td>
+      <td className="nx-tfoot-num nx-cell-num--violet">{totalCustomers > 0 ? <FmtNum n={totalAmountSum.toNumber() / totalCustomers} /> : '0.00'}</td>
       <td colSpan={2} />
     </>
   );
@@ -442,7 +442,7 @@ export default function DailySalesScreen() {
       <div className="grid grid-cols-3 gap-2 mt-1">
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('total')}</div>
-          <div className="text-[13px] font-bold text-noorix-green ltr">{fmt(row.totalAmount)}</div>
+          <div className="text-[13px] font-bold text-noorix-green ltr"><FmtNum n={row.totalAmount} /></div>
         </div>
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('customers')}</div>
@@ -450,7 +450,7 @@ export default function DailySalesScreen() {
         </div>
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('avgPerOrder')}</div>
-          <div className="text-[13px] font-bold text-noorix-violet ltr">{fmt(row.avgPerCustomer)}</div>
+          <div className="text-[13px] font-bold text-noorix-violet ltr"><FmtNum n={row.avgPerCustomer} /></div>
         </div>
       </div>
       <div className="flex justify-end mt-1">

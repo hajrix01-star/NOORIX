@@ -1,4 +1,4 @@
-/**
+﻿/**
  * InvoicesListScreen — قائمة الفواتير
  * يعتمد على: useInvoices | SmartTable | DateFilterBar | format | saudiDate
  */
@@ -289,9 +289,9 @@ export default function InvoicesListScreen() {
       <td colSpan={7} className="nx-tfoot-label text-[12px]">
         {t('totalInvoices', serverAll.count)} {total > PAGE_SIZE && <span className="text-[11px]" style={{ opacity: 0.65 }}>({t('allPages')})</span>}
       </td>
-      <td className="nx-tfoot-num nx-cell-num--green">{fmt(Number(serverAll.net))}</td>
-      <td className="nx-tfoot-num nx-cell-num--amber">{fmt(Number(serverAll.tax))}</td>
-      <td className="nx-tfoot-num nx-cell-num--violet">{fmt(Number(serverAll.total))}</td>
+      <td className="nx-tfoot-num nx-cell-num--green"><FmtNum n={Number(serverAll.net)} /></td>
+      <td className="nx-tfoot-num nx-cell-num--amber"><FmtNum n={Number(serverAll.tax)} /></td>
+      <td className="nx-tfoot-num nx-cell-num--violet"><FmtNum n={Number(serverAll.total)} /></td>
       <td colSpan={3} />
     </>
   );
@@ -326,15 +326,15 @@ export default function InvoicesListScreen() {
       <div className="nx-mc__grid nx-mc__grid--3">
         <div>
           <div className="nx-mc__stat-label">{t('total')}</div>
-          <div className="nx-mc__stat-value">{fmt(row.totalAmount)}</div>
+          <div className="nx-mc__stat-value"><FmtNum n={row.totalAmount} /></div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('net')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--green text-[13px]">{fmt(row.netAmount)}</div>
+          <div className="nx-mc__stat-value nx-cell-num--green text-[13px]"><FmtNum n={row.netAmount} /></div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('tax')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--amber text-[13px]">{fmt(row.taxAmount)}</div>
+          <div className="nx-mc__stat-value nx-cell-num--amber text-[13px]"><FmtNum n={row.taxAmount} /></div>
         </div>
       </div>
       <div className="nx-mc__actions">
