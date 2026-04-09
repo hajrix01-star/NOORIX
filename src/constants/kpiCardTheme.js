@@ -6,10 +6,15 @@
  * هذا الملف يوفّر الألوان بصيغتين:
  *
  *  1. CSS variables → للـ MetricCard + inline styles + CSS contexts
- *     KPI_CARD_SPARKLINE_COLORS  /  VAULT_TYPE_COLORS
+ *  2. Hex literals  → للـ Recharts الذي لا يدعم var() كـ stroke/fill
  *
- *  2. Hex literals → للـ Recharts الذي لا يدعم var() كـ stroke/fill
- *     KPI_RECHARTS_COLORS  /  VAULT_RECHARTS_COLORS
+ * الباليت الموحّد (6 ألوان لكل الكروت والمؤشرات):
+ *   sales      → مبيعات / خزينة بنكية
+ *   profit     → ربح إجمالي / خزينة نقدية / إيداعات
+ *   net-profit → صافي ربح
+ *   purchases  → مشتريات
+ *   expenses   → مصاريف / سحوبات
+ *   app        → خزينة تطبيق / رقمي
  *
  * ⚠️ عند تغيير أي لون: غيّره في @theme أولاً ثم حدّث الـ hex هنا.
  */
@@ -25,15 +30,15 @@ export const KPI_CARD_SPARKLINE_COLORS = {
 };
 
 export const VAULT_TYPE_COLORS = {
-  cash: 'var(--color-nx-vault-cash)',
-  bank: 'var(--color-nx-vault-bank)',
-  app:  'var(--color-nx-vault-app)',
+  cash: 'var(--color-nx-profit)',  /* نقدي   → أخضر داكن */
+  bank: 'var(--color-nx-sales)',   /* بنكي   → أزرق داكن */
+  app:  'var(--color-nx-app)',     /* تطبيق  → بنفسجي    */
 };
 
 export const VAULT_TYPE_BG = {
-  cash: 'color-mix(in srgb, var(--color-nx-vault-cash) 10%, transparent)',
-  bank: 'color-mix(in srgb, var(--color-nx-vault-bank) 10%, transparent)',
-  app:  'color-mix(in srgb, var(--color-nx-vault-app)  10%, transparent)',
+  cash: 'color-mix(in srgb, var(--color-nx-profit) 10%, transparent)',
+  bank: 'color-mix(in srgb, var(--color-nx-sales)  10%, transparent)',
+  app:  'color-mix(in srgb, var(--color-nx-app)    10%, transparent)',
 };
 
 /* ══ Hex literals (للـ Recharts فقط) ════════════════════════════ */
@@ -47,9 +52,9 @@ export const KPI_RECHARTS_COLORS = {
 };
 
 export const VAULT_RECHARTS_COLORS = {
-  cash: '#16a34a',
-  bank: '#2563eb',
-  app:  '#7c3aed',
+  cash: '#3B6D11',  /* = --color-nx-profit */
+  bank: '#185FA5',  /* = --color-nx-sales  */
+  app:  '#7c3aed',  /* = --color-nx-app    */
 };
 
 /** @deprecated — استُبدل بـ MetricCard.color prop مباشرة */

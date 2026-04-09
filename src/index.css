@@ -32,25 +32,29 @@
   --color-white-45:        rgba(255,255,255,0.45);
   --color-white-92:        rgba(255,255,255,0.92);
 
-  /* ── ألوان المؤشرات والكروت (Design Tokens) ──────────────────
-   * المصدر الوحيد الحقيقي للألوان في النظام.
+  /* ── باليت الألوان الموحّدة (Design Tokens) ───────────────────
+   * المصدر الوحيد الحقيقي لجميع ألوان الكروت والمؤشرات.
    * تتولد منها تلقائياً:
-   *   • Tailwind classes: text-nx-sales / bg-nx-sales / border-nx-sales …
+   *   • Tailwind classes: text-nx-sales / bg-nx-profit / border-nx-expenses …
    *   • CSS variables:    var(--color-nx-sales)
-   * للـ Recharts (يحتاج hex): استخدم KPI_RECHARTS_COLORS من kpiCardTheme.js
+   *
+   * الدلالة المزدوجة — كل لون يخدم سياقين:
+   *   sales      → مبيعات / خزينة بنكية
+   *   profit     → ربح إجمالي / خزينة نقدية / إيداعات
+   *   net-profit → صافي ربح
+   *   purchases  → مشتريات
+   *   expenses   → مصاريف / سحوبات
+   *   app        → خزينة تطبيق / رقمي
+   *
+   * للـ Recharts (يحتاج hex): استخدم KPI_RECHARTS_COLORS/VAULT_RECHARTS_COLORS من kpiCardTheme.js
    * ─────────────────────────────────────────────────────────── */
 
-  /* كروت KPI المالية */
-  --color-nx-sales:      #185FA5;
-  --color-nx-profit:     #3B6D11;
-  --color-nx-net-profit: #854F0B;
-  --color-nx-purchases:  #888780;
-  --color-nx-expenses:   #A32D2D;
-
-  /* كروت الخزائن */
-  --color-nx-vault-cash: #16a34a;
-  --color-nx-vault-bank: #2563eb;
-  --color-nx-vault-app:  #7c3aed;
+  --color-nx-sales:      #185FA5;   /* مبيعات · خزينة بنكية       */
+  --color-nx-profit:     #3B6D11;   /* ربح إجمالي · خزينة نقدية   */
+  --color-nx-net-profit: #854F0B;   /* صافي ربح                    */
+  --color-nx-purchases:  #888780;   /* مشتريات                     */
+  --color-nx-expenses:   #A32D2D;   /* مصاريف · سحوبات             */
+  --color-nx-app:        #7c3aed;   /* خزينة تطبيق · رقمي         */
 
   /* خط Cairo */
   --font-cairo: 'Cairo', system-ui, sans-serif;
@@ -1804,9 +1808,8 @@ html[data-card-style="10"] .noorix-stat-card {
   width: 100%;
   flex-shrink: 0;
 }
-/* الألوان من design tokens — المصدر: @theme في index.css */
-.noorix-exec-card--inbound  .noorix-exec-card__stripe { background: var(--color-nx-vault-cash); }
-.noorix-exec-card--outbound .noorix-exec-card__stripe { background: var(--color-nx-vault-bank); }
+.noorix-exec-card--inbound  .noorix-exec-card__stripe { background: var(--color-nx-profit); }
+.noorix-exec-card--outbound .noorix-exec-card__stripe { background: var(--color-nx-sales);  }
 
 /* هيدر الكرت: أيقونة + عنوان */
 .noorix-exec-card__header {
@@ -1824,8 +1827,8 @@ html[data-card-style="10"] .noorix-stat-card {
   align-items: center;
   justify-content: center;
 }
-.noorix-exec-card--inbound  .noorix-exec-card__icon { background: color-mix(in srgb, var(--color-nx-vault-cash) 10%, transparent); color: var(--color-nx-vault-cash); }
-.noorix-exec-card--outbound .noorix-exec-card__icon { background: color-mix(in srgb, var(--color-nx-vault-bank) 10%, transparent); color: var(--color-nx-vault-bank); }
+.noorix-exec-card--inbound  .noorix-exec-card__icon { background: color-mix(in srgb, var(--color-nx-profit) 10%, transparent); color: var(--color-nx-profit); }
+.noorix-exec-card--outbound .noorix-exec-card__icon { background: color-mix(in srgb, var(--color-nx-sales)  10%, transparent); color: var(--color-nx-sales);  }
 .noorix-exec-card__title {
   font-size: 11px;
   font-weight: 700;

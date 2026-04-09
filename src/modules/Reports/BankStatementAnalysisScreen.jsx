@@ -185,9 +185,9 @@ export default function BankStatementAnalysisScreen() {
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
           {[
             { label: t('bankStatementCardCount'),       value: String(completedStatements.length),    color: 'var(--color-nx-sales)'      },
-            { label: t('bankStatementCardDeposits'),    value: fmt(quickStats.totalDeposits),          color: 'var(--color-nx-vault-cash)' },
-            { label: t('bankStatementCardWithdrawals'), value: fmt(quickStats.totalWithdrawals),        color: 'var(--color-nx-expenses)'   },
-            { label: t('bankStatementCardNetFlow'),     value: fmt(quickStats.netFlow),                color: quickStats.netFlow >= 0 ? 'var(--color-nx-vault-cash)' : 'var(--color-nx-expenses)' },
+            { label: t('bankStatementCardDeposits'),    value: fmt(quickStats.totalDeposits),   color: 'var(--color-nx-profit)'   },
+            { label: t('bankStatementCardWithdrawals'), value: fmt(quickStats.totalWithdrawals), color: 'var(--color-nx-expenses)' },
+            { label: t('bankStatementCardNetFlow'),     value: fmt(quickStats.netFlow),          color: quickStats.netFlow >= 0 ? 'var(--color-nx-profit)' : 'var(--color-nx-expenses)' },
           ].map((c, i) => (
             <MetricCard key={i} color={c.color}>
               <MetricCard.Header label={c.label} />
