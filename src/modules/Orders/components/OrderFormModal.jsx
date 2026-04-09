@@ -1,4 +1,4 @@
-/**
+﻿/**
  * OrderFormModal ? ????? ????? ?????
  */
 import React, { useState, useMemo, useEffect } from 'react';
@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { ProductSearchInput } from '../../../components/common/ProductSearchInput';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 
 export function OrderFormModal({
   companyId,
@@ -189,7 +189,7 @@ export function OrderFormModal({
           <div className="flex items-center flex-wrap gap-4 justify-center mb-5">
             <div className="text-center">
               <div className="text-[11px] text-noorix-muted">{t('total')}</div>
-              <div className="text-[18px] nx-font-numbers text-noorix-green font-[900]">{fmt(savedOrder.totalAmount ?? 0)} ?</div>
+              <div className="text-[18px] nx-font-numbers text-noorix-green font-[900]"><FmtNum n={savedOrder.totalAmount ?? 0} /> ?</div>
             </div>
           </div>
           <div className="flex flex-col gap-2.5 items-center">
@@ -408,7 +408,7 @@ export function OrderFormModal({
                         <td className="py-2 px-2.5">
                           <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} className="w-20" />
                         </td>
-                        <td className="nx-cell-num font-semibold py-2 px-2.5">{fmt(enrichedItems[idx]?.amount ?? 0)}</td>
+                        <td className="nx-cell-num font-semibold py-2 px-2.5"><FmtNum n={enrichedItems[idx]?.amount ?? 0} /></td>
                         <td className="py-2 px-1">
                           <Button size="sm" variant="danger" onClick={() => removeItem(idx)}>?</Button>
                         </td>
@@ -439,7 +439,7 @@ export function OrderFormModal({
       <div className="noorix-summary-bar">
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">{t('total')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount)} ?</div>
+          <div className="noorix-summary-bar__value noorix-summary-bar__value--green"><FmtNum n={totalAmount} /> ?</div>
         </div>
       </div>
     </AdaptiveSheet>

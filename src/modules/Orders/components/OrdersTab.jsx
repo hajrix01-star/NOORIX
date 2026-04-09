@@ -1,4 +1,4 @@
-/**
+﻿/**
  * OrdersTab — تبويبة الطلبات
  */
 import React, { useState, useMemo, useCallback } from 'react';
@@ -21,7 +21,7 @@ import { exportToExcel } from '../../../utils/exportUtils';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
-import { Button, Badge, AdaptiveSheet, SmartTable, KebabMenu } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, SmartTable, KebabMenu, FmtNum } from '../../../ui';
 
 function buildWhatsAppText(order, t) {
   const lines = (order.items || []).map((it) => {
@@ -190,7 +190,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         shrink: true,
         render: (v, o) =>
           o.orderType === 'external' && v != null ? (
-            <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{fmt(Number(v))} SR</span>
+            <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap"><FmtNum n={Number(v)} /> SR</span>
           ) : (
             <span className="nx-cell-muted">—</span>
           ),
@@ -201,7 +201,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         numeric: true,
         align: 'center',
         shrink: true,
-        render: (v) => <span className="nx-cell-num font-bold whitespace-nowrap">{fmt(Number(v ?? 0))} SR</span>,
+        render: (v) => <span className="nx-cell-num font-bold whitespace-nowrap"><FmtNum n={Number(v ?? 0)} /> SR</span>,
       },
       {
         key: 'id',
@@ -214,7 +214,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           return (
             <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
               {cumRem >= 0 ? '' : '−'}
-              {fmt(Math.abs(cumRem))} SR
+              <FmtNum n={Math.abs(cumRem)} /> SR
             </Badge>
           );
         },
@@ -249,7 +249,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           {t('ordersFilteredTotal')}
         </td>
         <td className="nx-cell-num nx-cell-num--blue font-extrabold text-center text-[14px] py-[11px] px-[14px]">
-          {fmt(filteredTotal)} SR
+          <FmtNum n={filteredTotal} /> SR
         </td>
         <td className="text-center py-[11px] px-[14px]" />
         <td className="noorix-print-hide py-[11px] px-[14px]" />
@@ -279,12 +279,12 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
             </div>
             <div>
               <div className="text-[10px] text-noorix-muted mb-0.5">{t('orderTotalAmount')}</div>
-              <div className="text-[13px] font-bold nx-font-numbers text-noorix-navy">{fmt(Number(o.totalAmount ?? 0))} SR</div>
+              <div className="text-[13px] font-bold nx-font-numbers text-noorix-navy"><FmtNum n={Number(o.totalAmount ?? 0)} /> SR</div>
             </div>
             {pettyGiven != null && (
               <div>
                 <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersPettyCashGiven')}</div>
-                <div className="text-[13px] nx-font-numbers text-noorix-blue">{fmt(pettyGiven)} SR</div>
+                <div className="text-[13px] nx-font-numbers text-noorix-blue"><FmtNum n={pettyGiven} /> SR</div>
               </div>
             )}
             {cumRem != null && (
@@ -292,7 +292,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                 <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersCumulativeRemaining')}</div>
                 <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
                   {cumRem >= 0 ? '' : '−'}
-                  {fmt(Math.abs(cumRem))} SR
+                  <FmtNum n={Math.abs(cumRem)} /> SR
                 </Badge>
               </div>
             )}
@@ -467,7 +467,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
               ))}
             </div>
             <span className="text-[14px] font-bold nx-font-numbers ms-auto shrink-0">
-              {t('ordersFilteredTotal')}: {fmt(filteredTotal)} SR
+              {t('ordersFilteredTotal')}: <FmtNum n={filteredTotal} /> SR
             </span>
           </div>
         }
@@ -522,7 +522,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
             {viewingOrder.orderType === 'external' && viewingOrder.pettyCashAmount != null && (
               <div>
                 <div className="text-[11px] text-noorix-muted mb-1 uppercase tracking-[0.05em]">{t('ordersPettyCashGiven')}</div>
-                <div className="nx-cell-num nx-cell-num--blue text-[15px] font-semibold">{fmt(viewingOrder.pettyCashAmount ?? 0)} SR</div>
+                <div className="nx-cell-num nx-cell-num--blue text-[15px] font-semibold"><FmtNum n={viewingOrder.pettyCashAmount ?? 0} /> SR</div>
               </div>
             )}
           </div>
@@ -545,7 +545,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
               },
               { key: 'quantity', label: t('quantity'), numeric: true, align: 'center' },
               { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (v) => `${fmt(v ?? 0)} SR` },
-              { key: 'amount',    label: t('total'),    numeric: true, render: (v) => <span className="font-semibold">{fmt(v ?? 0)} SR</span> },
+              { key: 'amount',    label: t('total'),    numeric: true, render: (v) => <span className="font-semibold"><FmtNum n={v ?? 0} /> SR</span> },
             ]}
             data={viewingOrder.items ?? []}
             tableMinWidth={480}
@@ -553,7 +553,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
             footerCells={
               <>
                 <td colSpan={4} className="font-bold text-end" style={{ padding: '10px 16px' }}>{t('total')}</td>
-                <td className="nx-cell-num font-bold text-[15px]" style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt(viewingOrder.totalAmount ?? 0)} SR</td>
+                <td className="nx-cell-num font-bold text-[15px]" style={{ padding: '10px 16px', textAlign: 'right' }}><FmtNum n={viewingOrder.totalAmount ?? 0} /> SR</td>
               </>
             }
           />
