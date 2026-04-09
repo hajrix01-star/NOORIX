@@ -16,7 +16,7 @@ import {
 } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
-import { Button, Badge, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, cn } from '../../ui';
+import { Button, Badge, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
 import BankStatementDetailView from './bank/BankStatementDetailView';
@@ -184,27 +184,15 @@ export default function BankStatementAnalysisScreen() {
       {completedStatements.length > 0 && (
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
           {[
-            { label: t('bankStatementCardCount'), value: String(completedStatements.length), tone: 'blue' },
-            { label: t('bankStatementCardDeposits'), value: fmt(quickStats.totalDeposits), tone: 'green' },
-            { label: t('bankStatementCardWithdrawals'), value: fmt(quickStats.totalWithdrawals), tone: 'red' },
-            {
-              label: t('bankStatementCardNetFlow'),
-              value: fmt(quickStats.netFlow),
-              tone: quickStats.netFlow >= 0 ? 'green' : 'red',
-            },
+            { label: t('bankStatementCardCount'),       value: String(completedStatements.length),    color: 'var(--color-nx-sales)'      },
+            { label: t('bankStatementCardDeposits'),    value: fmt(quickStats.totalDeposits),          color: 'var(--color-nx-vault-cash)' },
+            { label: t('bankStatementCardWithdrawals'), value: fmt(quickStats.totalWithdrawals),        color: 'var(--color-nx-expenses)'   },
+            { label: t('bankStatementCardNetFlow'),     value: fmt(quickStats.netFlow),                color: quickStats.netFlow >= 0 ? 'var(--color-nx-vault-cash)' : 'var(--color-nx-expenses)' },
           ].map((c, i) => (
-            <div
-              key={i}
-              className="noorix-surface-card p-[14px]"
-              style={{
-                borderLeft: `4px solid ${
-                  c.tone === 'blue' ? 'var(--noorix-accent-blue)' : c.tone === 'green' ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)'
-                }`,
-              }}
-            >
-              <div className="text-[11px] text-noorix-muted">{c.label}</div>
-              <div className="text-[18px] font-extrabold mt-1 nx-ltr text-end">{c.value}</div>
-            </div>
+            <MetricCard key={i} color={c.color}>
+              <MetricCard.Header label={c.label} />
+              <MetricCard.Value value={c.value} />
+            </MetricCard>
           ))}
         </div>
       )}

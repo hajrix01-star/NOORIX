@@ -1804,8 +1804,9 @@ html[data-card-style="10"] .noorix-stat-card {
   width: 100%;
   flex-shrink: 0;
 }
-.noorix-exec-card--inbound  .noorix-exec-card__stripe { background: var(--noorix-accent-green); }
-.noorix-exec-card--outbound .noorix-exec-card__stripe { background: var(--noorix-accent-blue); }
+/* الألوان من design tokens — المصدر: @theme في index.css */
+.noorix-exec-card--inbound  .noorix-exec-card__stripe { background: var(--color-nx-vault-cash); }
+.noorix-exec-card--outbound .noorix-exec-card__stripe { background: var(--color-nx-vault-bank); }
 
 /* هيدر الكرت: أيقونة + عنوان */
 .noorix-exec-card__header {
@@ -1823,8 +1824,8 @@ html[data-card-style="10"] .noorix-stat-card {
   align-items: center;
   justify-content: center;
 }
-.noorix-exec-card--inbound  .noorix-exec-card__icon { background: color-mix(in srgb, var(--noorix-accent-green) 10%, transparent); color: var(--noorix-accent-green); }
-.noorix-exec-card--outbound .noorix-exec-card__icon { background: color-mix(in srgb, var(--noorix-accent-blue)  10%, transparent); color: var(--noorix-accent-blue);  }
+.noorix-exec-card--inbound  .noorix-exec-card__icon { background: color-mix(in srgb, var(--color-nx-vault-cash) 10%, transparent); color: var(--color-nx-vault-cash); }
+.noorix-exec-card--outbound .noorix-exec-card__icon { background: color-mix(in srgb, var(--color-nx-vault-bank) 10%, transparent); color: var(--color-nx-vault-bank); }
 .noorix-exec-card__title {
   font-size: 11px;
   font-weight: 700;
