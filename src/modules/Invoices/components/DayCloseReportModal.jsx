@@ -238,22 +238,22 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
               <div className="day-close-screen-only dc-kpi-grid">
                 <div className="dc-kpi-card dc-kpi-card--in">
                   <div className="dc-kpi-card__label">{t('inbound')} — {t('categoryTypeSale')}</div>
-                  <div className="dc-kpi-card__val">{fmt(Number(data.sums?.inflow?.total || 0), 2)} SR</div>
+                  <div className="dc-kpi-card__val">{fmt(Number(data.sums?.inflow?.total || 0))} SR</div>
                   <div className="dc-kpi-card__sub">{data.sums?.inflow?.count ?? 0} {t('dayCloseOperations')}</div>
                 </div>
                 <div className="dc-kpi-card dc-kpi-card--out">
                   <div className="dc-kpi-card__label">{t('outbound')}</div>
-                  <div className="dc-kpi-card__val">{fmt(Number(data.sums?.outflow?.total || 0), 2)} SR</div>
+                  <div className="dc-kpi-card__val">{fmt(Number(data.sums?.outflow?.total || 0))} SR</div>
                   <div className="dc-kpi-card__sub">{data.sums?.outflow?.count ?? 0} {t('dayCloseOperations')}</div>
                 </div>
                 <div className="dc-kpi-card dc-kpi-card--cash">
                   <div className="dc-kpi-card__label">{t('dayCloseNetDayCash')}</div>
-                  <div className="dc-kpi-card__val">{fmt(Number(data.cash?.netDay ?? 0), 2)} SR</div>
+                  <div className="dc-kpi-card__val">{fmt(Number(data.cash?.netDay ?? 0))} SR</div>
                   <div className="dc-kpi-card__sub">{t('dayCloseCashVaultsOnly')}</div>
                 </div>
                 <div className="dc-kpi-card dc-kpi-card--bal">
                   <div className="dc-kpi-card__label">{t('dayCloseCashRemainingEod')}</div>
-                  <div className="dc-kpi-card__val">{fmt(Number(data.cash?.balanceEndOfDayCashVaults ?? 0), 2)} SR</div>
+                  <div className="dc-kpi-card__val">{fmt(Number(data.cash?.balanceEndOfDayCashVaults ?? 0))} SR</div>
                   <div className="dc-kpi-card__sub">{t('dayCloseEodDefinition')}</div>
                 </div>
               </div>
@@ -271,33 +271,33 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 <tbody>
                   <tr>
                     <td>{t('inbound')} ({t('categoryTypeSale')})</td>
-                    <td className="dc-num">{fmt(Number(data.sums?.inflow?.total || 0), 2)}</td>
+                    <td className="dc-num">{fmt(Number(data.sums?.inflow?.total || 0))}</td>
                     <td className="dc-num">{data.sums?.inflow?.count ?? 0}</td>
                   </tr>
                   <tr>
                     <td>{t('outbound')}</td>
-                    <td className="dc-num">{fmt(Number(data.sums?.outflow?.total || 0), 2)}</td>
+                    <td className="dc-num">{fmt(Number(data.sums?.outflow?.total || 0))}</td>
                     <td className="dc-num">{data.sums?.outflow?.count ?? 0}</td>
                   </tr>
                   <tr>
                     <td>{t('dayCloseNetDayCash')}</td>
-                    <td className="dc-num">{fmt(Number(data.cash?.netDay ?? 0), 2)}</td>
+                    <td className="dc-num">{fmt(Number(data.cash?.netDay ?? 0))}</td>
                     <td className="dc-empty">—</td>
                   </tr>
                   <tr>
                     <td>{t('dayCloseCashRemainingEod')}</td>
-                    <td className="dc-num">{fmt(Number(data.cash?.balanceEndOfDayCashVaults ?? 0), 2)}</td>
+                    <td className="dc-num">{fmt(Number(data.cash?.balanceEndOfDayCashVaults ?? 0))}</td>
                     <td className="dc-empty">—</td>
                   </tr>
                   <tr>
                     <td>{t('dayCloseCashMovement')}</td>
                     <td className="dc-num" colSpan={2}>
-                      {t('dayCloseCashIn')} {fmt(Number(data.cash?.dayTotalIn ?? 0), 2)} &nbsp;|&nbsp; {t('dayCloseCashOut')} {fmt(Number(data.cash?.dayTotalOut ?? 0), 2)}
+                      {t('dayCloseCashIn')} {fmt(Number(data.cash?.dayTotalIn ?? 0))} &nbsp;|&nbsp; {t('dayCloseCashOut')} {fmt(Number(data.cash?.dayTotalOut ?? 0))}
                     </td>
                   </tr>
                   <tr>
                     <td>{t('dayCloseTransfers')}</td>
-                    <td className="dc-num">{fmt(Number(data.transfers?.volume || 0), 2)}</td>
+                    <td className="dc-num">{fmt(Number(data.transfers?.volume || 0))}</td>
                     <td className="dc-num">{data.transfers?.count ?? 0}</td>
                   </tr>
                 </tbody>
@@ -307,12 +307,12 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 <div>
                   <strong>{t('dayCloseCashMovement')}</strong>
                   {' — '}
-                  {t('dayCloseCashIn')} {fmt(Number(data.cash?.dayTotalIn ?? 0), 2)} · {t('dayCloseCashOut')} {fmt(Number(data.cash?.dayTotalOut ?? 0), 2)}
+                  {t('dayCloseCashIn')} {fmt(Number(data.cash?.dayTotalIn ?? 0))} · {t('dayCloseCashOut')} {fmt(Number(data.cash?.dayTotalOut ?? 0))}
                 </div>
                 <div>
                   <strong>{t('dayCloseTransfers')}</strong>
                   {' — '}
-                  {data.transfers?.count ?? 0} / {fmt(Number(data.transfers?.volume || 0), 2)} SR
+                  {data.transfers?.count ?? 0} / {fmt(Number(data.transfers?.volume || 0))} SR
                 </div>
               </div>
 
@@ -335,7 +335,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                           <tr key={row.kind}>
                             <td>{kindLabel[row.kind] || row.kind}</td>
                             <td className="dc-num">{row.count}</td>
-                            <td className="dc-num">{fmt(Number(row.total), 2)}</td>
+                            <td className="dc-num">{fmt(Number(row.total))}</td>
                           </tr>
                         ))
                       )}
@@ -361,7 +361,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                           <tr key={row.categoryId}>
                             <td>{row.nameAr}</td>
                             <td className="dc-num">{row.count}</td>
-                            <td className="dc-num">{fmt(Number(row.total), 2)}</td>
+                            <td className="dc-num">{fmt(Number(row.total))}</td>
                           </tr>
                         ))
                       )}
@@ -385,7 +385,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                         (data.outflowByPaymentMethod || []).map((row, i) => (
                           <tr key={`${row.label}-${i}`}>
                             <td>{row.label}</td>
-                            <td className="dc-num">{fmt(Number(row.total), 2)}</td>
+                            <td className="dc-num">{fmt(Number(row.total))}</td>
                           </tr>
                         ))
                       )}
@@ -412,10 +412,10 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                         <tr key={s.id}>
                           <td className="font-bold">{s.summaryNumber}</td>
                           <td className="dc-num">{s.customerCount}</td>
-                          <td className="dc-num">{fmt(Number(s.cashOnHand), 2)}</td>
-                          <td className="dc-num">{fmt(Number(s.totalAmount), 2)}</td>
+                          <td className="dc-num">{fmt(Number(s.cashOnHand))}</td>
+                          <td className="dc-num">{fmt(Number(s.totalAmount))}</td>
                           <td className="dc-muted text-[10px]">
-                            {(s.channels || []).map((c) => `${c.vaultName}: ${fmt(Number(c.amount), 2)}`).join(' · ') || '—'}
+                            {(s.channels || []).map((c) => `${c.vaultName}: ${fmt(Number(c.amount))}`).join(' · ') || '—'}
                           </td>
                         </tr>
                       ))}
@@ -443,9 +443,9 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                         (data.vaults?.movementOnDayByVault || []).map((v) => (
                           <tr key={v.id}>
                             <td>{v.nameAr} <span className="dc-muted">({v.type})</span></td>
-                            <td className="dc-num">{fmt(Number(v.totalIn), 2)}</td>
-                            <td className="dc-num">{fmt(Number(v.totalOut), 2)}</td>
-                            <td className="dc-num">{fmt(Number(v.netDay), 2)}</td>
+                            <td className="dc-num">{fmt(Number(v.totalIn))}</td>
+                            <td className="dc-num">{fmt(Number(v.totalOut))}</td>
+                            <td className="dc-num">{fmt(Number(v.netDay))}</td>
                           </tr>
                         ))
                       )}
@@ -468,7 +468,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                         (data.vaults?.balanceEndOfDayByVault || []).map((v) => (
                           <tr key={v.id}>
                             <td>{v.nameAr} <span className="dc-muted">({v.type})</span></td>
-                            <td className="dc-num">{fmt(Number(v.balance), 2)}</td>
+                            <td className="dc-num">{fmt(Number(v.balance))}</td>
                           </tr>
                         ))
                       )}
@@ -499,7 +499,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                         <tr key={op.id} style={{ opacity: op.status === 'cancelled' ? 0.55 : 1 }}>
                           <td className="font-bold">{op.invoiceNumber}</td>
                           <td>{kindLabel[op.kind] || op.kind}</td>
-                          <td className="dc-num">{fmt(Number(op.totalAmount), 2)}</td>
+                          <td className="dc-num">{fmt(Number(op.totalAmount))}</td>
                           <td className="dc-muted" style={{ maxWidth: 200 }}>
                             {op.supplierName || op.employeeName || op.expenseLineName || op.notes || '—'}
                           </td>

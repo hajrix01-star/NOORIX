@@ -179,16 +179,16 @@ export default function DailySalesScreen() {
     const cc = s.customerCount || 0;
     const total = Number(s.totalAmount || 0);
     const avg = cc > 0 ? (total / cc) : 0;
-    const channels = (s.channels || []).map((ch) => `  • ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount, 2)} SR`).join('\n');
+    const channels = (s.channels || []).map((ch) => `  • ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)} SR`).join('\n');
     return [
       `*ملخص المبيعات اليومي*`,
       `الرقم: ${s.summaryNumber}`,
       `التاريخ: ${formatSaudiDate(s.transactionDate)}`,
       ``,
       `عدد العملاء: ${cc}`,
-      `إجمالي المبيعات: ${fmt(total, 2)} SR`,
-      `معدل الطلب لكل عميل: ${fmt(avg, 2)} SR`,
-      Number(s.cashOnHand) > 0 ? `المبلغ الموجود بالصندوق: ${fmt(s.cashOnHand, 2)} SR` : '',
+      `إجمالي المبيعات: ${fmt(total)} SR`,
+      `معدل الطلب لكل عميل: ${fmt(avg)} SR`,
+      Number(s.cashOnHand) > 0 ? `المبلغ الموجود بالصندوق: ${fmt(s.cashOnHand)} SR` : '',
       ``, `*تفاصيل القنوات:*`, channels,
       s.notes ? `\nملاحظات: ${s.notes}` : '',
       ``, `— Noorix ERP`,
@@ -232,7 +232,7 @@ export default function DailySalesScreen() {
   const tableData = useMemo(() => pagedSummaries.map((s) => {
     const total = Number(s.totalAmount || 0);
     const cc = s.customerCount || 0;
-    const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount, 2)}`).join(' | ');
+    const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
     return {
       ...s,
       channelsText,
@@ -269,9 +269,9 @@ export default function DailySalesScreen() {
     { key: 'customerCount', label: t('customers'), numeric: true, sortable: true, width: '7%',
       render: (v) => <span className="nx-cell-num nx-cell-num--blue">{v ?? 0}</span> },
     { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '10%',
-      render: (v) => <span className="nx-cell-num nx-cell-num--green nx-cell-bold">{fmt(v, 2)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--green nx-cell-bold">{fmt(v)}</span> },
     { key: 'avgPerCustomer', label: t('avgPerOrder'), numeric: true, sortable: false, width: '7%',
-      render: (v) => <span className="nx-cell-num nx-cell-num--violet">{fmt(v, 2)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--violet">{fmt(v)}</span> },
     { key: 'status', label: t('statusLabel'), width: '8%',
       render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     { key: 'actions', label: t('actions'), align: 'center', width: '8%',
@@ -297,8 +297,8 @@ export default function DailySalesScreen() {
         ) : null}
       </td>
       <td className="nx-tfoot-num nx-cell-num--blue">{totalCustomers.toLocaleString('en')}</td>
-      <td className="nx-tfoot-num nx-cell-num--green">{fmt(totalAmountSum.toNumber(), 2)}</td>
-      <td className="nx-tfoot-num nx-cell-num--violet">{totalCustomers > 0 ? fmt(totalAmountSum.toNumber() / totalCustomers, 2) : '0.00'}</td>
+      <td className="nx-tfoot-num nx-cell-num--green">{fmt(totalAmountSum.toNumber())}</td>
+      <td className="nx-tfoot-num nx-cell-num--violet">{totalCustomers > 0 ? fmt(totalAmountSum.toNumber() / totalCustomers) : '0.00'}</td>
       <td colSpan={2} />
     </>
   );
@@ -318,14 +318,14 @@ export default function DailySalesScreen() {
     return rows.map((s) => {
       const total = Number(s.totalAmount || 0);
       const cc = s.customerCount || 0;
-      const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount, 2)}`).join(' | ');
+      const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
       return {
         summaryNumber: s.summaryNumber,
         transactionDate: formatSaudiDate(s.transactionDate),
         channelsText,
         customerCount: cc,
-        totalAmount: fmt(total, 2),
-        avgPerCustomer: cc > 0 ? fmt(total / cc, 2) : '0.00',
+        totalAmount: fmt(total),
+        avgPerCustomer: cc > 0 ? fmt(total / cc) : '0.00',
         status: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
       };
     });
@@ -408,10 +408,10 @@ export default function DailySalesScreen() {
       setExportBusy(false);
     }
     const channelsRows = allFilteredData.map((s) => {
-      const ch = (s.channels || []).map((c) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount, 2)}`).join(' | ');
+      const ch = (s.channels || []).map((c) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount)}`).join(' | ');
       const total = Number(s.totalAmount || 0);
       const cc = s.customerCount || 0;
-      return `<tr><td>${(s.summaryNumber || '').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(s.transactionDate)}</td><td>${(ch || '—').replace(/</g, '&lt;')}</td><td>${cc}</td><td>${fmt(total, 2)}</td><td>${cc > 0 ? fmt(total / cc, 2) : '0.00'}</td><td>${s.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td></tr>`;
+      return `<tr><td>${(s.summaryNumber || '').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(s.transactionDate)}</td><td>${(ch || '—').replace(/</g, '&lt;')}</td><td>${cc}</td><td>${fmt(total)}</td><td>${cc > 0 ? fmt(total / cc) : '0.00'}</td><td>${s.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td></tr>`;
     }).join('');
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('salesDailySummary') || '').replace(/</g, '&lt;')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;color:#1a1a1a;line-height:1.6}.page{max-width:210mm;margin:0 auto}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}.header img{max-height:48px}.header h1{margin:8px 0 4px;font-size:20px}.header .sub{font-size:12px;color:#555}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}.no-print{display:none}@media print{body{padding:0}.no-print{display:none!important}}</style></head><body>
@@ -442,7 +442,7 @@ export default function DailySalesScreen() {
       <div className="grid grid-cols-3 gap-2 mt-1">
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('total')}</div>
-          <div className="text-[13px] font-bold text-noorix-green ltr">{fmt(row.totalAmount, 2)}</div>
+          <div className="text-[13px] font-bold text-noorix-green ltr">{fmt(row.totalAmount)}</div>
         </div>
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('customers')}</div>
@@ -450,7 +450,7 @@ export default function DailySalesScreen() {
         </div>
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('avgPerOrder')}</div>
-          <div className="text-[13px] font-bold text-noorix-violet ltr">{fmt(row.avgPerCustomer, 2)}</div>
+          <div className="text-[13px] font-bold text-noorix-violet ltr">{fmt(row.avgPerCustomer)}</div>
         </div>
       </div>
       <div className="flex justify-end mt-1">

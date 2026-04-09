@@ -189,7 +189,7 @@ export function OrderFormModal({
           <div className="flex items-center flex-wrap gap-4 justify-center mb-5">
             <div className="text-center">
               <div className="text-[11px] text-noorix-muted">{t('total')}</div>
-              <div className="text-[18px] nx-font-numbers text-noorix-green font-[900]">{fmt(savedOrder.totalAmount ?? 0, 2)} ?</div>
+              <div className="text-[18px] nx-font-numbers text-noorix-green font-[900]">{fmt(savedOrder.totalAmount ?? 0)} ?</div>
             </div>
           </div>
           <div className="flex flex-col gap-2.5 items-center">
@@ -298,7 +298,7 @@ export function OrderFormModal({
                     <option value="">?</option>
                     {productVariants.map((v) => (
                       <option key={v._key} value={v._key}>
-                        {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '?'} ? {fmt(v.lastPrice ?? 0, 2)} ?
+                        {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '?'} ? {fmt(v.lastPrice ?? 0)} ?
                       </option>
                     ))}
                   </Input>
@@ -408,7 +408,7 @@ export function OrderFormModal({
                         <td className="py-2 px-2.5">
                           <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} className="w-20" />
                         </td>
-                        <td className="nx-cell-num font-semibold py-2 px-2.5">{fmt(enrichedItems[idx]?.amount ?? 0, 2)}</td>
+                        <td className="nx-cell-num font-semibold py-2 px-2.5">{fmt(enrichedItems[idx]?.amount ?? 0)}</td>
                         <td className="py-2 px-1">
                           <Button size="sm" variant="danger" onClick={() => removeItem(idx)}>?</Button>
                         </td>
@@ -439,7 +439,7 @@ export function OrderFormModal({
       <div className="noorix-summary-bar">
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">{t('total')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount, 2)} ?</div>
+          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount)} ?</div>
         </div>
       </div>
     </AdaptiveSheet>

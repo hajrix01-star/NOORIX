@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ItemsManageTab � ������ ����� ������� �������
  * ����� ���� �� ����� ������ ������� �������� + ���� ����� ����
  */
@@ -593,8 +593,8 @@ export function ItemsManageTab({ companyId }) {
                 {filteredProducts.map((p) => {
                   const variants = Array.isArray(p.variants) ? p.variants : [];
                   const variantsSummary = variants.length > 0
-                    ? variants.map((v) => `${v.size || '�'}/${v.packaging || '�'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0, 2)}`).join(' | ')
-                    : (p.lastPrice ? fmt(p.lastPrice, 2) + ' (�������)' : '�');
+                    ? variants.map((v) => `${v.size || '�'}/${v.packaging || '�'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0)}`).join(' | ')
+                    : (p.lastPrice ? fmt(p.lastPrice) + ' (�������)' : '�');
                   return (
                   <tr key={p.id} className="border-b border-noorix-border">
                     {editingProduct?.id === p.id ? (

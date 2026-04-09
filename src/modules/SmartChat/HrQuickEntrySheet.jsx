@@ -252,8 +252,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
       employeeName: employeeDisplayName(emp, 'ar'),
     };
     const report = {
-      textAr: `النوع: سلفة\nالاسم: ${employeeDisplayName(emp, 'ar')}\nالمبلغ: ${fmt(amt, 2)} SR\nالخزنة: ${vault?.nameAr || vault?.nameEn || '—'}\nالتاريخ: ${advDate}`,
-      textEn: `Type: Advance\nName: ${employeeDisplayName(emp, 'en')}\nAmount: ${fmt(amt, 2)} SAR\nVault: ${vault?.nameEn || vault?.nameAr || '—'}\nDate: ${advDate}`,
+      textAr: `النوع: سلفة\nالاسم: ${employeeDisplayName(emp, 'ar')}\nالمبلغ: ${fmt(amt)} SR\nالخزنة: ${vault?.nameAr || vault?.nameEn || '—'}\nالتاريخ: ${advDate}`,
+      textEn: `Type: Advance\nName: ${employeeDisplayName(emp, 'en')}\nAmount: ${fmt(amt)} SAR\nVault: ${vault?.nameEn || vault?.nameAr || '—'}\nDate: ${advDate}`,
     };
     setPendingData({ payload, report, mut: advMut });
     setConfirmStep(true);
@@ -312,8 +312,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
       notes: ddNotes || undefined,
     };
     const report = {
-      textAr: `النوع: خصم\nالاسم: ${employeeDisplayName(emp, 'ar')}\nالمبلغ: ${fmt(amt, 2)} SR\nالتاريخ: ${ddDate}`,
-      textEn: `Type: Deduction\nName: ${employeeDisplayName(emp, 'en')}\nAmount: ${fmt(amt, 2)} SAR\nDate: ${ddDate}`,
+      textAr: `النوع: خصم\nالاسم: ${employeeDisplayName(emp, 'ar')}\nالمبلغ: ${fmt(amt)} SR\nالتاريخ: ${ddDate}`,
+      textEn: `Type: Deduction\nName: ${employeeDisplayName(emp, 'en')}\nAmount: ${fmt(amt)} SAR\nDate: ${ddDate}`,
     };
     setPendingData({ payload, report, mut: dedMut });
     setConfirmStep(true);
@@ -340,8 +340,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
       notes: mvNotes || undefined,
     };
     const report = {
-      textAr: `النوع: ${mvType === 'raise' ? 'زيادة' : mvType === 'promotion' ? 'ترقية' : 'حركة'}\nالاسم: ${employeeDisplayName(emp, 'ar')}\n${Number.isFinite(amt) ? `المبلغ: ${fmt(amt, 2)} SR\n` : ''}التاريخ: ${mvEff}`,
-      textEn: `Type: ${mvType === 'raise' ? 'Raise' : mvType === 'promotion' ? 'Promotion' : 'Movement'}\nName: ${employeeDisplayName(emp, 'en')}\n${Number.isFinite(amt) ? `Amount: ${fmt(amt, 2)} SAR\n` : ''}Date: ${mvEff}`,
+      textAr: `النوع: ${mvType === 'raise' ? 'زيادة' : mvType === 'promotion' ? 'ترقية' : 'حركة'}\nالاسم: ${employeeDisplayName(emp, 'ar')}\n${Number.isFinite(amt) ? `المبلغ: ${fmt(amt)} SR\n` : ''}التاريخ: ${mvEff}`,
+      textEn: `Type: ${mvType === 'raise' ? 'Raise' : mvType === 'promotion' ? 'Promotion' : 'Movement'}\nName: ${employeeDisplayName(emp, 'en')}\n${Number.isFinite(amt) ? `Amount: ${fmt(amt)} SAR\n` : ''}Date: ${mvEff}`,
     };
     setPendingData({ payload, report, mut: movMut });
     setConfirmStep(true);
@@ -365,8 +365,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded }) {
       amount: amtRounded,
     };
     const report = {
-      textAr: `النوع: بدلة\nالاسم: ${employeeDisplayName(emp, 'ar')}\nالبند: ${alName.trim()}\nالمبلغ: ${fmt(amtRounded, 2)} SR`,
-      textEn: `Type: Allowance\nName: ${employeeDisplayName(emp, 'en')}\nItem: ${alName.trim()}\nAmount: ${fmt(amtRounded, 2)} SAR`,
+      textAr: `النوع: بدلة\nالاسم: ${employeeDisplayName(emp, 'ar')}\nالبند: ${alName.trim()}\nالمبلغ: ${fmt(amtRounded)} SR`,
+      textEn: `Type: Allowance\nName: ${employeeDisplayName(emp, 'en')}\nItem: ${alName.trim()}\nAmount: ${fmt(amtRounded)} SAR`,
     };
     setPendingData({ payload, report, mut: alMut });
     setConfirmStep(true);

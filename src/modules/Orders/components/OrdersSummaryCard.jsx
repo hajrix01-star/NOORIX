@@ -1,4 +1,4 @@
-﻿/**
+/**
  * OrdersSummaryCard — كرت ملخص واحد كبير
  * تنسيق هرمي: المستلم → المشتريات → خط → النتيجة
  */
@@ -18,11 +18,11 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-noorix-muted">{receivedLabel}</span>
-            <span className="nx-font-numbers font-bold text-[13px] text-noorix-green">{fmt(Number(received ?? 0), 2)}</span>
+            <span className="nx-font-numbers font-bold text-[13px] text-noorix-green">{fmt(Number(received ?? 0))}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-noorix-muted">{spentLabel}</span>
-            <span className="nx-font-numbers font-bold text-[13px] text-noorix-red">− {fmt(Number(spent ?? 0), 2)}</span>
+            <span className="nx-font-numbers font-bold text-[13px] text-noorix-red">− {fmt(Number(spent ?? 0))}</span>
           </div>
         </div>
       </div>
@@ -34,7 +34,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
         <div className="font-extrabold nx-font-numbers text-[22px] tracking-[-0.5px]" style={{
           color: resNum < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
         }}>
-          {resNum < 0 ? '−' : ''}{fmt(Math.abs(resNum), 2)}
+          {resNum < 0 ? '−' : ''}{fmt(Math.abs(resNum))}
           <span className="text-[12px] font-medium text-noorix-muted mr-1.5">SAR</span>
         </div>
       </div>

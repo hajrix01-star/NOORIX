@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PurchasesBatchScreen — إدخال جماعي لفواتير الموردين
  * تصميم احترافي متكامل — جدول موحد مثل الفواتير، اختصارات مدمجة، ملخص متسق
  */
@@ -290,9 +290,9 @@ export default function PurchasesBatchScreen() {
       <td colSpan={6} className="text-[12px] text-noorix-muted py-2 px-2.5 align-middle">
         {t('totalBatches', activeOnly.length) || `الإجمالي (${activeOnly.length} دفعة)`}
       </td>
-      <td className="text-noorix-green whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet, 2)}</td>
-      <td className="text-noorix-amber whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax, 2)}</td>
-      <td className="whitespace-nowrap py-2 px-2.5 text-noorix-violet font-[900] text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount, 2)}</td>
+      <td className="text-noorix-green whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)}</td>
+      <td className="text-noorix-amber whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)}</td>
+      <td className="whitespace-nowrap py-2 px-2.5 text-noorix-violet font-[900] text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)}</td>
       <td colSpan={2} className="py-2 px-2.5" />
     </>
   );

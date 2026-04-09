@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { bulkDeleteOcrInvoices } from '../services/ocrApi';
@@ -12,7 +12,7 @@ const STATUS = {
   rejected:  { bgCls: 'status--rejected',  ar: 'مرفوضة',           en: 'Rejected' },
 };
 
-const fmt    = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const fmt    = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
 const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
 
 /* ═══════════════════════════════════════════════════════════════════════

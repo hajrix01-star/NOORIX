@@ -36,7 +36,7 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
             />
           </div>
           <span className="text-[12px] min-w-[60px] text-left" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
-            {fmt(r[valueKey], 2)}
+            {fmt(r[valueKey])}
           </span>
         </div>
       ))}
@@ -90,9 +90,9 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
               <tr key={i} className="border-b border-noorix-border">
                 <td className="py-2 px-[10px]">{h.orderNumber}</td>
                 <td className="py-2 px-[10px]">{formatSaudiDate(h.orderDate)}</td>
-                <td className="py-2 px-[10px] nx-cell-num">{fmt(h.quantity, 2)}</td>
-                <td className="py-2 px-[10px] nx-cell-num">{fmt(h.unitPrice, 2)}</td>
-                <td className="py-2 px-[10px] nx-cell-num nx-cell-num--green">{fmt(h.amount, 2)} SR</td>
+                <td className="py-2 px-[10px] nx-cell-num">{fmt(h.quantity)}</td>
+                <td className="py-2 px-[10px] nx-cell-num">{fmt(h.unitPrice)}</td>
+                <td className="py-2 px-[10px] nx-cell-num nx-cell-num--green">{fmt(h.amount)} SR</td>
               </tr>
             ))}
           </tbody>
@@ -133,8 +133,8 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
         [t('product')]: r.productNameAr || r.productNameEn || '—',
         [t('category')]: r.categoryNameAr || r.categoryNameEn || '—',
         [t('unit')]: r.unit || '—',
-        [t('quantity')]: fmt(r.quantity ?? 0, 2),
-        [t('total')]: fmt(r.amount ?? 0, 2),
+        [t('quantity')]: fmt(r.quantity ?? 0),
+        [t('total')]: fmt(r.amount ?? 0),
         [t('ordersOrderCount')]: r.orderCount ?? 0,
       }));
       await exportToExcel(rows, `orders-items-report-${year}-${month}.xlsx`);
@@ -150,8 +150,8 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
       const data = filtered.map((r) => ({
         [t('product')]: r.productNameAr || r.productNameEn || '—',
         [t('category')]: r.categoryNameAr || r.categoryNameEn || '—',
-        [t('quantity')]: fmt(r.quantity ?? 0, 2),
-        [t('total')]: fmt(r.amount ?? 0, 2),
+        [t('quantity')]: fmt(r.quantity ?? 0),
+        [t('total')]: fmt(r.amount ?? 0),
         [t('ordersOrderCount')]: r.orderCount ?? 0,
       }));
       await exportTableToPdf({ columns: cols, data, title: `${t('ordersItemsReportTab')} — ${year}/${month}`, filename: `orders-items-${year}-${month}.pdf` });
@@ -199,11 +199,11 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
         </div>
         <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
           <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalQuantity')}</div>
-          <div className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity, 2)}</div>
+          <div className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity)}</div>
         </div>
         <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
           <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalAmount')}</div>
-          <div className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} SR</div>
+          <div className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount)} SR</div>
         </div>
       </div>
 
@@ -258,12 +258,12 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
             ) : <span className="nx-cell-muted">—</span>,
           },
           { key: 'unit', label: t('unit'), render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
-          { key: 'quantity', label: t('quantity'), numeric: true, render: (v) => fmt(v ?? 0, 2) },
+          { key: 'quantity', label: t('quantity'), numeric: true, render: (v) => fmt(v ?? 0) },
           {
             key: 'amount',
             label: t('total'),
             numeric: true,
-            render: (v) => <span className="nx-cell-num--green">{fmt(v ?? 0, 2)} SR</span>,
+            render: (v) => <span className="nx-cell-num--green">{fmt(v ?? 0)} SR</span>,
           },
           { key: 'orderCount', label: t('ordersOrderCount'), numeric: true, render: (v) => v ?? 0 },
         ]}
@@ -273,8 +273,8 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
         footerCells={filtered.length > 0 ? (
           <>
             <td colSpan={3} className="font-bold text-[12px] text-noorix-muted" style={{ padding: '8px 12px' }}>{t('total')}</td>
-            <td className="font-bold text-right" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity, 2)}</td>
-            <td className="font-bold text-right text-noorix-green" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount, 2)} SR</td>
+            <td className="font-bold text-right" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity)}</td>
+            <td className="font-bold text-right text-noorix-green" style={{ padding: '8px 12px', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.amount)} SR</td>
             <td style={{ padding: '8px 12px' }} />
           </>
         ) : null}
@@ -284,12 +284,12 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
               <Button variant="ghost" type="button" onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })} className="font-bold text-noorix-blue underline text-[13px]">
                 {r.productNameAr || r.productNameEn || '—'}
               </Button>
-              <span className="nx-cell-num text-noorix-green font-bold text-[13px]">{fmt(r.amount ?? 0, 2)} SR</span>
+              <span className="nx-cell-num text-noorix-green font-bold text-[13px]">{fmt(r.amount ?? 0)} SR</span>
             </div>
             <div className="flex gap-3 text-[12px] text-noorix-muted">
               {r.categoryNameAr && <span>{r.categoryNameAr}</span>}
               {r.unit && <span>{r.unit}</span>}
-              <span>{t('quantity')}: {fmt(r.quantity ?? 0, 2)}</span>
+              <span>{t('quantity')}: {fmt(r.quantity ?? 0)}</span>
               <span>{t('ordersOrderCount')}: {r.orderCount ?? 0}</span>
             </div>
           </div>

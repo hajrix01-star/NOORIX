@@ -121,7 +121,7 @@ export function SalesEntryModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-green-12)' }}>
               <span className="text-[11px] text-noorix-muted mb-1">{t('total')}</span>
-              <span className="text-[20px] font-black nx-font-numbers" style={{ color: 'var(--noorix-accent-green)' }}>{fmt(savedSummary.totalAmount, 2)}</span>
+              <span className="text-[20px] font-black nx-font-numbers" style={{ color: 'var(--noorix-accent-green)' }}>{fmt(savedSummary.totalAmount)}</span>
               <span className="text-[11px] text-noorix-muted mt-0.5">SAR</span>
             </div>
             <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-blue-8)' }}>
@@ -216,17 +216,17 @@ export function SalesEntryModal({
       <div className={`noorix-summary-bar noorix-summary-bar--${vatEnabled && totalAmount.gt(0) ? '5' : '3'} mb-2`}>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">{t('totalLabel')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount, 2)} <span className="nx-sar">SR</span></div>
+          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(totalAmount)} <span className="nx-sar">SR</span></div>
         </div>
         {vatEnabled && totalAmount.gt(0) && (
           <>
             <div className="noorix-summary-bar__item">
               <div className="noorix-summary-bar__label">الصافي</div>
-              <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{fmt(totalNet, 2)} <span className="nx-sar">SR</span></div>
+              <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{fmt(totalNet)} <span className="nx-sar">SR</span></div>
             </div>
             <div className="noorix-summary-bar__item">
               <div className="noorix-summary-bar__label">الضريبة</div>
-              <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(totalTax, 2)} <span className="nx-sar">SR</span></div>
+              <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(totalTax)} <span className="nx-sar">SR</span></div>
             </div>
           </>
         )}
@@ -236,7 +236,7 @@ export function SalesEntryModal({
         </div>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">{t('avgPerOrder')}</div>
-          <div className="noorix-summary-bar__value">{fmt(avgPerCustomer, 2)} <span className="nx-sar">SR</span></div>
+          <div className="noorix-summary-bar__value">{fmt(avgPerCustomer)} <span className="nx-sar">SR</span></div>
         </div>
       </div>
     </AdaptiveSheet>

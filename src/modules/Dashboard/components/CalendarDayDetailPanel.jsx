@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CalendarDayDetailPanel — تفاصيل مبيعات يوم بجانب التقويم + ملاحظة اليوم
  */
 import React, { useState, useEffect } from 'react';
@@ -48,7 +48,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
       <div className="flex flex flex-wrap gap-3">
         <div className="rounded-lg flex-1 min-w-[90px] p-[10px]" style={{ background: 'var(--noorix-blue-8)' }}>
           <div className="text-noorix-muted mb-1 text-[10px]">{t('dashboardSalesTarget')}</div>
-          <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget, 2) : '—'}</div>
+          <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget) : '—'}</div>
           <div className="text-[9px] text-noorix-muted mt-0.5">SAR</div>
         </div>
         <div className="rounded-lg flex-1 min-w-[90px] p-[10px]" style={{ background: achieved ? 'var(--noorix-green-12)' : 'var(--noorix-bg-muted)' }}>
@@ -56,7 +56,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
             <span className="text-[10px]">{t('total')}</span>
             {achieved && <span className="text-[9px] font-bold px-1 rounded" style={{ background: 'var(--noorix-accent-green)', color: '#fff' }}>✓</span>}
           </div>
-          <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>{fmt(totalAmount, 2)}</div>
+          <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>{fmt(totalAmount)}</div>
           <div className="text-[9px] text-noorix-muted mt-0.5">SAR</div>
         </div>
       </div>
@@ -90,13 +90,13 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
             {daySummaries.length === 0 ? (
               <tr><td colSpan={4} className="p-4 text-center text-noorix-muted text-[11px]">{t('noDataInPeriod')}</td></tr>
             ) : daySummaries.map((s) => {
-              const chText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount || 0, 2)}`).join(' | ');
+              const chText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount || 0)}`).join(' | ');
               return (
                 <tr key={s.id} className="border-t border-noorix-border">
                   <td className="py-1.5 px-2">{s.summaryNumber || '—'}</td>
                   <td className="nx-cell-ellipsis py-1.5 px-2" title={chText || ''}>{chText || '—'}</td>
                   <td className="nx-cell-num py-1.5 px-2">{s.customerCount ?? 0}</td>
-                  <td className="nx-cell-num font-semibold text-noorix-green py-1.5 px-2">{fmt(Number(s.totalAmount || 0), 2)}</td>
+                  <td className="nx-cell-num font-semibold text-noorix-green py-1.5 px-2">{fmt(Number(s.totalAmount || 0))}</td>
                 </tr>
               );
             })}

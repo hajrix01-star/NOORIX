@@ -50,9 +50,9 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
     { label: t('status'),          value: invoice.status || '—' },
     { label: t('supplier'),        value: supplierName },
     { label: t('invoiceVaultColumn'), value: vaultSummary },
-    { label: t('net'),             value: invoice.netAmount != null ? `${fmt(invoice.netAmount, 2)} SR` : '—', highlight: 'var(--noorix-accent-green)' },
-    { label: t('tax'),             value: invoice.taxAmount != null ? `${fmt(invoice.taxAmount, 2)} SR` : '—', highlight: 'var(--noorix-accent-amber)' },
-    { label: t('total'),           value: invoice.totalAmount != null ? `${fmt(invoice.totalAmount, 2)} SR` : '—', highlight: 'var(--noorix-accent-blue)', bold: true },
+    { label: t('net'),             value: invoice.netAmount != null ? `${fmt(invoice.netAmount)} SR` : '—', highlight: 'var(--noorix-accent-green)' },
+    { label: t('tax'),             value: invoice.taxAmount != null ? `${fmt(invoice.taxAmount)} SR` : '—', highlight: 'var(--noorix-accent-amber)' },
+    { label: t('total'),           value: invoice.totalAmount != null ? `${fmt(invoice.totalAmount)} SR` : '—', highlight: 'var(--noorix-accent-blue)', bold: true },
   ].filter(Boolean);
   return (
     <Modal open={!!invoice} onClose={onClose} size="sm" hideClose className="nx-modal--flush">
@@ -83,7 +83,7 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
                 return (
                   <li key={a.id} className="flex justify-between gap-2 text-[13px] text-noorix-text">
                     <span className="truncate">{vn || '—'}</span>
-                    <span className="ltr font-semibold shrink-0">{fmt(a.amount, 2)} <span className="nx-sar">SR</span></span>
+                    <span className="ltr font-semibold shrink-0">{fmt(a.amount)} <span className="nx-sar">SR</span></span>
                   </li>
                 );
               })}
@@ -213,11 +213,11 @@ export default function InvoicesListScreen() {
       },
     },
     { key: 'netAmount',     label: t('net'),    numeric: true, shrink: true, width: '5%',
-      render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v, 2)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--green">{fmt(v)}</span> },
     { key: 'taxAmount',     label: t('tax'),    numeric: true, shrink: true, width: '5%',
-      render: (v) => <span className="nx-cell-num nx-cell-num--amber">{fmt(v, 2)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-num--amber">{fmt(v)}</span> },
     { key: 'totalAmount',   label: t('total'),  numeric: true, shrink: true, width: '7%',
-      render: (v) => <span className="nx-cell-num nx-cell-bold">{fmt(v, 2)}</span> },
+      render: (v) => <span className="nx-cell-num nx-cell-bold">{fmt(v)}</span> },
     { key: 'transactionDate', label: t('date'), sortable: true, shrink: true, width: '6%',
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span> },
     { key: 'status',        label: t('statusLabel'), shrink: true, width: '6%',
@@ -289,9 +289,9 @@ export default function InvoicesListScreen() {
       <td colSpan={7} className="nx-tfoot-label text-[12px]">
         {t('totalInvoices', serverAll.count)} {total > PAGE_SIZE && <span className="text-[11px]" style={{ opacity: 0.65 }}>({t('allPages')})</span>}
       </td>
-      <td className="nx-tfoot-num nx-cell-num--green">{fmt(Number(serverAll.net), 2)}</td>
-      <td className="nx-tfoot-num nx-cell-num--amber">{fmt(Number(serverAll.tax), 2)}</td>
-      <td className="nx-tfoot-num nx-cell-num--violet">{fmt(Number(serverAll.total), 2)}</td>
+      <td className="nx-tfoot-num nx-cell-num--green">{fmt(Number(serverAll.net))}</td>
+      <td className="nx-tfoot-num nx-cell-num--amber">{fmt(Number(serverAll.tax))}</td>
+      <td className="nx-tfoot-num nx-cell-num--violet">{fmt(Number(serverAll.total))}</td>
       <td colSpan={3} />
     </>
   );
@@ -326,15 +326,15 @@ export default function InvoicesListScreen() {
       <div className="nx-mc__grid nx-mc__grid--3">
         <div>
           <div className="nx-mc__stat-label">{t('total')}</div>
-          <div className="nx-mc__stat-value">{fmt(row.totalAmount, 2)}</div>
+          <div className="nx-mc__stat-value">{fmt(row.totalAmount)}</div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('net')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--green text-[13px]">{fmt(row.netAmount, 2)}</div>
+          <div className="nx-mc__stat-value nx-cell-num--green text-[13px]">{fmt(row.netAmount)}</div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('tax')}</div>
-          <div className="nx-mc__stat-value nx-cell-num--amber text-[13px]">{fmt(row.taxAmount, 2)}</div>
+          <div className="nx-mc__stat-value nx-cell-num--amber text-[13px]">{fmt(row.taxAmount)}</div>
         </div>
       </div>
       <div className="nx-mc__actions">

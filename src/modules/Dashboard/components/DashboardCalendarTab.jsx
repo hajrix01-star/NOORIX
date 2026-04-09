@@ -211,15 +211,15 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
 
   const handlePrintDayDetails = useCallback((dateStr, dayTarget, daySummaries, totalAmount, achieved) => {
     const rows = daySummaries.map((s) => {
-      const chText = (s.channels || []).map((ch) => `${ch.vault?.nameAr || ch.vault?.nameEn || '—'}: ${fmt(ch.amount || 0, 2)}`).join(' | ');
-      return `<tr><td>${(s.summaryNumber || '—').replace(/</g, '&lt;')}</td><td>${chText.replace(/</g, '&lt;')}</td><td>${s.customerCount ?? 0}</td><td style="text-align:right;font-family:Cairo">${fmt(Number(s.totalAmount || 0), 2)}</td></tr>`;
+      const chText = (s.channels || []).map((ch) => `${ch.vault?.nameAr || ch.vault?.nameEn || '—'}: ${fmt(ch.amount || 0)}`).join(' | ');
+      return `<tr><td>${(s.summaryNumber || '—').replace(/</g, '&lt;')}</td><td>${chText.replace(/</g, '&lt;')}</td><td>${s.customerCount ?? 0}</td><td style="text-align:right;font-family:Cairo">${fmt(Number(s.totalAmount || 0))}</td></tr>`;
     }).join('');
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('transactions') || '').replace(/</g, '&lt;')} - ${dateStr}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px}table{width:100%;border-collapse:collapse}td,th{padding:8px 12px;border:1px solid #ddd;text-align:right}th{background:#2563eb;color:#fff;font-weight:700}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}.target{background:var(--noorix-blue-8);padding:12px;border-radius:8px;margin:12px 0}.achieved{color:#16a34a}@media print{body{padding:0}}</style></head><body>
 <div class="header"><h1 style="margin:0;font-size:20px">${(companyName || '').replace(/</g, '&lt;')}</h1><p style="margin:8px 0 0;font-size:14px">${(t('dashboardCalendar') || '').replace(/</g, '&lt;')} — ${dateStr.replace(/</g, '&lt;')}</p></div>
-<div class="target"><strong>${(t('dashboardSalesTarget') || '').replace(/</g, '&lt;')}:</strong> ${dayTarget != null ? fmt(dayTarget, 2) : '—'} SR &nbsp;|&nbsp; <strong>${(t('total') || '').replace(/</g, '&lt;')}:</strong> <span class="${achieved ? 'achieved' : ''}">${fmt(totalAmount, 2)} SR</span>${achieved ? ' ✓' : ''}</div>
-<table><thead><tr><th>${(t('summaryNumber') || '').replace(/</g, '&lt;')}</th><th>${(t('salesChannels') || '').replace(/</g, '&lt;')}</th><th>${(t('customers') || '').replace(/</g, '&lt;')}</th><th>${(t('total') || '').replace(/</g, '&lt;')}</th></tr></thead><tbody>${rows || '<tr><td colspan="4">' + (t('noDataInPeriod') || '').replace(/</g, '&lt;') + '</td></tr>'}</tbody><tfoot><tr style="font-weight:700;background:var(--noorix-blue-8)"><td colspan="3">${(t('total') || '').replace(/</g, '&lt;')}</td><td style="text-align:right">${fmt(totalAmount, 2)} SR</td></tr></tfoot></table></body></html>`;
+<div class="target"><strong>${(t('dashboardSalesTarget') || '').replace(/</g, '&lt;')}:</strong> ${dayTarget != null ? fmt(dayTarget) : '—'} SR &nbsp;|&nbsp; <strong>${(t('total') || '').replace(/</g, '&lt;')}:</strong> <span class="${achieved ? 'achieved' : ''}">${fmt(totalAmount)} SR</span>${achieved ? ' ✓' : ''}</div>
+<table><thead><tr><th>${(t('summaryNumber') || '').replace(/</g, '&lt;')}</th><th>${(t('salesChannels') || '').replace(/</g, '&lt;')}</th><th>${(t('customers') || '').replace(/</g, '&lt;')}</th><th>${(t('total') || '').replace(/</g, '&lt;')}</th></tr></thead><tbody>${rows || '<tr><td colspan="4">' + (t('noDataInPeriod') || '').replace(/</g, '&lt;') + '</td></tr>'}</tbody><tfoot><tr style="font-weight:700;background:var(--noorix-blue-8)"><td colspan="3">${(t('total') || '').replace(/</g, '&lt;')}</td><td style="text-align:right">${fmt(totalAmount)} SR</td></tr></tfoot></table></body></html>`;
     const w = window.open('', '_blank');
     if (w) {
       w.document.write(html);
@@ -328,7 +328,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
               </div>
             ) : (
               <div className="flex items-center gap-8 mb-[10px]">
-                <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{targets.overall != null ? fmt(targets.overall, 2) : '—'} <span className="text-[11px] font-normal text-noorix-muted">SAR</span></span>
+                <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{targets.overall != null ? fmt(targets.overall) : '—'} <span className="text-[11px] font-normal text-noorix-muted">SAR</span></span>
                 <Button onClick={() => { setTargetInput(targets.overall != null ? String(targets.overall) : ''); setEditingTarget(true); }}>{t('edit')}</Button>
               </div>
             )}
@@ -407,7 +407,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                       background: bg,
                       border: isSelected ? '2px solid var(--noorix-accent-blue)' : selectedDay?.dateStr === dateStr ? '2px solid var(--noorix-accent-blue)' : achieved ? '2px solid #16a34a' : special ? `2px solid ${specialColor}` : '1px solid var(--noorix-border)',
                     }}
-                    title={`${dateStr}: ${fmt(amount, 2)} SAR${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget, 2)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
+                    title={`${dateStr}: ${fmt(amount)} SAR${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
                   >
                     <span className="text-[12px] font-bold text-noorix-text">{day}</span>
                     <span className="text-[11px]" style={{ fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
@@ -467,7 +467,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           </div>
           {targets.overall != null && (
             <div className="text-noorix-muted mt-2 border-t border-noorix-border pt-2 text-[10px]">
-              {t('dashboardSalesTarget')}: {fmt(targets.overall, 2)} SAR
+              {t('dashboardSalesTarget')}: {fmt(targets.overall)} SAR
             </div>
           )}
         </div>

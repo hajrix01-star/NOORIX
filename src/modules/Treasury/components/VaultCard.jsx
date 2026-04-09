@@ -191,7 +191,7 @@ const VaultCard = memo(function VaultCard({
           fontFamily: 'var(--noorix-font-numbers)',
           color: balance < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
         }}>
-          {balance < 0 ? '−' : ''}{fmt(Math.abs(balance), 2)}
+          {balance < 0 ? '−' : ''}{fmt(Math.abs(balance))}
           <span className="nx-sar mr-1">SR</span>
         </div>
       </div>
@@ -208,7 +208,7 @@ const VaultCard = memo(function VaultCard({
             {t('inbound')}
           </div>
           <div className="text-[13px] font-bold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
-            {fmt(totalIn, 2)} <span className="nx-sar">SR</span>
+            {fmt(totalIn)} <span className="nx-sar">SR</span>
           </div>
         </div>
         <div className="text-left pr-2" style={{ borderRight: '1px solid var(--noorix-border)' }}>
@@ -219,7 +219,7 @@ const VaultCard = memo(function VaultCard({
             </svg>
           </div>
           <div className="text-[13px] font-bold text-noorix-text text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
-            {fmt(totalOut, 2)} <span className="nx-sar">SR</span>
+            {fmt(totalOut)} <span className="nx-sar">SR</span>
           </div>
         </div>
       </div>

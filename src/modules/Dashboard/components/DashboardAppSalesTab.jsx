@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DashboardAppSalesTab — نسبة مبيعات التطبيقات من المبيعات العامة + رسم بياني سنوي
  */
 import React, { useMemo } from 'react';
@@ -116,7 +116,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
               {fmt(appPercent, 1)}%
             </div>
             <div className="text-[12px] text-noorix-muted mt-1.5">
-              {fmt(yearApp, 2)} / {fmt(yearTotal, 2)} <span className="text-[11px] font-normal text-noorix-muted">SAR</span>
+              {fmt(yearApp)} / {fmt(yearTotal)} <span className="text-[11px] font-normal text-noorix-muted">SAR</span>
             </div>
             {yearApp === 0 && (
               <div className="mt-2 text-[11px] font-semibold text-noorix-amber">

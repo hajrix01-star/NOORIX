@@ -1,4 +1,4 @@
-﻿/**
+/**
  * OwnerDashboardScreen — لوحة المالك
  * مؤشرات شاملة: المبيعات الشهرية لكل شركة، الأرباح المجمعة، توزيع الأرباح
  */
@@ -180,17 +180,17 @@ export default function OwnerDashboardScreen() {
     const rows = [
       {
         [lang === 'ar' ? 'الشركة' : 'Company']: lang === 'ar' ? 'كل الشركات' : 'All companies',
-        [lang === 'ar' ? 'المبيعات' : 'Sales']: fmt(aggregated.totalSales, 2),
+        [lang === 'ar' ? 'المبيعات' : 'Sales']: fmt(aggregated.totalSales),
         [lang === 'ar' ? 'نسبة المشتريات' : 'Purchases %']: aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) + '%' : '—',
         [lang === 'ar' ? 'نسبة المصروفات' : 'Expenses %']: aggregated.totalSales > 0 ? fmt((aggregated.totalExpenses / aggregated.totalSales) * 100, 1) + '%' : '—',
-        [lang === 'ar' ? 'صافي الربح' : 'Net profit']: fmt(aggregated.totalNetProfit, 2),
+        [lang === 'ar' ? 'صافي الربح' : 'Net profit']: fmt(aggregated.totalNetProfit),
       },
       ...aggregated.byCompany.map((x) => ({
         [lang === 'ar' ? 'الشركة' : 'Company']: x.name,
-        [lang === 'ar' ? 'المبيعات' : 'Sales']: fmt(x.sales, 2),
+        [lang === 'ar' ? 'المبيعات' : 'Sales']: fmt(x.sales),
         [lang === 'ar' ? 'نسبة المشتريات' : 'Purchases %']: x.sales > 0 ? fmt((x.purchases / x.sales) * 100, 1) + '%' : '—',
         [lang === 'ar' ? 'نسبة المصروفات' : 'Expenses %']: x.sales > 0 ? fmt((x.expenses / x.sales) * 100, 1) + '%' : '—',
-        [lang === 'ar' ? 'صافي الربح' : 'Net profit']: fmt(x.netProfit, 2),
+        [lang === 'ar' ? 'صافي الربح' : 'Net profit']: fmt(x.netProfit),
       })),
     ];
     exportToExcel(rows, `owner-dashboard-${year}${selectedMonthNum ? `-m${selectedMonthNum}` : ''}.xlsx`);
@@ -198,8 +198,8 @@ export default function OwnerDashboardScreen() {
 
   const handleExportPdf = () => {
     const cols = [lang === 'ar' ? 'الشركة' : 'Company', lang === 'ar' ? 'المبيعات' : 'Sales', lang === 'ar' ? 'نسبة المشتريات' : 'Purchases %', lang === 'ar' ? 'صافي الربح' : 'Net profit'];
-    const data = aggregated.byCompany.map((x) => [x.name, fmt(x.sales, 2), x.sales > 0 ? fmt((x.purchases / x.sales) * 100, 1) + '%' : '—', fmt(x.netProfit, 2)]);
-    data.unshift([lang === 'ar' ? 'الإجمالي' : 'Total', fmt(aggregated.totalSales, 2), aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) + '%' : '—', fmt(aggregated.totalNetProfit, 2)]);
+    const data = aggregated.byCompany.map((x) => [x.name, fmt(x.sales), x.sales > 0 ? fmt((x.purchases / x.sales) * 100, 1) + '%' : '—', fmt(x.netProfit)]);
+    data.unshift([lang === 'ar' ? 'الإجمالي' : 'Total', fmt(aggregated.totalSales), aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) + '%' : '—', fmt(aggregated.totalNetProfit)]);
     exportTableToPdf({
       title: `${t('ownerDashboard')} — ${year}`,
       filename: `owner-dashboard-${year}.pdf`,
@@ -315,7 +315,7 @@ export default function OwnerDashboardScreen() {
                   <div className="text-[12px] font-medium text-noorix-muted">{card.label}</div>
                   <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                     <span dir="ltr" className="nx-font-numbers text-[22px] font-bold leading-tight tracking-[-0.5px] text-noorix-text text-start">
-                      {fmt(card.value, 2)}
+                      {fmt(card.value)}
                     </span>
                     <span className="text-[12px] font-medium text-noorix-muted">SR</span>
                   </div>
@@ -372,7 +372,7 @@ export default function OwnerDashboardScreen() {
                                   background: COLORS[i % COLORS.length],
                                   borderRadius: '2px 2px 0 0',
                                 }}
-                                title={`${companyList.find((c) => c.id === companyId)?.nameAr || companyId}: ${fmt(amt, 2)} SR`}
+                                title={`${companyList.find((c) => c.id === companyId)?.nameAr || companyId}: ${fmt(amt)} SR`}
                               />
                             );
                           })}
@@ -417,7 +417,7 @@ export default function OwnerDashboardScreen() {
                         </div>
                         <div className="flex items-center gap-8 shrink-0">
                           <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor /* dynamic: profit/loss color */ }}>
-                            {fmt(item.netProfit, 2)} <span className="nx-sar">SR</span>
+                            {fmt(item.netProfit)} <span className="nx-sar">SR</span>
                           </span>
                           <span className="text-[11px] text-noorix-muted text-end min-w-[38px]">
                             {aggregated.totalNetProfit !== 0 ? `${fmt(pct, 1)}%` : '—'}
