@@ -6,7 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
-import { ScreenShell, ScreenTitle, ScreenTabs, cn } from '../../ui';
+import { ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
 import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';
 import { ItemsManageTab } from './components/ItemsManageTab';
@@ -43,11 +43,11 @@ export default function OrdersScreen() {
     return { year: selYear, month: selMonth, startDate: dateFilter.startDate, endDate: dateFilter.endDate };
   }, [dateFilter.mode, dateFilter.selYear, dateFilter.selMonth, dateFilter.selDay, dateFilter.rangeStart, dateFilter.rangeEnd, dateFilter.startDate, dateFilter.endDate]);
 
-  const tabs = [
-    { id: 'orders', label: t('ordersTab'), desc: t('ordersTabDesc') },
-    { id: 'items-report', label: t('ordersItemsReportTab'), desc: t('ordersItemsReportTabDesc') },
-    { id: 'items-manage', label: t('ordersItemsManageTab'), desc: t('ordersItemsManageTabDesc') },
-  ];
+  const tabItems = useMemo(() => [
+    { id: 'orders', label: t('ordersTab') },
+    { id: 'items-report', label: t('ordersItemsReportTab') },
+    { id: 'items-manage', label: t('ordersItemsManageTab') },
+  ], [t]);
 
   return (
     <ScreenShell className="min-w-0">
@@ -62,19 +62,12 @@ export default function OrdersScreen() {
       )}
 
       {companyId && (
-        <>
-          <ScreenTabs
-            omitDefaultBarClasses
-            fadeWrap={false}
-            variant="underline"
-            barClassName="orders-screen-tab-strip"
-            getTabClassName={(_, active) => cn('orders-screen-tab', active && 'orders-screen-tab--active')}
-            items={tabs.map((tab) => ({ id: tab.id, label: tab.label }))}
-            value={activeTab}
-            onChange={setActiveTab}
-            buttonSize="auto"
-          />
-
+        <ScreenTabs
+          items={tabItems}
+          value={activeTab}
+          onChange={setActiveTab}
+          contentClassName="nx-tab-content"
+        >
           {activeTab === 'orders' && (
             <OrdersTab
               companyId={companyId}
@@ -96,7 +89,7 @@ export default function OrdersScreen() {
             />
           )}
           {activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
-        </>
+        </ScreenTabs>
       )}
     </ScreenShell>
   );
