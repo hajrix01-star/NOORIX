@@ -164,7 +164,11 @@ export class HRService {
         const remaining = Math.max(0, total - settled);
         if (remaining <= 0) continue;
 
-        const allocate = Math.min(remainingToDeduct, remaining);
+        // إن كانت السلفة بأقساط محددة، اقتطع القسط فقط — لا الرصيد الكامل
+        const cap = adv.installmentAmount
+          ? Math.min(Number(adv.installmentAmount), remaining)
+          : remaining;
+        const allocate = Math.min(remainingToDeduct, cap);
         const newSettled = settled + allocate;
         const fullySettled = newSettled >= total;
         const settleNote = `${adv.notes || ''}\n[ADV_PAYROLL] run=${run.runNumber}, amount=${allocate}, date=${txDate}`.trim();

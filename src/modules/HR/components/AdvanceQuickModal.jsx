@@ -2,7 +2,7 @@
  * AdvanceQuickModal — صرف سلفة سريع لموظف
  * يدعم employee محدد أو اختيار موظف من القائمة (employee=null)
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useVaults } from '../../../hooks/useVaults';
 import { useQuery } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
   const [vaultId, setVaultId] = useState('');
   const [txDate, setTxDate] = useState(getSaudiToday());
   const [notes, setNotes] = useState('');
+  const [installmentCount, setInstallmentCount] = useState('');
 
   const { data: employees = [] } = useQuery({
     queryKey: ['employees', companyId, false],
@@ -42,6 +43,13 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
     }
   }, [initialEmployee]);
 
+  const parsedInstallments = parseInt(installmentCount, 10) || 1;
+  const installmentAmt = useMemo(() => {
+    const amt = parseFloat(amount) || 0;
+    if (!amt || parsedInstallments <= 1) return null;
+    return Math.ceil((amt / parsedInstallments) * 100) / 100;
+  }, [amount, parsedInstallments]);
+
   const handleSubmit = async (e) => {
     e?.preventDefault?.();
     const amt = roundMoney2(amount);
@@ -57,6 +65,8 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
         amount: amt,
         transactionDate: txDate,
         notes: notes.trim() || `سلفة — ${empName}`,
+        installmentCount: parsedInstallments > 1 ? parsedInstallments : undefined,
+        installmentAmount: parsedInstallments > 1 ? installmentAmt : undefined,
       });
       onSuccess?.();
       onClose?.();
@@ -128,6 +138,24 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
           value={txDate}
           onChange={(e) => setTxDate(e.target.value)}
         />
+        <Input
+          type="number"
+          min="1"
+          max="120"
+          step="1"
+          label={t('installmentCount') || 'عدد الدفعات'}
+          value={installmentCount}
+          onChange={(e) => setInstallmentCount(e.target.value)}
+          placeholder="1"
+        />
+        {parsedInstallments > 1 && installmentAmt && (
+          <div className="flex items-center justify-between px-1 py-2 rounded-lg bg-noorix-bg-muted border border-noorix-border">
+            <span className="text-[13px] text-noorix-muted">{t('installmentAmount') || 'مبلغ الدفعة'}</span>
+            <span className="text-[15px] font-bold text-noorix-blue ltr">
+              {installmentAmt.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ﷼
+            </span>
+          </div>
+        )}
         <Input
           label={t('notes')}
           value={notes}

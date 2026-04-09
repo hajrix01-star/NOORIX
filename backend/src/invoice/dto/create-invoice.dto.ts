@@ -139,4 +139,19 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsString()
   idempotencyKey?: string;
+
+  /** للسلف بالأقساط: عدد الدفعات (1 = دفعة واحدة، سلوك افتراضي) */
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(120)
+  @Type(() => Number)
+  installmentCount?: number;
+
+  /** للسلف بالأقساط: مبلغ القسط الواحد (يُحسب تلقائياً = totalAmount / installmentCount) */
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  @Type(() => Number)
+  installmentAmount?: number;
 }

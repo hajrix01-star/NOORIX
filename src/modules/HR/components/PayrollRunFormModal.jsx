@@ -241,11 +241,17 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       if (remaining <= 0) continue;
       const deferMonth = parseDeferredMonth(inv.notes);
       const isDeferred = !!deferMonth && deferMonth > monthStr;
+      // إن كانت السلفة بأقساط، الدفعة = min(installmentAmount, remaining)
+      const instAmt = inv.installmentAmount ? Number(inv.installmentAmount) : null;
+      const dueThisMonth = instAmt ? Math.min(instAmt, remaining) : remaining;
       const row = {
         id: inv.id,
         transactionDate: inv.transactionDate,
-        remaining,
+        remaining: dueThisMonth,
+        fullRemaining: remaining,
         isDeferred,
+        installmentCount: inv.installmentCount ?? null,
+        installmentAmount: instAmt,
       };
       if (!map.has(inv.employeeId)) map.set(inv.employeeId, []);
       map.get(inv.employeeId).push(row);
@@ -285,7 +291,16 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       const advRows = advancesByEmployee.get(emp.id) || [];
       const dueAdv = advRows.filter((r) => !r.isDeferred);
       const advancesDeduct = dueAdv.reduce((s, r) => s + r.remaining, 0);
-      const advanceDatesLabel = dueAdv.map((r) => formatSaudiDate(r.transactionDate)).join(' ، ');
+      const advanceDatesLabel = dueAdv
+        .map((r) => {
+          const dateStr = formatSaudiDate(r.transactionDate);
+          if (r.installmentAmount && r.installmentCount) {
+            const paidCount = r.installmentCount - Math.ceil(r.fullRemaining / r.installmentAmount);
+            return `${dateStr} (${paidCount + 1}/${r.installmentCount})`;
+          }
+          return dateStr;
+        })
+        .join(' ، ');
       const netSalary = Math.max(0, grossProrated - leaveDeduction - advancesDeduct);
       const notesParts = [];
       if (advanceDatesLabel) notesParts.push(`تواريخ السلف: ${advanceDatesLabel}`);

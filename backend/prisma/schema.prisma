@@ -818,8 +818,10 @@ model Invoice {
   paymentMethodId String?   @map("payment_method_id")
   batchId         String?   @map("batch_id")
   notes           String?  // ملاحظة / تفاصيل — اسم الموظف، الشهر، تفاصيل فواتير حكومية
-  settledAt       DateTime? @map("settled_at")      // للسلف: تاريخ التسديد (خصم من راتب أو سداد)
-  settledAmount   Decimal? @map("settled_amount")   @db.Decimal(18, 4) // للسلف: المبلغ المسدد
+  settledAt         DateTime? @map("settled_at")        // للسلف: تاريخ التسديد (خصم من راتب أو سداد)
+  settledAmount     Decimal?  @map("settled_amount")    @db.Decimal(18, 4) // للسلف: المبلغ المسدد
+  installmentCount  Int?      @map("installment_count") // للسلف بالأقساط: عدد الدفعات
+  installmentAmount Decimal?  @map("installment_amount") @db.Decimal(18, 4) // للسلف بالأقساط: مبلغ القسط الواحد
   dailySalesSummaryId String? @unique @map("daily_sales_summary_id")  // للمبيعات: ربط بملخص المبيعات اليومي (واحد لواحد)
   status          String   @default("active")       // active | cancelled
   entryDate       DateTime @map("entry_date")       // توقيت السيرفر — غير قابل للتعديل

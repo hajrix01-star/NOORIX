@@ -295,9 +295,11 @@ export class FinancialCoreService {
             invoiceDate:     dto.invoiceDate ? new Date(dto.invoiceDate) : null,
             entryDate,
             vaultId:         invoiceVaultId,
-            batchId:         dto.batchId ?? null,
-            notes:           dto.notes ?? null,
-            status:          'active',
+            batchId:               dto.batchId ?? null,
+            notes:                 dto.notes ?? null,
+            installmentCount:      dto.installmentCount ?? null,
+            installmentAmount:     dto.installmentAmount ? new Prisma.Decimal(dto.installmentAmount) : null,
+            status:                'active',
           },
         });
 

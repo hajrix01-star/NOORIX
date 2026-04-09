@@ -36,6 +36,10 @@ export interface OutflowDto {
   notes?: string;
   /** مفتاح عدم التكرار — إن وُجد يُرجع النتيجة المخزنة بدل التنفيذ مرة ثانية */
   idempotencyKey?: string;
+  /** للسلف بالأقساط: عدد الدفعات */
+  installmentCount?: number;
+  /** للسلف بالأقساط: مبلغ القسط الواحد */
+  installmentAmount?: string;
 }
 
 export interface InflowDto {
