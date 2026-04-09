@@ -105,14 +105,14 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
   return (
     <div className="flex flex flex-col gap-6">
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
-        <MetricCard color={CARD_COLORS.sales.accent}>
+        <MetricCard color={KPI_CARD_SPARKLINE_COLORS.sales}>
           <div className="p-4 flex flex-col gap-1">
-            <div className="text-[12px] font-bold" style={{ color: CARD_COLORS.sales.accent }}>
+            <div className="text-[12px] font-bold" style={{ color: KPI_CARD_SPARKLINE_COLORS.sales }}>
               {t('dashboardAppSalesRatio')}
             </div>
             <div
               className="text-[28px] font-black nx-font-numbers leading-tight"
-              style={{ color: CARD_COLORS.sales.accent, fontFamily: 'var(--noorix-font-numbers)' }}
+              style={{ color: KPI_CARD_SPARKLINE_COLORS.sales, fontFamily: 'var(--noorix-font-numbers)' }}
             >
               {fmt(appPercent, 1)}%
             </div>
@@ -137,7 +137,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
               return (
                 <div key={ch.name} className="flex items-center justify-between bg-noorix-bg-muted rounded-lg py-[10px] px-[14px]">
                   <span className="font-semibold">{ch.name}</span>
-                  <span className="nx-font-numbers font-bold" style={{ color: CARD_COLORS.sales.accent }}>{fmt(pct, 1)}%</span>
+                  <span className="nx-font-numbers font-bold" style={{ color: KPI_CARD_SPARKLINE_COLORS.sales }}>{fmt(pct, 1)}%</span>
                 </div>
               );
             })}
@@ -146,7 +146,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
       )}
 
       <div className="noorix-surface-card overflow-hidden p-5">
-        <div className="text-[14px] font-bold mb-4" style={{ color: CARD_COLORS.sales.accent }}>{t('dashboardAppSalesChart')}</div>
+        <div className="text-[14px] font-bold mb-4" style={{ color: KPI_CARD_SPARKLINE_COLORS.sales }}>{t('dashboardAppSalesChart')}</div>
           <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <div className="grid gap-2 items-end min-h-[100px] min-w-[360px] [grid-template-columns:repeat(12,minmax(36px,1fr))]">
             {chartData.map((point) => {
@@ -160,13 +160,13 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
                         width: '70%',
                         height: barHeight,
                         minHeight: point.percent > 0 ? 4 : 0,
-                        background: CARD_COLORS.sales.accent,
+                        background: KPI_CARD_SPARKLINE_COLORS.sales,
                         borderRadius: '6px 6px 0 0',
                         transition: 'height 0.3s ease',
                       }}
                     />
                   </div>
-                  <div className="text-[10px] font-semibold nx-font-numbers" style={{ color: CARD_COLORS.sales.accent }}>
+                  <div className="text-[10px] font-semibold nx-font-numbers" style={{ color: KPI_CARD_SPARKLINE_COLORS.sales }}>
                     {fmt(point.percent, 1)}%
                   </div>
                 </div>
