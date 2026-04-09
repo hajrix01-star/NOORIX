@@ -139,14 +139,14 @@ export default function EmployeeProfileScreen() {
     queryKey: ['invoices', companyId, 'hr-all', id],
     queryFn: async () => {
       const [advRes, hrRes, salRes] = await Promise.all([
-        getInvoices(companyId, null, null, 1, 100, null, id, 'advance'),
-        getInvoices(companyId, null, null, 1, 100, null, id, 'hr_expense'),
-        getInvoices(companyId, null, null, 1, 100, null, id, 'salary'),
+        getInvoices(companyId, null, null, 1, 100, null, id, 'advance',    null, null, null, null, null, null, false),
+        getInvoices(companyId, null, null, 1, 100, null, id, 'hr_expense', null, null, null, null, null, null, false),
+        getInvoices(companyId, null, null, 1, 100, null, id, 'salary',     null, null, null, null, null, null, false),
       ]);
       const items = [];
-      if (advRes?.success) items.push(...(advRes.data?.items ?? []).filter((i) => i.kind === 'advance'));
-      if (hrRes?.success) items.push(...(hrRes.data?.items ?? []).filter((i) => i.kind === 'hr_expense'));
-      if (salRes?.success) items.push(...(salRes.data?.items ?? []).filter((i) => i.kind === 'salary'));
+      if (advRes?.success) items.push(...(advRes.data?.items ?? []).filter((i) => i.kind === 'advance'    && i.status !== 'cancelled'));
+      if (hrRes?.success) items.push(...(hrRes.data?.items ?? []).filter((i) => i.kind === 'hr_expense' && i.status !== 'cancelled'));
+      if (salRes?.success) items.push(...(salRes.data?.items ?? []).filter((i) => i.kind === 'salary'     && i.status !== 'cancelled'));
       return { items };
     },
     enabled: !!companyId && !!id,
@@ -225,7 +225,7 @@ export default function EmployeeProfileScreen() {
 
   const financialRecords = React.useMemo(() => {
     const recs = [];
-    const hrInvs = hrInvoicesData?.items ?? [];
+    const hrInvs = (hrInvoicesData?.items ?? []).filter((i) => i.status !== 'cancelled');
     for (const inv of hrInvs) {
       const dt = inv.transactionDate ? (inv.transactionDate.slice ? inv.transactionDate.slice(0, 10) : inv.transactionDate) : '';
       let typeKey = 'opAdvance';
