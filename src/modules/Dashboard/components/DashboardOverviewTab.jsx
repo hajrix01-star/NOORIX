@@ -17,6 +17,7 @@ import { useSales } from '../../../hooks/useSales';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
 import { Button, cn, FmtNum, MetricCard } from '../../../ui';
+import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import { useUiDir } from '../../../hooks/useUiDir';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../../constants/kpiCardTheme';
 
@@ -72,7 +73,16 @@ function PieTooltip({ active, payload }) {
   );
 }
 
-const PIE_COLORS = ['#2563eb','#16a34a','#d97706','#7c3aed','#db2777','#0891b2','#ea580c','#65a30d'];
+/* باليت قنوات البيع — من الأحدث استخداماً: بنكي، نقدي، تطبيق، ثم تكميلية */
+const PIE_COLORS = [
+  VAULT_RECHARTS_COLORS.bank,   // #185FA5 أزرق داكن
+  VAULT_RECHARTS_COLORS.cash,   // #3B6D11 أخضر داكن
+  VAULT_RECHARTS_COLORS.app,    // #7c3aed بنفسجي
+  KPI_RECHARTS_COLORS.netProfit,// #854F0B كهرماني
+  KPI_RECHARTS_COLORS.expenses, // #A32D2D أحمر
+  KPI_RECHARTS_COLORS.purchases,// #888780 رمادي
+  '#0891b2', '#db2777',         // تكميلية
+];
 
 export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }) {
   const { t, lang } = useTranslation();
@@ -203,9 +213,9 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   }, []);
 
   const SERIES = useMemo(() => [
-    { key: salesSeries,  label: t('annualSales'),    color: '#16a34a', gradId: 'gradSales', disabled: false },
-    { key: purchSeries,  label: t('annualPurchases'), color: '#2563eb', gradId: 'gradPurch', disabled: !isAnnualChart },
-    { key: expSeries,    label: t('annualExpenses'),  color: '#d97706', gradId: 'gradExp',   disabled: !isAnnualChart },
+    { key: salesSeries,  label: t('annualSales'),     color: KPI_RECHARTS_COLORS.sales,     gradId: 'gradSales', disabled: false },
+    { key: purchSeries,  label: t('annualPurchases'),  color: KPI_RECHARTS_COLORS.purchases,  gradId: 'gradPurch', disabled: !isAnnualChart },
+    { key: expSeries,    label: t('annualExpenses'),   color: KPI_RECHARTS_COLORS.expenses,   gradId: 'gradExp',   disabled: !isAnnualChart },
   ], [salesSeries, purchSeries, expSeries, isAnnualChart, t]);
 
   const timelineMonthName =

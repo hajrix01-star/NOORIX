@@ -11,9 +11,18 @@ import { EN_MONTHS } from '../Reports/reportHelpers';
 import { fmt } from '../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
-import { KPI_CARD_SPARKLINE_COLORS } from '../../constants/kpiCardTheme';
+import { KPI_CARD_SPARKLINE_COLORS, KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 
-const COLORS = ['var(--noorix-accent-green)', 'var(--noorix-accent-blue)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-violet)', 'var(--noorix-accent-red)', '#0891b2', 'var(--noorix-accent-violet)', 'var(--noorix-accent-green)'];
+/* hex فقط — var() لا يعمل مع إلحاق Alpha مثل ${c}18 */
+const COLORS = [
+  KPI_RECHARTS_COLORS.sales,      // #185FA5 أزرق
+  KPI_RECHARTS_COLORS.grossProfit, // #3B6D11 أخضر
+  KPI_RECHARTS_COLORS.netProfit,  // #854F0B كهرماني
+  VAULT_RECHARTS_COLORS.app,      // #7c3aed بنفسجي
+  KPI_RECHARTS_COLORS.expenses,   // #A32D2D أحمر
+  KPI_RECHARTS_COLORS.purchases,  // #888780 رمادي
+  '#0891b2', '#db2777',           // تكميلية
+];
 
 
 function formatAxisValue(n) {
