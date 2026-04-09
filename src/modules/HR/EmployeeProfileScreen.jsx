@@ -37,7 +37,7 @@ import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovementModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
-import { buildLeaveRequestStatusMap, buildResidencyRecordStatusMap } from '../../constants/badgeMaps';
+import { buildLeaveRequestStatusMap, buildResidencyRecordStatusMap, buildPayrollRunStatusMap } from '../../constants/badgeMaps';
 
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
@@ -86,6 +86,7 @@ export default function EmployeeProfileScreen() {
 
   const leaveProfileStatusMap = useMemo(() => buildLeaveRequestStatusMap(t), [t]);
   const residencyProfileStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
+  const payrollRunStatusMap = useMemo(() => buildPayrollRunStatusMap(t), [t]);
 
   const { data: leaves = [] } = useQuery({
     queryKey: ['leaves', companyId, id],
@@ -591,12 +592,7 @@ export default function EmployeeProfileScreen() {
             { key: 'netSalary', label: t('netSalary'), numeric: true, width: '12%',
               render: (v) => <span className="nx-cell-num font-bold text-noorix-green">{hrFmt(v)}</span> },
             { key: 'payrollRun.status', label: t('payrollStatus'), width: '12%',
-              render: (_, row) => {
-                const s = row.payrollRun?.status;
-                return <span className={`text-[11px] font-semibold ${s === 'completed' ? 'text-noorix-green' : 'text-noorix-amber'}`}>
-                  {s === 'completed' ? (t('payrollStatusCompleted') || 'مكتملة') : (t('payrollStatusDraft') || 'مسودة')}
-                </span>;
-              } },
+              render: (_, row) => <Badge {...Badge.fromStatus(row.payrollRun?.status, payrollRunStatusMap)} size="sm" /> },
             { key: 'notes', label: t('invoiceNotesColumn'), width: '14%',
               render: (v) => <span className="nx-cell-ellipsis text-[11px]" title={v || ''}>{v || '—'}</span> },
           ]}
