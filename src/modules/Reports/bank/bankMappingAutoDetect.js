@@ -4,6 +4,71 @@
  */
 import { formatSaudiDateISO } from '../../../utils/saudiDate';
 
+/**
+ * عبارات تمثّل عناوين وثائق لا أسماء بنوك — يُرفض تعيينها كـ bankName تلقائياً.
+ * تشمل: كشف الحساب / كشف حساب / بيان الحساب / bank statement / account statement …
+ */
+const BANK_NAME_BLACKLIST = [
+  'كشف الحساب',
+  'كشف حساب',
+  'بيان الحساب',
+  'بيان حساب',
+  'تقرير الحساب',
+  'تقرير حساب',
+  'account statement',
+  'bank statement',
+  'statement of account',
+  'monthly statement',
+  'كشف',
+  'حساب',
+  'statement',
+  'تقرير',
+  'تفاصيل الحساب',
+];
+
+/**
+ * يرجع true إذا كانت القيمة تطابق أحد عناوين الوثائق المعروفة ولا يُعتبر اسماً لبنك.
+ * @param {string} value
+ */
+export function isBankNameBlacklisted(value) {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, ' ');
+  return BANK_NAME_BLACKLIST.some((phrase) => normalized === phrase.toLowerCase() || normalized === phrase.toLowerCase().replace(/\s+/g, ' '));
+}
+
+/**
+ * يُنظّف اسم البنك القادم من الـ AI أو الاكتشاف التلقائي:
+ * - يرفض العبارات المدرجة في القائمة السوداء
+ * - يرفض النصوص الطويلة جداً (> 60 حرف) التي تشبه عناوين لا أسماء
+ * - يرفض النصوص التي تحتوي فقط على أرقام أو رموز
+ * @param {string} value
+ * @returns {string}
+ */
+export function sanitizeBankName(value) {
+  if (!value || typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (isBankNameBlacklisted(trimmed)) return '';
+  if (trimmed.length > 60) return '';
+  if (/^[\d\s\W]+$/.test(trimmed)) return '';
+  return trimmed;
+}
+
+/**
+ * يُنظّف اسم العميل القادم من الـ AI:
+ * - يرفض عناوين الوثائق (كشف الحساب…)
+ * - يرفض أسماء البنوك المعروفة
+ * @param {string} value
+ */
+export function sanitizeCustomerName(value) {
+  if (!value || typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (isBankNameBlacklisted(trimmed)) return '';
+  if (trimmed.length > 120) return '';
+  return trimmed;
+}
+
 export function extractDateFromCell(val) {
   if (!val) return '';
   if (val instanceof Date) {
@@ -45,10 +110,18 @@ export function autoDetectRows(sheetData) {
   const bankKeywords = [
     'الراجحي',
     'الأهلي',
+    'الأهلي التجاري',
     'الإنماء',
     'الرياض',
     'البلاد',
     'ساب',
+    'الجزيرة',
+    'الفرنسي',
+    'العربي',
+    'البنك السعودي',
+    'سامبا',
+    'stc pay',
+    'stcpay',
     'rajhi',
     'ahli',
     'inma',
@@ -56,6 +129,23 @@ export function autoDetectRows(sheetData) {
     'bilad',
     'sabb',
     'stc',
+    'jazira',
+    'fransi',
+    'samba',
+    'alinma',
+    'alawwal',
+    'العوال',
+    'اليمامة',
+  ];
+
+  /** تسميات تشير إلى خلية اسم البنك */
+  const bankLabelKeywords = [
+    'اسم البنك',
+    'البنك',
+    'bank name',
+    'bank',
+    'جهة الإصدار',
+    'المصرف',
   ];
   const customerNameKeywords = [
     'اسم العميل',
@@ -150,16 +240,37 @@ export function autoDetectRows(sheetData) {
       }
     }
 
-    if (i < 10 && !bankName) {
-      for (const bk of bankKeywords) {
-        if (rowText.includes(bk)) {
-          bankName = String(
-            row.find((c) => {
+    if (i < 15 && !bankName) {
+      // أولاً: ابحث عن خلية تحتوي على تسمية "اسم البنك" أو "البنك" وأخذ قيمة الخلية التالية
+      for (let j = 0; j < row.length; j++) {
+        const cellText = String(row[j] || '').trim();
+        const cellLower = cellText.toLowerCase();
+        if (bankLabelKeywords.some((lk) => cellLower === lk.toLowerCase() || cellLower.startsWith(lk.toLowerCase() + ':') || cellLower.startsWith(lk.toLowerCase() + '：'))) {
+          // القيمة قد تكون في نفس الخلية بعد ":"  أو في الخلية التالية
+          const parts = cellText.split(/[:：]/);
+          if (parts.length > 1 && parts[1].trim()) {
+            const candidate = sanitizeBankName(parts[1].trim());
+            if (candidate) { bankName = candidate; break; }
+          }
+          if (j + 1 < row.length && row[j + 1]) {
+            const candidate = sanitizeBankName(String(row[j + 1]).trim());
+            if (candidate) { bankName = candidate; break; }
+          }
+        }
+      }
+      // ثانياً: إذا لم نجد عبر التسمية، ابحث عن خلية تحتوي على اسم بنك معروف
+      if (!bankName) {
+        for (const bk of bankKeywords) {
+          if (rowText.includes(bk.toLowerCase())) {
+            const found = row.find((c) => {
               const s = String(c || '').toLowerCase();
-              return bankKeywords.some((k) => s.includes(k));
-            }) || '',
-          ).trim();
-          break;
+              return bankKeywords.some((k) => s.includes(k.toLowerCase()));
+            });
+            if (found) {
+              const candidate = sanitizeBankName(String(found));
+              if (candidate) { bankName = candidate; break; }
+            }
+          }
         }
       }
     }

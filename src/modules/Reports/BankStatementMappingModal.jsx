@@ -15,6 +15,8 @@ import {
   autoDetectColumns,
   countDataRowsFrom,
   extractDateFromCell,
+  sanitizeBankName,
+  sanitizeCustomerName,
 } from './bank/bankMappingAutoDetect';
 import { formatSaudiDate } from '../../utils/saudiDate';
 
@@ -89,8 +91,8 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
     const ar = autoDetectRows(raw);
     setHeaderRow(ar.headerRow);
     setDataStartRow(ar.dataStartRow);
-    setCompanyName((p) => (p.trim() ? p : ar.customerName || ''));
-    setBankName((p) => (p.trim() ? p : ar.bankName || ''));
+    setCompanyName((p) => (p.trim() ? p : sanitizeCustomerName(ar.customerName) || ''));
+    setBankName((p) => (p.trim() ? p : sanitizeBankName(ar.bankName) || ''));
     setStartDate((p) => p || normalizeDateForInput(ar.periodFrom) || '');
     setEndDate((p) => p || normalizeDateForInput(ar.periodTo) || '');
     if (!raw[ar.headerRow]) return;
@@ -124,8 +126,14 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
       .then((res) => {
         if (cancelled || !res?.success) return;
         const d = res.data ?? res;
-        if (d.customerName) setCompanyName((prev) => (prev && prev.trim() ? prev : d.customerName));
-        if (d.bankName) setBankName((prev) => (prev && prev.trim() ? prev : d.bankName));
+        if (d.customerName) {
+          const cleanCustomer = sanitizeCustomerName(d.customerName);
+          if (cleanCustomer) setCompanyName((prev) => (prev && prev.trim() ? prev : cleanCustomer));
+        }
+        if (d.bankName) {
+          const cleanBank = sanitizeBankName(d.bankName);
+          if (cleanBank) setBankName((prev) => (prev && prev.trim() ? prev : cleanBank));
+        }
         if (d.periodFrom) setStartDate((prev) => prev || normalizeDateForInput(d.periodFrom));
         if (d.periodTo) setEndDate((prev) => prev || normalizeDateForInput(d.periodTo));
       })
