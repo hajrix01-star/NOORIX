@@ -1,35 +1,20 @@
 /**
- * HRSummaryCard — كرت ملخص شؤون الموظفين الشامل
+ * HRSummaryCard — كرت ملخص شؤون الموظفين
+ * يستخدم MetricCard الموحّد تماماً كلوحة التحكم وكروت الخزائن.
  */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { MetricCard } from '../../../ui';
 import { fmt } from '../../../utils/format';
-import { cn } from '../../../ui';
 
-function StatItem({ label, value, sub, color = 'text-noorix-text', bgColor, icon, srOnly = false }) {
-  if (srOnly && !value) return null;
-  return (
-    <div
-      className={cn(
-        'flex flex-col gap-1 rounded-xl p-3 sm:p-4 min-w-0',
-        bgColor ?? 'bg-noorix-bg-muted',
-      )}
-    >
-      <div className="flex items-center gap-2 min-w-0">
-        {icon && (
-          <span className="text-[18px] shrink-0 leading-none opacity-80">{icon}</span>
-        )}
-        <span className="text-[12px] text-noorix-muted leading-tight truncate">{label}</span>
-      </div>
-      <div className={cn('text-[22px] sm:text-[26px] font-black tabular-nums leading-none', color)}>
-        {value}
-      </div>
-      {sub && (
-        <div className="text-[11px] text-noorix-muted leading-tight truncate mt-0.5">{sub}</div>
-      )}
-    </div>
-  );
-}
+/* ألوان Design Tokens الموحّدة (var() للكروت — لا hex مباشر) */
+const COLOR_ACTIVE    = 'var(--color-nx-profit)';   /* أخضر — موظفون نشطون */
+const COLOR_PAYROLL   = 'var(--color-nx-sales)';    /* أزرق — رواتب */
+const COLOR_RESIDENCY = 'var(--color-nx-purchases)';/* رمادي/بني — إقامات */
+const COLOR_ADVANCES  = 'var(--color-nx-expenses)'; /* أحمر — سلف معلقة */
+const COLOR_LEAVES    = 'var(--color-nx-app)';      /* بنفسجي — إجازات */
+
+const CARD_CLASS = 'min-h-[110px]';
 
 export default function HRSummaryCard({
   activeCount = 0,
@@ -45,86 +30,82 @@ export default function HRSummaryCard({
 
   if (isLoading) {
     return (
-      <div className="noorix-surface-card p-4 sm:p-5 animate-pulse">
-        <div className="h-4 w-40 bg-noorix-border rounded mb-4" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-20 bg-noorix-border/50 rounded-xl" />
-          ))}
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="noorix-surface-card min-h-[110px] animate-pulse" />
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="noorix-surface-card p-4 sm:p-5 flex flex-col gap-4">
-      {/* عنوان الكرت */}
-      <div className="flex items-center gap-2">
-        <span className="text-[16px] font-bold text-noorix-text">{t('hrSummaryCardTitle')}</span>
-      </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
 
-      {/* شبكة الإحصائيات */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      {/* 1 — الموظفون النشطون */}
+      <MetricCard color={COLOR_ACTIVE} className={CARD_CLASS}>
+        <MetricCard.Header label={t('hrStatsActive')} />
+        <MetricCard.Value value={activeCount} color={COLOR_ACTIVE} />
+        {terminatedCount > 0 && (
+          <MetricCard.Footer className="pb-3 pt-2">
+            <span className="text-[11px] text-noorix-muted truncate">
+              {t('hrStatsTerminated')}: <strong className="text-noorix-text">{terminatedCount}</strong>
+            </span>
+          </MetricCard.Footer>
+        )}
+      </MetricCard>
 
-        {/* الموظفون النشطون */}
-        <StatItem
-          label={t('hrStatsActive')}
-          value={activeCount}
-          icon="👥"
-          color="text-noorix-green"
-          bgColor="bg-noorix-green/8"
-        />
+      {/* 2 — إجمالي الرواتب الشهري */}
+      <MetricCard color={COLOR_PAYROLL} className={CARD_CLASS}>
+        <MetricCard.Header label={t('hrStatsMonthlyPayroll')} />
+        <MetricCard.Value value={monthlyPayrollTotal} currency="SR" color={COLOR_PAYROLL} />
+      </MetricCard>
 
-        {/* إجمالي الرواتب الشهري */}
-        <StatItem
-          label={t('hrStatsMonthlyPayroll')}
-          value={fmt(monthlyPayrollTotal)}
-          sub={<><span className="nx-sar">SR</span></>}
-          icon="💰"
-          color="text-noorix-blue"
-          bgColor="bg-noorix-blue/8"
-        />
-
-        {/* إقامات قريبة الانتهاء */}
-        <StatItem
-          label={t('hrStatsResidencyExpiring')}
+      {/* 3 — إقامات قريبة الانتهاء */}
+      <MetricCard
+        color={expiringResidencyCount > 0 ? 'var(--color-nx-net-profit)' : COLOR_RESIDENCY}
+        className={CARD_CLASS}
+      >
+        <MetricCard.Header label={t('hrStatsResidencyExpiring')} />
+        <MetricCard.Value
           value={expiringResidencyCount}
-          icon="🪪"
-          color={expiringResidencyCount > 0 ? 'text-noorix-amber' : 'text-noorix-muted'}
-          bgColor={expiringResidencyCount > 0 ? 'bg-noorix-amber/8' : 'bg-noorix-bg-muted'}
+          color={expiringResidencyCount > 0 ? 'var(--color-nx-net-profit)' : undefined}
         />
+      </MetricCard>
 
-        {/* السلف المعلقة */}
-        <StatItem
-          label={t('hrStatsAdvancesOutstanding')}
+      {/* 4 — السلف المعلقة */}
+      <MetricCard
+        color={outstandingAdvancesCount > 0 ? COLOR_ADVANCES : COLOR_RESIDENCY}
+        className={CARD_CLASS}
+      >
+        <MetricCard.Header label={t('hrStatsAdvancesOutstanding')} />
+        <MetricCard.Value
           value={outstandingAdvancesCount}
-          sub={
-            outstandingAdvancesAmount > 0
-              ? `${fmt(outstandingAdvancesAmount)} SR`
-              : undefined
-          }
-          icon="📋"
-          color={outstandingAdvancesCount > 0 ? 'text-noorix-red' : 'text-noorix-muted'}
-          bgColor={outstandingAdvancesCount > 0 ? 'bg-noorix-red/8' : 'bg-noorix-bg-muted'}
+          color={outstandingAdvancesCount > 0 ? COLOR_ADVANCES : undefined}
         />
+        {outstandingAdvancesAmount > 0 && (
+          <MetricCard.Footer className="pb-3 pt-1">
+            <span
+              className="text-[12px] font-bold tabular-nums"
+              style={{ color: COLOR_ADVANCES }}
+            >
+              {fmt(outstandingAdvancesAmount)} <span className="nx-sar">SR</span>
+            </span>
+          </MetricCard.Footer>
+        )}
+      </MetricCard>
 
-        {/* طلبات الإجازة المعلقة */}
-        <StatItem
-          label={t('hrStatsPendingLeaves')}
+      {/* 5 — طلبات الإجازة المعلقة */}
+      <MetricCard
+        color={pendingLeavesCount > 0 ? COLOR_LEAVES : COLOR_RESIDENCY}
+        className={CARD_CLASS}
+      >
+        <MetricCard.Header label={t('hrStatsPendingLeaves')} />
+        <MetricCard.Value
           value={pendingLeavesCount}
-          icon="🏖️"
-          color={pendingLeavesCount > 0 ? 'text-noorix-violet' : 'text-noorix-muted'}
-          bgColor={pendingLeavesCount > 0 ? 'bg-noorix-violet/8' : 'bg-noorix-bg-muted'}
+          color={pendingLeavesCount > 0 ? COLOR_LEAVES : undefined}
         />
-      </div>
+      </MetricCard>
 
-      {/* شريط سفلي: موظفون منتهية خدمتهم (إذا وُجدوا) */}
-      {terminatedCount > 0 && (
-        <div className="border-t border-noorix-border pt-3 flex items-center gap-2 text-[12px] text-noorix-muted">
-          <span className="shrink-0">{t('hrStatsTerminated')}:</span>
-          <span className="font-bold tabular-nums text-noorix-text">{terminatedCount}</span>
-        </div>
-      )}
     </div>
   );
 }
