@@ -354,7 +354,7 @@ export default function SmartChatScreen() {
           const eb = empBody || employeeBody;
           const empName = eb?.name || eb?.nameAr || eb?.nameEn || '—';
           const salary = Number(eb?.basicSalary ?? 0);
-          addMessage({ role: 'assistant', textAr: `النوع: إضافة موظف\nالاسم: ${empName}\nالمسمى: ${eb?.jobTitle || '—'}\nالراتب: ${salary.toLocaleString('en')} ﷼`, textEn: `Type: Add employee\nName: ${empName}\nTitle: ${eb?.jobTitle || '—'}\nSalary: ${salary.toLocaleString('en')} SAR` });
+          addMessage({ role: 'assistant', textAr: `النوع: إضافة موظف\nالاسم: ${empName}\nالمسمى: ${eb?.jobTitle || '—'}\nالراتب: ${salary.toLocaleString('en')} SA`, textEn: `Type: Add employee\nName: ${empName}\nTitle: ${eb?.jobTitle || '—'}\nSalary: ${salary.toLocaleString('en')} SAR` });
         } catch (e) {
           showToast(e?.message || t('saveFailed'), 'error');
         }

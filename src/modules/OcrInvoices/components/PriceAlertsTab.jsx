@@ -52,7 +52,7 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
               )}
               <div className="compare-invoice-meta mt-2.5">
                 <div className="font-extrabold text-[22px] text-noorix-red">
-                  {fmtNum(alert.latestPrice)} <span className="text-[12px] font-normal">{isAr ? 'ريال' : 'SAR'}</span>
+                  {fmtNum(alert.latestPrice)} <span className="nx-sar">SA</span>
                 </div>
                 <div className="text-[12px] text-noorix-muted">{alert.latestSupplier}</div>
                 <div className="text-[12px] text-noorix-muted">{fmtDate(alert.latestInvoiceDate)}</div>
@@ -69,7 +69,7 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
               )}
               <div className="compare-invoice-meta mt-2.5">
                 <div className="font-extrabold text-[22px] text-noorix-green">
-                  {fmtNum(alert.lowestPrice)} <span className="text-[12px] font-normal">{isAr ? 'ريال' : 'SAR'}</span>
+                  {fmtNum(alert.lowestPrice)} <span className="nx-sar">SA</span>
                 </div>
                 <div className="text-[12px] text-noorix-muted">{alert.lowestSupplier}</div>
                 <div className="text-[12px] text-noorix-muted">{fmtDate(alert.lowestInvoiceDate)}</div>
@@ -79,10 +79,10 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
 
           <div className="rounded-lg py-3 px-[14px] bg-noorix-green/5 border border-noorix-border">
             <div className="font-semibold text-[13px] text-noorix-green mb-[2px]">
-              {isAr ? 'التوفير المحتمل' : 'Potential Savings'}: {fmtNum(saving)} {isAr ? 'ريال / وحدة' : 'SAR/unit'}
+              {isAr ? 'التوفير المحتمل' : 'Potential Savings'}: {fmtNum(saving)} <span className="nx-sar">SA</span>/وحدة
             </div>
             <div className="text-[12px] text-noorix-muted">
-              {isAr ? `المتوسط التاريخي: ${fmtNum(alert.averagePrice)} ريال` : `Historical avg: ${fmtNum(alert.averagePrice)} SAR`}
+              {`المتوسط التاريخي: ${fmtNum(alert.averagePrice)} SA`}
             </div>
           </div>
         </div>
@@ -169,7 +169,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
         </div>
         <div className="ocr-alert-stat">
           <div className="ocr-alert-stat-value" style={{ color: 'var(--noorix-accent-green)' }}>{fmtNum(totalSavings)}</div>
-          <div className="ocr-alert-stat-label">{isAr ? 'فرص التوفير (ريال)' : 'Savings (SAR)'}</div>
+          <div className="ocr-alert-stat-label">فرص التوفير (SA)</div>
         </div>
       </div>
 

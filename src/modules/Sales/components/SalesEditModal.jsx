@@ -191,17 +191,17 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       <div className="grid gap-2.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
         <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-green-10)', border: '1px solid var(--noorix-green-30)' }}>
           <div className="text-[11px] text-noorix-green">الإجمالي</div>
-          <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)} ﷼</div>
+          <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)} <span className="nx-sar">SA</span></div>
         </div>
         {vatEnabled && totalAmount.gt(0) && (
           <>
             <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-sky-10)', border: '1px solid var(--noorix-sky-30)' }}>
               <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>الصافي</div>
-              <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-sky)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)} ﷼</div>
+              <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-sky)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)} <span className="nx-sar">SA</span></div>
             </div>
             <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-yellow-10)', border: '1px solid var(--noorix-yellow-30)' }}>
               <div className="text-[11px]" style={{ color: 'var(--color-noorix-amber)' }}>الضريبة</div>
-              <div className="text-[18px] font-black" style={{ color: 'var(--color-noorix-amber)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)} ﷼</div>
+              <div className="text-[18px] font-black" style={{ color: 'var(--color-noorix-amber)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)} <span className="nx-sar">SA</span></div>
             </div>
           </>
         )}
@@ -211,7 +211,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         </div>
         <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-violet-10)', border: '1px solid var(--noorix-violet-30)' }}>
           <div className="text-[11px]" style={{ color: 'var(--noorix-accent-violet)' }}>معدل الطلب</div>
-          <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-violet)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} ﷼</div>
+          <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-violet)', fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(avgPerCustomer)} <span className="nx-sar">SA</span></div>
         </div>
       </div>
     </AdaptiveSheet>

@@ -16,10 +16,10 @@ export const vaultsHandler: ChatHandler = {
     if (vaults.length === 0) {
       return { answerAr: 'لا توجد خزائن مسجلة.', answerEn: 'No vaults registered.' };
     }
-    const lines = vaults.map((v: { nameAr: string; balance?: number | null }) => `• ${v.nameAr}: ${Number(v.balance ?? 0).toLocaleString('en')} ﷼`);
+    const lines = vaults.map((v: { nameAr: string; balance?: number | null }) => `• ${v.nameAr}: ${Number(v.balance ?? 0).toLocaleString('en')} SA`);
     const total = vaults.reduce((s: number, v: { balance?: number | null }) => s + Number(v.balance ?? 0), 0);
     return {
-      answerAr: `أرصدة الخزائن:\n${lines.join('\n')}\nالإجمالي: ${total.toLocaleString('en')} ﷼`,
+      answerAr: `أرصدة الخزائن:\n${lines.join('\n')}\nالإجمالي: ${total.toLocaleString('en')} SA`,
       answerEn: `Vault balances:\n${vaults.map((v: { nameAr: string; nameEn?: string | null; balance?: number | null }) => `• ${v.nameEn || v.nameAr}: ${Number(v.balance ?? 0).toLocaleString('en')} SAR`).join('\n')}\nTotal: ${total.toLocaleString('en')} SAR`,
     };
   },

@@ -216,7 +216,7 @@ export function ProductSearchInput({
                     {(variantLabel || lastPrice > 0) && (
                       <span className="text-[12px] shrink-0 whitespace-nowrap text-noorix-muted">
                         {variantLabel && <span>{variantLabel} — </span>}
-                        <span className="nx-font-numbers">{fmt(lastPrice, 2)} ﷼</span>
+                        <span className="nx-font-numbers">{fmt(lastPrice, 2)} SA</span>
                       </span>
                     )}
                   </div>

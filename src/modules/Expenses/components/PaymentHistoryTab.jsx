@@ -62,7 +62,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     ).join('');
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>سجل المدفوعات</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}@media print{body{padding:0}}</style></head><body>
-<div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px"><h1 style="margin:0;font-size:20px">سجل المدفوعات (ثابت + متغير)</h1><p style="margin:8px 0 0;font-size:12px;color:#555">الإجمالي: ${fmt(totalAmount)} ر.س</p></div>
+<div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px"><h1 style="margin:0;font-size:20px">سجل المدفوعات (ثابت + متغير)</h1><p style="margin:8px 0 0;font-size:12px;color:#555">الإجمالي: ${fmt(totalAmount)} SA</p></div>
 <table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>المورد</th><th>بند المصروف</th><th>النوع</th><th>التاريخ</th><th>الصافي</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${rows || '<tr><td colspan="9">لا توجد مدفوعات</td></tr>'}</tbody></table>
 </body></html>`;
     const w = window.open('', '_blank');
@@ -164,7 +164,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
               <span className="text-[13px] text-noorix-muted">عدد السجلات: <strong className="text-noorix-text">{activeItems.length}</strong></span>
               <span className="text-[13px]">الصافي: <strong className="nx-cell-num nx-cell-num--green">{fmt(totalNet)}</strong></span>
               <span className="text-[13px]">الضريبة: <strong className="nx-cell-num text-noorix-amber">{fmt(totalTax)}</strong></span>
-              <span className="nx-cell-num text-[14px] font-bold">الإجمالي: {fmt(totalAmount)} ر.س</span>
+              <span className="nx-cell-num text-[14px] font-bold">الإجمالي: {fmt(totalAmount)} <span className="nx-sar">SA</span></span>
             </div>
           ) : null
         }

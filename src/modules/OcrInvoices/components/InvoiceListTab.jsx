@@ -168,9 +168,9 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
               { label: isAr ? 'رقم الفاتورة'   : 'Invoice #',     value: invoice.invoiceNumber || '—' },
               { label: isAr ? 'تاريخ الفاتورة' : 'Invoice Date',  value: fmtDate(invoice.invoiceDate) },
               { label: isAr ? 'تاريخ الرفع'    : 'Uploaded',      value: fmtDate(invoice.createdAt) },
-              { label: isAr ? 'المجموع قبل الضريبة' : 'Subtotal', value: invoice.subtotalAmount ? `${fmt(invoice.subtotalAmount)} ${isAr ? 'ريال' : 'SAR'}` : '—' },
-              { label: isAr ? 'الضريبة'        : 'VAT',           value: invoice.vatAmount    ? `${fmt(invoice.vatAmount)} ${isAr ? 'ريال' : 'SAR'}` : '—' },
-              { label: isAr ? 'الإجمالي شامل الضريبة' : 'Total',  value: invoice.totalAmount  ? `${fmt(invoice.totalAmount)} ${isAr ? 'ريال' : 'SAR'}` : '—', highlight: true },
+              { label: isAr ? 'المجموع قبل الضريبة' : 'Subtotal', value: invoice.subtotalAmount ? `${fmt(invoice.subtotalAmount)} SA` : '—' },
+              { label: isAr ? 'الضريبة'        : 'VAT',           value: invoice.vatAmount    ? `${fmt(invoice.vatAmount)} SA` : '—' },
+              { label: isAr ? 'الإجمالي شامل الضريبة' : 'Total',  value: invoice.totalAmount  ? `${fmt(invoice.totalAmount)} SA` : '—', highlight: true },
             ].map(({ label, value, highlight }) => (
               <div key={label} className={`inv-meta-cell${highlight ? ' inv-meta-cell--hl' : ''}`}>
                 <div className="inv-meta-label">{label}</div>
@@ -267,7 +267,7 @@ function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLight
         </div>
         <div className="inv-card-footer">
           <span className="inv-card-total">
-            {invoice.totalAmount ? `${fmt(invoice.totalAmount)} ${isAr ? 'ريال' : 'SAR'}` : '—'}
+            {invoice.totalAmount ? `${fmt(invoice.totalAmount)} SA` : '—'}
           </span>
           <span className="inv-card-items">
             {invoice.lines?.length || 0} {isAr ? 'صنف' : 'items'}

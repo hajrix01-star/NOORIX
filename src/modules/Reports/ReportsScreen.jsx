@@ -207,7 +207,7 @@ export default function ReportsScreen() {
                           {amountText(getCardValue(card.key))}
                         </span>
                         <span className="text-[12px] font-medium text-noorix-muted">
-                          {lang === 'ar' ? 'ر.س' : 'SAR'}
+                          SA
                         </span>
                       </div>
                       <div className="min-h-[24px] flex-1" aria-hidden />

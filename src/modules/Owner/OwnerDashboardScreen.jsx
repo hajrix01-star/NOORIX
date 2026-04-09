@@ -257,7 +257,7 @@ export default function OwnerDashboardScreen() {
               <div className="h-1 bg-noorix-green" aria-hidden />
               <div className="p-4">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('ownerTotalSales')}</div>
-                <div className="text-[20px] font-extrabold nx-font-numbers">{fmt(aggregated.totalSales, 2)} ﷼</div>
+                <div className="text-[20px] font-extrabold nx-font-numbers">{fmt(aggregated.totalSales, 2)} <span className="nx-sar">SA</span></div>
                 <div className="text-[10px] text-noorix-muted mt-1">100%</div>
               </div>
             </div>
@@ -268,7 +268,7 @@ export default function OwnerDashboardScreen() {
                 <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) : '—'}%
                 </div>
-                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalPurchases, 2)} ﷼</div>
+                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalPurchases, 2)} <span className="nx-sar">SA</span></div>
               </div>
             </div>
             <div className="noorix-surface-card relative overflow-hidden">
@@ -278,7 +278,7 @@ export default function OwnerDashboardScreen() {
                 <div className="text-[20px] font-extrabold nx-font-numbers text-noorix-red">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalExpenses / aggregated.totalSales) * 100, 1) : '—'}%
                 </div>
-                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalExpenses, 2)} ﷼</div>
+                <div className="text-[10px] text-noorix-muted mt-1">{fmt(aggregated.totalExpenses, 2)} <span className="nx-sar">SA</span></div>
               </div>
             </div>
             <div className="noorix-surface-card relative overflow-hidden">
@@ -294,7 +294,7 @@ export default function OwnerDashboardScreen() {
                     aggregated.totalNetProfit >= 0 ? 'text-noorix-blue' : 'text-noorix-red',
                   )}
                 >
-                  {fmt(aggregated.totalNetProfit, 2)} ﷼
+                  {fmt(aggregated.totalNetProfit, 2)} <span className="nx-sar">SA</span>
                 </div>
                 <div className="text-[10px] text-noorix-muted mt-1">
                   {aggregated.totalSales > 0 ? fmt((aggregated.totalNetProfit / aggregated.totalSales) * 100, 1) + '%' : '—'}
@@ -336,7 +336,7 @@ export default function OwnerDashboardScreen() {
                                   background: COLORS[i % COLORS.length],
                                   borderRadius: '2px 2px 0 0',
                                 }}
-                                title={`${companyList.find((c) => c.id === companyId)?.nameAr || companyId}: ${fmt(amt, 2)} ﷼`}
+                                title={`${companyList.find((c) => c.id === companyId)?.nameAr || companyId}: ${fmt(amt, 2)} SA`}
                               />
                             );
                           })}
@@ -381,7 +381,7 @@ export default function OwnerDashboardScreen() {
                         </div>
                         <div className="flex items-center gap-8 shrink-0">
                           <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor /* dynamic: profit/loss color */ }}>
-                            {fmt(item.netProfit, 2)} ﷼
+                            {fmt(item.netProfit, 2)} <span className="nx-sar">SA</span>
                           </span>
                           <span className="text-[11px] text-noorix-muted text-end min-w-[38px]">
                             {aggregated.totalNetProfit !== 0 ? `${fmt(pct, 1)}%` : '—'}

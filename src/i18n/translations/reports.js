@@ -332,7 +332,7 @@ export default {
   },
 
   bankStatementDateRange: { ar: 'نطاق التواريخ', en: 'Date range' },
-  bankCurrencySar: { ar: 'ر.س', en: 'SAR' },
+  bankCurrencySar: { ar: 'SA', en: 'SA' },
   bankNetSurplus: { ar: 'فائض', en: 'Surplus' },
   bankNetDeficit: { ar: 'عجز', en: 'Deficit' },
   bankBackToList: { ar: 'العودة للقائمة', en: 'Back to list' },

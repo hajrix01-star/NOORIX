@@ -266,7 +266,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           label="ملاحظات (للخدمة ورقمها)"
           value={form.notes}
           onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-          placeholder="مثال: كهرباء - عداد 12345 - 1,200 ر.س"
+          placeholder="مثال: كهرباء - عداد 12345 - 1,200 SA"
           rows={3}
         />
       </form>

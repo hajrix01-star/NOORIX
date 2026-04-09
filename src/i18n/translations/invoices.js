@@ -44,7 +44,7 @@ export default {
   opSalary: { ar: 'راتب', en: 'Salary' },
   opInvoicePayment: { ar: 'سداد فاتورة', en: 'Invoice payment' },
   opGovtExpense: { ar: 'مصروف حكومي', en: 'Govt expense' },
-  invoiceIssued: { ar: 'تم إصدار فاتورة {0} ﷼', en: 'Invoice issued {0} SAR' },
+  invoiceIssued: { ar: 'تم إصدار فاتورة {0} SA', en: 'Invoice issued {0} SA' },
   residencyInvoiceIssued: { ar: 'تم إصدار فاتورة الإقامة', en: 'Residency invoice issued' },
   issueResidencyInvoiceTitle: { ar: 'إصدار فاتورة إقامة — {0}', en: 'Issue residency invoice — {0}' },
   issuePaymentInvoice: { ar: 'إصدار فاتورة دفع', en: 'Issue payment invoice' },
@@ -110,7 +110,7 @@ export default {
   dayCloseCounterparty: { ar: 'الجهة / التفاصيل', en: 'Party / details' },
   dayCloseKpiPrintCaption: { ar: 'ملخص المؤشرات المالية', en: 'Financial summary' },
   dayCloseKpiColMetric: { ar: 'البند', en: 'Item' },
-  dayCloseKpiColValue: { ar: 'المبلغ (﷼)', en: 'Amount (SAR)' },
+  dayCloseKpiColValue: { ar: 'المبلغ (SA)', en: 'Amount (SA)' },
   dayCloseKpiColCount: { ar: 'العدد', en: 'Count' },
   totalAmountInclTax: { ar: 'الإجمالي (شامل الضريبة) *', en: 'Total amount (incl. VAT) *' },
 };

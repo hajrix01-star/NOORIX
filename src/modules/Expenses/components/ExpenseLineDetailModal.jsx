@@ -78,7 +78,7 @@ export default function ExpenseLineDetailModal({
     ).join('');
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>سجل مدفوعات - ${(line?.nameAr || '').replace(/</g, '&lt;')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}@media print{body{padding:0}}</style></head><body>
-<div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px"><h1 style="margin:0;font-size:20px">سجل مدفوعات - ${(line?.nameAr || line?.nameEn || '—').replace(/</g, '&lt;')}</h1><p style="margin:8px 0 0;font-size:12px;color:#555">إجمالي: ${fmt(totalPaid)} ر.س</p></div>
+<div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px"><h1 style="margin:0;font-size:20px">سجل مدفوعات - ${(line?.nameAr || line?.nameEn || '—').replace(/</g, '&lt;')}</h1><p style="margin:8px 0 0;font-size:12px;color:#555">إجمالي: ${fmt(totalPaid)} SA</p></div>
 <table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>التاريخ</th><th>المبلغ</th><th>الخزنة</th><th>ملاحظات</th></tr></thead><tbody>${rows || '<tr><td colspan="6">لا توجد مدفوعات</td></tr>'}</tbody></table>
 </body></html>`;
     const w = window.open('', '_blank');

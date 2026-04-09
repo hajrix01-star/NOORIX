@@ -384,7 +384,7 @@ export default function StaffListScreen({ embedded }) {
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('totalSalary')}</div>
-          <div className="nx-mc__stat-value">{hrFmt(row.totalSalary)} ﷼</div>
+          <div className="nx-mc__stat-value">{hrFmt(row.totalSalary)} <span className="nx-sar">SA</span></div>
         </div>
       </div>
       <div className="nx-mc__actions">

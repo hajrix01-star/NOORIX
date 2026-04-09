@@ -28,10 +28,10 @@ function buildWhatsAppText(order, t) {
     const name = it.product?.nameAr || it.product?.nameEn || '—';
     const parts = [it.size, it.packaging, it.unit].filter(Boolean);
     const variantPart = parts.length > 0 ? ` (${parts.join(' / ')})` : '';
-    return `${name}${variantPart}: ${it.quantity} × ${fmt(it.unitPrice ?? 0, 2)} = ${fmt(it.amount ?? 0, 2)} ﷼`;
+    return `${name}${variantPart}: ${it.quantity} × ${fmt(it.unitPrice ?? 0, 2)} = ${fmt(it.amount ?? 0, 2)} SA`;
   }).join('\n');
   const total = fmt(order.totalAmount ?? 0, 2);
-  return `طلب ${order.orderNumber}\nالتاريخ: ${formatSaudiDate(order.orderDate)}\nالنوع: ${order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}\n\n${lines}\n\nالإجمالي: ${total} ﷼`;
+  return `طلب ${order.orderNumber}\nالتاريخ: ${formatSaudiDate(order.orderDate)}\nالنوع: ${order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}\n\n${lines}\n\nالإجمالي: ${total} SA`;
 }
 
 function buildOrderPrintHtml(order, companyName, t, fmt, formatSaudiDate) {
@@ -39,16 +39,16 @@ function buildOrderPrintHtml(order, companyName, t, fmt, formatSaudiDate) {
   const rows = items.map((it) => {
     const parts = [it.size, it.packaging, it.unit].filter(Boolean);
     const name = (it.product?.nameAr || it.product?.nameEn || '—') + (parts.length > 0 ? ` (${parts.join(' / ')})` : '');
-    return `<tr><td style="padding:8px 10px;text-align:right;border:1px solid #ddd">${name}</td><td style="padding:8px 10px;text-align:center;border:1px solid #ddd">${it.quantity}</td><td style="padding:8px 10px;text-align:right;border:1px solid #ddd">${fmt(it.unitPrice ?? 0, 2)} ﷼</td><td style="padding:8px 10px;text-align:right;border:1px solid #ddd;font-weight:600">${fmt(it.amount ?? 0, 2)} ﷼</td></tr>`;
+    return `<tr><td style="padding:8px 10px;text-align:right;border:1px solid #ddd">${name}</td><td style="padding:8px 10px;text-align:center;border:1px solid #ddd">${it.quantity}</td><td style="padding:8px 10px;text-align:right;border:1px solid #ddd">${fmt(it.unitPrice ?? 0, 2)} SA</td><td style="padding:8px 10px;text-align:right;border:1px solid #ddd;font-weight:600">${fmt(it.amount ?? 0, 2)} SA</td></tr>`;
   }).join('');
   const orderType = order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal');
   const pettyRow = order.orderType === 'external' && order.pettyCashAmount != null
-    ? `<div style="margin-bottom:8px"><strong>${t('ordersPettyCashGiven')}:</strong> ${fmt(order.pettyCashAmount ?? 0, 2)} ﷼</div>`
+    ? `<div style="margin-bottom:8px"><strong>${t('ordersPettyCashGiven')}:</strong> ${fmt(order.pettyCashAmount ?? 0, 2)} SA</div>`
     : '';
   return `<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>${t('ordersPrintOrder')} - ${order.orderNumber}</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>body{font-family:'Cairo',Arial,sans-serif;padding:24px;direction:rtl;color:#1a1a1a;max-width:600px;margin:0 auto}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{padding:10px 12px;text-align:right;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}.header{border-bottom:2px solid #2563eb;padding-bottom:16px;margin-bottom:16px}.total-row{background:#f1f5f9;font-weight:700}</style></head><body>
 <div class="header"><div style="font-size:20px;font-weight:700;margin-bottom:4px">${companyName}</div><div style="font-size:14px;color:#64748b">${t('ordersViewOrder')} — ${order.orderNumber}</div></div>
 <div style="margin-bottom:16px"><div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:8px"><span><strong>${t('orderDate')}:</strong> ${formatSaudiDate(order.orderDate)}</span><span><strong>${t('orderType')}:</strong> ${orderType}</span></div>${pettyRow}</div>
-<table><thead><tr><th style="text-align:right">${t('product')}</th><th style="text-align:center">${t('quantity')}</th><th style="text-align:right">${t('unitPrice')}</th><th style="text-align:right">${t('total')}</th></tr></thead><tbody>${rows}</tbody><tfoot><tr class="total-row"><td colspan="3" style="text-align:right;padding:10px">${t('total')}</td><td style="padding:10px">${fmt(order.totalAmount ?? 0, 2)} ﷼</td></tr></tfoot></table>
+<table><thead><tr><th style="text-align:right">${t('product')}</th><th style="text-align:center">${t('quantity')}</th><th style="text-align:right">${t('unitPrice')}</th><th style="text-align:right">${t('total')}</th></tr></thead><tbody>${rows}</tbody><tfoot><tr class="total-row"><td colspan="3" style="text-align:right;padding:10px">${t('total')}</td><td style="padding:10px">${fmt(order.totalAmount ?? 0, 2)} SA</td></tr></tfoot></table>
 </body></html>`;
 }
 
@@ -190,7 +190,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         shrink: true,
         render: (v, o) =>
           o.orderType === 'external' && v != null ? (
-            <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{fmt(Number(v), 2)} ﷼</span>
+            <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{fmt(Number(v), 2)} SA</span>
           ) : (
             <span className="nx-cell-muted">—</span>
           ),
@@ -201,7 +201,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         numeric: true,
         align: 'center',
         shrink: true,
-        render: (v) => <span className="nx-cell-num font-bold whitespace-nowrap">{fmt(Number(v ?? 0), 2)} ﷼</span>,
+        render: (v) => <span className="nx-cell-num font-bold whitespace-nowrap">{fmt(Number(v ?? 0), 2)} SA</span>,
       },
       {
         key: 'id',
@@ -214,7 +214,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           return (
             <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
               {cumRem >= 0 ? '' : '−'}
-              {fmt(Math.abs(cumRem), 2)} ﷼
+              {fmt(Math.abs(cumRem), 2)} SA
             </Badge>
           );
         },
@@ -249,7 +249,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           {t('ordersFilteredTotal')}
         </td>
         <td className="nx-cell-num nx-cell-num--blue font-extrabold text-center text-[14px] py-[11px] px-[14px]">
-          {fmt(filteredTotal, 2)} ﷼
+          {fmt(filteredTotal, 2)} SA
         </td>
         <td className="text-center py-[11px] px-[14px]" />
         <td className="noorix-print-hide py-[11px] px-[14px]" />
@@ -279,12 +279,12 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
             </div>
             <div>
               <div className="text-[10px] text-noorix-muted mb-0.5">{t('orderTotalAmount')}</div>
-              <div className="text-[13px] font-bold nx-font-numbers text-noorix-navy">{fmt(Number(o.totalAmount ?? 0), 2)} ﷼</div>
+              <div className="text-[13px] font-bold nx-font-numbers text-noorix-navy">{fmt(Number(o.totalAmount ?? 0), 2)} SA</div>
             </div>
             {pettyGiven != null && (
               <div>
                 <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersPettyCashGiven')}</div>
-                <div className="text-[13px] nx-font-numbers text-noorix-blue">{fmt(pettyGiven, 2)} ﷼</div>
+                <div className="text-[13px] nx-font-numbers text-noorix-blue">{fmt(pettyGiven, 2)} SA</div>
               </div>
             )}
             {cumRem != null && (
@@ -292,7 +292,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                 <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersCumulativeRemaining')}</div>
                 <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
                   {cumRem >= 0 ? '' : '−'}
-                  {fmt(Math.abs(cumRem), 2)} ﷼
+                  {fmt(Math.abs(cumRem), 2)} SA
                 </Badge>
               </div>
             )}
@@ -376,7 +376,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           [t('unit')]: '',
           [t('quantity')]: '',
           [t('unitPrice')]: '',
-          [t('total')]: t('total') + ': ' + fmt(order.totalAmount ?? 0, 2) + ' ﷼',
+          [t('total')]: t('total') + ': ' + fmt(order.totalAmount ?? 0, 2) + ' SA',
         });
       }
       await exportToExcel(rows, `order-${order.orderNumber}.xlsx`);
@@ -467,7 +467,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
               ))}
             </div>
             <span className="text-[14px] font-bold nx-font-numbers ms-auto shrink-0">
-              {t('ordersFilteredTotal')}: {fmt(filteredTotal, 2)} ﷼
+              {t('ordersFilteredTotal')}: {fmt(filteredTotal, 2)} SA
             </span>
           </div>
         }
@@ -522,7 +522,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
             {viewingOrder.orderType === 'external' && viewingOrder.pettyCashAmount != null && (
               <div>
                 <div className="text-[11px] text-noorix-muted mb-1 uppercase tracking-[0.05em]">{t('ordersPettyCashGiven')}</div>
-                <div className="nx-cell-num nx-cell-num--blue text-[15px] font-semibold">{fmt(viewingOrder.pettyCashAmount ?? 0, 2)} ﷼</div>
+                <div className="nx-cell-num nx-cell-num--blue text-[15px] font-semibold">{fmt(viewingOrder.pettyCashAmount ?? 0, 2)} SA</div>
               </div>
             )}
           </div>
@@ -544,8 +544,8 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
                 ),
               },
               { key: 'quantity', label: t('quantity'), numeric: true, align: 'center' },
-              { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (v) => `${fmt(v ?? 0, 2)} ﷼` },
-              { key: 'amount',    label: t('total'),    numeric: true, render: (v) => <span className="font-semibold">{fmt(v ?? 0, 2)} ﷼</span> },
+              { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (v) => `${fmt(v ?? 0, 2)} SA` },
+              { key: 'amount',    label: t('total'),    numeric: true, render: (v) => <span className="font-semibold">{fmt(v ?? 0, 2)} SA</span> },
             ]}
             data={viewingOrder.items ?? []}
             tableMinWidth={480}
@@ -553,7 +553,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
             footerCells={
               <>
                 <td colSpan={4} className="font-bold text-end" style={{ padding: '10px 16px' }}>{t('total')}</td>
-                <td className="nx-cell-num font-bold text-[15px]" style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt(viewingOrder.totalAmount ?? 0, 2)} ﷼</td>
+                <td className="nx-cell-num font-bold text-[15px]" style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt(viewingOrder.totalAmount ?? 0, 2)} SA</td>
               </>
             }
           />

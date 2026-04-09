@@ -50,9 +50,9 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
     { label: t('status'),          value: invoice.status || '—' },
     { label: t('supplier'),        value: supplierName },
     { label: t('invoiceVaultColumn'), value: vaultSummary },
-    { label: t('net'),             value: invoice.netAmount != null ? `${fmt(invoice.netAmount, 2)} ﷼` : '—', highlight: 'var(--noorix-accent-green)' },
-    { label: t('tax'),             value: invoice.taxAmount != null ? `${fmt(invoice.taxAmount, 2)} ﷼` : '—', highlight: 'var(--noorix-accent-amber)' },
-    { label: t('total'),           value: invoice.totalAmount != null ? `${fmt(invoice.totalAmount, 2)} ﷼` : '—', highlight: 'var(--noorix-accent-blue)', bold: true },
+    { label: t('net'),             value: invoice.netAmount != null ? `${fmt(invoice.netAmount, 2)} SA` : '—', highlight: 'var(--noorix-accent-green)' },
+    { label: t('tax'),             value: invoice.taxAmount != null ? `${fmt(invoice.taxAmount, 2)} SA` : '—', highlight: 'var(--noorix-accent-amber)' },
+    { label: t('total'),           value: invoice.totalAmount != null ? `${fmt(invoice.totalAmount, 2)} SA` : '—', highlight: 'var(--noorix-accent-blue)', bold: true },
   ].filter(Boolean);
   return (
     <Modal open={!!invoice} onClose={onClose} size="sm" hideClose className="nx-modal--flush">
@@ -83,7 +83,7 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
                 return (
                   <li key={a.id} className="flex justify-between gap-2 text-[13px] text-noorix-text">
                     <span className="truncate">{vn || '—'}</span>
-                    <span className="ltr font-semibold shrink-0">{fmt(a.amount, 2)} ﷼</span>
+                    <span className="ltr font-semibold shrink-0">{fmt(a.amount, 2)} <span className="nx-sar">SA</span></span>
                   </li>
                 );
               })}
@@ -425,7 +425,7 @@ export default function InvoicesListScreen() {
               </div>
               <div className="noorix-exec-card__total">
                 <span className="noorix-exec-card__amount">{fmt(Number(serverInflow.total))}</span>
-                <span className="noorix-exec-card__currency">﷼</span>
+                <span className="noorix-exec-card__currency">SA</span>
               </div>
               <div className="noorix-exec-card__divider" />
               <div className="noorix-exec-card__footer">
@@ -435,11 +435,11 @@ export default function InvoicesListScreen() {
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('net')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverInflow.net))} ﷼</span>
+                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverInflow.net))} <span className="nx-sar">SA</span></span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('tax')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverInflow.tax))} ﷼</span>
+                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverInflow.tax))} <span className="nx-sar">SA</span></span>
                 </div>
               </div>
             </div>
@@ -457,7 +457,7 @@ export default function InvoicesListScreen() {
               </div>
               <div className="noorix-exec-card__total">
                 <span className="noorix-exec-card__amount">{fmt(Number(serverOutflow.total))}</span>
-                <span className="noorix-exec-card__currency">﷼</span>
+                <span className="noorix-exec-card__currency">SA</span>
               </div>
               <div className="noorix-exec-card__divider" />
               <div className="noorix-exec-card__footer">
@@ -467,11 +467,11 @@ export default function InvoicesListScreen() {
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('net')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverOutflow.net))} ﷼</span>
+                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverOutflow.net))} <span className="nx-sar">SA</span></span>
                 </div>
                 <div className="noorix-exec-card__stat">
                   <span className="noorix-exec-card__stat-label">{t('tax')}</span>
-                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverOutflow.tax))} ﷼</span>
+                  <span className="noorix-exec-card__stat-value">{fmt(Number(serverOutflow.tax))} <span className="nx-sar">SA</span></span>
                 </div>
               </div>
             </div>

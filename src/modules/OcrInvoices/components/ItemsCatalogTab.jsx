@@ -280,7 +280,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
         <div dir={dir}>
           {lowestPrice != null && (
             <p className="text-[12px] font-semibold mt-0 mb-3" style={{ color: 'var(--noorix-accent-green)' }}>
-              {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
+              {t('ocrLowestPrice')}: {lowestPrice.toLocaleString('en-US')} <span className="nx-sar">SA</span>
             </p>
           )}
 
@@ -327,7 +327,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                         </div>
                       </div>
                       <div className="font-bold text-[15px]" style={{ color: isLowest ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>
-                        {Number(h.price).toLocaleString('en-US')} {isAr ? 'ريال' : 'SAR'}
+                        {Number(h.price).toLocaleString('en-US')} <span className="nx-sar">SA</span>
                       </div>
                     </div>
                   );

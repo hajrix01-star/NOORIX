@@ -342,7 +342,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                 : 'bg-noorix-bg-muted text-noorix-muted';
 
           const periodLabel = filter?.label || String(year);
-          const currencySuffix = lang === 'ar' ? 'ر.س' : 'SAR';
+          const currencySuffix = 'SA';
 
           return (
             <div

@@ -260,15 +260,15 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         </div>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">الصافي</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(summary.totalNet)} ﷼</div>
+          <div className="noorix-summary-bar__value noorix-summary-bar__value--green">{fmt(summary.totalNet)} SA</div>
         </div>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">الضريبة</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(summary.totalTax)} ﷼</div>
+          <div className="noorix-summary-bar__value noorix-summary-bar__value--amber">{fmt(summary.totalTax)} SA</div>
         </div>
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">الإجمالي</div>
-          <div className="noorix-summary-bar__value">{fmt(summary.total)} ﷼</div>
+          <div className="noorix-summary-bar__value">{fmt(summary.total)} SA</div>
         </div>
       </div>
       <Button

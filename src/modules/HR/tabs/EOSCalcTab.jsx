@@ -172,15 +172,15 @@ export default function EOSCalcTab() {
                 <div class="row"><span class="row-label">ساعات العمل / يوم</span><span class="row-val">${hrFmt(parseWorkHours(emp?.workHours))}</span></div>
                 <div class="row"><span class="row-label">تاريخ التعيين</span><span class="row-val">${jd || '—'}</span></div>
                 <div class="row"><span class="row-label">تاريخ نهاية الخدمة</span><span class="row-val">${ed || '—'}</span></div>
-                <div class="row"><span class="row-label">آخر أجر فعلي</span><span class="row-val">${hrFmt(sal.toNumber())} ﷼</span></div>
+                <div class="row"><span class="row-label">آخر أجر فعلي</span><span class="row-val">${hrFmt(sal.toNumber())} SA</span></div>
                 <div class="row"><span class="row-label">سبب الانتهاء</span><span class="row-val">${t(terminationReason === 'employer' ? 'eosCalcReasonEmployer' : terminationReason === 'resignation' ? 'eosCalcReasonResignation' : terminationReason === 'article81' ? 'eosCalcReasonArticle81' : 'eosCalcReasonArticle80')}</span></div>
                 <div class="row"><span class="row-label">مدة الخدمة بالأيام</span><span class="row-val">${serviceDays}</span></div>
                 <div class="row"><span class="row-label">سنوات الخدمة</span><span class="row-val">${serviceYears.toDecimalPlaces(2).toString()} سنة</span></div>
-                <div class="row"><span class="row-label">نصف شهر × ${firstFiveYears.toDecimalPlaces(2)} سنة</span><span class="row-val">${hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())} ﷼</span></div>
-                ${remainingYears.gt(0) ? `<div class="row"><span class="row-label">شهر كامل × ${remainingYears.toDecimalPlaces(2)} سنة</span><span class="row-val">${hrFmt(sal.times(remainingYears).toNumber())} ﷼</span></div>` : ''}
-                <div class="row"><span class="row-label">المكافأة الكاملة</span><span class="row-val">${hrFmt(fullAward.toNumber())} ﷼</span></div>
+                <div class="row"><span class="row-label">نصف شهر × ${firstFiveYears.toDecimalPlaces(2)} سنة</span><span class="row-val">${hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())} SA</span></div>
+                ${remainingYears.gt(0) ? `<div class="row"><span class="row-label">شهر كامل × ${remainingYears.toDecimalPlaces(2)} سنة</span><span class="row-val">${hrFmt(sal.times(remainingYears).toNumber())} SA</span></div>` : ''}
+                <div class="row"><span class="row-label">المكافأة الكاملة</span><span class="row-val">${hrFmt(fullAward.toNumber())} SA</span></div>
                 <div class="row"><span class="row-label">نسبة الاستحقاق</span><span class="row-val">${eligibilityFactor.times(100).toDecimalPlaces(0)}%</span></div>
-                <div class="row row-highlight"><span class="row-label">مكافأة نهاية الخدمة</span><span class="row-val">${hrFmt(eosAmount.toNumber())} ﷼</span></div>
+                <div class="row row-highlight"><span class="row-label">مكافأة نهاية الخدمة</span><span class="row-val">${hrFmt(eosAmount.toNumber())} SA</span></div>
               </div>
 
               <div class="sep"></div>
@@ -211,7 +211,7 @@ export default function EOSCalcTab() {
               <div style="padding:0 16px 0 0">
                 <div style="font-weight:800;font-size:12px;color:#374151;margin-bottom:8px;text-align:center">تفاصيل البدلات المحتسبة في الأجر الفعلي</div>
                 <table>
-                  <thead><tr><th class="td-ar">البدل</th><th>القيمة (﷼)</th></tr></thead>
+                  <thead><tr><th class="td-ar">البدل</th><th>القيمة (SA)</th></tr></thead>
                   <tbody>${allowanceRowsAr}</tbody>
                 </table>
               </div>
@@ -294,7 +294,7 @@ export default function EOSCalcTab() {
               نصف شهر × {firstFiveYears.toDecimalPlaces(2).toString()} سنة (≤5)
             </span>
             <span className="noorix-result-panel__row-value">
-              {hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())} ﷼
+              {hrFmt(sal.times(firstFiveYears).times(0.5).toNumber())} <span className="nx-sar">SA</span>
             </span>
           </div>
           {remainingYears.gt(0) && (
@@ -303,13 +303,13 @@ export default function EOSCalcTab() {
                 شهر كامل × {remainingYears.toDecimalPlaces(2).toString()} سنة ({'>'}5)
               </span>
               <span className="noorix-result-panel__row-value">
-                {hrFmt(sal.times(remainingYears).toNumber())} ﷼
+                {hrFmt(sal.times(remainingYears).toNumber())} <span className="nx-sar">SA</span>
               </span>
             </div>
           )}
           <div className="noorix-result-panel__row">
             <span className="noorix-result-panel__row-label">{t('eosCalcFullAward')}</span>
-            <span className="noorix-result-panel__row-value">{hrFmt(fullAward.toNumber())} ﷼</span>
+            <span className="noorix-result-panel__row-value">{hrFmt(fullAward.toNumber())} <span className="nx-sar">SA</span></span>
           </div>
           <div className="noorix-result-panel__row">
             <span className="noorix-result-panel__row-label">{t('eosCalcEligibilityFactor')}</span>
@@ -317,7 +317,7 @@ export default function EOSCalcTab() {
           </div>
           <div className="noorix-result-panel__row noorix-result-panel__row--highlight">
             <span className="noorix-result-panel__row-label">{t('eosCalcResult')}</span>
-            <span className="noorix-result-panel__row-value">{hrFmt(eosAmount.toNumber())} ﷼</span>
+            <span className="noorix-result-panel__row-value">{hrFmt(eosAmount.toNumber())} <span className="nx-sar">SA</span></span>
           </div>
         </div>
         <div className="noorix-result-panel__note">

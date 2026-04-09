@@ -179,16 +179,16 @@ export default function DailySalesScreen() {
     const cc = s.customerCount || 0;
     const total = Number(s.totalAmount || 0);
     const avg = cc > 0 ? (total / cc) : 0;
-    const channels = (s.channels || []).map((ch) => `  • ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount, 2)} ﷼`).join('\n');
+    const channels = (s.channels || []).map((ch) => `  • ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount, 2)} SA`).join('\n');
     return [
       `*ملخص المبيعات اليومي*`,
       `الرقم: ${s.summaryNumber}`,
       `التاريخ: ${formatSaudiDate(s.transactionDate)}`,
       ``,
       `عدد العملاء: ${cc}`,
-      `إجمالي المبيعات: ${fmt(total, 2)} ﷼`,
-      `معدل الطلب لكل عميل: ${fmt(avg, 2)} ﷼`,
-      Number(s.cashOnHand) > 0 ? `المبلغ الموجود بالصندوق: ${fmt(s.cashOnHand, 2)} ﷼` : '',
+      `إجمالي المبيعات: ${fmt(total, 2)} SA`,
+      `معدل الطلب لكل عميل: ${fmt(avg, 2)} SA`,
+      Number(s.cashOnHand) > 0 ? `المبلغ الموجود بالصندوق: ${fmt(s.cashOnHand, 2)} SA` : '',
       ``, `*تفاصيل القنوات:*`, channels,
       s.notes ? `\nملاحظات: ${s.notes}` : '',
       ``, `— Noorix ERP`,
