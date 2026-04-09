@@ -1,4 +1,6 @@
 // Labels resolved via useTranslation in components (vaultTypeCash, vaultTypeBank, vaultTypeApp, paymentCash, etc.)
+import { VAULT_TYPE_COLORS, VAULT_TYPE_BG } from '../../../constants/kpiCardTheme';
+
 export const VAULT_TYPES = [
   { value: 'cash', labelKey: 'vaultTypeCash' },
   { value: 'bank', labelKey: 'vaultTypeBank' },
@@ -14,9 +16,6 @@ export const PAYMENT_METHODS = [
   { value: 'apple_pay', labelKey: 'applePay'        },
 ];
 
-export const TYPE_COLORS = { cash: '#16a34a', bank: '#2563eb', app: '#7c3aed' };
-export const TYPE_BG     = {
-  cash: 'rgba(22,163,74,0.1)',
-  bank: 'rgba(37,99,235,0.1)',
-  app:  'rgba(124,58,237,0.1)',
-};
+/** re-export من المصدر الموحّد kpiCardTheme.js */
+export const TYPE_COLORS = VAULT_TYPE_COLORS;
+export const TYPE_BG     = VAULT_TYPE_BG;

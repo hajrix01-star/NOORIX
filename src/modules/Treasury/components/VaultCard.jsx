@@ -2,7 +2,8 @@
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { VAULT_TYPES, PAYMENT_METHODS, TYPE_COLORS } from '../constants/treasuryConstants';
+import { VAULT_TYPES, PAYMENT_METHODS } from '../constants/treasuryConstants';
+import { VAULT_TYPE_COLORS } from '../../../constants/kpiCardTheme';
 import { Badge, Button, FmtNum, MetricCard } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
@@ -134,7 +135,7 @@ const VaultCard = memo(function VaultCard({
 
   const { isCustom, emoji: customEmoji } = parseVaultType(vault.type);
   const typeInfo    = !isCustom ? (VAULT_TYPES.find((x) => x.value === vault.type) || VAULT_TYPES[0]) : null;
-  const accentColor = !isCustom ? (TYPE_COLORS[vault.type] || 'var(--noorix-text-muted)') : 'var(--noorix-text-muted)';
+  const accentColor = !isCustom ? (VAULT_TYPE_COLORS[vault.type] || 'var(--noorix-text-muted)') : 'var(--noorix-text-muted)';
   const isArchived  = vault.isArchived;
   const balance     = Number(vault.balance ?? 0);
   const totalIn     = Number(vault.totalIn ?? 0);
