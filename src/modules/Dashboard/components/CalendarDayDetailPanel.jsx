@@ -49,7 +49,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
         <div className="rounded-lg flex-1 min-w-[90px] p-[10px]" style={{ background: 'var(--noorix-blue-8)' }}>
           <div className="text-noorix-muted mb-1 text-[10px]">{t('dashboardSalesTarget')}</div>
           <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{dayTarget != null ? fmt(dayTarget) : '—'}</div>
-          <div className="text-[9px] text-noorix-muted mt-0.5">SAR</div>
+          <div className="text-[9px] text-noorix-muted mt-0.5"><span className="nx-sar">SR</span></div>
         </div>
         <div className="rounded-lg flex-1 min-w-[90px] p-[10px]" style={{ background: achieved ? 'var(--noorix-green-12)' : 'var(--noorix-bg-muted)' }}>
           <div className="flex items-center gap-1 text-noorix-muted mb-1">
@@ -57,7 +57,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
             {achieved && <span className="text-[9px] font-bold px-1 rounded" style={{ background: 'var(--noorix-accent-green)', color: '#fff' }}>✓</span>}
           </div>
           <div className="text-[16px] font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)', color: achieved ? 'var(--noorix-accent-green)' : 'var(--noorix-text)' }}>{fmt(totalAmount)}</div>
-          <div className="text-[9px] text-noorix-muted mt-0.5">SAR</div>
+          <div className="text-[9px] text-noorix-muted mt-0.5"><span className="nx-sar">SR</span></div>
         </div>
       </div>
 

@@ -35,7 +35,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
           color: resNum < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)',
         }}>
           {resNum < 0 ? '−' : ''}{fmt(Math.abs(resNum))}
-          <span className="text-[12px] font-medium text-noorix-muted mr-1.5">SAR</span>
+          <span className="nx-sar">SR</span>
         </div>
       </div>
     </div>
@@ -70,7 +70,7 @@ export function OrdersSummaryCard({ summary = {}, cashSalesTotal = 0, isLoading 
           <div className="text-[13px] font-bold text-noorix-muted tracking-[0.04em]">
             {t('ordersSummaryCardTitle')}
           </div>
-          <span className="text-[11px] font-semibold text-noorix-muted bg-noorix-bg-muted px-2 py-0.5 rounded-md">SAR</span>
+          <span className="nx-sar">SR</span>
         </div>
         <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
           <SectionBlock

@@ -34,9 +34,9 @@ const MONTH_NAMES_EN = [
 
 function buildLabel(mode, selYear, selMonth, selDay, rangeStart, rangeEnd) {
   if (mode === 'month') return `${MONTH_NAMES_EN[selMonth - 1]} ${selYear}`;
-  if (mode === 'day')   return selDay.split('-').reverse().join('/');
-  const s = (rangeStart || '').split('-').reverse().join('/');
-  const e = (rangeEnd   || '').split('-').reverse().join('/');
+  if (mode === 'day')   return selDay.split('-').reverse().join('-');
+  const s = (rangeStart || '').split('-').reverse().join('-');
+  const e = (rangeEnd   || '').split('-').reverse().join('-');
   return `${s} — ${e}`;
 }
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SalesEntryModal — نافذة إدخال ملخص المبيعات اليومي
  * على الديسك توب: نافذة منبثقة مركزية
  * على الجوال: Bottom Sheet من الأسفل
@@ -122,7 +122,7 @@ export function SalesEntryModal({
             <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-green-12)' }}>
               <span className="text-[11px] text-noorix-muted mb-1">{t('total')}</span>
               <span className="text-[20px] font-black nx-font-numbers" style={{ color: 'var(--noorix-accent-green)' }}>{fmt(savedSummary.totalAmount)}</span>
-              <span className="text-[11px] text-noorix-muted mt-0.5">SAR</span>
+              <span className="nx-sar">SR</span>
             </div>
             <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-blue-8)' }}>
               <span className="text-[11px] text-noorix-muted mb-1">{t('customers')}</span>

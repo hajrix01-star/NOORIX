@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DashboardCalendarTab — تقويم حراري للمبيعات
  * أهداف احترافية | تحديد أيام متعددة → إضافة كأيام خاصة | ملاحظة لكل يوم
  */
@@ -328,7 +328,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
               </div>
             ) : (
               <div className="flex items-center gap-8 mb-[10px]">
-                <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{targets.overall != null ? fmt(targets.overall) : '—'} <span className="text-[11px] font-normal text-noorix-muted">SAR</span></span>
+                <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{targets.overall != null ? fmt(targets.overall) : '—'} <span className="nx-sar">SR</span></span>
                 <Button onClick={() => { setTargetInput(targets.overall != null ? String(targets.overall) : ''); setEditingTarget(true); }}>{t('edit')}</Button>
               </div>
             )}
@@ -407,7 +407,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                       background: bg,
                       border: isSelected ? '2px solid var(--noorix-accent-blue)' : selectedDay?.dateStr === dateStr ? '2px solid var(--noorix-accent-blue)' : achieved ? '2px solid #16a34a' : special ? `2px solid ${specialColor}` : '1px solid var(--noorix-border)',
                     }}
-                    title={`${dateStr}: ${fmt(amount)} SAR${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
+                    title={`${dateStr}: ${fmt(amount)} SR${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
                   >
                     <span className="text-[12px] font-bold text-noorix-text">{day}</span>
                     <span className="text-[11px]" style={{ fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
@@ -467,7 +467,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           </div>
           {targets.overall != null && (
             <div className="text-noorix-muted mt-2 border-t border-noorix-border pt-2 text-[10px]">
-              {t('dashboardSalesTarget')}: {fmt(targets.overall)} SAR
+              {t('dashboardSalesTarget')}: {fmt(targets.overall)} <span className="nx-sar">SR</span>
             </div>
           )}
         </div>
