@@ -241,8 +241,6 @@ export async function apiDelete(path) {
 }
 
 // ——— فحص الاتصال ———
-export function getApiBaseUrl() { return BASE_URL || '(dynamic)'; }
-
 export async function checkApiConnection() {
   try {
     const base = getBase();

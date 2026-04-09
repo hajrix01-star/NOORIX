@@ -78,7 +78,7 @@ export default function Drawer({
   return createPortal(
     <div
       className="fixed inset-0 z-[2000] bg-[rgba(8,16,32,0.5)] backdrop-blur-sm"
-      style={{ animation: 'nx-backdrop-in 0.2s ease' }}
+      style={{ animation: 'nx-backdrop-in 0.12s ease' }}
       role="presentation"
       onClick={closeOnBackdrop ? onClose : undefined}
     >

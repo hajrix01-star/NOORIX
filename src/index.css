@@ -87,12 +87,12 @@
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 @keyframes nx-drawer-in-start {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
 }
 @keyframes nx-drawer-in-end {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
 }
 [dir="rtl"] .nx-drawer-slide-start { animation: nx-drawer-in-start 0.28s cubic-bezier(0.4,0,0.2,1); }
 [dir="rtl"] .nx-drawer-slide-end   { animation: nx-drawer-in-end   0.28s cubic-bezier(0.4,0,0.2,1); }

@@ -17,7 +17,7 @@ export function useMediaQuery(query) {
   return useSyncExternalStore(
     (cb) => subscribeMediaQuery(query, cb),
     () => getMediaQuerySnapshot(query),
-    () => false,
+    () => getMediaQuerySnapshot(query),
   );
 }
 
