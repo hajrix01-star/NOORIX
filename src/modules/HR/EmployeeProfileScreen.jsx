@@ -591,10 +591,18 @@ export default function EmployeeProfileScreen() {
           rowNumberWidth="1%"
           innerPadding={8}
           columns={[
-            { key: 'totalAmount',     label: t('advanceAmount'),    numeric: true, width: '20%', render: (v) => <span className="nx-cell-num nx-cell-bold">{hrFmt(v)}</span> },
-            { key: 'transactionDate', label: t('transactionDate'),                width: '20%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
-            { key: 'status',          label: t('status'),                         width: '20%', render: (v) => <Badge {...Badge.fromStatus(v, ADVANCE_STATUS_MAP)} size="sm" /> },
-            { key: 'notes',           label: t('invoiceNotesColumn'),             width: '40%', render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
+            { key: 'totalAmount',     label: t('advanceAmount'),    numeric: true, width: '18%', render: (v) => <span className="nx-cell-num nx-cell-bold">{hrFmt(v)}</span> },
+            { key: 'transactionDate', label: t('transactionDate'),                width: '16%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'installmentCount', label: t('installmentInfo'),               width: '20%', render: (_, row) => {
+              if (!row.installmentCount || row.installmentCount <= 1) return <span className="nx-cell-muted-sm">—</span>;
+              return (
+                <span className="text-[12px] text-noorix-blue font-semibold ltr">
+                  {row.installmentCount} × {hrFmt(row.installmentAmount ?? 0)}
+                </span>
+              );
+            } },
+            { key: 'status',          label: t('status'),                         width: '16%', render: (v) => <Badge {...Badge.fromStatus(v, ADVANCE_STATUS_MAP)} size="sm" /> },
+            { key: 'notes',           label: t('invoiceNotesColumn'),             width: '30%', render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
           ]}
           data={advances}
           total={advances.length}

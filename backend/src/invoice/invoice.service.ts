@@ -219,6 +219,8 @@ export class InvoiceService {
       if (dto.paymentMethodId !== undefined) updateData.paymentMethodId = dto.paymentMethodId;
       if (dto.status          !== undefined) updateData.status          = dto.status;
       if (dto.notes           !== undefined) updateData.notes           = dto.notes;
+      if (dto.installmentCount  !== undefined) updateData.installmentCount  = dto.installmentCount;
+      if (dto.installmentAmount !== undefined) updateData.installmentAmount = new Prisma.Decimal(dto.installmentAmount);
 
       const newInvoice = await tx.invoice.update({ where: { id }, data: updateData });
 

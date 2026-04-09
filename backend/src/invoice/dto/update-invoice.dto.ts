@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, Min, IsIn, IsDateString, Allow } from 'class-validator';
+import { IsOptional, IsString, IsNumber, Min, IsIn, IsDateString, Allow, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateInvoiceDto {
@@ -67,4 +67,16 @@ export class UpdateInvoiceDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  installmentCount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  installmentAmount?: number;
 }

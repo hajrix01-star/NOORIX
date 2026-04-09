@@ -145,6 +145,15 @@ export default function AdvancesTab() {
           {hrFmt(row.remainingAmount || 0)}
         </span>
       ) },
+    { key: 'installmentCount', label: t('installmentInfo'), width: 110, minWidth: 100,
+      render: (_, row) => {
+        if (!row.installmentCount || row.installmentCount <= 1) return <span className="nx-cell-muted-sm">—</span>;
+        return (
+          <span className="text-[12px] text-noorix-blue font-semibold ltr">
+            {row.installmentCount} × {hrFmt(row.installmentAmount ?? 0)}
+          </span>
+        );
+      } },
     { key: 'settledAt', label: t('advanceSettlementDate'), width: 125, minWidth: 120,
       render: (v, row) => (
         <span className="nx-cell-muted-sm">
@@ -197,6 +206,8 @@ export default function AdvancesTab() {
     employeeName: r.employeeName || '—',
     amount: hrFmt(r.totalAmount),
     transactionDate: formatSaudiDate(r.transactionDate),
+    installmentCount: r.installmentCount > 1 ? r.installmentCount : '—',
+    installmentAmount: r.installmentCount > 1 ? hrFmt(r.installmentAmount ?? 0) : '—',
     settledAmount: hrFmt(r.settledAmountNum || 0),
     remainingAmount: hrFmt(r.remainingAmount || 0),
     settlementDate: r.settledAt ? formatSaudiDate(r.settledAt) : '—',
@@ -238,6 +249,11 @@ export default function AdvancesTab() {
             <div className="text-[13px] nx-font-numbers" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>{hrFmt(row.remainingAmount)}</div>
           </div>
         </div>
+        {row.installmentCount > 1 && (
+          <div className="flex items-center gap-1.5 mb-2 text-[12px] text-noorix-blue font-semibold ltr">
+            {row.installmentCount} {t('installmentInfo')} × {hrFmt(row.installmentAmount ?? 0)}
+          </div>
+        )}
         <div className="flex items-center justify-end">
           <HRActionsCell
             row={row}
@@ -361,20 +377,36 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
   const [amount, setAmount] = useState(String(Number(advance?.totalAmount ?? 0)));
   const [date, setDate] = useState(String(advance?.transactionDate || '').slice(0, 10));
   const [notes, setNotes] = useState(advance?.notes || '');
+  const [installmentCount, setInstallmentCount] = useState(
+    advance?.installmentCount > 1 ? String(advance.installmentCount) : '',
+  );
   const [saving, setSaving] = useState(false);
+
+  const parsedCount = parseInt(installmentCount, 10) || 1;
+  const installmentAmt = parsedCount > 1
+    ? Math.ceil((Number(amount || 0) / parsedCount) * 100) / 100
+    : null;
 
   async function submit() {
     const val = Number(amount || 0);
     if (val <= 0) return;
     setSaving(true);
     try {
-      const res = await updateInvoice(advance.id, {
+      const payload = {
         totalAmount: val,
         netAmount: val,
         taxAmount: 0,
         transactionDate: date,
         notes,
-      }, companyId);
+      };
+      if (parsedCount > 1) {
+        payload.installmentCount = parsedCount;
+        payload.installmentAmount = installmentAmt;
+      } else {
+        payload.installmentCount = 1;
+        payload.installmentAmount = val;
+      }
+      const res = await updateInvoice(advance.id, payload, companyId);
       rejectIfApiFailed(res, t('saveFailed'));
       onSaved?.();
     } catch (e) {
@@ -402,7 +434,25 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
       <div className="grid gap-2.5">
         <Input type="number" label={t('advanceAmount')} min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
         <Input type="date" label={t('advanceLoanDate')} value={date} onChange={(e) => setDate(e.target.value)} />
-        <Input multiline rows={3} label="ملاحظات" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <Input
+          type="number"
+          min="1"
+          max="120"
+          step="1"
+          label={t('installmentCount')}
+          value={installmentCount}
+          onChange={(e) => setInstallmentCount(e.target.value)}
+          placeholder="1"
+        />
+        {parsedCount > 1 && installmentAmt && (
+          <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-noorix-bg-muted border border-noorix-border">
+            <span className="text-[13px] text-noorix-muted">{t('installmentAmount')}</span>
+            <span className="text-[15px] font-bold text-noorix-blue ltr">
+              {installmentAmt.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ﷼
+            </span>
+          </div>
+        )}
+        <Input multiline rows={3} label={t('notes')} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
     </AdaptiveSheet>
   );
