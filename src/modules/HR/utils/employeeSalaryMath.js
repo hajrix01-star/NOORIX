@@ -1,16 +1,24 @@
 /**
  * ثوابت ومعادلات الراتب الشهري (متوافقة مع المادة 107 في الواجهة).
  *
- * المعيار: 8 ساعات/يوم. فوقها = أوفر تايم.
- * أيام ضرب الأوفر شهرياً تختلف حسب الاتفاق: غالباً 26 (شهر 30 ناقص ~4 أيام راحة)
- * أو 30 (دوام كامل الشهر) — تُخزَّن لكل موظف في workSchedule كـ [NOORIX_WD:26] أو :30.
+ * المعيار القانوني (م107): 8 ساعات/يوم، 26 يوم عمل/شهر → 208 ساعة معيارية.
+ * 26 يوم = 30 يوماً - ~4 أيام راحة أسبوعية، وهو المعيار الرسمي المعتمد في
+ * حاسبات نظام العمل السعودي لاحتساب أجر الساعة.
+ *
+ * أجر الساعة = الأساسي ÷ 208   (الأساسي فقط، البدلات لا تدخل في الأوفر تايم — م107)
+ * أجر OT     = أجر الساعة × 1.5
+ *
+ * أيام > 26 تُعدّ «أيام راحة» — كامل ساعاتها تُحسب أوفر تايم.
+ * أيام العمل تُخزَّن لكل موظف في workSchedule كـ [NOORIX_WD:26] أو :30 إلخ.
  */
 import Decimal from 'decimal.js';
 
 export const SAUDI_STANDARD_HOURS = 8;
-export const SAUDI_DAYS_PER_MONTH = 30;
+export const SAUDI_DAYS_PER_MONTH = 30;           // للحسابات اليومية العامة (نهاية خدمة، خصم إجازة)
+export const SAUDI_WORK_DAYS_STANDARD = 26;       // أيام العمل المعيارية (معيار نظام العمل م107)
+export const SAUDI_STANDARD_MONTHLY_HOURS = SAUDI_WORK_DAYS_STANDARD * SAUDI_STANDARD_HOURS; // 208
 
-/** افتراض عند عدم وجود وسوم: نمط «4 أيام إجازة بالشهر» ≈ 26 يوم عمل */
+/** افتراض عند عدم وجود وسوم: 26 يوم عمل شهرياً */
 export const DEFAULT_OVERTIME_WORK_DAYS = 26;
 /** اسم قديم للتوافق مع الاستيرادات */
 export const WORK_DAYS_PER_MONTH = DEFAULT_OVERTIME_WORK_DAYS;
@@ -69,22 +77,33 @@ export function baseSalaryComponentsDecimal(emp) {
     .plus(emp?.otherAllowance ?? 0);
 }
 
+/**
+ * حساب أوفر تايم الموظف الشهري وفق م107:
+ *   أجر الساعة = الأساسي ÷ 208
+ *   أجر OT     = أجر الساعة × 1.5
+ *
+ * أيام العمل الإجمالية مقسّمة إلى:
+ *   - أيام عادية  (≤26): الساعات الزائدة عن 8 تُحسب OT
+ *   - أيام الراحة (>26): كامل ساعاتها تُحسب OT
+ */
 export function overtimePayDecimal(emp, customTotal = 0) {
   const workDays = parseOvertimeWorkDaysPerMonth(emp);
-  const basic = new Decimal(emp?.basicSalary ?? 0);
-  const housing = new Decimal(emp?.housingAllowance ?? 0);
-  const transport = new Decimal(emp?.transportAllowance ?? 0);
-  const other = new Decimal(emp?.otherAllowance ?? 0);
-  const ct = new Decimal(customTotal || 0);
-  const actualWage = basic.plus(housing).plus(transport).plus(other).plus(ct);
-  const overtimeHoursPerDay = Math.max(0, parseWorkHours(emp?.workHours) - SAUDI_STANDARD_HOURS);
-  if (overtimeHoursPerDay <= 0) return new Decimal(0);
-  const actualHourlyRate = actualWage.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
-  const basicHourlyRate = basic.div(SAUDI_DAYS_PER_MONTH).div(SAUDI_STANDARD_HOURS);
-  return actualHourlyRate
-    .plus(basicHourlyRate.times(0.5))
-    .times(overtimeHoursPerDay)
-    .times(workDays);
+  const hours    = parseWorkHours(emp?.workHours);
+  const basic    = new Decimal(emp?.basicSalary ?? 0);
+
+  const regularWorkDays     = Math.min(workDays, SAUDI_WORK_DAYS_STANDARD);
+  const restDays            = Math.max(0, workDays - SAUDI_WORK_DAYS_STANDARD);
+  const overtimeHoursPerDay = Math.max(0, hours - SAUDI_STANDARD_HOURS);
+
+  const totalDailyOT = overtimeHoursPerDay * regularWorkDays;
+  const totalRestOT  = restDays * hours;
+  const totalOT      = totalDailyOT + totalRestOT;
+
+  if (totalOT <= 0 || basic.lte(0)) return new Decimal(0);
+
+  const hourlyRate   = basic.div(SAUDI_STANDARD_MONTHLY_HOURS); // أساسي / 208
+  const overtimeRate = hourlyRate.times(1.5);
+  return overtimeRate.times(totalOT);
 }
 
 export function overtimePay(emp, customTotal = 0) {
@@ -114,32 +133,77 @@ export function fixedMonthlyPayPackage(emp, customTotal = 0) {
 }
 
 /**
- * عكس حاسبة الراتب: إيجاد الراتب الأساسي الذي يحقق إجمالياً شهرياً (أساسي + بدلات + مخصصة + أوفر تايم)
- * بنفس معادلة تبويب حاسبة الرواتب.
+ * تفصيل الأوفر تايم الشهري (للعرض في الحاسبة).
+ * يُعيد: { totalDailyOT, totalRestOT, totalOT, dailyOTValue, restOTValue, totalOTValue, hourlyRate, overtimeRate }
+ */
+export function overtimeBreakdownDecimal(emp, customTotal = 0) {
+  const workDays = parseOvertimeWorkDaysPerMonth(emp);
+  const hours    = parseWorkHours(emp?.workHours);
+  const basic    = new Decimal(emp?.basicSalary ?? 0);
+
+  const regularWorkDays     = Math.min(workDays, SAUDI_WORK_DAYS_STANDARD);
+  const restDays            = Math.max(0, workDays - SAUDI_WORK_DAYS_STANDARD);
+  const overtimeHoursPerDay = Math.max(0, hours - SAUDI_STANDARD_HOURS);
+
+  const totalDailyOT = overtimeHoursPerDay * regularWorkDays;
+  const totalRestOT  = restDays * hours;
+  const totalOT      = totalDailyOT + totalRestOT;
+
+  const hourlyRate   = basic.gt(0) ? basic.div(SAUDI_STANDARD_MONTHLY_HOURS) : new Decimal(0);
+  const overtimeRate = hourlyRate.times(1.5);
+  const dailyOTValue = overtimeRate.times(totalDailyOT);
+  const restOTValue  = overtimeRate.times(totalRestOT);
+  const totalOTValue = overtimeRate.times(totalOT);
+
+  return { regularWorkDays, restDays, overtimeHoursPerDay, totalDailyOT, totalRestOT, totalOT, hourlyRate, overtimeRate, dailyOTValue, restOTValue, totalOTValue };
+}
+
+/**
+ * عكس حاسبة الراتب: إيجاد الراتب الأساسي الذي يحقق إجمالياً شهرياً
+ * (أساسي + بدلات + أوفر تايم) وفق م107:
  *
- * @param {object} emp حقول الموظف (basicSalary الحالي لا يُستخدم إلا للتحقق الاختياري؛ يُعتمد workHours وworkSchedule والبدلات)
- * @param {number} customTotal مجموع البدلات المخصصة
- * @param {number|string|Decimal} targetTotal الإجمالي الشهري المستهدف (شامل الأوفر تايم)
+ *   الإجمالي = أساسي + بدلات + (أساسي/208 × 1.5 × إجمالي_ساعات_OT)
+ *   → أساسي  = (الإجمالي − بدلات) ÷ (1 + 1.5 × OT_ساعات / 208)
+ *
+ * @param {object} emp       حقول الموظف (workHours, workSchedule, housingAllowance, transportAllowance, otherAllowance)
+ * @param {number} customTotal  مجموع البدلات المخصصة
+ * @param {number|string|Decimal} targetTotal  الإجمالي الشهري المستهدف (شامل الأوفر تايم)
  * @returns {{ basic: number, inverseWarning: boolean }}
  */
 export function basicSalaryFromTargetTotalInclusiveOvertime(emp, customTotal, targetTotal) {
   const totalTarget = new Decimal(targetTotal || 0);
-  const hours = Math.max(1, Math.min(12, parseWorkHours(emp?.workHours)));
+  const hours    = Math.max(1, Math.min(12, parseWorkHours(emp?.workHours)));
   const workDays = Math.max(1, parseOvertimeWorkDaysPerMonth(emp));
-  const housing = new Decimal(emp?.housingAllowance ?? 0);
+
+  const housing   = new Decimal(emp?.housingAllowance   ?? 0);
   const transport = new Decimal(emp?.transportAllowance ?? 0);
-  const other = new Decimal(emp?.otherAllowance ?? 0);
-  const custom = new Decimal(customTotal || 0);
-  const editableAllowances = housing.plus(transport).plus(other);
-  const totalAllowances = editableAllowances.plus(custom);
+  const other     = new Decimal(emp?.otherAllowance     ?? 0);
+  const custom    = new Decimal(customTotal || 0);
+  const totalAllowances = housing.plus(transport).plus(other).plus(custom);
+
+  const regularWorkDays     = Math.min(workDays, SAUDI_WORK_DAYS_STANDARD);
+  const restDays            = Math.max(0, workDays - SAUDI_WORK_DAYS_STANDARD);
   const overtimeHoursPerDay = Math.max(0, hours - SAUDI_STANDARD_HOURS);
-  const overtimeFactor = new Decimal(overtimeHoursPerDay)
-    .times(workDays)
-    .div(SAUDI_DAYS_PER_MONTH * SAUDI_STANDARD_HOURS);
-  const basicNumerator = totalTarget.minus(totalAllowances.times(new Decimal(1).plus(overtimeFactor)));
-  const basicDenominator = new Decimal(1).plus(overtimeFactor.times(1.5));
-  const basic = Decimal.max(basicNumerator.div(basicDenominator), 0);
-  const inverseWarning = totalTarget.gt(0) && basicNumerator.lt(0);
+  const totalDailyOT        = overtimeHoursPerDay * regularWorkDays;
+  const totalRestOT         = restDays * hours;
+  const totalOT             = totalDailyOT + totalRestOT;
+
+  // بدون أوفر تايم: الأساسي = الإجمالي − البدلات
+  if (totalOT === 0) {
+    const basic = Decimal.max(totalTarget.minus(totalAllowances), 0);
+    return {
+      basic: basic.toDecimalPlaces(2).toNumber(),
+      inverseWarning: totalTarget.gt(0) && totalTarget.lte(totalAllowances) && totalAllowances.gt(0),
+    };
+  }
+
+  // مع أوفر تايم: أساسي = (إجمالي − بدلات) ÷ (1 + 1.5 × OT / 208)
+  const overtimeFactor = new Decimal(1.5).times(totalOT).div(SAUDI_STANDARD_MONTHLY_HOURS);
+  const numerator      = totalTarget.minus(totalAllowances);
+  const denominator    = new Decimal(1).plus(overtimeFactor);
+  const basic          = Decimal.max(numerator.div(denominator), 0);
+  const inverseWarning = totalTarget.gt(0) && numerator.lt(0);
+
   return {
     basic: basic.toDecimalPlaces(2).toNumber(),
     inverseWarning,
