@@ -26,7 +26,7 @@ export function useAdaptiveSheetNarrow(breakpointPx = ADAPTIVE_SHEET_BREAKPOINT_
   return useSyncExternalStore(
     (cb) => subscribeNarrow(breakpointPx, cb),
     () => getNarrowSnapshot(breakpointPx),
-    () => getNarrowSnapshot(breakpointPx),
+    () => false,
   );
 }
 

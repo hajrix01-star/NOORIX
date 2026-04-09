@@ -118,39 +118,3 @@ export function clearAuth() {
   _companyId = '';
 }
 
-/**
- * يُسجّل مستمعاً لحدث `storage` لمزامنة تسجيل الخروج بين التبويبات.
- * عند تسجيل الخروج في تبويب آخر (حذف TOKEN_KEY من sessionStorage) يُستدعى onLogout.
- * ملاحظة: sessionStorage لا يُشارَك بين التبويبات، لكن localStorage يُطلق حدث storage.
- * لذلك نُخزّن علامة logout في localStorage مؤقتاً ونحذفها فوراً.
- * @param {Function} onLogout
- * @returns {Function} دالة لإلغاء الاشتراك
- */
-export function initAuthStorageListener(onLogout) {
-  if (typeof window === 'undefined') return () => {};
-  const LOGOUT_FLAG = 'noorix-logout-event';
-  const handler = (e) => {
-    if (e.key === LOGOUT_FLAG && e.newValue === '1') {
-      window.localStorage.removeItem(LOGOUT_FLAG);
-      onLogout?.();
-    }
-  };
-  window.addEventListener('storage', handler);
-  return () => window.removeEventListener('storage', handler);
-}
-
-/**
- * يُبثّ إشارة logout لكل التبويبات المفتوحة.
- * يُستدعى من clearAuth عند تسجيل الخروج.
- */
-export function broadcastLogout() {
-  try {
-    const ls = safeLocalStorage();
-    if (ls) {
-      ls.setItem('noorix-logout-event', '1');
-      setTimeout(() => ls.removeItem('noorix-logout-event'), 500);
-    }
-  } catch {
-    // تجاهل أخطاء localStorage في بيئات مقيّدة
-  }
-}
