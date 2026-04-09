@@ -63,10 +63,10 @@ export function getRowTone(row) {
     return { bg, stickyBg: bg, accent, isSummary: true, borderTop };
   }
   if (row.groupKey === 'purchases') {
-    return { bg: row.rowType === 'group' ? 'rgba(239,68,68,0.08)' : 'rgba(239,68,68,0.03)', stickyBg: row.rowType === 'group' ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.98)', accent: '#dc2626', isSummary: false };
+    return { bg: row.rowType === 'group' ? 'rgba(239,68,68,0.09)' : 'rgba(239,68,68,0.03)', stickyBg: row.rowType === 'group' ? 'rgba(239,68,68,0.09)' : 'rgba(255,255,255,0.98)', accent: '#dc2626', isSummary: false };
   }
   if (row.groupKey === 'expenses') {
-    return { bg: row.rowType === 'group' ? 'rgba(220,38,38,0.09)' : 'rgba(220,38,38,0.035)', stickyBg: row.rowType === 'group' ? 'rgba(220,38,38,0.09)' : 'rgba(255,255,255,0.98)', accent: '#b91c1c', isSummary: false };
+    return { bg: row.rowType === 'group' ? 'rgba(217,119,6,0.09)' : 'rgba(217,119,6,0.035)', stickyBg: row.rowType === 'group' ? 'rgba(217,119,6,0.09)' : 'rgba(255,255,255,0.98)', accent: '#b45309', isSummary: false };
   }
   if (row.rowType === 'group') {
     return { bg: 'rgba(37,99,235,0.04)', stickyBg: 'rgba(37,99,235,0.04)', accent: '#2563eb', isSummary: false };
