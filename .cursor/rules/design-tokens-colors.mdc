@@ -1,0 +1,111 @@
+---
+description: نظام الألوان الموحّد — باليت Design Tokens وقواعد الاستخدام في كل السياقات
+alwaysApply: true
+---
+
+# نظام الألوان الموحّد — Noorix Design Tokens
+
+## المصدر الوحيد الحقيقي — `src/index.css` `@theme`
+
+```css
+--color-nx-sales:      #185FA5;   /* مبيعات · خزينة بنكية           */
+--color-nx-profit:     #3B6D11;   /* ربح إجمالي · خزينة نقدية · إيداعات */
+--color-nx-net-profit: #854F0B;   /* صافي ربح                        */
+--color-nx-purchases:  #888780;   /* مشتريات                         */
+--color-nx-expenses:   #A32D2D;   /* مصاريف · سحوبات                 */
+--color-nx-app:        #c2410c;   /* خزينة تطبيق · رقمي             */
+```
+
+**أي تغيير في لون = يُعدَّل في هذا الملف فقط.**
+
+---
+
+## كيف تستخدم اللون حسب السياق
+
+### 1. MetricCard / كروت الكروت (CSS variable)
+
+```jsx
+// ✅ أمثلة صحيحة
+<MetricCard color="var(--color-nx-sales)">
+<MetricCard color="var(--color-nx-profit)">
+<MetricCard color={KPI_CARD_SPARKLINE_COLORS.sales}>
+<MetricCard color={VAULT_TYPE_COLORS.cash}>
+
+// ❌ ممنوع — hex مباشر في MetricCard
+<MetricCard color="#16a34a">
+```
+
+### 2. Recharts (stroke / fill) — hex إلزامي
+
+```jsx
+import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
+
+// ✅ صحيح
+stroke={KPI_RECHARTS_COLORS.sales}       // #185FA5
+fill={VAULT_RECHARTS_COLORS.cash}        // #3B6D11
+
+// ❌ ممنوع — hex عشوائي لا علاقة له بالباليت
+stroke="#16a34a"
+fill="#2563eb"
+
+// ❌ ممنوع — var() لا يعمل كـ Recharts prop
+stroke="var(--color-nx-sales)"
+```
+
+### 3. Tailwind classes
+
+```jsx
+// ✅ تتولّد تلقائياً من @theme
+className="text-nx-sales bg-nx-profit border-nx-expenses"
+```
+
+### 4. inline styles مع Alpha
+
+```jsx
+// ✅ hex + إلحاق alpha (18 = ~10%)
+style={{ background: `${KPI_RECHARTS_COLORS.sales}18` }}
+
+// ❌ مكسور — var() لا يقبل إلحاق alpha
+style={{ background: `var(--color-nx-sales)18` }}
+
+// ✅ بديل var() مع alpha
+style={{ background: 'color-mix(in srgb, var(--color-nx-sales) 10%, transparent)' }}
+```
+
+---
+
+## الخريطة الدلالية (مرجع سريع)
+
+| السياق | اللون |
+|---|---|
+| مبيعات / إيرادات / خزينة بنكية | `sales` |
+| ربح إجمالي / نقدي / إيداعات | `profit` |
+| صافي الربح | `net-profit` |
+| مشتريات | `purchases` |
+| مصاريف / سحوبات / سالب | `expenses` |
+| تطبيق / رقمي / App vault | `app` |
+
+---
+
+## ملف المرآة — `src/constants/kpiCardTheme.js`
+
+يصدّر 4 ثوابت فقط:
+- `KPI_CARD_SPARKLINE_COLORS` → `var(--color-nx-*)` للكروت
+- `VAULT_TYPE_COLORS` → `var(--color-nx-*)` لخزائن MetricCard
+- `KPI_RECHARTS_COLORS` → hex للرسوم البيانية KPI
+- `VAULT_RECHARTS_COLORS` → hex للرسوم البيانية الخزائن
+
+**عند تغيير لون في `@theme`: حدّث الـ hex المقابل في هذا الملف.**
+
+---
+
+## ممنوعات
+
+```jsx
+// ❌ ألوان قديمة غير موحّدة
+'#16a34a'  '#2563eb'  '#d97706'  '#7c3aed'  '#65a30d'  '#ea580c'
+var(--noorix-accent-green)  var(--noorix-accent-blue)  var(--noorix-accent-red)
+
+// ✅ البديل دائماً
+KPI_RECHARTS_COLORS.*  أو  VAULT_RECHARTS_COLORS.*  أو  var(--color-nx-*)
+```
