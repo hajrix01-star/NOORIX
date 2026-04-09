@@ -18,6 +18,7 @@ import {
   getInvoices,
   getDeductions,
   getMovements,
+  getEmployeePayrollItems,
   uploadDocumentFile,
   downloadDocument,
   deleteEmployee,
@@ -174,6 +175,16 @@ export default function EmployeeProfileScreen() {
     enabled: !!companyId && !!id,
   });
 
+  const { data: payrollItems = [] } = useQuery({
+    queryKey: ['payroll-run-items', companyId, id],
+    queryFn: async () => {
+      const res = await getEmployeePayrollItems(companyId, id);
+      if (!res?.success) return [];
+      return Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
+    },
+    enabled: !!companyId && !!id,
+  });
+
   const careerTableRows = useMemo(() => {
     const labelFor = (mt) => {
       if (mt === 'promotion') return t('movementTypePromotion');
@@ -301,6 +312,7 @@ export default function EmployeeProfileScreen() {
     queryClient.invalidateQueries({ queryKey: ['invoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['deductions', companyId, id] });
     queryClient.invalidateQueries({ queryKey: ['movements', companyId, id] });
+    queryClient.invalidateQueries({ queryKey: ['payroll-run-items', companyId, id] });
   };
 
   const handleUploadDoc = async (e) => {
@@ -549,6 +561,47 @@ export default function EmployeeProfileScreen() {
           ]}
           data={financialRecords}
           total={financialRecords.length}
+          page={1}
+          pageSize={50}
+          emptyMessage={t('noDataInPeriod')}
+        />
+      </div>
+
+      {/* سجل الرواتب */}
+      <div className="noorix-surface-card overflow-hidden employee-profile-layout__wide">
+        <div className="nx-section-header">
+          <span className="nx-section-header__title">{t('hrTabPayroll')}</span>
+        </div>
+        <SmartTable
+          compact
+          showRowNumbers
+          rowNumberWidth="1%"
+          innerPadding={8}
+          columns={[
+            { key: 'payrollRun.runNumber', label: t('payrollRunNumber'), width: '14%',
+              render: (_, row) => <span className="nx-cell-num nx-cell-accent text-[12px]">{row.payrollRun?.runNumber || '—'}</span> },
+            { key: 'payrollRun.payrollMonth', label: t('payrollMonth'), width: '14%',
+              render: (_, row) => <span className="nx-cell-muted-sm">{formatSaudiDate(row.payrollRun?.payrollMonth)}</span> },
+            { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: '12%',
+              render: (v) => <span className="nx-cell-num">{hrFmt(v)}</span> },
+            { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: '11%',
+              render: (v) => <span className="nx-cell-num" style={{ color: Number(v) > 0 ? 'var(--noorix-accent-red)' : undefined }}>{hrFmt(v)}</span> },
+            { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: '11%',
+              render: (v) => <span className="nx-cell-num" style={{ color: Number(v) > 0 ? 'var(--color-noorix-amber)' : undefined }}>{hrFmt(v)}</span> },
+            { key: 'netSalary', label: t('netSalary'), numeric: true, width: '12%',
+              render: (v) => <span className="nx-cell-num font-bold text-noorix-green">{hrFmt(v)}</span> },
+            { key: 'payrollRun.status', label: t('payrollStatus'), width: '12%',
+              render: (_, row) => {
+                const s = row.payrollRun?.status;
+                return <span className={`text-[11px] font-semibold ${s === 'completed' ? 'text-noorix-green' : 'text-noorix-amber'}`}>
+                  {s === 'completed' ? (t('payrollStatusCompleted') || 'مكتملة') : (t('payrollStatusDraft') || 'مسودة')}
+                </span>;
+              } },
+            { key: 'notes', label: t('invoiceNotesColumn'), width: '14%',
+              render: (v) => <span className="nx-cell-ellipsis text-[11px]" title={v || ''}>{v || '—'}</span> },
+          ]}
+          data={payrollItems}
+          total={payrollItems.length}
           page={1}
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}

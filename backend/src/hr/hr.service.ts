@@ -89,6 +89,23 @@ export class HRService {
     });
   }
 
+  async findPayrollRunItemsByEmployee(companyId: string, employeeId: string) {
+    return this.prisma.payrollRunItem.findMany({
+      where: { employeeId, payrollRun: { companyId } },
+      include: {
+        payrollRun: {
+          select: {
+            id: true,
+            runNumber: true,
+            payrollMonth: true,
+            status: true,
+          },
+        },
+      },
+      orderBy: { payrollRun: { payrollMonth: 'desc' } },
+    });
+  }
+
   async findPayrollRunById(id: string, companyId: string) {
     const run = await this.prisma.payrollRun.findFirst({
       where: { id, companyId },

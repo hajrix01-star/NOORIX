@@ -57,6 +57,17 @@ export class HRController {
   // PAYROLL RUNS
   // ══════════════════════════════════════════════════════════
 
+  @Get('payroll-run-items')
+  @RequirePermission('HR_READ')
+  findPayrollRunItemsByEmployee(
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+    @Query('employeeId') employeeId: string,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    return this.hrService.findPayrollRunItemsByEmployee(companyId, employeeId);
+  }
+
   @Get('payroll-runs')
   @RequirePermission('HR_READ')
   findPayrollRuns(

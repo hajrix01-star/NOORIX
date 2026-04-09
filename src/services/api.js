@@ -869,6 +869,9 @@ export async function getPayrollRuns(companyId, year) {
   if (year) params.year = String(year);
   return apiGet('/api/v1/hr/payroll-runs', params);
 }
+export async function getEmployeePayrollItems(companyId, employeeId) {
+  return apiGet('/api/v1/hr/payroll-run-items', { companyId, employeeId });
+}
 export async function getPayrollRun(id, companyId) {
   return apiGet(`/api/v1/hr/payroll-runs/${id}`, { companyId });
 }
