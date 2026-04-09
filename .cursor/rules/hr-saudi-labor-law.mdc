@@ -1,0 +1,81 @@
+---
+description: قوانين نظام العمل السعودي المطبقة في وحدة HR — الراتب والأوفر تايم ونهاية الخدمة
+globs: src/modules/HR/**
+alwaysApply: false
+---
+
+# HR — نظام العمل السعودي (المعتمد رسمياً)
+
+## المادة 107 — الأوفر تايم
+
+**المصدر:** بوابة وزارة الموارد البشرية الرسمية  
+**النص:** "يُدفع للعامل أجرٌ بأجر يوازي أجر الساعة مضافاً إليه 50% من أجره الأساسي"
+
+```js
+// ✅ المعادلة الصحيحة (employeeSalaryMath.js)
+// أجر_ساعة_فعلي  = (أساسي + بدلات) ÷ 208
+// أجر_ساعة_أساسي = أساسي ÷ 208
+// أجر_ساعة_OT    = أجر_ساعة_فعلي + 50% × أجر_ساعة_أساسي
+const overtimeHourlyRate = actual.plus(basic.times(0.5)).div(208);
+
+// ❌ خاطئ — لا تستخدم هذا
+const overtimeRate = basic.div(208).times(1.5); // يتجاهل البدلات
+const overtimeRate = actual.div(240).times(1.5); // 240 خاطئ
+```
+
+**ثوابت ثابتة:**
+- `208 ساعة` = 26 يوم عمل × 8 ساعات (المعيار م107)
+- أيام > 26 = أيام راحة — كامل ساعاتها أوفر تايم
+- البدلات **تدخل** في أجر الساعة الفعلي، الـ 50% على الأساسي **فقط**
+
+**الحساب العكسي** (من الإجمالي للأساسي):
+```js
+// K = totalOT_hours / 208
+// أساسي = [إجمالي − بدلات×(1+K)] ÷ (1 + 1.5K)
+const K = new Decimal(totalOT).div(208);
+const basic = totalTarget.minus(allowances.times(new Decimal(1).plus(K)))
+                         .div(new Decimal(1).plus(new Decimal(1.5).times(K)));
+```
+
+---
+
+## المادة 84 — مكافأة نهاية الخدمة (الحساب)
+
+```js
+// ✅ صحيح
+const serviceYears = new Decimal(serviceDays).div(365); // ÷365 وليس ÷360
+// أيام الخدمة = فرق التاريخين بدون +1
+const serviceDays = Math.floor((end - start) / DAY_MS); // بدون +1
+
+const firstFive    = Decimal.min(serviceYears, 5);
+const remaining    = Decimal.max(serviceYears.minus(5), 0);
+const fullAward    = salary.times(firstFive).times(0.5)  // نصف شهر × 5
+                           .plus(salary.times(remaining));  // شهر كامل × ما زاد
+
+// ❌ خاطئ
+Math.floor((end - start) / DAY_MS) + 1  // +1 يُضخم المدة
+serviceDays / 360                         // 360 للأجر اليومي م61 فقط
+```
+
+**قاعدة الراتب:** أساسي + بدلات ثابتة. **الأوفر تايم لا يدخل في EOS.**
+
+---
+
+## المادة 85 — نسبة الاستحقاق عند الاستقالة
+
+```js
+// ✅ صحيح — الحدود الدقيقة
+if (reason === 'employer' || reason === 'article81' ||
+    reason === 'force_majeure' || reason === 'maternity') return 1;    // 100%
+if (serviceYears < 2)   return 0;      // صفر
+if (serviceYears <= 5)  return 1/3;    // ثلث  ("لا تزيد على خمس" — يشمل 5 بالضبط)
+if (serviceYears < 10)  return 2/3;    // ثلثان
+return 1;                               // 100% (10 سنوات فأكثر)
+
+// ❌ خاطئ — كان يمنح ثلثين عند 5 سنوات بالضبط
+if (serviceYears < 5) return 1/3;  // خطأ — يستثني 5 سنوات
+```
+
+**الحالات الاستثنائية — مكافأة كاملة حتى عند الاستقالة (م85):**
+- `force_majeure` — قوة قاهرة خارجة عن إرادة العامل
+- `maternity` — عاملة أنهت العقد خلال 6 أشهر من زواجها أو 3 من وضعها
