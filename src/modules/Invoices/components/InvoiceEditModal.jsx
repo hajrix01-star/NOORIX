@@ -10,8 +10,10 @@ import { updateInvoice } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
-// أنواع النظام: لا مورد، لا تغيير نوع، لا رقم فاتورة إلزامي
-const SYSTEM_KINDS = new Set(['salary', 'advance', 'hr_expense', 'fixed_expense']);
+// بلا مورد نهائياً (رواتب وسلف — فواتير نظام داخلية)
+const NO_SUPPLIER_KINDS = new Set(['salary', 'advance']);
+// مورد اختياري (مصاريف ثابتة وHR)
+const OPTIONAL_SUPPLIER_KINDS = new Set(['fixed_expense', 'hr_expense']);
 
 export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClose }) {
   const { t } = useTranslation();
@@ -27,8 +29,9 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
   });
   const [error, setError] = useState('');
 
-  const isSystemKind = SYSTEM_KINDS.has(invoice?.kind);
-  const hasSupplier = !isSystemKind;
+  const kind = invoice?.kind;
+  const hasSupplier = !NO_SUPPLIER_KINDS.has(kind);           // purchase, expense, fixed_expense, hr_expense
+  const supplierRequired = !NO_SUPPLIER_KINDS.has(kind) && !OPTIONAL_SUPPLIER_KINDS.has(kind); // purchase, expense فقط
 
   const saveMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateInvoice(id, body, companyId),
@@ -70,7 +73,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
   async function handleSave() {
     setError('');
     const total = parseFloat(form.totalAmount);
-    if (hasSupplier && !form.supplierInvoiceNumber?.trim()) {
+    if (supplierRequired && !form.supplierInvoiceNumber?.trim()) {
       setError(t('invoiceNumberRequired'));
       return;
     }
@@ -85,10 +88,11 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
     };
     if (hasSupplier) {
       body.supplierId = form.supplierId || undefined;
-      body.supplierInvoiceNumber = form.supplierInvoiceNumber.trim();
-      body.kind = form.kind;
+      if (form.supplierInvoiceNumber?.trim()) body.supplierInvoiceNumber = form.supplierInvoiceNumber.trim();
       body.netAmount = parseFloat(form.netAmount) || 0;
       body.taxAmount = parseFloat(form.taxAmount) || 0;
+      // النوع قابل للتعديل لـ purchase/expense فقط
+      if (supplierRequired) body.kind = form.kind;
     } else {
       body.netAmount = total;
       body.taxAmount = 0;
@@ -142,21 +146,23 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
             </div>
 
             <Input
-              label={`${t('supplierInvoiceNumber')} *`}
+              label={supplierRequired ? `${t('supplierInvoiceNumber')} *` : t('supplierInvoiceNumber')}
               value={form.supplierInvoiceNumber}
               onChange={(e) => updateField('supplierInvoiceNumber', e.target.value)}
               placeholder={t('invoiceNumberPlaceholder')}
             />
 
-            <Input
-              type="select"
-              label={t('kind')}
-              value={form.kind}
-              onChange={(e) => updateField('kind', e.target.value)}
-            >
-              <option value="purchase">{t('purchaseType')}</option>
-              <option value="expense">{t('expenseType')}</option>
-            </Input>
+            {supplierRequired && (
+              <Input
+                type="select"
+                label={t('kind')}
+                value={form.kind}
+                onChange={(e) => updateField('kind', e.target.value)}
+              >
+                <option value="purchase">{t('purchaseType')}</option>
+                <option value="expense">{t('expenseType')}</option>
+              </Input>
+            )}
           </>
         )}
 
