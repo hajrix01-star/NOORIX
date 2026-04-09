@@ -1,13 +1,11 @@
-﻿/**
- * بطاقات ملخص الكشف — أسلوب مشابه للمشروع السابق مع متغيرات Noorix
- */
-import React from 'react';
+﻿import React from 'react';
 import { fmt } from '../../../utils/format';
+import { MetricCard } from '../../../ui';
 
 export default function BankStatementSummaryCards({ statement, t }) {
   if (!statement) return null;
 
-  const dep = Number(statement.totalDeposits) || 0;
+  const dep = Number(statement.totalDeposits)    || 0;
   const wdr = Number(statement.totalWithdrawals) || 0;
   const net = dep - wdr;
   const nTx = statement.transactionCount ?? statement.transactions?.length ?? 0;
@@ -16,65 +14,53 @@ export default function BankStatementSummaryCards({ statement, t }) {
     {
       title: t('bankStatementBankName'),
       value: statement.bankName || '—',
-      sub: statement.companyName || '',
-      accent: 'var(--noorix-accent-blue)',
+      sub:   statement.companyName || '',
+      color: 'var(--color-nx-sales)',
     },
     {
       title: t('bankStatementDateRange'),
       value: statement.startDate?.slice(0, 10) || '—',
-      sub: statement.endDate?.slice(0, 10) ? `→ ${statement.endDate.slice(0, 10)}` : '',
-      accent: 'var(--noorix-text-muted)',
+      sub:   statement.endDate?.slice(0, 10) ? `← ${statement.endDate.slice(0, 10)}` : '',
+      color: 'var(--color-nx-purchases)',
     },
     {
       title: t('bankStatementCardDeposits'),
       value: fmt(dep),
-      sub: t('bankCurrencySar'),
-      accent: 'var(--noorix-accent-green)',
+      sub:   'SR',
+      color: 'var(--color-nx-profit)',
     },
     {
       title: t('bankStatementCardWithdrawals'),
       value: fmt(wdr),
-      sub: t('bankCurrencySar'),
-      accent: 'var(--noorix-accent-red)',
+      sub:   'SR',
+      color: 'var(--color-nx-expenses)',
     },
     {
       title: t('bankStatementCardNetFlow'),
       value: fmt(net),
-      sub: net >= 0 ? t('bankNetSurplus') : t('bankNetDeficit'),
-      accent: net >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)',
+      sub:   net >= 0 ? t('bankNetSurplus') : t('bankNetDeficit'),
+      color: net >= 0 ? 'var(--color-nx-profit)' : 'var(--color-nx-expenses)',
     },
     {
       title: t('bankStatementTransactions'),
       value: String(nTx),
-      sub: statement.fileName || '',
-      accent: 'var(--noorix-accent-violet)',
+      sub:   statement.fileName || '',
+      color: 'var(--color-nx-sales)',
     },
   ];
 
   return (
     <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
       {cards.map((c, i) => (
-        <div
-          key={i}
-          className="noorix-surface-card flex flex-col gap-1 p-[14px]"
-        >
-          <div className="text-[11px] text-noorix-muted font-semibold mb-0.5">{c.title}</div>
-          <div
-            className="font-extrabold nx-ltr text-noorix-text text-right break-words"
-            style={{
-              fontSize: c.value?.length > 14 ? 14 : 17,
-            }}
-          >
-            {c.value}
-          </div>
-          {c.sub ? (
-            <div className="text-[11px] text-noorix-muted mt-0.5">{c.sub}</div>
-          ) : null}
-          <div
-            className="mt-2 h-[3px] rounded-sm"
-            style={{ background: c.accent }}
-          />
-        </div>
+        <MetricCard key={i} color={c.color}>
+          <MetricCard.Header label={c.title} />
+          <MetricCard.Value value={c.value} />
+          {c.sub && (
+            <MetricCard.Section>
+              <span className="text-[11px] text-noorix-muted">{c.sub}</span>
+            </MetricCard.Section>
+          )}
+        </MetricCard>
       ))}
     </div>
   );
