@@ -483,7 +483,6 @@ export default function EmployeeProfileScreen() {
                 </Button>
               </>
             )}
-            <span className="nx-pill nx-pill--blue nx-pill--sm">{careerTableRows.length}</span>
           </div>
         </div>
         <SmartTable
@@ -532,7 +531,6 @@ export default function EmployeeProfileScreen() {
       <div className="noorix-surface-card noorix-table-frame overflow-hidden employee-profile-layout__wide">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('financialRecord') || 'السجل المالي'}</span>
-          <span className="nx-pill nx-pill--blue nx-pill--sm">{financialRecords.length}</span>
         </div>
         <SmartTable
           compact
@@ -561,7 +559,6 @@ export default function EmployeeProfileScreen() {
       <div className="noorix-surface-card noorix-table-frame overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('hrTabLeave')}</span>
-          <span className="nx-pill nx-pill--blue nx-pill--sm">{leaves.length}</span>
         </div>
         <SmartTable
           compact
@@ -587,7 +584,6 @@ export default function EmployeeProfileScreen() {
       <div className="noorix-surface-card noorix-table-frame overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('advancesList')}</span>
-          <span className="nx-pill nx-pill--blue nx-pill--sm">{advances.length}</span>
         </div>
         <SmartTable
           compact
@@ -612,7 +608,6 @@ export default function EmployeeProfileScreen() {
       <div className="noorix-surface-card noorix-table-frame overflow-hidden">
         <div className="nx-section-header">
           <span className="nx-section-header__title">{t('hrTabResidency')}</span>
-          <span className="nx-pill nx-pill--blue nx-pill--sm">{residencies.length}</span>
         </div>
         <SmartTable
           compact
@@ -642,7 +637,6 @@ export default function EmployeeProfileScreen() {
             <Button size="sm" disabled={uploading} loading={uploading} onClick={() => docFileRef.current?.click()}>
               {uploading ? t('saving') : t('uploadFile')}
             </Button>
-            <span className="nx-pill nx-pill--blue nx-pill--sm">{documents.length}</span>
           </div>
         </div>
         <SmartTable

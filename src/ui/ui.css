@@ -1494,7 +1494,7 @@
 
 /* رأس قسم (header + badge) داخل بطاقة الجدول */
 .nx-section-header {
-  padding: 12px 16px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--noorix-border);
   display: flex;
   align-items: center;
