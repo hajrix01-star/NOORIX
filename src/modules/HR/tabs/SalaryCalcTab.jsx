@@ -1,10 +1,11 @@
 /**
  * SalaryCalcTab — حاسبة الرواتب (عكسية + ديناميكية)
  *
- * مراجع قانونية:
+ * مراجع قانونية (بوابة وزارة الموارد البشرية الرسمية):
  * - المادة 98: ساعات العمل المعيارية 8 ساعات يومياً.
- * - المادة 107: أجر الساعة = الأساسي ÷ 208 (26×8)، أجر OT = أجر الساعة × 1.5.
- *   البدلات لا تدخل في احتساب الأوفر تايم (الأساسي فقط).
+ * - المادة 107: "يُدفع للعامل أجر ساعة مضافاً إليه 50% من أجره الأساسي"
+ *   أجر_ساعة_OT = (أجر_فعلي + 0.5 × أساسي) ÷ 208
+ *   حيث أجر_فعلي = أساسي + بدلات
  *   أيام > 26 تُعدّ «أيام راحة» — كامل ساعاتها أوفر تايم.
  */
 import React, { useMemo, useState, useEffect } from 'react';
@@ -98,15 +99,17 @@ export default function SalaryCalcTab() {
       .plus(employee?.transportAllowance || 0)
       .plus(employee?.otherAllowance || 0)
       .plus(customTotal || 0);
+    const actual = basic.plus(alloc);
     const h  = Math.max(1, Math.min(12, parseFloat(hoursVal)  || SAUDI_STANDARD_HOURS));
     const wd = Math.max(1, parseFloat(workDaysVal) || DEFAULT_OVERTIME_WORK_DAYS);
-    const regularDays     = Math.min(wd, SAUDI_WORK_DAYS_STANDARD);
-    const restDays        = Math.max(0, wd - SAUDI_WORK_DAYS_STANDARD);
-    const otPerDay        = Math.max(0, h - SAUDI_STANDARD_HOURS);
-    const totalOT         = otPerDay * regularDays + restDays * h;
-    if (totalOT <= 0 || basic.lte(0)) return basic.plus(alloc);
-    const otPay = basic.div(SAUDI_STANDARD_MONTHLY_HOURS).times(1.5).times(totalOT);
-    return basic.plus(alloc).plus(otPay);
+    const regularDays = Math.min(wd, SAUDI_WORK_DAYS_STANDARD);
+    const restDays    = Math.max(0, wd - SAUDI_WORK_DAYS_STANDARD);
+    const otPerDay    = Math.max(0, h - SAUDI_STANDARD_HOURS);
+    const totalOT     = otPerDay * regularDays + restDays * h;
+    if (totalOT <= 0 || actual.lte(0)) return actual;
+    // م107: أجر_ساعة_OT = (فعلي + 0.5×أساسي) / 208
+    const otHourlyRate = actual.plus(basic.times(0.5)).div(SAUDI_STANDARD_MONTHLY_HOURS);
+    return actual.plus(otHourlyRate.times(totalOT));
   }
 
   useEffect(() => {
@@ -163,13 +166,21 @@ export default function SalaryCalcTab() {
   const basic       = toDecimal(basicNum);
   const actualWage  = basic.plus(totalAllowances);            // أجر ثابت (بدون OT)
   const deduction   = vacDays > 0 ? actualWage.times(vacDays).div(workDays) : new Decimal(0);
-  const hourlyRate  = basic.gt(0) ? basic.div(SAUDI_STANDARD_MONTHLY_HOURS) : new Decimal(0); // أساسي / 208
-  const overtimeRate = hourlyRate.times(1.5);
-  const dailyOTValue = overtimeRate.times(totalDailyOT);
-  const restOTValue  = overtimeRate.times(totalRestOT);
-  const totalOTValue = overtimeRate.times(totalOT);
+  // م107: أجر_الساعة_الفعلي = (أساسي+بدلات) / 208
+  const actualHourlyRate = actualWage.gt(0) ? actualWage.div(SAUDI_STANDARD_MONTHLY_HOURS) : new Decimal(0);
+  // م107: أجر_الساعة_الأساسي = أساسي / 208
+  const basicHourlyRate  = basic.gt(0)  ? basic.div(SAUDI_STANDARD_MONTHLY_HOURS)  : new Decimal(0);
+  // م107: أجر_ساعة_OT = أجر_الساعة_الفعلي + 50% × أجر_الساعة_الأساسي
+  const overtimeHourlyRate = actualHourlyRate.plus(basicHourlyRate.times(0.5));
+  const dailyOTValue    = overtimeHourlyRate.times(totalDailyOT);
+  const restOTValue     = overtimeHourlyRate.times(totalRestOT);
+  const totalOTValue    = overtimeHourlyRate.times(totalOT);
   const calculatedTotal = actualWage.plus(totalOTValue);
-  const netSalary   = calculatedTotal.minus(deduction);
+  const netSalary       = calculatedTotal.minus(deduction);
+
+  // للإسناد القديم (للعرض العام)
+  const hourlyRate   = actualHourlyRate;
+  const overtimeRate = overtimeHourlyRate;
 
   const hasResult = totalTarget.gt(0) && basic.gt(0);
   const hasOT     = totalOT > 0;
@@ -303,8 +314,9 @@ export default function SalaryCalcTab() {
                 <div class="row"><span class="muted">ساعات OT يومية × أيام عادية</span><span class="num amber">${hrFmt(totalDailyOT)} ساعة</span></div>
                 ${restDays > 0 ? `<div class="row"><span class="muted">ساعات OT أيام الراحة</span><span class="num amber">${hrFmt(totalRestOT)} ساعة</span></div>` : ''}
                 <div class="row row-hl"><span>إجمالي ساعات OT</span><span class="num amber">${hrFmt(totalOT)} ساعة</span></div>
-                <div class="row"><span class="muted">أجر الساعة (أساسي/208)</span><span class="num">${hrFmt(hourlyRate.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">أجر ساعة OT (×1.5)</span><span class="num">${hrFmt(overtimeRate.toNumber())} SR</span></div>
+                <div class="row"><span class="muted">أجر الساعة الفعلي (فعلي/208)</span><span class="num">${hrFmt(actualHourlyRate.toNumber())} SR</span></div>
+                <div class="row"><span class="muted">أجر الساعة الأساسي (أساسي/208)</span><span class="num">${hrFmt(basicHourlyRate.toNumber())} SR</span></div>
+                <div class="row"><span class="muted">أجر ساعة OT (فعلي + 50% أساسي)</span><span class="num">${hrFmt(overtimeHourlyRate.toNumber())} SR</span></div>
                 ${totalDailyOT > 0 ? `<div class="row"><span class="muted">قيمة OT الساعات اليومية</span><span class="num">${hrFmt(dailyOTValue.toNumber())} SR</span></div>` : ''}
                 ${restDays > 0 ? `<div class="row"><span class="muted">قيمة OT أيام الراحة</span><span class="num">${hrFmt(restOTValue.toNumber())} SR</span></div>` : ''}
                 <div class="row row-hl"><span>إجمالي الأوفر تايم</span><span class="num">${hrFmt(totalOTValue.toNumber())} SR</span></div>
@@ -320,8 +332,9 @@ export default function SalaryCalcTab() {
                 <div class="row"><span class="muted">Daily OT hrs × regular days</span><span class="num amber">${hrFmt(totalDailyOT)} hrs</span></div>
                 ${restDays > 0 ? `<div class="row"><span class="muted">Rest day OT hours</span><span class="num amber">${hrFmt(totalRestOT)} hrs</span></div>` : ''}
                 <div class="row row-hl"><span>Total OT hours</span><span class="num amber">${hrFmt(totalOT)} hrs</span></div>
-                <div class="row"><span class="muted">Hourly rate (basic/208)</span><span class="num">${hrFmt(hourlyRate.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">OT hourly rate (×1.5)</span><span class="num">${hrFmt(overtimeRate.toNumber())} SR</span></div>
+                <div class="row"><span class="muted">Actual hourly rate (actual/208)</span><span class="num">${hrFmt(actualHourlyRate.toNumber())} SR</span></div>
+                <div class="row"><span class="muted">Basic hourly rate (basic/208)</span><span class="num">${hrFmt(basicHourlyRate.toNumber())} SR</span></div>
+                <div class="row"><span class="muted">OT hourly rate (actual + 50% basic)</span><span class="num">${hrFmt(overtimeHourlyRate.toNumber())} SR</span></div>
                 ${totalDailyOT > 0 ? `<div class="row"><span class="muted">Daily OT value</span><span class="num">${hrFmt(dailyOTValue.toNumber())} SR</span></div>` : ''}
                 ${restDays > 0 ? `<div class="row"><span class="muted">Rest day OT value</span><span class="num">${hrFmt(restOTValue.toNumber())} SR</span></div>` : ''}
                 <div class="row row-hl"><span>Total Overtime Pay</span><span class="num">${hrFmt(totalOTValue.toNumber())} SR</span></div>
@@ -346,7 +359,7 @@ export default function SalaryCalcTab() {
             </div>
           </div>
 
-          ${hasOT ? `<div class="section"><div class="warn">⚠️ هذا الحساب يفترض أن صاحب العمل يدفع الأوفر تايم بنسبة 150% حسب نظام العمل السعودي (م107). إذا كان يدفع بنسبة أقل فالراتب الأساسي الفعلي سيكون أعلى.<br/>This assumes employer pays overtime at 150% per Saudi Labor Law Art.107. If paid less, actual basic salary would be higher.</div></div>` : ''}
+          ${hasOT ? `<div class="section"><div class="warn">⚖️ المادة 107 — وزارة الموارد البشرية: "يُدفع للعامل أجرٌ بأجر يوازي أجر الساعة مضافاً إليه 50% من أجره الأساسي".<br/>أجر_ساعة_OT = (الأجر_الفعلي + 50% × الأساسي) ÷ 208<br/>Art.107 MHRSD: OT hourly rate = (actual wage + 50% × basic) ÷ 208 hrs.</div></div>` : ''}
         </div>
       </body>
       </html>`;
@@ -494,17 +507,22 @@ export default function SalaryCalcTab() {
               )}
             </div>
 
-            {/* 2. أجر الساعة */}
+            {/* 2. أجر الساعة — م107 */}
             <div className="bg-noorix-bg-muted rounded-xl p-4">
-              <SectionTitle>أجر الساعة</SectionTitle>
+              <SectionTitle>أجر الساعة (م107)</SectionTitle>
               <ResultRow
-                label="أجر الساعة العادية"
-                value={`${hrFmt(hourlyRate.toNumber())} SR`}
+                label={<span>أجر الساعة الفعلي <span className="text-noorix-muted text-[11px]">(أساسي+بدلات) ÷ 208</span></span>}
+                value={`${hrFmt(actualHourlyRate.toNumber())} SR`}
                 muted
               />
               <ResultRow
-                label={<span>أجر ساعة الأوفر تايم <span className="text-noorix-amber">(1.5×)</span></span>}
-                value={<span className="text-noorix-amber">{hrFmt(overtimeRate.toNumber())} SR</span>}
+                label={<span>أجر الساعة الأساسي <span className="text-noorix-muted text-[11px]">أساسي ÷ 208</span></span>}
+                value={`${hrFmt(basicHourlyRate.toNumber())} SR`}
+                muted
+              />
+              <ResultRow
+                label={<span>أجر ساعة الأوفر تايم <span className="text-noorix-amber text-[11px]">فعلي + 50% أساسي</span></span>}
+                value={<span className="text-noorix-amber font-bold">{hrFmt(overtimeHourlyRate.toNumber())} SR</span>}
               />
             </div>
 
