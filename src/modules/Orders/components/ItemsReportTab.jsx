@@ -10,7 +10,7 @@ import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
-import { Button, Input, AdaptiveSheet, SmartTable, FmtNum } from '../../../ui';
+import { Button, Input, AdaptiveSheet, SmartTable, FmtNum, MetricCard } from '../../../ui';
 
 const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
 
@@ -191,20 +191,20 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
         </div>
       </div>
 
-      {/* كروت الإجمالي */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
-        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
-          <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalItems')}</div>
-          <div className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{filtered.length}</div>
-        </div>
-        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
-          <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalQuantity')}</div>
-          <div className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totals.quantity)}</div>
-        </div>
-        <div className="bg-noorix-bg-muted rounded-xl border border-noorix-border py-[14px] px-4">
-          <div className="text-[11px] text-noorix-muted mb-1">{t('ordersTotalAmount')}</div>
-          <div dir="ltr" className="text-[18px] font-extrabold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}><FmtNum n={totals.amount} /> SR</div>
-        </div>
+      {/* كروت الإجمالي — MetricCard الموحّد */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <MetricCard color="var(--color-nx-purchases)">
+          <MetricCard.Header label={t('ordersTotalItems')} />
+          <MetricCard.Value value={filtered.length} />
+        </MetricCard>
+        <MetricCard color="var(--color-nx-sales)">
+          <MetricCard.Header label={t('ordersTotalQuantity')} />
+          <MetricCard.Value value={fmt(totals.quantity, 0)} color="var(--color-nx-sales)" />
+        </MetricCard>
+        <MetricCard color="var(--color-nx-profit)">
+          <MetricCard.Header label={t('ordersTotalAmount')} />
+          <MetricCard.Value value={totals.amount} currency="SR" color="var(--color-nx-profit)" />
+        </MetricCard>
       </div>
 
       {/* رسم بياني */}

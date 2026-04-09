@@ -309,13 +309,12 @@ export async function exportToExcel(data, filename = 'export.xlsx') {
   XLSX.writeFile(wb, filename);
 }
 
-export async function exportToPdf(content, filename = 'export.pdf') {
-  const { jsPDF } = await import('jspdf');
-  const doc = new jsPDF({ putOnlyUsedFonts: true });
-  doc.setFontSize(12);
-  const text = typeof content === 'string' ? content : 'PDF Export';
-  doc.text(text, doc.internal.pageSize.getWidth() - 14, 10, { align: 'right' });
-  doc.save(filename);
+export function exportToPdf(opts, filename = 'export.pdf') {
+  if (typeof opts === 'string') {
+    exportTableToPdf({ data: [], title: opts, filename });
+  } else {
+    exportTableToPdf({ filename, ...opts });
+  }
 }
 
 /**
@@ -434,48 +433,67 @@ export async function importBankStatementFile(file) {
   return importExcelRaw(file);
 }
 
-export async function exportTableToPdf({ columns, data, title = '', filename = 'export.pdf', rtl = true }) {
-  const { jsPDF } = await import('jspdf');
-  const autoTable = (await import('jspdf-autotable')).default;
-  const pageWidth = 210;
-  const doc = new jsPDF({ putOnlyUsedFonts: true });
-  let y = 14;
-
-  if (title) {
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    if (rtl) {
-      doc.text(title, pageWidth - 14, y, { align: 'right' });
-    } else {
-      doc.text(title, 14, y);
-    }
-    y += 10;
-  }
-
-  const cols = columns || (data[0] && typeof data[0] === 'object' && !Array.isArray(data[0]) ? Object.keys(data[0]) : []);
-  const head = [cols];
-  const body = data.map((row) =>
-    Array.isArray(row) ? row.map((c) => String(c ?? '')) : cols.map((c) => String(row[c] ?? '')),
+/**
+ * exportTableToPdf — يفتح نافذة طباعة HTML بدلاً من jsPDF
+ * العربية مضمونة عبر خط Cairo + dir=rtl؛ المتصفح يتولى التحويل لـ PDF
+ */
+export function exportTableToPdf({ columns, data, title = '', filename = 'export.pdf', rtl = true }) {
+  const cols = columns || (
+    data[0] && typeof data[0] === 'object' && !Array.isArray(data[0])
+      ? Object.keys(data[0])
+      : []
   );
 
-  autoTable(doc, {
-    head,
-    body: body.length ? body : [['لا توجد بيانات']],
-    startY: y,
-    styles: {
-      font: 'helvetica',
-      fontSize: 9,
-      halign: rtl ? 'right' : 'left',
-    },
-    headStyles: {
-      fillColor: [37, 99, 235],
-      halign: rtl ? 'right' : 'left',
-      fontStyle: 'bold',
-    },
-    columnStyles: rtl ? { 0: { cellWidth: 'auto' } } : {},
-    tableWidth: 'auto',
-    margin: { left: 14, right: 14 },
-  });
+  const escHtml = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-  doc.save(filename);
+  const headRow = `<tr>${cols.map((c) => `<th>${escHtml(c)}</th>`).join('')}</tr>`;
+  const bodyRows = data.length
+    ? data.map((row) => {
+        const cells = Array.isArray(row)
+          ? row.map((c) => `<td>${escHtml(c)}</td>`).join('')
+          : cols.map((c) => `<td>${escHtml(row[c])}</td>`).join('');
+        return `<tr>${cells}</tr>`;
+      }).join('')
+    : `<tr><td colspan="${cols.length || 1}" style="text-align:center;color:#888">لا توجد بيانات</td></tr>`;
+
+  const dir = rtl ? 'rtl' : 'ltr';
+  const docTitle = escHtml(title || filename.replace('.pdf', ''));
+
+  const html = `<!DOCTYPE html>
+<html dir="${dir}" lang="${rtl ? 'ar' : 'en'}">
+<head>
+<meta charset="utf-8">
+<title>${docTitle}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+@page { size: A4 landscape; margin: 12mm }
+* { box-sizing: border-box }
+body { font-family: 'Cairo', Arial, sans-serif; padding: 16px; color: #111; font-size: 13px; line-height: 1.5 }
+h1 { margin: 0 0 10px; font-size: 18px; font-weight: 800 }
+table { width: 100%; border-collapse: collapse }
+th, td { border: 1px solid #d0d5dd; padding: 5px 8px; text-align: ${rtl ? 'right' : 'left'} }
+th { background: #2563eb; color: #fff; font-weight: 700; font-size: 12px }
+tr:nth-child(even) td { background: #f8fafc }
+</style>
+</head>
+<body>
+${title ? `<h1>${docTitle}</h1>` : ''}
+<table>
+<thead>${headRow}</thead>
+<tbody>${bodyRows}</tbody>
+</table>
+<script>
+var loaded = false;
+function tryPrint() { if (!loaded) return; window.print(); }
+document.fonts.ready.then(function() { loaded = true; tryPrint(); });
+window.onload = function() { loaded = true; tryPrint(); };
+setTimeout(function() { loaded = true; tryPrint(); }, 2500);
+</script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
 }
