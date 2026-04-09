@@ -88,6 +88,8 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
     return () => document.removeEventListener('keydown', handleKey);
   }, [open]);
 
+  const isMobileLayout = useIsNarrow768();
+
   const role         = (user?.role || '').toLowerCase();
   const roleLabel    = ROLE_KEYS[role] ? t(ROLE_KEYS[role]) : role;
   const roleColor    = ROLE_COLORS[role] || 'var(--noorix-accent-green)';

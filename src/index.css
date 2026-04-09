@@ -1832,6 +1832,15 @@ html[data-card-style="10"] .noorix-stat-card {
   letter-spacing: 0.02em;
 }
 
+/* الجزء العشري — رمادي خافت أصغر من الرقم الرئيسي */
+.nx-decimal {
+  font-size: 0.78em;
+  color: var(--noorix-text-muted);
+  opacity: 0.65;
+  font-weight: inherit;
+  letter-spacing: 0;
+}
+
 /* currency label — SR بخط صغير (0.72em) بعد الأرقام */
 .nx-sar {
   font-size: 0.72em;
