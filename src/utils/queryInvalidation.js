@@ -27,6 +27,7 @@ const FINANCIAL_QUERY_PREFIXES = [
   ['payroll-run'],
   ['invoice-day-close'],
   ['suppliers'],
+  ['deductions'],
 ];
 
 /**
