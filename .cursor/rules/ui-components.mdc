@@ -215,7 +215,7 @@ const items = useMemo(() => TABS.map((x) => ({ id: x.id, label: t(x.labelKey) })
 
 ### متى `underline` أو `segmented`؟
 
-- **`variant="underline"`** + **`omitDefaultBarClasses`** + **`barClassName`** + **`getTabClassName`** — أشرطة **مخصّصة** فقط: طلبات، بنك، OCR، تبويبات جوال داخل جدول تقرير، إلخ. يدعم `fadeWrap` (افتراضي `true`) خارج الكرت المخصّص. **الإعدادات** تستخدم الآن الوضع الافتراضي `connected` مثل بقية الأقسام.
+- **`variant="underline"`** + **`omitDefaultBarClasses`** + **`barClassName`** + **`getTabClassName`** — أشرطة **مخصّصة** فقط: بنك، OCR، تبويبات جوال داخل جدول تقرير، إلخ. يدعم `fadeWrap` (افتراضي `true`) خارج الكرت المخصّص. **الإعدادات والطلبات** تستخدمان الآن الوضع الافتراضي `connected` مثل بقية الأقسام.
 - **`variant="segmented"`** — حبات لعدد **قليل** من التبويبات القصيرة داخل كرت (مثل يومي/شهري في مخطط لوحة التحكم). الألوان عبر `.nx-tab-btn--segmented` في `index.css`.
 
 - **`data-active`** على أزرار وضع underline/segmented وعلى **ConnectedTabStrip** — للتمرير (`scrollIntoView`) والأنماط المخصّصة عند الحاجة.
