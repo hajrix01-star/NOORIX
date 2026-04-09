@@ -65,6 +65,7 @@ export default function Input({
     'aria-required':    required  || undefined,
     'aria-invalid':     !!error   || undefined,
     'aria-describedby': error ? `${id}-error` : hint ? `${id}-hint` : undefined,
+    ...(type === 'date' && { dir: 'ltr' }),
     ...rest,
   };
 
