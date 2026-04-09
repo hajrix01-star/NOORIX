@@ -1,0 +1,47 @@
+---
+description: قرارات توحيد الجداول — SmartTable والاستثناءات الموثّقة
+alwaysApply: true
+---
+
+# توحيد الجداول — القرار النهائي (أبريل 2026)
+
+## الحالة بعد التوحيد
+
+تم تحويل جميع جداول البيانات الرئيسية إلى `SmartTable`:
+- `SupplierTable.jsx` ✅
+- `BankStatementTransactionsFullTab.jsx` ✅
+- `ItemsReportTab.jsx` (الجدول الرئيسي) ✅
+- `OrdersTab.jsx` (تفاصيل الطلب داخل Sheet) ✅
+- وجميع الشاشات الرئيسية (Invoices, HR, Sales, Purchases...)
+
+## القاعدة
+
+```
+SmartTable = جداول بيانات (قراءة، فرز، بحث، كروت جوال)
+<table> خام = مقبول فقط في الحالات الموثّقة أدناه
+```
+
+## الاستثناءات الموثّقة — لا تُناقَش مجدداً
+
+### 1. جداول الطباعة/التصدير (template strings) ✅ معفاة
+`<table>` داخل backtick strings لـ HTML print — ليست JSX، لا علاقة لـ SmartTable بها.
+
+ملفات: `OrdersTab`, `PayrollTab`, `VaultTransactionsModal`, `DashboardCalendarTab`, `SalaryCalcTab`, `EOSCalcTab`, `PaymentHistoryTab`, `ExpenseLineList`, `ExpenseLineDetailModal`, `DailySalesScreen`
+
+### 2. جداول نماذج التحرير الثقيلة ✅ معفاة
+جداول فيها inputs في كل خلية — SmartTable لا يدعم inline editing بشكل مريح. تعمل جيداً كما هي ولا تستحق إعادة الكتابة.
+
+ملفات: `PurchasesBatchScreen`, `BatchEditPanel`, `PayrollRunFormModal`, `OrderFormModal`, `ItemsManageTab`, `TaxReportTab`, `BankStatementMappingModal`
+
+### 3. هياكل خاصة ✅ معفاة — SmartTable لا يدعمها هندسياً
+- `ReportsScreen` — P&L هرمي بـ expand/collapse (SmartTable row-oriented فقط)
+- `RolesTab` — مصفوفة صلاحيات (محوران: modules × levels)
+
+### 4. جداول ملخص ≤10 صفوف ✅ معفاة
+`CalendarDayDetailPanel`, `DayCloseReportModal` (summary tables), `BankStatementAnalysisCardsTab`
+
+**السبب:** SmartTable يضيف frame وheader وskeleton لجدول 3-5 صفوف ثابتة — تعقيد بلا كسب مرئي أو وظيفي للمستخدم.
+
+## مبدأ ثابت
+لا تُحوَّل جداول تعمل بشكل صحيح إذا كان التحويل لا يضيف قيمة للمستخدم.
+توحيد الكود هدفه تسهيل الصيانة، وليس التوحيد لذاته.
