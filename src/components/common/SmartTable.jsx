@@ -175,8 +175,7 @@ const SmartTable = memo(function SmartTable({
                 {columns.map((col) => {
                   const align = getAlign(col);
                   const isSorted = sortKey === col.key;
-                  // numeric columns without an explicit width shrink automatically
-                  const shrink = col.shrink === true || (col.numeric === true && !col.width);
+                  const shrink = col.shrink === true;
                   const actionSticky = col.key === 'actions' && stickyActionColumn;
                   // noorix-cell-truncate adds white-space:nowrap which expands cells in auto layout
                   // only apply it in fixed layout (where width is enforced) or when col.maxWidth bounds it
@@ -232,7 +231,7 @@ const SmartTable = memo(function SmartTable({
                     const value  = row[col.key];
                     const align  = getAlign(col);
                     const family = col.numeric ? 'var(--noorix-font-numbers)' : undefined;
-                    const shrink = col.shrink === true || (col.numeric === true && !col.width);
+                    const shrink = col.shrink === true;
                     const actionSticky = col.key === 'actions' && stickyActionColumn;
                     const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
                     return (

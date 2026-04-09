@@ -120,8 +120,8 @@ export const SupplierTable = memo(function SupplierTable({
         </span>
       ),
     },
-    { key: 'taxNumber', label: t('taxNumber'), numeric: true },
-    { key: 'phone',     label: t('phone') },
+    { key: 'taxNumber', label: t('taxNumber'), numeric: true, width: 150, minWidth: 140 },
+    { key: 'phone',     label: t('phone'), shrink: true },
     {
       key: 'supplierCategoryId',
       label: t('category'),
