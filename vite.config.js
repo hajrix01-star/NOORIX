@@ -55,6 +55,9 @@ export default defineConfig({
         screenshots: [],
       },
       workbox: {
+        /* يفعّل الإصدار الجديد بسرعة بعد النشر — يقلّل بقاء واجهة قديمة بسبب الـ PWA */
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {

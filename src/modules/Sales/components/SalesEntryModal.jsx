@@ -135,7 +135,16 @@ export function SalesEntryModal({
             variant="success"
             size="md"
             className="w-full"
-            onClick={() => onWhatsApp?.(savedSummary)}
+            onClick={() => {
+              /* الـ API لا يعيد channels مع الملخص بعد الإنشاء — نبنيها من النموذج حتى تظهر في واتساب */
+              const fromForm = salesChannels
+                .filter((v) => parseFloat(channelAmounts[v.id]) > 0)
+                .map((v) => ({ vaultId: v.id, amount: channelAmounts[v.id], vault: v }));
+              onWhatsApp?.({
+                ...savedSummary,
+                channels: fromForm.length ? fromForm : (savedSummary.channels || []),
+              });
+            }}
           >
             {t('sendWhatsApp')} — {t('salesDailySummary')}
           </Button>

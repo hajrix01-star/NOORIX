@@ -558,10 +558,20 @@ export default function DailySalesScreen() {
         }}
       />
 
-      {/* هيدر + شريط إجراءات */}
+      {/* هيدر + شريط إجراءات — زر الملخصات الملغاة هنا ليظهر فوق الطيّ ولا يختفي داخل رأس الجدول */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('salesDailySummary')}</h1>
-        <div className="flex items-center gap-2 flex-wrap print:hidden">
+        <div className="flex items-center gap-2 flex-wrap print:hidden justify-end flex-1 min-w-0">
+          {hasCompany && salesViewSummariesList && (
+            <Button
+              size="sm"
+              variant={showCancelledSales ? 'primary' : 'default'}
+              aria-pressed={showCancelledSales}
+              onClick={() => setShowCancelledSales((v) => !v)}
+            >
+              {showCancelledSales ? t('hideCancelledSummaries') : t('showCancelledSummaries')}
+            </Button>
+          )}
           {salesFullHistory && (
             <Button
               size="sm"
@@ -619,15 +629,6 @@ export default function DailySalesScreen() {
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-noorix-blue text-[12px] font-semibold">
                 {t('summaryCount', displayedTotal)}
               </span>
-              <Button
-                size="sm"
-                variant={showCancelledSales ? 'primary' : 'default'}
-                className="print:hidden"
-                aria-pressed={showCancelledSales}
-                onClick={() => setShowCancelledSales((v) => !v)}
-              >
-                {showCancelledSales ? t('hideCancelledSummaries') : t('showCancelledSummaries')}
-              </Button>
               {salesFullHistory && (
                 <span className="flex flex-wrap gap-1.5 print:hidden">
                   <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportExcel')}</Button>
