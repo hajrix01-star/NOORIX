@@ -71,14 +71,21 @@ export class DatabaseBootstrapService implements OnModuleInit {
         this.logger.log(`تم إنشاء دور: ${name}`);
       } else if (name === 'owner' || name === 'super_admin') {
         // owner/super_admin يحصلان دائماً على كل الصلاحيات الجديدة في الكود
-        const current = (role.permissions || []) as string[];
+        const current     = (role.permissions         || []) as string[];
+        const lastSeedAdm = (role.lastSeedPermissions || []) as string[];
         const merged = [...new Set([...current, ...ALL_PERMISSIONS])];
-        if (merged.length > current.length) {
+        const permChanged = merged.length > current.length;
+        const seedChanged = lastSeedAdm.length !== ALL_PERMISSIONS.length ||
+          !ALL_PERMISSIONS.every((p) => lastSeedAdm.includes(p));
+        if (permChanged || seedChanged) {
           await this.prisma.role.update({
             where: { id: role.id },
-            data: { permissions: merged, lastSeedPermissions: ALL_PERMISSIONS },
+            data: {
+              ...(permChanged ? { permissions: merged } : {}),
+              lastSeedPermissions: ALL_PERMISSIONS,
+            },
           });
-          this.logger.log(`تم تحديث صلاحيات دور: ${name}`);
+          if (permChanged) this.logger.log(`تم تحديث صلاحيات دور: ${name}`);
         }
       }
       roleMap[name] = role.id;
