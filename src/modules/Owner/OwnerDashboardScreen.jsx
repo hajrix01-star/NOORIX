@@ -7,6 +7,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { Button, Input, ScreenShell, ScreenTitle, cn, FmtNum, MetricCard } from '../../ui';
 import { useApp } from '../../context/AppContext';
 import { useOwnerReports } from '../../hooks/useOwnerReports';
+import { useOwnerDailySales } from '../../hooks/useOwnerDailySales';
 import { EN_MONTHS } from '../Reports/reportHelpers';
 import { fmt } from '../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
@@ -44,6 +45,7 @@ export default function OwnerDashboardScreen() {
   const allSelected = selectedCompanyIds.size === companyList.length && companyList.length > 0;
   const idsToFetch = [...selectedCompanyIds];
   const { reportsByCompany, isLoading, isError, error } = useOwnerReports({ companyIds: idsToFetch, year });
+  const dailySalesQuery = useOwnerDailySales({ companyIds: idsToFetch, year, month: selectedMonthNum });
 
   const toggleCompany = (id) => {
     setSelectedCompanyIds((prev) => {
@@ -160,6 +162,42 @@ export default function OwnerDashboardScreen() {
     const step = Math.max(1, Math.ceil(maxChartValue / 5));
     return [0, 1, 2, 3, 4, 5].map((i) => step * i);
   }, [maxChartValue]);
+
+  const dailyChartData = useMemo(() => {
+    if (!selectedMonthNum) return [];
+    const y = year;
+    const m = selectedMonthNum;
+    const lastDay = new Date(y, m, 0).getDate();
+    const pad = (n) => String(n).padStart(2, '0');
+    const { itemsByCompanyId } = dailySalesQuery;
+    return Array.from({ length: lastDay }, (_, idx) => {
+      const day = idx + 1;
+      const ymd = `${y}-${pad(m)}-${pad(day)}`;
+      const byCompany = {};
+      idsToFetch.forEach((cid) => {
+        const list = itemsByCompanyId[cid] || [];
+        const sum = list
+          .filter((s) => (s.transactionDate || '').slice(0, 10) === ymd && s.status !== 'cancelled')
+          .reduce((a, s) => a + Number(s.totalAmount || 0), 0);
+        if (sum > 0) byCompany[cid] = sum;
+      });
+      return { day, label: String(day), byCompany };
+    });
+  }, [selectedMonthNum, year, idsToFetch.join(','), dailySalesQuery.dataStamp]);
+
+  const maxDailyChartValue = useMemo(() => {
+    let max = 0;
+    dailyChartData.forEach((d) => {
+      const sum = Object.values(d.byCompany || {}).reduce((a, b) => a + b, 0);
+      max = Math.max(max, sum);
+    });
+    return Math.max(1, max);
+  }, [dailyChartData]);
+
+  const yAxisTicksDaily = useMemo(() => {
+    const step = Math.max(1, Math.ceil(maxDailyChartValue / 5));
+    return [0, 1, 2, 3, 4, 5].map((i) => step * i);
+  }, [maxDailyChartValue]);
 
   const handleExportExcel = () => {
     const rows = [
@@ -374,6 +412,80 @@ export default function OwnerDashboardScreen() {
               })}
             </div>
           </div>
+
+          {/* المبيعات اليومية — شهر محدد فقط */}
+          {selectedMonthNum && (
+            <div className={cn('noorix-surface-card', isMobile ? 'p-3' : 'p-6')}>
+              <div className="text-[16px] font-bold mb-1">
+                {t('ownerDailySalesTitle')} — {EN_MONTHS[selectedMonthNum - 1]} {year}
+              </div>
+              <p className="text-[12px] text-noorix-muted m-0 mb-4">{t('ownerDailySalesSubtitle')}</p>
+              {dailySalesQuery.isLoading && (
+                <div className="text-center text-noorix-muted py-8">{t('loading')}</div>
+              )}
+              {dailySalesQuery.isError && (
+                <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-4 py-3 text-[13px] text-noorix-red">
+                  {dailySalesQuery.error?.message || t('loadingError')}
+                </div>
+              )}
+              {!dailySalesQuery.isLoading && !dailySalesQuery.isError && (
+                <div className="flex gap-0 min-h-[220px]">
+                  <div className="shrink-0 flex flex-col w-12 justify-between pt-1 pb-7">
+                    {[...yAxisTicksDaily].reverse().map((tick) => (
+                      <div key={tick} className="text-[10px] nx-font-numbers text-noorix-muted font-semibold">
+                        {formatAxisValue(tick)}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex-1 min-w-0 overflow-x-auto">
+                    <div className="flex gap-0.5 sm:gap-1 items-end h-[180px] pb-7 min-w-max">
+                      {dailyChartData.map((point) => {
+                        const companyAmounts = point.byCompany || {};
+                        const total = Object.values(companyAmounts).reduce((a, b) => a + b, 0);
+                        return (
+                          <div key={point.day} className="flex flex-col gap-1 items-center w-5 sm:w-6 shrink-0">
+                            <div className="w-full h-full flex max-w-[32px] flex-col-reverse items-stretch" title={`${fmt(total)} SR`}>
+                              {idsToFetch.map((companyId, i) => {
+                                const amt = companyAmounts[companyId] || 0;
+                                if (amt <= 0) return null;
+                                const heightPct = Math.max(0.5, (amt / maxDailyChartValue) * 100);
+                                return (
+                                  <div
+                                    key={companyId}
+                                    style={{
+                                      height: `${heightPct}%`,
+                                      minHeight: 2,
+                                      background: COLORS[i % COLORS.length],
+                                      borderRadius: '2px 2px 0 0',
+                                    }}
+                                    title={`${companyList.find((c) => c.id === companyId)?.nameAr || companyId}: ${fmt(amt)} SR`}
+                                  />
+                                );
+                              })}
+                            </div>
+                            <div className="text-[9px] sm:text-[10px] text-noorix-muted font-semibold tabular-nums">{point.label}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {!dailySalesQuery.isLoading && !dailySalesQuery.isError && (
+                <div className="flex flex-wrap gap-4 mt-4 border-t border-noorix-border pt-3">
+                  {idsToFetch.map((companyId, i) => {
+                    const c = companyList.find((x) => x.id === companyId);
+                    return (
+                      <div key={`d-${companyId}`} className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                        <span className="text-[12px]">{lang === 'ar' ? c?.nameAr || c?.nameEn : c?.nameEn || c?.nameAr}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* توزيع الأرباح */}
           <div className="noorix-surface-card p-4">

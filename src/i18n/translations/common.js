@@ -27,6 +27,8 @@ export default {
   ownerSelectCompanies: { ar: 'اختر الشركات', en: 'Select companies' },
   ownerAllCompanies: { ar: 'كل الشركات', en: 'All companies' },
   ownerMonthlySales: { ar: 'المبيعات الشهرية', en: 'Monthly sales' },
+  ownerDailySalesTitle: { ar: 'المبيعات اليومية للشهر', en: 'Daily sales in selected month' },
+  ownerDailySalesSubtitle: { ar: 'من ملخصات المبيعات اليومية (بدون أيام بلا ملخص تظهر عموداً صفراً).', en: 'From daily sales summaries; days without a summary show as zero height.' },
   ownerAggregatedProfit: { ar: 'الأرباح/الخسائر المجمعة', en: 'Aggregated profit/loss' },
   ownerProfitDistribution: { ar: 'توزيع الأرباح', en: 'Profit distribution' },
   ownerTotalNetProfit: { ar: 'صافي الربح الإجمالي', en: 'Total net profit' },
