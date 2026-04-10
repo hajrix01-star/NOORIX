@@ -36,7 +36,19 @@ const METRIC_COLORS = {
   sales:     KPI_RECHARTS_COLORS.sales,
   purchases: KPI_RECHARTS_COLORS.purchases,
   expenses:  KPI_RECHARTS_COLORS.expenses,
+  netProfit: KPI_RECHARTS_COLORS.netProfit,
 };
+
+/** يُعيد مصفوفة 12 قيمة شهرية لمؤشر معين من تقرير شركة */
+function getCompanyMonthlyArr(report, metric) {
+  if (!report) return Array(12).fill(0);
+  if (metric === 'netProfit') {
+    const row = report.summaryRows?.find((r) => r.key === 'netProfit');
+    return Array.from({ length: 12 }, (_, i) => Number(row?.months?.[i] || 0));
+  }
+  const group = report.groups?.find((r) => r.key === metric);
+  return Array.from({ length: 12 }, (_, i) => Number(group?.months?.[i] || 0));
+}
 
 function getSaudiYearMonth() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -84,6 +96,7 @@ export default function OwnerDashboardScreen() {
   const [selectedCompanyIds, setSelectedCompanyIds] = useState(() => new Set(companies?.map((c) => c.id) || []));
   const [chartGrain, setChartGrain] = useState('monthly');
   const [metricFilter, setMetricFilter] = useState(new Set(['sales']));
+  const [comparisonMetric, setComparisonMetric] = useState('sales');
 
   const toggleMetric = (key) => {
     setMetricFilter((prev) => {
@@ -178,6 +191,27 @@ export default function OwnerDashboardScreen() {
     });
     return months;
   }, [reportsByCompany]);
+
+  /* ── بيانات جدول المقارنة الشهرية ── */
+  const companyMonthlyData = useMemo(() =>
+    idsToFetch.map((cid, i) => {
+      const report = reportsByCompany[cid];
+      const company = companyList.find((c) => c.id === cid);
+      const name = lang === 'ar' ? company?.nameAr || company?.nameEn || cid : company?.nameEn || company?.nameAr || cid;
+      const months = getCompanyMonthlyArr(report, comparisonMetric);
+      const total = months.reduce((a, b) => a + b, 0);
+      return { cid, name, months, total, color: COLORS[i % COLORS.length] };
+    }),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [idsToFetch.join(','), reportsByCompany, comparisonMetric, companyList, lang]);
+
+  const grandMonthlyTotals = useMemo(() =>
+    Array.from({ length: 12 }, (_, i) =>
+      companyMonthlyData.reduce((a, c) => a + (c.months[i] || 0), 0),
+    ),
+  [companyMonthlyData]);
+
+  const grandTotal = grandMonthlyTotals.reduce((a, b) => a + b, 0);
 
   /* ── بيانات الرسم البياني الموحّد ── */
   const performanceData = useMemo(() => {
@@ -515,6 +549,145 @@ export default function OwnerDashboardScreen() {
               ))}
             </div>
           </div>
+
+          {/* ── جدول مقارنة الشركات الشهرية ── */}
+          {(() => {
+            const isNetProfit = comparisonMetric === 'netProfit';
+            const metricColor = METRIC_COLORS[comparisonMetric];
+            const COMPARISON_METRICS = [
+              { key: 'sales',     label: t('annualSales') },
+              { key: 'purchases', label: t('annualPurchases') },
+              { key: 'expenses',  label: t('annualExpenses') },
+              { key: 'netProfit', label: t('ownerTotalNetProfit') },
+            ];
+            const monthAbbr = lang === 'ar'
+              ? MONTH_NAMES_AR.map((m) => m.slice(0, 3))
+              : EN_MONTHS.map((m) => m.slice(0, 3));
+
+            const valColor = (val) => {
+              if (!isNetProfit) return undefined;
+              return val < 0 ? 'var(--noorix-accent-red)' : val > 0 ? 'var(--noorix-accent-green)' : undefined;
+            };
+
+            return (
+              <div className="noorix-surface-card p-5">
+                {/* رأس */}
+                <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+                  <div>
+                    <div className="text-[14px] font-bold text-noorix-text">
+                      {lang === 'ar' ? 'مقارنة الشركات الشهرية' : 'Monthly Company Comparison'}
+                    </div>
+                    <div className="text-[12px] text-noorix-muted mt-0.5">{year}</div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {COMPARISON_METRICS.map((m) => {
+                      const active = comparisonMetric === m.key;
+                      const color  = METRIC_COLORS[m.key];
+                      return (
+                        <button
+                          key={m.key}
+                          onClick={() => setComparisonMetric(m.key)}
+                          style={{
+                            borderColor: active ? color : 'var(--noorix-border)',
+                            color:       active ? color : 'var(--noorix-text-muted)',
+                            background:  active ? `${color}14` : 'transparent',
+                          }}
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150"
+                        >
+                          <span
+                            className="inline-block w-3 h-0.5 rounded-full flex-shrink-0"
+                            style={{ background: active ? color : 'var(--noorix-border)' }}
+                          />
+                          {m.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* الجدول */}
+                <div className="overflow-x-auto -mx-5 px-5">
+                  <table style={{ minWidth: 860 }} className="w-full text-[12px] border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="text-start py-2 px-3 text-[11px] text-noorix-muted font-semibold w-36 border-b border-noorix-border">
+                          {lang === 'ar' ? 'الشركة' : 'Company'}
+                        </th>
+                        {monthAbbr.map((m, i) => (
+                          <th key={i} className="text-end py-2 px-1.5 text-[10px] text-noorix-muted font-semibold min-w-[56px] border-b border-noorix-border">
+                            {m}
+                          </th>
+                        ))}
+                        <th className="text-end py-2 px-3 text-[11px] text-noorix-muted font-semibold min-w-[80px] border-b-2 border-noorix-border">
+                          {lang === 'ar' ? 'المجموع' : 'Total'}
+                        </th>
+                        <th className="text-end py-2 px-3 text-[10px] text-noorix-muted font-semibold min-w-[48px] border-b-2 border-noorix-border">%</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {companyMonthlyData.map(({ cid, name, months, total, color }) => {
+                        const pct = Math.abs(grandTotal) > 0 ? (total / Math.abs(grandTotal)) * 100 : 0;
+                        const bestMonth = Math.max(...months);
+                        return (
+                          <tr key={cid} className="border-b border-noorix-border/40 hover:bg-noorix-bg-muted/50 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: color }} />
+                                <span className="font-semibold text-noorix-text truncate max-w-[110px]">{name}</span>
+                              </div>
+                            </td>
+                            {months.map((val, mi) => (
+                              <td
+                                key={mi}
+                                className="py-2.5 px-1.5 text-end tabular-nums"
+                                style={{
+                                  color: valColor(val) || (val === 0 ? 'var(--noorix-text-muted)' : 'var(--noorix-text)'),
+                                  fontWeight: !isNetProfit && val === bestMonth && val > 0 ? 700 : 400,
+                                  background: !isNetProfit && val === bestMonth && val > 0
+                                    ? `${color}0d`
+                                    : undefined,
+                                }}
+                              >
+                                {val === 0 ? <span className="text-[10px] opacity-30">—</span> : fmtAxis(val)}
+                              </td>
+                            ))}
+                            <td className="py-2.5 px-3 text-end font-bold tabular-nums"
+                              style={{ color: valColor(total) || metricColor }}
+                            >
+                              {fmtAxis(total)}
+                            </td>
+                            <td className="py-2.5 px-3 text-end text-[11px] text-noorix-muted tabular-nums">
+                              {fmt(Math.abs(pct), 1)}%
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-noorix-border">
+                        <td className="py-3 px-3 font-bold text-noorix-text text-[12px]">
+                          {lang === 'ar' ? 'الإجمالي' : 'Total'}
+                        </td>
+                        {grandMonthlyTotals.map((val, mi) => (
+                          <td key={mi} className="py-3 px-1.5 text-end font-bold tabular-nums"
+                            style={{ color: valColor(val) || 'var(--noorix-text)' }}
+                          >
+                            {val === 0 ? <span className="text-[10px] opacity-30">—</span> : fmtAxis(val)}
+                          </td>
+                        ))}
+                        <td className="py-3 px-3 text-end font-bold tabular-nums"
+                          style={{ color: valColor(grandTotal) || metricColor }}
+                        >
+                          {fmtAxis(grandTotal)}
+                        </td>
+                        <td className="py-3 px-3 text-end text-[11px] text-noorix-muted">100%</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* توزيع الأرباح */}
           <div className="noorix-surface-card p-4">
