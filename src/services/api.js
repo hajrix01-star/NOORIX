@@ -584,7 +584,7 @@ export async function getDailySalesSummaries(
   };
 }
 
-/** جلب كل ملخصات المبيعات في الفترة (مع إلغاء الملخصات) — للتصدير والطباعة */
+/** جلب كل ملخصات المبيعات في الفترة — للتصدير والطباعة */
 export async function fetchAllSalesSummariesForExport(
   companyId,
   startDate,
@@ -592,6 +592,7 @@ export async function fetchAllSalesSummariesForExport(
   q,
   sortBy = 'transactionDate',
   sortDir = 'desc',
+  includeCancelled = true,
 ) {
   const pageSize = 150;
   let page = 1;
@@ -606,7 +607,7 @@ export async function fetchAllSalesSummariesForExport(
       q,
       sortBy,
       sortDir,
-      true,
+      includeCancelled,
     );
     if (!res?.success) break;
     const { items = [], total = 0 } = res.data || {};

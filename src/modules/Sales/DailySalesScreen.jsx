@@ -18,7 +18,7 @@ import { formatSaudiDate, getSaudiToday } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
-import { Badge, Button, ScreenShell , FmtNum } from '../../ui';
+import { Badge, Button, ScreenShell, FmtNum, cn } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
 import { SalesActionsCell } from '../../components/common/SalesActionsCell';
@@ -30,6 +30,37 @@ import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 import { buildActiveCancelledStatusMap } from '../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
+
+/** عرض قنوات البيع في الجدول والجوال — شرائح واضحة بدل نص مفصول بـ | */
+function SalesChannelsChips({ channels, lang }) {
+  const list = Array.isArray(channels) ? channels : [];
+  if (list.length === 0) {
+    return <span className="text-[12px] text-noorix-muted">—</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5 justify-end">
+      {list.map((ch, i) => {
+        const vid = ch.vaultId ?? ch.vault?.id ?? i;
+        const label = vaultDisplayName(ch.vault, lang);
+        return (
+          <div
+            key={vid}
+            className={cn(
+              'inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-noorix-border',
+              'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
+            )}
+            title={label}
+          >
+            <span className="min-w-0 truncate text-[11px] font-semibold text-noorix-text">{label}</span>
+            <span dir="ltr" className="shrink-0 whitespace-nowrap text-[12px] font-bold tabular-nums text-nx-sales">
+              {fmt(ch.amount)} <span className="nx-sar">SR</span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function addCalendarDaysYmd(ymd, delta) {
   const [y, m, d] = ymd.split('-').map((x) => parseInt(x, 10));
@@ -61,6 +92,8 @@ export default function DailySalesScreen() {
   const [sortDir, setSortDir] = useState('desc');
   const [exportBusy, setExportBusy] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
+  /** افتراضي: الملخصات الملغاة مخفية (لا يُرسل includeCancelled للـ API) */
+  const [showCancelledSales, setShowCancelledSales] = useState(false);
 
   const salesFullHistory = hasPermission(userRole, PERMISSIONS.SALES_FULL_HISTORY, userPermissions);
   const salesViewSummariesList = hasPermission(userRole, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, userPermissions);
@@ -97,7 +130,7 @@ export default function DailySalesScreen() {
 
   useEffect(() => {
     setListPage(1);
-  }, [debouncedQEffective, dateFilter.startDate, dateFilter.endDate]);
+  }, [debouncedQEffective, dateFilter.startDate, dateFilter.endDate, showCancelledSales]);
 
   useEffect(() => {
     if (!salesFullHistory) return;
@@ -120,7 +153,6 @@ export default function DailySalesScreen() {
     }
     if (q) {
       setSearchInput(q);
-      setDebouncedQ(q.trim());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -141,6 +173,7 @@ export default function DailySalesScreen() {
       sortKey,
       sortDir,
       salesViewSummariesList,
+      showCancelledSales,
     ],
     queryFn: async () => {
       const res = await getDailySalesSummaries(
@@ -152,7 +185,7 @@ export default function DailySalesScreen() {
         debouncedQEffective,
         sortKey,
         sortDir,
-        true,
+        showCancelledSales,
       );
       if (!res?.success) throw new Error(res?.error || 'فشل تحميل المبيعات');
       return res.data;
@@ -179,20 +212,32 @@ export default function DailySalesScreen() {
     const cc = s.customerCount || 0;
     const total = Number(s.totalAmount || 0);
     const avg = cc > 0 ? (total / cc) : 0;
-    const channels = (s.channels || []).map((ch) => `  • ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)} SR`).join('\n');
-    return [
-      `*ملخص المبيعات اليومي*`,
-      `الرقم: ${s.summaryNumber}`,
-      `التاريخ: ${formatSaudiDate(s.transactionDate)}`,
-      ``,
-      `عدد العملاء: ${cc}`,
-      `إجمالي المبيعات: ${fmt(total)} SR`,
-      `معدل الطلب لكل عميل: ${fmt(avg)} SR`,
-      Number(s.cashOnHand) > 0 ? `المبلغ الموجود بالصندوق: ${fmt(s.cashOnHand)} SR` : '',
-      ``, `*تفاصيل القنوات:*`, channels,
-      s.notes ? `\nملاحظات: ${s.notes}` : '',
-      ``, `— Noorix ERP`,
-    ].filter(Boolean).join('\n');
+    const name = (companyName || '').trim();
+    const headerBlock = name
+      ? [`*${name}*`, t('salesShareSubtitle')]
+      : [`*${t('salesShareSubtitle')}*`];
+    const chList = s.channels || [];
+    const channelBlock = chList.length > 0
+      ? chList.map((ch, i) => `  ${i + 1}. ${vaultDisplayName(ch.vault, lang)} — ${fmt(ch.amount)} SR`)
+      : [`  ${t('salesShareNoChannels')}`];
+    const lines = [
+      ...headerBlock,
+      '',
+      `${t('summaryNumber')}: ${s.summaryNumber}`,
+      `${t('transactionDateLabel')}: ${formatSaudiDate(s.transactionDate)}`,
+      '',
+      `▸ ${t('salesShareCustomers')}: ${cc}`,
+      `▸ ${t('salesShareTotal')}: ${fmt(total)} SR`,
+      `▸ ${t('salesShareAvgPerCustomer')}: ${fmt(avg)} SR`,
+    ];
+    if (Number(s.cashOnHand) > 0) {
+      lines.push(`▸ ${t('salesShareCashOnHand')}: ${fmt(s.cashOnHand)} SR`);
+    }
+    lines.push('', `*${t('salesShareChannelsHeading')}*`, ...channelBlock);
+    if (s.notes) {
+      lines.push('', `${t('salesShareNotes')}: ${s.notes}`);
+    }
+    return lines.join('\n');
   }
 
   function openWhatsApp(s) {
@@ -264,8 +309,8 @@ export default function DailySalesScreen() {
       render: (v) => <span className="nx-cell-num nx-cell-accent">{v}</span> },
     { key: 'transactionDate', label: t('transactionDate'), sortable: true, width: '10%',
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
-    { key: 'channelsText', label: t('salesChannels'), sortable: false, width: '35%',
-      render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
+    { key: 'channelsText', label: t('salesChannels'), sortable: false, width: '38%',
+      render: (_, row) => <SalesChannelsChips channels={row.channels} lang={lang} /> },
     { key: 'customerCount', label: t('customers'), numeric: true, sortable: true, width: '7%',
       render: (v) => <span className="nx-cell-num nx-cell-num--blue">{v ?? 0}</span> },
     { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '10%',
@@ -285,7 +330,7 @@ export default function DailySalesScreen() {
         />
       ),
     },
-  ], [userRole, t, STATUS_MAP, handleDeleteSummary]);
+  ], [userRole, t, STATUS_MAP, handleDeleteSummary, lang]);
 
   const footerCells = (
     <>
@@ -342,6 +387,7 @@ export default function DailySalesScreen() {
         debouncedQEffective,
         sortKey,
         sortDir,
+        showCancelledSales,
       );
       const exportData = mapSummariesToExportRows(all);
       exportToExcel({
@@ -370,6 +416,7 @@ export default function DailySalesScreen() {
         debouncedQEffective,
         sortKey,
         sortDir,
+        showCancelledSales,
       );
       const exportData = mapSummariesToExportRows(all);
       exportToPdf({
@@ -399,6 +446,7 @@ export default function DailySalesScreen() {
         debouncedQEffective,
         sortKey,
         sortDir,
+        showCancelledSales,
       );
     } catch (e) {
       showToast(e?.message || t('saveFailed'), 'error');
@@ -436,9 +484,10 @@ export default function DailySalesScreen() {
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
       </div>
-      {row.channelsText && (
-        <div className="text-[12px] text-noorix-muted truncate">{row.channelsText}</div>
-      )}
+      <div className="rounded-lg border border-noorix-border/80 bg-noorix-bg-muted/40 p-2">
+        <div className="text-[11px] font-bold text-noorix-muted mb-1.5">{t('salesChannels')}</div>
+        <SalesChannelsChips channels={row.channels} lang={lang} />
+      </div>
       <div className="grid grid-cols-3 gap-2 mt-1">
         <div>
           <div className="text-[11px] text-noorix-muted mb-0.5">{t('total')}</div>
@@ -457,7 +506,7 @@ export default function DailySalesScreen() {
         <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
       </div>
     </div>
-  ), [STATUS_MAP, userRole, t, handleDeleteSummary]);
+  ), [STATUS_MAP, userRole, t, handleDeleteSummary, lang]);
 
   return (
     <ScreenShell>
@@ -569,6 +618,15 @@ export default function DailySalesScreen() {
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-noorix-blue text-[12px] font-semibold">
                 {t('summaryCount', displayedTotal)}
               </span>
+              <Button
+                size="sm"
+                variant={showCancelledSales ? 'primary' : 'default'}
+                className="print:hidden"
+                aria-pressed={showCancelledSales}
+                onClick={() => setShowCancelledSales((v) => !v)}
+              >
+                {showCancelledSales ? t('hideCancelledSummaries') : t('showCancelledSummaries')}
+              </Button>
               {salesFullHistory && (
                 <span className="flex flex-wrap gap-1.5 print:hidden">
                   <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportExcel')}</Button>
