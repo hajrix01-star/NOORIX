@@ -77,8 +77,9 @@ export default function DailySalesScreen() {
   const urlDrillKeyRef = useRef('');
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
-  const companyName = companies?.find((c) => c.id === activeCompanyId)?.nameAr || '';
-  const logoUrl = companies?.find((c) => c.id === activeCompanyId)?.logoUrl || '';
+  const activeCo = companies?.find((c) => c.id === activeCompanyId);
+  const companyName = (lang === 'en' ? (activeCo?.nameEn || activeCo?.nameAr) : (activeCo?.nameAr || activeCo?.nameEn)) || '';
+  const logoUrl = activeCo?.logoUrl || '';
 
   // ── كل الـ Hooks في أعلى المكوّن ──
   const { showToast } = useToast();
