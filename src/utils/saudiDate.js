@@ -40,6 +40,20 @@ export function formatSaudiDate(value) {
   return `${day}-${month}-${year}`;
 }
 
+/**
+ * اسم يوم الأسبوع (طويل) بتوقيت الرياض — للعربية أو الإنجليزية.
+ */
+export function formatSaudiWeekdayName(value, lang = 'ar') {
+  if (!value) return '';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '';
+  const locale = lang === 'en' ? 'en-US' : 'ar-SA';
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: RIYADH_TZ,
+    weekday: 'long',
+  }).format(d);
+}
+
 export function formatSaudiDateISO(value) {
   if (!value) return '—';
   const d = new Date(value);

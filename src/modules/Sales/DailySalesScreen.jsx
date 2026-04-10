@@ -14,7 +14,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useSales } from '../../hooks/useSales';
 import { useSalesChannels } from '../../hooks/useSalesChannels';
 import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } from '../../services/api';
-import { formatSaudiDate, getSaudiToday } from '../../utils/saudiDate';
+import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
@@ -215,11 +215,15 @@ export default function DailySalesScreen() {
     const avg = cc > 0 ? (total / cc) : 0;
     const name = (companyName || '').trim();
     const dateRaw = formatSaudiDate(s.transactionDate);
-    const dateSlashed = dateRaw === '—' ? dateRaw : dateRaw.replace(/-/g, '/');
+    let dateWithWeekday = dateRaw;
+    if (dateRaw !== '—') {
+      const wd = formatSaudiWeekdayName(s.transactionDate, lang);
+      if (wd) dateWithWeekday = `${dateRaw} ${wd}`;
+    }
 
     const lines = [
       `${t('salesWhatsAppReportTitle')}${name ? ` ${name}` : ''}`,
-      `${t('salesWhatsAppDateLine')} ${dateSlashed}`,
+      `${t('salesWhatsAppDateLine')} ${dateWithWeekday}`,
       `${t('salesWhatsAppSummaryRef')} ${s.summaryNumber ?? '—'}`,
       '',
     ];
