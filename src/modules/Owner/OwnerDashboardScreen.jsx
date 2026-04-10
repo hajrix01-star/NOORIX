@@ -44,6 +44,8 @@ export default function OwnerDashboardScreen() {
   const isMobile = useIsNarrow700();
   const allSelected = selectedCompanyIds.size === companyList.length && companyList.length > 0;
   const idsToFetch = [...selectedCompanyIds];
+  const selectedMonthNum = selectedMonth ? Number(selectedMonth) : null;
+
   const { reportsByCompany, isLoading, isError, error } = useOwnerReports({ companyIds: idsToFetch, year });
   const dailySalesQuery = useOwnerDailySales({ companyIds: idsToFetch, year, month: selectedMonthNum });
 
@@ -63,8 +65,6 @@ export default function OwnerDashboardScreen() {
   const selectNone = () => {
     setSelectedCompanyIds(new Set());
   };
-
-  const selectedMonthNum = selectedMonth ? Number(selectedMonth) : null;
 
   const getMonthValue = (report, key, monthIdx) => {
     if (!report) return 0;
