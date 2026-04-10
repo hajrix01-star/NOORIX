@@ -3,6 +3,10 @@
  * مؤشرات شاملة: المبيعات الشهرية لكل شركة، الأرباح المجمعة، توزيع الأرباح
  */
 import React, { useState, useMemo } from 'react';
+import {
+  ResponsiveContainer, AreaChart, Area,
+  XAxis, YAxis, Tooltip, CartesianGrid,
+} from 'recharts';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Button, Input, ScreenShell, ScreenTitle, cn, FmtNum, MetricCard } from '../../ui';
 import { useApp } from '../../context/AppContext';
@@ -12,33 +16,74 @@ import { EN_MONTHS } from '../Reports/reportHelpers';
 import { fmt } from '../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
+import { useUiDir } from '../../hooks/useUiDir';
 import { KPI_CARD_SPARKLINE_COLORS, KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
+
+const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
 /* hex فقط — var() لا يعمل مع إلحاق Alpha مثل ${c}18 */
 const COLORS = [
-  KPI_RECHARTS_COLORS.sales,      // #185FA5 أزرق
+  KPI_RECHARTS_COLORS.sales,       // #185FA5 أزرق
   KPI_RECHARTS_COLORS.grossProfit, // #3B6D11 أخضر
-  KPI_RECHARTS_COLORS.netProfit,  // #854F0B كهرماني
-  VAULT_RECHARTS_COLORS.app,      // #7c3aed بنفسجي
-  KPI_RECHARTS_COLORS.expenses,   // #A32D2D أحمر
-  KPI_RECHARTS_COLORS.purchases,  // #888780 رمادي
-  '#0891b2', '#db2777',           // تكميلية
+  KPI_RECHARTS_COLORS.netProfit,   // #854F0B كهرماني
+  VAULT_RECHARTS_COLORS.app,       // #7c3aed بنفسجي
+  KPI_RECHARTS_COLORS.expenses,    // #A32D2D أحمر
+  KPI_RECHARTS_COLORS.purchases,   // #888780 رمادي
+  '#0891b2', '#db2777',            // تكميلية
 ];
 
+const METRIC_COLORS = {
+  sales:     KPI_RECHARTS_COLORS.sales,
+  purchases: KPI_RECHARTS_COLORS.purchases,
+  expenses:  KPI_RECHARTS_COLORS.expenses,
+};
 
-function formatAxisValue(n) {
+function getSaudiYearMonth() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit',
+  }).formatToParts(new Date());
+  const m = {};
+  for (const p of parts) if (p.type !== 'literal') m[p.type] = p.value;
+  return { year: parseInt(m.year, 10), month: parseInt(m.month, 10) };
+}
+
+function fmtAxis(n) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
   if (n >= 1e3) return `${(n / 1e3).toFixed(0)}K`;
   return String(Math.round(n));
 }
 
+function ChartTooltip({ active, payload, label, companyList, lang }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', borderRadius: 6, padding: '8px 12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: 12, minWidth: 140 }}>
+      <div style={{ fontWeight: 700, marginBottom: 5, color: 'var(--noorix-text)', fontSize: 11 }}>{label}</div>
+      {payload.map((p) => {
+        const company = (companyList || []).find((c) => c.id === p.dataKey);
+        const name = company
+          ? (lang === 'ar' ? company.nameAr || company.nameEn : company.nameEn || company.nameAr)
+          : p.name;
+        return (
+          <div key={p.dataKey} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: p.color, fontWeight: 600, marginTop: 2 }}>
+            <span>{name}</span>
+            <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(p.value, 0)} SR</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function OwnerDashboardScreen() {
   const { t, lang } = useTranslation();
   const { companies } = useApp();
+  const uiDir = useUiDir();
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedCompanyIds, setSelectedCompanyIds] = useState(() => new Set(companies?.map((c) => c.id) || []));
+  const [chartGrain, setChartGrain] = useState('monthly');
+  const [metricFilter, setMetricFilter] = useState('sales');
 
   const companyList = companies?.filter((c) => !c.isArchived) || [];
   const isMobile = useIsNarrow700();
@@ -46,8 +91,18 @@ export default function OwnerDashboardScreen() {
   const idsToFetch = [...selectedCompanyIds];
   const selectedMonthNum = selectedMonth ? Number(selectedMonth) : null;
 
+  const saudiYM = getSaudiYearMonth();
+  const chartMonthForDaily = selectedMonthNum != null
+    ? selectedMonthNum
+    : (year === saudiYM.year ? saudiYM.month : 1);
+
   const { reportsByCompany, isLoading, isError, error } = useOwnerReports({ companyIds: idsToFetch, year });
-  const dailySalesQuery = useOwnerDailySales({ companyIds: idsToFetch, year, month: selectedMonthNum });
+  const dailySalesQuery = useOwnerDailySales({
+    companyIds: idsToFetch,
+    year,
+    month: chartMonthForDaily,
+    enabled: chartGrain === 'daily',
+  });
 
   const toggleCompany = (id) => {
     setSelectedCompanyIds((prev) => {
@@ -58,13 +113,8 @@ export default function OwnerDashboardScreen() {
     });
   };
 
-  const selectAll = () => {
-    setSelectedCompanyIds(new Set(companyList.map((c) => c.id)));
-  };
-
-  const selectNone = () => {
-    setSelectedCompanyIds(new Set());
-  };
+  const selectAll = () => setSelectedCompanyIds(new Set(companyList.map((c) => c.id)));
+  const selectNone = () => setSelectedCompanyIds(new Set());
 
   const getMonthValue = (report, key, monthIdx) => {
     if (!report) return 0;
@@ -81,36 +131,17 @@ export default function OwnerDashboardScreen() {
     return Number(group?.months?.[monthIdx] || 0);
   };
 
-  const salesByMonthByCompany = useMemo(() => {
-    const result = {};
-    Object.entries(reportsByCompany).forEach(([companyId, report]) => {
-      const salesGroup = report?.groups?.find((r) => r.key === 'sales');
-      if (!salesGroup?.months?.length) return;
-      result[companyId] = (salesGroup.months || []).map((val, i) => ({
-        month: i + 1,
-        label: EN_MONTHS[i],
-        amount: Number(val || 0),
-      }));
-    });
-    return result;
-  }, [reportsByCompany]);
-
   const aggregated = useMemo(() => {
     const m = selectedMonthNum != null ? selectedMonthNum - 1 : null;
-    let totalSales = 0;
-    let totalPurchases = 0;
-    let totalExpenses = 0;
-    let totalNetProfit = 0;
+    let totalSales = 0, totalPurchases = 0, totalExpenses = 0, totalNetProfit = 0;
     const byCompany = [];
     Object.entries(reportsByCompany).forEach(([companyId, report]) => {
       const sales = getMonthValue(report, 'sales', m);
       const purchases = getMonthValue(report, 'purchases', m);
       const expenses = getMonthValue(report, 'expenses', m);
       const netProfit = getMonthValue(report, 'netProfit', m);
-      totalSales += sales;
-      totalPurchases += purchases;
-      totalExpenses += expenses;
-      totalNetProfit += netProfit;
+      totalSales += sales; totalPurchases += purchases;
+      totalExpenses += expenses; totalNetProfit += netProfit;
       const company = companyList.find((c) => c.id === companyId);
       const name = lang === 'ar' ? (company?.nameAr || company?.nameEn || companyId) : (company?.nameEn || company?.nameAr || companyId);
       byCompany.push({ companyId, name, sales, purchases, expenses, netProfit });
@@ -135,69 +166,60 @@ export default function OwnerDashboardScreen() {
     return months;
   }, [reportsByCompany]);
 
-  const chartData = useMemo(() => {
-    let months = EN_MONTHS.map((_, i) => ({ month: i + 1, label: EN_MONTHS[i], byCompany: {} }));
-    if (selectedMonthNum != null) {
-      months = months.filter((x) => x.month === selectedMonthNum);
+  /* ── بيانات الرسم البياني الموحّد ── */
+  const performanceData = useMemo(() => {
+    if (chartGrain === 'daily') {
+      const { itemsByCompanyId } = dailySalesQuery;
+      const lastDay = new Date(year, chartMonthForDaily, 0).getDate();
+      const pad = (n) => String(n).padStart(2, '0');
+      return Array.from({ length: lastDay }, (_, idx) => {
+        const day = idx + 1;
+        const dateStr = `${year}-${pad(chartMonthForDaily)}-${pad(day)}`;
+        const entry = { label: String(day) };
+        idsToFetch.forEach((cid) => {
+          const list = itemsByCompanyId[cid] || [];
+          entry[cid] = list
+            .filter((s) => (s.transactionDate || '').slice(0, 10) === dateStr && s.status !== 'cancelled')
+            .reduce((a, s) => a + Number(s.totalAmount || 0), 0);
+        });
+        return entry;
+      });
     }
-    Object.entries(salesByMonthByCompany).forEach(([companyId, data]) => {
-      data.forEach((p) => {
-        const m = months.find((x) => x.month === p.month);
-        if (m) m.byCompany[companyId] = p.amount;
-      });
-    });
-    return months;
-  }, [salesByMonthByCompany, selectedMonthNum]);
-
-  const maxChartValue = useMemo(() => {
-    let max = 0;
-    chartData.forEach((m) => {
-      const sum = Object.values(m.byCompany || {}).reduce((a, b) => a + b, 0);
-      max = Math.max(max, sum);
-    });
-    return Math.max(1, max);
-  }, [chartData]);
-
-  const yAxisTicks = useMemo(() => {
-    const step = Math.max(1, Math.ceil(maxChartValue / 5));
-    return [0, 1, 2, 3, 4, 5].map((i) => step * i);
-  }, [maxChartValue]);
-
-  const dailyChartData = useMemo(() => {
-    if (!selectedMonthNum) return [];
-    const y = year;
-    const m = selectedMonthNum;
-    const lastDay = new Date(y, m, 0).getDate();
-    const pad = (n) => String(n).padStart(2, '0');
-    const { itemsByCompanyId } = dailySalesQuery;
-    return Array.from({ length: lastDay }, (_, idx) => {
-      const day = idx + 1;
-      const ymd = `${y}-${pad(m)}-${pad(day)}`;
-      const byCompany = {};
+    /* Monthly — دائماً 12 شهراً للسياق */
+    return Array.from({ length: 12 }, (_, i) => {
+      const entry = { label: lang === 'ar' ? MONTH_NAMES_AR[i] : EN_MONTHS[i] };
       idsToFetch.forEach((cid) => {
-        const list = itemsByCompanyId[cid] || [];
-        const sum = list
-          .filter((s) => (s.transactionDate || '').slice(0, 10) === ymd && s.status !== 'cancelled')
-          .reduce((a, s) => a + Number(s.totalAmount || 0), 0);
-        if (sum > 0) byCompany[cid] = sum;
+        const report = reportsByCompany[cid];
+        const groupKey = metricFilter === 'purchases' ? 'purchases' : metricFilter === 'expenses' ? 'expenses' : 'sales';
+        const g = report?.groups?.find((r) => r.key === groupKey);
+        entry[cid] = Number(g?.months?.[i] || 0);
       });
-      return { day, label: String(day), byCompany };
+      return entry;
     });
-  }, [selectedMonthNum, year, idsToFetch.join(','), dailySalesQuery.dataStamp]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartGrain, dailySalesQuery.dataStamp, year, chartMonthForDaily, idsToFetch.join(','), selectedMonthNum, reportsByCompany, metricFilter, lang]);
 
-  const maxDailyChartValue = useMemo(() => {
-    let max = 0;
-    dailyChartData.forEach((d) => {
-      const sum = Object.values(d.byCompany || {}).reduce((a, b) => a + b, 0);
-      max = Math.max(max, sum);
-    });
-    return Math.max(1, max);
-  }, [dailyChartData]);
+  const companySeries = useMemo(() =>
+    idsToFetch.map((cid, i) => {
+      const c = companyList.find((x) => x.id === cid);
+      return {
+        key: cid,
+        label: lang === 'ar' ? c?.nameAr || c?.nameEn || cid : c?.nameEn || c?.nameAr || cid,
+        color: COLORS[i % COLORS.length],
+        gradId: `grad-owner-${i}`,
+      };
+    }),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [idsToFetch.join(','), companyList, lang]);
 
-  const yAxisTicksDaily = useMemo(() => {
-    const step = Math.max(1, Math.ceil(maxDailyChartValue / 5));
-    return [0, 1, 2, 3, 4, 5].map((i) => step * i);
-  }, [maxDailyChartValue]);
+  const METRIC_FILTERS = [
+    { key: 'sales',     label: t('annualSales') },
+    { key: 'purchases', label: t('annualPurchases') },
+    { key: 'expenses',  label: t('annualExpenses') },
+  ];
+
+  const chartMonthName = lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : EN_MONTHS[chartMonthForDaily - 1];
+  const chartSubtitle  = chartGrain === 'monthly' ? String(year) : `${chartMonthName} — ${year}`;
 
   const handleExportExcel = () => {
     const rows = [
@@ -223,12 +245,7 @@ export default function OwnerDashboardScreen() {
     const cols = [lang === 'ar' ? 'الشركة' : 'Company', lang === 'ar' ? 'المبيعات' : 'Sales', lang === 'ar' ? 'نسبة المشتريات' : 'Purchases %', lang === 'ar' ? 'صافي الربح' : 'Net profit'];
     const data = aggregated.byCompany.map((x) => [x.name, fmt(x.sales), x.sales > 0 ? fmt((x.purchases / x.sales) * 100, 1) + '%' : '—', fmt(x.netProfit)]);
     data.unshift([lang === 'ar' ? 'الإجمالي' : 'Total', fmt(aggregated.totalSales), aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) + '%' : '—', fmt(aggregated.totalNetProfit)]);
-    exportTableToPdf({
-      title: `${t('ownerDashboard')} — ${year}`,
-      filename: `owner-dashboard-${year}.pdf`,
-      columns: cols,
-      data,
-    });
+    exportTableToPdf({ title: `${t('ownerDashboard')} — ${year}`, filename: `owner-dashboard-${year}.pdf`, columns: cols, data });
   };
 
   if (companyList.length === 0) {
@@ -250,20 +267,12 @@ export default function OwnerDashboardScreen() {
           <p className="text-[13px] text-noorix-muted m-0">{t('ownerDashboardDesc')}</p>
         </div>
         <div className="nx-toolbar">
-          <Input
-            type="select"
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-          >
+          <Input type="select" value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </Input>
-          <Input
-            type="select"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-          >
+          <Input type="select" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
             <option value="">{t('allMonths')}</option>
             {EN_MONTHS.map((m, i) => (
               <option key={i} value={i + 1}>{m}</option>
@@ -274,7 +283,7 @@ export default function OwnerDashboardScreen() {
         </div>
       </div>
 
-      {/* اختيار الشركات — أزرار عين */}
+      {/* اختيار الشركات */}
       <div className={cn('noorix-surface-card', isMobile ? 'p-3' : 'p-4')}>
         <div className="font-bold mb-3">{t('ownerSelectCompanies')}</div>
         <div className="flex items-center flex flex-wrap gap-2">
@@ -355,137 +364,142 @@ export default function OwnerDashboardScreen() {
             })}
           </div>
 
-          {/* المبيعات الشهرية — رسم بياني */}
-          <div className={cn('noorix-surface-card', isMobile ? 'p-3' : 'p-6')}>
-            <div className="text-[16px] font-bold mb-5">{t('ownerMonthlySales')} — {year}{selectedMonthNum ? ` (${EN_MONTHS[selectedMonthNum - 1]})` : ''}</div>
-            <div className="flex gap-0 min-h-[220px]">
-              <div className="shrink-0 flex flex-col w-12 justify-between pt-1 pb-7">
-                {[...yAxisTicks].reverse().map((tick) => (
-                  <div key={tick} className="text-[10px] nx-font-numbers text-noorix-muted font-semibold">
-                    {formatAxisValue(tick)}
-                  </div>
-                ))}
+          {/* ── الرسم البياني الموحّد (شهري/يومي) ── */}
+          <div className={cn('noorix-surface-card', isMobile ? 'p-3' : 'p-5')}>
+            {/* رأس: العنوان + التبديل شهري/يومي + فلاتر المؤشرات */}
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+              <div>
+                <div className="text-[14px] font-bold text-noorix-text">{t('ownerMonthlySales')}</div>
+                <div className="text-[12px] text-noorix-muted mt-0.5">{chartSubtitle}</div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex gap-1.5 items-end h-[180px] pb-7">
-                  {chartData.map((point) => {
-                    const companyAmounts = point.byCompany || {};
-                    const total = Object.values(companyAmounts).reduce((a, b) => a + b, 0);
-                    const barHeightPct = maxChartValue > 0 ? (total / maxChartValue) * 100 : 0;
-                    return (
-                      <div key={point.month} className="flex-1 min-w-0 flex flex-col gap-1 items-center">
-                        <div className="w-full h-full flex max-w-[40px] flex-col-reverse items-stretch">
-                          {idsToFetch.map((companyId, i) => {
-                            const amt = companyAmounts[companyId] || 0;
-                            if (amt <= 0) return null;
-                            const heightPct = Math.max(0.5, (amt / maxChartValue) * 100);
-                            return (
-                              <div
-                                key={companyId}
-                                style={{
-                                  height: `${heightPct}%`,
-                                  minHeight: 2,
-                                  background: COLORS[i % COLORS.length],
-                                  borderRadius: '2px 2px 0 0',
-                                }}
-                                title={`${companyList.find((c) => c.id === companyId)?.nameAr || companyId}: ${fmt(amt)} SR`}
-                              />
-                            );
-                          })}
-                        </div>
-                        <div className="text-[10px] text-noorix-muted font-semibold">{point.label}</div>
-                      </div>
-                    );
-                  })}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Toggle شهري / يومي */}
+                <div
+                  role="tablist"
+                  dir={uiDir}
+                  className="inline-flex shrink-0 items-stretch rounded-lg border border-noorix-border bg-noorix-bg-muted p-0.5"
+                >
+                  <Button
+                    type="button" role="tab"
+                    aria-selected={chartGrain === 'monthly'}
+                    variant="raw" size="auto"
+                    className={cn(
+                      'min-h-9 rounded-md px-3 py-1.5 text-[12px] font-semibold sm:min-h-8 sm:py-1',
+                      chartGrain === 'monthly'
+                        ? 'bg-noorix-surface text-noorix-text shadow-sm'
+                        : 'text-noorix-muted hover:bg-noorix-surface/60 hover:text-noorix-text',
+                    )}
+                    data-active={chartGrain === 'monthly' ? 'true' : 'false'}
+                    onClick={() => setChartGrain('monthly')}
+                  >
+                    {t('dashboardTimelineMonthly')}
+                  </Button>
+                  <Button
+                    type="button" role="tab"
+                    aria-selected={chartGrain === 'daily'}
+                    variant="raw" size="auto"
+                    className={cn(
+                      'min-h-9 rounded-md px-3 py-1.5 text-[12px] font-semibold sm:min-h-8 sm:py-1',
+                      chartGrain === 'daily'
+                        ? 'bg-noorix-surface text-noorix-text shadow-sm'
+                        : 'text-noorix-muted hover:bg-noorix-surface/60 hover:text-noorix-text',
+                    )}
+                    data-active={chartGrain === 'daily' ? 'true' : 'false'}
+                    onClick={() => setChartGrain('daily')}
+                  >
+                    {t('dashboardTimelineDaily')}
+                  </Button>
                 </div>
+
+                {/* فلاتر المؤشرات — مبيعات/مشتريات/مصروفات */}
+                {METRIC_FILTERS.map((f) => {
+                  const disabled = chartGrain === 'daily' && f.key !== 'sales';
+                  const active   = !disabled && metricFilter === f.key;
+                  return (
+                    <button
+                      key={f.key}
+                      onClick={() => !disabled && setMetricFilter(f.key)}
+                      style={{
+                        borderColor: active ? METRIC_COLORS[f.key] : 'var(--noorix-border)',
+                        color:       active ? METRIC_COLORS[f.key] : disabled ? 'var(--noorix-border)' : 'var(--noorix-text-muted)',
+                        background:  active ? `${METRIC_COLORS[f.key]}14` : 'transparent',
+                        opacity:     disabled ? 0.35 : 1,
+                        cursor:      disabled ? 'not-allowed' : 'pointer',
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150 select-none"
+                    >
+                      <span
+                        className="inline-block w-3 h-0.5 rounded-full flex-shrink-0"
+                        style={{ background: active ? METRIC_COLORS[f.key] : 'var(--noorix-border)' }}
+                      />
+                      {f.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* حالة تحميل اليومي */}
+            {chartGrain === 'daily' && dailySalesQuery.isLoading && (
+              <div className="text-center text-noorix-muted py-12">{t('loading')}</div>
+            )}
+            {chartGrain === 'daily' && dailySalesQuery.isError && (
+              <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-4 py-3 text-[13px] text-noorix-red">
+                {dailySalesQuery.error?.message || t('loadingError')}
+              </div>
+            )}
+
+            {/* الرسم البياني */}
+            {!(chartGrain === 'daily' && (dailySalesQuery.isLoading || dailySalesQuery.isError)) && (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={performanceData} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
+                  <defs>
+                    {companySeries.map((s) => (
+                      <linearGradient key={s.gradId} id={s.gradId} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor={s.color} stopOpacity={0.22} />
+                        <stop offset="95%" stopColor={s.color} stopOpacity={0.02} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" opacity={0.6} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-primary)' }}
+                    axisLine={false} tickLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={fmtAxis}
+                    tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
+                    axisLine={false} tickLine={false} width={46}
+                  />
+                  <Tooltip content={(props) => <ChartTooltip {...props} companyList={companyList} lang={lang} />} />
+                  {companySeries.map((s) => (
+                    <Area
+                      key={s.key}
+                      type="monotone"
+                      dataKey={s.key}
+                      name={s.label}
+                      stroke={s.color}
+                      strokeWidth={2}
+                      fill={`url(#${s.gradId})`}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  ))}
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+
+            {/* مفتاح الألوان */}
             <div className="flex flex-wrap gap-4 mt-4 border-t border-noorix-border pt-3">
-              {idsToFetch.map((companyId, i) => {
-                const c = companyList.find((x) => x.id === companyId);
-                return (
-                  <div key={companyId} className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                    <span className="text-[12px]">{lang === 'ar' ? c?.nameAr || c?.nameEn : c?.nameEn || c?.nameAr}</span>
-                  </div>
-                );
-              })}
+              {companySeries.map((s) => (
+                <div key={s.key} className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: s.color }} />
+                  <span className="text-[12px]">{s.label}</span>
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* المبيعات اليومية — شهر محدد فقط */}
-          {selectedMonthNum && (
-            <div className={cn('noorix-surface-card', isMobile ? 'p-3' : 'p-6')}>
-              <div className="text-[16px] font-bold mb-1">
-                {t('ownerDailySalesTitle')} — {EN_MONTHS[selectedMonthNum - 1]} {year}
-              </div>
-              <p className="text-[12px] text-noorix-muted m-0 mb-4">{t('ownerDailySalesSubtitle')}</p>
-              {dailySalesQuery.isLoading && (
-                <div className="text-center text-noorix-muted py-8">{t('loading')}</div>
-              )}
-              {dailySalesQuery.isError && (
-                <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-4 py-3 text-[13px] text-noorix-red">
-                  {dailySalesQuery.error?.message || t('loadingError')}
-                </div>
-              )}
-              {!dailySalesQuery.isLoading && !dailySalesQuery.isError && (
-                <div className="flex gap-0 min-h-[220px]">
-                  <div className="shrink-0 flex flex-col w-12 justify-between pt-1 pb-7">
-                    {[...yAxisTicksDaily].reverse().map((tick) => (
-                      <div key={tick} className="text-[10px] nx-font-numbers text-noorix-muted font-semibold">
-                        {formatAxisValue(tick)}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex-1 min-w-0 overflow-x-auto">
-                    <div className="flex gap-0.5 sm:gap-1 items-end h-[180px] pb-7 min-w-max">
-                      {dailyChartData.map((point) => {
-                        const companyAmounts = point.byCompany || {};
-                        const total = Object.values(companyAmounts).reduce((a, b) => a + b, 0);
-                        return (
-                          <div key={point.day} className="flex flex-col gap-1 items-center w-5 sm:w-6 shrink-0">
-                            <div className="w-full h-full flex max-w-[32px] flex-col-reverse items-stretch" title={`${fmt(total)} SR`}>
-                              {idsToFetch.map((companyId, i) => {
-                                const amt = companyAmounts[companyId] || 0;
-                                if (amt <= 0) return null;
-                                const heightPct = Math.max(0.5, (amt / maxDailyChartValue) * 100);
-                                return (
-                                  <div
-                                    key={companyId}
-                                    style={{
-                                      height: `${heightPct}%`,
-                                      minHeight: 2,
-                                      background: COLORS[i % COLORS.length],
-                                      borderRadius: '2px 2px 0 0',
-                                    }}
-                                    title={`${companyList.find((c) => c.id === companyId)?.nameAr || companyId}: ${fmt(amt)} SR`}
-                                  />
-                                );
-                              })}
-                            </div>
-                            <div className="text-[9px] sm:text-[10px] text-noorix-muted font-semibold tabular-nums">{point.label}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-              {!dailySalesQuery.isLoading && !dailySalesQuery.isError && (
-                <div className="flex flex-wrap gap-4 mt-4 border-t border-noorix-border pt-3">
-                  {idsToFetch.map((companyId, i) => {
-                    const c = companyList.find((x) => x.id === companyId);
-                    return (
-                      <div key={`d-${companyId}`} className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                        <span className="text-[12px]">{lang === 'ar' ? c?.nameAr || c?.nameEn : c?.nameEn || c?.nameAr}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* توزيع الأرباح */}
           <div className="noorix-surface-card p-4">
@@ -506,7 +520,7 @@ export default function OwnerDashboardScreen() {
                           <span className="text-[13px] font-semibold truncate">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-8 shrink-0">
-                          <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor /* dynamic: profit/loss color */ }}>
+                          <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor }}>
                             <FmtNum n={item.netProfit} /> <span className="nx-sar">SR</span>
                           </span>
                           <span className="text-[11px] text-noorix-muted text-end min-w-[38px]">

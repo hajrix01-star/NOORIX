@@ -13,13 +13,13 @@ function monthBounds(y, month1to12) {
 }
 
 /**
- * @param {{ companyIds: string[], year: number, month: number | null }} params — month: 1..12 أو null
+ * @param {{ companyIds: string[], year: number, month: number | null, enabled?: boolean }} params
  */
-export function useOwnerDailySales({ companyIds, year, month }) {
+export function useOwnerDailySales({ companyIds, year, month, enabled: externalEnabled = true }) {
   const bounds = month && year ? monthBounds(year, month) : null;
 
   const ids = companyIds || [];
-  const enabled = !!(bounds && ids.length && month);
+  const enabled = externalEnabled && !!(bounds && ids.length && month);
 
   const queries = useQueries({
     queries: ids.map((companyId) => ({
