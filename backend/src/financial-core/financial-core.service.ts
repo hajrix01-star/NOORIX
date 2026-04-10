@@ -1180,9 +1180,9 @@ export class FinancialCoreService {
    *   EXP-001 → مصروفات عامة        (expense)
    *   EXP-002 → موارد بشرية          (hr_expense | salary)
    *   EXP-003 → مصروفات ثابتة        (fixed_expense)
-   *   EXP-004 → مصروفات المشتريات    (purchase)
-   *   EMP-001 → سلفيات الموظفين      (advance) ← حساب أصول (asset)
+   *   EXP-004 → رواتب وأجور          (salary + advance)
    *
+   * السلفيات تُعامَل كجزء من الراتب (أساس نقدي) — تظهر في P&L فور الصرف.
    * لإضافة نوع جديد: أضف الكود هنا وأنشئ الحساب في seed.js.
    */
   private static readonly KIND_TO_ACCOUNT_CODE: Record<string, string> = {
@@ -1191,15 +1191,15 @@ export class FinancialCoreService {
     hr_expense:    'EXP-002',   // رسوم حكومية وإقامات
     fixed_expense: 'EXP-003',   // إيجار ومرافق
     salary:        'EXP-004',   // رواتب وأجور
-    advance:       'EXP-001',   // سلفيات الموظفين (أصل/مديونية)
+    advance:       'EXP-004',   // سلفة = جزء من الراتب (أساس نقدي) → expense
   };
 
   /**
    * يُحدد الحساب المدين بدقة باستخدام الخريطة الصريحة.
    *
    * أنواع الحسابات حسب Kind:
-   *   expense | purchase | hr_expense | fixed_expense | salary → نوع expense
-   *   advance → نوع asset (EMP-001: سلفيات الموظفين)
+   *   expense | purchase | hr_expense | fixed_expense | salary | advance → نوع expense
+   *   (السلفيات = جزء من الراتب، أساس نقدي — تظهر في P&L فور الصرف)
    *
    * أولوية: الخريطة الصريحة → fallback حسب نوع العملية.
    */
@@ -1219,9 +1219,8 @@ export class FinancialCoreService {
     });
     if (specific) return specific.id;
 
-    // محاولة 2: fallback حسب نوع العملية
-    // السلفية → أي حساب أصول | بقية العمليات → أي حساب مصروفات
-    const fallbackType = kind === 'advance' ? 'asset' : 'expense';
+    // محاولة 2: fallback حسب نوع العملية (كل العمليات بما فيها السلفيات → expense)
+    const fallbackType = 'expense';
     const fallback = await tx.account.findFirst({
       where:   { companyId, type: fallbackType, isActive: true },
       select:  { id: true },
