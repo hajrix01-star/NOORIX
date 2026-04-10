@@ -16,7 +16,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
   ];
   const [form, setForm] = useState({
     nameAr: '', nameEn: '', taxNumber: '', phone: '',
-    supplierCategoryId: '', supplierType: 'purchases',
+    supplierCategoryId: '', supplierType: 'purchases', isTaxRegistered: false,
   });
 
   useEffect(() => {
@@ -28,6 +28,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
         phone: supplier.phone || '',
         supplierCategoryId: supplier.supplierCategoryId || '',
         supplierType: supplier.supplierType === 'expenses' ? 'expenses' : 'purchases',
+        isTaxRegistered: !!supplier.isTaxRegistered,
       });
     }
   }, [supplier]);
@@ -50,6 +51,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
       phone: form.phone.trim() || undefined,
       supplierType: form.supplierType,
       supplierCategoryId: form.supplierCategoryId || undefined,
+      isTaxRegistered: form.isTaxRegistered,
     });
   }
 
@@ -109,6 +111,22 @@ export const SupplierEditModal = memo(function SupplierEditModal({
             })}
           </Input>
         </FormRow>
+
+        <label className="nx-checkbox flex items-center gap-2 mt-3 cursor-pointer select-none text-[13px] text-noorix-text">
+          <input
+            type="checkbox"
+            checked={form.isTaxRegistered}
+            onChange={(e) => set('isTaxRegistered', e.target.checked)}
+            className="w-[18px] h-[18px]"
+          />
+          <span>
+            {t('isTaxRegistered')}
+            <span className="ms-1 text-[11px] text-noorix-muted">
+              — {form.isTaxRegistered ? t('taxRegisteredHint') : t('taxNotRegisteredHint')}
+            </span>
+          </span>
+        </label>
+
         <div className="nx-toolbar flex items-center justify-end mt-[14px]">
           <Button type="button" onClick={onClose}>{t('cancel')}</Button>
           <Button type="submit" variant="primary" disabled={isSaving || !form.nameAr.trim()}>

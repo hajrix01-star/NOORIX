@@ -6,7 +6,7 @@ import React, { useState, memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, Card, FormRow } from '../../../ui';
 
-const EMPTY = { nameAr: '', nameEn: '', taxNumber: '', phone: '', supplierCategoryId: '', supplierType: 'purchases' };
+const EMPTY = { nameAr: '', nameEn: '', taxNumber: '', phone: '', supplierCategoryId: '', supplierType: 'purchases', isTaxRegistered: false };
 
 export const SupplierForm = memo(function SupplierForm({ companyId, flatCategories = [], onSave, isSaving, onCancel }) {
   const { t } = useTranslation();
@@ -32,6 +32,7 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
       phone:              form.phone.trim() || undefined,
       supplierType:       form.supplierType,
       supplierCategoryId: form.supplierCategoryId || undefined,
+      isTaxRegistered:    form.isTaxRegistered,
     });
   }
 
@@ -92,6 +93,22 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
             })}
           </Input>
         </FormRow>
+
+        <label className="nx-checkbox flex items-center gap-2 mt-3 cursor-pointer select-none text-[13px] text-noorix-text">
+          <input
+            type="checkbox"
+            checked={form.isTaxRegistered}
+            onChange={(e) => set('isTaxRegistered', e.target.checked)}
+            className="w-[18px] h-[18px]"
+          />
+          <span>
+            {t('isTaxRegistered')}
+            <span className="ms-1 text-[11px] text-noorix-muted">
+              — {form.isTaxRegistered ? t('taxRegisteredHint') : t('taxNotRegisteredHint')}
+            </span>
+          </span>
+        </label>
+
         <div className="nx-toolbar mt-[14px]">
           <Button type="submit" variant="primary" disabled={isSaving || !form.nameAr.trim()}>
             {isSaving ? t('saving') : t('saveSupplier')}

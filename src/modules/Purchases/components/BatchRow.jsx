@@ -56,17 +56,21 @@ export const BatchRow = memo(function BatchRow({
       return;
     }
     const supplier = suppliers.find((s) => s.id === supplierId);
-    // فئة المورد: من supplierCategory المضمنة أو من القائمة عبر supplierCategoryId
     const cat = supplier?.supplierCategory ?? (supplier?.supplierCategoryId ? categories.find((c) => c.id === supplier.supplierCategoryId) : null);
     const kind = cat?.type === 'expense' ? 'expense' : 'purchase';
-    const taxExempt = cat?.account?.taxExempt ?? false;
-    // تحديث واحد لتفادي مشاكل الـ batching
+
+    // الأولوية: isTaxRegistered على المورد ← taxExempt على الفئة ← افتراضي (ضريبي)
+    let isTaxable;
+    if (supplier?.isTaxRegistered === true)  isTaxable = true;
+    else if (supplier?.isTaxRegistered === false) isTaxable = false;
+    else isTaxable = !(cat?.account?.taxExempt ?? false);
+
     onUpdate(index, {
       supplierId,
       kind,
-      categoryId: cat ? cat.id : '',
-      debitAccountId: cat ? (cat.accountId || cat.account?.id || '') : '',
-      isTaxable: !taxExempt,
+      categoryId:      cat ? cat.id : '',
+      debitAccountId:  cat ? (cat.accountId || cat.account?.id || '') : '',
+      isTaxable,
     });
   }
 

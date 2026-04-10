@@ -152,6 +152,20 @@ export const SupplierTable = memo(function SupplierTable({
       },
     },
     {
+      key: 'isTaxRegistered',
+      label: t('taxRegisteredCol'),
+      align: 'center',
+      shrink: true,
+      render: (_, row) =>
+        row.isTaxRegistered == null ? (
+          <span className="nx-cell-muted text-[12px]">—</span>
+        ) : row.isTaxRegistered ? (
+          <Badge color="green" size="sm" title={t('taxRegisteredHint')}>{t('taxRegisteredBadgeYes')}</Badge>
+        ) : (
+          <Badge color="gray" size="sm" title={t('taxNotRegisteredHint')}>{t('taxRegisteredBadgeNo')}</Badge>
+        ),
+    },
+    {
       key: 'supplierType',
       label: t('type'),
       align: 'center',
@@ -220,8 +234,8 @@ export const SupplierTable = memo(function SupplierTable({
                 ariaLabel={`تحديد ${row.nameAr}`}
               />
               <div className="flex-1 min-w-0">
-                <div className="flex mb-1 justify-between items-start">
-                  <div>
+                <div className="flex mb-1 justify-between items-start gap-2">
+                  <div className="min-w-0">
                     <div className="font-bold text-[14px]">{sName(row, lang)}</div>
                     {row.nameEn && row.nameAr && lang !== 'en' && (
                       <div className="nx-cell-muted">{row.nameEn}</div>
@@ -230,7 +244,14 @@ export const SupplierTable = memo(function SupplierTable({
                       <div className="nx-cell-muted">{row.nameAr}</div>
                     )}
                   </div>
-                  <TypeBadge type={row.supplierType || 'purchases'} />
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {row.isTaxRegistered != null && (
+                      row.isTaxRegistered
+                        ? <Badge color="green" size="sm">{t('taxRegisteredBadgeYes')}</Badge>
+                        : <Badge color="gray" size="sm">{t('taxRegisteredBadgeNo')}</Badge>
+                    )}
+                    <TypeBadge type={row.supplierType || 'purchases'} />
+                  </div>
                 </div>
                 {(row.phone || row.taxNumber) && (
                   <div className="flex gap-3 text-[12px] text-noorix-muted mb-1">
