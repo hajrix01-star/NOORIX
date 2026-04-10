@@ -245,11 +245,15 @@ export const SupplierTable = memo(function SupplierTable({
                     </Badge>
                   </div>
                 )}
-                <ActionBtns
-                  onEdit={() => onEdit?.(row)}
-                  onDelete={() => onDelete?.(row)}
-                  t={t}
-                />
+                <div className="flex justify-end">
+                  <KebabMenu
+                    ariaLabel={t('actions')}
+                    items={[
+                      { key: 'edit',   label: t('edit'),   style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
+                      { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' },   onClick: () => onDelete?.(row) },
+                    ]}
+                  />
+                </div>
               </div>
             </div>
           </div>
