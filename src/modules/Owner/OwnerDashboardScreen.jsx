@@ -8,7 +8,7 @@ import {
   XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button, Input, ScreenShell, ScreenTitle, cn, FmtNum, MetricCard } from '../../ui';
+import { Button, Input, ScreenShell, ScreenTitle, cn, MetricCard } from '../../ui';
 import { useApp } from '../../context/AppContext';
 import { useOwnerReports } from '../../hooks/useOwnerReports';
 import { useOwnerDailySales } from '../../hooks/useOwnerDailySales';
@@ -17,20 +17,12 @@ import { fmt } from '../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
-import { KPI_CARD_SPARKLINE_COLORS, KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
+import { KPI_CARD_SPARKLINE_COLORS, KPI_RECHARTS_COLORS, SERIES_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
-/* hex فقط — var() لا يعمل مع إلحاق Alpha مثل ${c}18 */
-const COLORS = [
-  KPI_RECHARTS_COLORS.sales,       // #185FA5 أزرق
-  KPI_RECHARTS_COLORS.grossProfit, // #3B6D11 أخضر
-  KPI_RECHARTS_COLORS.netProfit,   // #854F0B كهرماني
-  VAULT_RECHARTS_COLORS.app,       // #7c3aed بنفسجي
-  KPI_RECHARTS_COLORS.expenses,    // #A32D2D أحمر
-  KPI_RECHARTS_COLORS.purchases,   // #888780 رمادي
-  '#0891b2', '#db2777',            // تكميلية
-];
+/* SERIES_RECHARTS_COLORS — ألوان موحّدة من kpiCardTheme لسلاسل الشركات */
+const COLORS = SERIES_RECHARTS_COLORS;
 
 const METRIC_COLORS = {
   sales:     KPI_RECHARTS_COLORS.sales,
@@ -689,44 +681,6 @@ export default function OwnerDashboardScreen() {
             );
           })()}
 
-          {/* توزيع الأرباح */}
-          <div className="noorix-surface-card p-4">
-            <div className="text-[16px] font-bold mb-3.5">{t('ownerProfitDistribution')}</div>
-            <div className="flex flex-col gap-3">
-              {aggregated.byCompany
-                .filter((x) => Math.abs(x.netProfit) > 0.001)
-                .sort((a, b) => b.netProfit - a.netProfit)
-                .map((item, i) => {
-                  const pct = aggregated.totalNetProfit !== 0 ? (item.netProfit / aggregated.totalNetProfit) * 100 : 0;
-                  const barWidth = Math.min(100, Math.max(0, Math.abs(pct)));
-                  const profitColor = item.netProfit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)';
-                  return (
-                    <div key={item.companyId}>
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-8 min-w-0">
-                          <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                          <span className="text-[13px] font-semibold truncate">{item.name}</span>
-                        </div>
-                        <div className="flex items-center gap-8 shrink-0">
-                          <span className="text-[13px] font-bold nx-font-numbers" style={{ color: profitColor }}>
-                            <FmtNum n={item.netProfit} /> <span className="nx-sar">SR</span>
-                          </span>
-                          <span className="text-[11px] text-noorix-muted text-end min-w-[38px]">
-                            {aggregated.totalNetProfit !== 0 ? `${fmt(pct, 1)}%` : '—'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="bg-noorix-bg-muted overflow-hidden h-1.5 rounded">
-                        <div className="h-full" style={{ width: `${barWidth}%`, background: profitColor, borderRadius: 4, transition: 'width 400ms ease' }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              {aggregated.byCompany.filter((x) => Math.abs(x.netProfit) > 0.001).length === 0 && (
-                <div className="p-6 text-center text-noorix-muted text-[13px]">{t('reportNoData')}</div>
-              )}
-            </div>
-          </div>
         </>
       )}
     </ScreenShell>

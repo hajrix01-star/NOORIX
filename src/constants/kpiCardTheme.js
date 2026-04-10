@@ -57,3 +57,18 @@ export const VAULT_RECHARTS_COLORS = {
   app:  '#c2410c',  /* = --color-nx-app    */
 };
 
+/**
+ * ألوان تكميلية للسلاسل المتعددة (مخططات متعددة الشركات).
+ * تُستخدم عندما يتجاوز عدد الكيانات الستة ألوان الباليت الأساسي.
+ */
+export const SERIES_RECHARTS_COLORS = [
+  '#185FA5',  /* sales      */
+  '#3B6D11',  /* profit     */
+  '#854F0B',  /* net-profit */
+  '#c2410c',  /* app        */
+  '#A32D2D',  /* expenses   */
+  '#888780',  /* purchases  */
+  '#0369a1',  /* sky-700    — تكميلي 7 */
+  '#9333ea',  /* purple-600 — تكميلي 8 */
+];
+
