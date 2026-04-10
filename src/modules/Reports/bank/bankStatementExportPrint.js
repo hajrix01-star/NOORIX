@@ -95,20 +95,34 @@ export function printBankStatement({
     </tr>`,
     )
     .join('');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>كشف</title>
-  <style>
-    body{font-family:system-ui,sans-serif;padding:16px;}
-    h1{font-size:18px} table{border-collapse:collapse;width:100%;font-size:12px}
-    th,td{border:1px solid #ccc;padding:6px} th{background:#f0f0f0}
-  </style></head><body>
-  <h1>${companyName || ''}</h1>
-  <p>${statement.bankName || ''} — ${period}</p>
-  <p>الملف: ${statement.fileName || ''}</p>
-  <table><thead><tr><th>التاريخ</th><th>الوصف</th><th>التصنيف</th><th>مدين</th><th>دائن</th></tr></thead>
-  <tbody>${rows}</tbody>
-  <tfoot><tr><th colspan="3">مجموع المعروض</th><th>${fmt(columnTotals.debit)}</th><th>${fmt(columnTotals.credit)}</th></tr></tfoot>
-  </table>
-  <script>window.onload=function(){window.print();}</script>
-  </body></html>`);
+  const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+  w.document.write(`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>كشف حساب - ${(companyName || '').replace(/</g, '&lt;')}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}
+  *{box-sizing:border-box}
+  body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:13px;color:#1a1a1a;line-height:1.6}
+  .header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:20px}
+  .header h1{margin:0 0 4px;font-size:20px;font-weight:800}
+  .header .sub{font-size:12px;color:#555;margin:2px 0}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border:1px solid #ddd;padding:6px 10px;text-align:right}
+  th{background:#2563eb;color:#fff;font-weight:700}
+  tfoot tr{font-weight:700;background:#f1f5f9}
+  .print-footer{margin-top:20px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}
+  @media print{body{padding:0}}
+</style></head><body>
+<div class="header">
+  <h1>${(companyName || '').replace(/</g, '&lt;')}</h1>
+  <div class="sub">${(statement.bankName || '').replace(/</g, '&lt;')} — ${period}</div>
+  <div class="sub">الملف: ${(statement.fileName || '').replace(/</g, '&lt;')}</div>
+</div>
+<table><thead><tr><th>التاريخ</th><th>الوصف</th><th>التصنيف</th><th>مدين</th><th>دائن</th></tr></thead>
+<tbody>${rows}</tbody>
+<tfoot><tr><td colspan="3">مجموع المعروض</td><td>${fmt(columnTotals.debit)}</td><td>${fmt(columnTotals.credit)}</td></tr></tfoot>
+</table>
+<div class="print-footer">طُبع بتاريخ: ${printDate}</div>
+<script>window.onload=function(){window.print();}</script>
+</body></html>`);
   w.document.close();
 }

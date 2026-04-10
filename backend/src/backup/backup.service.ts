@@ -686,7 +686,10 @@ export class BackupService {
     try {
       const buf = await fs.readFile(abs);
       const json = zlib.gunzipSync(buf).toString('utf8');
-      JSON.parse(json);
+      const snap = JSON.parse(json) as { meta?: { format?: string; version?: number } };
+      if (!snap?.meta || snap.meta.format !== 'noorix-company-logical') {
+        throw new Error('تنسيق اللقطة غير صالح — المتوقع: noorix-company-logical');
+      }
       await this.prisma.backupJob.update({
         where: { id: job.id },
         data: { verifyOk: true, verifyError: null, verifiedAt: now },

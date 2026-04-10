@@ -297,6 +297,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             </Input>
             <Button
               type="button"
+              size="sm"
               variant="primary"
               disabled={!companyId || !activeCompanies.length || triggerMut.isPending}
               onClick={() => triggerMut.mutate()}
@@ -389,6 +390,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             <div className="backup-actions-row">
               <Button
                 type="button"
+                size="sm"
                 disabled={saveSysMut.isPending}
                 onClick={() =>
                   saveSysMut.mutate({
@@ -403,6 +405,7 @@ export default function BackupTab({ activeCompanies = [] }) {
               </Button>
               <Button
                 type="button"
+                size="sm"
                 variant="primary"
                 disabled={runSysMut.isPending}
                 onClick={() => runSysMut.mutate()}
@@ -438,6 +441,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                     {sj.status === 'completed' && sj.localRelativePath && (
                       <Button
                         type="button"
+                        size="sm"
                         variant="ghost"
                         disabled={verifySysMut.isPending}
                         onClick={() => verifySysMut.mutate(sj.id)}
@@ -500,6 +504,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                 <div className="backup-job-actions">
                   <Button
                     type="button"
+                    size="sm"
                     disabled={reportMut.isPending}
                     onClick={() => reportMut.mutate(j.id)}
                   >
@@ -509,6 +514,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                     <>
                       <Button
                         type="button"
+                        size="sm"
                         disabled={downloadMut.isPending}
                         onClick={() => downloadMut.mutate(j.id)}
                       >
@@ -516,6 +522,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                       </Button>
                       <Button
                         type="button"
+                        size="sm"
                         variant="primary"
                         disabled={importMut.isPending}
                         onClick={() => {
@@ -528,6 +535,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                       </Button>
                       <Button
                         type="button"
+                        size="sm"
                         variant="ghost"
                         disabled={verifyCoMut.isPending}
                         onClick={() => verifyCoMut.mutate(j.id)}
@@ -539,6 +547,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   {!j.externalUploaded && j.status === 'completed' && j.localRelativePath && (
                     <Button
                       type="button"
+                      size="sm"
                       variant="ghost"
                       disabled={retryMut.isPending}
                       onClick={() => retryMut.mutate(j.id)}
@@ -594,9 +603,10 @@ export default function BackupTab({ activeCompanies = [] }) {
           </span>
         </label>
 
-        <div className="flex items-center justify-end flex flex-wrap gap-2">
+        <div className="flex items-center justify-end flex-wrap gap-2">
           <Button
             type="button"
+            size="sm"
             variant="ghost"
             disabled={importMut.isPending}
             onClick={() => { setImportModal(null); setImportConfirmed(false); }}
@@ -702,7 +712,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             </div>
 
             <div className="flex items-center justify-end mt-[18px]">
-              <Button type="button" variant="primary" onClick={() => setReportModal(null)}>
+              <Button type="button" size="sm" variant="primary" onClick={() => setReportModal(null)}>
                 {t('close')}
               </Button>
             </div>
@@ -793,7 +803,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             </div>
 
             <div className="flex items-center justify-end mt-[18px]">
-              <Button type="button" variant="primary" onClick={() => setImportReportModal(null)}>
+              <Button type="button" size="sm" variant="primary" onClick={() => setImportReportModal(null)}>
                 {t('close')}
               </Button>
             </div>

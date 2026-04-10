@@ -135,24 +135,26 @@ export default function TaxReportTab() {
       const vat = r.isTotal ? inputTotal : getRowValue(r.key, 'vat');
       return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmt(amt)}</td><td>${r.isTotal ? '—' : fmt(getRowValue(r.key, 'adjustment'))}</td><td>${fmt(vat)}</td></tr>`;
     }).join('');
+    const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
     const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(lang === 'ar' ? 'تقرير الضرائب' : 'Tax Report').replace(/</g, '&lt;')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}@media print{body{padding:0}}</style></head><body>
+<style>@page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#2563eb;color:#fff;font-weight:700}.print-footer{margin-top:24px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}}</style></head><body>
 <div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px">
 <h1 style="margin:0;font-size:20px">${(companyName || '').replace(/</g, '&lt;')}</h1>
 <p style="margin:8px 0 0;font-size:12px;color:#555">${(lang === 'ar' ? 'نموذج الإفصاح الضريبي — ضريبة القيمة المضافة' : 'VAT Tax Disclosure Form').replace(/</g, '&lt;')} — ${periodKey}</p>
 </div>
 <table><thead><tr><th>${(t('reportItem') || '').replace(/</g, '&lt;')}</th><th>المبلغ (SR)</th><th>${(lang === 'ar' ? 'التعديلات' : 'Adjustments').replace(/</g, '&lt;')}</th><th>${(lang === 'ar' ? 'ضريبة القيمة المضافة' : 'VAT').replace(/</g, '&lt;')}</th></tr></thead>
-<tbody><tr><td colspan="4" style="background:var(--noorix-green-15);font-weight:700">${(lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)').replace(/</g, '&lt;')}</td></tr>${outRows}
-<tr><td colspan="4" style="background:var(--noorix-red-15);font-weight:700">${(lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)').replace(/</g, '&lt;')}</td></tr>${inRows}
-<tr><td colspan="4" style="background:var(--noorix-blue-15);font-weight:700">${(lang === 'ar' ? 'الملخص' : 'Summary').replace(/</g, '&lt;')}</td></tr>
+<tbody><tr><td colspan="4" style="background:#f0fdf4;font-weight:700">${(lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)').replace(/</g, '&lt;')}</td></tr>${outRows}
+<tr><td colspan="4" style="background:#fef2f2;font-weight:700">${(lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)').replace(/</g, '&lt;')}</td></tr>${inRows}
+<tr><td colspan="4" style="background:#eff6ff;font-weight:700">${(lang === 'ar' ? 'الملخص' : 'Summary').replace(/</g, '&lt;')}</td></tr>
 <tr><td>${(lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(outputTotal)} SR</td></tr>
 <tr><td>${(lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(inputTotal)} SR</td></tr>
 <tr><td>${(lang === 'ar' ? 'صافي الضريبة' : 'Net VAT').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(netVat)} SR</td></tr>
 <tr><td>${(lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(priorAdj)}</td></tr>
 <tr><td>${(lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(balanceCarried)}</td></tr>
-<tr style="background:var(--noorix-blue-20);font-weight:800"><td>${(lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(netPayable)} SR</td></tr>
-</tbody></table></body></html>`;
+<tr style="background:#dbeafe;font-weight:800"><td>${(lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable').replace(/</g, '&lt;')}</td><td colspan="3">${fmt(netPayable)} SR</td></tr>
+</tbody></table>
+<div class="print-footer">طُبع بتاريخ: ${printDate}</div></body></html>`;
     const w = window.open('', '_blank');
     if (w) {
       w.document.write(html);
