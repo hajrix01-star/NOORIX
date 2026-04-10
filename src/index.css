@@ -2255,7 +2255,7 @@ input:focus, select:focus, textarea:focus {
   .backup-run-row {
     grid-template-columns: 1fr;
   }
-  .backup-run-row .noorix-btn {
+  .backup-run-row button {
     width: 100%;
     justify-content: center;
   }
@@ -2341,8 +2341,8 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-.backup-tab .backup-actions-row .noorix-btn,
-.backup-tab .backup-job-actions .noorix-btn {
+.backup-tab .backup-actions-row button,
+.backup-tab .backup-job-actions button {
   font-size: 12px;
   padding: 8px 12px;
   min-height: 36px;
