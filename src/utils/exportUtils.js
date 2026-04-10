@@ -570,7 +570,7 @@ body { font-family: 'Cairo', Arial, sans-serif; padding: 16px; color: #111; font
 h1 { margin: 0 0 10px; font-size: 18px; font-weight: 800 }
 table { width: 100%; border-collapse: collapse }
 th, td { border: 1px solid #d0d5dd; padding: 5px 8px; text-align: ${rtl ? 'right' : 'left'} }
-th { background: #2563eb; color: #fff; font-weight: 700; font-size: 12px }
+th { background: #185FA5; color: #fff; font-weight: 700; font-size: 12px }
 tr:nth-child(even) td { background: #f8fafc }
 </style>
 </head>
