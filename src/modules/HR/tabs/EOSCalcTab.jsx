@@ -199,6 +199,7 @@ export default function EOSCalcTab() {
           .td-num{text-align:center;font-weight:600;font-family:'Cairo',Arial,sans-serif}
           /* ── تذييل ── */
           .foot{padding:12px 24px;border-top:1px solid #dbe1e8;background:#f8fafc;text-align:center;font-size:11px;color:#94a3b8}
+          @page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}
           @media print{body{padding:0;background:#fff}.doc{box-shadow:none;border:none}}
         </style>
       </head>

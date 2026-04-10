@@ -299,13 +299,111 @@ export async function exportOrdersCategoriesImportTemplate(filename = 'order-cat
   XLSX.writeFile(wb, filename);
 }
 
-export async function exportToExcel(data, filename = 'export.xlsx') {
-  const XLSX = await import('xlsx');
-  const rows = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
-  const ws = XLSX.utils.json_to_sheet(rows);
-  setSheetRTL(ws);
+/**
+ * exportToExcel — تصدير بيانات إلى Excel مع تنسيق احترافي
+ *
+ * يقبل نمطين للاستدعاء:
+ *   exportToExcel(rows, 'file.xlsx', opts)
+ *   exportToExcel({ data: rows, filename: '...', title: '...', ... })
+ *
+ * @param {Object[]|{data:Object[], filename?:string, title?:string, columns?:string[]}} data
+ * @param {string} filename
+ * @param {{
+ *   title?: string,        - صف عنوان مدمج فوق الجدول
+ *   sheetName?: string,    - اسم الورقة (افتراضي: 'بيانات')
+ *   rtl?: boolean,         - اتجاه RTL (افتراضي: true)
+ *   headerColor?: string,  - لون خلفية رأس الأعمدة hex بدون # (افتراضي: '185FA5')
+ * }} opts
+ */
+export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
+  const XLSXmod = await import('xlsx-js-style');
+  const XLSX = XLSXmod.default ?? XLSXmod;
+
+  // دعم نمط كائن الإعدادات: exportToExcel({ data, filename, title, ... })
+  let configOpts = opts;
+  if (!Array.isArray(data) && data && typeof data === 'object' && 'data' in data) {
+    const { data: innerData, filename: cfgFile, title: cfgTitle, sheetName: cfgSheet, ...rest } = data;
+    if (cfgFile) filename = cfgFile;
+    if (cfgTitle && !configOpts.title) configOpts = { title: cfgTitle, ...configOpts };
+    if (cfgSheet && !configOpts.sheetName) configOpts = { sheetName: cfgSheet, ...configOpts };
+    data = Array.isArray(innerData) ? innerData : [];
+  }
+
+  const {
+    title = '',
+    sheetName = 'بيانات',
+    rtl = true,
+    headerColor = '185FA5',
+  } = configOpts;
+
+  const rows = Array.isArray(data) ? data : [];
+  const headers = rows.length ? Object.keys(rows[0]) : [];
+  const titleRowCount = title ? 1 : 0;
+
+  // حوّل القيم الرقمية من نص إلى number لضمان التنسيق الصحيح في Excel
+  const dataAoA = rows.map((row) =>
+    headers.map((h) => {
+      const v = row[h];
+      if (v == null || v === '') return '';
+      if (typeof v === 'number') return v;
+      const s = String(v).replace(/,/g, '').trim();
+      const n = Number(s);
+      return s !== '' && !isNaN(n) ? n : v;
+    }),
+  );
+
+  const aoa = [];
+  if (title) aoa.push([title, ...Array(Math.max(0, headers.length - 1)).fill('')]);
+  aoa.push([...headers]);
+  aoa.push(...dataAoA);
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // RTL + تجميد صف الرأس
+  if (!ws['!views']) ws['!views'] = [{}];
+  if (rtl) ws['!views'][0].rightToLeft = true;
+  ws['!views'][0].state = 'frozen';
+  ws['!views'][0].ySplit = titleRowCount + 1;
+  ws['!views'][0].xSplit = 0;
+  if (headers.length > 0) {
+    ws['!views'][0].topLeftCell = XLSX.utils.encode_cell({ r: titleRowCount + 1, c: 0 });
+  }
+
+  // دمج وتنسيق صف العنوان الرئيسي
+  if (title && headers.length > 0) {
+    if (!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } });
+    const tc = XLSX.utils.encode_cell({ r: 0, c: 0 });
+    if (ws[tc]) {
+      ws[tc].s = {
+        font: { bold: true, sz: 13, color: { rgb: '111827' } },
+        alignment: { horizontal: rtl ? 'right' : 'left', vertical: 'center' },
+      };
+    }
+  }
+
+  // تنسيق رأس الأعمدة — خلفية زرقاء، نص أبيض، خط غامق
+  const headerRowR = titleRowCount;
+  headers.forEach((h, ci) => {
+    const addr = XLSX.utils.encode_cell({ r: headerRowR, c: ci });
+    if (!ws[addr]) ws[addr] = { v: h, t: 's' };
+    ws[addr].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: headerColor } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { horizontal: rtl ? 'right' : 'left', vertical: 'center', wrapText: false },
+    };
+  });
+
+  // حساب عرض الأعمدة تلقائياً من المحتوى
+  if (headers.length) {
+    ws['!cols'] = headers.map((h, ci) => {
+      const maxLen = dataAoA.reduce((m, row) => Math.max(m, String(row[ci] ?? '').length), String(h).length);
+      return { wch: Math.min(Math.max(maxLen + 2, 8), 52) };
+    });
+  }
+
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'بيانات');
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, filename);
 }
 

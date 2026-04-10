@@ -242,6 +242,7 @@ export default function SalaryCalcTab() {
         <title>Salary Calculator</title>
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
         <style>
+          @page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}
           body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#111;padding:20px;line-height:1.6}
           .doc{border:1px solid #dbe1e8;border-radius:12px;overflow:hidden}
           .head{padding:14px 18px;border-bottom:1px solid #dbe1e8;background:#f8fafc;text-align:center}
@@ -261,6 +262,8 @@ export default function SalaryCalcTab() {
           th,td{border:1px solid #dbe1e8;padding:8px;font-size:12px}
           th{background:#f8fafc}
           .warn{background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:8px 12px;font-size:11px;color:#92400e;margin-top:8px}
+          .print-footer{margin-top:16px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}
+          @media print{body{padding:0;background:#fff}.doc{box-shadow:none}}
         </style>
       </head>
       <body>
@@ -361,6 +364,7 @@ export default function SalaryCalcTab() {
 
           ${hasOT ? `<div class="section"><div class="warn">⚖️ المادة 107 — وزارة الموارد البشرية: "يُدفع للعامل أجرٌ بأجر يوازي أجر الساعة مضافاً إليه 50% من أجره الأساسي".<br/>أجر_ساعة_OT = (الأجر_الفعلي + 50% × الأساسي) ÷ 208<br/>Art.107 MHRSD: OT hourly rate = (actual wage + 50% × basic) ÷ 208 hrs.</div></div>` : ''}
         </div>
+        <div class="print-footer">طُبع بتاريخ: ${reportDate}</div>
       </body>
       </html>`;
 

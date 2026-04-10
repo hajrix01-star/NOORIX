@@ -77,6 +77,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
           <title>${run.runNumber}</title>
           <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
           <style>
+            @page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}
             body { font-family: 'Cairo', Arial, sans-serif; color:#0f172a; padding:24px; line-height:1.6; }
             .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid #0f172a; padding-bottom:12px; }
             .title { font-size:20px; font-weight:700; margin:0; }
@@ -89,6 +90,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
             .card { border:1px solid #cbd5e1; border-radius:8px; padding:10px; }
             .label { font-size:12px; color:#475569; margin-bottom:4px; }
             .value { font-size:16px; font-weight:700; }
+            .print-footer { margin-top:20px; padding-top:8px; border-top:1px solid #ddd; text-align:center; font-size:11px; color:#777; }
+            @media print { body { padding:0; } }
           </style>
         </head>
         <body>
@@ -131,6 +134,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
               <div class="value">${hrFmt(totalNet)}</div>
             </div>
           </div>
+          <div class="print-footer">طُبع بتاريخ: ${new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
           <script>window.onload = () => window.print();</script>
         </body>
       </html>
