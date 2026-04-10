@@ -246,7 +246,8 @@ export function orderProductImportGroupsToPayload(groups, catByName) {
  * قالب استيراد أصناف الطلبات — صف عناوين + خلايا منفصلة؛ مثال بتركيبتين على صفّين
  */
 export async function exportOrdersProductsImportTemplate(filename = 'order-products-import-template.xlsx') {
-  const XLSX = await import('xlsx');
+  const XLSXmod = await import('xlsx-js-style');
+  const XLSX = XLSXmod.default ?? XLSXmod;
   const emptyRow = () => ['', '', '', '', '', '', ''];
   const aoa = [
     ORDER_PRODUCTS_EXCEL_HEADERS,
@@ -257,6 +258,7 @@ export async function exportOrdersProductsImportTemplate(filename = 'order-produ
   const wsData = XLSX.utils.aoa_to_sheet(aoa);
   setSheetColWidths(wsData, [26, 22, 20, 16, 16, 11, 12]);
   setSheetRTL(wsData);
+  styleHeaderRow(XLSXmod, wsData, 0, ORDER_PRODUCTS_EXCEL_HEADERS.length);
 
   const instructions = [
     ['البند', 'الشرح'],
@@ -279,6 +281,7 @@ export async function exportOrdersProductsImportTemplate(filename = 'order-produ
   const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
   setSheetColWidths(wsInstr, [28, 62]);
   setSheetRTL(wsInstr);
+  styleHeaderRow(XLSXmod, wsInstr, 0, 2);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, wsData, 'أصناف');
@@ -290,7 +293,8 @@ export async function exportOrdersProductsImportTemplate(filename = 'order-produ
  * قالب استيراد فئات الطلبات — صف عناوين + خلايا منفصلة
  */
 export async function exportOrdersCategoriesImportTemplate(filename = 'order-categories-import-template.xlsx') {
-  const XLSX = await import('xlsx');
+  const XLSXmod = await import('xlsx-js-style');
+  const XLSX = XLSXmod.default ?? XLSXmod;
   const aoa = [
     ORDER_CATEGORIES_EXCEL_HEADERS,
     [ORDER_CATEGORIES_TEMPLATE_MARKER_AR, 'Example category (delete row)'],
@@ -299,6 +303,7 @@ export async function exportOrdersCategoriesImportTemplate(filename = 'order-cat
   const wsData = XLSX.utils.aoa_to_sheet(aoa);
   setSheetColWidths(wsData, [32, 28]);
   setSheetRTL(wsData);
+  styleHeaderRow(XLSXmod, wsData, 0, ORDER_CATEGORIES_EXCEL_HEADERS.length);
 
   const instructions = [
     ['البند', 'الشرح'],
@@ -312,6 +317,7 @@ export async function exportOrdersCategoriesImportTemplate(filename = 'order-cat
   const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
   setSheetColWidths(wsInstr, [22, 58]);
   setSheetRTL(wsInstr);
+  styleHeaderRow(XLSXmod, wsInstr, 0, 2);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, wsData, 'فئات');
@@ -320,37 +326,46 @@ export async function exportOrdersCategoriesImportTemplate(filename = 'order-cat
 }
 
 /**
+ * تطبيع مصفوفة الأعمدة: تقبل string[] أو {key,label}[]
+ * تُعيد { labels: string[], keys: string[] }
+ */
+function normalizeColumnDefs(columns) {
+  if (!columns || !columns.length) return { labels: [], keys: [] };
+  if (typeof columns[0] === 'string') {
+    return { labels: columns, keys: columns };
+  }
+  return {
+    labels: columns.map((c) => String(c.label ?? c.key ?? '')),
+    keys:   columns.map((c) => String(c.key ?? c.label ?? '')),
+  };
+}
+
+/**
  * exportToExcel — تصدير بيانات إلى Excel مع تنسيق احترافي
  *
  * يقبل نمطين للاستدعاء:
  *   exportToExcel(rows, 'file.xlsx', opts)
- *   exportToExcel({ data: rows, filename: '...', title: '...', companyName: '...', ... })
+ *   exportToExcel({ data: rows, filename, title, companyName, columns, ... })
  *
- * @param {Object[]|{data:Object[], filename?:string, title?:string, companyName?:string}} data
- * @param {string} filename
- * @param {{
- *   companyName?: string,  - اسم الشركة — صف أول مدمج كبير (اختياري)
- *   title?: string,        - عنوان التقرير — صف ثانٍ مدمج (اختياري)
- *   sheetName?: string,    - اسم الورقة (افتراضي: 'بيانات')
- *   rtl?: boolean,         - اتجاه RTL (افتراضي: true)
- *   headerColor?: string,  - لون رأس الأعمدة hex بدون # (افتراضي: '185FA5')
- * }} opts
+ * columns يقبل: string[] (مفاتيح/تسميات) أو {key, label}[] (مفتاح للبيانات، label للعرض)
  */
 export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
   const XLSXmod = await import('xlsx-js-style');
   const XLSX = XLSXmod.default ?? XLSXmod;
 
-  // دعم نمط كائن الإعدادات: exportToExcel({ data, filename, title, companyName, ... })
   let configOpts = opts;
+  let columnDefs = null;
+
   if (!Array.isArray(data) && data && typeof data === 'object' && 'data' in data) {
     const {
       data: innerData, filename: cfgFile, title: cfgTitle,
-      companyName: cfgCo, sheetName: cfgSheet, ...rest
+      companyName: cfgCo, sheetName: cfgSheet, columns: cfgColumns, ...rest
     } = data;
     if (cfgFile) filename = cfgFile;
     if (cfgCo && !configOpts.companyName) configOpts = { companyName: cfgCo, ...configOpts };
     if (cfgTitle && !configOpts.title) configOpts = { title: cfgTitle, ...configOpts };
     if (cfgSheet && !configOpts.sheetName) configOpts = { sheetName: cfgSheet, ...configOpts };
+    if (cfgColumns?.length) columnDefs = cfgColumns;
     data = Array.isArray(innerData) ? innerData : [];
   }
 
@@ -363,17 +378,27 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
   } = configOpts;
 
   const rows = Array.isArray(data) ? data : [];
-  const headers = rows.length ? Object.keys(rows[0]) : [];
+
+  // اشتقاق رؤوس الأعمدة: من columnDefs أو من مفاتيح أول صف
+  let headers, dataKeys;
+  if (columnDefs?.length) {
+    const { labels, keys } = normalizeColumnDefs(columnDefs);
+    headers = labels;
+    dataKeys = keys;
+  } else {
+    headers = rows.length ? Object.keys(rows[0]) : [];
+    dataKeys = headers;
+  }
 
   // عدد صفوف الترويسة قبل رأس الأعمدة
   const companyRow = companyName ? 1 : 0;
   const titleRow   = title       ? 1 : 0;
   const headerRowR = companyRow + titleRow; // مؤشر صف رأس الأعمدة (0-indexed)
 
-  // حوّل القيم الرقمية من نص إلى number
+  // حوّل القيم الرقمية من نص إلى number (استخدم dataKeys للوصول للبيانات)
   const dataAoA = rows.map((row) =>
-    headers.map((h) => {
-      const v = row[h];
+    dataKeys.map((k) => {
+      const v = row[k];
       if (v == null || v === '') return '';
       if (typeof v === 'number') return v;
       const s = String(v).replace(/,/g, '').trim();
@@ -439,8 +464,8 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
 
   // حساب عرض الأعمدة تلقائياً من المحتوى (min 8، max 52)
   if (headers.length) {
-    ws['!cols'] = headers.map((h, ci) => {
-      const maxLen = dataAoA.reduce((m, row) => Math.max(m, String(row[ci] ?? '').length), String(h).length);
+    ws['!cols'] = headers.map((label, ci) => {
+      const maxLen = dataAoA.reduce((m, row) => Math.max(m, String(row[ci] ?? '').length), String(label).length);
       return { wch: Math.min(Math.max(maxLen + 2, 8), 52) };
     });
   }
@@ -503,11 +528,7 @@ export async function importFromExcel(file, opts = {}) {
 
 /**
  * importExcelRaw — قراءة Excel كصفوف خام (مصفوفة مصفوفات) بدون افتراض عناوين
- * @param {File} file
- * @returns {Promise<{ raw: any[][], colCount: number }>}
- */
-/**
- * اختيار الورقة ذات أكثر صفوف بيانات (مثل readExcelToJson في Base44) + cellDates للتواريخ
+ * يختار الورقة ذات أكثر صفوف بيانات + cellDates للتواريخ
  */
 export async function importExcelRaw(file) {
   const XLSX = await import('xlsx');
@@ -570,40 +591,50 @@ export async function importBankStatementFile(file) {
 
 /**
  * exportTableToPdf — يفتح نافذة طباعة HTML (المتصفح يتولى التحويل لـ PDF)
- * @param {{ columns?, data, title?, companyName?, filename?, landscape?, rtl? }} opts
+ * @param {{ columns?, data, title?, companyName?, subtitle?, filename?, landscape? }} opts
+ * columns: string[] | {key, label}[] (label للعرض، key للوصول للبيانات)
  */
 export function exportTableToPdf({
   columns,
-  data,
+  data = [],
   title = '',
   companyName = '',
+  subtitle = '',
   filename = 'export.pdf',
   landscape = true,
-  rtl = true,
 }) {
-  const cols = columns || (
-    data[0] && typeof data[0] === 'object' && !Array.isArray(data[0])
-      ? Object.keys(data[0])
-      : []
-  );
+  // تطبيع columns: تحديد التسميات ومفاتيح البيانات
+  let colLabels, colKeys;
+  if (columns?.length) {
+    const norm = normalizeColumnDefs(columns);
+    colLabels = norm.labels;
+    colKeys   = norm.keys;
+  } else if (data[0] && typeof data[0] === 'object' && !Array.isArray(data[0])) {
+    colLabels = Object.keys(data[0]);
+    colKeys   = colLabels;
+  } else {
+    colLabels = [];
+    colKeys   = [];
+  }
 
   const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-  const headRow = `<tr>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr>`;
+  const headRow = `<tr>${colLabels.map((l) => `<th>${esc(l)}</th>`).join('')}</tr>`;
   const bodyRows = data.length
     ? data.map((row) => {
         const cells = Array.isArray(row)
           ? row.map((c) => `<td>${esc(c)}</td>`).join('')
-          : cols.map((c) => `<td>${esc(row[c])}</td>`).join('');
+          : colKeys.map((k) => `<td>${esc(row[k])}</td>`).join('');
         return `<tr>${cells}</tr>`;
       }).join('')
-    : `<tr><td colspan="${cols.length || 1}" style="text-align:center;color:#888">لا توجد بيانات</td></tr>`;
+    : `<tr><td colspan="${colLabels.length || 1}" style="text-align:center;color:#888">لا توجد بيانات</td></tr>`;
 
   const tableHtml = `<table><thead>${headRow}</thead><tbody>${bodyRows}</tbody></table>`;
 
   openPrintWindow({
     title: title || filename.replace('.pdf', ''),
     companyName,
+    subtitle,
     landscape,
     body: tableHtml,
   });
