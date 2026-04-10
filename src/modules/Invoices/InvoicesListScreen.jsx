@@ -16,7 +16,7 @@ import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDate, formatSaudiDateISO } from '../../utils/saudiDate';
 import { updateInvoice, getInvoices, deleteInvoice } from '../../services/api';
-import { Badge, Button, Modal, Input, FilterScrollStrip, ScreenShell, FmtNum, cn } from '../../ui';
+import { Badge, Button, Modal, Input, ScreenShell, FmtNum, cn } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable         from '../../components/common/SmartTable';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
@@ -572,7 +572,6 @@ export default function InvoicesListScreen() {
               </Button>
             </div>
           )}
-          <FilterScrollStrip>
           <div className="noorix-exec-filters noorix-exec-filters--scroll">
             <Button
               size="sm"
@@ -625,7 +624,6 @@ export default function InvoicesListScreen() {
               ))}
             </Input>
           </div>
-          </FilterScrollStrip>
           {/* ── عرض الفاتورة (قراءة فقط) ── */}
         {viewingInvoice && (
           <InvoiceViewModal invoice={viewingInvoice} onClose={() => setViewingInvoice(null)} t={t} lang={lang} fmt={fmt} />
