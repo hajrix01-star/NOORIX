@@ -33,6 +33,7 @@ const MONTH_NAMES_EN = [
 ];
 
 function buildLabel(mode, selYear, selMonth, selDay, rangeStart, rangeEnd) {
+  if (mode === 'all')   return '—';
   if (mode === 'month') return `${MONTH_NAMES_EN[selMonth - 1]} ${selYear}`;
   if (mode === 'day')   return selDay.split('-').reverse().join('-');
   const s = (rangeStart || '').split('-').reverse().join('-');
@@ -51,6 +52,12 @@ export function useDateFilter() {
   const [rangeEnd,   setRangeEnd]   = useState(ymd(now.year, now.month, now.day));
 
   const { startDate, endDate } = useMemo(() => {
+    if (mode === 'all') {
+      return {
+        startDate: saudiDayStart('2020-01-01'),
+        endDate:   saudiDayEnd(ymd(now.year + 1, 12, 31)),
+      };
+    }
     if (mode === 'month') {
       const last = lastDayOfMonth(selYear, selMonth);
       return {

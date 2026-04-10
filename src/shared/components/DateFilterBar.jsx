@@ -32,6 +32,7 @@ function ymd(y, m, d) {
 export default function DateFilterBar({ filter }) {
   const { t, lang } = useTranslation();
   const MODES = [
+    { id: 'all',   label: t('dateFilterAll') },
     { id: 'month', label: t('dateFilterMonth') },
     { id: 'day',   label: t('dateFilterDay') },
     { id: 'range', label: t('dateFilterRange') },
@@ -131,7 +132,7 @@ export default function DateFilterBar({ filter }) {
       )}
 
       {/* شارة النطاق — تظهر فقط في وضع اليوم أو النطاق */}
-      {mode !== 'month' && (
+      {mode !== 'month' && mode !== 'all' && (
         <div className="ndfb-badge">
           <span className="ndfb-badge__icon">◷</span>
           <span className="ndfb-badge__label">{label}</span>

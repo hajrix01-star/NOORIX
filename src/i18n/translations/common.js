@@ -301,6 +301,7 @@ export default {
   roleSuperAdmin: { ar: 'مدير عام', en: 'Super Admin' },
   roleAccountant: { ar: 'محاسب', en: 'Accountant' },
   roleCashier: { ar: 'كاشير', en: 'Cashier' },
+  dateFilterAll: { ar: 'الكل', en: 'All' },
   dateFilterMonth: { ar: 'شهر', en: 'Month' },
   dateFilterYear: { ar: 'السنة', en: 'Year' },
   dateFilterDay: { ar: 'يوم', en: 'Day' },
