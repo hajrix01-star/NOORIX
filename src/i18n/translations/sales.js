@@ -86,4 +86,13 @@ export default {
   salesShareAvgPerCustomer: { ar: 'متوسط المبيعات لكل عميل', en: 'Average per customer' },
   salesShareCashOnHand: { ar: 'المبلغ بالصندوق', en: 'Cash on hand' },
   salesShareNotes: { ar: 'ملاحظات', en: 'Notes' },
+  /** نص واتساب — تنسيق تقرير مختصر */
+  salesWhatsAppReportTitle: { ar: '📊 تقرير مبيعات', en: '📊 Sales report' },
+  salesWhatsAppDateLine: { ar: '📅 التاريخ:', en: '📅 Date:' },
+  salesWhatsAppSummaryRef: { ar: '📋 رقم الملخص:', en: '📋 Summary #:' },
+  salesWhatsAppTotalLine: { ar: '💰 الإجمالي:', en: '💰 Total:' },
+  salesWhatsAppCustomersLine: { ar: '👥 عدد العملاء:', en: '👥 Customers:' },
+  salesWhatsAppAvgInvoiceLine: { ar: '🧾 متوسط الفاتورة:', en: '🧾 Avg. sale:' },
+  salesWhatsAppCashLine: { ar: '💵 الصندوق:', en: '💵 Cash on hand:' },
+  salesWhatsAppNoChannels: { ar: '• لا يوجد تفصيل قنوات.', en: '• No channel breakdown.' },
 };

@@ -214,29 +214,37 @@ export default function DailySalesScreen() {
     const total = Number(s.totalAmount || 0);
     const avg = cc > 0 ? (total / cc) : 0;
     const name = (companyName || '').trim();
-    const headerBlock = name
-      ? [`*${name}*`, t('salesShareSubtitle')]
-      : [`*${t('salesShareSubtitle')}*`];
-    const chList = s.channels || [];
-    const channelBlock = chList.length > 0
-      ? chList.map((ch, i) => `  ${i + 1}. ${vaultDisplayName(ch.vault, lang)} — ${fmt(ch.amount)} SR`)
-      : [`  ${t('salesShareNoChannels')}`];
+    const dateRaw = formatSaudiDate(s.transactionDate);
+    const dateSlashed = dateRaw === '—' ? dateRaw : dateRaw.replace(/-/g, '/');
+
     const lines = [
-      ...headerBlock,
+      `${t('salesWhatsAppReportTitle')}${name ? ` ${name}` : ''}`,
+      `${t('salesWhatsAppDateLine')} ${dateSlashed}`,
+      `${t('salesWhatsAppSummaryRef')} ${s.summaryNumber ?? '—'}`,
       '',
-      `${t('summaryNumber')}: ${s.summaryNumber}`,
-      `${t('transactionDateLabel')}: ${formatSaudiDate(s.transactionDate)}`,
-      '',
-      `▸ ${t('salesShareCustomers')}: ${cc}`,
-      `▸ ${t('salesShareTotal')}: ${fmt(total)} SR`,
-      `▸ ${t('salesShareAvgPerCustomer')}: ${fmt(avg)} SR`,
     ];
-    if (Number(s.cashOnHand) > 0) {
-      lines.push(`▸ ${t('salesShareCashOnHand')}: ${fmt(s.cashOnHand)} SR`);
+
+    const chList = s.channels || [];
+    if (chList.length > 0) {
+      chList.forEach((ch) => {
+        lines.push(`• ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)} SR`);
+      });
+    } else {
+      lines.push(t('salesWhatsAppNoChannels'));
     }
-    lines.push('', `*${t('salesShareChannelsHeading')}*`, ...channelBlock);
-    if (s.notes) {
-      lines.push('', `${t('salesShareNotes')}: ${s.notes}`);
+
+    lines.push(
+      '',
+      `${t('salesWhatsAppTotalLine')} ${fmt(total)} SR`,
+      `${t('salesWhatsAppCustomersLine')} ${cc}`,
+      `${t('salesWhatsAppAvgInvoiceLine')} ${fmt(avg)} SR`,
+    );
+
+    if (Number(s.cashOnHand) > 0) {
+      lines.push(`${t('salesWhatsAppCashLine')} ${fmt(s.cashOnHand)} SR`);
+    }
+    if (s.notes?.trim()) {
+      lines.push('', `${t('salesShareNotes')}: ${s.notes.trim()}`);
     }
     return lines.join('\n');
   }
