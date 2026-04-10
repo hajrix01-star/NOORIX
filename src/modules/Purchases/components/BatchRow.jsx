@@ -43,12 +43,16 @@ export const BatchRow = memo(function BatchRow({
       onUpdate(index, { categoryId: '', debitAccountId: '' });
       return;
     }
-    const taxExempt = cat.account?.taxExempt ?? false;
-    onUpdate(index, {
+    const update = {
       categoryId: cat.id,
       debitAccountId: cat.accountId || cat.account?.id,
-      isTaxable: !taxExempt,
-    });
+    };
+    // إذا لا يوجد مورد محدد → الفئة تحدد isTaxable
+    // إذا يوجد مورد → لا تُلغِ ضبط الضريبة الحالي (المورد والمستخدم يحددانه)
+    if (!row.supplierId) {
+      update.isTaxable = !(cat.account?.taxExempt ?? false);
+    }
+    onUpdate(index, update);
   }
 
   function handleSupplierChange(supplierId) {
