@@ -11,6 +11,7 @@ import {
   updateVault,
   archiveVault,
   deleteVault,
+  throwIfApiFailed,
 } from '../services/api';
 
 /**
@@ -28,7 +29,7 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
         startDate || undefined,
         endDate || undefined,
       );
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الخزائن');
+      throwIfApiFailed(res, 'فشل تحميل الخزائن');
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },
@@ -39,7 +40,7 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
     queryKey: ['payment-vaults', companyId],
     queryFn: async () => {
       const res = await getPaymentVaults(companyId);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل خيارات الدفع');
+      throwIfApiFailed(res, 'فشل تحميل خيارات الدفع');
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },

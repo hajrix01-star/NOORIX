@@ -5,7 +5,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
-import { getInvoiceDayCloseReport } from '../../../services/api';
+import { getInvoiceDayCloseReport, throwIfApiFailed } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDateISO } from '../../../utils/saudiDate';
 import { Button, Modal, Input } from '../../../ui';
@@ -52,7 +52,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
     queryKey: ['invoice-day-close', companyId, dateStr],
     queryFn: async () => {
       const res = await getInvoiceDayCloseReport(companyId, dateStr);
-      if (!res.success) throw new Error(res.error || t('dayCloseLoadFailed'));
+      throwIfApiFailed(res, t('dayCloseLoadFailed'));
       return res.data;
     },
     enabled: Boolean(isOpen && companyId && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)),

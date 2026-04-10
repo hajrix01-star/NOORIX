@@ -3,7 +3,7 @@
  * placeholderData فقط داخل نفس الشركة (تصفح الصفحات/الفلاتر) — لا عرض فواتير شركة سابقة عند تبديل الشركة.
  */
 import { useQuery } from '@tanstack/react-query';
-import { getInvoices } from '../services/api';
+import { getInvoices, throwIfApiFailed } from '../services/api';
 
 /**
  * @param {{ companyId: string, startDate: string, endDate: string, page?: number, pageSize?: number, kind?: string, sortBy?: string, sortDir?: 'asc'|'desc', supplierId?: string, q?: string, categoryId?: string, expenseLineId?: string, includeCancelled?: boolean }} params
@@ -13,7 +13,7 @@ export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize 
     queryKey: ['invoices', companyId, startDate, endDate, page, pageSize, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled],
     queryFn: async () => {
       const res = await getInvoices(companyId, startDate, endDate, page, pageSize, null, null, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled);
-      if (!res.success) throw new Error(res.error || 'فشل تحميل الفواتير');
+      throwIfApiFailed(res, 'فشل تحميل الفواتير');
       return res.data;
     },
     placeholderData: (previousData, previousQuery) => {

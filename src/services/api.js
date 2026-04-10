@@ -125,6 +125,15 @@ export async function refreshAuthSession() {
   }
 }
 
+// ── أخطاء عابرة من البروكسي / السيرفر النائم (cold start على Render وغيره) ──
+const TRANSIENT_HTTP = new Set([502, 503, 504]);
+/** إعادة محاولة GET بعد هذه الأكواد أو انقطاع الشبكة */
+const API_GET_TRANSIENT_ATTEMPTS = 3;
+
+function sleepMs(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // ── معالجة الاستجابة ─────────────────────────────────
 async function parseResponse(res, retryFn) {
   const data = await res.json().catch(() => ({}));
@@ -138,6 +147,15 @@ async function parseResponse(res, retryFn) {
     handleUnauthorized();
     return { success: false, error: 'غير مصرح — يُرجى تسجيل الدخول', code: 401 };
   }
+  if (TRANSIENT_HTTP.has(res.status)) {
+    return {
+      success: false,
+      error:
+        'الخادم لم يستجب مؤقتاً (البوابة أو السيرفر النائم). إن استمر الأمر، حدّث الصفحة أو غيّر الشركة ثم عد.',
+      code: res.status,
+      isTransientServerError: true,
+    };
+  }
   if (!res.ok) {
     const msg = Array.isArray(data?.message)
       ? data.message.join(', ')
@@ -147,26 +165,60 @@ async function parseResponse(res, retryFn) {
   return { success: true, data: data?.data ?? data };
 }
 
+/**
+ * للاستخدام من queryFn — يمرّر code / isTransientServerError لـ React Query (إعادة محاولة عند 502).
+ */
+export function throwIfApiFailed(res, fallbackMessage = 'طلب فشل') {
+  if (res?.success) return;
+  const err = new Error(String(res?.error || fallbackMessage));
+  if (res?.code != null) err.code = res.code;
+  if (res?.isTransientServerError) err.isTransientServerError = true;
+  if (res?.isNetworkError) err.isNetworkError = true;
+  throw err;
+}
+
 function getBase() {
   return BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 }
 
 /**
  * استدعاء GET.
+ * يعيد المحاولة تلقائياً عند 502/503/504 أو أخطاء الشبكة (سيرفر نائم / Bad Gateway).
  */
 export async function apiGet(path, params = {}) {
   const url = new URL(path, getBase());
   Object.entries(params).forEach(([k, v]) => { if (v != null && v !== '') url.searchParams.set(k, v); });
-  const doFetch = async () => {
-    const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
-    return parseResponse(res);
-  };
-  try {
-    const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
-    return parseResponse(res, doFetch);
-  } catch (err) {
-    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+
+  let lastFailure = { success: false, error: 'خطأ في الاتصال' };
+
+  for (let attempt = 0; attempt < API_GET_TRANSIENT_ATTEMPTS; attempt++) {
+    const doFetch = async () => {
+      const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
+      return parseResponse(res);
+    };
+    try {
+      const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
+      const parsed = await parseResponse(res, doFetch);
+      if (parsed.success) return parsed;
+      lastFailure = parsed;
+      const canRetry =
+        attempt < API_GET_TRANSIENT_ATTEMPTS - 1 &&
+        (TRANSIENT_HTTP.has(parsed.code) || parsed.isTransientServerError || parsed.isNetworkError);
+      if (canRetry) {
+        await sleepMs(550 + attempt * 450);
+        continue;
+      }
+      return parsed;
+    } catch (err) {
+      lastFailure = { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+      if (attempt < API_GET_TRANSIENT_ATTEMPTS - 1) {
+        await sleepMs(550 + attempt * 450);
+        continue;
+      }
+      return lastFailure;
+    }
   }
+  return lastFailure;
 }
 
 /**
@@ -658,7 +710,7 @@ export async function fetchAllInvoicesForBatch(companyId, batchId, startDate, en
       'transactionDate',
       'asc',
     );
-    if (!res.success) throw new Error(res.error || 'فشل تحميل فواتير الدفعة');
+    throwIfApiFailed(res, 'فشل تحميل فواتير الدفعة');
     const items = res.data?.items ?? [];
     total = Number(res.data?.total) ?? all.length + items.length;
     all.push(...items);

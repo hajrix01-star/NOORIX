@@ -9,6 +9,7 @@ import {
   getEmployee,
   createEmployee,
   updateEmployee,
+  throwIfApiFailed,
 } from '../services/api';
 import { createAdvance } from '../services/financialApi';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
@@ -24,7 +25,7 @@ export function useEmployees(companyId, { includeTerminated = false, fetchEnable
     queryKey: ['employees', companyId, includeTerminated],
     queryFn: async () => {
       const res = await getEmployees(companyId, includeTerminated);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الموظفين');
+      throwIfApiFailed(res, 'فشل تحميل الموظفين');
       return Array.isArray(res.data) ? res.data : [];
     },
     enabled: !!companyId && fetchEnabled,
@@ -82,7 +83,7 @@ export function useEmployee(id, companyId) {
     queryKey: ['employee', id, companyId],
     queryFn: async () => {
       const res = await getEmployee(id, companyId);
-      if (!res?.success) throw new Error(res.error || 'فشل تحميل الموظف');
+      throwIfApiFailed(res, 'فشل تحميل الموظف');
       return res.data;
     },
     enabled: !!id && !!companyId,

@@ -20,6 +20,7 @@ import {
   createOrderCategory,
   updateOrderCategory,
   createOrderCategoriesBatch,
+  throwIfApiFailed,
 } from '../services/api';
 
 export function useOrders(companyId, year, month) {
@@ -27,7 +28,7 @@ export function useOrders(companyId, year, month) {
     queryKey: ['orders', companyId, year, month],
     queryFn: async () => {
       const res = await getOrders(companyId, year, month);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الطلبات');
+      throwIfApiFailed(res, 'فشل تحميل الطلبات');
       return res.data ?? [];
     },
     enabled: !!companyId && !!year && !!month,
@@ -84,7 +85,7 @@ export function useOrderProducts(companyId) {
     queryKey: ['order-products', companyId],
     queryFn: async () => {
       const res = await getOrderProducts(companyId);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الأصناف');
+      throwIfApiFailed(res, 'فشل تحميل الأصناف');
       return res.data ?? [];
     },
     enabled: !!companyId,
@@ -96,7 +97,7 @@ export function useOrderCategories(companyId) {
     queryKey: ['order-categories', companyId],
     queryFn: async () => {
       const res = await getOrderCategories(companyId);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الفئات');
+      throwIfApiFailed(res, 'فشل تحميل الفئات');
       return res.data ?? [];
     },
     enabled: !!companyId,
@@ -132,7 +133,7 @@ export function useOrdersItemsReport(companyId, year, month) {
     queryKey: ['orders-items-report', companyId, year, month],
     queryFn: async () => {
       const res = await getOrdersItemsReport(companyId, year, month);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل التقرير');
+      throwIfApiFailed(res, 'فشل تحميل التقرير');
       return res.data ?? [];
     },
     enabled: !!companyId && !!year && !!month,

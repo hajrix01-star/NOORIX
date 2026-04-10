@@ -2,7 +2,7 @@
  * useOwnerReports — جلب تقارير ربح وخسارة لعدة شركات (لوحة المالك)
  */
 import { useQueries } from '@tanstack/react-query';
-import { getGeneralProfitLossReport } from '../services/api';
+import { getGeneralProfitLossReport, throwIfApiFailed } from '../services/api';
 
 export function useOwnerReports({ companyIds, year }) {
   const queries = useQueries({
@@ -10,7 +10,7 @@ export function useOwnerReports({ companyIds, year }) {
       queryKey: ['reports', 'general-profit-loss', 'owner', companyId, year],
       queryFn: async () => {
         const res = await getGeneralProfitLossReport(companyId, year);
-        if (!res?.success) throw new Error(res?.error || 'Failed to load report');
+        throwIfApiFailed(res, 'Failed to load report');
         return { companyId, data: res.data };
       },
       enabled: !!companyId && !!year,

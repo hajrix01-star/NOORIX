@@ -5,9 +5,16 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
-import { getEmployees, getInvoices, getLeaves } from '../../../services/api';
-import { getPayrollRun, getPayrollRuns } from '../../../services/api';
-import { createPayrollRun, updatePayrollRun } from '../../../services/api';
+import {
+  getEmployees,
+  getInvoices,
+  getLeaves,
+  getPayrollRun,
+  getPayrollRuns,
+  createPayrollRun,
+  updatePayrollRun,
+  throwIfApiFailed,
+} from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
@@ -109,7 +116,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     queryKey: ['payroll-run', runId, cid],
     queryFn: async () => {
       const res = await getPayrollRun(runId, cid);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل المسيرة');
+      throwIfApiFailed(res, 'فشل تحميل المسيرة');
       return res.data;
     },
     enabled: !!cid && !!runId,

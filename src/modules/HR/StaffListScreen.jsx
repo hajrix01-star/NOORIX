@@ -25,6 +25,7 @@ import {
   getCustomAllowances,
   getEmployeesPaged,
   getEmployeesBulk,
+  throwIfApiFailed,
 } from '../../services/api';
 import { Badge, Button, Modal, Input, ScreenShell, cn , FmtNum } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
@@ -108,7 +109,7 @@ export default function StaffListScreen({ embedded }) {
         sortBy: sortKey,
         sortDir,
       });
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الموظفين');
+      throwIfApiFailed(res, 'فشل تحميل الموظفين');
       return res;
     },
     enabled: !!companyId,

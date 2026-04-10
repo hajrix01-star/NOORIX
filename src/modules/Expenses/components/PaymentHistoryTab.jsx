@@ -4,7 +4,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getInvoices } from '../../../services/api';
+import { getInvoices, throwIfApiFailed } from '../../../services/api';
 import DateFilterBar, { useDateFilter } from '../../../shared/components/DateFilterBar';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
@@ -30,7 +30,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     queryKey: ['invoices', companyId, startDate, endDate, kindParam],
     queryFn: async () => {
       const res = await getInvoices(companyId, startDate, endDate, 1, 500, undefined, undefined, kindParam);
-      if (!res.success) throw new Error(res.error || 'فشل تحميل المدفوعات');
+      throwIfApiFailed(res, 'فشل تحميل المدفوعات');
       return res.data;
     },
     enabled: !!companyId,

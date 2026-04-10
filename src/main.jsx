@@ -30,11 +30,11 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
       retry(failureCount, error) {
-        // لا إعادة على أخطاء HTTP المعروفة
         const code = error?.code ?? error?.response?.status;
         if ([401, 403, 404, 422].includes(code)) return false;
-        // إعادة واحدة فقط على أخطاء الشبكة
-        if (error?.isNetworkError) return failureCount < 1;
+        // بوابة / سيرفر نائم — محاولتان إضافيتان بعد فشل إعادة المحاولة داخل apiGet
+        if ([502, 503, 504].includes(code)) return failureCount < 2;
+        if (error?.isNetworkError || error?.isTransientServerError) return failureCount < 2;
         return failureCount < 1;
       },
       retryDelay: 3000,

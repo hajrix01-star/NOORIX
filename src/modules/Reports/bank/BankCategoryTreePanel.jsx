@@ -18,6 +18,7 @@ import {
   bankStatementClassificationRulesExportPack,
   bankStatementClassificationRulesImportPack,
   bankStatementClassificationRulesImportFromCompany,
+  throwIfApiFailed,
 } from '../../../services/api';
 import { TRANSACTION_TYPES, TRANSACTION_SIDES, getTransactionTypeInfo, getTransactionSideInfo } from './bankRuleConstants';
 
@@ -396,7 +397,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
     queryKey: qKey,
     queryFn: async () => {
       const res = await bankStatementTreeCategoriesList(companyId);
-      if (!res.success) throw new Error(res.error);
+      throwIfApiFailed(res, res.error || 'فشل التحميل');
       return res.data ?? [];
     },
     enabled: !!companyId,
@@ -406,7 +407,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
     queryKey: ['bank-classification-rules', companyId],
     queryFn: async () => {
       const res = await bankStatementClassificationRulesList(companyId);
-      if (!res.success) throw new Error(res.error);
+      throwIfApiFailed(res, res.error || 'فشل التحميل');
       return res.data ?? [];
     },
     enabled: !!companyId,
@@ -487,7 +488,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
           parentKeywords: [],
           classifications: [{ name: group.categoryName, keywords: [...new Set(group.keywords)] }],
         });
-        if (res?.success === false) throw new Error(res.error || 'migrate');
+        throwIfApiFailed(res, res.error || 'migrate');
         order += 10;
       }
       await qc.invalidateQueries({ queryKey: qKey });
@@ -519,7 +520,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
     setExportBusy(true);
     try {
       const res = await bankStatementClassificationRulesExportPack(companyId);
-      if (!res.success) throw new Error(res.error || 'export');
+      throwIfApiFailed(res, res.error || 'export');
       const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -572,7 +573,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
         }
         res = await bankStatementClassificationRulesImportPack(companyId, pack, importMode);
       }
-      if (!res.success) throw new Error(res.error || 'import');
+      throwIfApiFailed(res, res.error || 'import');
       const d = res.data ?? res;
       showToast(
         t(

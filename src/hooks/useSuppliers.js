@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
-import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../services/api';
+import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, throwIfApiFailed } from '../services/api';
 
 /**
  * @param {string} companyId
@@ -16,7 +16,7 @@ export function useSuppliers(companyId, { pageSize = 200, q } = {}) {
     queryKey: ['suppliers', companyId, pageSize, q || ''],
     queryFn: async () => {
       const res = await getSuppliers(companyId, 1, pageSize, q);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الموردين');
+      throwIfApiFailed(res, 'فشل تحميل الموردين');
       const d = res.data?.data ?? res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },

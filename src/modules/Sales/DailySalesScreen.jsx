@@ -13,7 +13,7 @@ import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useSales } from '../../hooks/useSales';
 import { useSalesChannels } from '../../hooks/useSalesChannels';
-import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } from '../../services/api';
+import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport, throwIfApiFailed } from '../../services/api';
 import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
@@ -188,7 +188,7 @@ export default function DailySalesScreen() {
         sortDir,
         showCancelledSales,
       );
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل المبيعات');
+      throwIfApiFailed(res, 'فشل تحميل المبيعات');
       return res.data;
     },
     enabled: !!companyId && salesViewSummariesList,

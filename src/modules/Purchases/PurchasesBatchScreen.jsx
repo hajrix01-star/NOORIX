@@ -11,7 +11,7 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { rejectIfApiFailed } from '../../utils/apiResponse';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
-import { createInvoiceBatch, updateInvoice, getPurchaseBatchSummaries, fetchAllInvoicesForBatch } from '../../services/api';
+import { createInvoiceBatch, updateInvoice, getPurchaseBatchSummaries, fetchAllInvoicesForBatch, throwIfApiFailed } from '../../services/api';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useCategories } from '../../hooks/useCategories';
 import { useVaults } from '../../hooks/useVaults';
@@ -95,7 +95,7 @@ export default function PurchasesBatchScreen() {
     queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ],
     queryFn: async () => {
       const res = await getPurchaseBatchSummaries(companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ || undefined);
-      if (!res?.success) throw new Error(res?.error || 'فشل تحميل الدفعات');
+      throwIfApiFailed(res, 'فشل تحميل الدفعات');
       return res.data;
     },
     enabled: !!companyId && activeTab === 'history',

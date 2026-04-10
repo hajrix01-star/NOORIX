@@ -8,6 +8,7 @@ import {
   createDailySalesSummary,
   updateDailySalesSummary,
   deleteDailySalesSummary,
+  throwIfApiFailed,
 } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
 
@@ -27,7 +28,7 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
       let reportedTotal = 0;
       for (let guard = 0; guard < 500; guard++) {
         const res = await getDailySalesSummaries(companyId, startDate, endDate, page, pageSize);
-        if (!res?.success) throw new Error(res?.error || 'فشل تحميل ملخصات المبيعات');
+        throwIfApiFailed(res, 'فشل تحميل ملخصات المبيعات');
         const { items = [], total = 0 } = res.data || {};
         reportedTotal = Number(total) || 0;
         acc.push(...items);

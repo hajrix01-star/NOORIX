@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStatementTemplateDelete } from '../../../services/api';
+import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStatementTemplateDelete, throwIfApiFailed } from '../../../services/api';
 import { Button, Modal } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 
@@ -39,7 +39,7 @@ export default function BankStatementTemplatesPanel({ companyId }) {
     queryKey: ['bank-statement-templates', companyId],
     queryFn: async () => {
       const res = await bankStatementTemplatesList(companyId);
-      if (!res.success) throw new Error(res.error);
+      throwIfApiFailed(res, res.error || 'فشل التحميل');
       return res.data ?? [];
     },
     enabled: !!companyId,
