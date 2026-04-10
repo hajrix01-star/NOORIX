@@ -9,7 +9,8 @@ import { Button, Input, Card, FormRow } from '../../../ui';
 const EMPTY = { nameAr: '', nameEn: '', taxNumber: '', phone: '', supplierCategoryId: '', supplierType: 'purchases', isTaxRegistered: true };
 
 export const SupplierForm = memo(function SupplierForm({ companyId, flatCategories = [], onSave, isSaving, onCancel }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const catLabel = (c) => (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || '';
   const [form, setForm] = useState(EMPTY);
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
@@ -87,7 +88,7 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
               const code = c.account?.code ? ` [${c.account.code}]` : '';
               return (
                 <option key={c.id} value={c.id}>
-                  {icon} {c.parentId ? `↳ ${c.nameAr}` : c.nameAr}{code}
+                  {icon} {c.parentId ? `↳ ${catLabel(c)}` : catLabel(c)}{code}
                 </option>
               );
             })}

@@ -9,7 +9,8 @@ import { Button, Input, AdaptiveSheet, FormRow } from '../../../ui';
 export const SupplierEditModal = memo(function SupplierEditModal({
   supplier, flatCategories = [], onSave, onClose, isSaving,
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const catLabel = (c) => (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || '';
   const SUPPLIER_TYPES = [
     { value: 'purchases', label: t('supplierTypePurchases') },
     { value: 'expenses',  label: t('supplierTypeExpenses') },
@@ -105,7 +106,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
               const code = c.account?.code ? ` [${c.account.code}]` : '';
               return (
                 <option key={c.id} value={c.id}>
-                  {icon} {c.parentId ? `↳ ${c.nameAr}` : c.nameAr}{code}
+                  {icon} {c.parentId ? `↳ ${catLabel(c)}` : catLabel(c)}{code}
                 </option>
               );
             })}

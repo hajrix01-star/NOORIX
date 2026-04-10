@@ -22,7 +22,7 @@ const TYPE_BADGE_COLOR = {
 };
 
 export const CategoriesManager = memo(function CategoriesManager({ companyId, titleKey = 'categoriesTab' }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const { showToast } = useToast();
@@ -177,7 +177,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
               >
                 <option value="">— تصنيف رئيسي —</option>
                 {roots.filter((c) => c.id !== editing?.id).map((c) => (
-                  <option key={c.id} value={c.id}>{c.icon || ''} {c.nameAr}</option>
+                  <option key={c.id} value={c.id}>{c.icon || ''} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}</option>
                 ))}
               </Input>
             </div>

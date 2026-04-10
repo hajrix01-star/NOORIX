@@ -18,7 +18,7 @@ export const BatchRow = memo(function BatchRow({
   row, index, suppliers, categories = [], bookmarkedIds, onUpdate, onRemove, onBookmark,
   maxInvoiceDate,
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { net, tax } = calcReverseVat(row.totalInclusive, row.isTaxable !== false);
   const accountCategories = categories.filter(
     (c) => (c.accountId || c.account) && (c.type === 'expense' || c.type === 'purchase'),
@@ -193,7 +193,7 @@ export const BatchRow = memo(function BatchRow({
         >
           <option value="">{t('categoryPlaceholder')}</option>
           {categoryOptions.map((c) => (
-            <option key={c.id} value={c.id}>{(c.icon || '')} {c.nameAr}</option>
+            <option key={c.id} value={c.id}>{(c.icon || '')} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}</option>
           ))}
         </Input>
       </td>

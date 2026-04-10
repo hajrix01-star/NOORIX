@@ -139,12 +139,13 @@ export const SupplierTable = memo(function SupplierTable({
       render: (_, row) => {
         const cat  = flatCategories.find((c) => c.id === row.supplierCategoryId);
         if (!cat) return <span className="nx-cell-muted">—</span>;
-        const icon = cat?.icon || cat?.account?.icon || '';
+        const icon    = cat?.icon || cat?.account?.icon || '';
+        const catName = lang === 'en' ? cat.nameEn || cat.nameAr : cat.nameAr || cat.nameEn;
         return (
           <span className="flex items-center justify-center gap-1">
             {icon && <span className="text-[14px]">{icon}</span>}
             <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
-              {cat.nameAr}
+              {catName}
               {cat.account?.code && <span className="me-1 opacity-70">[{cat.account.code}]</span>}
             </Badge>
           </span>
@@ -262,7 +263,8 @@ export const SupplierTable = memo(function SupplierTable({
                 {cat && (
                   <div className="mb-2">
                     <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
-                      {icon && <span>{icon}</span>}{cat.nameAr}
+                      {icon && <span>{icon}</span>}
+                      {lang === 'en' ? cat.nameEn || cat.nameAr : cat.nameAr || cat.nameEn}
                     </Badge>
                   </div>
                 )}
