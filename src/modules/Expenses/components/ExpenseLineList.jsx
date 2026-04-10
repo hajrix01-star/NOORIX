@@ -5,6 +5,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { openPrintWindow } from '../../../utils/printUtils';
 import SmartTable from '../../../components/common/SmartTable';
 import { Button, Badge, Input, ScreenShell, cn } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
@@ -149,21 +150,13 @@ export default function ExpenseLineList({
     const rows = tableData.map((r) =>
       `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${(KIND_LABELS[r.kind]?.label || r.kind).replace(/</g, '&lt;')}</td><td>${(r.categoryName || '—').replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td></tr>`,
     ).join('');
-    const printTitle = String(t('expenseLinesPrintTitle') || '').replace(/</g, '&lt;');
-    const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${printTitle}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;color:#1a1a1a;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#185FA5;color:#fff;font-weight:700}.print-footer{margin-top:24px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}}</style></head><body>
-<div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px">${companyName ? `<h1 style="margin:0;font-size:20px">${companyName.replace(/</g, '&lt;')}</h1><p style="margin:6px 0 0;font-size:14px">${printTitle}</p>` : `<h1 style="margin:0;font-size:20px">${printTitle}</h1>`}</div>
-<table><thead><tr><th>اسم البند</th><th>النوع</th><th>الفئة</th><th>المورد</th><th>رقم الخدمة</th></tr></thead><tbody>${rows || '<tr><td colspan="5">لا توجد بيانات</td></tr>'}</tbody></table>
-<div class="print-footer">طُبع بتاريخ: ${printDate}</div>
-</body></html>`;
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      w.onafterprint = () => { try { w.close(); } catch (_) {} };
-      w.onload = () => setTimeout(() => w.print(), 300);
-    }
+    const printTitle = t('expenseLinesPrintTitle') || 'بنود المصاريف';
+    openPrintWindow({
+      title: printTitle,
+      companyName,
+      subtitle: printTitle,
+      body: `<table><thead><tr><th>اسم البند</th><th>النوع</th><th>الفئة</th><th>المورد</th><th>رقم الخدمة</th></tr></thead><tbody>${rows || '<tr><td colspan="5">لا توجد بيانات</td></tr>'}</tbody></table>`,
+    });
   }
 
   return (

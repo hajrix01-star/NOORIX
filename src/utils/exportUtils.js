@@ -1,6 +1,7 @@
 /**
  * exportUtils — تصدير Excel و PDF (Dynamic Imports)
  */
+import { openPrintWindow } from './printUtils';
 import {
   ORDER_PRODUCTS_TEMPLATE_MARKER_AR,
   ORDER_CATEGORIES_TEMPLATE_MARKER_AR,
@@ -61,23 +62,42 @@ export function flattenOrderCategoriesToAoA(categories) {
   return [ORDER_CATEGORIES_EXCEL_HEADERS, ...(categories || []).map((c) => [c.nameAr ?? '', c.nameEn ?? ''])];
 }
 
+/** تنسيق صف رأس الأعمدة (xlsx-js-style) */
+function styleHeaderRow(XLSXmod, ws, rowIdx, colCount) {
+  const XLSX = XLSXmod.default ?? XLSXmod;
+  const HEADER_S = {
+    fill: { patternType: 'solid', fgColor: { rgb: '185FA5' } },
+    font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+    alignment: { horizontal: 'right', vertical: 'center' },
+  };
+  for (let ci = 0; ci < colCount; ci++) {
+    const addr = XLSX.utils.encode_cell({ r: rowIdx, c: ci });
+    if (!ws[addr]) continue;
+    ws[addr].s = HEADER_S;
+  }
+}
+
 export async function exportOrderProductsWorkbook(products, filename = 'order-products.xlsx') {
-  const XLSX = await import('xlsx');
+  const XLSXmod = await import('xlsx-js-style');
+  const XLSX = XLSXmod.default ?? XLSXmod;
   const aoa = flattenOrderProductsToAoA(products);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   setSheetColWidths(ws, [26, 22, 20, 16, 16, 11, 12]);
   setSheetRTL(ws);
+  styleHeaderRow(XLSXmod, ws, 0, ORDER_PRODUCTS_EXCEL_HEADERS.length);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'أصناف');
   XLSX.writeFile(wb, filename);
 }
 
 export async function exportOrderCategoriesWorkbook(categories, filename = 'order-categories.xlsx') {
-  const XLSX = await import('xlsx');
+  const XLSXmod = await import('xlsx-js-style');
+  const XLSX = XLSXmod.default ?? XLSXmod;
   const aoa = flattenOrderCategoriesToAoA(categories);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   setSheetColWidths(ws, [32, 28]);
   setSheetRTL(ws);
+  styleHeaderRow(XLSXmod, ws, 0, ORDER_CATEGORIES_EXCEL_HEADERS.length);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'فئات');
   XLSX.writeFile(wb, filename);
@@ -304,32 +324,38 @@ export async function exportOrdersCategoriesImportTemplate(filename = 'order-cat
  *
  * يقبل نمطين للاستدعاء:
  *   exportToExcel(rows, 'file.xlsx', opts)
- *   exportToExcel({ data: rows, filename: '...', title: '...', ... })
+ *   exportToExcel({ data: rows, filename: '...', title: '...', companyName: '...', ... })
  *
- * @param {Object[]|{data:Object[], filename?:string, title?:string, columns?:string[]}} data
+ * @param {Object[]|{data:Object[], filename?:string, title?:string, companyName?:string}} data
  * @param {string} filename
  * @param {{
- *   title?: string,        - صف عنوان مدمج فوق الجدول
+ *   companyName?: string,  - اسم الشركة — صف أول مدمج كبير (اختياري)
+ *   title?: string,        - عنوان التقرير — صف ثانٍ مدمج (اختياري)
  *   sheetName?: string,    - اسم الورقة (افتراضي: 'بيانات')
  *   rtl?: boolean,         - اتجاه RTL (افتراضي: true)
- *   headerColor?: string,  - لون خلفية رأس الأعمدة hex بدون # (افتراضي: '185FA5')
+ *   headerColor?: string,  - لون رأس الأعمدة hex بدون # (افتراضي: '185FA5')
  * }} opts
  */
 export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
   const XLSXmod = await import('xlsx-js-style');
   const XLSX = XLSXmod.default ?? XLSXmod;
 
-  // دعم نمط كائن الإعدادات: exportToExcel({ data, filename, title, ... })
+  // دعم نمط كائن الإعدادات: exportToExcel({ data, filename, title, companyName, ... })
   let configOpts = opts;
   if (!Array.isArray(data) && data && typeof data === 'object' && 'data' in data) {
-    const { data: innerData, filename: cfgFile, title: cfgTitle, sheetName: cfgSheet, ...rest } = data;
+    const {
+      data: innerData, filename: cfgFile, title: cfgTitle,
+      companyName: cfgCo, sheetName: cfgSheet, ...rest
+    } = data;
     if (cfgFile) filename = cfgFile;
+    if (cfgCo && !configOpts.companyName) configOpts = { companyName: cfgCo, ...configOpts };
     if (cfgTitle && !configOpts.title) configOpts = { title: cfgTitle, ...configOpts };
     if (cfgSheet && !configOpts.sheetName) configOpts = { sheetName: cfgSheet, ...configOpts };
     data = Array.isArray(innerData) ? innerData : [];
   }
 
   const {
+    companyName = '',
     title = '',
     sheetName = 'بيانات',
     rtl = true,
@@ -338,9 +364,13 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
 
   const rows = Array.isArray(data) ? data : [];
   const headers = rows.length ? Object.keys(rows[0]) : [];
-  const titleRowCount = title ? 1 : 0;
 
-  // حوّل القيم الرقمية من نص إلى number لضمان التنسيق الصحيح في Excel
+  // عدد صفوف الترويسة قبل رأس الأعمدة
+  const companyRow = companyName ? 1 : 0;
+  const titleRow   = title       ? 1 : 0;
+  const headerRowR = companyRow + titleRow; // مؤشر صف رأس الأعمدة (0-indexed)
+
+  // حوّل القيم الرقمية من نص إلى number
   const dataAoA = rows.map((row) =>
     headers.map((h) => {
       const v = row[h];
@@ -353,37 +383,50 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
   );
 
   const aoa = [];
-  if (title) aoa.push([title, ...Array(Math.max(0, headers.length - 1)).fill('')]);
+  if (companyName) aoa.push([companyName, ...Array(Math.max(0, headers.length - 1)).fill('')]);
+  if (title)       aoa.push([title,       ...Array(Math.max(0, headers.length - 1)).fill('')]);
   aoa.push([...headers]);
   aoa.push(...dataAoA);
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-  // RTL + تجميد صف الرأس
+  // RTL + تجميد صف الرأس (أول صف من البيانات يظل مرئياً)
   if (!ws['!views']) ws['!views'] = [{}];
   if (rtl) ws['!views'][0].rightToLeft = true;
   ws['!views'][0].state = 'frozen';
-  ws['!views'][0].ySplit = titleRowCount + 1;
+  ws['!views'][0].ySplit = headerRowR + 1;
   ws['!views'][0].xSplit = 0;
   if (headers.length > 0) {
-    ws['!views'][0].topLeftCell = XLSX.utils.encode_cell({ r: titleRowCount + 1, c: 0 });
+    ws['!views'][0].topLeftCell = XLSX.utils.encode_cell({ r: headerRowR + 1, c: 0 });
   }
 
-  // دمج وتنسيق صف العنوان الرئيسي
-  if (title && headers.length > 0) {
-    if (!ws['!merges']) ws['!merges'] = [];
+  if (!ws['!merges']) ws['!merges'] = [];
+
+  // تنسيق صف اسم الشركة — خط كبير داكن
+  if (companyName && headers.length > 0) {
     ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } });
-    const tc = XLSX.utils.encode_cell({ r: 0, c: 0 });
-    if (ws[tc]) {
-      ws[tc].s = {
-        font: { bold: true, sz: 13, color: { rgb: '111827' } },
+    const addr = XLSX.utils.encode_cell({ r: 0, c: 0 });
+    if (ws[addr]) {
+      ws[addr].s = {
+        font: { bold: true, sz: 15, color: { rgb: '0F172A' } },
         alignment: { horizontal: rtl ? 'right' : 'left', vertical: 'center' },
       };
     }
   }
 
-  // تنسيق رأس الأعمدة — خلفية زرقاء، نص أبيض، خط غامق
-  const headerRowR = titleRowCount;
+  // تنسيق صف عنوان التقرير
+  if (title && headers.length > 0) {
+    ws['!merges'].push({ s: { r: companyRow, c: 0 }, e: { r: companyRow, c: headers.length - 1 } });
+    const addr = XLSX.utils.encode_cell({ r: companyRow, c: 0 });
+    if (ws[addr]) {
+      ws[addr].s = {
+        font: { bold: true, sz: 12, color: { rgb: '374151' } },
+        alignment: { horizontal: rtl ? 'right' : 'left', vertical: 'center' },
+      };
+    }
+  }
+
+  // تنسيق رأس الأعمدة — خلفية زرقاء #185FA5، نص أبيض، خط غامق
   headers.forEach((h, ci) => {
     const addr = XLSX.utils.encode_cell({ r: headerRowR, c: ci });
     if (!ws[addr]) ws[addr] = { v: h, t: 's' };
@@ -394,7 +437,7 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
     };
   });
 
-  // حساب عرض الأعمدة تلقائياً من المحتوى
+  // حساب عرض الأعمدة تلقائياً من المحتوى (min 8، max 52)
   if (headers.length) {
     ws['!cols'] = headers.map((h, ci) => {
       const maxLen = dataAoA.reduce((m, row) => Math.max(m, String(row[ci] ?? '').length), String(h).length);
@@ -532,66 +575,42 @@ export async function importBankStatementFile(file) {
 }
 
 /**
- * exportTableToPdf — يفتح نافذة طباعة HTML بدلاً من jsPDF
- * العربية مضمونة عبر خط Cairo + dir=rtl؛ المتصفح يتولى التحويل لـ PDF
+ * exportTableToPdf — يفتح نافذة طباعة HTML (المتصفح يتولى التحويل لـ PDF)
+ * @param {{ columns?, data, title?, companyName?, filename?, landscape?, rtl? }} opts
  */
-export function exportTableToPdf({ columns, data, title = '', filename = 'export.pdf', rtl = true }) {
+export function exportTableToPdf({
+  columns,
+  data,
+  title = '',
+  companyName = '',
+  filename = 'export.pdf',
+  landscape = true,
+  rtl = true,
+}) {
   const cols = columns || (
     data[0] && typeof data[0] === 'object' && !Array.isArray(data[0])
       ? Object.keys(data[0])
       : []
   );
 
-  const escHtml = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-  const headRow = `<tr>${cols.map((c) => `<th>${escHtml(c)}</th>`).join('')}</tr>`;
+  const headRow = `<tr>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr>`;
   const bodyRows = data.length
     ? data.map((row) => {
         const cells = Array.isArray(row)
-          ? row.map((c) => `<td>${escHtml(c)}</td>`).join('')
-          : cols.map((c) => `<td>${escHtml(row[c])}</td>`).join('');
+          ? row.map((c) => `<td>${esc(c)}</td>`).join('')
+          : cols.map((c) => `<td>${esc(row[c])}</td>`).join('');
         return `<tr>${cells}</tr>`;
       }).join('')
     : `<tr><td colspan="${cols.length || 1}" style="text-align:center;color:#888">لا توجد بيانات</td></tr>`;
 
-  const dir = rtl ? 'rtl' : 'ltr';
-  const docTitle = escHtml(title || filename.replace('.pdf', ''));
+  const tableHtml = `<table><thead>${headRow}</thead><tbody>${bodyRows}</tbody></table>`;
 
-  const html = `<!DOCTYPE html>
-<html dir="${dir}" lang="${rtl ? 'ar' : 'en'}">
-<head>
-<meta charset="utf-8">
-<title>${docTitle}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-@page { size: A4 landscape; margin: 12mm }
-* { box-sizing: border-box }
-body { font-family: 'Cairo', Arial, sans-serif; padding: 16px; color: #111; font-size: 13px; line-height: 1.5 }
-h1 { margin: 0 0 10px; font-size: 18px; font-weight: 800 }
-table { width: 100%; border-collapse: collapse }
-th, td { border: 1px solid #d0d5dd; padding: 5px 8px; text-align: ${rtl ? 'right' : 'left'} }
-th { background: #185FA5; color: #fff; font-weight: 700; font-size: 12px }
-tr:nth-child(even) td { background: #f8fafc }
-</style>
-</head>
-<body>
-${title ? `<h1>${docTitle}</h1>` : ''}
-<table>
-<thead>${headRow}</thead>
-<tbody>${bodyRows}</tbody>
-</table>
-<script>
-var loaded = false;
-function tryPrint() { if (!loaded) return; window.print(); }
-document.fonts.ready.then(function() { loaded = true; tryPrint(); });
-window.onload = function() { loaded = true; tryPrint(); };
-setTimeout(function() { loaded = true; tryPrint(); }, 2500);
-</script>
-</body>
-</html>`;
-
-  const win = window.open('', '_blank');
-  if (!win) return;
-  win.document.write(html);
-  win.document.close();
+  openPrintWindow({
+    title: title || filename.replace('.pdf', ''),
+    companyName,
+    landscape,
+    body: tableHtml,
+  });
 }

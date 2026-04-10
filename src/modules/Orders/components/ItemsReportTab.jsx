@@ -187,7 +187,7 @@ export function ItemsReportTab({ companyId, year, month, dateFilter }) {
           )}
           <Button type="button" className="noorix-print-hide" onClick={() => window.print()} disabled={filtered.length === 0}>{t('print')}</Button>
           <Button type="button" className="noorix-print-hide" onClick={handleExportExcel} disabled={filtered.length === 0}>Excel</Button>
-          <Button type="button" className="noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>PDF</Button>
+          <Button type="button" className="noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>طباعة / PDF</Button>
         </div>
       </div>
 

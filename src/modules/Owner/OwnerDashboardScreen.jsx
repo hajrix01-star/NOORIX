@@ -320,7 +320,7 @@ export default function OwnerDashboardScreen() {
             ))}
           </Input>
           <Button variant="primary" onClick={handleExportExcel} size="sm">Excel</Button>
-          <Button onClick={handleExportPdf} size="sm">PDF</Button>
+          <Button onClick={handleExportPdf} size="sm">طباعة / PDF</Button>
         </div>
       </div>
 

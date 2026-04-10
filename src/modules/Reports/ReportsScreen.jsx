@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext';
 import { PERMISSIONS } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
 import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
+import { openPrintWindow } from '../../utils/printUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
 import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
@@ -102,19 +103,20 @@ export default function ReportsScreen() {
   function handlePrint() {
     const printRows = buildFlatRows(report, {});
     const head = `${selectedMonthNumber ? `<th>${(t('selectedMonth') || '').replace(/</g, '&lt;')}</th><th>${(t('reportSalesShare') || '').replace(/</g, '&lt;')}</th>` : ''}${EN_MONTHS.map((month) => `<th>${month}</th>`).join('')}<th>${(t('reportAnnualTotal') || '').replace(/</g, '&lt;')}</th><th>${(t('reportSalesShare') || '').replace(/</g, '&lt;')}</th>`;
-    const body = printRows.map((row) => {
+    const bodyRows = printRows.map((row) => {
       const firstCell = (displayLabel(row, lang) || '').replace(/</g, '&lt;');
       const contextCells = selectedMonthNumber ? `<td>${amountText(getContextAmount(row, selectedMonthNumber))}</td><td>${percentText(getContextPercent(row, selectedMonthNumber))}</td>` : '';
       const monthsCells = (row.months ?? []).map((value) => `<td>${amountText(value)}</td>`).join('');
       return `<tr><td>${firstCell}</td>${contextCells}${monthsCells}<td>${amountText(row.total)}</td><td>${percentText(row.percentOfSalesYear)}</td></tr>`;
     }).join('');
-    const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-    const html = `<!DOCTYPE html><html dir="${lang === 'en' ? 'ltr' : 'rtl'}" lang="${lang}"><head><meta charset="utf-8"><title>${(t('reportGeneral') || '').replace(/</g, '&lt;')}</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:12mm 12mm 18mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}body{font-family:'Cairo',Arial,sans-serif;padding:20px;color:#111;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}th,td{border:1px solid #d5d7da;padding:6px 8px;text-align:right}th{background:#185FA5;color:#fff;font-size:13px}h1{margin:0 0 6px;font-size:24px}.sub{margin:0 0 18px;color:#555}.print-footer{margin-top:20px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}}</style></head><body><h1>${(companyName || t('reports')).replace(/</g, '&lt;')}</h1><p class="sub">${(t('reportGeneral') || '').replace(/</g, '&lt;')} - ${year}${selectedMonthNumber ? ` - ${EN_MONTHS[selectedMonthNumber - 1]}` : ''}</p><table><thead><tr><th>${(t('reportItem') || '').replace(/</g, '&lt;')}</th>${head}</tr></thead><tbody>${body}</tbody></table><div class="print-footer">طُبع بتاريخ: ${printDate}</div></body></html>`;
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.onload = () => setTimeout(() => win.print(), 300);
+    const subtitle = `${t('reportGeneral')} — ${year}${selectedMonthNumber ? ` — ${EN_MONTHS[selectedMonthNumber - 1]}` : ''}`;
+    openPrintWindow({
+      title: t('reportGeneral'),
+      companyName: companyName || t('reports'),
+      subtitle,
+      landscape: true,
+      body: `<table><thead><tr><th>${(t('reportItem') || '').replace(/</g, '&lt;')}</th>${head}</tr></thead><tbody>${bodyRows}</tbody></table>`,
+    });
   }
 
   return (
@@ -138,7 +140,7 @@ export default function ReportsScreen() {
           )}
           <div className="nx-toolbar">
             <Button onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
-            <Button onClick={handleExportPdf} disabled={!report}>{t('exportPdf')}</Button>
+            <Button onClick={handleExportPdf} disabled={!report}>طباعة / PDF</Button>
             <Button onClick={handlePrint} disabled={!report}>{t('print')}</Button>
           </div>
         </div>

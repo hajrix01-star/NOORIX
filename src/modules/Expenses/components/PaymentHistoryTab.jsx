@@ -9,6 +9,7 @@ import DateFilterBar, { useDateFilter } from '../../../shared/components/DateFil
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { openPrintWindow } from '../../../utils/printUtils';
 import SmartTable from '../../../components/common/SmartTable';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Badge, Input , FmtNum } from '../../../ui';
@@ -64,20 +65,12 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
     const rows = activeItems.map((inv) =>
       `<tr><td>${(inv.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplier?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(inv.expenseLine?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${String(kindBadgeMap[inv.kind]?.label || inv.kind).replace(/</g, '&lt;')}</td><td>${formatSaudiDate(inv.transactionDate).replace(/</g, '&lt;')}</td><td>${fmt(inv.netAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.taxAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.totalAmount).replace(/</g, '&lt;')}</td></tr>`,
     ).join('');
-    const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>سجل المدفوعات</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#185FA5;color:#fff;font-weight:700}.print-footer{margin-top:24px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}}</style></head><body>
-<div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px">${companyName ? `<h1 style="margin:0;font-size:20px">${companyName.replace(/</g, '&lt;')}</h1><p style="margin:6px 0 0;font-size:14px">سجل المدفوعات (ثابت + متغير)</p>` : '<h1 style="margin:0;font-size:20px">سجل المدفوعات (ثابت + متغير)</h1>'}<p style="margin:6px 0 0;font-size:12px;color:#555">الإجمالي: ${fmt(totalAmount)} SR</p></div>
-<table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>المورد</th><th>بند المصروف</th><th>النوع</th><th>التاريخ</th><th>الصافي</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${rows || '<tr><td colspan="9">لا توجد مدفوعات</td></tr>'}</tbody></table>
-<div class="print-footer">طُبع بتاريخ: ${printDate}</div>
-</body></html>`;
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      w.onafterprint = () => { try { w.close(); } catch (_) {} };
-      w.onload = () => setTimeout(() => w.print(), 300);
-    }
+    openPrintWindow({
+      title: 'سجل المدفوعات',
+      companyName,
+      subtitle: `سجل المدفوعات (ثابت + متغير) | الإجمالي: ${fmt(totalAmount)} SR`,
+      body: `<table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>المورد</th><th>بند المصروف</th><th>النوع</th><th>التاريخ</th><th>الصافي</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${rows || '<tr><td colspan="9">لا توجد مدفوعات</td></tr>'}</tbody></table>`,
+    });
   }
 
   const columns = useMemo(() => [
@@ -145,8 +138,8 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'payment-history.xlsx')} disabled={!activeItems.length}>
             {t('exportExcel')}
           </Button>
-          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', filename: 'payment-history.pdf' })} disabled={!activeItems.length}>
-            {t('exportPdf')}
+          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', companyName, filename: 'payment-history.pdf' })} disabled={!activeItems.length}>
+            طباعة / PDF
           </Button>
         </div>
       </div>

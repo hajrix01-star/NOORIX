@@ -11,6 +11,7 @@ import { useVaults } from '../../../hooks/useVaults';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
+import { openPrintWindow } from '../../../utils/printUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import SmartTable from '../../../components/common/SmartTable';
@@ -247,20 +248,12 @@ export default function PayrollTab() {
     const rows = allFilteredData.map((r) =>
       `<tr><td>${(r.runNumber || '').replace(/</g, '&lt;')}</td><td>${(r.month || '').replace(/</g, '&lt;')}</td><td>${hrFmt(r.grossTotal)}</td><td>${hrFmt(r.netTotal)}</td><td>${(payrollStatusMap[r.status]?.label || r.status).replace(/</g, '&lt;')}</td></tr>`
     ).join('');
-    const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('hrTabPayroll') || '').replace(/</g, '&lt;')}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;color:#1a1a1a;line-height:1.6}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}.header h1{margin:8px 0 4px;font-size:20px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#185FA5;color:#fff;font-weight:700}.print-footer{margin-top:24px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}}</style></head><body>
-<div class="header"><h1>${(companyName || 'الشركة').replace(/</g, '&lt;')}</h1><div>${(t('hrTabPayroll') || '').replace(/</g, '&lt;')} — ${year}</div></div>
-<table><thead><tr><th>${t('payrollRunNumber')}</th><th>${t('payrollMonth')}</th><th>${t('payrollGross')}</th><th>${t('payrollNet')}</th><th>${t('payrollStatus')}</th></tr></thead><tbody>${rows || '<tr><td colspan="5">' + t('noDataInPeriod') + '</td></tr>'}</tbody></table>
-<div class="print-footer">طُبع بتاريخ: ${printDate}</div>
-</body></html>`;
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      w.onafterprint = () => { try { w.close(); } catch (_) {} };
-      w.onload = () => setTimeout(() => w.print(), 300);
-    }
+    openPrintWindow({
+      title: t('hrTabPayroll'),
+      companyName: companyName || 'الشركة',
+      subtitle: `${t('hrTabPayroll')} — ${year}`,
+      body: `<table><thead><tr><th>${t('payrollRunNumber')}</th><th>${t('payrollMonth')}</th><th>${t('payrollGross')}</th><th>${t('payrollNet')}</th><th>${t('payrollStatus')}</th></tr></thead><tbody>${rows || '<tr><td colspan="5">' + t('noDataInPeriod') + '</td></tr>'}</tbody></table>`,
+    });
   }
 
   return (

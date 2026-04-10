@@ -8,6 +8,7 @@ import { useApp } from '../../../context/AppContext';
 import { useSales } from '../../../hooks/useSales';
 import { CARD_COLORS } from '../../../utils/cardStyles';
 import { fmt } from '../../../utils/format';
+import { openPrintWindow } from '../../../utils/printUtils';
 import CalendarDayDetailPanel from './CalendarDayDetailPanel';
 import { Button, Input, Modal , FmtNum } from '../../../ui';
 import {
@@ -212,23 +213,18 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   const handlePrintDayDetails = useCallback((dateStr, dayTarget, daySummaries, totalAmount, achieved) => {
     const rows = daySummaries.map((s) => {
       const chText = (s.channels || []).map((ch) => `${ch.vault?.nameAr || ch.vault?.nameEn || '—'}: ${fmt(ch.amount || 0)}`).join(' | ');
-      return `<tr><td>${(s.summaryNumber || '—').replace(/</g, '&lt;')}</td><td>${chText.replace(/</g, '&lt;')}</td><td>${s.customerCount ?? 0}</td><td style="text-align:right;font-family:'Cairo',Arial,sans-serif">${fmt(Number(s.totalAmount || 0))}</td></tr>`;
+      return `<tr><td>${(s.summaryNumber || '—').replace(/</g, '&lt;')}</td><td>${chText.replace(/</g, '&lt;')}</td><td>${s.customerCount ?? 0}</td><td>${fmt(Number(s.totalAmount || 0))}</td></tr>`;
     }).join('');
-    const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('transactions') || '').replace(/</g, '&lt;')} - ${dateStr}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>@page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px}table{width:100%;border-collapse:collapse}td,th{padding:8px 12px;border:1px solid #ddd;text-align:right}th{background:#185FA5;color:#fff;font-weight:700}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}.target{background:#eff6ff;padding:12px;border-radius:8px;margin:12px 0}.achieved{color:#16a34a}.print-footer{margin-top:24px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}}</style></head><body>
-<div class="header"><h1 style="margin:0;font-size:20px">${(companyName || '').replace(/</g, '&lt;')}</h1><p style="margin:8px 0 0;font-size:14px">${(t('dashboardCalendar') || '').replace(/</g, '&lt;')} — ${dateStr.replace(/</g, '&lt;')}</p></div>
-<div class="target"><strong>${(t('dashboardSalesTarget') || '').replace(/</g, '&lt;')}:</strong> ${dayTarget != null ? fmt(dayTarget) : '—'} SR &nbsp;|&nbsp; <strong>${(t('total') || '').replace(/</g, '&lt;')}:</strong> <span class="${achieved ? 'achieved' : ''}">${fmt(totalAmount)} SR</span>${achieved ? ' ✓' : ''}</div>
-<table><thead><tr><th>${(t('summaryNumber') || '').replace(/</g, '&lt;')}</th><th>${(t('salesChannels') || '').replace(/</g, '&lt;')}</th><th>${(t('customers') || '').replace(/</g, '&lt;')}</th><th>${(t('total') || '').replace(/</g, '&lt;')}</th></tr></thead><tbody>${rows || '<tr><td colspan="4">' + (t('noDataInPeriod') || '').replace(/</g, '&lt;') + '</td></tr>'}</tbody><tfoot><tr style="font-weight:700;background:#eff6ff"><td colspan="3">${(t('total') || '').replace(/</g, '&lt;')}</td><td style="text-align:right">${fmt(totalAmount)} SR</td></tr></tfoot></table>
-<div class="print-footer">طُبع بتاريخ: ${printDate}</div></body></html>`;
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      w.onafterprint = () => { try { w.close(); } catch (_) {} };
-      w.onload = () => setTimeout(() => w.print(), 300);
-    }
+    const targetInfo = `<div style="background:#eff6ff;padding:12px;border-radius:8px;margin:12px 0;font-size:13px">
+      <strong>${t('dashboardSalesTarget')}:</strong> ${dayTarget != null ? fmt(dayTarget) : '—'} SR &nbsp;|&nbsp;
+      <strong>${t('total')}:</strong> <span style="color:${achieved ? '#16a34a' : 'inherit'}">${fmt(totalAmount)} SR${achieved ? ' ✓' : ''}</span>
+    </div>`;
+    openPrintWindow({
+      title: `${t('transactions')} — ${dateStr}`,
+      companyName: companyName || '',
+      subtitle: `${t('dashboardCalendar')} — ${dateStr}`,
+      body: `${targetInfo}<table><thead><tr><th>${t('summaryNumber')}</th><th>${t('salesChannels')}</th><th>${t('customers')}</th><th>${t('total')}</th></tr></thead><tbody>${rows || '<tr><td colspan="4">' + t('noDataInPeriod') + '</td></tr>'}</tbody><tfoot><tr><td colspan="3">${t('total')}</td><td>${fmt(totalAmount)} SR</td></tr></tfoot></table>`,
+    });
   }, [t, companyName]);
 
   const monthLabel = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month - 1];
@@ -252,7 +248,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           bg = `rgba(22,163,74,${0.2 + intensity * 0.5})`;
         }
       }
-      return `<td style="padding:6px;text-align:center;border:1px solid #ddd;background:${bg};font-family:'Cairo',Arial,sans-serif">${day}<br><span style="font-weight:700">${fmt(amount, 0)}</span>${achieved ? ' ✓' : ''}</td>`;
+      return `<td style="padding:6px;text-align:center;border:1px solid #ddd;background:${bg}">${day}<br><span style="font-weight:700">${fmt(amount, 0)}</span>${achieved ? ' ✓' : ''}</td>`;
     });
     const firstDow = new Date(year, month - 1, 1).getDay();
     const blanks = Array(firstDow).fill('<td></td>').join('');
@@ -264,21 +260,13 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     });
     if (row) rows.push(`<tr>${row}</tr>`);
     const dowHeader = (lang === 'ar' ? DOW_LABELS_AR : DOW_LABELS);
-    const headerRow = `<tr>${[0,1,2,3,4,5,6].map((d) => `<th style="padding:8px;background:#185FA5;color:#fff;font-weight:700">${dowHeader[d]}</th>`).join('')}</tr>`;
-    const printDate2 = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('dashboardCalendar') || '').replace(/</g, '&lt;')}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>@page{size:A4;margin:12mm 12mm 18mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:20px;font-size:13px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:12px;margin-bottom:16px}.print-footer{margin-top:16px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}}</style></head><body>
-<div class="header"><h1 style="margin:0;font-size:18px">${(companyName || '').replace(/</g, '&lt;')}</h1><p style="margin:6px 0 0;font-size:14px">${(t('dashboardCalendar') || '').replace(/</g, '&lt;')} — ${monthLabel} ${year}</p></div>
-<table><thead>${headerRow}</thead><tbody>${rows.join('')}</tbody></table>
-<div class="print-footer">طُبع بتاريخ: ${printDate2}</div></body></html>`;
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      w.onafterprint = () => { try { w.close(); } catch (_) {} };
-      w.onload = () => setTimeout(() => w.print(), 300);
-    }
+    const headerRow = `<tr>${[0,1,2,3,4,5,6].map((d) => `<th>${dowHeader[d]}</th>`).join('')}</tr>`;
+    openPrintWindow({
+      title: t('dashboardCalendar'),
+      companyName: companyName || '',
+      subtitle: `${t('dashboardCalendar')} — ${monthLabel} ${year}`,
+      body: `<table><thead>${headerRow}</thead><tbody>${rows.join('')}</tbody></table>`,
+    });
   }, [daysInMonth, year, month, monthLabel, companyName, t, lang, maxAmount]);
 
   const selectedDatesSorted = useMemo(() => [...selectedDates].filter((d) => d >= startDate && d <= endDate).sort(), [selectedDates, startDate, endDate]);

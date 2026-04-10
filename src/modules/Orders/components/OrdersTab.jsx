@@ -18,6 +18,7 @@ import { getDailySalesSummaries } from '../../../services/api';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
+import { openPrintWindow } from '../../../utils/printUtils';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
@@ -39,19 +40,23 @@ function buildOrderPrintHtml(order, companyName, t, fmt, formatSaudiDate) {
   const rows = items.map((it) => {
     const parts = [it.size, it.packaging, it.unit].filter(Boolean);
     const name = (it.product?.nameAr || it.product?.nameEn || '—') + (parts.length > 0 ? ` (${parts.join(' / ')})` : '');
-    return `<tr><td style="padding:8px 10px;text-align:right;border:1px solid #ddd">${name}</td><td style="padding:8px 10px;text-align:center;border:1px solid #ddd">${it.quantity}</td><td style="padding:8px 10px;text-align:right;border:1px solid #ddd">${fmt(it.unitPrice ?? 0)} SR</td><td style="padding:8px 10px;text-align:right;border:1px solid #ddd;font-weight:600">${fmt(it.amount ?? 0)} SR</td></tr>`;
+    return `<tr><td>${name}</td><td style="text-align:center">${it.quantity}</td><td>${fmt(it.unitPrice ?? 0)} SR</td><td><strong>${fmt(it.amount ?? 0)} SR</strong></td></tr>`;
   }).join('');
   const orderType = order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal');
   const pettyRow = order.orderType === 'external' && order.pettyCashAmount != null
-    ? `<div style="margin-bottom:8px"><strong>${t('ordersPettyCashGiven')}:</strong> ${fmt(order.pettyCashAmount ?? 0)} SR</div>`
+    ? `<p style="margin:6px 0"><strong>${t('ordersPettyCashGiven')}:</strong> ${fmt(order.pettyCashAmount ?? 0)} SR</p>`
     : '';
-  const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-  return `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${t('ordersPrintOrder')} - ${order.orderNumber}</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}body{font-family:'Cairo',Arial,sans-serif;padding:24px;direction:rtl;color:#1a1a1a;max-width:600px;margin:0 auto}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{padding:10px 12px;text-align:right;border:1px solid #ddd}th{background:#185FA5;color:#fff;font-weight:700}.header{border-bottom:2px solid #185FA5;padding-bottom:16px;margin-bottom:16px}.total-row{background:#f1f5f9;font-weight:700}.print-footer{margin-top:20px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}}</style></head><body>
-<div class="header"><div style="font-size:20px;font-weight:700;margin-bottom:4px">${companyName}</div><div style="font-size:14px;color:#64748b">${t('ordersViewOrder')} — ${order.orderNumber}</div></div>
-<div style="margin-bottom:16px"><div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:8px"><span><strong>${t('orderDate')}:</strong> ${formatSaudiDate(order.orderDate)}</span><span><strong>${t('orderType')}:</strong> ${orderType}</span></div>${pettyRow}</div>
-<table><thead><tr><th style="text-align:right">${t('product')}</th><th style="text-align:center">${t('quantity')}</th><th style="text-align:right">${t('unitPrice')}</th><th style="text-align:right">${t('total')}</th></tr></thead><tbody>${rows}</tbody><tfoot><tr class="total-row"><td colspan="3" style="text-align:right;padding:10px">${t('total')}</td><td style="padding:10px">${fmt(order.totalAmount ?? 0)} SR</td></tr></tfoot></table>
-<div class="print-footer">طُبع بتاريخ: ${printDate}</div>
-</body></html>`;
+  const meta = `<div style="margin-bottom:16px;font-size:13px">
+    <p style="margin:4px 0"><strong>${t('orderDate')}:</strong> ${formatSaudiDate(order.orderDate)}</p>
+    <p style="margin:4px 0"><strong>${t('orderType')}:</strong> ${orderType}</p>
+    ${pettyRow}
+  </div>`;
+  const tableHtml = `${meta}<table>
+<thead><tr><th>${t('product')}</th><th style="text-align:center">${t('quantity')}</th><th>${t('unitPrice')}</th><th>${t('total')}</th></tr></thead>
+<tbody>${rows}</tbody>
+<tfoot><tr><td colspan="3">${t('total')}</td><td>${fmt(order.totalAmount ?? 0)} SR</td></tr></tfoot>
+</table>`;
+  return tableHtml;
 }
 
 export function OrdersTab({ companyId, year, month, startDate: propStartDate, endDate: propEndDate, dateFilter }) {
@@ -389,19 +394,13 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
   };
 
   const handlePrintOrder = (order) => {
-    const html = buildOrderPrintHtml(order, companyName, t, fmt, formatSaudiDate);
-    const w = window.open('', '_blank');
-    if (!w) {
-      showToast(t('allowPopupsForPrint'), 'error');
-      return;
-    }
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(() => {
-      w.print();
-      w.onafterprint = () => w.close();
-    }, 350);
+    const bodyHtml = buildOrderPrintHtml(order, companyName, t, fmt, formatSaudiDate);
+    openPrintWindow({
+      title: `${t('ordersPrintOrder')} — ${order.orderNumber}`,
+      companyName,
+      subtitle: `${t('ordersViewOrder')} — ${order.orderNumber}`,
+      body: bodyHtml,
+    });
   };
 
   function closeModal() {

@@ -18,6 +18,7 @@ import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday } from '../../ut
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
+import { openPrintWindow } from '../../utils/printUtils';
 import { Badge, Button, ScreenShell, FmtNum, cn } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable from '../../components/common/SmartTable';
@@ -474,20 +475,13 @@ export default function DailySalesScreen() {
       const cc = s.customerCount || 0;
       return `<tr><td>${(s.summaryNumber || '').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(s.transactionDate)}</td><td>${(ch || '—').replace(/</g, '&lt;')}</td><td>${cc}</td><td>${fmt(total)}</td><td>${cc > 0 ? fmt(total / cc) : '0.00'}</td><td>${s.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td></tr>`;
     }).join('');
-    const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('salesDailySummary') || '').replace(/</g, '&lt;')}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;color:#1a1a1a;line-height:1.6}.page{max-width:210mm;margin:0 auto}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}.header img{max-height:48px}.header h1{margin:8px 0 4px;font-size:20px}.header .sub{font-size:12px;color:#555}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd}th{background:#185FA5;color:#fff;font-weight:700}.no-print{display:none}.print-footer{margin-top:24px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}.no-print{display:none!important}}</style></head><body>
-<div class="header">${logoUrl ? `<img src="${logoUrl}" alt="" />` : ''}<h1>${(companyName || 'الشركة').replace(/</g, '&lt;')}</h1><div class="sub">${(t('salesDailySummary') || '').replace(/</g, '&lt;')} — ${(dateFilter.label || '').replace(/</g, '&lt;')}</div></div>
-<table><thead><tr><th>${t('summaryNumber')}</th><th>${t('transactionDate')}</th><th>${t('salesChannels')}</th><th>${t('customers')}</th><th>${t('total')}</th><th>${t('avgPerOrder')}</th><th>${t('statusLabel')}</th></tr></thead><tbody>${channelsRows || '<tr><td colspan="7">' + t('noSummariesInPeriod') + '</td></tr>'}</tbody></table>
-<div class="print-footer">طُبع بتاريخ: ${printDate}</div>
-</body></html>`;
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      w.onafterprint = () => { try { w.close(); } catch (_) {} };
-      w.onload = () => setTimeout(() => w.print(), 300);
-    }
+    openPrintWindow({
+      title: t('salesDailySummary'),
+      companyName: companyName || 'الشركة',
+      subtitle: `${t('salesDailySummary')} — ${dateFilter.label || ''}`,
+      logoUrl: logoUrl || '',
+      body: `<table><thead><tr><th>${t('summaryNumber')}</th><th>${t('transactionDate')}</th><th>${t('salesChannels')}</th><th>${t('customers')}</th><th>${t('total')}</th><th>${t('avgPerOrder')}</th><th>${t('statusLabel')}</th></tr></thead><tbody>${channelsRows || '<tr><td colspan="7">' + t('noSummariesInPeriod') + '</td></tr>'}</tbody></table>`,
+    });
   }
 
   const renderMobileCard = useCallback((row) => (
@@ -646,7 +640,7 @@ export default function DailySalesScreen() {
               {salesFullHistory && (
                 <span className="flex flex-wrap gap-1.5 print:hidden">
                   <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportExcel')}</Button>
-                  <Button size="sm" onClick={handleExportPdf} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportPdf')}</Button>
+                  <Button size="sm" onClick={handleExportPdf} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : 'طباعة / PDF'}</Button>
                   <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('print')}</Button>
                 </span>
               )}

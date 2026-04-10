@@ -12,6 +12,7 @@ import SmartTable from '../../../components/common/SmartTable';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Badge, Button, AdaptiveSheet } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { openPrintWindow } from '../../../utils/printUtils';
 
 const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
@@ -52,99 +53,56 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
       const advanceDates = String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—';
       const before = Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0);
       const deductionsAll = Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0);
-      return `
-        <tr>
-          <td>${idx + 1}</td>
-          <td>${employeeName}</td>
-          <td>${advanceDates}</td>
-          <td>${hrFmt(row.grossSalary ?? 0)}</td>
-          <td>${hrFmt(before)}</td>
-          <td>${hrFmt(deductionsAll)}</td>
-          <td>${hrFmt(row.netSalary ?? 0)}</td>
-          <td class="signature-cell">&nbsp;</td>
-        </tr>
-      `;
+      return `<tr>
+        <td>${idx + 1}</td><td>${employeeName}</td><td>${advanceDates}</td>
+        <td>${hrFmt(row.grossSalary ?? 0)}</td><td>${hrFmt(before)}</td>
+        <td>${hrFmt(deductionsAll)}</td><td>${hrFmt(row.netSalary ?? 0)}</td>
+        <td class="sig-cell">&nbsp;</td>
+      </tr>`;
     }).join('');
 
     const logoHtml = companyLogo
-      ? `<img src="${companyLogo}" alt="logo" style="height:52px; width:auto; object-fit:contain;" />`
+      ? `<img src="${companyLogo}" alt="logo" style="height:52px;width:auto;object-fit:contain" />`
       : '';
 
-    const html = `
-      <html lang="en" dir="rtl">
-        <head>
-          <meta charset="utf-8" />
-          <title>${run.runNumber}</title>
-          <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-          <style>
-            @page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}
-            body { font-family: 'Cairo', Arial, sans-serif; color:#0f172a; padding:24px; line-height:1.6; }
-            .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid #0f172a; padding-bottom:12px; }
-            .title { font-size:20px; font-weight:700; margin:0; }
-            .meta { font-size:13px; color:#334155; margin:2px 0; }
-            table { width:100%; border-collapse:collapse; margin-top:12px; font-size:12px; }
-            th, td { border:1px solid #cbd5e1; padding:8px; text-align:right; }
-            th { background:#f1f5f9; }
-            .signature-cell { min-height:44px; min-width:110px; vertical-align:middle; }
-            .summary { margin-top:16px; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-            .card { border:1px solid #cbd5e1; border-radius:8px; padding:10px; }
-            .label { font-size:12px; color:#475569; margin-bottom:4px; }
-            .value { font-size:16px; font-weight:700; }
-            .print-footer { margin-top:20px; padding-top:8px; border-top:1px solid #ddd; text-align:center; font-size:11px; color:#777; }
-            @media print { body { padding:0; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div>
-              <h1 class="title">${companyName || 'NOORIX'}</h1>
-              <p class="meta">مسير الرواتب: ${run.runNumber}</p>
-              <p class="meta">الشهر: ${monthLabel}</p>
-            </div>
-            <div>${logoHtml}</div>
+    openPrintWindow({
+      title: run.runNumber,
+      extraCss: `
+        .run-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid #0f172a; padding-bottom:12px; }
+        .run-title { font-size:20px; font-weight:700; margin:0; }
+        .run-meta { font-size:13px; color:#334155; margin:2px 0; }
+        table th { background:#f1f5f9; color:#0f172a; }
+        .sig-cell { min-height:44px; min-width:110px; vertical-align:middle; }
+        .summary-grid { margin-top:16px; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+        .s-card { border:1px solid #cbd5e1; border-radius:8px; padding:10px; }
+        .s-label { font-size:12px; color:#475569; margin-bottom:4px; }
+        .s-value { font-size:16px; font-weight:700; }
+      `,
+      body: `
+        <div class="run-header">
+          <div>
+            <h1 class="run-title">${companyName || 'NOORIX'}</h1>
+            <p class="run-meta">مسير الرواتب: ${run.runNumber}</p>
+            <p class="run-meta">الشهر: ${monthLabel}</p>
           </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>${t('employeeName')}</th>
-                <th>${t('payrollAdvanceDates')}</th>
-                <th>${t('grossSalary')}</th>
-                <th>${t('payrollTotalBeforeDeductions')}</th>
-                <th>${t('payrollTotalDeductionsAll')}</th>
-                <th>${t('payrollTotalAfterDeductions')}</th>
-                <th>${t('payrollEmployeeSignature')}</th>
-              </tr>
-            </thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-
-          <div class="summary">
-            <div class="card">
-              <div class="label">${t('payrollTotalBeforeDeductions')}</div>
-              <div class="value">${hrFmt(totalBeforeDeduction)}</div>
-            </div>
-            <div class="card">
-              <div class="label">${t('payrollTotalDeductionsAll')}</div>
-              <div class="value">${hrFmt(totalDeductions)}</div>
-            </div>
-            <div class="card">
-              <div class="label">${t('payrollTotalAfterDeductions')}</div>
-              <div class="value">${hrFmt(totalNet)}</div>
-            </div>
-          </div>
-          <div class="print-footer">طُبع بتاريخ: ${new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-          <script>window.onload = () => window.print();</script>
-        </body>
-      </html>
-    `;
-
-    const win = window.open('', '_blank', 'width=1280,height=900');
-    if (!win) return;
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
+          <div>${logoHtml}</div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>#</th><th>${t('employeeName')}</th><th>${t('payrollAdvanceDates')}</th>
+            <th>${t('grossSalary')}</th><th>${t('payrollTotalBeforeDeductions')}</th>
+            <th>${t('payrollTotalDeductionsAll')}</th><th>${t('payrollTotalAfterDeductions')}</th>
+            <th>${t('payrollEmployeeSignature')}</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <div class="summary-grid">
+          <div class="s-card"><div class="s-label">${t('payrollTotalBeforeDeductions')}</div><div class="s-value">${hrFmt(totalBeforeDeduction)}</div></div>
+          <div class="s-card"><div class="s-label">${t('payrollTotalDeductionsAll')}</div><div class="s-value">${hrFmt(totalDeductions)}</div></div>
+          <div class="s-card"><div class="s-label">${t('payrollTotalAfterDeductions')}</div><div class="s-value">${hrFmt(totalNet)}</div></div>
+        </div>
+      `,
+    });
   };
 
   const columns = [

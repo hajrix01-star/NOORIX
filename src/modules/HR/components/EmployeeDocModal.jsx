@@ -15,6 +15,7 @@ import {
   SAUDI_STANDARD_HOURS,
 } from '../utils/employeeSalaryMath';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { openPrintWindow } from '../../../utils/printUtils';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ALLOWANCE_NAME_EN_MAP = {
@@ -166,42 +167,29 @@ function buildSalaryRows(employee, customAllowances = []) {
   return { rows, total };
 }
 
-function buildPrintableHtml(title, html) {
-  return `<!DOCTYPE html>
-  <html dir="rtl">
-    <head>
-      <meta charset="utf-8">
-      <title>${title}</title>
-      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-      <style>
-        @page{size:A4;margin:10mm 10mm 16mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}
-        body{font-family:'Cairo',Arial,sans-serif;padding:12px;background:#fff;color:#111;max-width:190mm;margin:0 auto;line-height:1.45;font-size:11px}
-        .doc{border:1px solid #d6dbe3;border-radius:10px;overflow:hidden}
-        .header{padding:12px 14px;border-bottom:2px solid #0f172a;background:#f8fafc}
-        .title{font-size:18px;font-weight:800;text-align:center;margin:0}
-        .subtitle{font-size:11px;text-align:center;color:#475569;margin-top:4px}
-        .section{padding:10px 14px;border-bottom:1px solid #e5e7eb}
-        .section:last-child{border-bottom:none}
-        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .bilingual{display:grid;grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);column-gap:10px;direction:ltr;align-items:stretch}
-        .hr-bilingual-sep{background:#cbd5e1;border-radius:999px;width:1px;min-width:1px}
-        .box{padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff}
-        .box h3{margin:0 0 6px;font-size:12px;text-align:center;font-weight:800}
-        .box p,.box li{margin:0 0 6px;line-height:1.5;font-size:10.5px}
-        table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10.5px}
-        th,td{padding:4px 6px;border:1px solid #dbe1e8}
-        th{background:#f1f5f9;font-weight:700;text-align:center;color:#334155}
-        .num{font-family:'Cairo',Arial,sans-serif}
-        .footer{padding:10px 14px}
-        .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
-        .sig{padding-top:24px;border-top:1px solid #cbd5e1;font-size:10px}
-        .print-footer{margin-top:12px;padding-top:6px;border-top:1px solid #ddd;text-align:center;font-size:10px;color:#94a3b8}
-        @media print{body{padding:0;max-width:none}.doc{border:none;border-radius:0}}
-      </style>
-    </head>
-    <body>${html}<div class="print-footer">طُبع بتاريخ: ${new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}</div></body>
-  </html>`;
-}
+const EMPLOYEE_DOC_EXTRA_CSS = `
+  body{font-size:11px;line-height:1.45}
+  .doc{border:1px solid #d6dbe3;border-radius:10px;overflow:hidden}
+  .header{padding:12px 14px;border-bottom:2px solid #0f172a;background:#f8fafc}
+  .title{font-size:18px;font-weight:800;text-align:center;margin:0}
+  .subtitle{font-size:11px;text-align:center;color:#475569;margin-top:4px}
+  .section{padding:10px 14px;border-bottom:1px solid #e5e7eb}
+  .section:last-child{border-bottom:none}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .bilingual{display:grid;grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);column-gap:10px;direction:ltr;align-items:stretch}
+  .hr-bilingual-sep{background:#cbd5e1;border-radius:999px;width:1px;min-width:1px}
+  .box{padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff}
+  .box h3{margin:0 0 6px;font-size:12px;text-align:center;font-weight:800}
+  .box p,.box li{margin:0 0 6px;line-height:1.5;font-size:10.5px}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10.5px}
+  th,td{padding:4px 6px;border:1px solid #dbe1e8}
+  th{background:#f1f5f9;font-weight:700;text-align:center;color:#334155}
+  .num{font-family:'Cairo',Arial,sans-serif}
+  .footer{padding:10px 14px}
+  .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+  .sig{padding-top:24px;border-top:1px solid #cbd5e1;font-size:10px}
+  @media print{.doc{border:none;border-radius:0}}
+`;
 
 async function renderPdfFileFromElement(element, fileBaseName) {
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
@@ -234,12 +222,8 @@ async function renderPdfFileFromElement(element, fileBaseName) {
 }
 
 function buildPrintWindow(title, html) {
-  const win = window.open('', '_blank');
-  if (!win) return null;
-  win.document.write(buildPrintableHtml(title, html));
-  win.document.close();
-  win.focus();
-  return win;
+  openPrintWindow({ title, body: html, extraCss: EMPLOYEE_DOC_EXTRA_CSS });
+  return true;
 }
 
 function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }) {

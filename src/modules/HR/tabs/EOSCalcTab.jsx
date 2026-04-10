@@ -20,6 +20,7 @@ import { hrFmt } from '../utils/hrFmt';
 import { parseWorkHours } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input , FmtNum } from '../../../ui';
+import { openPrintWindow } from '../../../utils/printUtils';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -157,15 +158,8 @@ export default function EOSCalcTab() {
     const allowanceRowsEn = allowanceRows.length
       ? allowanceRows.map((r) => `<tr><td class="td-en">${r.en}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
       : '<tr><td class="td-en" style="color:#94a3b8">No allowances</td><td class="td-num" style="color:#94a3b8">—</td></tr>';
-    const html = `<!DOCTYPE html>
-      <html dir="rtl">
-      <head>
-        <meta charset="utf-8" />
-        <title>EOS Calculator</title>
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        <style>
+    const extraCss = `
           *{box-sizing:border-box;margin:0;padding:0}
-          body{font-family:'Cairo',Arial,sans-serif;background:#f8fafc;color:#111;padding:24px;line-height:1.6;font-size:13px}
           .doc{background:#fff;border:1px solid #dbe1e8;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);max-width:900px;margin:0 auto}
           /* ── رأس المستند ── */
           .head{padding:20px 24px;border-bottom:2px solid #dbe1e8;background:#f8fafc;text-align:center}
@@ -199,12 +193,9 @@ export default function EOSCalcTab() {
           .td-num{text-align:center;font-weight:600;font-family:'Cairo',Arial,sans-serif}
           /* ── تذييل ── */
           .foot{padding:12px 24px;border-top:1px solid #dbe1e8;background:#f8fafc;text-align:center;font-size:11px;color:#94a3b8}
-          @page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}
-          @media print{body{padding:0;background:#fff}.doc{box-shadow:none;border:none}}
-        </style>
-      </head>
-      <body>
-        <div class="doc">
+          @media print{.doc{box-shadow:none;border:none}}
+    `;
+    const bodyHtml = `<div class="doc">
           <!-- رأس المستند -->
           <div class="head">
             <div class="head-title">${companyName}</div>
@@ -296,17 +287,8 @@ export default function EOSCalcTab() {
           <div class="foot">
             ${companyName} &nbsp;·&nbsp; ${reportDate} &nbsp;·&nbsp; وثيقة آلية / Auto-generated Document
           </div>
-        </div>
-      </body>
-      </html>`;
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.onload = () => {
-      win.onafterprint = () => win.close();
-      win.print();
-    };
+        </div>`;
+    openPrintWindow({ title: 'EOS Calculator', extraCss, body: bodyHtml });
   }
 
   return (

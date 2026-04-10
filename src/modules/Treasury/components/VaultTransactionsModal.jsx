@@ -10,6 +10,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
+import { openPrintWindow } from '../../../utils/printUtils';
 import SmartTable from '../../../components/common/SmartTable';
 import { Button, AdaptiveSheet , FmtNum } from '../../../ui';
 
@@ -95,29 +96,17 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   }, [vault?.id, vault?.accountId, vault?.nameAr, companyId, startDate, endDate, periodLabel, t]);
 
   const handlePrintPdf = () => {
-    const docNumKey = t('documentNumber');
-    const dateKey = t('date');
-    const typeKey = t('type');
-    const debitKey = t('debit');
-    const creditKey = t('credit');
     const rows = items.map((r) =>
-      `<tr><td>${(r.documentNumber || r.referenceId || '—').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(r.transactionDate).replace(/</g, '&lt;')}</td><td>${(r.referenceType || '—').replace(/</g, '&lt;')}</td><td style="text-align:right;font-family:'Cairo',Arial,sans-serif">${r.debit != null ? fmt(r.debit) : '—'}</td><td style="text-align:right;font-family:'Cairo',Arial,sans-serif">${r.credit != null ? fmt(r.credit) : '—'}</td></tr>`,
+      `<tr><td>${(r.documentNumber || r.referenceId || '—').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(r.transactionDate)}</td><td>${(r.referenceType || '—').replace(/</g, '&lt;')}</td><td>${r.debit != null ? fmt(r.debit) : '—'}</td><td>${r.credit != null ? fmt(r.credit) : '—'}</td></tr>`,
     ).join('');
-    const totalRow = `<tr style="font-weight:700;background:#eff6ff"><td colspan="3">${t('total').replace(/</g, '&lt;')}</td><td style="text-align:right;font-family:'Cairo',Arial,sans-serif">${fmt(totalDebit)}</td><td style="text-align:right;font-family:'Cairo',Arial,sans-serif">${fmt(totalCredit)}</td></tr>`;
-    const printDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${(t('transactions') || '').replace(/</g, '&lt;')}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>@page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:24px;font-size:14px;line-height:1.6}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 12px;border:1px solid #ddd;text-align:right}th{background:#185FA5;color:#fff;font-weight:700}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:24px}.print-footer{margin-top:24px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}@media print{body{padding:0}}</style></head><body>
-<div class="header"><h1 style="margin:0;font-size:20px">${(vaultDisplayName(vault, lang) || '').replace(/</g, '&lt;')} — ${(t('transactions') || '').replace(/</g, '&lt;')}${periodLabel ? ` (${periodLabel.replace(/</g, '&lt;')})` : ''}</h1></div>
-<table><thead><tr><th>${docNumKey.replace(/</g, '&lt;')}</th><th>${dateKey.replace(/</g, '&lt;')}</th><th>${typeKey.replace(/</g, '&lt;')}</th><th>${debitKey.replace(/</g, '&lt;')}</th><th>${creditKey.replace(/</g, '&lt;')}</th></tr></thead><tbody>${rows || '<tr><td colspan="5">' + (t('noDataInPeriod') || '').replace(/</g, '&lt;') + '</td></tr>'}${rows ? totalRow : ''}</tbody></table>
-<div class="print-footer">طُبع بتاريخ: ${printDate}</div></body></html>`;
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      w.onafterprint = () => { try { w.close(); } catch (_) {} };
-      w.onload = () => setTimeout(() => w.print(), 300);
-    }
+    const totalRow = rows ? `<tr><td colspan="3">${t('total')}</td><td>${fmt(totalDebit)}</td><td>${fmt(totalCredit)}</td></tr>` : '';
+    const vaultName = vaultDisplayName(vault, lang) || '';
+    openPrintWindow({
+      title: `${vaultName} — ${t('transactions')}`,
+      companyName: vaultName,
+      subtitle: `${t('transactions')}${periodLabel ? ` — ${periodLabel}` : ''}`,
+      body: `<table><thead><tr><th>${t('documentNumber')}</th><th>${t('date')}</th><th>${t('type')}</th><th>${t('debit')}</th><th>${t('credit')}</th></tr></thead><tbody>${rows || '<tr><td colspan="5">' + t('noDataInPeriod') + '</td></tr>'}${totalRow}</tbody></table>`,
+    });
   };
 
   const columns = [
@@ -171,7 +160,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     >
       <div className="nx-toolbar mb-4">
         <Button onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>Excel</Button>
-        <Button onClick={handlePrintPdf} disabled={!items.length}>PDF</Button>
+        <Button onClick={handlePrintPdf} disabled={!items.length}>طباعة / PDF</Button>
       </div>
 
       {isPaginatedTotal && (

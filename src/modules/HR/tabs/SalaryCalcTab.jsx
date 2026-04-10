@@ -30,6 +30,7 @@ import {
 } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, FormRow, FmtNum } from '../../../ui';
+import { openPrintWindow } from '../../../utils/printUtils';
 
 function toDecimal(value) {
   return new Decimal(value || 0);
@@ -235,39 +236,28 @@ export default function SalaryCalcTab() {
           .join('')
       : `<tr><td>لا توجد بدلات مخصصة</td><td class="num">0</td></tr>`;
 
-    const html = `<!DOCTYPE html>
-      <html dir="rtl">
-      <head>
-        <meta charset="utf-8" />
-        <title>Salary Calculator</title>
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        <style>
-          @page{size:A4;margin:15mm 15mm 20mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}
-          body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#111;padding:20px;line-height:1.6}
-          .doc{border:1px solid #dbe1e8;border-radius:12px;overflow:hidden}
-          .head{padding:14px 18px;border-bottom:1px solid #dbe1e8;background:#f8fafc;text-align:center}
-          .section{padding:14px 18px;border-bottom:1px solid #e5e7eb}
-          .bi{display:grid;grid-template-columns:1fr 1px 1fr;gap:12px;align-items:stretch}
-          .sep{background:#cbd5e1;border-radius:999px}
-          .box{border:1px solid #dbe1e8;border-radius:10px;padding:12px}
-          .box-title{font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e5e7eb}
-          .row{display:flex;justify-content:space-between;gap:12px;margin-bottom:5px;font-size:12px}
-          .row-hl{background:#f0fdf4;border-radius:6px;padding:5px 8px;margin-top:4px}
-          .row-hl span:last-child{color:#15803d;font-weight:700}
-          .en{direction:ltr;text-align:left}
-          .num{font-family:'Cairo',Arial,sans-serif;font-weight:600}
-          .muted{color:#6b7280}
-          .amber{color:#b45309}
-          table{width:100%;border-collapse:collapse}
-          th,td{border:1px solid #dbe1e8;padding:8px;font-size:12px}
-          th{background:#f8fafc}
-          .warn{background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:8px 12px;font-size:11px;color:#92400e;margin-top:8px}
-          .print-footer{margin-top:16px;padding-top:8px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#777}
-          @media print{body{padding:0;background:#fff}.doc{box-shadow:none}}
-        </style>
-      </head>
-      <body>
-        <div class="doc">
+    const extraCss = `
+      .doc{border:1px solid #dbe1e8;border-radius:12px;overflow:hidden}
+      .head{padding:14px 18px;border-bottom:1px solid #dbe1e8;background:#f8fafc;text-align:center}
+      .section{padding:14px 18px;border-bottom:1px solid #e5e7eb}
+      .bi{display:grid;grid-template-columns:1fr 1px 1fr;gap:12px;align-items:stretch}
+      .sep{background:#cbd5e1;border-radius:999px}
+      .box{border:1px solid #dbe1e8;border-radius:10px;padding:12px}
+      .box-title{font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e5e7eb}
+      .row{display:flex;justify-content:space-between;gap:12px;margin-bottom:5px;font-size:12px}
+      .row-hl{background:#f0fdf4;border-radius:6px;padding:5px 8px;margin-top:4px}
+      .row-hl span:last-child{color:#15803d;font-weight:700}
+      .en{direction:ltr;text-align:left}
+      .num{font-family:'Cairo',Arial,sans-serif;font-weight:600}
+      .muted{color:#6b7280}
+      .amber{color:#b45309}
+      table{width:100%;border-collapse:collapse}
+      th,td{border:1px solid #dbe1e8;padding:8px;font-size:12px}
+      th{background:#f8fafc}
+      .warn{background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:8px 12px;font-size:11px;color:#92400e;margin-top:8px}
+      @media print{.doc{box-shadow:none}}
+    `;
+    const bodyHtml = `<div class="doc">
           <div class="head">
             <div style="font-weight:800;font-size:18px">${companyName}</div>
             <div style="font-weight:700;margin-top:6px">تقرير حاسبة الرواتب / Salary Calculator Report</div>
@@ -363,19 +353,8 @@ export default function SalaryCalcTab() {
           </div>
 
           ${hasOT ? `<div class="section"><div class="warn">⚖️ المادة 107 — وزارة الموارد البشرية: "يُدفع للعامل أجرٌ بأجر يوازي أجر الساعة مضافاً إليه 50% من أجره الأساسي".<br/>أجر_ساعة_OT = (الأجر_الفعلي + 50% × الأساسي) ÷ 208<br/>Art.107 MHRSD: OT hourly rate = (actual wage + 50% × basic) ÷ 208 hrs.</div></div>` : ''}
-        </div>
-        <div class="print-footer">طُبع بتاريخ: ${reportDate}</div>
-      </body>
-      </html>`;
-
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.onload = () => {
-      win.onafterprint = () => win.close();
-      win.print();
-    };
+        </div>`;
+    openPrintWindow({ title: 'Salary Calculator', extraCss, body: bodyHtml });
   }
 
   // ── JSX ──────────────────────────────────────────────────
