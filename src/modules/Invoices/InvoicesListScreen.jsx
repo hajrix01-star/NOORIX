@@ -28,6 +28,39 @@ import { buildActiveCancelledStatusMap, buildInvoiceKindBadgeMap } from '../../c
 
 const PAGE_SIZE = 50;
 
+/** أسطر تفصيل نوع الفاتورة داخل كروت الداخل/الخارج */
+function InvoiceExecKindBreakdown({ rows, kindMap, t }) {
+  if (!rows?.length) {
+    return <p className="text-[11px] text-noorix-muted m-0 leading-relaxed">—</p>;
+  }
+  return (
+    <ul className="m-0 p-0 list-none flex flex-col gap-1 w-full">
+      {rows.map((r) => {
+        const label = kindMap[r.kind]?.label ?? `${t('invoiceKindUnknown')} (${r.kind})`;
+        return (
+          <li
+            key={r.kind}
+            className="flex justify-between gap-2 items-start text-[11px] border-b border-noorix-border/35 pb-1.5 last:border-0"
+          >
+            <div className="min-w-0 text-start">
+              <span className="font-bold text-noorix-text">{label}</span>
+              <span className="text-noorix-muted font-normal"> · {r.count}</span>
+            </div>
+            <div dir="ltr" className="shrink-0 text-end leading-snug">
+              <div className="font-black text-[12px] text-noorix-text tabular-nums">
+                <FmtNum n={r.total} /> <span className="nx-sar">SR</span>
+              </div>
+              <div className="text-[10px] text-noorix-muted tabular-nums">
+                {t('net')} <FmtNum n={r.net} /> · {t('tax')} <FmtNum n={r.tax} />
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 /* ══ نافذة عرض الفاتورة (قراءة فقط) ══════════════════════════════════════════ */
 function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
   if (!invoice) return null;
@@ -263,7 +296,7 @@ export default function InvoicesListScreen() {
 
   const kindForApi = filterKind || urlExtra.kind || undefined;
 
-  const { items, total, sums, isLoading, isError, error } = useInvoices({
+  const { items, total, sums, sumsByKind, isLoading, isError, error } = useInvoices({
     companyId,
     startDate: dateFilter.startDate,
     endDate:   dateFilter.endDate,
@@ -300,6 +333,15 @@ export default function InvoicesListScreen() {
   const serverAll     = sums.all;
   const serverInflow  = sums.inflow;
   const serverOutflow = sums.outflow;
+
+  const inflowByKind = useMemo(
+    () => (sumsByKind || []).filter((r) => r.kind === 'sale'),
+    [sumsByKind],
+  );
+  const outflowByKind = useMemo(
+    () => (sumsByKind || []).filter((r) => r.kind !== 'sale'),
+    [sumsByKind],
+  );
 
   const footerCells = (
     <>
@@ -458,10 +500,16 @@ export default function InvoicesListScreen() {
                 </div>
                 <span className="noorix-exec-card__title">{t('inbound')} — {t('categoryTypeSale')}</span>
               </div>
+              <p className="text-[11px] text-noorix-muted m-0 mb-2 leading-relaxed px-0.5">{t('invoicesInboundExplain')}</p>
+              <div className="text-[11px] font-bold text-noorix-text mb-1">{t('invoicesSumByKindTitle')}</div>
+              <div className="mb-3 min-h-[2.5rem]">
+                <InvoiceExecKindBreakdown rows={inflowByKind} kindMap={KIND_MAP} t={t} />
+              </div>
               <div className="noorix-exec-card__total">
                 <FmtNum n={Number(serverInflow.total)} className="noorix-exec-card__amount" />
                 <span className="noorix-exec-card__currency">SR</span>
               </div>
+              <div className="text-[10px] text-noorix-muted text-center m-0 mb-1">{t('total')}</div>
               <div className="noorix-exec-card__divider" />
               <div className="noorix-exec-card__footer">
                 <div className="noorix-exec-card__stat">
@@ -490,10 +538,16 @@ export default function InvoicesListScreen() {
                 </div>
                 <span className="noorix-exec-card__title">{t('outbound')} — {t('purchases')} / {t('categoryTypeExpense')}</span>
               </div>
+              <p className="text-[11px] text-noorix-muted m-0 mb-2 leading-relaxed px-0.5">{t('invoicesOutboundExplain')}</p>
+              <div className="text-[11px] font-bold text-noorix-text mb-1">{t('invoicesSumByKindTitle')}</div>
+              <div className="mb-3 max-h-[220px] overflow-y-auto min-h-[2.5rem] pr-0.5">
+                <InvoiceExecKindBreakdown rows={outflowByKind} kindMap={KIND_MAP} t={t} />
+              </div>
               <div className="noorix-exec-card__total">
                 <FmtNum n={Number(serverOutflow.total)} className="noorix-exec-card__amount" />
                 <span className="noorix-exec-card__currency">SR</span>
               </div>
+              <div className="text-[10px] text-noorix-muted text-center m-0 mb-1">{t('total')}</div>
               <div className="noorix-exec-card__divider" />
               <div className="noorix-exec-card__footer">
                 <div className="noorix-exec-card__stat">

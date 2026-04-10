@@ -1069,6 +1069,7 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
       page:  data?.page ?? page,
       pageSize: data?.pageSize ?? pageSize,
       sums: data?.sums,
+      sumsByKind: Array.isArray(data?.sumsByKind) ? data.sumsByKind : [],
     },
   };
 }

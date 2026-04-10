@@ -363,7 +363,7 @@ export class InvoiceService {
 
     const activeWhere = { ...where, status: 'active' };
 
-    const [items, total, byKind] = await Promise.all([
+    const [items, total, kindAggRows] = await Promise.all([
       this.prisma.invoice.findMany({
         where,
         orderBy,
@@ -390,11 +390,13 @@ export class InvoiceService {
 
     const zero = () => ({ net: '0', tax: '0', total: '0', count: 0 });
     const sums = { all: zero(), inflow: zero(), outflow: zero() };
-    for (const row of byKind) {
+    const sumsByKind: { kind: string; count: number; net: string; tax: string; total: string }[] = [];
+    for (const row of kindAggRows) {
       const n = row._sum.netAmount?.toString()   ?? '0';
       const x = row._sum.taxAmount?.toString()   ?? '0';
       const t = row._sum.totalAmount?.toString() ?? '0';
       const c = row._count._all;
+      sumsByKind.push({ kind: row.kind, count: c, net: n, tax: x, total: t });
       const target = row.kind === 'sale' ? sums.inflow : sums.outflow;
       target.net   = new Decimal(target.net).plus(n).toString();
       target.tax   = new Decimal(target.tax).plus(x).toString();
@@ -405,8 +407,13 @@ export class InvoiceService {
       sums.all.total = new Decimal(sums.all.total).plus(t).toString();
       sums.all.count += c;
     }
+    sumsByKind.sort((a, b) => {
+      if (a.kind === 'sale' && b.kind !== 'sale') return -1;
+      if (b.kind === 'sale' && a.kind !== 'sale') return 1;
+      return new Decimal(b.total).cmp(a.total) || a.kind.localeCompare(b.kind);
+    });
 
-    return { items, total, page: p, pageSize: size, sums };
+    return { items, total, page: p, pageSize: size, sums, sumsByKind };
   }
 
   private buildDateFilter(startDate?: string, endDate?: string) {

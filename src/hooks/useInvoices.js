@@ -29,6 +29,7 @@ export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize 
     items:    data?.items ?? [],
     total:    data?.total ?? 0,
     sums:     data?.sums  ?? { all: zero(), inflow: zero(), outflow: zero() },
+    sumsByKind: Array.isArray(data?.sumsByKind) ? data.sumsByKind : [],
     isLoading,
     isError,
     error,
