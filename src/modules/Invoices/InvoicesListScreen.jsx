@@ -186,34 +186,35 @@ export default function InvoicesListScreen() {
   }, [t, deleteInvoiceMut]);
 
   const columns = useMemo(() => [
-    { key: 'invoiceNumber', label: t('documentNumber'), shrink: true, width: '15%',
+    { key: 'invoiceNumber', label: t('documentNumber'), shrink: true, width: '11%',
       render: (v) => <span className="nx-cell-num nx-cell-accent nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), shrink: true, width: '13%',
+    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), shrink: true, width: '9%',
       render: (v) => <span className="nx-cell-num nx-cell-muted nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'supplierName',  label: t('supplier'), width: '14%',
+    { key: 'supplierName',  label: t('supplier'), width: '10%',
       render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'notesOrEmployee', label: t('invoiceNotesColumn') || 'ملاحظة', width: '16%',
+    { key: 'notesOrEmployee', label: t('invoiceNotesColumn') || 'ملاحظة', width: '10%',
       render: (_, row) => <span className="nx-cell-ellipsis" title={row.notes || ''}>{row.notes || '—'}</span> },
-    { key: 'kind',          label: t('type'), shrink: true, width: '8%',
+    { key: 'kind',          label: t('type'), shrink: true, width: '5%',
       render: (v) => <Badge {...Badge.fromStatus(v, KIND_MAP)} size="sm" /> },
-    { key: 'vaultLabel', label: t('invoiceVaultColumn'), width: '14%', shrink: true,
+    { key: 'vaultLabel', label: t('invoiceVaultColumn'), width: '22%',
       render: (_, row) => {
         const a = row.vaultAllocations;
         if (a?.length > 0) {
           return (
-            <div className="flex flex-wrap gap-1.5 justify-end">
+            /* flex-nowrap: الشرائح في صف واحد دائماً — overflow-hidden يقطع ما يزيد */
+            <div className="flex flex-nowrap gap-1.5 justify-end overflow-hidden">
               {a.map((al) => {
                 const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
                 return (
                   <div
                     key={al.id}
                     className={cn(
-                      'inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-noorix-border',
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-noorix-border',
                       'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
                     )}
                     title={vn ? `${vn} — ${fmt(al.amount)} SR` : ''}
                   >
-                    <span className="min-w-0 truncate text-[11px] font-semibold text-noorix-text">{vn || '—'}</span>
+                    <span className="truncate text-[11px] font-semibold text-noorix-text max-w-[60px]">{vn || '—'}</span>
                     <span dir="ltr" className="shrink-0 whitespace-nowrap text-[12px] font-bold tabular-nums text-nx-sales">
                       <FmtNum n={al.amount} /> <span className="nx-sar">SR</span>
                     </span>
@@ -231,15 +232,15 @@ export default function InvoicesListScreen() {
     },
     { key: 'netAmount',     label: t('net'),    numeric: true, shrink: true, width: '5%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
-    { key: 'taxAmount',     label: t('tax'),    numeric: true, shrink: true, width: '5%',
+    { key: 'taxAmount',     label: t('tax'),    numeric: true, shrink: true, width: '4%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--amber" /> },
     { key: 'totalAmount',   label: t('total'),  numeric: true, shrink: true, width: '7%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" /> },
     { key: 'transactionDate', label: t('date'), sortable: true, shrink: true, width: '6%',
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span> },
-    { key: 'status',        label: t('statusLabel'), shrink: true, width: '6%',
+    { key: 'status',        label: t('statusLabel'), shrink: true, width: '5%',
       render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
-    { key: 'actions', label: t('actions'), align: 'center', width: '5%', shrink: true,
+    { key: 'actions', label: t('actions'), align: 'center', width: '6%', shrink: true,
       render: (_, row) => (
         <InvoiceActionsCell
           row={row}
