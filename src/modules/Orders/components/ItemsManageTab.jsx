@@ -454,20 +454,22 @@ export function ItemsManageTab({ companyId }) {
         <div className="grid gap-5">
           <div className="noorix-surface-card p-4 lg:p-5">
             <div className="flex flex-col gap-3 mb-3">
-              <div className="flex flex-wrap gap-3 justify-between items-center">
+              <div className="flex items-center justify-between gap-2">
                 <h4 className="m-0 text-[15px]">+ {t('ordersAddProduct')}</h4>
                 <OrdersImportHelpTrigger t={t} variant="products" />
               </div>
-              <div className="flex flex-wrap gap-2">
-                <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} className="hidden" />
-                <Button size="sm" variant="primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
-                  {presetBusy ? t('saving') : t('ordersPresetCatalogButton')}
-                </Button>
-                <Button size="sm" onClick={handleDownloadProductsImportTemplate}>
-                  {t('ordersDownloadImportTemplate')}
-                </Button>
-                <Button size="sm" onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>{t('import')}</Button>
-                <Button size="sm" onClick={handleExportProducts} disabled={products.length === 0}>{t('exportExcel')}</Button>
+              <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} className="hidden" />
+              <div className="overflow-x-auto">
+                <div className="flex gap-2 w-max">
+                  <Button size="sm" variant="primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
+                    {presetBusy ? t('saving') : t('ordersPresetCatalogButton')}
+                  </Button>
+                  <Button size="sm" onClick={handleDownloadProductsImportTemplate}>
+                    {t('ordersDownloadImportTemplate')}
+                  </Button>
+                  <Button size="sm" onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>{t('import')}</Button>
+                  <Button size="sm" onClick={handleExportProducts} disabled={products.length === 0}>{t('exportExcel')}</Button>
+                </div>
               </div>
               <p className="m-0 text-[11px] text-noorix-muted leading-[1.45]">
                 {t('ordersPresetCatalogHint')}
@@ -505,7 +507,7 @@ export function ItemsManageTab({ companyId }) {
                   <Button size="sm" onClick={addVariantToProduct}>+ {t('ordersAddVariant')}</Button>
                 </div>
                 <div className="rounded-lg border border-noorix-border overflow-x-auto">
-                  <table className="w-full text-[12px] border-collapse min-w-[420px]">
+                  <table className="w-full text-[12px] border-collapse" style={{ minWidth: '400px' }}>
                     <thead>
                       <tr className="bg-noorix-bg-muted border-b border-noorix-border">
                         <th className="font-semibold text-right py-2 px-2.5">{t('ordersProductSize')}</th>
@@ -712,17 +714,19 @@ export function ItemsManageTab({ companyId }) {
         <div className="grid gap-5">
           <div className="noorix-surface-card p-4 lg:p-5">
             <div className="flex flex-col gap-3 mb-3">
-              <div className="flex flex-wrap gap-3 justify-between items-center">
+              <div className="flex items-center justify-between gap-2">
                 <h4 className="m-0 text-[15px]">+ {t('ordersAddCategory')}</h4>
                 <OrdersImportHelpTrigger t={t} variant="categories" />
               </div>
-              <div className="flex flex-wrap gap-2">
-                <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} className="hidden" />
-                <Button size="sm" onClick={handleDownloadCategoriesImportTemplate}>
-                  {t('ordersDownloadImportTemplate')}
-                </Button>
-                <Button size="sm" onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>{t('import')}</Button>
-                <Button size="sm" onClick={handleExportCategories} disabled={categories.length === 0}>{t('exportExcel')}</Button>
+              <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} className="hidden" />
+              <div className="overflow-x-auto">
+                <div className="flex gap-2 w-max">
+                  <Button size="sm" onClick={handleDownloadCategoriesImportTemplate}>
+                    {t('ordersDownloadImportTemplate')}
+                  </Button>
+                  <Button size="sm" onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>{t('import')}</Button>
+                  <Button size="sm" onClick={handleExportCategories} disabled={categories.length === 0}>{t('exportExcel')}</Button>
+                </div>
               </div>
             </div>
               <div className="flex gap-3 flex flex-wrap items-end">
