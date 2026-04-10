@@ -26,7 +26,7 @@ export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Post()
-  @RequireAnyPermission(['INVOICES_WRITE', 'PURCHASES_WRITE'])
+  @RequireAnyPermission('INVOICES_WRITE', 'PURCHASES_WRITE')
   async create(
     @Body()        dto:  CreateInvoiceDto,
     @CurrentUser() user: JwtUser,
@@ -35,7 +35,7 @@ export class InvoiceController {
   }
 
   @Post('batch')
-  @RequireAnyPermission(['INVOICES_WRITE', 'PURCHASES_WRITE'])
+  @RequireAnyPermission('INVOICES_WRITE', 'PURCHASES_WRITE')
   async createBatch(
     @Body()        dto:  CreateInvoiceBatchDto,
     @CurrentUser() user: JwtUser,
@@ -44,7 +44,7 @@ export class InvoiceController {
   }
 
   @Get('purchase-batch-summaries')
-  @RequireAnyPermission(['INVOICES_READ', 'PURCHASES_READ'])
+  @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async purchaseBatchSummaries(
     @Query('companyId') companyId: string,
     @Query('startDate') startDate?: string,
@@ -56,7 +56,7 @@ export class InvoiceController {
   }
 
   @Get('day-close-report')
-  @RequireAnyPermission(['INVOICES_READ', 'PURCHASES_READ'])
+  @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async dayCloseReport(
     @Query('companyId') companyId: string,
     @Query('date')     date:      string,
@@ -66,7 +66,7 @@ export class InvoiceController {
   }
 
   @Get()
-  @RequireAnyPermission(['INVOICES_READ', 'PURCHASES_READ'])
+  @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async findAll(
     @CurrentUser()        user:        JwtUser,
     @Query('companyId')   companyId:   string,
@@ -119,7 +119,7 @@ export class InvoiceController {
   }
 
   @Get(':id')
-  @RequireAnyPermission(['INVOICES_READ', 'PURCHASES_READ'])
+  @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async findOne(
     @Param('id')        id:        string,
     @Query('companyId') companyId: string,
@@ -128,7 +128,7 @@ export class InvoiceController {
   }
 
   @Patch(':id')
-  @RequireAnyPermission(['INVOICES_WRITE', 'PURCHASES_WRITE'])
+  @RequireAnyPermission('INVOICES_WRITE', 'PURCHASES_WRITE')
   async update(
     @Param('id')        id:        string,
     @Body()             dto:       UpdateInvoiceDto,
