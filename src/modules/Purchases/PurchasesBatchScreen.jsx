@@ -431,7 +431,20 @@ export default function PurchasesBatchScreen() {
                 id="batch-purchase-date"
                 type="date"
                 value={batchDate}
-                onChange={(e) => setBatchDate(e.target.value)}
+                onChange={(e) => {
+                  const newDate = e.target.value;
+                  setBatchDate(newDate);
+                  // كل فاتورة بتاريخ أحدث من تاريخ العملية → تُقيَّد بنفس تاريخ العملية
+                  if (newDate) {
+                    setRows((prev) =>
+                      prev.map((r) =>
+                        r.invoiceDate && r.invoiceDate > newDate
+                          ? { ...r, invoiceDate: newDate }
+                          : r,
+                      ),
+                    );
+                  }
+                }}
                 className="nx-font-numbers"
               />
             </div>
@@ -512,6 +525,7 @@ export default function PurchasesBatchScreen() {
                       onUpdate={updateRow}
                       onRemove={removeRow}
                       onBookmark={toggleBookmark}
+                      maxInvoiceDate={batchDate}
                     />
                   ))}
                 </tbody>

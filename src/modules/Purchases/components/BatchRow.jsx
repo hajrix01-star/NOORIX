@@ -16,6 +16,7 @@ const inputBase = {
 
 export const BatchRow = memo(function BatchRow({
   row, index, suppliers, categories = [], bookmarkedIds, onUpdate, onRemove, onBookmark,
+  maxInvoiceDate,
 }) {
   const { t } = useTranslation();
   const { net, tax } = calcReverseVat(row.totalInclusive, row.isTaxable !== false);
@@ -145,9 +146,24 @@ export const BatchRow = memo(function BatchRow({
           type="date"
           dir="ltr"
           value={row.invoiceDate}
-          onChange={(e) => onUpdate(index, 'invoiceDate', e.target.value)}
+          max={maxInvoiceDate || undefined}
+          onChange={(e) => {
+            const v = e.target.value;
+            // إذا اختار المستخدم تاريخاً أحدث من تاريخ العملية → يُقيَّد
+            if (maxInvoiceDate && v > maxInvoiceDate) {
+              onUpdate(index, 'invoiceDate', maxInvoiceDate);
+            } else {
+              onUpdate(index, 'invoiceDate', v);
+            }
+          }}
           className="text-center w-full"
-          style={inputSm}
+          style={{
+            ...inputSm,
+            ...(maxInvoiceDate && row.invoiceDate > maxInvoiceDate
+              ? { borderColor: 'var(--noorix-accent-red)', background: 'var(--noorix-red-8, #fef2f2)' }
+              : {}),
+          }}
+          title={maxInvoiceDate ? `تاريخ الفاتورة يجب أن يكون ${maxInvoiceDate} أو أقدم` : undefined}
         />
       </td>
 
