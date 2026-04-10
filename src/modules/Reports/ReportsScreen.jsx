@@ -94,8 +94,10 @@ export default function ReportsScreen() {
 
   function handleExportPdf() {
     exportTableToPdf({
-      title: `${companyName || t('reports')} - ${t('reportGeneral')} - ${year}${selectedMonthNumber ? ` - ${EN_MONTHS[selectedMonthNumber - 1]}` : ''}`,
+      companyName: companyName || t('reports'),
+      title: `${t('reportGeneral')} — ${year}${selectedMonthNumber ? ` — ${EN_MONTHS[selectedMonthNumber - 1]}` : ''}`,
       filename: `general-profit-loss-${year}${selectedMonthNumber ? `-m${selectedMonthNumber}` : ''}.pdf`,
+      landscape: true,
       data: exportRows,
     });
   }

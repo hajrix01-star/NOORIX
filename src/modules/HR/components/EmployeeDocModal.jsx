@@ -223,7 +223,8 @@ async function renderPdfFileFromElement(element, fileBaseName) {
 
 function buildPrintWindow(title, html) {
   openPrintWindow({ title, body: html, extraCss: EMPLOYEE_DOC_EXTRA_CSS });
-  return true;
+  // أعيد كائناً وهمياً ليتجاهل الكود المُستدعي onload/print (openPrintWindow تتولاها داخلياً)
+  return { onload: null, onafterprint: null, print: () => {}, close: () => {} };
 }
 
 function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }) {

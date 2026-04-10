@@ -459,12 +459,6 @@ export function exportToPdf(opts, filename = 'export.pdf') {
 }
 
 /**
- * exportTableToPdf — تصدير جدول إلى PDF باستخدام jspdf-autotable
- * @param {{ columns?: string[], data: Object[]|any[][], title?: string, filename?: string }} opts
- * - data: array of objects (keys = columns) or array of arrays
- * - columns: optional; if data is objects, derived from first row keys
- */
-/**
  * importFromExcel — قراءة ملف Excel وإرجاع صفوف كـ JSON
  * @param {File} file
  * @param {{ headerRow?: number }} opts - headerRow: صف العناوين (0=الأول، 1=الثاني، ...)

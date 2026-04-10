@@ -23,7 +23,7 @@ function arabicPrintDate() {
 function buildBaseCss(landscape) {
   return `
 @page {
-  size: A4 ${landscape ? 'landscape' : ''};
+  size: ${landscape ? 'A4 landscape' : 'A4'};
   margin: 15mm 15mm 20mm;
   @bottom-center {
     content: "صفحة " counter(page) " من " counter(pages);
