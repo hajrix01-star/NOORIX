@@ -30,6 +30,7 @@ export class RolesService implements OnModuleInit {
               name,
               nameAr: seed.nameAr,
               permissions: seed.permissions,
+              lastSeedPermissions: seed.permissions,
               isSystem: true,
             },
           });
@@ -37,7 +38,7 @@ export class RolesService implements OnModuleInit {
         } else if (!Array.isArray(existing.permissions) || existing.permissions.length === 0) {
           await this.prisma.role.update({
             where: { id: existing.id },
-            data: { permissions: seed.permissions, isSystem: true },
+            data: { permissions: seed.permissions, lastSeedPermissions: seed.permissions, isSystem: true },
           });
           this.logger.log(`Filled permissions for system role: ${name}`);
         }

@@ -37,14 +37,16 @@ model Tenant {
 // TIER 2: AUTH & PERMISSIONS
 // ══════════════════════════════════════════════════
 model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  nameAr      String?  @map("name_ar")
-  description String?
-  permissions String[] @default([])
-  isSystem    Boolean  @default(false) @map("is_system")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt      @map("updated_at")
+  id                  String   @id @default(cuid())
+  name                String   @unique
+  nameAr              String?  @map("name_ar")
+  description         String?
+  permissions         String[] @default([])
+  /// آخر مجموعة صلاحيات seed طُبّقت على هذا الدور — تُستخدم لاكتشاف الصلاحيات الجديدة فعلاً دون إعادة ما حذفه المدير
+  lastSeedPermissions String[] @default([]) @map("last_seed_permissions")
+  isSystem            Boolean  @default(false) @map("is_system")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt      @map("updated_at")
 
   users User[]
 

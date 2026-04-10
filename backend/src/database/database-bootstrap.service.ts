@@ -65,16 +65,18 @@ export class DatabaseBootstrapService implements OnModuleInit {
             nameAr: seed?.nameAr || name,
             isSystem: true,
             permissions: seed?.permissions || [],
+            lastSeedPermissions: seed?.permissions || [],
           },
         });
         this.logger.log(`تم إنشاء دور: ${name}`);
       } else if (name === 'owner' || name === 'super_admin') {
+        // owner/super_admin يحصلان دائماً على كل الصلاحيات الجديدة في الكود
         const current = (role.permissions || []) as string[];
         const merged = [...new Set([...current, ...ALL_PERMISSIONS])];
         if (merged.length > current.length) {
           await this.prisma.role.update({
             where: { id: role.id },
-            data: { permissions: merged },
+            data: { permissions: merged, lastSeedPermissions: ALL_PERMISSIONS },
           });
           this.logger.log(`تم تحديث صلاحيات دور: ${name}`);
         }
@@ -82,19 +84,51 @@ export class DatabaseBootstrapService implements OnModuleInit {
       roleMap[name] = role.id;
     }
 
+    // accountant / cashier — نُضيف فقط الصلاحيات الجديدة فعلاً في الكود
+    // (موجودة في الـ seed الحالي لكن لم تكن في آخر seed طُبّق)
+    // هذا يحترم ما حذفه المدير يدوياً ولا يُعيده
     for (const name of ['accountant', 'cashier'] as const) {
       const r = await this.prisma.role.findUnique({ where: { name } });
       if (!r) continue;
       const seed = SYSTEM_ROLE_SEEDS[name];
       if (!seed) continue;
-      const cur = (r.permissions || []) as string[];
-      const merged = [...new Set([...cur, ...seed.permissions])];
-      if (merged.length > cur.length) {
+
+      const cur         = (r.permissions         || []) as string[];
+      const lastSeed    = (r.lastSeedPermissions  || []) as string[];
+      const currentSeed = seed.permissions;
+
+      if (lastSeed.length === 0) {
+        // أول تشغيل بعد إضافة هذا الحقل — نُهيّئه بالـ seed الحالي فقط
+        // بدون إضافة أي صلاحية حتى لا نُعيد ما حذفه المدير سابقاً
         await this.prisma.role.update({
           where: { id: r.id },
-          data: { permissions: merged },
+          data: { lastSeedPermissions: currentSeed },
         });
-        this.logger.log(`تم دمج صلاحيات الدور الافتراضي: ${name}`);
+        this.logger.log(`تم تهيئة lastSeedPermissions لدور "${name}"`);
+        continue;
+      }
+
+      // الصلاحيات التي أُضيفت للكود بعد آخر تطبيق للـ seed (جديدة حقاً)
+      const trulyNew = currentSeed.filter((p) => !lastSeed.includes(p));
+      // منها ما ليس موجوداً بعد في صلاحيات الدور الحالية
+      const toAdd    = trulyNew.filter((p) => !cur.includes(p));
+
+      const seedChanged = lastSeed.length !== currentSeed.length ||
+        !currentSeed.every((p) => lastSeed.includes(p));
+
+      if (toAdd.length > 0 || seedChanged) {
+        await this.prisma.role.update({
+          where: { id: r.id },
+          data: {
+            ...(toAdd.length > 0 ? { permissions: [...new Set([...cur, ...toAdd])] } : {}),
+            lastSeedPermissions: currentSeed,
+          },
+        });
+        if (toAdd.length > 0) {
+          this.logger.log(`تم إضافة ${toAdd.length} صلاحية جديدة لدور "${name}": ${toAdd.join(', ')}`);
+        } else {
+          this.logger.log(`تم تحديث lastSeedPermissions لدور "${name}" (بدون تغيير في الصلاحيات)`);
+        }
       }
     }
 
