@@ -186,23 +186,23 @@ export default function InvoicesListScreen() {
   }, [t, deleteInvoiceMut]);
 
   const columns = useMemo(() => [
-    { key: 'invoiceNumber', label: t('documentNumber'), shrink: true, width: '11%',
+    { key: 'invoiceNumber', label: t('documentNumber'), align: 'center', shrink: true, width: '11%',
       render: (v) => <span className="nx-cell-num nx-cell-accent nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), shrink: true, width: '9%',
+    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), align: 'center', shrink: true, width: '9%',
       render: (v) => <span className="nx-cell-num nx-cell-muted nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'supplierName',  label: t('supplier'), width: '10%',
+    { key: 'supplierName',  label: t('supplier'), align: 'center', width: '10%',
       render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'notesOrEmployee', label: t('invoiceNotesColumn') || 'ملاحظة', width: '10%',
+    { key: 'notesOrEmployee', label: t('invoiceNotesColumn') || 'ملاحظة', align: 'center', width: '10%',
       render: (_, row) => <span className="nx-cell-ellipsis" title={row.notes || ''}>{row.notes || '—'}</span> },
-    { key: 'kind',          label: t('type'), shrink: true, width: '5%',
+    { key: 'kind',          label: t('type'), align: 'center', shrink: true, width: '5%',
       render: (v) => <Badge {...Badge.fromStatus(v, KIND_MAP)} size="sm" /> },
-    { key: 'vaultLabel', label: t('invoiceVaultColumn'), width: '22%',
+    { key: 'vaultLabel', label: t('invoiceVaultColumn'), align: 'center', width: '22%',
       render: (_, row) => {
         const a = row.vaultAllocations;
         if (a?.length > 0) {
           return (
             /* flex-nowrap: الشرائح في صف واحد دائماً — overflow-hidden يقطع ما يزيد */
-            <div className="flex flex-nowrap gap-1.5 justify-end overflow-hidden">
+            <div className="flex flex-nowrap gap-1.5 justify-center overflow-hidden">
               {a.map((al) => {
                 const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
                 return (
@@ -227,18 +227,18 @@ export default function InvoicesListScreen() {
         const vn = row.vault
           ? (lang === 'en' ? row.vault.nameEn || row.vault.nameAr : row.vault.nameAr || row.vault.nameEn)
           : '';
-        return <span className="nx-cell-ellipsis text-[12px]" title={vn || ''}>{vn || '—'}</span>;
+        return <span className="nx-cell-ellipsis text-[12px] text-center" title={vn || ''}>{vn || '—'}</span>;
       },
     },
-    { key: 'netAmount',     label: t('net'),    numeric: true, shrink: true, width: '5%',
+    { key: 'netAmount',     label: t('net'),    align: 'center', numeric: true, shrink: true, width: '5%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
-    { key: 'taxAmount',     label: t('tax'),    numeric: true, shrink: true, width: '4%',
+    { key: 'taxAmount',     label: t('tax'),    align: 'center', numeric: true, shrink: true, width: '4%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--amber" /> },
-    { key: 'totalAmount',   label: t('total'),  numeric: true, shrink: true, width: '7%',
+    { key: 'totalAmount',   label: t('total'),  align: 'center', numeric: true, shrink: true, width: '7%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" /> },
-    { key: 'transactionDate', label: t('date'), sortable: true, shrink: true, width: '6%',
+    { key: 'transactionDate', label: t('date'), align: 'center', sortable: true, shrink: true, width: '6%',
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span> },
-    { key: 'status',        label: t('statusLabel'), shrink: true, width: '5%',
+    { key: 'status',        label: t('statusLabel'), align: 'center', shrink: true, width: '5%',
       render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     { key: 'actions', label: t('actions'), align: 'center', width: '6%', shrink: true,
       render: (_, row) => (
@@ -310,12 +310,12 @@ export default function InvoicesListScreen() {
 
   const footerCells = (
     <>
-      <td colSpan={7} className="nx-tfoot-label text-[12px]">
+      <td colSpan={7} className="nx-tfoot-label text-[12px] text-center">
         {t('totalInvoices', serverAll.count)} {total > PAGE_SIZE && <span className="text-[11px]" style={{ opacity: 0.65 }}>({t('allPages')})</span>}
       </td>
-      <td className="nx-tfoot-num nx-cell-num--green"><FmtNum n={Number(serverAll.net)} /></td>
-      <td className="nx-tfoot-num nx-cell-num--amber"><FmtNum n={Number(serverAll.tax)} /></td>
-      <td className="nx-tfoot-num nx-cell-num--violet"><FmtNum n={Number(serverAll.total)} /></td>
+      <td className="nx-tfoot-num nx-cell-num--green text-center"><FmtNum n={Number(serverAll.net)} /></td>
+      <td className="nx-tfoot-num nx-cell-num--amber text-center"><FmtNum n={Number(serverAll.tax)} /></td>
+      <td className="nx-tfoot-num nx-cell-num--violet text-center"><FmtNum n={Number(serverAll.total)} /></td>
       <td colSpan={3} />
     </>
   );
