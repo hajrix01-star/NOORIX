@@ -28,7 +28,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
         phone: supplier.phone || '',
         supplierCategoryId: supplier.supplierCategoryId || '',
         supplierType: supplier.supplierType === 'expenses' ? 'expenses' : 'purchases',
-        isTaxRegistered: !!supplier.isTaxRegistered,
+        isTaxRegistered: supplier.isTaxRegistered ?? true,
       });
     }
   }, [supplier]);

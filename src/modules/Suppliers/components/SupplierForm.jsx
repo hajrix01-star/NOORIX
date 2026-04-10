@@ -6,7 +6,7 @@ import React, { useState, memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, Card, FormRow } from '../../../ui';
 
-const EMPTY = { nameAr: '', nameEn: '', taxNumber: '', phone: '', supplierCategoryId: '', supplierType: 'purchases', isTaxRegistered: false };
+const EMPTY = { nameAr: '', nameEn: '', taxNumber: '', phone: '', supplierCategoryId: '', supplierType: 'purchases', isTaxRegistered: true };
 
 export const SupplierForm = memo(function SupplierForm({ companyId, flatCategories = [], onSave, isSaving, onCancel }) {
   const { t } = useTranslation();

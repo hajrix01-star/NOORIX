@@ -59,11 +59,8 @@ export const BatchRow = memo(function BatchRow({
     const cat = supplier?.supplierCategory ?? (supplier?.supplierCategoryId ? categories.find((c) => c.id === supplier.supplierCategoryId) : null);
     const kind = cat?.type === 'expense' ? 'expense' : 'purchase';
 
-    // الأولوية: isTaxRegistered على المورد ← taxExempt على الفئة ← افتراضي (ضريبي)
-    let isTaxable;
-    if (supplier?.isTaxRegistered === true)  isTaxable = true;
-    else if (supplier?.isTaxRegistered === false) isTaxable = false;
-    else isTaxable = !(cat?.account?.taxExempt ?? false);
+    // isTaxRegistered=false → 0%، كل ما عداه (true أو غير محدد) → 15% افتراضي
+    const isTaxable = supplier?.isTaxRegistered !== false;
 
     onUpdate(index, {
       supplierId,
@@ -186,15 +183,16 @@ export const BatchRow = memo(function BatchRow({
         <Button
           type="button"
           onClick={() => onUpdate(index, 'isTaxable', row.isTaxable !== false ? false : true)}
-          className="w-full text-[11px] font-bold"
+          className="w-full text-[11px] font-bold whitespace-nowrap"
+          title={row.isTaxable === false ? '0% — انقر لتفعيل الضريبة' : '15% — انقر لإبطال الضريبة'}
           style={{
-            padding: '6px 2px', borderRadius: 5,
-            border: `1px solid ${row.isTaxable === false ? 'var(--noorix-text-muted-2)' : 'var(--noorix-accent-amber)'}`,
+            padding: '5px 4px', borderRadius: 5,
+            border: `1px solid ${row.isTaxable === false ? 'var(--noorix-border)' : 'var(--noorix-accent-amber)'}`,
             background: row.isTaxable === false ? 'var(--noorix-bg-page)' : 'var(--noorix-amber-8)',
             color: row.isTaxable === false ? 'var(--noorix-text-muted)' : 'var(--noorix-accent-amber)',
           }}
         >
-          {row.isTaxable === false ? '0%' : '15%'}
+          {row.isTaxable === false ? '⊘ إبطال' : '✓ 15%'}
         </Button>
       </td>
 
