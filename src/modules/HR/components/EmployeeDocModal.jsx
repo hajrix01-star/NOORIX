@@ -174,7 +174,7 @@ function buildPrintableHtml(title, html) {
       <title>${title}</title>
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>
-        @page{size:A4;margin:10mm}
+        @page{size:A4;margin:10mm 10mm 16mm;@bottom-center{content:"صفحة " counter(page) " من " counter(pages);font-family:'Cairo',Arial,sans-serif;font-size:10px;color:#555}}
         body{font-family:'Cairo',Arial,sans-serif;padding:12px;background:#fff;color:#111;max-width:190mm;margin:0 auto;line-height:1.45;font-size:11px}
         .doc{border:1px solid #d6dbe3;border-radius:10px;overflow:hidden}
         .header{padding:12px 14px;border-bottom:2px solid #0f172a;background:#f8fafc}
@@ -195,10 +195,11 @@ function buildPrintableHtml(title, html) {
         .footer{padding:10px 14px}
         .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
         .sig{padding-top:24px;border-top:1px solid #cbd5e1;font-size:10px}
+        .print-footer{margin-top:12px;padding-top:6px;border-top:1px solid #ddd;text-align:center;font-size:10px;color:#94a3b8}
         @media print{body{padding:0;max-width:none}.doc{border:none;border-radius:0}}
       </style>
     </head>
-    <body>${html}</body>
+    <body>${html}<div class="print-footer">طُبع بتاريخ: ${new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}</div></body>
   </html>`;
 }
 
