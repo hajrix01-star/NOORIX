@@ -92,9 +92,11 @@ const SmartTable = memo(function SmartTable({
     >
       {/* ── رأس الجدول ── */}
       {showTableHeaderRow && (
-        <div className="flex items-center gap-2.5 flex-wrap px-4 py-2.5 border-b border-noorix-border">
-          {title && <span className="font-bold text-[15px] shrink-0">{title}</span>}
-          {badge && <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">{badge}</div>}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap px-4 py-2.5 border-b border-noorix-border">
+          <div className="flex items-center gap-2.5 flex-wrap flex-1 min-w-0">
+            {title && <span className="font-bold text-[15px] shrink-0">{title}</span>}
+            {badge && <div className="flex items-center gap-2 flex-wrap min-w-0">{badge}</div>}
+          </div>
           {onSearchChange && showSearchInHeader && (
             <Input
               type="search"
@@ -102,7 +104,7 @@ const SmartTable = memo(function SmartTable({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t('searchPlaceholder')}
               size="sm"
-              className="noorix-table-search"
+              className="noorix-table-search shrink-0"
               aria-label={t('searchPlaceholder')}
             />
           )}

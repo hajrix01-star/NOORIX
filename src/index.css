@@ -1843,6 +1843,7 @@ html[data-card-style="10"] .noorix-stat-card {
   display: flex;
   align-items: baseline;
   gap: 5px;
+  direction: ltr; /* يضمن ظهور الرقم قبل SR حتى في RTL */
 }
 .noorix-exec-card__amount {
   font-size: clamp(18px, 4vw, 26px);
@@ -1934,6 +1935,8 @@ html[data-card-style="10"] .noorix-stat-card {
   font-family: var(--noorix-font-numbers);
   color: var(--noorix-text);
   white-space: nowrap;
+  direction: ltr;       /* يضمن ترتيب "0 SR" الصحيح داخل flex-row على الجوال */
+  unicode-bidi: embed;
 }
 
 /* فلاتر أنيقة */
@@ -1994,6 +1997,11 @@ html[data-card-style="10"] .noorix-stat-card {
   flex-shrink: 0;
   width: auto;
   min-width: 130px;
+}
+/* أزرار شريط الفلاتر الأفقي — لا يُسمح بالتكسر لأسطر متعددة */
+.noorix-exec-filters--scroll button {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ========== حقول الإدخال — rounded-sm احترافي ========== */
