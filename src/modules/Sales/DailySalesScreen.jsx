@@ -407,7 +407,7 @@ export default function DailySalesScreen() {
       exportToExcel({
         columns: exportColumns,
         data: exportData,
-        filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}`,
+        filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}.xlsx`,
         companyName,
         title: `${t('salesDailySummary')} — ${dateFilter.label}`,
         logoUrl,

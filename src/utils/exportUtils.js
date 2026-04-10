@@ -472,6 +472,7 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  if (!filename.toLowerCase().endsWith('.xlsx')) filename += '.xlsx';
   XLSX.writeFile(wb, filename);
 }
 
