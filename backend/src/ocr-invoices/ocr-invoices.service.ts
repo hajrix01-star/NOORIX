@@ -256,12 +256,13 @@ function findBestItemMatch(
 // ─── Gemini Model Fallback Chain ─────────────────────────────────────────────
 // إذا لم يكن النموذج المُعيّن متاحاً، يجرب النظام النماذج بالترتيب تلقائياً
 const GEMINI_FALLBACK_CHAIN = [
-  { model: 'gemini-2.0-flash',     version: 'v1beta' },
   { model: 'gemini-2.5-flash',     version: 'v1beta' },
   { model: 'gemini-2.0-flash-exp', version: 'v1beta' },
   { model: 'gemini-1.5-flash',     version: 'v1'     },
   { model: 'gemini-1.5-pro',       version: 'v1'     },
   { model: 'gemini-pro-vision',    version: 'v1beta' },
+  // حسابات قديمة فقط — غالباً 404 للمستخدمين الجدد
+  { model: 'gemini-2.0-flash',     version: 'v1beta' },
 ];
 
 function buildGeminiUrl(model: string, version: string): string {

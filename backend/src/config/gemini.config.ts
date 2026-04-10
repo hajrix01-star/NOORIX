@@ -16,7 +16,8 @@ export function getGeminiApiKey(): string | null {
 /** اسم النموذج — يمكن تخصيصه عبر GEMINI_MODEL في .env */
 export function getGeminiModel(): string {
   const m = process.env.GEMINI_MODEL?.trim();
-  return m && m.length > 0 ? m : 'gemini-2.0-flash';
+  // gemini-2.0-flash لم يعد متاحاً لمفاتيح/حسابات جديدة — الافتراضي 2.5-flash
+  return m && m.length > 0 ? m : 'gemini-2.5-flash';
 }
 
 /** هل خدمة Gemini متاحة (مفتاح مُعرّف)؟ */
