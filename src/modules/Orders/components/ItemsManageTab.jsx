@@ -452,26 +452,26 @@ export function ItemsManageTab({ companyId }) {
 
       {activeSubTab === 'products' && (
         <div className="grid gap-5">
-          <div className="noorix-surface-card p-5">
-            <div className="flex gap-3 mb-3 flex flex-wrap justify-between items-start">
-              <h4 className="m-0 text-[15px]">+ {t('ordersAddProduct')}</h4>
-              <div className="flex flex-col gap-2 items-end">
-                <div className="nx-toolbar flex-wrap justify-end">
-                  <OrdersImportHelpTrigger t={t} variant="products" />
-                  <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} className="hidden" />
-                  <Button variant="primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
-                    {presetBusy ? t('saving') : t('ordersPresetCatalogButton')}
-                  </Button>
-                  <Button onClick={handleDownloadProductsImportTemplate}>
-                    {t('ordersDownloadImportTemplate')}
-                  </Button>
-                  <Button onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>{t('import')}</Button>
-                  <Button onClick={handleExportProducts} disabled={products.length === 0}>{t('exportExcel')}</Button>
-                </div>
-                <p className="m-0 text-[11px] text-noorix-muted text-end max-w-[560px] leading-[1.45]">
-                  {t('ordersPresetCatalogHint')}
-                </p>
+          <div className="noorix-surface-card p-4 lg:p-5">
+            <div className="flex flex-col gap-3 mb-3">
+              <div className="flex flex-wrap gap-3 justify-between items-center">
+                <h4 className="m-0 text-[15px]">+ {t('ordersAddProduct')}</h4>
+                <OrdersImportHelpTrigger t={t} variant="products" />
               </div>
+              <div className="flex flex-wrap gap-2">
+                <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} className="hidden" />
+                <Button size="sm" variant="primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
+                  {presetBusy ? t('saving') : t('ordersPresetCatalogButton')}
+                </Button>
+                <Button size="sm" onClick={handleDownloadProductsImportTemplate}>
+                  {t('ordersDownloadImportTemplate')}
+                </Button>
+                <Button size="sm" onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>{t('import')}</Button>
+                <Button size="sm" onClick={handleExportProducts} disabled={products.length === 0}>{t('exportExcel')}</Button>
+              </div>
+              <p className="m-0 text-[11px] text-noorix-muted leading-[1.45]">
+                {t('ordersPresetCatalogHint')}
+              </p>
             </div>
             <div className="grid gap-4">
               <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
@@ -504,8 +504,8 @@ export function ItemsManageTab({ companyId }) {
                   <label className="text-[12px] text-noorix-muted">{t('ordersProductVariants')}</label>
                   <Button size="sm" onClick={addVariantToProduct}>+ {t('ordersAddVariant')}</Button>
                 </div>
-                <div className="rounded-lg border border-noorix-border overflow-auto">
-                  <table className="w-full text-[12px] border-collapse">
+                <div className="rounded-lg border border-noorix-border overflow-x-auto">
+                  <table className="w-full text-[12px] border-collapse min-w-[420px]">
                     <thead>
                       <tr className="bg-noorix-bg-muted border-b border-noorix-border">
                         <th className="font-semibold text-right py-2 px-2.5">{t('ordersProductSize')}</th>
@@ -710,19 +710,19 @@ export function ItemsManageTab({ companyId }) {
 
       {activeSubTab === 'categories' && (
         <div className="grid gap-5">
-          <div className="noorix-surface-card p-5">
-            <div className="flex gap-3 mb-3 flex flex-wrap justify-between items-start">
-              <h4 className="m-0 text-[15px]">+ {t('ordersAddCategory')}</h4>
-              <div className="flex flex-col gap-2 items-end">
-                <div className="nx-toolbar flex-wrap justify-end">
-                  <OrdersImportHelpTrigger t={t} variant="categories" />
-                  <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} className="hidden" />
-                  <Button onClick={handleDownloadCategoriesImportTemplate}>
-                    {t('ordersDownloadImportTemplate')}
-                  </Button>
-                  <Button onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>{t('import')}</Button>
-                  <Button onClick={handleExportCategories} disabled={categories.length === 0}>{t('exportExcel')}</Button>
-                </div>
+          <div className="noorix-surface-card p-4 lg:p-5">
+            <div className="flex flex-col gap-3 mb-3">
+              <div className="flex flex-wrap gap-3 justify-between items-center">
+                <h4 className="m-0 text-[15px]">+ {t('ordersAddCategory')}</h4>
+                <OrdersImportHelpTrigger t={t} variant="categories" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} className="hidden" />
+                <Button size="sm" onClick={handleDownloadCategoriesImportTemplate}>
+                  {t('ordersDownloadImportTemplate')}
+                </Button>
+                <Button size="sm" onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>{t('import')}</Button>
+                <Button size="sm" onClick={handleExportCategories} disabled={categories.length === 0}>{t('exportExcel')}</Button>
               </div>
             </div>
               <div className="flex gap-3 flex flex-wrap items-end">
