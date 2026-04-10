@@ -83,7 +83,20 @@ export default function OwnerDashboardScreen() {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedCompanyIds, setSelectedCompanyIds] = useState(() => new Set(companies?.map((c) => c.id) || []));
   const [chartGrain, setChartGrain] = useState('monthly');
-  const [metricFilter, setMetricFilter] = useState('sales');
+  const [metricFilter, setMetricFilter] = useState(new Set(['sales']));
+
+  const toggleMetric = (key) => {
+    setMetricFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        if (next.size === 1) return prev; // لا يُسمح بإلغاء الكل
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   const companyList = companies?.filter((c) => !c.isArchived) || [];
   const isMobile = useIsNarrow700();
@@ -185,19 +198,21 @@ export default function OwnerDashboardScreen() {
         return entry;
       });
     }
-    /* Monthly — دائماً 12 شهراً للسياق */
+    /* Monthly — دائماً 12 شهراً للسياق، مجموع المؤشرات المختارة */
+    const activeMetrics = ['sales', 'purchases', 'expenses'].filter((k) => metricFilter.has(k));
     return Array.from({ length: 12 }, (_, i) => {
       const entry = { label: lang === 'ar' ? MONTH_NAMES_AR[i] : EN_MONTHS[i] };
       idsToFetch.forEach((cid) => {
         const report = reportsByCompany[cid];
-        const groupKey = metricFilter === 'purchases' ? 'purchases' : metricFilter === 'expenses' ? 'expenses' : 'sales';
-        const g = report?.groups?.find((r) => r.key === groupKey);
-        entry[cid] = Number(g?.months?.[i] || 0);
+        entry[cid] = activeMetrics.reduce((sum, key) => {
+          const g = report?.groups?.find((r) => r.key === key);
+          return sum + Number(g?.months?.[i] || 0);
+        }, 0);
       });
       return entry;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chartGrain, dailySalesQuery.dataStamp, year, chartMonthForDaily, idsToFetch.join(','), selectedMonthNum, reportsByCompany, metricFilter, lang]);
+  }, [chartGrain, dailySalesQuery.dataStamp, year, chartMonthForDaily, idsToFetch.join(','), selectedMonthNum, reportsByCompany, [...metricFilter].join(','), lang]);
 
   const companySeries = useMemo(() =>
     idsToFetch.map((cid, i) => {
@@ -411,14 +426,14 @@ export default function OwnerDashboardScreen() {
                   </Button>
                 </div>
 
-                {/* فلاتر المؤشرات — مبيعات/مشتريات/مصروفات */}
+                {/* فلاتر المؤشرات — مبيعات/مشتريات/مصروفات (متعدد الاختيار) */}
                 {METRIC_FILTERS.map((f) => {
                   const disabled = chartGrain === 'daily' && f.key !== 'sales';
-                  const active   = !disabled && metricFilter === f.key;
+                  const active   = !disabled && metricFilter.has(f.key);
                   return (
                     <button
                       key={f.key}
-                      onClick={() => !disabled && setMetricFilter(f.key)}
+                      onClick={() => !disabled && toggleMetric(f.key)}
                       style={{
                         borderColor: active ? METRIC_COLORS[f.key] : 'var(--noorix-border)',
                         color:       active ? METRIC_COLORS[f.key] : disabled ? 'var(--noorix-border)' : 'var(--noorix-text-muted)',
