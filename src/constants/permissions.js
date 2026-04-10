@@ -14,6 +14,7 @@ export const PERMISSIONS = {
   VIEW_CHAT:        'VIEW_CHAT',
   VIEW_SALES:       'VIEW_SALES',
   VIEW_INVOICES:    'VIEW_INVOICES',
+  VIEW_PURCHASES:   'VIEW_PURCHASES',
   VIEW_SUPPLIERS:   'VIEW_SUPPLIERS',
   VIEW_VAULTS:      'VIEW_VAULTS',
   VIEW_REPORTS:     'VIEW_REPORTS',
@@ -25,6 +26,10 @@ export const PERMISSIONS = {
   INVOICES_WRITE:   'INVOICES_WRITE',
   INVOICES_DELETE:  'INVOICES_DELETE',
   INVOICES_ACTIONS: 'INVOICES_ACTIONS',
+
+  PURCHASES_READ:   'PURCHASES_READ',
+  PURCHASES_WRITE:  'PURCHASES_WRITE',
+  PURCHASES_DELETE: 'PURCHASES_DELETE',
 
   SALES_READ:       'SALES_READ',
   SALES_WRITE:      'SALES_WRITE',
@@ -137,7 +142,8 @@ export const ROUTE_PERMISSION = {
   '/chat':          PERMISSIONS.VIEW_CHAT,
   '/sales':         PERMISSIONS.VIEW_SALES,
   '/sales/new':     PERMISSIONS.VIEW_SALES,
-  '/invoices':      PERMISSIONS.VIEW_INVOICES,
+  '/invoices':      [PERMISSIONS.VIEW_INVOICES, PERMISSIONS.VIEW_PURCHASES],
+  '/purchases':     PERMISSIONS.VIEW_PURCHASES,
   '/suppliers':     PERMISSIONS.VIEW_SUPPLIERS,
   '/treasury':      PERMISSIONS.VIEW_VAULTS,
   '/expenses':      PERMISSIONS.VIEW_EXPENSES,
@@ -162,6 +168,9 @@ export function getRouteRequiredPermissions(pathname) {
   if (pathname.startsWith('/hr/')) {
     const hr = ROUTE_PERMISSION['/hr'];
     return Array.isArray(hr) ? hr : [hr];
+  }
+  if (pathname.startsWith('/purchases')) {
+    return [PERMISSIONS.VIEW_PURCHASES];
   }
   if (pathname.startsWith('/reports')) {
     return [ROUTE_PERMISSION['/reports']];

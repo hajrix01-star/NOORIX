@@ -29,7 +29,7 @@ const SIDEBAR_LINKS = [
   { to: '/', end: true, labelKey: 'dashboard', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
   { to: '/chat', labelKey: 'smartChat', icon: IconChat, permission: 'VIEW_CHAT' },
   { to: '/sales', labelKey: 'sales', icon: IconCart, permission: 'VIEW_SALES' },
-  { to: '/purchases', labelKey: 'purchases', icon: IconDocument, permission: 'VIEW_INVOICES' },
+  { to: '/purchases', labelKey: 'purchases', icon: IconDocument, permission: 'VIEW_PURCHASES' },
   { to: '/invoices', labelKey: 'invoices', icon: IconDocument, permission: 'VIEW_INVOICES' },
   { to: '/suppliers', labelKey: 'suppliersAndCategories', icon: IconTruck, permission: 'VIEW_SUPPLIERS' },
   { to: '/treasury', labelKey: 'vaults', icon: IconDollar, permission: 'VIEW_VAULTS' },
