@@ -561,7 +561,7 @@ export default function DailySalesScreen() {
       {/* هيدر + شريط إجراءات — زر الملخصات الملغاة هنا ليظهر فوق الطيّ ولا يختفي داخل رأس الجدول */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('salesDailySummary')}</h1>
-        <div className="flex items-center gap-2 flex-wrap print:hidden justify-end flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap print:hidden">
           {hasCompany && salesViewSummariesList && (
             <Button
               size="sm"
