@@ -492,7 +492,8 @@ export class FinancialCoreService {
       });
 
       // ── [E2] Create Invoice (kind=sale) مع الصافي والضريبة ──
-      await tx.invoice.create({
+      // مثل فواتير الصرف: توزيعات خزنة لكل قناة — وإلا شاشة الفواتير تعرض vault_id للقناة الأولى فقط
+      const saleInvoice = await tx.invoice.create({
         data: {
           tenantId,
           companyId:           dto.companyId,
@@ -503,11 +504,19 @@ export class FinancialCoreService {
           taxAmount:           vatEnabled ? totalTax : new Prisma.Decimal(0),
           transactionDate:     txDate,
           entryDate,
-          vaultId:             activeChannels[0]?.vaultId ?? null,
+          vaultId:             activeChannels.length === 1 ? activeChannels[0].vaultId : null,
           notes:               dto.notes ?? null,
           dailySalesSummaryId: summary.id,
           status:              'active',
         },
+      });
+      await tx.invoiceVaultAllocation.createMany({
+        data: activeChannels.map((ch: { vaultId: string; amount: string }) => ({
+          tenantId,
+          invoiceId: saleInvoice.id,
+          vaultId:   ch.vaultId,
+          amount:    new Prisma.Decimal(ch.amount),
+        })),
       });
 
       // ── [F] LedgerEntry لكل قناة: إيراد + ضريبة (إن وُجدت) ──
@@ -715,6 +724,15 @@ export class FinancialCoreService {
         where: { dailySalesSummaryId: summaryId, companyId },
       });
       if (saleInvoice) {
+        await tx.invoiceVaultAllocation.deleteMany({ where: { invoiceId: saleInvoice.id } });
+        await tx.invoiceVaultAllocation.createMany({
+          data: activeChannels.map((ch: SalesChannelDto) => ({
+            tenantId,
+            invoiceId: saleInvoice.id,
+            vaultId:   ch.vaultId,
+            amount:    new Prisma.Decimal(ch.amount),
+          })),
+        });
         await tx.invoice.update({
           where: { id: saleInvoice.id },
           data:  {
@@ -722,6 +740,7 @@ export class FinancialCoreService {
             totalAmount,
             netAmount: vatEnabled ? totalNet : totalAmount,
             taxAmount: vatEnabled ? totalTax : new Prisma.Decimal(0),
+            vaultId: activeChannels.length === 1 ? activeChannels[0].vaultId : null,
           },
         });
       }

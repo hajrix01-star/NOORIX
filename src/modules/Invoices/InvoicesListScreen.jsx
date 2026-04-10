@@ -16,7 +16,7 @@ import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDate, formatSaudiDateISO } from '../../utils/saudiDate';
 import { updateInvoice, getInvoices, deleteInvoice } from '../../services/api';
-import { Badge, Button, Modal, Input, FilterScrollStrip, ScreenShell , FmtNum } from '../../ui';
+import { Badge, Button, Modal, Input, FilterScrollStrip, ScreenShell, FmtNum, cn } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable         from '../../components/common/SmartTable';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
@@ -196,15 +196,32 @@ export default function InvoicesListScreen() {
       render: (_, row) => <span className="nx-cell-ellipsis" title={row.notes || ''}>{row.notes || '—'}</span> },
     { key: 'kind',          label: t('type'), shrink: true, width: '8%',
       render: (v) => <Badge {...Badge.fromStatus(v, KIND_MAP)} size="sm" /> },
-    { key: 'vaultLabel', label: t('invoiceVaultColumn'), width: '10%', shrink: true,
+    { key: 'vaultLabel', label: t('invoiceVaultColumn'), width: '14%', shrink: true,
       render: (_, row) => {
         const a = row.vaultAllocations;
-        if (a?.length > 1) {
-          return <span className="text-[12px] text-noorix-muted nx-cell-ellipsis" title={t('invoiceVaultMultiple')}>{t('invoiceVaultMultiple')}</span>;
-        }
-        if (a?.length === 1) {
-          const vn = lang === 'en' ? a[0].vault?.nameEn || a[0].vault?.nameAr : a[0].vault?.nameAr || a[0].vault?.nameEn;
-          return <span className="nx-cell-ellipsis text-[12px]" title={vn || ''}>{vn || '—'}</span>;
+        if (a?.length > 0) {
+          return (
+            <div className="flex flex-wrap gap-1.5 justify-end">
+              {a.map((al) => {
+                const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
+                return (
+                  <div
+                    key={al.id}
+                    className={cn(
+                      'inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-noorix-border',
+                      'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
+                    )}
+                    title={vn ? `${vn} — ${fmt(al.amount)} SR` : ''}
+                  >
+                    <span className="min-w-0 truncate text-[11px] font-semibold text-noorix-text">{vn || '—'}</span>
+                    <span dir="ltr" className="shrink-0 whitespace-nowrap text-[12px] font-bold tabular-nums text-nx-sales">
+                      <FmtNum n={al.amount} /> <span className="nx-sar">SR</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
         }
         const vn = row.vault
           ? (lang === 'en' ? row.vault.nameEn || row.vault.nameAr : row.vault.nameAr || row.vault.nameEn)
@@ -235,7 +252,7 @@ export default function InvoicesListScreen() {
         />
       ),
     },
-  ], [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice]);
+  ], [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice, fmt]);
 
   const { suppliers } = useSuppliers(companyId);
 
@@ -311,17 +328,35 @@ export default function InvoicesListScreen() {
         <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
         {row.supplierName && <span className="nx-cell-muted">{row.supplierName}</span>}
       </div>
-      <div className="text-[11px] text-noorix-muted mb-2">
-        {t('invoiceVaultColumn')}:{' '}
-        {row.vaultAllocations?.length > 1
-          ? t('invoiceVaultMultiple')
-          : row.vaultAllocations?.length === 1
-            ? (lang === 'en'
-              ? row.vaultAllocations[0].vault?.nameEn || row.vaultAllocations[0].vault?.nameAr
-              : row.vaultAllocations[0].vault?.nameAr || row.vaultAllocations[0].vault?.nameEn)
-            : (row.vault
+      <div className="mb-2">
+        <div className="text-[10px] font-bold text-noorix-muted mb-1">{t('invoiceVaultColumn')}</div>
+        {row.vaultAllocations?.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {row.vaultAllocations.map((al) => {
+              const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
+              return (
+                <div
+                  key={al.id}
+                  className={cn(
+                    'inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-noorix-border',
+                    'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
+                  )}
+                >
+                  <span className="min-w-0 truncate text-[11px] font-semibold text-noorix-text">{vn || '—'}</span>
+                  <span dir="ltr" className="shrink-0 text-[12px] font-bold tabular-nums text-nx-sales">
+                    <FmtNum n={al.amount} /> <span className="nx-sar">SR</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-[12px] text-noorix-muted">
+            {row.vault
               ? (lang === 'en' ? row.vault.nameEn || row.vault.nameAr : row.vault.nameAr || row.vault.nameEn)
-              : '—')}
+              : '—'}
+          </div>
+        )}
       </div>
       <div className="nx-mc__grid nx-mc__grid--3">
         <div>
