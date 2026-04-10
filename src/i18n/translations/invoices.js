@@ -20,15 +20,12 @@ export default {
   invoiceVaultColumn: { ar: 'الخزنة', en: 'Vault' },
   invoiceVaultMultiple: { ar: 'عدة خزائن', en: 'Multiple vaults' },
   invoiceVaultSplitsDetail: { ar: 'توزيع السداد', en: 'Payment split' },
-  invoicesInboundExplain: {
-    ar: 'الداخل = فواتير المبيعات فقط (إيراد يُسجَّل في الخزائن).',
-    en: 'Inbound = sales invoices only (revenue recorded into vaults).',
+  invoicesInflowByVaultTitle: { ar: 'المبيعات حسب الخزينة', en: 'Sales by vault' },
+  invoicesSalesUnassignedVault: { ar: 'بدون خزينة محددة', en: 'Unassigned vault' },
+  invoicesCardNonPurchaseOutflow: {
+    ar: 'المصروفات وغير المشتريات',
+    en: 'Expenses & non-purchase outflows',
   },
-  invoicesOutboundExplain: {
-    ar: 'الخارج = المشتريات والمصروفات والرواتب والسلف والمصروفات الثابتة وHR وغيرها (صرف من الخزائن).',
-    en: 'Outbound = purchases, expenses, payroll, advances, fixed/HR expenses, etc. (paid from vaults).',
-  },
-  invoicesSumByKindTitle: { ar: 'التفصيل حسب نوع الفاتورة', en: 'By invoice type' },
   invoiceKindUnknown: { ar: 'نوع آخر', en: 'Other' },
   splitPaymentAcrossVaults: { ar: 'السداد من أكثر من خزنة', en: 'Pay from multiple vaults' },
   addVaultSplit: { ar: '+ خزنة', en: '+ Vault' },

@@ -1070,6 +1070,12 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
       pageSize: data?.pageSize ?? pageSize,
       sums: data?.sums,
       sumsByKind: Array.isArray(data?.sumsByKind) ? data.sumsByKind : [],
+      inflowByVault: Array.isArray(data?.inflowByVault) ? data.inflowByVault : [],
+      outflowSummary: data?.outflowSummary ?? {
+        purchasesTotal: '0',
+        expensesTotal: '0',
+        taxTotal: '0',
+      },
     },
   };
 }

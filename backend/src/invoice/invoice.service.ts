@@ -413,7 +413,82 @@ export class InvoiceService {
       return new Decimal(b.total).cmp(a.total) || a.kind.localeCompare(b.kind);
     });
 
-    return { items, total, page: p, pageSize: size, sums, sumsByKind };
+    const saleWhere = { ...activeWhere, kind: 'sale' as const };
+    const [allocGroups, legacySaleInvoices] = await Promise.all([
+      this.prisma.invoiceVaultAllocation.groupBy({
+        by: ['vaultId'],
+        where: { invoice: { is: saleWhere } },
+        _sum: { amount: true },
+      }),
+      this.prisma.invoice.findMany({
+        where: { ...saleWhere, vaultAllocations: { none: {} } },
+        select: { vaultId: true, totalAmount: true },
+      }),
+    ]);
+
+    const unassignedVaultKey = '__unassigned__';
+    const vaultTotals = new Map<string, Decimal>();
+    for (const g of allocGroups) {
+      const vid = g.vaultId;
+      const amt = new Decimal(g._sum.amount ?? 0);
+      vaultTotals.set(vid, (vaultTotals.get(vid) ?? new Decimal(0)).plus(amt));
+    }
+    for (const inv of legacySaleInvoices) {
+      const amt = new Decimal(inv.totalAmount ?? 0);
+      const key = inv.vaultId ?? unassignedVaultKey;
+      vaultTotals.set(key, (vaultTotals.get(key) ?? new Decimal(0)).plus(amt));
+    }
+    const vaultIds = [...vaultTotals.keys()].filter((id) => id !== unassignedVaultKey);
+    const vaultRows =
+      vaultIds.length > 0
+        ? await this.prisma.vault.findMany({
+            where: { id: { in: vaultIds }, companyId },
+            select: { id: true, nameAr: true, nameEn: true },
+          })
+        : [];
+    const nameByVault = new Map(vaultRows.map((v) => [v.id, v]));
+    const inflowByVault = [...vaultTotals.entries()]
+      .map(([vaultId, tot]) => {
+        if (vaultId === unassignedVaultKey) {
+          return { vaultId, nameAr: '', nameEn: '', total: tot.toString(), unassigned: true };
+        }
+        const meta = nameByVault.get(vaultId);
+        return {
+          vaultId,
+          nameAr: meta?.nameAr ?? '',
+          nameEn: meta?.nameEn ?? '',
+          total: tot.toString(),
+        };
+      })
+      .sort((a, b) => new Decimal(b.total).cmp(a.total));
+
+    let purchasesTotal = new Decimal(0);
+    let expensesTotal = new Decimal(0);
+    let outflowTax = new Decimal(0);
+    for (const r of sumsByKind) {
+      if (r.kind === 'sale') continue;
+      const tot = new Decimal(r.total);
+      const tax = new Decimal(r.tax);
+      outflowTax = outflowTax.plus(tax);
+      if (r.kind === 'purchase') purchasesTotal = purchasesTotal.plus(tot);
+      else expensesTotal = expensesTotal.plus(tot);
+    }
+    const outflowSummary = {
+      purchasesTotal: purchasesTotal.toString(),
+      expensesTotal: expensesTotal.toString(),
+      taxTotal: outflowTax.toString(),
+    };
+
+    return {
+      items,
+      total,
+      page: p,
+      pageSize: size,
+      sums,
+      sumsByKind,
+      inflowByVault,
+      outflowSummary,
+    };
   }
 
   private buildDateFilter(startDate?: string, endDate?: string) {

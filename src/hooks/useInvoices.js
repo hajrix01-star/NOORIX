@@ -25,11 +25,14 @@ export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize 
   });
 
   const zero = () => ({ net: '0', tax: '0', total: '0', count: 0 });
+  const zeroOutflowSummary = () => ({ purchasesTotal: '0', expensesTotal: '0', taxTotal: '0' });
   return {
     items:    data?.items ?? [],
     total:    data?.total ?? 0,
     sums:     data?.sums  ?? { all: zero(), inflow: zero(), outflow: zero() },
     sumsByKind: Array.isArray(data?.sumsByKind) ? data.sumsByKind : [],
+    inflowByVault: Array.isArray(data?.inflowByVault) ? data.inflowByVault : [],
+    outflowSummary: data?.outflowSummary ?? zeroOutflowSummary(),
     isLoading,
     isError,
     error,
