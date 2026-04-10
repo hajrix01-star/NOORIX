@@ -224,6 +224,20 @@ export class InvoiceService {
 
       const newInvoice = await tx.invoice.update({ where: { id }, data: updateData });
 
+      /* تحديث تاريخ قيود دفتر الأستاذ عند تغيير تاريخ الفاتورة
+         (التقارير تقرأ من ledger_entries.transaction_date) */
+      if (dto.transactionDate !== undefined) {
+        await tx.ledgerEntry.updateMany({
+          where: {
+            companyId,
+            referenceId:   id,
+            referenceType: { in: ['invoice', 'salary', 'advance'] },
+            status:        'active',
+          },
+          data: { transactionDate: new Date(dto.transactionDate) },
+        });
+      }
+
       await tx.auditLog.create({
         data: {
           tenantId,
