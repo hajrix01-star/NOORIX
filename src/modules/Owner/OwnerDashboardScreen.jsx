@@ -452,7 +452,24 @@ export default function OwnerDashboardScreen() {
                   </Button>
                 </div>
 
-                {/* فلاتر المؤشرات — مبيعات/مشتريات/مصروفات (متعدد الاختيار) */}
+                {/* فلاتر المؤشرات — الكل + مبيعات/مشتريات/مصروفات (متعدد الاختيار) */}
+                {chartGrain === 'monthly' && (() => {
+                  const allKeys = METRIC_FILTERS.map((f) => f.key);
+                  const isAllActive = allKeys.every((k) => metricFilter.has(k));
+                  return (
+                    <button
+                      onClick={() => setMetricFilter(isAllActive ? new Set(['sales']) : new Set(allKeys))}
+                      style={{
+                        borderColor: isAllActive ? 'var(--noorix-text)' : 'var(--noorix-border)',
+                        color:       isAllActive ? 'var(--noorix-text)' : 'var(--noorix-text-muted)',
+                        background:  isAllActive ? 'var(--noorix-bg-muted)' : 'transparent',
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150 select-none cursor-pointer"
+                    >
+                      {lang === 'ar' ? 'الكل' : 'All'}
+                    </button>
+                  );
+                })()}
                 {METRIC_FILTERS.map((f) => {
                   const disabled = chartGrain === 'daily' && f.key !== 'sales';
                   const active   = !disabled && metricFilter.has(f.key);
