@@ -308,6 +308,12 @@ export default function PurchasesBatchScreen() {
         vaultId: batchVaultId || undefined,
         idempotencyKey,
         items: valid.map((r) => {
+          let notes = r.notes?.trim();
+          if (r.kind === 'fixed_expense') {
+            notes = notes ? `${t('fixedExpenseType')} — ${notes}` : t('fixedExpenseType');
+          } else if (r.kind === 'expense') {
+            notes = notes ? `${t('expenseType')} — ${notes}` : t('expenseType');
+          }
           return {
             supplierId: r.supplierId || undefined,
             supplierInvoiceNumber: r.invoiceNumber?.trim() || undefined,
@@ -316,7 +322,7 @@ export default function PurchasesBatchScreen() {
             isTaxable: r.isTaxable !== false,
             invoiceDate: r.invoiceDate,
             debitAccountId: r.debitAccountId || undefined,
-            notes: r.notes?.trim() || undefined,
+            notes: notes || undefined,
           };
         }),
       });
