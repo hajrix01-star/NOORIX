@@ -1,8 +1,8 @@
-name: Database Backup → Google Drive
+name: Database Backup → Google Drive (VPS)
 
 on:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 2 * * *'   # كل يوم الساعة 2 صباحاً UTC
   workflow_dispatch:
 
 jobs:
@@ -11,83 +11,47 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y postgresql-client
-
-      - name: Backup & upload to Google Drive
+      - name: Backup via SSH & upload to Google Drive
         env:
-          DATABASE_URL:      ${{ secrets.SUPABASE_DB_URL }}
+          VPS_HOST:          ${{ secrets.VPS_HOST }}
+          VPS_USER:          ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY:       ${{ secrets.VPS_SSH_KEY }}
+          VPS_DB_PASSWORD:   ${{ secrets.VPS_DB_PASSWORD }}
+          VPS_DB_NAME:       ${{ secrets.VPS_DB_NAME || 'noorix' }}
+          VPS_DB_USER:       ${{ secrets.VPS_DB_USER || 'postgres' }}
           GDRIVE_SCRIPT_URL: ${{ secrets.GDRIVE_SCRIPT_URL }}
         run: |
-          cat > /tmp/backup.py << 'PYEOF'
-          import os, sys, subprocess, datetime, socket, base64, json
+          # ── إعداد مفتاح SSH ──
+          mkdir -p ~/.ssh
+          echo "$VPS_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          TS=$(date +%Y%m%d_%H%M%S)
+          FNAME="noorix_backup_${TS}.dump"
+
+          # ── تشغيل pg_dump على الـ VPS ونقل الملف ──
+          ssh -i ~/.ssh/id_rsa "${VPS_USER}@${VPS_HOST}" \
+            "PGPASSWORD='${VPS_DB_PASSWORD}' pg_dump \
+              -U ${VPS_DB_USER} \
+              -d ${VPS_DB_NAME} \
+              --no-owner --no-acl --format=custom \
+              --file=/tmp/${FNAME} && gzip -9 /tmp/${FNAME}"
+
+          scp -i ~/.ssh/id_rsa "${VPS_USER}@${VPS_HOST}:/tmp/${FNAME}.gz" "/tmp/${FNAME}.gz"
+
+          # ── حذف الملف من الـ VPS ──
+          ssh -i ~/.ssh/id_rsa "${VPS_USER}@${VPS_HOST}" "rm -f /tmp/${FNAME}.gz"
+
+          # ── رفع إلى Google Drive ──
+          python3 - <<'PYEOF'
+          import os, base64, json
           import urllib.request
-          from urllib.parse import urlparse, unquote
 
-          DB_URL    = os.environ['DATABASE_URL'].split('?')[0]
-          SCRIPT_URL = os.environ['GDRIVE_SCRIPT_URL']
+          fname  = os.environ['FNAME'] + '.gz'
+          script = os.environ['GDRIVE_SCRIPT_URL']
 
-          r = urlparse(DB_URL)
-          if not r.hostname:
-              print('DATABASE_URL has no host — check secrets.SUPABASE_DB_URL', file=sys.stderr)
-              sys.exit(1)
-
-          # على GitHub لا يوجد Postgres على localhost — السر يجب أن يشير لـ Supabase (db.*.supabase.co أو pooler)
-          _ci = os.environ.get('GITHUB_ACTIONS') == 'true' or os.environ.get('CI') == 'true'
-          if _ci and r.hostname in ('localhost', '127.0.0.1', '::1'):
-              print(
-                  'pg_dump: connection refused — DATABASE_URL points to localhost, but this runner has no local PostgreSQL.',
-                  file=sys.stderr,
-              )
-              print(
-                  'Fix: set repository secret SUPABASE_DB_URL to your Supabase connection string '
-                  '(Project Settings → Database → URI, use pooler :6543 or direct :5432 with ssl).',
-                  file=sys.stderr,
-              )
-              sys.exit(1)
-
-          # ---- تفضيل IPv4 للمضيف البعيد (تفادي مشاكل IPv6 مع بعض مزودي السحابة) ----
-          host = r.hostname
-          if r.hostname not in ('localhost', '127.0.0.1', '::1'):
-              try:
-                  host = socket.getaddrinfo(r.hostname, r.port or 5432, socket.AF_INET)[0][4][0]
-                  print(f'Host resolved to IPv4: {host}')
-              except Exception:
-                  print(f'Using hostname as-is: {r.hostname}')
-
-          ts    = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-          fname = f'noorix_backup_{ts}.dump.gz'
-
-          env = dict(os.environ)
-          env['PGPASSWORD'] = unquote(r.password or '')
-          env['PGSSLMODE']  = 'require'
-
-          # ---- pg_dump ----
-          dump_file = fname.replace('.gz', '')
-          cmd = [
-              'pg_dump',
-              f'--host={host}',
-              f'--port={r.port or 5432}',
-              f'--username={r.username}',
-              f'--dbname={r.path.lstrip("/")}',
-              '--no-owner', '--no-acl', '--format=custom',
-              f'--file={dump_file}',
-          ]
-          print('Running pg_dump...')
-          res = subprocess.run(cmd, env=env)
-          if res.returncode != 0:
-              print('pg_dump failed', file=sys.stderr)
-              sys.exit(1)
-
-          # ---- ضغط الملف ----
-          subprocess.run(['gzip', '-9', dump_file], check=True)
-          size = os.path.getsize(fname)
-          print(f'Backup size: {size:,} bytes ({size//1024//1024} MB)')
-
-          # ---- رفع إلى Google Drive ----
-          with open(fname, 'rb') as f:
+          with open(f'/tmp/{fname}', 'rb') as f:
               content_b64 = base64.b64encode(f.read()).decode()
 
           payload = json.dumps({
@@ -97,19 +61,19 @@ jobs:
           }).encode()
 
           req = urllib.request.Request(
-              SCRIPT_URL,
+              script,
               data=payload,
               headers={'Content-Type': 'application/json'},
               method='POST',
           )
-          print('Uploading to Google Drive...')
           with urllib.request.urlopen(req, timeout=120) as resp:
               result = json.loads(resp.read())
 
           if result.get('ok'):
-              print(f"✅ Saved to Google Drive: {result['saved']}")
+              print(f"✅ Saved: {result['saved']}")
           else:
-              print(f"❌ Upload failed: {result.get('error')}", file=sys.stderr)
-              sys.exit(1)
+              print(f"❌ Upload failed: {result.get('error')}")
+              raise SystemExit(1)
           PYEOF
-          python3 /tmp/backup.py
+        env:
+          FNAME: "noorix_backup_$(date +%Y%m%d_%H%M%S)"

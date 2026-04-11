@@ -1,81 +1,116 @@
-# نشر نويركس (Deployment)
+# نشر Noorix على Hostinger VPS
 
-## GitHub Actions → VPS (خطأ `dial tcp ...:22: connect: connection timed out`)
-
-عند فشل خطوة `appleboy/scp-action` أو `appleboy/ssh-action` بهذا النص، المشكلة **شبكية**: الـ runner لا يستطيع فتح اتصال TCP إلى `VPS_HOST` على المنفذ المستخدم (افتراضياً 22).
-
-### ما الذي تتحقق منه
-
-1. **`VPS_HOST` في Secrets**  
-   يجب أن يكون **عنوان IPv4 عام** يصل إليه الإنترنت (ليس IP داخلياً ولا `localhost`). جرّب من جهازك خارج الشبكة الداخلية:
-   `ssh -p PORT USER@HOST`
-
-2. **جدار النار على السيرفر** (`ufw` / `iptables`)  
-   اسمح بالمنفذ 22 (أو المنفذ الذي يستمع عليه SSH):
-   `ufw allow 22/tcp` ثم `ufw reload`  
-   راقب أن لا يكون السماح مقتصراً على IP قديم.
-
-3. **جدار مزوّد السحابة** (Security Group / Firewall في لوحة التحكم)  
-   أضف قاعدة **Inbound**: TCP المنفذ 22 (أو منفذ SSH الفعلي) من `0.0.0.0/0` للاختبار، ثم يمكن تقييدها لاحقاً.  
-   ملاحظة: عناوين **GitHub-hosted runners** ليست ثابتة؛ تقييد SSH لقائمة IP صغيرة قد يكسر النشر بينما يعمل الاتصال من بيتك.
-
-4. **SSH على منفذ غير 22**  
-   في إعدادات المستودع → Secrets → أضف `VPS_SSH_PORT` بالقيمة الصحيحة (مثلاً `2222`). السير `deploy.yml` يقرأها.
-
-5. **السيرفر متوقف أو غير متصل**  
-   تأكد أن الـ VPS يعمل وأن نفس الـ IP ما زال مخصصاً له.
-
-6. **اختبار سريع من الإنترنت**  
-   من جهاز خارجي: `nc -zv YOUR_HOST 22` (أو المنفذ المستخدم). إذا فشل، المشكلة قبل SSH (شبكة/جدار).
-
-### بدائل إن استمر الحظر
-
-- تشغيل **self-hosted runner** على شبكة تصل للسيرفر ثم توجيه الـ workflow إليه.
-- النشر اليدوي عند الحاجة: `bash scripts/vps-update-noorix.sh` على السيرفر بعد `git pull` محلياً أو من الجهاز الذي يصل للـ SSH.
+## المتطلبات
+- Hostinger VPS مع Ubuntu
+- Node.js 20+، PM2، PostgreSQL 15+، Nginx
+- المنفذ 3000 للباكند، 80/443 للفرونت إند
 
 ---
 
-## Railway / بيئة الإنتاج
+## إعداد قاعدة البيانات (أول مرة)
 
-### متغيرات البيئة المطلوبة
+```bash
+# على الـ VPS
+sudo -u postgres psql
+CREATE DATABASE noorix;
+CREATE USER noorixuser WITH PASSWORD 'YOUR_STRONG_PASSWORD';
+GRANT ALL PRIVILEGES ON DATABASE noorix TO noorixuser;
+\q
+```
 
-| المتغير | الوصف |
-|---------|-------|
-| `DATABASE_URL` | رابط PostgreSQL (من Railway أو خارجي) |
-| `JWT_SECRET` | مفتاح JWT (32 حرفاً على الأقل) |
-| `VITE_API_URL` | رابط الـ Backend (عند بناء الـ Frontend) |
+---
 
-### آلية التشغيل التلقائي
+## ملف `.env` على الـ VPS
 
-- **Migrations**: تُنفَّذ عند البدء عبر `prisma migrate deploy`
-- **Seed**: يُنفَّذ تلقائياً عند بدء التطبيق (NestJS DatabaseBootstrapService)
-- المستخدم الافتراضي يُنشأ أو يُحدَّث في كل تشغيل
+```
+# /var/www/noorix/backend/.env
+PORT=3000
+DATABASE_URL="postgresql://postgres:YOUR_DB_PASSWORD@localhost:5432/noorix"
+JWT_SECRET=your-very-long-random-secret-min-32-chars
+JWT_EXPIRES_IN=8h
+ADMIN_DEFAULT_PASSWORD=your-admin-password
+CORS_ORIGIN=https://your-domain.com
+GEMINI_API_KEY=your-gemini-key-optional
+```
 
-### بيانات الدخول الافتراضية
+---
+
+## النشر (pull + build + restart)
+
+```bash
+cd /var/www/noorix
+
+# سحب التحديثات
+git pull origin main
+
+# الباكند
+cd backend
+npm install
+npm run build
+npx prisma db push          # ⚠️ لا تستخدم --force-reset أبداً
+pm2 restart noorix-backend
+
+# الفرونت إند
+cd ../
+npm install
+npm run build
+# الملفات في dist/ → خدّمها عبر Nginx
+```
+
+---
+
+## PM2 (أول مرة)
+
+```bash
+cd /var/www/noorix/backend
+pm2 start ecosystem.config.cjs
+pm2 save
+pm2 startup
+```
+
+---
+
+## فحص الصحة
+
+```
+GET https://your-domain.com/api/v1/health
+```
+
+يُعيد:
+```json
+{ "dbConnected": true, "adminExists": true }
+```
+
+---
+
+## النسخ الاحتياطي اليدوي
+
+```bash
+# على الـ VPS
+PGPASSWORD=YOUR_PASSWORD pg_dump -U postgres -d noorix \
+  --no-owner --no-acl --format=custom \
+  --file=/var/backups/noorix_$(date +%Y%m%d).dump
+```
+
+---
+
+## بيانات الدخول الافتراضية
 
 | البريد | كلمة المرور |
 |--------|-------------|
-| `admin@noorix.sa` | `123` |
+| `admin@noorix.sa` | `ADMIN_DEFAULT_PASSWORD من .env` |
 
-⚠️ **أمان**: غيّر كلمة المرور فوراً بعد أول دخول في بيئة الإنتاج.
+⚠️ **غيّر كلمة المرور فور أول دخول.**
 
-### فحص الاتصال والتشخيص
+---
 
-افتح: `https://YOUR-BACKEND-URL/api/v1/health`
+## GitHub Secrets المطلوبة للنسخ الاحتياطي التلقائي
 
-الاستجابة تتضمن:
-- `dbConnected`: هل قاعدة البيانات متصلة
-- `adminExists`: هل المستخدم admin@noorix.sa موجود
-
-إذا كان `adminExists: false` رغم تشغيل التطبيق، تحقق من:
-1. `DATABASE_URL` صحيح ومتصل بنفس قاعدة البيانات
-2. سجلات Railway (Deploy Logs) — هل تظهر أخطاء عند البدء
-
-### خطأ MaxClientsInSessionMode (Supabase)
-
-إذا ظهر:
-```
-MaxClientsInSessionMode: max clients reached - in Session mode max clients are limited to pool_size
-```
-
-**راجع [RENDER_SUPABASE.md](RENDER_SUPABASE.md) للحل التفصيلي.** الملخص: استخدم رابط **Pooler → Transaction** (منفذ 6543) في `DATABASE_URL`.
+| الاسم | القيمة |
+|-------|--------|
+| `VPS_HOST` | `77.37.51.67` |
+| `VPS_USER` | `root` |
+| `VPS_SSH_KEY` | مفتاح SSH الخاص (private key) |
+| `VPS_DB_PASSWORD` | كلمة مرور PostgreSQL |
+| `VPS_DB_NAME` | `noorix` |
+| `GDRIVE_SCRIPT_URL` | رابط Google Apps Script |
