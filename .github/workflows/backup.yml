@@ -30,13 +30,32 @@ jobs:
           SCRIPT_URL = os.environ['GDRIVE_SCRIPT_URL']
 
           r = urlparse(DB_URL)
+          if not r.hostname:
+              print('DATABASE_URL has no host — check secrets.SUPABASE_DB_URL', file=sys.stderr)
+              sys.exit(1)
 
-          # ---- إجبار IPv4 ----
-          try:
-              ipv4 = socket.getaddrinfo(r.hostname, r.port or 5432, socket.AF_INET)[0][4][0]
-              print(f'Host resolved to IPv4: {ipv4}')
-          except Exception:
-              ipv4 = r.hostname
+          # على GitHub لا يوجد Postgres على localhost — السر يجب أن يشير لـ Supabase (db.*.supabase.co أو pooler)
+          _ci = os.environ.get('GITHUB_ACTIONS') == 'true' or os.environ.get('CI') == 'true'
+          if _ci and r.hostname in ('localhost', '127.0.0.1', '::1'):
+              print(
+                  'pg_dump: connection refused — DATABASE_URL points to localhost, but this runner has no local PostgreSQL.',
+                  file=sys.stderr,
+              )
+              print(
+                  'Fix: set repository secret SUPABASE_DB_URL to your Supabase connection string '
+                  '(Project Settings → Database → URI, use pooler :6543 or direct :5432 with ssl).',
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          # ---- تفضيل IPv4 للمضيف البعيد (تفادي مشاكل IPv6 مع بعض مزودي السحابة) ----
+          host = r.hostname
+          if r.hostname not in ('localhost', '127.0.0.1', '::1'):
+              try:
+                  host = socket.getaddrinfo(r.hostname, r.port or 5432, socket.AF_INET)[0][4][0]
+                  print(f'Host resolved to IPv4: {host}')
+              except Exception:
+                  print(f'Using hostname as-is: {r.hostname}')
 
           ts    = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
           fname = f'noorix_backup_{ts}.dump.gz'
@@ -49,7 +68,7 @@ jobs:
           dump_file = fname.replace('.gz', '')
           cmd = [
               'pg_dump',
-              f'--host={ipv4}',
+              f'--host={host}',
               f'--port={r.port or 5432}',
               f'--username={r.username}',
               f'--dbname={r.path.lstrip("/")}',
