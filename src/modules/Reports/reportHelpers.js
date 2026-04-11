@@ -96,7 +96,7 @@ export function buildFlatRows(report, collapsedGroups = {}) {
   const rows = [];
   for (const group of report?.groups || []) {
     rows.push({ ...group, rowType: 'group', groupKey: group.key, itemKey: null });
-    if (group.key === 'expenses' && Array.isArray(group.items) && group.items.some((i) => i.children)) {
+    if (Array.isArray(group.items) && group.items.some((i) => i.children)) {
       rows.push(...flattenExpenseTree(group.items, group.key, collapsedGroups));
     } else {
       for (const item of group.items || []) {

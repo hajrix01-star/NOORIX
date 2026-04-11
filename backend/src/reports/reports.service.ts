@@ -225,7 +225,7 @@ export class ReportsService {
     const selectedRow =
       itemKey && allGroup?.items
         ? groupKey === 'expenses'
-          ? this.findInExpenseTree(allGroup.items as ExpenseTreeNode[], itemKey)
+          ? this.findInCategoryTree(allGroup.items as ExpenseTreeNode[], itemKey)
           : (allGroup.items as GeneralRowModel[]).find((row) => row.key === itemKey)
         : allGroup;
     const contextAmount = month != null
@@ -286,7 +286,7 @@ export class ReportsService {
     const selectedItem =
       itemKey && group?.items
         ? groupKey === 'expenses'
-          ? this.findInExpenseTree(group.items as ExpenseTreeNode[], itemKey)
+          ? this.findInCategoryTree(group.items as ExpenseTreeNode[], itemKey)
           : (group.items as GeneralRowModel[]).find((entry) => entry.key === itemKey)
         : null;
 
@@ -360,12 +360,12 @@ export class ReportsService {
           };
         });
 
-      const items =
-        groupKey === 'expenses' && flatItems.some((i) => i.key.startsWith('category:') || i.key.startsWith('expense-line:'))
-          ? this.buildExpenseHierarchy(flatItems, categories, expenseLines, salesMonths, totalSales)
-          : flatItems
-              .sort((a, b) => a.sortOrder - b.sortOrder || a.labelAr.localeCompare(b.labelAr))
-              .map(({ sortOrder: _sortOrder, ...item }) => item);
+      const hasCategoryItems = flatItems.some((i) => i.key.startsWith('category:') || i.key.startsWith('expense-line:'));
+      const items = hasCategoryItems
+        ? this.buildCategoryHierarchy(groupKey, flatItems, categories, expenseLines, salesMonths, totalSales)
+        : flatItems
+            .sort((a, b) => a.sortOrder - b.sortOrder || a.labelAr.localeCompare(b.labelAr))
+            .map(({ sortOrder: _sortOrder, ...item }) => item);
 
       return {
         key: groupState.key,
@@ -895,18 +895,20 @@ export class ReportsService {
     return set;
   }
 
-  private findInExpenseTree(items: ExpenseTreeNode[], key: string): ExpenseTreeNode | null {
+  private findInCategoryTree(items: ExpenseTreeNode[], key: string): ExpenseTreeNode | null {
     for (const item of items) {
       if (item.key === key) return item;
       if (item.children) {
-        const found = this.findInExpenseTree(item.children, key);
+        const found = this.findInCategoryTree(item.children, key);
         if (found) return found;
       }
     }
     return null;
   }
 
-  private buildExpenseHierarchy(
+  /** بناء شجرة فئات هرمية لأي مجموعة (مبيعات، مشتريات، مصاريف) */
+  private buildCategoryHierarchy(
+    groupKey: GroupKey,
     flatItems: Array<GeneralRowModel & { sortOrder?: number }>,
     categories: Map<string, CategoryNode>,
     expenseLines: ExpenseLineNode[],
@@ -914,10 +916,19 @@ export class ReportsService {
     totalSales: Decimal,
   ): ExpenseTreeNode[] {
     const itemMap = new Map(flatItems.map((item) => [item.key, item]));
-    const expenseCats = Array.from(categories.values()).filter((c) => c.type === 'expense');
-    const roots = expenseCats.filter((c) => !c.parentId).sort((a, b) => a.sortOrder - b.sortOrder);
+
+    // نحدد نوع الفئة حسب المجموعة
+    const catTypeByGroup: Record<GroupKey, string> = {
+      expenses: 'expense',
+      purchases: 'purchase',
+      sales: 'sale',
+    };
+    const catType = catTypeByGroup[groupKey];
+    const groupCats = Array.from(categories.values()).filter((c) => c.type === catType);
+    const roots = groupCats.filter((c) => !c.parentId).sort((a, b) => a.sortOrder - b.sortOrder);
+
     const childrenByParent = new Map<string, CategoryNode[]>();
-    for (const c of expenseCats) {
+    for (const c of groupCats) {
       if (c.parentId) {
         const list = childrenByParent.get(c.parentId) ?? [];
         list.push(c);
@@ -927,14 +938,17 @@ export class ReportsService {
     for (const list of childrenByParent.values()) {
       list.sort((a, b) => a.sortOrder - b.sortOrder);
     }
+
+    // بنود المصاريف (expense-lines) — خاصة بمجموعة المصاريف فقط
     const linesByCategory = new Map<string, ExpenseLineNode[]>();
-    for (const el of expenseLines) {
-      const list = linesByCategory.get(el.categoryId) ?? [];
-      list.push(el);
-      linesByCategory.set(el.categoryId, list);
+    if (groupKey === 'expenses') {
+      for (const el of expenseLines) {
+        const list = linesByCategory.get(el.categoryId) ?? [];
+        list.push(el);
+        linesByCategory.set(el.categoryId, list);
+      }
     }
 
-    const zeroArr = () => Array.from({ length: 12 }, () => '0');
     const toNode = (key: string, labelAr: string, labelEn: string, months: string[], total: string, percentOfSalesMonths: string[], percentOfSalesYear: string): ExpenseTreeNode => ({
       key,
       labelAr,
@@ -951,7 +965,7 @@ export class ReportsService {
       const childCats = childrenByParent.get(cat.id) ?? [];
       const lines = linesByCategory.get(cat.id) ?? [];
       const childNodes: ExpenseTreeNode[] = [];
-      let monthsSum = direct?.months.map((v, i) => parseFloat(v || '0')) ?? Array(12).fill(0);
+      const monthsSum = direct?.months.map((v) => parseFloat(v || '0')) ?? Array(12).fill(0);
       let totalSum = parseFloat(direct?.total || '0');
 
       for (const child of childCats) {
@@ -972,8 +986,7 @@ export class ReportsService {
         }
       }
 
-      const hasData = totalSum > 0.0001 || childNodes.length > 0;
-      if (!hasData && childNodes.length === 0) return null;
+      if (totalSum < 0.0001 && childNodes.length === 0) return null;
 
       const months = monthsSum.map((v) => v.toFixed(2));
       const total = totalSum.toFixed(2);
@@ -991,10 +1004,16 @@ export class ReportsService {
       if (node) result.push(node);
     }
 
-    const kindItems = flatItems.filter((i) => i.key.startsWith('kind:'));
-    for (const k of kindItems) {
+    // البنود الحرة (kind:xxx / account:xxx / sales-channel:xxx) — تظهر بعد الشجرة
+    const trackedCategoryKeys = new Set(groupCats.map((c) => `category:${c.id}`));
+    const trackedLineKeys = new Set(groupKey === 'expenses' ? expenseLines.map((el) => `expense-line:${el.id}`) : []);
+    const freeItems = flatItems.filter(
+      (i) => !trackedCategoryKeys.has(i.key) && !trackedLineKeys.has(i.key),
+    );
+    for (const k of freeItems.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.labelAr.localeCompare(b.labelAr))) {
       result.push(toNode(k.key, k.labelAr, k.labelEn, k.months, k.total, k.percentOfSalesMonths, k.percentOfSalesYear));
     }
+
     return result;
   }
 
