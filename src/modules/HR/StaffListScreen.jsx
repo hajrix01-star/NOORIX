@@ -164,9 +164,9 @@ export default function StaffListScreen({ embedded }) {
   }, [companyId, t, lang, permanentDeleteEmployeeMut]);
 
   const columns = useMemo(() => [
-    { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120, minWidth: 110,
+    { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120,
       render: (v) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={v || ''}>{v || '—'}</span> },
-    { key: 'name', label: t('employeeName'), sortable: true, minWidth: 170,
+    { key: 'name', label: t('employeeName'), sortable: true, width: 200,
       render: (_, row) => (
         <Button
           variant="raw"
@@ -177,31 +177,31 @@ export default function StaffListScreen({ embedded }) {
           {employeeDisplayName(row, lang)}
         </Button>
       ) },
-    { key: 'jobTitle', label: t('jobTitle'), sortable: true, minWidth: 150,
+    { key: 'jobTitle', label: t('jobTitle'), sortable: true, width: 170,
       render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
-    { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125, minWidth: 120,
+    { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125,
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
-    { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140, minWidth: 130,
+    { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140,
       render: (_, row) => <FmtNum n={row.totalSalary} className="nx-cell-num text-[13px]" /> },
-    { key: 'status', label: t('status'), width: 120, minWidth: 110,
+    { key: 'status', label: t('status'), width: 110,
       render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     ...(viewMode === 'terminated' || viewMode === 'archived'
       ? [
           {
             key: 'terminationReason',
             label: t('terminationReason'),
-            minWidth: 190,
+            width: 190,
             render: (v) => <span className="nx-cell-muted">{v || '—'}</span>,
           },
           {
             key: 'terminationClause',
             label: t('terminationClause'),
-            minWidth: 130,
+            width: 140,
             render: (v) => <span className="nx-cell-muted">{v || '—'}</span>,
           },
         ]
       : []),
-    { key: 'actions', label: t('actions'), width: '5%', align: 'center',
+    { key: 'actions', label: t('actions'), width: 60, align: 'center',
       render: (_, row) => (
         <HRActionsCell
           row={row}
@@ -474,7 +474,7 @@ export default function StaffListScreen({ embedded }) {
           <SmartTable
             compact
             showRowNumbers
-            rowNumberWidth="1%"
+            tableMinWidth={960}
             innerPadding={8}
             columns={columns}
             data={tableData}
