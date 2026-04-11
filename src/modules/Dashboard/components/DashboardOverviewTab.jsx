@@ -5,14 +5,15 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import {
   ResponsiveContainer, AreaChart, Area,
-  XAxis, YAxis, Tooltip, CartesianGrid, Legend,
+  XAxis, YAxis, Tooltip, CartesianGrid,
   PieChart, Pie, Cell,
+  BarChart, Bar, LabelList,
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useApp } from '../../../context/AppContext';
-import { PERMISSIONS } from '../../../constants/permissions';
-import { useReportsGeneralProfitLoss } from '../../../hooks/useReports';
-import PeriodAnalyticsStrip from '../../Reports/PeriodAnalyticsStrip';
+import { useReportsGeneralProfitLoss, usePeriodAnalytics } from '../../../hooks/useReports';
+import { useSuppliers } from '../../../hooks/useSuppliers';
+import { useCategories } from '../../../hooks/useCategories';
+import { monthDateBounds } from '../../../utils/reportDrillLinks';
 import { useSales } from '../../../hooks/useSales';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
@@ -87,8 +88,6 @@ const PIE_COLORS = [
 export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }) {
   const { t, lang } = useTranslation();
   const uiDir = useUiDir();
-  const { userPermissions } = useApp();
-  const canPeriodAnalytics = (userPermissions || []).includes(PERMISSIONS.REPORTS_READ);
   const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
 
   const [timelineGrain, setTimelineGrain] = useState(() => (selectedMonth != null ? 'daily' : 'monthly'));
@@ -110,6 +109,17 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const yearStart = `${year}-01-01`;
   const yearEnd   = `${year}-12-31`;
   const { summaries: yearSummaries } = useSales({ companyId, startDate: yearStart, endDate: yearEnd });
+
+  /* ── بيانات أعلى الموردين + فئاتهم ── */
+  const { from: supplierFrom, to: supplierTo } = useMemo(
+    () => monthDateBounds(year, selectedMonth ?? null),
+    [year, selectedMonth],
+  );
+  const { data: periodData, isLoading: isPeriodLoading } = usePeriodAnalytics({
+    companyId, startDate: supplierFrom, endDate: supplierTo, enabled: !!companyId,
+  });
+  const { suppliers, isLoading: isSuppliersLoading } = useSuppliers(companyId);
+  const { flatCategories } = useCategories(companyId);
 
   /* ── دوال القيم ── */
   function getCardValue(key) {
@@ -196,6 +206,41 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     [performanceData, t]
   );
 
+  /* ── بيانات رسم بياني أعلى الموردين ── */
+  const topSuppliersChartData = useMemo(() => {
+    const list = (periodData?.topSuppliers || []).slice(0, 8);
+    const total = list.reduce((s, x) => s + Number(x.totalAmount || 0), 0) || 1;
+    return list.map((s, i) => ({
+      name: (lang === 'ar' ? s.nameAr || s.nameEn : s.nameEn || s.nameAr) || '—',
+      value: Number(s.totalAmount || 0),
+      count: s.invoiceCount || 0,
+      pct: ((Number(s.totalAmount || 0) / total) * 100).toFixed(1),
+      fill: PIE_COLORS[i % PIE_COLORS.length],
+    }));
+  }, [periodData, lang]);
+
+  /* ── بيانات رسم بياني فئات الموردين ── */
+  const supplierCategoriesData = useMemo(() => {
+    if (!suppliers.length) return [];
+    const map = {};
+    for (const s of suppliers) {
+      const cat = flatCategories.find((c) => c.id === s.supplierCategoryId);
+      const catName = cat
+        ? (lang === 'ar' ? cat.nameAr || cat.nameEn : cat.nameEn || cat.nameAr) || '—'
+        : (lang === 'ar' ? 'غير مصنّف' : 'Uncategorized');
+      map[catName] = (map[catName] || 0) + 1;
+    }
+    const catTotal = Object.values(map).reduce((s, v) => s + v, 0) || 1;
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value], i) => ({
+        name,
+        value,
+        pct: ((value / catTotal) * 100).toFixed(1),
+        fill: PIE_COLORS[i % PIE_COLORS.length],
+      }));
+  }, [suppliers, flatCategories, lang]);
+
   /* ── ثوابت السلاسل الزمنية — قبل أي return مشروط ── */
   const salesSeries   = t('annualSales');
   const purchSeries   = t('annualPurchases');
@@ -256,13 +301,113 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   return (
     <div className="flex flex-col gap-5">
 
-      {/* شريط التحليلات */}
-      <PeriodAnalyticsStrip
-        companyId={companyId}
-        year={year}
-        month={selectedMonth ?? null}
-        enabled={canPeriodAnalytics}
-      />
+      {/* ── رسوم بيانية: أعلى الموردين + فئات الموردين ── */}
+      <div className="grid gap-5" style={{ gridTemplateColumns: supplierCategoriesData.length > 0 ? 'minmax(0,1fr) 300px' : '1fr' }}>
+
+        {/* أعلى الموردين — أفقي */}
+        <div className="noorix-surface-card p-5">
+          <div className="text-[14px] font-bold text-noorix-text mb-0.5">{t('periodAnalyticsTopSuppliers')}</div>
+          <div className="text-[12px] text-noorix-muted mb-4">{supplierFrom} — {supplierTo}</div>
+          {isPeriodLoading ? (
+            <div className="h-[220px] flex items-center justify-center text-noorix-muted text-[12px]">{t('loading')}</div>
+          ) : topSuppliersChartData.length === 0 ? (
+            <div className="h-[220px] flex flex-col items-center justify-center text-noorix-muted gap-2">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <div className="text-[12px]">{t('noDataInPeriod')}</div>
+            </div>
+          ) : (
+            <div dir="ltr">
+              <ResponsiveContainer width="100%" height={Math.max(220, topSuppliersChartData.length * 40)}>
+                <BarChart
+                  layout="vertical"
+                  data={topSuppliersChartData}
+                  margin={{ top: 0, right: 56, left: 0, bottom: 0 }}
+                >
+                  <XAxis
+                    type="number"
+                    tickFormatter={fmtAxis}
+                    tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
+                    axisLine={false} tickLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={140}
+                    tick={{ fontSize: 11, fill: 'var(--noorix-text)', fontFamily: 'var(--noorix-font-primary)' }}
+                    axisLine={false} tickLine={false}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const d = payload[0]?.payload;
+                      return (
+                        <div style={{ background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', borderRadius: 6, padding: '8px 12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: 12, minWidth: 160 }}>
+                          <div style={{ fontWeight: 700, marginBottom: 4, color: d?.fill }}>{d?.name}</div>
+                          <div style={{ color: 'var(--noorix-text)', fontWeight: 600, fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(d?.value, 0)} SR</div>
+                          <div style={{ color: 'var(--noorix-text-muted)', fontSize: 11, marginTop: 2 }}>{d?.count} {lang === 'ar' ? 'فاتورة' : 'inv.'} · {d?.pct}%</div>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={20}>
+                    {topSuppliersChartData.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                    <LabelList
+                      dataKey="value"
+                      position="right"
+                      formatter={(v) => fmt(v, 0)}
+                      style={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-numbers)' }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* فئات الموردين — donut */}
+        {supplierCategoriesData.length > 0 && (
+          <div className="noorix-surface-card p-5 flex flex-col">
+            <div className="text-[14px] font-bold text-noorix-text mb-0.5">{t('supplierCategories')}</div>
+            <div className="text-[12px] text-noorix-muted mb-4">
+              {t('suppliersTotal')}: {suppliers.length}
+            </div>
+            <ResponsiveContainer width="100%" height={170}>
+              <PieChart>
+                <Pie
+                  data={supplierCategoriesData}
+                  cx="50%" cy="50%"
+                  innerRadius={50} outerRadius={78}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {supplierCategoriesData.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<PieTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="flex flex-col gap-1.5 mt-3">
+              {supplierCategoriesData.slice(0, 5).map((cat) => (
+                <div key={cat.name} className="flex items-center justify-between gap-2 text-[12px]">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: cat.fill }} />
+                    <span className="text-noorix-text truncate">{cat.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="font-bold text-noorix-text">{cat.value}</span>
+                    <span className="text-noorix-muted">({cat.pct}%)</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ── كروت KPI — الغلاف يحمل container-type ── */}
       <div className="nx-kpi-container">

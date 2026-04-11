@@ -3,13 +3,11 @@
  */
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { PERMISSIONS } from '../../constants/permissions';
 import { useTranslation } from '../../i18n/useTranslation';
 import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
-import PeriodAnalyticsStrip from './PeriodAnalyticsStrip';
 import { Button, Input, ScreenTabs, ScreenShell, cn, MetricCard } from '../../ui';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../constants/kpiCardTheme';
@@ -31,8 +29,7 @@ const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export default function ReportsScreen() {
-  const { activeCompanyId, companies, userPermissions } = useApp();
-  const canPeriodAnalytics = (userPermissions || []).includes(PERMISSIONS.REPORTS_READ);
+  const { activeCompanyId, companies } = useApp();
   const { t, lang } = useTranslation();
   const currentYear = new Date().getUTCFullYear();
   const [year, setYear] = useState(currentYear);
@@ -160,13 +157,6 @@ export default function ReportsScreen() {
             {t('reportClickHint')}
             {selectedMonthNumber && <div className="mt-2">{t('reportFocusedMonthDesc')}</div>}
           </div>
-
-          <PeriodAnalyticsStrip
-            companyId={activeCompanyId}
-            year={year}
-            month={selectedMonthNumber}
-            enabled={canPeriodAnalytics}
-          />
 
           {report && (
             <div
