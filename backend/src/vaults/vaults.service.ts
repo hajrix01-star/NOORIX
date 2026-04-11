@@ -205,7 +205,22 @@ export class VaultsService {
           }
         : {};
 
-    const where = { companyId, vaultId: id, status: 'active', ...dateFilter };
+    // حركات الخزنة: إما مرتبطة مباشرة بـ vaultId، أو حركة تحويل تمس حسابها (مدين أو دائن)
+    const where: any = {
+      companyId,
+      status: 'active',
+      ...dateFilter,
+      OR: [
+        { vaultId: id },
+        {
+          referenceType: 'transfer',
+          OR: [
+            { debitAccountId:  vault.accountId },
+            { creditAccountId: vault.accountId },
+          ],
+        },
+      ],
+    };
 
     const [items, total, debitAgg, creditAgg] = await Promise.all([
       this.prisma.ledgerEntry.findMany({

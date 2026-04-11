@@ -227,6 +227,23 @@ export class InvoiceService {
       /* تحديث تاريخ قيود دفتر الأستاذ عند تغيير تاريخ الفاتورة
          (التقارير تقرأ من ledger_entries.transaction_date) */
       if (dto.transactionDate !== undefined) {
+        const newDate = new Date(dto.transactionDate);
+        // فحص أن التاريخ الجديد لا يقع في فترة مالية مغلقة
+        const period = await tx.fiscalPeriod.findFirst({
+          where: {
+            companyId,
+            startDate: { lte: newDate },
+            endDate:   { gte: newDate },
+          },
+          select:  { status: true, nameAr: true },
+          orderBy: { startDate: 'desc' },
+        });
+        if (period?.status === 'closed') {
+          throw new BadRequestException(
+            `لا يمكن نقل الفاتورة إلى فترة مالية مغلقة: ${period.nameAr}`,
+          );
+        }
+
         await tx.ledgerEntry.updateMany({
           where: {
             companyId,
@@ -234,7 +251,7 @@ export class InvoiceService {
             referenceType: { in: ['invoice', 'salary', 'advance'] },
             status:        'active',
           },
-          data: { transactionDate: new Date(dto.transactionDate) },
+          data: { transactionDate: newDate },
         });
       }
 
