@@ -297,11 +297,6 @@ export default function PurchasesBatchScreen() {
     </>
   );
 
-  const bookmarkedSuppliers = useMemo(
-    () => suppliers.filter((s) => bookmarks.includes(s.id)),
-    [suppliers, bookmarks],
-  );
-
   const summary = useBatchSummary(rows);
 
   const saveMutation = useApiMutation({
@@ -365,18 +360,6 @@ export default function PurchasesBatchScreen() {
   const addRow         = ()         => setRows((p) => [...p, EMPTY_ROW()]);
   const removeRow      = (i)        => setRows((p) => p.length <= 1 ? [EMPTY_ROW()] : p.filter((_, idx) => idx !== i));
   const toggleBookmark = (id)       => setBookmarks((p) => { const n = p.includes(id) ? p.filter((x) => x !== id) : [...p, id]; saveBookmarks(n); return n; });
-  const addBookmarked  = (id)       => {
-    const s = suppliers.find((x) => x.id === id);
-    const cat = s?.supplierCategory;
-    const base = { ...EMPTY_ROW(), supplierId: id };
-    if (cat) {
-      base.kind = cat.type === 'expense' ? 'expense' : 'purchase';
-      base.categoryId = cat.id;
-      base.debitAccountId = cat.accountId || cat.account?.id || '';
-      base.isTaxable = !(cat.account?.taxExempt ?? false);
-    }
-    setRows((p) => [...p, base]);
-  };
 
   async function saveInvoiceEdit(inv) {
     const payload = {
@@ -461,25 +444,6 @@ export default function PurchasesBatchScreen() {
                   <option key={v.id} value={v.id}>{vaultDisplayName(v, language)}</option>
                 ))}
               </Input>
-            </div>
-            <div className="batch-purchases-entry-toolbar__shortcuts">
-              <span className="text-[12px] font-bold text-noorix-muted whitespace-nowrap">{t('shortcuts')}</span>
-              {bookmarkedSuppliers.length > 0 ? (
-                bookmarkedSuppliers.map((s) => (
-                  <Button
-                    key={s.id}
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => addBookmarked(s.id)}
-                    className="batch-purchases-shortcut-chip border border-noorix-border whitespace-nowrap"
-                  >
-                    {(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}
-                  </Button>
-                ))
-              ) : (
-                <span className="text-[12px] text-noorix-muted">{t('selectSupplierBookmark')}</span>
-              )}
             </div>
           </div>
 
