@@ -154,7 +154,12 @@ export class BackupService {
         'pg_dump',
         ['-h', host, '-p', port, '-U', user, '-d', database, '--no-owner', '--no-acl', '--format=custom', '-f', outPath],
         {
-          env: { ...process.env, PGPASSWORD: password, PGSSLMODE: 'require' },
+          // localhost → no SSL needed; remote hosts (Supabase, RDS…) keep SSL
+          env: {
+            ...process.env,
+            PGPASSWORD: password,
+            PGSSLMODE: host === 'localhost' || host === '127.0.0.1' ? 'disable' : 'require',
+          },
           stdio: ['ignore', 'pipe', 'pipe'],
         },
       );
