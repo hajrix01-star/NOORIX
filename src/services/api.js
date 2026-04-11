@@ -509,6 +509,16 @@ export async function getCompany(id) {
   return apiGet(`/api/v1/companies/${id}`);
 }
 
+/** إعادة تهيئة فئات شركة واحدة — super_admin فقط */
+export async function resetCompanyCategories(companyId) {
+  return apiPost(`/api/v1/accounting-init/reset-categories/${companyId}`, {});
+}
+
+/** إعادة تهيئة فئات جميع الشركات — super_admin فقط */
+export async function resetAllCompaniesCategories() {
+  return apiPost('/api/v1/accounting-init/reset-all-categories', {});
+}
+
 export async function getRoles() {
   const res = await apiGet('/api/v1/roles');
   return { success: res.success, data: Array.isArray(res.data) ? res.data : [] };

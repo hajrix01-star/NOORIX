@@ -315,6 +315,151 @@ export class AccountingInitService {
     };
   }
 
+  /**
+   * إعادة تهيئة الفئات والحسابات لشركة واحدة.
+   * آمن تماماً: يمسح الفئات القديمة + الحسابات الزائدة ثم يعيد البذر بالهيكل الجديد.
+   *
+   * الخطوات:
+   * 1. فصل الموردين وبنود المصروفات عن الفئات (null)
+   * 2. حذف جميع الفئات للشركة
+   * 3. حذف الحسابات غير الأساسية (مولَّدة قديماً خارج MASTER)
+   * 4. upsert الحسابات الأساسية (إنشاء ما يغيب، تحديث ما يختلف)
+   * 5. إعادة بذر الفئات الرئيسية والفرعية بالأكواد التحليلية
+   */
+  async resetAndReinitializeCategories(tenantId: string, companyId: string): Promise<{
+    deleted: { categories: number; oldAccounts: number };
+    created: { categories: number };
+  }> {
+    const masterCodes = new Set(MASTER_ACCOUNTS.map((a) => a.code));
+
+    // ① فصل الموردين عن الفئات (supplierCategoryId nullable → null آمن)
+    await this.prisma.supplier.updateMany({
+      where: { companyId },
+      data:  { supplierCategoryId: null },
+    });
+
+    // ② حذف بنود المصروفات (categoryId غير nullable → لا يمكن تصفيرها)
+    //    هذه بيانات تجريبية ستُعاد إضافتها يدوياً بعد إعادة هيكلة الفئات
+    await this.prisma.expenseLine.deleteMany({ where: { companyId } });
+
+    // ③ حذف جميع الفئات (الأبناء أولاً ثم الآباء لتجنب قيود FK)
+    await this.prisma.category.deleteMany({ where: { companyId, parentId: { not: null } } });
+    const delCats = await this.prisma.category.deleteMany({ where: { companyId } });
+
+    // ④ حذف الحسابات الزائدة (مولَّدة قديماً وليست في MASTER)
+    //    نتحقق: لا توجد لها قيود محاسبية في ledger_entries (آمن على بيانات تجريبية)
+    const oldAccounts = await this.prisma.account.findMany({
+      where: { companyId, code: { notIn: [...masterCodes] } },
+    });
+    let delAccounts = 0;
+    for (const acc of oldAccounts) {
+      const ledgerCount = await this.prisma.ledgerEntry.count({
+        where: { companyId, OR: [{ debitAccountId: acc.id }, { creditAccountId: acc.id }] },
+      });
+      if (ledgerCount === 0) {
+        await this.prisma.account.delete({ where: { id: acc.id } });
+        delAccounts++;
+      }
+    }
+
+    // ⑤ upsert الحسابات الأساسية (createMany skipDuplicates)
+    const codeToAccountId: Record<string, string> = {};
+    for (const acc of MASTER_ACCOUNTS) {
+      const existing = await this.prisma.account.findFirst({ where: { companyId, code: acc.code } });
+      if (existing) {
+        // تحديث البيانات إن تغيّرت
+        await this.prisma.account.update({
+          where: { id: existing.id },
+          data: { nameAr: acc.nameAr, nameEn: acc.nameEn, icon: acc.icon, isActive: true },
+        });
+        codeToAccountId[acc.code] = existing.id;
+      } else {
+        const created = await this.prisma.account.create({
+          data: {
+            tenantId,
+            companyId,
+            code: acc.code,
+            nameAr: acc.nameAr,
+            nameEn: acc.nameEn,
+            type: acc.type,
+            icon: acc.icon,
+            taxExempt: acc.taxExempt,
+            isActive: true,
+          },
+        });
+        codeToAccountId[acc.code] = created.id;
+      }
+    }
+
+    // ⑥ إعادة بذر الفئات الرئيسية
+    const accountCodeToCategoryId: Record<string, string> = {};
+    for (let i = 0; i < MASTER_CATEGORIES.length; i++) {
+      const cat = MASTER_CATEGORIES[i];
+      const accountId = codeToAccountId[cat.accountCode];
+      const acc = MASTER_ACCOUNTS.find((a) => a.code === cat.accountCode);
+      const created = await this.prisma.category.create({
+        data: {
+          tenantId,
+          companyId,
+          accountId: accountId ?? null,
+          code:      cat.accountCode,
+          nameAr:    cat.nameAr,
+          nameEn:    acc?.nameEn ?? null,
+          type:      cat.type,
+          icon:      acc?.icon ?? null,
+          sortOrder: i,
+          isActive:  true,
+        },
+      });
+      accountCodeToCategoryId[cat.accountCode] = created.id;
+    }
+
+    // ⑦ إعادة بذر الفئات الفرعية مع الأكواد التحليلية
+    let createdSubs = 0;
+    for (const sub of MASTER_SUBCATEGORIES) {
+      const parentId = accountCodeToCategoryId[sub.parentAccountCode];
+      const parentCat = MASTER_CATEGORIES.find((c) => c.accountCode === sub.parentAccountCode);
+      if (!parentId || !parentCat) continue;
+      await this.prisma.category.create({
+        data: {
+          tenantId,
+          companyId,
+          parentId,
+          accountId: codeToAccountId[sub.parentAccountCode] ?? null,
+          code:      sub.code,
+          nameAr:    sub.nameAr,
+          nameEn:    sub.nameAr,
+          type:      parentCat.type,
+          sortOrder: sub.sortOrder ?? 0,
+          isActive:  true,
+        },
+      });
+      createdSubs++;
+    }
+
+    return {
+      deleted: { categories: delCats.count, oldAccounts: delAccounts },
+      created: { categories: MASTER_CATEGORIES.length + createdSubs },
+    };
+  }
+
+  /**
+   * إعادة تهيئة الفئات لجميع الشركات دفعةً واحدة.
+   * يُستدعى من endpoint محمي بصلاحية super_admin.
+   */
+  async resetAllCompaniesCategories(tenantId: string): Promise<{
+    companies: number;
+    details: Array<{ companyId: string; result: Awaited<ReturnType<typeof this.resetAndReinitializeCategories>> }>;
+  }> {
+    const companies = await this.prisma.company.findMany({ where: { tenantId } });
+    const details: Array<{ companyId: string; result: Awaited<ReturnType<typeof this.resetAndReinitializeCategories>> }> = [];
+    for (const company of companies) {
+      const result = await this.resetAndReinitializeCategories(tenantId, company.id);
+      details.push({ companyId: company.id, result });
+    }
+    return { companies: companies.length, details };
+  }
+
   /** يزرع فقط إن لم تكن هناك فئات شجرية — لا يكرر عند إعادة الاستدعاء */
   private async seedDefaultBankTreeCategories(tenantId: string, companyId: string): Promise<void> {
     const n = await this.prisma.bankTreeCategory.count({ where: { companyId } });

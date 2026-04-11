@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AccountingInitService } from './accounting-init.service';
+import { AccountingInitService }    from './accounting-init.service';
+import { AccountingInitController } from './accounting-init.controller';
 
 @Module({
-  providers: [AccountingInitService],
-  exports: [AccountingInitService],
+  controllers: [AccountingInitController],
+  providers:   [AccountingInitService],
+  exports:     [AccountingInitService],
 })
 export class AccountingInitModule {}
