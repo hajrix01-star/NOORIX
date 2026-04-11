@@ -37,7 +37,7 @@ function ImageLightbox({ src, onClose }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+  }, [onClose]);
 
   const zoomIn  = () => setScale((s) => Math.min(s + 0.25, 5));
   const zoomOut = () => setScale((s) => { const n = Math.max(s - 0.25, 0.25); if (n === 1) setPan({ x:0, y:0 }); return n; });
@@ -282,7 +282,7 @@ function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLight
    التبويب الرئيسي
    ═══════════════════════════════════════════════════════════════════════ */
 export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
-  const { language } = useTranslation();
+  const { lang: language } = useTranslation();
   const isAr = language === 'ar';
   const dir  = isAr ? 'rtl' : 'ltr';
 

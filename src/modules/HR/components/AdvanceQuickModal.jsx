@@ -12,9 +12,11 @@ import { roundMoney2 } from '../../../utils/moneyInput';
 import { fmt } from '../../../utils/format';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
+import { useToast } from '../../../context/ToastContext';
 
 export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }) {
   const { t, lang } = useTranslation();
+  const { showToast } = useToast();
   const { paymentVaults = [] } = useVaults({ companyId });
   const vaults = paymentVaults;
   const [employee, setEmployee] = useState(initialEmployee);
@@ -72,7 +74,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      console.error(err);
+      showToast(t('errorGeneral') || 'حدث خطأ أثناء الحفظ', 'error');
     }
   };
 

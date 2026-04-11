@@ -29,7 +29,7 @@ function ItemForm({ initial = {}, onSave, onCancel, loading }) {
 }
 
 export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
-  const { t, language } = useTranslation();
+  const { t, lang: language } = useTranslation();
   const [search, setSearch] = useState('');
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null);

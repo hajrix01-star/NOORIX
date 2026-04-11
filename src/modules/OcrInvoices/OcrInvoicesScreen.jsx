@@ -20,9 +20,9 @@ const TABS = [
 ];
 
 export default function OcrInvoicesScreen() {
-  const { language } = useTranslation();
+  const { lang } = useTranslation();
   const [activeTab, setActiveTab] = useState('upload');
-  const isAr = language === 'ar';
+  const isAr = lang === 'ar';
 
   const { data: invoicesData,  isLoading: invoicesLoading,  refetch: refetchInvoices  } = useQuery({
     queryKey: ['ocr-invoices'],

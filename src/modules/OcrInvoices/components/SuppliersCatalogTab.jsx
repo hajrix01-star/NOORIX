@@ -28,7 +28,7 @@ function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
 }
 
 export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh }) {
-  const { t, language } = useTranslation();
+  const { t, lang: language } = useTranslation();
   const [search, setSearch]     = useState('');
   const [adding, setAdding]     = useState(false);
   const [editing, setEditing]   = useState(null);

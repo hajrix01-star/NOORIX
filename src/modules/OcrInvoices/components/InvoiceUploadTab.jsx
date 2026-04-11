@@ -16,7 +16,7 @@ const STATUS_BADGE = {
 };
 
 export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
-  const { t, language } = useTranslation();
+  const { t, lang: language } = useTranslation();
   const [dragging, setDragging]   = useState(false);
   const [preview, setPreview]     = useState(null);
   const [imageBase64, setBase64]  = useState(null);

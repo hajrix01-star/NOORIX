@@ -92,7 +92,7 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
 }
 
 export default function PriceAlertsTab({ alerts = [], loading, invoices = [], onRefresh }) {
-  const { language } = useTranslation();
+  const { lang: language } = useTranslation();
   const isAr = language === 'ar';
   const [comparing, setComparing]   = useState(null);
   const [selected,  setSelected]    = useState(new Set());

@@ -39,7 +39,7 @@ export default function SettingsScreen() {
     { id: 'roles',     label: t('rolesTab') },
     { id: 'backup',    label: t('backupTab'),  permission: 'MANAGE_SETTINGS' },
     { id: 'ai',        label: t('aiTab') },
-    { id: 'branding',  label: 'هوية التطبيق' },
+    { id: 'branding',  label: t('brandingTab') },
   ], [t]);
 
   const TABS = useMemo(
