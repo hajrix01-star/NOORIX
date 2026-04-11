@@ -944,7 +944,18 @@ export class ReportsService {
       sales: 'sale',
     };
     const catType = catTypeByGroup[groupKey];
-    const groupCats = Array.from(categories.values()).filter((c) => c.type === catType);
+    /**
+     * فئات المجموعة: الجذر type === catType، والفرع يُدرَج إذا كان أبوه من نفس نوع المجموعة
+     * ونوع الفرع عام أو فارغ أو مطابق — حتى لا تُستبعد الفئات الفرعية (P1-1…) إذا كان
+     * type = general أو قديماً غير متزامن مع الأب، فيختفي التداخل تحت «مواد غذائية» ويبقى السطر الأب فقط.
+     */
+    const groupCats = Array.from(categories.values()).filter((c) => {
+      if (c.type === catType) return true;
+      if (!c.parentId) return false;
+      const p = categories.get(c.parentId);
+      if (!p || p.type !== catType) return false;
+      return !c.type || c.type === 'general' || c.type === catType;
+    });
     const roots = groupCats.filter((c) => !c.parentId).sort((a, b) => a.sortOrder - b.sortOrder);
 
     const childrenByParent = new Map<string, CategoryNode[]>();
