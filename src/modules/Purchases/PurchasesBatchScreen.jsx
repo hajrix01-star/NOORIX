@@ -308,16 +308,6 @@ export default function PurchasesBatchScreen() {
         vaultId: batchVaultId || undefined,
         idempotencyKey,
         items: valid.map((r) => {
-          let notes = r.notes?.trim();
-          if (r.supplierId) {
-            const sup = suppliers.find((s) => s.id === r.supplierId);
-            const name = (lang === 'en' ? sup?.nameEn || sup?.nameAr : sup?.nameAr || sup?.nameEn) || '';
-            notes = name ? `${t('opInvoicePayment')} — ${name}` : notes;
-          } else if (r.kind === 'fixed_expense') {
-            notes = notes ? `${t('fixedExpenseType')} — ${notes}` : t('fixedExpenseType');
-          } else if (r.kind === 'expense') {
-            notes = notes ? `${t('expenseType')} — ${notes}` : t('expenseType');
-          }
           return {
             supplierId: r.supplierId || undefined,
             supplierInvoiceNumber: r.invoiceNumber?.trim() || undefined,
@@ -326,7 +316,7 @@ export default function PurchasesBatchScreen() {
             isTaxable: r.isTaxable !== false,
             invoiceDate: r.invoiceDate,
             debitAccountId: r.debitAccountId || undefined,
-            notes: notes || undefined,
+            notes: r.notes?.trim() || undefined,
           };
         }),
       });

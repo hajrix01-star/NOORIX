@@ -2,7 +2,7 @@
  * SmartTable — مكون الجداول المركزي لنظام نوركس
  * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards | Column Resize
  */
-import React, { memo, useCallback, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
@@ -116,6 +116,49 @@ const SmartTable = memo(function SmartTable({
     document.addEventListener('mouseup', onUp);
   }, [dir, tableId]);
 
+  // ── Column Visibility ──────────────────────────────────────────
+  const [showColPanel, setShowColPanel] = useState(false);
+  const colBtnRef  = useRef(null);
+  const colPanelRef = useRef(null);
+
+  const [hiddenCols, setHiddenCols] = useState(() => {
+    if (!tableId) return new Set();
+    try {
+      const saved = localStorage.getItem(`nx-col-vis:${tableId}`);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  useEffect(() => {
+    if (!showColPanel) return;
+    const handler = (e) => {
+      if (!colPanelRef.current?.contains(e.target) && !colBtnRef.current?.contains(e.target)) {
+        setShowColPanel(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showColPanel]);
+
+  const toggleColVis = useCallback((colKey) => {
+    setHiddenCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(colKey)) next.delete(colKey); else next.add(colKey);
+      if (tableId) {
+        try { localStorage.setItem(`nx-col-vis:${tableId}`, JSON.stringify([...next])); } catch { /* noop */ }
+      }
+      return next;
+    });
+  }, [tableId]);
+
+  const resetColVis = useCallback(() => {
+    setHiddenCols(new Set());
+    if (tableId) {
+      try { localStorage.removeItem(`nx-col-vis:${tableId}`); } catch { /* noop */ }
+    }
+    setShowColPanel(false);
+  }, [tableId]);
+
   const isNarrow = useIsNarrow700();
 
   const showCards    = isNarrow && typeof renderMobileCard === 'function';
@@ -130,7 +173,8 @@ const SmartTable = memo(function SmartTable({
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
-  const showTableHeaderRow = Boolean(title || badge || (onSearchChange && showSearchInHeader));
+  const showTableHeaderRow = Boolean(title || badge || (onSearchChange && showSearchInHeader) || tableId);
+  const hideableCols = columns.filter((c) => c.key !== 'actions');
 
   return (
     <div
@@ -144,17 +188,59 @@ const SmartTable = memo(function SmartTable({
             {title && <span className="font-bold text-[15px] shrink-0">{title}</span>}
             {badge && <div className="flex items-center gap-2 flex-wrap min-w-0">{badge}</div>}
           </div>
-          {onSearchChange && showSearchInHeader && (
-            <Input
-              type="search"
-              value={searchValue ?? ''}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder={t('searchPlaceholder')}
-              size="sm"
-              className="noorix-table-search shrink-0"
-              aria-label={t('searchPlaceholder')}
-            />
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onSearchChange && showSearchInHeader && (
+              <Input
+                type="search"
+                value={searchValue ?? ''}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder={t('searchPlaceholder')}
+                size="sm"
+                className="noorix-table-search"
+                aria-label={t('searchPlaceholder')}
+              />
+            )}
+            {tableId && (
+              <div className="relative">
+                <button
+                  ref={colBtnRef}
+                  className={`nx-col-vis-btn${hiddenCols.size > 0 ? ' nx-col-vis-btn--active' : ''}`}
+                  title="إظهار / إخفاء الأعمدة"
+                  aria-label="إظهار / إخفاء الأعمدة"
+                  onClick={() => setShowColPanel((v) => !v)}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="9" y1="3" x2="9" y2="21" />
+                    <line x1="15" y1="3" x2="15" y2="21" />
+                  </svg>
+                  {hiddenCols.size > 0 && (
+                    <span className="nx-col-vis-badge">{hiddenCols.size}</span>
+                  )}
+                </button>
+                {showColPanel && (
+                  <div ref={colPanelRef} className="nx-col-vis-panel">
+                    <div className="nx-col-vis-panel__header">
+                      <span>الأعمدة</span>
+                      {hiddenCols.size > 0 && (
+                        <button className="nx-col-vis-reset" onClick={resetColVis}>إعادة تعيين</button>
+                      )}
+                    </div>
+                    {hideableCols.map((col) => (
+                      <label key={col.key} className="nx-col-vis-item">
+                        <input
+                          type="checkbox"
+                          checked={!hiddenCols.has(col.key)}
+                          onChange={() => toggleColVis(col.key)}
+                        />
+                        <span>{col.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -222,6 +308,10 @@ const SmartTable = memo(function SmartTable({
                   <th style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36, textAlign: 'center' }}>#</th>
                 )}
                 {columns.map((col) => {
+                  const isHidden = hiddenCols.has(col.key);
+                  if (isHidden) {
+                    return <th key={col.key} aria-hidden="true" style={{ width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' }} />;
+                  }
                   const align = getAlign(col);
                   const isSorted = sortKey === col.key;
                   const shrink = col.shrink === true;
@@ -292,6 +382,9 @@ const SmartTable = memo(function SmartTable({
                     </td>
                   )}
                   {columns.map((col) => {
+                    if (hiddenCols.has(col.key)) {
+                      return <td key={col.key} aria-hidden="true" style={{ width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' }} />;
+                    }
                     const value  = row[col.key];
                     const align  = getAlign(col);
                     const family = col.numeric ? 'var(--noorix-font-numbers)' : undefined;

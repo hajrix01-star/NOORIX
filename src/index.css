@@ -1467,6 +1467,116 @@ html[data-card-style="10"] .noorix-stat-card {
   white-space: nowrap;
 }
 
+/* ── Column Visibility Button & Panel ────────────────────────── */
+.nx-col-vis-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--noorix-border);
+  background: var(--noorix-surface);
+  color: var(--noorix-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  position: relative;
+  white-space: nowrap;
+}
+.nx-col-vis-btn:hover {
+  border-color: var(--noorix-accent-blue);
+  color: var(--noorix-accent-blue);
+  background: var(--noorix-blue-4, #eff6ff);
+}
+.nx-col-vis-btn--active {
+  border-color: var(--noorix-accent-blue);
+  color: var(--noorix-accent-blue);
+  background: var(--noorix-blue-4, #eff6ff);
+}
+.nx-col-vis-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--noorix-accent-blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+.nx-col-vis-panel {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 6px);
+  z-index: 120;
+  min-width: 180px;
+  max-width: 240px;
+  background: var(--noorix-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(10,31,68,0.12), 0 2px 6px rgba(10,31,68,0.06);
+  overflow: hidden;
+  animation: nx-fade-in 0.12s ease;
+}
+@keyframes nx-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.nx-col-vis-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid var(--noorix-border);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--noorix-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.nx-col-vis-reset {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--noorix-accent-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.nx-col-vis-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--noorix-text);
+  transition: background 0.1s;
+  user-select: none;
+}
+.nx-col-vis-item:hover {
+  background: var(--noorix-bg-muted);
+}
+.nx-col-vis-item input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--noorix-accent-blue);
+  flex-shrink: 0;
+}
+.nx-col-vis-item span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── Column Resize Handle ─────────────────────────────────────── */
 .nx-col-resize-handle {
   position: absolute;
