@@ -649,6 +649,7 @@ model Category {
   tenantId  String   @map("tenant_id")      // RLS
   companyId String   @map("company_id")
   accountId String?  @map("account_id")    // ربط بجدول الحسابات — للفئات المُظهرة في P&L
+  code      String?  @map("code")          // كود تحليلي: أب مثل PUR-001، فرع مثل P1-1 أو E3-2
   nameAr    String   @map("name_ar")
   nameEn    String?  @map("name_en")
   parentId  String?  @map("parent_id")
@@ -666,6 +667,7 @@ model Category {
   suppliers    Supplier[]
   expenseLines ExpenseLine[]
 
+  @@unique([companyId, code])
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, parentId])

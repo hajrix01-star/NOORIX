@@ -21,6 +21,26 @@ const TYPE_BADGE_COLOR = {
   sale: 'green',
 };
 
+/** عرض الكود التحليلي مع لون يختلف حسب المستوى */
+function CodeBadge({ row }) {
+  const displayCode = row.code || row.account?.code || null;
+  if (!displayCode) return <span className="text-noorix-muted text-[11px]">—</span>;
+
+  const isParent = row._level === 0;
+  return (
+    <span
+      className={[
+        'inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold leading-none',
+        isParent
+          ? 'bg-blue-50 text-noorix-blue border border-blue-200'
+          : 'bg-amber-50 text-amber-700 border border-amber-200',
+      ].join(' ')}
+    >
+      {displayCode}
+    </span>
+  );
+}
+
 export const CategoriesManager = memo(function CategoriesManager({ companyId, titleKey = 'categoriesTab' }) {
   const { t, lang } = useTranslation();
   const [showForm, setShowForm] = useState(false);
@@ -50,7 +70,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
           ...child,
           _level: 1,
           _parentName: cat.nameAr,
-          _parentCode: cat.account?.code || '',
+          _parentCode: cat.code || cat.account?.code || '',
         });
       }
     }
@@ -106,29 +126,44 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   const columns = useMemo(() => [
     { key: 'nameAr', label: t('nameAr'), align: 'right', render: (v, row) => (
       <span
-        className="block text-right"
-        style={{
-          fontWeight: row._level === 0 ? 700 : 500,
-          paddingRight: row._level === 1 ? 32 : 0,
-        }}
+        className={[
+          'flex items-center gap-1 text-right',
+          row._level === 0
+            ? 'font-bold text-noorix-text'
+            : 'font-medium text-noorix-muted',
+        ].join(' ')}
+        style={{ paddingRight: row._level === 1 ? 28 : 0 }}
       >
-        {row._level === 1 ? '↳ ' : ''}{(row.icon || '') + ' '}{v || '—'}
+        {row._level === 1 && (
+          <span className="text-noorix-muted text-[11px] shrink-0">↳</span>
+        )}
+        {row.icon ? <span>{row.icon}</span> : null}
+        <span>{v || '—'}</span>
       </span>
     ) },
-    { key: 'accountCode', label: codeColumnLabel, render: (_, row) => (
-      <span className="text-[12px] font-semibold text-noorix-muted">
-        {row.account?.code ? `[${row.account.code}]` : '—'}
+    { key: 'code', label: codeColumnLabel, render: (_, row) => <CodeBadge row={row} /> },
+    { key: 'nameEn', label: t('nameEnCol'), render: (v, row) => (
+      <span className={row._level === 0 ? 'text-[13px] text-noorix-muted' : 'text-[12px] text-noorix-muted opacity-70'}>
+        {v || '—'}
       </span>
     ) },
-    { key: 'nameEn', label: t('nameEnCol'), render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
     { key: 'type', label: t('type'), render: (v) => (
       <Badge color={TYPE_BADGE_COLOR[v] ?? 'gray'} size="sm">
         {typeLabels[v] || v}
       </Badge>
     ) },
     { key: 'parent', label: t('parentCategory'), render: (_, row) => (
-      <span className="text-[12px]">
-        {row._parentName ? `${row._parentName}${row._parentCode ? ` [${row._parentCode}]` : ''}` : '—'}
+      <span className="text-[12px] text-noorix-muted">
+        {row._parentName
+          ? <>
+              {row._parentName}
+              {row._parentCode && (
+                <span className="ms-1 font-mono text-[11px] text-noorix-blue opacity-70">
+                  [{row._parentCode}]
+                </span>
+              )}
+            </>
+          : '—'}
       </span>
     ) },
     { key: 'actions', label: t('actions'), render: (_, row) => (
@@ -193,7 +228,8 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
                 <option value="">— تصنيف رئيسي —</option>
                 {roots.filter((c) => c.id !== editing?.id).map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.icon || ''} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}{c.account?.code ? ` [${c.account.code}]` : ''}
+                    {c.icon || ''} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}
+                    {(c.code || c.account?.code) ? ` [${c.code || c.account.code}]` : ''}
                   </option>
                 ))}
               </Input>

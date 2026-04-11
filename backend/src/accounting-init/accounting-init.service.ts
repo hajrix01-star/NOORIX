@@ -84,50 +84,51 @@ const MASTER_CATEGORIES: MasterCategorySeed[] = [
   { accountCode: 'REV-001', nameAr: 'المبيعات', type: 'sale' },
 ];
 
-/** فئات فرعية مقترحة — تحت كل فرع رئيسي (مقترحة ومتداولة) */
+/** فئات فرعية مقترحة — تحت كل فرع رئيسي */
 interface SubCategorySeed {
   parentAccountCode: string;
   nameAr: string;
+  code: string;       // كود تحليلي: P1-1، E3-2 ...
   sortOrder?: number;
 }
 const MASTER_SUBCATEGORIES: SubCategorySeed[] = [
-  // تحت PUR-001 — مواد غذائية
-  { parentAccountCode: 'PUR-001', nameAr: 'لحوم',              sortOrder: 0 },
-  { parentAccountCode: 'PUR-001', nameAr: 'دجاج',              sortOrder: 1 },
-  { parentAccountCode: 'PUR-001', nameAr: 'خضار وفواكه',       sortOrder: 2 },
-  { parentAccountCode: 'PUR-001', nameAr: 'بضاعة تموينية',     sortOrder: 3 },
-  { parentAccountCode: 'PUR-001', nameAr: 'خامات',             sortOrder: 4 },
-  { parentAccountCode: 'PUR-001', nameAr: 'مواد غذائية أخرى', sortOrder: 5 },
-  // تحت PUR-002 — مشروبات
-  { parentAccountCode: 'PUR-002', nameAr: 'غازيات',            sortOrder: 0 },
-  { parentAccountCode: 'PUR-002', nameAr: 'مياه',              sortOrder: 1 },
-  { parentAccountCode: 'PUR-002', nameAr: 'عصائر',             sortOrder: 2 },
-  // تحت PUR-003 — تعبئة وتغليف
-  { parentAccountCode: 'PUR-003', nameAr: 'بلاستيكات',         sortOrder: 0 },
-  { parentAccountCode: 'PUR-003', nameAr: 'علب وأكواب',        sortOrder: 1 },
-  { parentAccountCode: 'PUR-003', nameAr: 'أكياس',             sortOrder: 2 },
-  // تحت PUR-004 — مستلزمات تشغيل مطبخ
-  { parentAccountCode: 'PUR-004', nameAr: 'فحم',               sortOrder: 0 },
-  { parentAccountCode: 'PUR-004', nameAr: 'غاز طبخ',           sortOrder: 1 },
-  { parentAccountCode: 'PUR-004', nameAr: 'مواد تشغيلية',      sortOrder: 2 },
-  { parentAccountCode: 'PUR-004', nameAr: 'مواد تنظيف مطبخ',  sortOrder: 3 },
-  // تحت إيجار ومرافق
-  { parentAccountCode: 'EXP-003', nameAr: 'إيجارات', sortOrder: 0 },
-  { parentAccountCode: 'EXP-003', nameAr: 'كهرباء', sortOrder: 1 },
-  { parentAccountCode: 'EXP-003', nameAr: 'اتصالات', sortOrder: 2 },
-  { parentAccountCode: 'EXP-003', nameAr: 'ماء', sortOrder: 3 },
-  { parentAccountCode: 'EXP-003', nameAr: 'غاز', sortOrder: 4 },
-  // تحت صيانة وتشغيل
-  { parentAccountCode: 'EXP-005', nameAr: 'صيانة آلات', sortOrder: 0 },
-  { parentAccountCode: 'EXP-005', nameAr: 'قطع غيار', sortOrder: 1 },
-  // تحت رسوم حكومية وإقامات
-  { parentAccountCode: 'EXP-002', nameAr: 'رخصة تجارية', sortOrder: 0 },
-  { parentAccountCode: 'EXP-002', nameAr: 'رخصة بلدية', sortOrder: 1 },
-  { parentAccountCode: 'EXP-002', nameAr: 'دفاع مدني', sortOrder: 2 },
-  { parentAccountCode: 'EXP-002', nameAr: 'إقامات وجوازات', sortOrder: 3 },
-  { parentAccountCode: 'EXP-002', nameAr: 'زيارات', sortOrder: 4 },
-  { parentAccountCode: 'EXP-002', nameAr: 'غرامات', sortOrder: 5 },
-  { parentAccountCode: 'EXP-002', nameAr: 'ضرائب ورسوم أخرى', sortOrder: 6 },
+  // تحت PUR-001 — مواد غذائية  (بادئة P1)
+  { parentAccountCode: 'PUR-001', code: 'P1-1', nameAr: 'لحوم',              sortOrder: 0 },
+  { parentAccountCode: 'PUR-001', code: 'P1-2', nameAr: 'دجاج',              sortOrder: 1 },
+  { parentAccountCode: 'PUR-001', code: 'P1-3', nameAr: 'خضار وفواكه',       sortOrder: 2 },
+  { parentAccountCode: 'PUR-001', code: 'P1-4', nameAr: 'بضاعة تموينية',     sortOrder: 3 },
+  { parentAccountCode: 'PUR-001', code: 'P1-5', nameAr: 'خامات',             sortOrder: 4 },
+  { parentAccountCode: 'PUR-001', code: 'P1-6', nameAr: 'مواد غذائية أخرى', sortOrder: 5 },
+  // تحت PUR-002 — مشروبات  (بادئة P2)
+  { parentAccountCode: 'PUR-002', code: 'P2-1', nameAr: 'غازيات',            sortOrder: 0 },
+  { parentAccountCode: 'PUR-002', code: 'P2-2', nameAr: 'مياه',              sortOrder: 1 },
+  { parentAccountCode: 'PUR-002', code: 'P2-3', nameAr: 'عصائر',             sortOrder: 2 },
+  // تحت PUR-003 — تعبئة وتغليف  (بادئة P3)
+  { parentAccountCode: 'PUR-003', code: 'P3-1', nameAr: 'بلاستيكات',         sortOrder: 0 },
+  { parentAccountCode: 'PUR-003', code: 'P3-2', nameAr: 'علب وأكواب',        sortOrder: 1 },
+  { parentAccountCode: 'PUR-003', code: 'P3-3', nameAr: 'أكياس',             sortOrder: 2 },
+  // تحت PUR-004 — مستلزمات تشغيل مطبخ  (بادئة P4)
+  { parentAccountCode: 'PUR-004', code: 'P4-1', nameAr: 'فحم',               sortOrder: 0 },
+  { parentAccountCode: 'PUR-004', code: 'P4-2', nameAr: 'غاز طبخ',           sortOrder: 1 },
+  { parentAccountCode: 'PUR-004', code: 'P4-3', nameAr: 'مواد تشغيلية',      sortOrder: 2 },
+  { parentAccountCode: 'PUR-004', code: 'P4-4', nameAr: 'مواد تنظيف مطبخ',  sortOrder: 3 },
+  // تحت EXP-003 — إيجار ومرافق  (بادئة E3)
+  { parentAccountCode: 'EXP-003', code: 'E3-1', nameAr: 'إيجارات',           sortOrder: 0 },
+  { parentAccountCode: 'EXP-003', code: 'E3-2', nameAr: 'كهرباء',            sortOrder: 1 },
+  { parentAccountCode: 'EXP-003', code: 'E3-3', nameAr: 'اتصالات',           sortOrder: 2 },
+  { parentAccountCode: 'EXP-003', code: 'E3-4', nameAr: 'ماء',               sortOrder: 3 },
+  { parentAccountCode: 'EXP-003', code: 'E3-5', nameAr: 'غاز',               sortOrder: 4 },
+  // تحت EXP-005 — صيانة وتشغيل  (بادئة E5)
+  { parentAccountCode: 'EXP-005', code: 'E5-1', nameAr: 'صيانة آلات',        sortOrder: 0 },
+  { parentAccountCode: 'EXP-005', code: 'E5-2', nameAr: 'قطع غيار',          sortOrder: 1 },
+  // تحت EXP-002 — رسوم حكومية وإقامات  (بادئة E2)
+  { parentAccountCode: 'EXP-002', code: 'E2-1', nameAr: 'رخصة تجارية',       sortOrder: 0 },
+  { parentAccountCode: 'EXP-002', code: 'E2-2', nameAr: 'رخصة بلدية',        sortOrder: 1 },
+  { parentAccountCode: 'EXP-002', code: 'E2-3', nameAr: 'دفاع مدني',         sortOrder: 2 },
+  { parentAccountCode: 'EXP-002', code: 'E2-4', nameAr: 'إقامات وجوازات',    sortOrder: 3 },
+  { parentAccountCode: 'EXP-002', code: 'E2-5', nameAr: 'زيارات',            sortOrder: 4 },
+  { parentAccountCode: 'EXP-002', code: 'E2-6', nameAr: 'غرامات',            sortOrder: 5 },
+  { parentAccountCode: 'EXP-002', code: 'E2-7', nameAr: 'ضرائب ورسوم أخرى', sortOrder: 6 },
   // تحت مصروفات مالية
   { parentAccountCode: 'EXP-007', nameAr: 'رسوم تحويل', sortOrder: 0 },
   { parentAccountCode: 'EXP-007', nameAr: 'رسوم سحب', sortOrder: 1 },
@@ -246,6 +247,7 @@ export class AccountingInitService {
           tenantId,
           companyId,
           accountId: accountId ?? null,
+          code:      cat.accountCode,   // الفئة الرئيسية تحمل كود الحساب كمرجع
           nameAr: cat.nameAr,
           nameEn: acc?.nameEn ?? null,
           type: cat.type,
@@ -271,6 +273,7 @@ export class AccountingInitService {
           companyId,
           parentId,
           accountId: parentAccountId,
+          code:      sub.code,          // الكود التحليلي مثل P1-1 أو E3-2
           nameAr: sub.nameAr,
           nameEn: sub.nameAr,
           type: parentCat.type,

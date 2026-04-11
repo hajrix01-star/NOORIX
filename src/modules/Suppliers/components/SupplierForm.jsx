@@ -85,7 +85,8 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
             <option value="">{t('noCategory')}</option>
             {filteredCategories.map((c) => {
               const icon = c.icon || c.account?.icon || '';
-              const code = c.account?.code ? ` [${c.account.code}]` : '';
+              const displayCode = c.code || c.account?.code || '';
+              const code = displayCode ? ` [${displayCode}]` : '';
               return (
                 <option key={c.id} value={c.id}>
                   {icon} {c.parentId ? `↳ ${catLabel(c)}` : catLabel(c)}{code}
