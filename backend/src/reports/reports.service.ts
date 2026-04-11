@@ -820,8 +820,8 @@ export class ReportsService {
         { categoryId: { in: [...catIds] } },
         { expenseLine: { categoryId: { in: [...catIds] } } },
       ];
-      // المشتريات: جزء من المبلغ يُجمَّع تحت فئة المورد (مثل لوحة «فئات الموردين») مع category_id=جذر
-      if (groupKey === 'purchases') {
+      // مشتريات ومصاريف: مطابقة تفاصيل التقرير مع تجميع فئة المورد
+      if (groupKey === 'purchases' || groupKey === 'expenses') {
         categoryOr.push({ supplier: { supplierCategoryId: { in: [...catIds] } } });
       }
       where = {
@@ -1095,6 +1095,18 @@ export class ReportsService {
     }
 
     if (invoice.expenseLine) {
+      const lineCatId = invoice.expenseLine.categoryId;
+      const supId = invoice.supplier?.supplierCategoryId ?? null;
+      /**
+       * المصاريف: بند المصروف يحدد category للبند، لكن فئة المورد قد تكون فرعاً تحت نفس الفرع —
+       * نفس منطق المشتريات مع لوحة «فئات الموردين».
+       */
+      if (groupKey === 'expenses' && supId && lineCatId && supId !== lineCatId) {
+        const supCat = categories.get(supId);
+        if (supCat && this.categoryIsDescendantOf(supId, lineCatId, categories)) {
+          return this.resolveCategoryMeta(supCat, categories);
+        }
+      }
       const category = categories.get(invoice.expenseLine.categoryId);
       const parent = category?.parentId ? categories.get(category.parentId) : null;
       return {
@@ -1110,12 +1122,12 @@ export class ReportsService {
     }
 
     /**
-     * المشتريات: لوحة التحكم تُجمّع حسب فئة المورد (supplierCategoryId)؛ التقرير كان يعتمد فقط على
-     * category_id على الفاتورة — فيُجمَع كل شيء على الجذر (مثلاً PUR-001) ولا تظهر الفروع.
-     * - إن وُجدت فئة مورد فرعية تحت فئة سطر الفاتورة → نستخدم الفرع (يتوافق مع «فئات الموردين»).
-     * - إن لم يُضبط category_id على الفاتورة → نستخدم فئة المورد إن وُجدت.
+     * المشتريات والمصاريف (بدون بند مصروف): لوحة التحكم تُجمّع حسب فئة المورد؛ التقرير كان يعتمد
+     * على category_id على الفاتورة فقط — فيُجمَع على الجذر ولا تظهر الفروع.
+     * - فئة مورد فرعية تحت فئة سطر الفاتورة → نستخدم الفرع.
+     * - لا category_id على الفاتورة → نستخدم فئة المورد إن وُجدت.
      */
-    if (groupKey === 'purchases' && invoice.supplier?.supplierCategoryId != null) {
+    if ((groupKey === 'purchases' || groupKey === 'expenses') && invoice.supplier?.supplierCategoryId != null) {
       const invId = invoice.categoryId ?? null;
       const supId = invoice.supplier.supplierCategoryId;
       const supCat = categories.get(supId);
