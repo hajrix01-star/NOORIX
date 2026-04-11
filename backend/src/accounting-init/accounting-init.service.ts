@@ -129,19 +129,19 @@ const MASTER_SUBCATEGORIES: SubCategorySeed[] = [
   { parentAccountCode: 'EXP-002', code: 'E2-5', nameAr: 'زيارات',            sortOrder: 4 },
   { parentAccountCode: 'EXP-002', code: 'E2-6', nameAr: 'غرامات',            sortOrder: 5 },
   { parentAccountCode: 'EXP-002', code: 'E2-7', nameAr: 'ضرائب ورسوم أخرى', sortOrder: 6 },
-  // تحت مصروفات مالية
-  { parentAccountCode: 'EXP-007', nameAr: 'رسوم تحويل', sortOrder: 0 },
-  { parentAccountCode: 'EXP-007', nameAr: 'رسوم سحب', sortOrder: 1 },
-  { parentAccountCode: 'EXP-007', nameAr: 'رسوم إدارة حساب', sortOrder: 2 },
-  { parentAccountCode: 'EXP-007', nameAr: 'فوائد ورسوم قروض', sortOrder: 3 },
-  { parentAccountCode: 'EXP-007', nameAr: 'رسوم أخرى', sortOrder: 4 },
-  // تحت أصول ومعدات
-  { parentAccountCode: 'EXP-008', nameAr: 'أثاث', sortOrder: 0 },
-  { parentAccountCode: 'EXP-008', nameAr: 'معدات مكتبية', sortOrder: 1 },
-  { parentAccountCode: 'EXP-008', nameAr: 'أجهزة وإلكترونيات', sortOrder: 2 },
-  { parentAccountCode: 'EXP-008', nameAr: 'مركبات', sortOrder: 3 },
-  { parentAccountCode: 'EXP-008', nameAr: 'آلات ومعدات', sortOrder: 4 },
-  { parentAccountCode: 'EXP-008', nameAr: 'أصول أخرى', sortOrder: 5 },
+  // تحت EXP-007 — مصروفات مالية  (بادئة E7)
+  { parentAccountCode: 'EXP-007', code: 'E7-1', nameAr: 'رسوم تحويل',        sortOrder: 0 },
+  { parentAccountCode: 'EXP-007', code: 'E7-2', nameAr: 'رسوم سحب',          sortOrder: 1 },
+  { parentAccountCode: 'EXP-007', code: 'E7-3', nameAr: 'رسوم إدارة حساب',   sortOrder: 2 },
+  { parentAccountCode: 'EXP-007', code: 'E7-4', nameAr: 'فوائد ورسوم قروض',  sortOrder: 3 },
+  { parentAccountCode: 'EXP-007', code: 'E7-5', nameAr: 'رسوم أخرى',         sortOrder: 4 },
+  // تحت EXP-008 — أصول ومعدات  (بادئة E8)
+  { parentAccountCode: 'EXP-008', code: 'E8-1', nameAr: 'أثاث',               sortOrder: 0 },
+  { parentAccountCode: 'EXP-008', code: 'E8-2', nameAr: 'معدات مكتبية',       sortOrder: 1 },
+  { parentAccountCode: 'EXP-008', code: 'E8-3', nameAr: 'أجهزة وإلكترونيات', sortOrder: 2 },
+  { parentAccountCode: 'EXP-008', code: 'E8-4', nameAr: 'مركبات',             sortOrder: 3 },
+  { parentAccountCode: 'EXP-008', code: 'E8-5', nameAr: 'آلات ومعدات',        sortOrder: 4 },
+  { parentAccountCode: 'EXP-008', code: 'E8-6', nameAr: 'أصول أخرى',          sortOrder: 5 },
 ];
 
 /** موردين خدمات افتراضيين — يُنشَؤون مع كل شركة جديدة */
