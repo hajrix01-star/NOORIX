@@ -1,10 +1,11 @@
 /**
  * SmartTable — مكون الجداول المركزي لنظام نوركس
- * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards
+ * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards | Column Resize
  */
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useRef, useState } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
+import { useUiDir } from '../../hooks/useUiDir';
 import Button from '../../ui/Button';
 import Input  from '../../ui/Input';
 
@@ -66,8 +67,54 @@ const SmartTable = memo(function SmartTable({
   getRowStyle,
   renderMobileCard,
   stickyActionColumn = true,
+  /** معرف فريد للجدول — لما يُمرَّر يُفعّل السحب لتغيير عرض الأعمدة + الحفظ في localStorage */
+  tableId,
 }) {
   const { t } = useTranslation();
+  const dir = useUiDir();
+
+  // ── Column Resize ──────────────────────────────────────────────
+  const resizingRef = useRef(null);
+  const [colWidths, setColWidths] = useState(() => {
+    if (!tableId) return {};
+    try {
+      const saved = localStorage.getItem(`nx-col-widths:${tableId}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+
+  const handleResizeStart = useCallback((e, colKey, startW) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const dirMult = dir === 'rtl' ? -1 : 1;
+    resizingRef.current = { colKey, startX: e.clientX, startW };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev) => {
+      if (!resizingRef.current) return;
+      const delta = (ev.clientX - resizingRef.current.startX) * dirMult;
+      const newW = Math.max(40, resizingRef.current.startW + delta);
+      setColWidths((prev) => ({ ...prev, [colKey]: Math.round(newW) }));
+    };
+
+    const onUp = () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      if (tableId) {
+        setColWidths((prev) => {
+          try { localStorage.setItem(`nx-col-widths:${tableId}`, JSON.stringify(prev)); } catch { /* noop */ }
+          return prev;
+        });
+      }
+      resizingRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [dir, tableId]);
 
   const isNarrow = useIsNarrow700();
 
@@ -182,18 +229,24 @@ const SmartTable = memo(function SmartTable({
                   // noorix-cell-truncate adds white-space:nowrap which expands cells in auto layout
                   // only apply it in fixed layout (where width is enforced) or when col.maxWidth bounds it
                   const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
+                  const resizableCol = tableId && col.key !== 'actions';
+                  const effectiveWidth = colWidths[col.key] != null
+                    ? colWidths[col.key]
+                    : (col.width ?? (shrink ? '1%' : undefined));
                   return (
                     <th
                       key={col.key}
                       className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-th-shrink' : ''}${shouldTruncate ? ' noorix-cell-truncate' : ''}`}
                       style={{
                         padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: align,
-                        width: col.width ?? (shrink ? '1%' : undefined),
+                        position: resizableCol ? 'relative' : undefined,
+                        width: effectiveWidth,
                         minWidth: layout === 'fixed' ? undefined : col.minWidth,
-                        maxWidth: col.maxWidth,
+                        maxWidth: resizableCol ? undefined : col.maxWidth,
                         cursor: col.sortable ? 'pointer' : 'default',
                         userSelect: col.sortable ? 'none' : 'auto',
                         whiteSpace: shrink || col.key === 'actions' ? 'nowrap' : 'normal',
+                        overflow: resizableCol ? 'hidden' : undefined,
                       }}
                       onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
                     >
@@ -202,6 +255,15 @@ const SmartTable = memo(function SmartTable({
                         <span className="text-[13px] opacity-30 ms-1" style={{ opacity: isSorted ? 1 : 0.3 }}>
                           {isSorted ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                         </span>
+                      )}
+                      {resizableCol && (
+                        <div
+                          className="nx-col-resize-handle"
+                          onMouseDown={(e) => {
+                            const th = e.currentTarget.parentElement;
+                            handleResizeStart(e, col.key, th.offsetWidth);
+                          }}
+                        />
                       )}
                     </th>
                   );
@@ -236,6 +298,7 @@ const SmartTable = memo(function SmartTable({
                     const shrink = col.shrink === true;
                     const actionSticky = col.key === 'actions' && stickyActionColumn;
                     const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
+                    const tdEffectiveWidth = colWidths[col.key] != null ? colWidths[col.key] : col.width;
                     return (
                       <td
                         key={col.key}
@@ -245,7 +308,7 @@ const SmartTable = memo(function SmartTable({
                           fontSize: cellFs,
                           textAlign: align,
                           fontFamily: family,
-                          width: col.width,
+                          width: tdEffectiveWidth,
                           minWidth: layout === 'fixed' ? undefined : col.minWidth,
                           maxWidth: col.maxWidth,
                           whiteSpace: shrink ? 'nowrap' : undefined,

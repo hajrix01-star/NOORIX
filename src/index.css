@@ -1466,6 +1466,26 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-table .noorix-td-shrink {
   white-space: nowrap;
 }
+
+/* ── Column Resize Handle ─────────────────────────────────────── */
+.nx-col-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-end: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 2;
+  border-inline-end: 2px solid transparent;
+  transition: border-color 0.15s;
+}
+.nx-col-resize-handle:hover {
+  border-inline-end-color: var(--noorix-accent-blue);
+}
+/* أثناء السحب: خط أزرق على كامل عمود العنوان */
+.noorix-table th:has(.nx-col-resize-handle:active) {
+  border-inline-end: 2px solid var(--noorix-accent-blue);
+}
 /* صف مشطوب — فاتورة ملغاة */
 .noorix-table .noorix-row-cancelled,
 .noorix-table .noorix-row-cancelled td {
