@@ -32,6 +32,15 @@ function trackSupplierUsage(supplierId) {
   writeJsonStorage(SUPPLIER_USAGE_KEY, usage);
 }
 
+function matchesQuery(s, normalized) {
+  if (!normalized) return true;
+  return (
+    String(s.nameAr || '').toLowerCase().includes(normalized) ||
+    String(s.nameEn || '').toLowerCase().includes(normalized) ||
+    String(s.code   || '').toLowerCase().includes(normalized)
+  );
+}
+
 export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds = [], placeholder = '—' }) {
   const { lang } = useTranslation();
   const anchorRef = useRef(null);
@@ -39,7 +48,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [usageVersion, setUsageVersion] = useState(0);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 280, maxHeight: 260 });
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 280, maxHeight: 320 });
 
   const selectedSupplier = useMemo(
     () => suppliers.find((s) => s.id === value) || null,
@@ -52,44 +61,52 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
     }
   }, [selectedSupplier, open, lang]);
 
-  const filteredSuppliers = useMemo(() => {
+  /* ── ثلاثة أقسام: مفضلة → أكثر استخداماً → باقي ── */
+  const { favoritesSection, mostUsedSection, regularSection } = useMemo(() => {
     const usage = readSupplierUsage();
     const normalized = query.trim().toLowerCase();
     const bookmarked = new Set(bookmarkedIds);
-    const list = [...suppliers].sort((a, b) => {
-      const aBookmarked = bookmarked.has(a.id) ? 1 : 0;
-      const bBookmarked = bookmarked.has(b.id) ? 1 : 0;
-      if (aBookmarked !== bBookmarked) return bBookmarked - aBookmarked;
-      const aUsage = Number(usage[a.id] || 0);
-      const bUsage = Number(usage[b.id] || 0);
-      if (aUsage !== bUsage) return bUsage - aUsage;
-      return supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), lang === 'en' ? 'en' : 'ar');
-    });
-    if (!normalized) return list.slice(0, 40);
-    return list.filter((s) => {
-      const nameAr = String(s.nameAr || '').toLowerCase();
-      const nameEn = String(s.nameEn || '').toLowerCase();
-      const code = String(s.code || '').toLowerCase();
-      return nameAr.includes(normalized) || nameEn.includes(normalized) || code.includes(normalized);
-    }).slice(0, 40);
-  }, [bookmarkedIds, query, suppliers, usageVersion]);
+    const localeOpts = lang === 'en' ? 'en' : 'ar';
 
-  const topSuppliers = useMemo(
-    () => (query.trim() ? [] : filteredSuppliers.filter((s) => Number(readSupplierUsage()[s.id] || 0) > 0).slice(0, 6)),
-    [filteredSuppliers, query, usageVersion],
-  );
+    const favorites = [];
+    const mostUsed  = [];
+    const regular   = [];
 
-  const remainingSuppliers = useMemo(() => {
-    if (!topSuppliers.length) return filteredSuppliers;
-    const topIds = new Set(topSuppliers.map((s) => s.id));
-    return filteredSuppliers.filter((s) => !topIds.has(s.id));
-  }, [filteredSuppliers, topSuppliers]);
+    for (const s of suppliers) {
+      if (!matchesQuery(s, normalized)) continue;
+      if (bookmarked.has(s.id)) {
+        favorites.push(s);
+      } else if (Number(usage[s.id] || 0) > 0) {
+        mostUsed.push(s);
+      } else {
+        regular.push(s);
+      }
+    }
+
+    favorites.sort((a, b) =>
+      supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), localeOpts),
+    );
+    mostUsed.sort((a, b) =>
+      Number(usage[b.id] || 0) - Number(usage[a.id] || 0),
+    );
+    regular.sort((a, b) =>
+      supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), localeOpts),
+    );
+
+    return {
+      favoritesSection: favorites,
+      mostUsedSection:  mostUsed.slice(0, 10),
+      regularSection:   regular.slice(0, 30),
+    };
+  }, [bookmarkedIds, query, suppliers, lang, usageVersion]);
+
+  const totalVisible = favoritesSection.length + mostUsedSection.length + regularSection.length;
 
   const updateMenuPosition = useCallback(() => {
     const el = anchorRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const maxH = 260;
+    const maxH = 340;
     const gap = 4;
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
@@ -125,7 +142,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onScroll);
     };
-  }, [open, updateMenuPosition, query, filteredSuppliers.length, usageVersion]);
+  }, [open, updateMenuPosition, query, totalVisible, usageVersion]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -139,7 +156,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
 
-  const showMenu = open && (filteredSuppliers.length > 0 || query.trim() || suppliers.length > 0);
+  const showMenu = open && (totalVisible > 0 || query.trim() || suppliers.length > 0);
 
   function selectSupplier(supplier) {
     onChange(supplier.id);
@@ -166,59 +183,84 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
             boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
           }}
         >
-          {topSuppliers.length > 0 && (
-            <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-muted bg-noorix-bg border-b border-noorix-border">
-              الموردون الأكثر طلباً
-            </div>
+          {/* ── قسم المفضلة ── */}
+          {favoritesSection.length > 0 && (
+            <>
+              <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-amber bg-noorix-bg border-b border-noorix-border">
+                ★ المفضلة
+              </div>
+              {favoritesSection.map((s) => (
+                <Button
+                  key={`fav-${s.id}`}
+                  role="option"
+                  aria-selected={s.id === value}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectSupplier(s)}
+                  className="nx-supplier-option"
+                  style={s.id === value ? { background: 'var(--noorix-blue-8)' } : undefined}
+                >
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                    {supplierLabel(s, lang)}
+                  </span>
+                  <span className="shrink-0 text-noorix-amber text-[13px]">★</span>
+                </Button>
+              ))}
+            </>
           )}
-          {topSuppliers.map((s) => {
-            const isSelected = s.id === value;
-            const isBookmarked = bookmarkedIds.includes(s.id);
-            return (
-              <Button
-                key={`top-${s.id}`}
-                role="option"
-                aria-selected={isSelected}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => selectSupplier(s)}
-                className="nx-supplier-option"
-                style={isSelected ? { background: 'var(--noorix-blue-8)' } : undefined}
-              >
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                  {supplierLabel(s, lang)}
-                </span>
-                <span className="inline-flex items-center gap-1.5 shrink-0">
-                  {isBookmarked ? <span className="text-noorix-amber">★</span> : null}
-                  <span className="text-[11px] text-noorix-blue">الأكثر</span>
-                </span>
-              </Button>
-            );
-          })}
-          {topSuppliers.length > 0 && remainingSuppliers.length > 0 && (
-            <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-muted bg-noorix-bg border-b border-noorix-border">
-              جميع الموردين
-            </div>
+
+          {/* ── قسم الأكثر استخداماً ── */}
+          {mostUsedSection.length > 0 && (
+            <>
+              <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-muted bg-noorix-bg border-b border-noorix-border">
+                الأكثر استخداماً
+              </div>
+              {mostUsedSection.map((s) => (
+                <Button
+                  key={`used-${s.id}`}
+                  role="option"
+                  aria-selected={s.id === value}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectSupplier(s)}
+                  className="nx-supplier-option"
+                  style={s.id === value ? { background: 'var(--noorix-blue-8)' } : undefined}
+                >
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                    {supplierLabel(s, lang)}
+                  </span>
+                  <span className="text-[11px] text-noorix-blue shrink-0">الأكثر</span>
+                </Button>
+              ))}
+            </>
           )}
-          {filteredSuppliers.length > 0 ? remainingSuppliers.map((s) => {
-            const isSelected = s.id === value;
-            const isBookmarked = bookmarkedIds.includes(s.id);
-            return (
-              <Button
-                key={s.id}
-                role="option"
-                aria-selected={isSelected}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => selectSupplier(s)}
-                className="nx-supplier-option"
-                style={isSelected ? { background: 'var(--noorix-blue-8)' } : undefined}
-              >
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                  {supplierLabel(s, lang)}
-                </span>
-                {isBookmarked ? <span className="shrink-0 text-noorix-amber">★</span> : null}
-              </Button>
-            );
-          }) : (
+
+          {/* ── قسم باقي الموردين ── */}
+          {regularSection.length > 0 && (
+            <>
+              {(favoritesSection.length > 0 || mostUsedSection.length > 0) && (
+                <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-muted bg-noorix-bg border-b border-noorix-border">
+                  جميع الموردين
+                </div>
+              )}
+              {regularSection.map((s) => (
+                <Button
+                  key={s.id}
+                  role="option"
+                  aria-selected={s.id === value}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectSupplier(s)}
+                  className="nx-supplier-option"
+                  style={s.id === value ? { background: 'var(--noorix-blue-8)' } : undefined}
+                >
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                    {supplierLabel(s, lang)}
+                  </span>
+                </Button>
+              ))}
+            </>
+          )}
+
+          {/* ── لا نتائج ── */}
+          {totalVisible === 0 && (
             <div className="py-[10px] px-3 text-[13px] text-noorix-muted">
               {suppliers.length ? 'لا يوجد مورد مطابق' : 'لا يوجد موردون متاحون حالياً'}
             </div>
