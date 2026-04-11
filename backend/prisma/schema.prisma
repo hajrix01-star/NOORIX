@@ -852,6 +852,7 @@ model Invoice {
   @@index([companyId, employeeId])
   @@index([companyId, expenseLineId])
   @@index([companyId, categoryId])
+  @@index([companyId, batchId])
   @@map("invoices")
 }
 
