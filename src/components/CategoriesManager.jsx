@@ -27,6 +27,7 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
   const [editing, setEditing] = useState(null);
   const { showToast } = useToast();
   const [form, setForm] = useState({ nameAr: '', nameEn: '', type: 'purchase', icon: '', parentId: '' });
+  const codeColumnLabel = lang === 'en' ? 'Code' : 'الكود';
 
   const { categories, isLoading, create, update, remove } = useCategories(companyId);
   const roots = useMemo(() => categories.filter((c) => !c.parentId), [categories]);
@@ -45,7 +46,12 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
     for (const cat of categories) {
       list.push({ ...cat, _level: 0 });
       for (const child of cat.children || []) {
-        list.push({ ...child, _level: 1, _parentName: cat.nameAr });
+        list.push({
+          ...child,
+          _level: 1,
+          _parentName: cat.nameAr,
+          _parentCode: cat.account?.code || '',
+        });
       }
     }
     return list;
@@ -109,20 +115,29 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
         {row._level === 1 ? '↳ ' : ''}{(row.icon || '') + ' '}{v || '—'}
       </span>
     ) },
+    { key: 'accountCode', label: codeColumnLabel, render: (_, row) => (
+      <span className="text-[12px] font-semibold text-noorix-muted">
+        {row.account?.code ? `[${row.account.code}]` : '—'}
+      </span>
+    ) },
     { key: 'nameEn', label: t('nameEnCol'), render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
     { key: 'type', label: t('type'), render: (v) => (
       <Badge color={TYPE_BADGE_COLOR[v] ?? 'gray'} size="sm">
         {typeLabels[v] || v}
       </Badge>
     ) },
-    { key: 'parent', label: t('parentCategory'), render: (_, row) => <span className="text-[12px]">{row._parentName || '—'}</span> },
+    { key: 'parent', label: t('parentCategory'), render: (_, row) => (
+      <span className="text-[12px]">
+        {row._parentName ? `${row._parentName}${row._parentCode ? ` [${row._parentCode}]` : ''}` : '—'}
+      </span>
+    ) },
     { key: 'actions', label: t('actions'), render: (_, row) => (
       <span className="inline-flex gap-1.5">
         <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button>
         <Button size="sm" variant="danger" onClick={() => handleDelete(row)}>{t('delete')}</Button>
       </span>
     ) },
-  ], [t, typeLabels]);
+  ], [codeColumnLabel, t, typeLabels]);
 
   if (!companyId) return null;
 
@@ -177,7 +192,9 @@ export const CategoriesManager = memo(function CategoriesManager({ companyId, ti
               >
                 <option value="">— تصنيف رئيسي —</option>
                 {roots.filter((c) => c.id !== editing?.id).map((c) => (
-                  <option key={c.id} value={c.id}>{c.icon || ''} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.icon || ''} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}{c.account?.code ? ` [${c.account.code}]` : ''}
+                  </option>
                 ))}
               </Input>
             </div>
