@@ -29,7 +29,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
   const { showToast } = useToast();
 
   /* ── بيانات ── */
-  const { suppliers, isLoading, create, update, remove } = useSuppliers(companyId, { pageSize: 500, q: debouncedQ || undefined });
+  const { suppliers, isLoading, isError, error, create, update, remove } = useSuppliers(companyId, { pageSize: 500, q: debouncedQ || undefined });
   const { flatCategories } = useCategories(companyId);
 
   /* ── مساعد toast ── */
@@ -147,6 +147,14 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }) {
       {/* ── الجدول ── */}
       {isLoading
         ? <p className="text-noorix-muted text-[13px]">{t('loading')}</p>
+        : isError
+        ? (
+          <div className="rounded-xl border border-noorix-red p-4 text-[13px] text-noorix-red" style={{ background: 'color-mix(in srgb, var(--noorix-accent-red) 8%, transparent)' }}>
+            <strong>تعذّر تحميل الموردين</strong>
+            {error?.message && <p className="m-0 mt-1 text-[12px] opacity-80">{error.message}</p>}
+            <p className="m-0 mt-1 text-[12px] opacity-70">تأكد من اتصالك بالإنترنت وتحديث الصفحة.</p>
+          </div>
+        )
         : (
           <SupplierTable
             suppliers={suppliers}

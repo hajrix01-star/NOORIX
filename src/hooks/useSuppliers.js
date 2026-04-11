@@ -12,7 +12,7 @@ import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, throwIfAp
  * @param {{ pageSize?: number }} [opts]
  */
 export function useSuppliers(companyId, { pageSize = 200, q } = {}) {
-  const { data: raw = [], isLoading } = useQuery({
+  const { data: raw = [], isLoading, isError, error } = useQuery({
     queryKey: ['suppliers', companyId, pageSize, q || ''],
     queryFn: async () => {
       const res = await getSuppliers(companyId, 1, pageSize, q);
@@ -46,6 +46,8 @@ export function useSuppliers(companyId, { pageSize = 200, q } = {}) {
   return {
     suppliers,
     isLoading,
+    isError,
+    error,
     create: createMutation,
     update: updateMutation,
     remove: deleteMutation,

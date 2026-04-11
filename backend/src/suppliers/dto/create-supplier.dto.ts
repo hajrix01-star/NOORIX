@@ -8,7 +8,7 @@ export const createSupplierSchema = z.object({
     .refine(val => !val || /^\d{15}$/.test(val), 'الرقم الضريبي يجب أن يكون 15 رقماً بالضبط')
     .optional().nullable().or(z.literal('')),
   phone: z.string()
-    .refine(val => !val || /^05\d{8}$/.test(val), 'رقم الجوال يجب أن يبدأ بـ 05 ويكون 10 أرقام')
+    .max(30, 'رقم الهاتف طويل جداً')
     .optional().nullable().or(z.literal('')),
   supplierCategoryId: z.string().optional().nullable(),
   // يقبل الصيغتين: مع s وبدون s (توافق frontend)
@@ -17,6 +17,7 @@ export const createSupplierSchema = z.object({
     .transform((v) => (v === 'purchase' ? 'purchases' : v === 'expense' ? 'expenses' : v))
     .optional()
     .default('purchases'),
+  isTaxRegistered: z.boolean().optional().default(true),
 });
 
 export type CreateSupplierDto = z.infer<typeof createSupplierSchema>;

@@ -60,6 +60,7 @@ export class SuppliersService {
         categoryId:         dto.supplierType ?? 'purchases',
         supplierCategoryId: dto.supplierCategoryId ?? null,
         phone:              (dto.phone ?? '').trim() || null,
+        isTaxRegistered:    dto.isTaxRegistered ?? true,
       },
     });
   }
@@ -85,6 +86,7 @@ export class SuppliersService {
     if (dto.phone !== undefined) data.phone = (dto.phone ?? '').trim() || null;
     if (dto.supplierCategoryId !== undefined) data.supplierCategoryId = dto.supplierCategoryId || null;
     if (dto.supplierType !== undefined) data.categoryId = dto.supplierType;
+    if (dto.isTaxRegistered !== undefined) data.isTaxRegistered = dto.isTaxRegistered;
 
     return this.prisma.supplier.update({
       where: { id },

@@ -7,13 +7,14 @@ export const updateSupplierSchema = z.object({
     .refine(val => !val || /^\d{15}$/.test(val), 'الرقم الضريبي يجب أن يكون 15 رقماً بالضبط')
     .optional().nullable().or(z.literal('')),
   phone: z.string()
-    .refine(val => !val || /^05\d{8}$/.test(val), 'رقم الجوال يجب أن يبدأ بـ 05 ويكون 10 أرقام')
+    .max(30, 'رقم الهاتف طويل جداً')
     .optional().nullable().or(z.literal('')),
   supplierCategoryId: z.string().optional().nullable(),
   supplierType: z
     .enum(['purchases', 'expenses', 'purchase', 'expense'])
     .transform((v) => (v === 'purchase' ? 'purchases' : v === 'expense' ? 'expenses' : v))
     .optional(),
+  isTaxRegistered: z.boolean().optional(),
 });
 
 export type UpdateSupplierDto = z.infer<typeof updateSupplierSchema>;
