@@ -321,6 +321,7 @@ export default function PurchasesBatchScreen() {
             totalAmount: parseFloat(r.totalInclusive),
             isTaxable: r.isTaxable !== false,
             invoiceDate: r.invoiceDate,
+            categoryId: r.categoryId || undefined,
             debitAccountId: r.debitAccountId || undefined,
             notes: notes || undefined,
           };

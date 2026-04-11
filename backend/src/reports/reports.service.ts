@@ -67,6 +67,7 @@ type CategoryNode = {
   parentId: string | null;
   sortOrder: number;
   type?: string;
+  accountId?: string | null;
 };
 
 type ExpenseLineNode = {
@@ -507,7 +508,7 @@ export class ReportsService {
       `,
       this.prisma.category.findMany({
         where: { companyId, isActive: true },
-        select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true },
+        select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true, accountId: true },
       }),
       this.prisma.expenseLine.findMany({
         where: { companyId, isActive: true },
@@ -516,6 +517,13 @@ export class ReportsService {
     ]);
 
     const catMap = new Map(categories.map((c) => [c.id, { ...c } as CategoryNode]));
+    // خريطة عكسية: accountId → فئة جذرية — لربط قيود اللدجر بدون category_id بالفئة الأم المناسبة
+    // نقتصر على الفئات الجذرية (parentId = null) لأن الفرعية ترث accountId من أبيها،
+    // فنضمن أن كل accountId يُعيّن للفئة الأب لا لفرع يُكتب عليه عشوائياً
+    const accountToCategory = new Map<string, CategoryNode>();
+    for (const cat of categories) {
+      if (cat.accountId && !cat.parentId) accountToCategory.set(cat.accountId, cat as CategoryNode);
+    }
 
     const entries: Array<{
       groupKey: GroupKey | null;
@@ -565,20 +573,32 @@ export class ReportsService {
             supplier: null,
           };
           const meta = this.resolveItemMeta(pseudoInvoice as unknown as ReportInvoice, groupKey, catMap);
-          entries.push({ groupKey, monthIndex, amount, itemKey: meta.key, labelAr: meta.labelAr, labelEn: meta.labelEn, sortOrder: meta.sortOrder });
+          // إذا لم يُحلَّ الحساب لفئة (fallback = kind:xxx) وكان الحساب مرتبطاً بفئة — استخدمها
+          const finalMeta =
+            meta.key.startsWith('kind:') && accountToCategory.has(row.debit_account_id)
+              ? this.resolveCategoryMeta(accountToCategory.get(row.debit_account_id)!, catMap)
+              : meta;
+          entries.push({ groupKey, monthIndex, amount, itemKey: finalMeta.key, labelAr: finalMeta.labelAr, labelEn: finalMeta.labelEn, sortOrder: finalMeta.sortOrder });
         } else {
-          const sortOrder = isPurchase
-            ? row.debit_code === 'PUR-001' ? 0 : 999
-            : parseInt(row.debit_code.replace(/\D/g, '') || '999', 10);
-          entries.push({
-            groupKey,
-            monthIndex,
-            amount,
-            itemKey: `account:${row.debit_account_id}`,
-            labelAr: row.debit_name_ar,
-            labelEn: row.debit_name_en || row.debit_name_ar,
-            sortOrder,
-          });
+          // قيد بدون فاتورة — ربط الحساب بالفئة مباشرة إن وُجدت
+          const linkedCat = accountToCategory.get(row.debit_account_id);
+          if (linkedCat) {
+            const meta = this.resolveCategoryMeta(linkedCat, catMap);
+            entries.push({ groupKey, monthIndex, amount, itemKey: meta.key, labelAr: meta.labelAr, labelEn: meta.labelEn, sortOrder: meta.sortOrder });
+          } else {
+            const sortOrder = isPurchase
+              ? row.debit_code === 'PUR-001' ? 0 : 999
+              : parseInt(row.debit_code.replace(/\D/g, '') || '999', 10);
+            entries.push({
+              groupKey,
+              monthIndex,
+              amount,
+              itemKey: `account:${row.debit_account_id}`,
+              labelAr: row.debit_name_ar,
+              labelEn: row.debit_name_en || row.debit_name_ar,
+              sortOrder,
+            });
+          }
         }
       }
     }
@@ -1072,6 +1092,19 @@ export class ReportsService {
       labelAr: kindLabel.ar,
       labelEn: kindLabel.en,
       sortOrder: 999999,
+    };
+  }
+
+  /** تحويل فئة مباشرة إلى ItemMeta — لربط قيود اللدجر بالفئة عبر الحساب */
+  private resolveCategoryMeta(cat: CategoryNode, categories: Map<string, CategoryNode>): ItemMeta {
+    const parent = cat.parentId ? categories.get(cat.parentId) : null;
+    return {
+      key: `category:${cat.id}`,
+      labelAr: parent ? `${parent.nameAr} / ${cat.nameAr}` : cat.nameAr,
+      labelEn: parent
+        ? `${parent.nameEn || parent.nameAr} / ${cat.nameEn || cat.nameAr}`
+        : (cat.nameEn || cat.nameAr),
+      sortOrder: (parent?.sortOrder ?? 0) * 1000 + cat.sortOrder,
     };
   }
 
