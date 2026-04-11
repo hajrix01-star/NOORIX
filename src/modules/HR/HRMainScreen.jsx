@@ -7,8 +7,9 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
 import { ScreenShell, ScreenTabs } from '../../ui';
 import { useEmployees } from '../../hooks/useEmployees';
+import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { getResidencies, getLeaves, getInvoices } from '../../services/api';
-import { baseSalaryComponentsDecimal } from './utils/employeeSalaryMath';
+import { totalSalary } from './utils/employeeSalaryMath';
 import HRSummaryCard from './components/HRSummaryCard';
 import StaffListScreen from './StaffListScreen';
 import PayrollTab from './tabs/PayrollTab';
@@ -38,6 +39,17 @@ export default function HRMainScreen() {
   const [activeTab, setActiveTab] = useState('employees');
 
   const { employees, isLoading: empLoading } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: !!companyId });
+  const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
+
+  const allowanceTotals = useMemo(() => {
+    const map = new Map();
+    for (const row of customAllowances) {
+      const employeeId = row.employeeId;
+      if (!employeeId) continue;
+      map.set(employeeId, (map.get(employeeId) || 0) + (Number(row.amount) || 0));
+    }
+    return map;
+  }, [customAllowances]);
 
   const { data: residencies = [] } = useQuery({
     queryKey: ['residencies', companyId],
@@ -87,9 +99,13 @@ export default function HRMainScreen() {
   const terminatedCount = employees.filter((e) => e.status === 'terminated').length;
   const activeCount = activeEmployees.length;
 
+  /** مطابق لعمود «إجمالي الراتب» في قائمة الموظفين: أساسي + بدلات + مخصصة + تقدير الأوفر تايم */
   const monthlyPayrollTotal = useMemo(
-    () => activeEmployees.reduce((sum, emp) => sum + baseSalaryComponentsDecimal(emp).toNumber(), 0),
-    [activeEmployees],
+    () => activeEmployees.reduce(
+      (sum, emp) => sum + totalSalary(emp, allowanceTotals.get(emp.id) || 0),
+      0,
+    ),
+    [activeEmployees, allowanceTotals],
   );
 
   const expiringCount = residencies.filter((r) => {
