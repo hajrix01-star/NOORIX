@@ -177,35 +177,35 @@ export default function PurchasesBatchScreen() {
   }, [companyId, dateFilter.startDate, dateFilter.endDate, queryClient, t, showToast]);
 
   const batchesColumns = useMemo(() => [
-    { key: 'batchId', label: t('batchId'), sortable: true, shrink: true,
+    { key: 'batchId', label: t('batchId'), sortable: true, width: '10%',
       render: (v) => (
-        <span className="font-bold whitespace-nowrap" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v}</span>
+        <span className="font-bold nx-cell-ellipsis" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v}</span>
       )},
-    { key: 'transactionDate', label: t('transactionDate'), sortable: true, shrink: true,
+    { key: 'transactionDate', label: t('transactionDate'), sortable: true, width: '8%',
       render: (v) => (
-        <span className="text-[12px] text-noorix-muted whitespace-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(v)}</span>
+        <span className="text-[12px] text-noorix-muted" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(v)}</span>
       )},
-    { key: 'invoiceCount', label: t('invoicesColHeader'), numeric: true, sortable: true, shrink: true,
+    { key: 'invoiceCount', label: t('invoicesColHeader'), numeric: true, sortable: true, width: '6%',
       render: (v) => (
         <span className="font-bold" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span>
       )},
-    { key: 'supplierNames', label: t('supplier'), sortable: true, minWidth: 160,
+    { key: 'supplierNames', label: t('supplier'), sortable: true, width: '20%',
       render: (v) => (
-        <span className="truncate block min-w-0">{v || '—'}</span>
+        <span className="nx-cell-ellipsis block">{v || '—'}</span>
       )},
-    { key: 'vaultName', label: t('vault'), sortable: true, minWidth: 120,
+    { key: 'vaultName', label: t('vault'), sortable: true, width: '13%',
       render: (v) => (
-        <span className="truncate block min-w-0">{v || '—'}</span>
+        <span className="nx-cell-ellipsis block">{v || '—'}</span>
       )},
-    { key: 'netAmount', label: t('net'), numeric: true, sortable: true, shrink: true,
+    { key: 'netAmount', label: t('net'), numeric: true, sortable: true, width: '8%',
       render: (v) => <span className="text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
-    { key: 'taxAmount', label: t('tax'), numeric: true, sortable: true, shrink: true,
+    { key: 'taxAmount', label: t('tax'), numeric: true, sortable: true, width: '7%',
       render: (v) => <span className="text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
-    { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, shrink: true,
+    { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '8%',
       render: (v) => <span className="font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
-    { key: 'status', label: t('statusLabel'), shrink: true,
+    { key: 'status', label: t('statusLabel'), width: '8%',
       render: (v) => <Badge {...Badge.fromStatus(v, statusBadgeMap)} size="sm" /> },
-    { key: 'actions', label: t('actions'), align: 'center', minWidth: 220,
+    { key: 'actions', label: t('actions'), align: 'center', width: '12%',
       render: (_, row) => {
         const canCancel = row.status === 'active' || row.status === 'partial';
         return (
@@ -536,8 +536,8 @@ export default function PurchasesBatchScreen() {
             showRowNumbers
             rowNumberWidth={40}
             tableId="purchases-batches"
-            tableLayout="auto"
-            tableMinWidth={1240}
+            tableLayout="fixed"
+            tableMinWidth={1100}
             innerPadding={8}
             total={displayedTotal}
             page={page}
