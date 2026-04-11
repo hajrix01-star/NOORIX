@@ -95,7 +95,7 @@ export default function PurchasesBatchScreen() {
     queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ],
     queryFn: async () => {
       const res = await getPurchaseBatchSummaries(companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ || undefined);
-      throwIfApiFailed(res, 'فشل تحميل الدفعات');
+      throwIfApiFailed(res, t('loadBatchFailed'));
       return res.data;
     },
     enabled: !!companyId && activeTab === 'history',
@@ -194,7 +194,7 @@ export default function PurchasesBatchScreen() {
         render: (v) => (
           <span className="text-[12px] text-noorix-muted whitespace-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(v)}</span>
         )},
-      { key: 'invoiceCount', label: t('invoiceCount'), numeric: true, sortable: true, shrink: true,
+      { key: 'invoiceCount', label: t('invoicesColHeader'), numeric: true, sortable: true, shrink: true,
         render: (v) => (
           <span className="font-bold" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span>
         )},
@@ -314,9 +314,9 @@ export default function PurchasesBatchScreen() {
             const name = (lang === 'en' ? sup?.nameEn || sup?.nameAr : sup?.nameAr || sup?.nameEn) || '';
             notes = name ? `${t('opInvoicePayment')} — ${name}` : notes;
           } else if (r.kind === 'fixed_expense') {
-            notes = notes ? `مصروف ثابت — ${notes}` : 'مصروف ثابت';
+            notes = notes ? `${t('fixedExpenseType')} — ${notes}` : t('fixedExpenseType');
           } else if (r.kind === 'expense') {
-            notes = notes ? `مصروف متغير — ${notes}` : 'مصروف متغير';
+            notes = notes ? `${t('expenseType')} — ${notes}` : t('expenseType');
           }
           return {
             supplierId: r.supplierId || undefined,
@@ -356,7 +356,7 @@ export default function PurchasesBatchScreen() {
       await setSupplierBookmark(id, !current);
       queryClient.invalidateQueries({ queryKey: ['suppliers', companyId] });
     } catch {
-      showToast('تعذّر تحديث المفضلة', 'error');
+      showToast(t('bookmarkUpdateFailed'), 'error');
     }
   }, [bookmarks, companyId, queryClient, showToast]);
 
@@ -468,7 +468,7 @@ export default function PurchasesBatchScreen() {
                       { label: t('date'),                  align: 'center' },
                       { label: t('type'),                  align: 'center' },
                       { label: t('category'),              align: 'center' },
-                      { label: 'ض%',                       align: 'center', title: 'ضريبة القيمة المضافة' },
+                      { label: t('taxPct'),                 align: 'center', title: t('taxPctTitle') },
                       { label: t('notes'),                 align: 'right'  },
                       { label: '',                         align: 'center' },
                     ].map(({ label, align, title }, i) => (
@@ -558,9 +558,9 @@ export default function PurchasesBatchScreen() {
                   size="sm"
                   variant={showFinancialCols ? 'primary' : 'ghost'}
                   onClick={() => setShowFinancialCols((v) => !v)}
-                  title={showFinancialCols ? 'إخفاء الصافي والضريبة' : 'إظهار الصافي والضريبة'}
+                  title={showFinancialCols ? t('hideFinancialCols') : t('showNetTax')}
                 >
-                  {showFinancialCols ? '◂ إخفاء التفاصيل' : '▸ صافي / ضريبة'}
+                  {showFinancialCols ? t('hideFinancialCols') : t('showNetTax')}
                 </Button>
               </>
             }

@@ -63,6 +63,10 @@ export default {
   average: { ar: 'المعدل', en: 'Average' },
   allTypes: { ar: 'كل الأنواع', en: 'All types' },
   addExpenseLine: { ar: 'إضافة بند مصروف', en: 'Add expense line' },
-  fixedExpense: { ar: 'ثابت', en: 'Fixed' },
-  variableExpense: { ar: 'متغير', en: 'Variable' },
+  fixedExpense:        { ar: 'ثابت',                         en: 'Fixed' },
+  variableExpense:     { ar: 'متغير',                        en: 'Variable' },
+  bookmarkUpdateFailed:{ ar: 'تعذّر تحديث المفضلة',         en: 'Failed to update bookmark' },
+  loadBatchFailed:     { ar: 'فشل تحميل الدفعات',           en: 'Failed to load batches' },
+  taxPct:              { ar: 'ض%',                           en: 'VAT%' },
+  taxPctTitle:         { ar: 'ضريبة القيمة المضافة',        en: 'Value Added Tax' },
 };
