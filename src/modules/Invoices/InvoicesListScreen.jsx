@@ -186,8 +186,19 @@ export default function InvoicesListScreen() {
   }, [t, deleteInvoiceMut]);
 
   const columns = useMemo(() => [
-    { key: 'invoiceNumber', label: t('documentNumber'), align: 'center', shrink: true, width: '12%',
-      render: (v) => <span className="nx-cell-num nx-cell-accent nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
+    { key: 'invoiceNumber', label: t('documentNumber'), align: 'center', shrink: true, width: '12%', sortable: true,
+      render: (v, row) => {
+        const isInbound = row.kind === 'sale';
+        return (
+          <span
+            className="nx-cell-num nx-cell-ellipsis"
+            style={{ color: isInbound ? 'var(--color-nx-sales)' : 'var(--color-nx-expenses)', fontWeight: 700 }}
+            title={v || ''}
+          >
+            {v || '—'}
+          </span>
+        );
+      } },
     { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), align: 'center', shrink: true, width: '7%',
       render: (v) => <span className="nx-cell-num nx-cell-muted nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
     { key: 'supplierName',  label: t('supplier'), align: 'center', width: '8%',
@@ -230,11 +241,11 @@ export default function InvoicesListScreen() {
         return <span className="nx-cell-ellipsis text-[12px] text-center" title={vn || ''}>{vn || '—'}</span>;
       },
     },
-    { key: 'netAmount',     label: t('net'),    align: 'center', numeric: true, shrink: true, width: '7%',
+    { key: 'netAmount',     label: t('net'),    align: 'center', numeric: true, shrink: true, width: '7%', sortable: true,
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
     { key: 'taxAmount',     label: t('tax'),    align: 'center', numeric: true, shrink: true, width: '6%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--amber" /> },
-    { key: 'totalAmount',   label: t('total'),  align: 'center', numeric: true, shrink: true, width: '7%',
+    { key: 'totalAmount',   label: t('total'),  align: 'center', numeric: true, shrink: true, width: '7%', sortable: true,
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" /> },
     { key: 'transactionDate', label: t('date'), align: 'center', sortable: true, shrink: true, width: '7%',
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span> },
@@ -291,10 +302,13 @@ export default function InvoicesListScreen() {
   const displayedTotal  = total || 0;
 
   const toggleSort = (key) => {
-    if (key !== 'transactionDate') return;
     setPage(1);
-    setSortKey('transactionDate');
-    setSortDir((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
   };
 
   // المجاميع الحقيقية من السيرفر (كل النتائج المُفلترة، ليس الصفحة فقط)
