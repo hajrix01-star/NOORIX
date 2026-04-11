@@ -636,7 +636,6 @@ export default function InvoicesListScreen() {
           compact
           showRowNumbers
           tableLayout="fixed"
-          rowNumberWidth="1%"
           innerPadding={8}
           getRowClassName={(row) => row.status === 'cancelled' ? 'noorix-row-cancelled' : ''}
           columns={columns}
