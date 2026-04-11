@@ -99,7 +99,19 @@ export class CategoriesService {
     let accountId: string | null = null;
     let categoryCode: string | null = dto.code?.trim() || null;
 
-    if (dto.createAccount) {
+    if (dto.parentId) {
+      // ── فئة فرعية ──
+      // ترث accountId من الأب (لا تُنشئ حساباً جديداً)
+      const parent = await this.prisma.category.findFirst({
+        where: { id: dto.parentId, companyId: dto.companyId },
+      });
+      accountId = parent?.accountId ?? null;
+      // توليد كود تحليلي تلقائي إن لم يُمرَّر يدوياً
+      if (!categoryCode) {
+        categoryCode = await this.generateChildCode(dto.companyId, dto.parentId);
+      }
+    } else if (dto.createAccount) {
+      // ── فئة رئيسية جديدة → إنشاء حساب مرتبط ──
       const accountType = type === 'sale' ? 'revenue' : 'expense';
       const prefix = type === 'sale' ? 'REV' : type === 'purchase' ? 'PUR' : 'EXP';
       const existing = await this.prisma.account.findMany({
@@ -125,11 +137,7 @@ export class CategoriesService {
         },
       });
       accountId = account.id;
-      // الفئة الرئيسية تأخذ كودها من كود الحساب
       if (!categoryCode) categoryCode = accountCode;
-    } else if (dto.parentId && !categoryCode) {
-      // فئة فرعية → توليد كود تحليلي تلقائي
-      categoryCode = await this.generateChildCode(dto.companyId, dto.parentId);
     }
 
     return this.prisma.category.create({
