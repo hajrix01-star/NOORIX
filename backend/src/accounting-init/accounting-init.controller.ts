@@ -54,4 +54,36 @@ export class AccountingInitController {
       data: result,
     };
   }
+
+  /** إضافة الفئات الناقصة فقط لشركة واحدة — بدون حذف */
+  @Post('patch-categories/:companyId')
+  @SkipCompanyCheck()
+  async patchOne(@Param('companyId') companyId: string, @Req() req: any) {
+    if (!isSuperAdmin(req.user?.role ?? '')) {
+      throw new ForbiddenException('هذا الإجراء للمسؤول العام فقط');
+    }
+    const tenantId = TenantContext.getTenantId();
+    const result = await this.initService.patchMissingSubcategories(tenantId, companyId);
+    return {
+      success: true,
+      message: `تمت إضافة ${result.added} فئة جديدة (${result.skipped} موجودة مسبقاً)`,
+      data: result,
+    };
+  }
+
+  /** إضافة الفئات الناقصة لجميع الشركات — بدون حذف */
+  @Post('patch-all-categories')
+  @SkipCompanyCheck()
+  async patchAll(@Req() req: any) {
+    if (!isSuperAdmin(req.user?.role ?? '')) {
+      throw new ForbiddenException('هذا الإجراء للمسؤول العام فقط');
+    }
+    const tenantId = TenantContext.getTenantId();
+    const result = await this.initService.patchAllCompaniesSubcategories(tenantId);
+    return {
+      success: true,
+      message: `تمت إضافة ${result.totalAdded} فئة لـ ${result.companies} شركة`,
+      data: result,
+    };
+  }
 }

@@ -4,7 +4,7 @@
 import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { getCompanies, createCompany, updateCompany, deleteCompany, resetCompanyCategories, resetAllCompaniesCategories } from '../../../services/api';
+import { getCompanies, createCompany, updateCompany, deleteCompany, resetCompanyCategories, resetAllCompaniesCategories, patchCompanyCategories, patchAllCompaniesCategories } from '../../../services/api';
 import {
   labelStyle,
   getDeleteCode, setDeleteCode, DEFAULT_DELETE_CODE,
@@ -105,6 +105,38 @@ export default function CompaniesTab({ onCompanyCreated }) {
     }
   };
 
+  const [patchState, setPatchState] = useState({ loading: false, msg: null, error: null });
+
+  const handlePatchOneCompany = async (companyId) => {
+    setPatchState({ loading: true, msg: null, error: null });
+    try {
+      const res = await patchCompanyCategories(companyId);
+      if (res?.success) {
+        const d = res.data;
+        setPatchState({ loading: false, msg: `✅ أُضيفت ${d.added} فئة جديدة (${d.skipped} موجودة مسبقاً)`, error: null });
+      } else {
+        setPatchState({ loading: false, msg: null, error: res?.error || 'فشل' });
+      }
+    } catch (e) {
+      setPatchState({ loading: false, msg: null, error: e?.message || 'خطأ غير متوقع' });
+    }
+  };
+
+  const handlePatchAllCompanies = async () => {
+    if (!window.confirm('سيتم إضافة الفئات الناقصة لجميع الشركات دون حذف أي فئة موجودة.\n\nمتأكد؟')) return;
+    setPatchState({ loading: true, msg: null, error: null });
+    try {
+      const res = await patchAllCompaniesCategories();
+      if (res?.success) {
+        setPatchState({ loading: false, msg: `✅ أُضيفت ${res.data.totalAdded} فئة لـ ${res.data.companies} شركة`, error: null });
+      } else {
+        setPatchState({ loading: false, msg: null, error: res?.error || 'فشل' });
+      }
+    } catch (e) {
+      setPatchState({ loading: false, msg: null, error: e?.message || 'خطأ غير متوقع' });
+    }
+  };
+
   const openEdit = (company, e) => {
     if (e?.target?.closest?.('button')) return;
     setEditModal({ id: company.id, nameAr: company.nameAr || '', nameEn: company.nameEn || '', taxNumber: company.taxNumber || '', phone: company.phone || '', address: company.address || '', email: company.email || '', logoUrl: company.logoUrl || '', isArchived: !!company.isArchived });
@@ -156,6 +188,14 @@ export default function CompaniesTab({ onCompanyCreated }) {
             </label>
             <Button
               size="sm"
+              variant="success"
+              disabled={patchState.loading}
+              onClick={handlePatchAllCompanies}
+            >
+              {patchState.loading ? 'جاري...' : '➕ إضافة الفئات الناقصة (الكل)'}
+            </Button>
+            <Button
+              size="sm"
               variant="warning"
               disabled={resetState.loading}
               onClick={handleResetAllCompanies}
@@ -165,6 +205,12 @@ export default function CompaniesTab({ onCompanyCreated }) {
           </>
         )}
       </div>
+      {patchState.msg && (
+        <div className="rounded-lg p-3 text-[13px] bg-green-50 border border-green-200 text-green-800">{patchState.msg}</div>
+      )}
+      {patchState.error && (
+        <div className="rounded-lg p-3 text-[13px] bg-noorix-red/10 border border-noorix-red/30 text-noorix-red">{patchState.error}</div>
+      )}
       {resetState.msg && (
         <div className="rounded-lg p-3 text-[13px] bg-green-50 border border-green-200 text-green-800">{resetState.msg}</div>
       )}
@@ -314,8 +360,26 @@ export default function CompaniesTab({ onCompanyCreated }) {
               {updateMutation.isError && <p className="m-0 text-[13px] rounded-lg py-2 px-3 text-noorix-red bg-noorix-red/10">{updateMutation.error?.message}</p>}
             </form>
 
+            {/* إضافة الفئات الناقصة — آمنة */}
+            <div className="rounded-xl mt-4 p-[14px] bg-green-50 border border-green-200">
+              <div className="text-[13px] font-bold mb-1.5 text-green-800">➕ إضافة الفئات الناقصة</div>
+              <div className="text-[12px] text-green-700 mb-2">
+                تُضيف فقط الفئات الجديدة من القائمة الافتراضية — لا تحذف أي فئة موجودة ولا تمس البيانات.
+              </div>
+              <Button
+                size="sm"
+                variant="success"
+                disabled={patchState.loading}
+                onClick={() => handlePatchOneCompany(editModal?.id)}
+              >
+                {patchState.loading ? 'جاري...' : '➕ إضافة الناقص لهذه الشركة'}
+              </Button>
+              {patchState.msg && <p className="mt-1.5 text-[12px] text-green-700">{patchState.msg}</p>}
+              {patchState.error && <p className="mt-1.5 text-[12px] text-noorix-red">{patchState.error}</p>}
+            </div>
+
             {/* قسم الخطر */}
-            <div className="rounded-xl mt-6 p-[14px] bg-noorix-red/5 border border-noorix-red/20">
+            <div className="rounded-xl mt-3 p-[14px] bg-noorix-red/5 border border-noorix-red/20">
               <div className="text-[13px] font-bold mb-3 text-noorix-red">⚠ منطقة الخطر</div>
               <div className="grid gap-2.5">
                 <div>

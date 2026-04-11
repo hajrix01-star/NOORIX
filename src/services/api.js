@@ -519,6 +519,16 @@ export async function resetAllCompaniesCategories() {
   return apiPost('/api/v1/accounting-init/reset-all-categories', {});
 }
 
+/** إضافة الفئات الناقصة فقط لشركة — بدون حذف أي فئة موجودة */
+export async function patchCompanyCategories(companyId) {
+  return apiPost(`/api/v1/accounting-init/patch-categories/${companyId}`, {});
+}
+
+/** إضافة الفئات الناقصة لجميع الشركات — بدون حذف */
+export async function patchAllCompaniesCategories() {
+  return apiPost('/api/v1/accounting-init/patch-all-categories', {});
+}
+
 export async function getRoles() {
   const res = await apiGet('/api/v1/roles');
   return { success: res.success, data: Array.isArray(res.data) ? res.data : [] };

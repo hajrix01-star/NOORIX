@@ -444,6 +444,64 @@ export class AccountingInitService {
   }
 
   /**
+   * إضافة الفئات الفرعية الناقصة فقط — لا تحذف ولا تعدّل الموجود.
+   * آمنة تماماً على الشركات التي لديها فئات مخصصة.
+   */
+  async patchMissingSubcategories(tenantId: string, companyId: string): Promise<{ added: number; skipped: number }> {
+    let added = 0;
+    let skipped = 0;
+
+    for (const sub of MASTER_SUBCATEGORIES) {
+      // تحقق إن كانت موجودة بالفعل
+      const exists = await this.prisma.category.findFirst({
+        where: { companyId, code: sub.code },
+      });
+      if (exists) { skipped++; continue; }
+
+      // ابحث عن الفئة الأب بالكود
+      const parent = await this.prisma.category.findFirst({
+        where: { companyId, code: sub.parentAccountCode },
+      });
+      if (!parent) { skipped++; continue; }
+
+      await this.prisma.category.create({
+        data: {
+          tenantId,
+          companyId,
+          parentId:  parent.id,
+          accountId: parent.accountId,
+          code:      sub.code,
+          nameAr:    sub.nameAr,
+          nameEn:    sub.nameAr,
+          type:      parent.type as any,
+          sortOrder: sub.sortOrder ?? 0,
+          isActive:  true,
+        },
+      });
+      added++;
+    }
+
+    return { added, skipped };
+  }
+
+  /** تطبيق patch على جميع الشركات */
+  async patchAllCompaniesSubcategories(tenantId: string): Promise<{
+    companies: number;
+    totalAdded: number;
+    details: Array<{ companyId: string; added: number; skipped: number }>;
+  }> {
+    const companies = await this.prisma.company.findMany({ where: { tenantId } });
+    let totalAdded = 0;
+    const details: Array<{ companyId: string; added: number; skipped: number }> = [];
+    for (const company of companies) {
+      const result = await this.patchMissingSubcategories(tenantId, company.id);
+      totalAdded += result.added;
+      details.push({ companyId: company.id, ...result });
+    }
+    return { companies: companies.length, totalAdded, details };
+  }
+
+  /**
    * إعادة تهيئة الفئات لجميع الشركات دفعةً واحدة.
    * يُستدعى من endpoint محمي بصلاحية super_admin.
    */
