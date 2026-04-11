@@ -113,7 +113,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
       const res = await patchCompanyCategories(companyId);
       if (res?.success) {
         const d = res.data;
-        setPatchState({ loading: false, msg: `✅ أُضيفت ${d.added} فئة جديدة (${d.skipped} موجودة مسبقاً)`, error: null });
+        setPatchState({ loading: false, msg: `✅ أُضيفت ${d.added} فئة، حُدِّثت ترجمة ${d.updated} فئة`, error: null });
       } else {
         setPatchState({ loading: false, msg: null, error: res?.error || 'فشل' });
       }
@@ -128,7 +128,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
     try {
       const res = await patchAllCompaniesCategories();
       if (res?.success) {
-        setPatchState({ loading: false, msg: `✅ أُضيفت ${res.data.totalAdded} فئة لـ ${res.data.companies} شركة`, error: null });
+        setPatchState({ loading: false, msg: `✅ أُضيفت ${res.data.totalAdded} فئة، حُدِّثت ترجمة ${res.data.totalUpdated} لـ ${res.data.companies} شركة`, error: null });
       } else {
         setPatchState({ loading: false, msg: null, error: res?.error || 'فشل' });
       }

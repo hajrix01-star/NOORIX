@@ -66,7 +66,7 @@ export class AccountingInitController {
     const result = await this.initService.patchMissingSubcategories(tenantId, companyId);
     return {
       success: true,
-      message: `تمت إضافة ${result.added} فئة جديدة (${result.skipped} موجودة مسبقاً)`,
+      message: `أُضيفت ${result.added} فئة، حُدِّثت ترجمة ${result.updated} (${result.skipped} لم تتغير)`,
       data: result,
     };
   }
@@ -82,7 +82,7 @@ export class AccountingInitController {
     const result = await this.initService.patchAllCompaniesSubcategories(tenantId);
     return {
       success: true,
-      message: `تمت إضافة ${result.totalAdded} فئة لـ ${result.companies} شركة`,
+      message: `أُضيفت ${result.totalAdded} فئة، حُدِّثت ترجمة ${result.totalUpdated} لـ ${result.companies} شركة`,
       data: result,
     };
   }
