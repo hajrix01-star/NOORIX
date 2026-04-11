@@ -169,6 +169,22 @@ export class CategoriesService {
     const cat = await this.prisma.category.findFirst({ where: { id, companyId } });
     if (!cat) throw new NotFoundException('التصنيف غير موجود');
 
+    // فحص تكرار الاسم عند التعديل
+    if (dto.nameAr !== undefined) {
+      const targetParentId = dto.parentId !== undefined ? (dto.parentId || null) : cat.parentId;
+      const duplicate = await this.prisma.category.findFirst({
+        where: {
+          companyId,
+          nameAr:   dto.nameAr.trim(),
+          parentId: targetParentId,
+          isActive: true,
+          NOT:      { id },
+        },
+      });
+      if (duplicate) throw new BadRequestException('يوجد تصنيف بنفس الاسم على هذا المستوى');
+    }
+
+    let newAccountId: string | null | undefined = undefined; // undefined = لا تغيير
     if (dto.parentId !== undefined) {
       if (dto.parentId) {
         if (dto.parentId === id) throw new BadRequestException('لا يمكن جعل التصنيف والداً لنفسه');
@@ -177,19 +193,25 @@ export class CategoriesService {
         });
         if (!parent) throw new BadRequestException('الفئة الأم غير موجودة');
         if (parent.parentId) throw new BadRequestException('لا يمكن إضافة فئة فرعية تحت فئة فرعية (مستويان فقط)');
+        // الفئة الفرعية ترث accountId من الأب الجديد
+        newAccountId = parent.accountId;
+      } else {
+        // تحويل إلى فئة رئيسية → لا حساب موروث (يبقى null حتى يُربط يدوياً)
+        newAccountId = null;
       }
     }
 
     return this.prisma.category.update({
       where: { id },
       data: {
-        ...(dto.nameAr    !== undefined ? { nameAr:    dto.nameAr.trim() }        : {}),
-        ...(dto.nameEn    !== undefined ? { nameEn:    dto.nameEn?.trim() || null } : {}),
-        ...(dto.type      !== undefined ? { type:      dto.type }                  : {}),
-        ...(dto.parentId  !== undefined ? { parentId:  dto.parentId || null }      : {}),
-        ...(dto.icon      !== undefined ? { icon:      dto.icon }                  : {}),
-        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder }             : {}),
-        ...(dto.isActive  !== undefined ? { isActive:  dto.isActive }              : {}),
+        ...(dto.nameAr     !== undefined ? { nameAr:    dto.nameAr.trim() }          : {}),
+        ...(dto.nameEn     !== undefined ? { nameEn:    dto.nameEn?.trim() || null }  : {}),
+        ...(dto.type       !== undefined ? { type:      dto.type }                    : {}),
+        ...(dto.parentId   !== undefined ? { parentId:  dto.parentId || null }        : {}),
+        ...(newAccountId   !== undefined ? { accountId: newAccountId }                : {}),
+        ...(dto.icon       !== undefined ? { icon:      dto.icon }                    : {}),
+        ...(dto.sortOrder  !== undefined ? { sortOrder: dto.sortOrder }               : {}),
+        ...(dto.isActive   !== undefined ? { isActive:  dto.isActive }                : {}),
       },
     });
   }
