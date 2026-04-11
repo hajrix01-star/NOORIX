@@ -41,7 +41,6 @@ const MASTER_ACCOUNTS: MasterAccountSeed[] = [
   { code: 'V-001',  nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash Vault',           type: 'asset',   icon: '💵', taxExempt: false },
   { code: 'V-002',  nameAr: 'البنك (مدى/تحويلات)',    nameEn: 'Bank (Mada/Transfer)',        type: 'asset',   icon: '💳', taxExempt: false },
   { code: 'AR-001', nameAr: 'الذمم المدينة (عملاء)',  nameEn: 'Accounts Receivable',         type: 'asset',   icon: '🧾', taxExempt: false },
-  { code: 'EXP-001',nameAr: 'سلفيات الموظفين',        nameEn: 'Employee Advances',           type: 'asset',   icon: '👤', taxExempt: false },
   // ب- الخصوم
   { code: 'AP-001', nameAr: 'الذمم الدائنة (موردون)', nameEn: 'Accounts Payable',            type: 'liability',icon: '📋', taxExempt: false },
   { code: 'TAX-001',nameAr: 'ضريبة القيمة المضافة',   nameEn: 'VAT',                         type: 'liability',icon: '📝', taxExempt: false },

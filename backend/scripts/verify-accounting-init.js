@@ -18,7 +18,6 @@ const prisma = new PrismaClient();
 const MASTER_ACCOUNTS = [
   { code: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash Vault', type: 'asset', icon: '💵', taxExempt: false },
   { code: 'V-002', nameAr: 'البنك (مدى/تحويلات)', nameEn: 'Bank (Mada/Transfer)', type: 'asset', icon: '💳', taxExempt: false },
-  { code: 'EXP-001', nameAr: 'سلفيات الموظفين', nameEn: 'Employee Advances', type: 'asset', icon: '👤', taxExempt: false },
   { code: 'PUR-001', nameAr: 'مواد غذائية', nameEn: 'Food & Materials', type: 'expense', icon: '🥩', taxExempt: false },
   { code: 'PUR-002', nameAr: 'مشروبات', nameEn: 'Beverages', type: 'expense', icon: '🥤', taxExempt: false },
   { code: 'PUR-003', nameAr: 'تعبئة وتغليف', nameEn: 'Packaging', type: 'expense', icon: '📦', taxExempt: false },
@@ -77,7 +76,6 @@ async function runAccountingInit(prisma, tenantId, companyId) {
 const EXPECTED_ACCOUNTS = [
   { code: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', icon: '💵' },
   { code: 'V-002', nameAr: 'البنك (مدى/تحويلات)', icon: '💳' },
-  { code: 'EXP-001', nameAr: 'سلفيات الموظفين', icon: '👤' },
   { code: 'PUR-001', nameAr: 'مواد غذائية', icon: '🥩' },
   { code: 'PUR-002', nameAr: 'مشروبات', icon: '🥤' },
   { code: 'PUR-003', nameAr: 'تعبئة وتغليف', icon: '📦' },

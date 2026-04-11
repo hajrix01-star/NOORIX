@@ -1176,32 +1176,29 @@ export class FinancialCoreService {
   /**
    * خريطة صريحة: نوع العملية → كود الحساب المحاسبي.
    *
-   * الأكواد مُطابِقة لما يُنشئه seed.js:
-   *   EXP-001 → مصروفات عامة        (expense)
-   *   EXP-002 → موارد بشرية          (hr_expense | salary)
-   *   EXP-003 → مصروفات ثابتة        (fixed_expense)
+   * الأكواد مُطابِقة لما يُنشئه accounting-init.service.ts:
+   *   PUR-001 → مواد غذائية           (purchase)
+   *   EXP-002 → رسوم حكومية وإقامات  (hr_expense)
+   *   EXP-003 → إيجار ومرافق         (fixed_expense)
    *   EXP-004 → رواتب وأجور          (salary + advance)
+   *   EXP-005 → صيانة وتشغيل         (expense — مصروفات عامة / fallback)
    *
    * السلفيات تُعامَل كجزء من الراتب (أساس نقدي) — تظهر في P&L فور الصرف.
-   * لإضافة نوع جديد: أضف الكود هنا وأنشئ الحساب في seed.js.
+   * لإضافة نوع جديد: أضف الكود هنا وتأكد من وجوده في accounting-init.service.ts.
    */
   private static readonly KIND_TO_ACCOUNT_CODE: Record<string, string> = {
-    purchase:      'PUR-001',   // بضاعة ومواد (مشتريات)
+    purchase:      'PUR-001',   // مواد غذائية (مشتريات)
     expense:       'EXP-005',   // صيانة وتشغيل (مصروفات عامة)
     hr_expense:    'EXP-002',   // رسوم حكومية وإقامات
     fixed_expense: 'EXP-003',   // إيجار ومرافق
     salary:        'EXP-004',   // رواتب وأجور
-    advance:       'EXP-004',   // سلفة = جزء من الراتب (أساس نقدي) → expense
+    advance:       'EXP-004',   // سلفة = جزء من الراتب (أساس نقدي) → تظهر في P&L فوراً
   };
 
   /**
    * يُحدد الحساب المدين بدقة باستخدام الخريطة الصريحة.
    *
-   * أنواع الحسابات حسب Kind:
-   *   expense | purchase | hr_expense | fixed_expense | salary | advance → نوع expense
-   *   (السلفيات = جزء من الراتب، أساس نقدي — تظهر في P&L فور الصرف)
-   *
-   * أولوية: الخريطة الصريحة → fallback حسب نوع العملية.
+   * أولوية: الخريطة الصريحة → fallback EXP-005 (مصروفات عامة) → أي حساب expense.
    */
   private async _getDefaultExpenseAccount(
     tx:        TxClient,
@@ -1209,8 +1206,8 @@ export class FinancialCoreService {
     kind?:     string,
   ): Promise<string> {
     const targetCode = kind
-      ? (FinancialCoreService.KIND_TO_ACCOUNT_CODE[kind] ?? 'EXP-001')
-      : 'EXP-001';
+      ? (FinancialCoreService.KIND_TO_ACCOUNT_CODE[kind] ?? 'EXP-005')
+      : 'EXP-005';
 
     // محاولة 1: الحساب المُحدَّد بالكود الصريح (يعمل مع expense وasset على حد سواء)
     const specific = await tx.account.findFirst({
