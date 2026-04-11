@@ -19,7 +19,10 @@ const MASTER_ACCOUNTS = [
   { code: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash Vault', type: 'asset', icon: '💵', taxExempt: false },
   { code: 'V-002', nameAr: 'البنك (مدى/تحويلات)', nameEn: 'Bank (Mada/Transfer)', type: 'asset', icon: '💳', taxExempt: false },
   { code: 'EXP-001', nameAr: 'سلفيات الموظفين', nameEn: 'Employee Advances', type: 'asset', icon: '👤', taxExempt: false },
-  { code: 'PUR-001', nameAr: 'بضاعة ومواد (مشتريات)', nameEn: 'Goods & Materials', type: 'expense', icon: '📦', taxExempt: false },
+  { code: 'PUR-001', nameAr: 'مواد غذائية', nameEn: 'Food & Materials', type: 'expense', icon: '🥩', taxExempt: false },
+  { code: 'PUR-002', nameAr: 'مشروبات', nameEn: 'Beverages', type: 'expense', icon: '🥤', taxExempt: false },
+  { code: 'PUR-003', nameAr: 'تعبئة وتغليف', nameEn: 'Packaging', type: 'expense', icon: '📦', taxExempt: false },
+  { code: 'PUR-004', nameAr: 'مستلزمات تشغيل مطبخ', nameEn: 'Kitchen Operations', type: 'expense', icon: '🔥', taxExempt: false },
   { code: 'EXP-004', nameAr: 'رواتب وأجور', nameEn: 'Salaries & Wages', type: 'expense', icon: '💸', taxExempt: true },
   { code: 'EXP-002', nameAr: 'رسوم حكومية وإقامات', nameEn: 'Gov Fees & Iqama', type: 'expense', icon: '🏛️', taxExempt: true },
   { code: 'EXP-003', nameAr: 'إيجار ومرافق (كهرباء/ماء)', nameEn: 'Rent & Utilities', type: 'expense', icon: '🏠', taxExempt: false },
@@ -34,7 +37,10 @@ const MASTER_VAULTS = [
   { accountCode: 'V-002', nameAr: 'البنك (مدى/تحويلات)', nameEn: 'Bank (Mada/Transfer)', type: 'bank' },
 ];
 const MASTER_CATEGORIES = [
-  { accountCode: 'PUR-001', nameAr: 'بضاعة ومواد (مشتريات)', type: 'purchase' },
+  { accountCode: 'PUR-001', nameAr: 'مواد غذائية', type: 'purchase' },
+  { accountCode: 'PUR-002', nameAr: 'مشروبات', type: 'purchase' },
+  { accountCode: 'PUR-003', nameAr: 'تعبئة وتغليف', type: 'purchase' },
+  { accountCode: 'PUR-004', nameAr: 'مستلزمات تشغيل مطبخ', type: 'purchase' },
   { accountCode: 'EXP-004', nameAr: 'رواتب وأجور', type: 'expense' },
   { accountCode: 'EXP-002', nameAr: 'رسوم حكومية وإقامات', type: 'expense' },
   { accountCode: 'EXP-003', nameAr: 'إيجار ومرافق (كهرباء/ماء)', type: 'expense' },
@@ -72,7 +78,10 @@ const EXPECTED_ACCOUNTS = [
   { code: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', icon: '💵' },
   { code: 'V-002', nameAr: 'البنك (مدى/تحويلات)', icon: '💳' },
   { code: 'EXP-001', nameAr: 'سلفيات الموظفين', icon: '👤' },
-  { code: 'PUR-001', nameAr: 'بضاعة ومواد (مشتريات)', icon: '📦' },
+  { code: 'PUR-001', nameAr: 'مواد غذائية', icon: '🥩' },
+  { code: 'PUR-002', nameAr: 'مشروبات', icon: '🥤' },
+  { code: 'PUR-003', nameAr: 'تعبئة وتغليف', icon: '📦' },
+  { code: 'PUR-004', nameAr: 'مستلزمات تشغيل مطبخ', icon: '🔥' },
   { code: 'EXP-004', nameAr: 'رواتب وأجور', icon: '💸' },
   { code: 'EXP-002', nameAr: 'رسوم حكومية وإقامات', icon: '🏛️' },
   { code: 'EXP-003', nameAr: 'إيجار ومرافق (كهرباء/ماء)', icon: '🏠' },
@@ -117,8 +126,8 @@ async function main() {
   });
 
   console.log(`\n📊 الحسابات المُنشأة: ${accounts.length}`);
-  if (accounts.length < 12) {
-    console.error(`❌ فشل: متوقع 12 حساباً على الأقل، موجود ${accounts.length}`);
+  if (accounts.length < 15) {
+    console.error(`❌ فشل: متوقع 15 حساباً على الأقل، موجود ${accounts.length}`);
     process.exit(1);
   }
 
@@ -160,7 +169,7 @@ async function main() {
 ║              ✅ التحقق مكتمل بنجاح                        ║
 ╠══════════════════════════════════════════════════════════╣
 ║  الشركة: بوفية وقت الكرك                                ║
-║  الحسابات: 12 (كلها بـ tenantId)                         ║
+║  الحسابات: 15 (كلها بـ tenantId)                         ║
 ║  الخزائن: 2 (V-001 كاش، V-002 بنك)                       ║
 ║  الفئات: مرتبطة بدليل الحسابات                          ║
 ╚══════════════════════════════════════════════════════════╝

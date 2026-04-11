@@ -49,8 +49,11 @@ const MASTER_ACCOUNTS: MasterAccountSeed[] = [
   { code: 'EQU-001',nameAr: 'رأس المال',              nameEn: 'Capital',                     type: 'equity',  icon: '💎', taxExempt: false },
   // د- الإيرادات
   { code: 'REV-001',nameAr: 'المبيعات',               nameEn: 'Sales',                       type: 'revenue', icon: '💰', taxExempt: false },
-  // هـ- المصروفات
-  { code: 'PUR-001',nameAr: 'بضاعة ومواد (مشتريات)', nameEn: 'Goods & Materials (Purchases)',type: 'expense', icon: '📦', taxExempt: false },
+  // هـ- المصروفات / المشتريات
+  { code: 'PUR-001',nameAr: 'مواد غذائية',             nameEn: 'Food & Materials',            type: 'expense', icon: '🥩', taxExempt: false },
+  { code: 'PUR-002',nameAr: 'مشروبات',                 nameEn: 'Beverages',                   type: 'expense', icon: '🥤', taxExempt: false },
+  { code: 'PUR-003',nameAr: 'تعبئة وتغليف',            nameEn: 'Packaging',                   type: 'expense', icon: '📦', taxExempt: false },
+  { code: 'PUR-004',nameAr: 'مستلزمات تشغيل مطبخ',    nameEn: 'Kitchen Operations',          type: 'expense', icon: '🔥', taxExempt: false },
   { code: 'EXP-004',nameAr: 'رواتب وأجور',            nameEn: 'Salaries & Wages',            type: 'expense', icon: '💸', taxExempt: true  },
   { code: 'EXP-002',nameAr: 'رسوم حكومية وإقامات',   nameEn: 'Gov Fees & Iqama',            type: 'expense', icon: '🏛️', taxExempt: true  },
   { code: 'EXP-003',nameAr: 'إيجار ومرافق (كهرباء/ماء)', nameEn: 'Rent & Utilities',       type: 'expense', icon: '🏠', taxExempt: false },
@@ -67,7 +70,10 @@ const MASTER_VAULTS: MasterVaultSeed[] = [
 
 /** فئات مرتبطة بحسابات — للعرض في واجهة الفئات وتقارير P&L */
 const MASTER_CATEGORIES: MasterCategorySeed[] = [
-  { accountCode: 'PUR-001', nameAr: 'بضاعة ومواد (مشتريات)', type: 'purchase' },
+  { accountCode: 'PUR-001', nameAr: 'مواد غذائية', type: 'purchase' },
+  { accountCode: 'PUR-002', nameAr: 'مشروبات', type: 'purchase' },
+  { accountCode: 'PUR-003', nameAr: 'تعبئة وتغليف', type: 'purchase' },
+  { accountCode: 'PUR-004', nameAr: 'مستلزمات تشغيل مطبخ', type: 'purchase' },
   { accountCode: 'EXP-004', nameAr: 'رواتب وأجور', type: 'expense' },
   { accountCode: 'EXP-002', nameAr: 'رسوم حكومية وإقامات', type: 'expense' },
   { accountCode: 'EXP-003', nameAr: 'إيجار ومرافق (كهرباء/ماء)', type: 'expense' },
@@ -85,12 +91,26 @@ interface SubCategorySeed {
   sortOrder?: number;
 }
 const MASTER_SUBCATEGORIES: SubCategorySeed[] = [
-  // تحت المشتريات (بضاعة ومواد)
-  { parentAccountCode: 'PUR-001', nameAr: 'مواد تشغيلية', sortOrder: 0 },
-  { parentAccountCode: 'PUR-001', nameAr: 'غاز', sortOrder: 1 },
-  { parentAccountCode: 'PUR-001', nameAr: 'فحم', sortOrder: 2 },
-  { parentAccountCode: 'PUR-001', nameAr: 'بضاعة تموينية', sortOrder: 3 },
-  { parentAccountCode: 'PUR-001', nameAr: 'خامات', sortOrder: 4 },
+  // تحت PUR-001 — مواد غذائية
+  { parentAccountCode: 'PUR-001', nameAr: 'لحوم',              sortOrder: 0 },
+  { parentAccountCode: 'PUR-001', nameAr: 'دجاج',              sortOrder: 1 },
+  { parentAccountCode: 'PUR-001', nameAr: 'خضار وفواكه',       sortOrder: 2 },
+  { parentAccountCode: 'PUR-001', nameAr: 'بضاعة تموينية',     sortOrder: 3 },
+  { parentAccountCode: 'PUR-001', nameAr: 'خامات',             sortOrder: 4 },
+  { parentAccountCode: 'PUR-001', nameAr: 'مواد غذائية أخرى', sortOrder: 5 },
+  // تحت PUR-002 — مشروبات
+  { parentAccountCode: 'PUR-002', nameAr: 'غازيات',            sortOrder: 0 },
+  { parentAccountCode: 'PUR-002', nameAr: 'مياه',              sortOrder: 1 },
+  { parentAccountCode: 'PUR-002', nameAr: 'عصائر',             sortOrder: 2 },
+  // تحت PUR-003 — تعبئة وتغليف
+  { parentAccountCode: 'PUR-003', nameAr: 'بلاستيكات',         sortOrder: 0 },
+  { parentAccountCode: 'PUR-003', nameAr: 'علب وأكواب',        sortOrder: 1 },
+  { parentAccountCode: 'PUR-003', nameAr: 'أكياس',             sortOrder: 2 },
+  // تحت PUR-004 — مستلزمات تشغيل مطبخ
+  { parentAccountCode: 'PUR-004', nameAr: 'فحم',               sortOrder: 0 },
+  { parentAccountCode: 'PUR-004', nameAr: 'غاز طبخ',           sortOrder: 1 },
+  { parentAccountCode: 'PUR-004', nameAr: 'مواد تشغيلية',      sortOrder: 2 },
+  { parentAccountCode: 'PUR-004', nameAr: 'مواد تنظيف مطبخ',  sortOrder: 3 },
   // تحت إيجار ومرافق
   { parentAccountCode: 'EXP-003', nameAr: 'إيجارات', sortOrder: 0 },
   { parentAccountCode: 'EXP-003', nameAr: 'كهرباء', sortOrder: 1 },
