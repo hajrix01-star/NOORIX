@@ -120,6 +120,7 @@ const MASTER_SUBCATEGORIES: SubCategorySeed[] = [
   // تحت EXP-005 — صيانة وتشغيل  (بادئة E5)
   { parentAccountCode: 'EXP-005', code: 'E5-1', nameAr: 'صيانة آلات',        sortOrder: 0 },
   { parentAccountCode: 'EXP-005', code: 'E5-2', nameAr: 'قطع غيار',          sortOrder: 1 },
+  { parentAccountCode: 'EXP-005', code: 'E5-3', nameAr: 'وقود ومواصلات',     sortOrder: 2 },
   // تحت EXP-002 — رسوم حكومية وإقامات  (بادئة E2)
   { parentAccountCode: 'EXP-002', code: 'E2-1', nameAr: 'رخصة تجارية',       sortOrder: 0 },
   { parentAccountCode: 'EXP-002', code: 'E2-2', nameAr: 'رخصة بلدية',        sortOrder: 1 },

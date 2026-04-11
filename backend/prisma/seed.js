@@ -67,6 +67,7 @@ const MASTER_SUBCATEGORIES = [
   { parentAccountCode: 'EXP-003', code: 'E3-5', nameAr: 'غاز',               sortOrder: 4 },
   { parentAccountCode: 'EXP-005', code: 'E5-1', nameAr: 'صيانة آلات',        sortOrder: 0 },
   { parentAccountCode: 'EXP-005', code: 'E5-2', nameAr: 'قطع غيار',          sortOrder: 1 },
+  { parentAccountCode: 'EXP-005', code: 'E5-3', nameAr: 'وقود ومواصلات',     sortOrder: 2 },
   { parentAccountCode: 'EXP-002', code: 'E2-1', nameAr: 'رخصة تجارية',       sortOrder: 0 },
   { parentAccountCode: 'EXP-002', code: 'E2-2', nameAr: 'رخصة بلدية',        sortOrder: 1 },
   { parentAccountCode: 'EXP-002', code: 'E2-3', nameAr: 'دفاع مدني',         sortOrder: 2 },
