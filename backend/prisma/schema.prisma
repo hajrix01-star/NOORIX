@@ -8,8 +8,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // uncomment when using prisma migrate
+  // ⚠️ لا تستخدم `prisma db push --force-reset` على قاعدة البيانات الإنتاجية — يمحو البيانات كاملة
+  // بدلاً من db push: استخدم `prisma migrate dev` لإنشاء ملف migration آمن
 }
 
 // ══════════════════════════════════════════════════
