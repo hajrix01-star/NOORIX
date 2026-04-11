@@ -93,6 +93,18 @@ export class SuppliersService {
     });
   }
 
+  async setBookmark(id: string, companyId: string, value: boolean) {
+    const existing = await this.prisma.supplier.findFirst({
+      where: { id, companyId, isDeleted: false },
+    });
+    if (!existing) throw new NotFoundException('المورد غير موجود');
+    return this.prisma.supplier.update({
+      where: { id },
+      data: { isBookmarked: value },
+      include: { supplierCategory: { include: { account: true } } },
+    });
+  }
+
   async remove(id: string, companyId: string) {
     const existing = await this.prisma.supplier.findFirst({
       where: { id, companyId, isDeleted: false },

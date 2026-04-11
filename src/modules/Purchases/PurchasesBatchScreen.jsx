@@ -11,7 +11,7 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { rejectIfApiFailed } from '../../utils/apiResponse';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
-import { createInvoiceBatch, updateInvoice, getPurchaseBatchSummaries, fetchAllInvoicesForBatch, throwIfApiFailed } from '../../services/api';
+import { createInvoiceBatch, updateInvoice, getPurchaseBatchSummaries, fetchAllInvoicesForBatch, throwIfApiFailed, setSupplierBookmark } from '../../services/api';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useCategories } from '../../hooks/useCategories';
 import { useVaults } from '../../hooks/useVaults';
@@ -27,16 +27,10 @@ import { BatchRow } from './components/BatchRow';
 import { BatchEditPanel } from './components/BatchEditPanel';
 import { BatchPrintSheet } from './components/BatchPrintSheet';
 import { BatchSummaryBar } from './components/BatchSummaryBar';
-import { SUPPLIER_BOOKMARKS_KEY } from '../../constants/storageKeys';
-import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { buildActiveCancelledPartialStatusMap } from '../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
-
-/* ── Bookmarks ────────────────────────────────────────────────── */
-const loadBookmarks = () => readJsonStorage(SUPPLIER_BOOKMARKS_KEY, []);
-const saveBookmarks = (arr) => { writeJsonStorage(SUPPLIER_BOOKMARKS_KEY, arr); };
 
 /* ── Row factory ──────────────────────────────────────────────── */
 const EMPTY_ROW = () => ({
@@ -71,12 +65,17 @@ export default function PurchasesBatchScreen() {
   const [batchDate, setBatchDate] = useState(getSaudiToday());
   const [batchVaultId, setBatchVaultId] = useState('');
   const [rows, setRows]           = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
-  const [bookmarks, setBookmarks] = useState(loadBookmarks);
   const [editingBatch, setEditingBatch] = useState(null);
   const [printingBatch, setPrintingBatch] = useState(null);
   const [batchActionLoading, setBatchActionLoading] = useState(null);
 
   const { suppliers } = useSuppliers(companyId);
+
+  /* ── مفضلة الموردين — مشتقة من قاعدة البيانات ── */
+  const bookmarks = useMemo(
+    () => suppliers.filter((s) => s.isBookmarked).map((s) => s.id),
+    [suppliers],
+  );
   const { flatCategories = [] } = useCategories(companyId);
   const { paymentVaults: activeVaults = [], isLoading: vaultsLoading } = useVaults({ companyId });
 
@@ -359,7 +358,15 @@ export default function PurchasesBatchScreen() {
   };
   const addRow         = ()         => setRows((p) => [...p, EMPTY_ROW()]);
   const removeRow      = (i)        => setRows((p) => p.length <= 1 ? [EMPTY_ROW()] : p.filter((_, idx) => idx !== i));
-  const toggleBookmark = (id)       => setBookmarks((p) => { const n = p.includes(id) ? p.filter((x) => x !== id) : [...p, id]; saveBookmarks(n); return n; });
+  const toggleBookmark = useCallback(async (id) => {
+    const current = bookmarks.includes(id);
+    try {
+      await setSupplierBookmark(id, !current);
+      queryClient.invalidateQueries({ queryKey: ['suppliers', companyId] });
+    } catch {
+      showToast('تعذّر تحديث المفضلة', 'error');
+    }
+  }, [bookmarks, companyId, queryClient, showToast]);
 
   async function saveInvoiceEdit(inv) {
     const payload = {

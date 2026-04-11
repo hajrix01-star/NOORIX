@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query, UseGuards, ParseBoolPipe } from '@nestjs/common';
 import { AuthGuard }          from '@nestjs/passport';
 import { ZodError }           from 'zod';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
@@ -68,6 +68,18 @@ export class SuppliersController {
       }
       throw e;
     }
+  }
+
+  @Patch(':id/bookmark')
+  @RequireAnyPermission('SUPPLIERS_READ', 'SUPPLIERS_WRITE', 'VIEW_INVOICES', 'INVOICES_READ')
+  async setBookmark(
+    @Param('id') id: string,
+    @Headers('x-company-id') headerCompanyId: string,
+    @Body('isBookmarked', ParseBoolPipe) isBookmarked: boolean,
+  ) {
+    const companyId = headerCompanyId?.trim() || '';
+    if (!companyId) throw new BadRequestException('معرف الشركة مطلوب');
+    return this.suppliersService.setBookmark(id, companyId, isBookmarked);
   }
 
   @Delete(':id')
