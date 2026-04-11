@@ -14,7 +14,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ email: '', password: '', nameAr: '', nameEn: '', roleName: '', companyIds: [] });
+  const [form, setForm] = useState({ email: '', password: '', nameAr: '', nameEn: '', roleName: '', preferredLang: 'ar', companyIds: [] });
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -70,6 +70,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
       email: u.email,
       nameAr: u.nameAr || '',
       nameEn: u.nameEn || '',
+      preferredLang: u.preferredLang || 'ar',
       roleName: u.role?.name || '',
       companyIds: (u.userCompanies || []).map((uc) => uc.companyId),
       isActive: u.isActive !== false,
@@ -79,6 +80,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   const columns = [
     { key: 'email', label: t('email'), render: (v) => <span className="font-semibold">{v || '—'}</span> },
     { key: 'nameAr', label: t('nameAr'), render: (v, row) => <span>{v || row.nameEn || '—'}</span> },
+    { key: 'preferredLang', label: t('preferredLang'), render: (v) => <Badge color={v === 'en' ? 'blue' : 'violet'} size="sm">{v === 'en' ? t('langEn') : t('langAr')}</Badge> },
     { key: 'role', label: t('role'), render: (_, row) => <span>{row.role?.nameAr || row.role?.name || '—'}</span> },
     { key: 'companies', label: t('companies'), render: (_, row) => <span className="nx-cell-muted">{(row.userCompanies || []).map((uc) => uc.company?.nameAr).filter(Boolean).join(', ') || '—'}</span> },
     { key: 'status', label: t('status'), render: (_, row) => <Badge color={row.isActive ? 'green' : 'red'} size="sm">{row.isActive ? t('active') : t('archived')}</Badge> },
@@ -96,11 +98,15 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
       {showForm && (
         <div className="noorix-surface-card p-5">
           <h4 className="text-[14px] m-0 mb-4">{t('newUser')}</h4>
-          <form onSubmit={(e) => { e.preventDefault(); if (!form.email?.trim() || !form.password?.trim()) return; createMutation.mutate({ email: form.email.trim(), password: form.password, nameAr: form.nameAr?.trim(), nameEn: form.nameEn?.trim(), roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c) => c.id) }); }}>
+          <form onSubmit={(e) => { e.preventDefault(); if (!form.email?.trim() || !form.password?.trim()) return; createMutation.mutate({ email: form.email.trim(), password: form.password, nameAr: form.nameAr?.trim(), nameEn: form.nameEn?.trim(), preferredLang: form.preferredLang, roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c) => c.id) }); }}>
             <div className="grid gap-3 mb-[14px] max-w-[400px]">
               <Input type="email" label={`${t('email')} *`} value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} required />
               <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} required />
               <Input type="text" label={t('nameAr')} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} />
+              <Input type="select" label={t('preferredLang')} value={form.preferredLang} onChange={(e) => setForm((p) => ({ ...p, preferredLang: e.target.value }))}>
+                <option value="ar">{t('langAr')}</option>
+                <option value="en">{t('langEn')}</option>
+              </Input>
               <Input type="select" label={t('role')} value={form.roleName} onChange={(e) => setForm((p) => ({ ...p, roleName: e.target.value }))}>
                 {roles.map((r) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
               </Input>
@@ -132,10 +138,14 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
         className="users-edit-drawer"
       >
         {editing && (
-          <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
+          <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), preferredLang: editing.preferredLang, roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
             <div className="grid gap-3 mb-[14px]">
               <Input type="email" label={t('email')} value={editing.email} disabled />
               <Input type="text" label={t('nameAr')} value={editing.nameAr} onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))} />
+              <Input type="select" label={t('preferredLang')} value={editing.preferredLang} onChange={(e) => setEditing((p) => ({ ...p, preferredLang: e.target.value }))}>
+                <option value="ar">{t('langAr')}</option>
+                <option value="en">{t('langEn')}</option>
+              </Input>
               <Input type="select" label={t('role')} value={editing.roleName} onChange={(e) => setEditing((p) => ({ ...p, roleName: e.target.value }))}>
                 {roles.map((r) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
               </Input>

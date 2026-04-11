@@ -70,15 +70,16 @@ export class AuthController {
       };
     }
     return {
-      id:          dbUser.id,
-      email:       dbUser.email,
-      nameAr:      dbUser.nameAr,
-      nameEn:      dbUser.nameEn,
-      role:        dbUser.role.name,
-      roleNameAr:  dbUser.role.nameAr,
-      permissions: Array.isArray(dbUser.role.permissions) ? dbUser.role.permissions : [],
-      tenantId:    dbUser.tenantId,
-      companyIds:  dbUser.userCompanies.map((uc) => uc.companyId),
+      id:            dbUser.id,
+      email:         dbUser.email,
+      nameAr:        dbUser.nameAr,
+      nameEn:        dbUser.nameEn,
+      preferredLang: dbUser.preferredLang ?? 'ar',
+      role:          dbUser.role.name,
+      roleNameAr:    dbUser.role.nameAr,
+      permissions:   Array.isArray(dbUser.role.permissions) ? dbUser.role.permissions : [],
+      tenantId:      dbUser.tenantId,
+      companyIds:    dbUser.userCompanies.map((uc) => uc.companyId),
     };
   }
 }

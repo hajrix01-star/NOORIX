@@ -64,6 +64,7 @@ model User {
   nameAr          String?   @map("name_ar")
   nameEn          String?   @map("name_en")
   roleId          String    @map("role_id")
+  preferredLang   String    @default("ar")  @map("preferred_lang")
   isActive        Boolean   @default(true)  @map("is_active")
   lastActivityAt  DateTime? @map("last_activity_at")
   createdAt       DateTime  @default(now()) @map("created_at")

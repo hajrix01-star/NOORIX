@@ -10,6 +10,9 @@ export default {
   backupTab: { ar: 'النسخ الاحتياطي', en: 'Backup' },
   aiTab: { ar: 'الذكاء المستخدم', en: 'AI integration' },
   brandingTab: { ar: 'هوية التطبيق', en: 'App branding' },
+  preferredLang: { ar: 'اللغة المفضلة', en: 'Preferred language' },
+  langAr: { ar: 'العربية', en: 'Arabic' },
+  langEn: { ar: 'الإنجليزية', en: 'English' },
   backupDesc: { ar: 'النسخ الاحتياطي الذكي لكل شركة مع تخزين محلي وخارجي.', en: 'Smart per-company backup with local and external storage.' },
   backupHeading: { ar: 'النسخ الاحتياطي الذكي', en: 'Smart backup' },
   backupIntro: {

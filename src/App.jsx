@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useState, useMemo, useTransition, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useMemo, useTransition, useCallback, useRef } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCompanies, getMe, checkApiConnection } from './services/api';
@@ -167,6 +167,7 @@ export default function App() {
   const [language, setLanguage] = useState(getInitialLanguage); // 'ar' | 'en'
   const [cardStyle, setCardStyle] = useState(getInitialCardStyle); // 1..10
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const appliedUserLangRef = useRef(null); // تتبع آخر userId طُبِّقت لغته — لمنع التطبيق المتكرر
   const companies = companiesList;
 
   useEffect(() => {
@@ -190,19 +191,27 @@ export default function App() {
     } catch (_) {}
   }, [cardStyle]);
 
-  const toggleLanguage = () => {
+  const applyLanguage = useCallback((lang) => {
     document.documentElement.classList.add('dir-switching');
-    setLanguage((prev) => {
-      const next = prev === 'ar' ? 'en' : 'ar';
-      writeStoredLanguage(next);
-      return next;
-    });
+    setLanguage(lang);
+    writeStoredLanguage(lang);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('dir-switching');
       });
     });
-  };
+  }, []);
+
+  const toggleLanguage = () => applyLanguage(language === 'ar' ? 'en' : 'ar');
+
+  // عند تحميل بيانات المستخدم: طبّق لغته المفضلة مرة واحدة فقط لكل جلسة
+  useEffect(() => {
+    if (!user?.id || !user?.preferredLang) return;
+    if (appliedUserLangRef.current === user.id) return;
+    appliedUserLangRef.current = user.id;
+    const pref = user.preferredLang === 'en' ? 'en' : 'ar';
+    if (pref !== language) applyLanguage(pref);
+  }, [user?.id, user?.preferredLang]);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const navigate = useNavigate();

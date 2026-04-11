@@ -17,6 +17,7 @@ export class UsersService {
         email: true,
         nameAr: true,
         nameEn: true,
+        preferredLang: true,
         isActive: true,
         createdAt: true,
         role: { select: { id: true, name: true, nameAr: true } },
@@ -30,6 +31,7 @@ export class UsersService {
     password: string;
     nameAr?: string;
     nameEn?: string;
+    preferredLang?: string;
     roleName: string;
     companyIds: string[];
   }) {
@@ -49,6 +51,7 @@ export class UsersService {
         passwordHash,
         nameAr: data.nameAr?.trim() || null,
         nameEn: data.nameEn?.trim() || null,
+        preferredLang: (data.preferredLang === 'en' ? 'en' : 'ar'),
         roleId: role.id,
       },
     });
@@ -64,7 +67,7 @@ export class UsersService {
     return this.prisma.user.findUnique({
       where: { id: user.id },
       select: {
-        id: true, email: true, nameAr: true, nameEn: true, isActive: true,
+        id: true, email: true, nameAr: true, nameEn: true, preferredLang: true, isActive: true,
         role: { select: { id: true, name: true, nameAr: true } },
         userCompanies: { select: { companyId: true, company: { select: { id: true, nameAr: true } } } },
       },
@@ -76,6 +79,7 @@ export class UsersService {
     data: {
       nameAr?: string;
       nameEn?: string;
+      preferredLang?: string;
       roleName?: string;
       password?: string;
       companyIds?: string[];
@@ -88,6 +92,7 @@ export class UsersService {
     const updateData: Record<string, unknown> = {};
     if (data.nameAr !== undefined) updateData.nameAr = data.nameAr?.trim() || null;
     if (data.nameEn !== undefined) updateData.nameEn = data.nameEn?.trim() || null;
+    if (data.preferredLang !== undefined) updateData.preferredLang = (data.preferredLang === 'en' ? 'en' : 'ar');
 
     if (data.password?.trim()) {
       updateData.passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
@@ -114,7 +119,7 @@ export class UsersService {
     return this.prisma.user.findUnique({
       where: { id },
       select: {
-        id: true, email: true, nameAr: true, nameEn: true, isActive: true,
+        id: true, email: true, nameAr: true, nameEn: true, preferredLang: true, isActive: true,
         role: { select: { id: true, name: true, nameAr: true } },
         userCompanies: { select: { companyId: true, company: { select: { id: true, nameAr: true } } } },
       },
