@@ -17,12 +17,13 @@ function getAlign(col) {
   return 'start';
 }
 
-const HIDDEN_STYLE = { width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' };
-
 /**
  * يحوّل footerRow (مصفوفة شرائح) إلى خلايا <td> مدركة لإخفاء الأعمدة.
- * كل شريحة { keys, content?, className? } تمتد على مجموع أعمدة keys؛
- * إن كانت كل أعمدة الشريحة مخفية تُصيَّر بعرض صفري.
+ * كل شريحة: { keys: string[], content?: ReactNode, className?: string }
+ *
+ * المبدأ: لا تُصيَّر خلايا 0-عرض أبدًا — بدلاً من ذلك تُدمج الأعمدة المخفية
+ * في colSpan الخلية المرئية التالية (وهي 0-عرض أصلاً فلا تأثير بصري).
+ * هذا يضمن عدم تسرّب المحتوى أو ظهور حدود طفيلية في أي متصفح.
  */
 function buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowNumberWidth, cellPad }) {
   const cells = [];
@@ -39,35 +40,45 @@ function buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowN
     if (seg.keys?.length) segByFirstKey.set(seg.keys[0], seg);
   });
 
+  // بناء قائمة مرتّبة من العناصر (شرائح + أعمدة منفردة)
+  const items = [];
   let i = 0;
   while (i < columns.length) {
     const col = columns[i];
     const seg = segByFirstKey.get(col.key);
-
     if (seg) {
-      const colSpan = seg.keys.length;
       const allHidden = seg.keys.every((k) => hiddenCols.has(k));
-
-      cells.push(
-        <td
-          key={col.key}
-          colSpan={colSpan > 1 ? colSpan : undefined}
-          className={allHidden ? undefined : (seg.className || '')}
-          aria-hidden={allHidden || undefined}
-          style={allHidden ? HIDDEN_STYLE : undefined}
-        >
-          {allHidden ? null : seg.content}
-        </td>,
-      );
-      i += colSpan;
+      items.push({ key: col.key, span: seg.keys.length, hidden: allHidden, content: seg.content, className: seg.className });
+      i += seg.keys.length;
     } else {
-      cells.push(
-        hiddenCols.has(col.key)
-          ? <td key={col.key} aria-hidden style={HIDDEN_STYLE} />
-          : <td key={col.key} style={{ padding: cellPad.td }} />,
-      );
+      items.push({ key: col.key, span: 1, hidden: hiddenCols.has(col.key), content: null, className: '' });
       i++;
     }
+  }
+
+  // دمج الأعمدة المخفية في colSpan الخلية المرئية التالية
+  let pendingSpan = 0;
+  for (const item of items) {
+    if (item.hidden) {
+      pendingSpan += item.span;
+    } else {
+      const totalSpan = pendingSpan + item.span;
+      cells.push(
+        <td
+          key={item.key}
+          colSpan={totalSpan > 1 ? totalSpan : undefined}
+          className={item.className || undefined}
+        >
+          {item.content}
+        </td>,
+      );
+      pendingSpan = 0;
+    }
+  }
+
+  // أعمدة مخفية متبقية في النهاية → خلية فارغة واحدة
+  if (pendingSpan > 0) {
+    cells.push(<td key="__trail__" colSpan={pendingSpan > 1 ? pendingSpan : undefined} />);
   }
 
   return cells;
