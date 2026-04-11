@@ -1,10 +1,158 @@
 /**
  * NOORIX Seed — يعمل على قاعدة بيانات جديدة (إنتاج) أو موجودة (تطوير)
- * ينشئ: Tenant، Roles، Company، User، UserCompany
+ * ينشئ: Tenant، Roles، Company، User، UserCompany + تهيئة دليل الحسابات
  * بيانات الدخول الافتراضية: admin@noorix.sa / 123
  */
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
+
+// ─── ثوابت تهيئة المحاسبة (مطابقة لـ accounting-init.service.ts) ───
+const MASTER_ACCOUNTS = [
+  { code: 'V-001',   nameAr: 'الخزينة الرئيسية (كاش)',       nameEn: 'Main Cash Vault',         type: 'asset',    icon: '💵', taxExempt: false },
+  { code: 'V-002',   nameAr: 'البنك (مدى/تحويلات)',           nameEn: 'Bank (Mada/Transfer)',     type: 'asset',    icon: '💳', taxExempt: false },
+  { code: 'AR-001',  nameAr: 'الذمم المدينة (عملاء)',         nameEn: 'Accounts Receivable',      type: 'asset',    icon: '🧾', taxExempt: false },
+  { code: 'AP-001',  nameAr: 'الذمم الدائنة (موردون)',        nameEn: 'Accounts Payable',         type: 'liability',icon: '📋', taxExempt: false },
+  { code: 'TAX-001', nameAr: 'ضريبة القيمة المضافة',          nameEn: 'VAT',                      type: 'liability',icon: '📝', taxExempt: false },
+  { code: 'EQU-001', nameAr: 'رأس المال',                    nameEn: 'Capital',                  type: 'equity',   icon: '💎', taxExempt: false },
+  { code: 'REV-001', nameAr: 'المبيعات',                     nameEn: 'Sales',                    type: 'revenue',  icon: '💰', taxExempt: false },
+  { code: 'PUR-001', nameAr: 'مواد غذائية',                  nameEn: 'Food & Materials',         type: 'expense',  icon: '🥩', taxExempt: false },
+  { code: 'PUR-002', nameAr: 'مشروبات',                      nameEn: 'Beverages',                type: 'expense',  icon: '🥤', taxExempt: false },
+  { code: 'PUR-003', nameAr: 'تعبئة وتغليف',                 nameEn: 'Packaging',                type: 'expense',  icon: '📦', taxExempt: false },
+  { code: 'PUR-004', nameAr: 'مستلزمات تشغيل مطبخ',          nameEn: 'Kitchen Operations',       type: 'expense',  icon: '🔥', taxExempt: false },
+  { code: 'EXP-002', nameAr: 'رسوم حكومية وإقامات',          nameEn: 'Gov Fees & Iqama',         type: 'expense',  icon: '🏛️', taxExempt: true  },
+  { code: 'EXP-003', nameAr: 'إيجار ومرافق (كهرباء/ماء)',   nameEn: 'Rent & Utilities',         type: 'expense',  icon: '🏠', taxExempt: false },
+  { code: 'EXP-004', nameAr: 'رواتب وأجور',                 nameEn: 'Salaries & Wages',         type: 'expense',  icon: '💸', taxExempt: true  },
+  { code: 'EXP-005', nameAr: 'صيانة وتشغيل',               nameEn: 'Maintenance & Operations', type: 'expense',  icon: '🛠️', taxExempt: false },
+  { code: 'EXP-006', nameAr: 'تسويق وهدايا',               nameEn: 'Marketing & Gifts',        type: 'expense',  icon: '📣', taxExempt: false },
+  { code: 'EXP-007', nameAr: 'مصروفات مالية',              nameEn: 'Financial Expenses',       type: 'expense',  icon: '🏦', taxExempt: false },
+  { code: 'EXP-008', nameAr: 'أصول ومعدات',               nameEn: 'Assets & Equipment',       type: 'expense',  icon: '🖥️', taxExempt: false },
+];
+
+const MASTER_CATEGORIES = [
+  { accountCode: 'PUR-001', nameAr: 'مواد غذائية',              type: 'purchase' },
+  { accountCode: 'PUR-002', nameAr: 'مشروبات',                  type: 'purchase' },
+  { accountCode: 'PUR-003', nameAr: 'تعبئة وتغليف',             type: 'purchase' },
+  { accountCode: 'PUR-004', nameAr: 'مستلزمات تشغيل مطبخ',     type: 'purchase' },
+  { accountCode: 'EXP-004', nameAr: 'رواتب وأجور',              type: 'expense'  },
+  { accountCode: 'EXP-002', nameAr: 'رسوم حكومية وإقامات',     type: 'expense'  },
+  { accountCode: 'EXP-003', nameAr: 'إيجار ومرافق (كهرباء/ماء)', type: 'expense' },
+  { accountCode: 'EXP-005', nameAr: 'صيانة وتشغيل',            type: 'expense'  },
+  { accountCode: 'EXP-006', nameAr: 'تسويق وهدايا',            type: 'expense'  },
+  { accountCode: 'EXP-007', nameAr: 'مصروفات مالية',           type: 'expense'  },
+  { accountCode: 'EXP-008', nameAr: 'أصول ومعدات',             type: 'expense'  },
+  { accountCode: 'REV-001', nameAr: 'المبيعات',                 type: 'sale'     },
+];
+
+const MASTER_SUBCATEGORIES = [
+  { parentAccountCode: 'PUR-001', code: 'P1-1', nameAr: 'لحوم',              sortOrder: 0 },
+  { parentAccountCode: 'PUR-001', code: 'P1-2', nameAr: 'دجاج',              sortOrder: 1 },
+  { parentAccountCode: 'PUR-001', code: 'P1-3', nameAr: 'خضار وفواكه',       sortOrder: 2 },
+  { parentAccountCode: 'PUR-001', code: 'P1-4', nameAr: 'بضاعة تموينية',     sortOrder: 3 },
+  { parentAccountCode: 'PUR-001', code: 'P1-5', nameAr: 'خامات',             sortOrder: 4 },
+  { parentAccountCode: 'PUR-001', code: 'P1-6', nameAr: 'مواد غذائية أخرى', sortOrder: 5 },
+  { parentAccountCode: 'PUR-002', code: 'P2-1', nameAr: 'غازيات',            sortOrder: 0 },
+  { parentAccountCode: 'PUR-002', code: 'P2-2', nameAr: 'مياه',              sortOrder: 1 },
+  { parentAccountCode: 'PUR-002', code: 'P2-3', nameAr: 'عصائر',             sortOrder: 2 },
+  { parentAccountCode: 'PUR-003', code: 'P3-1', nameAr: 'بلاستيكات',         sortOrder: 0 },
+  { parentAccountCode: 'PUR-003', code: 'P3-2', nameAr: 'علب وأكواب',        sortOrder: 1 },
+  { parentAccountCode: 'PUR-003', code: 'P3-3', nameAr: 'أكياس',             sortOrder: 2 },
+  { parentAccountCode: 'PUR-004', code: 'P4-1', nameAr: 'فحم',               sortOrder: 0 },
+  { parentAccountCode: 'PUR-004', code: 'P4-2', nameAr: 'غاز طبخ',           sortOrder: 1 },
+  { parentAccountCode: 'PUR-004', code: 'P4-3', nameAr: 'مواد تشغيلية',      sortOrder: 2 },
+  { parentAccountCode: 'PUR-004', code: 'P4-4', nameAr: 'مواد تنظيف مطبخ',  sortOrder: 3 },
+  { parentAccountCode: 'EXP-003', code: 'E3-1', nameAr: 'إيجارات',           sortOrder: 0 },
+  { parentAccountCode: 'EXP-003', code: 'E3-2', nameAr: 'كهرباء',            sortOrder: 1 },
+  { parentAccountCode: 'EXP-003', code: 'E3-3', nameAr: 'اتصالات',           sortOrder: 2 },
+  { parentAccountCode: 'EXP-003', code: 'E3-4', nameAr: 'ماء',               sortOrder: 3 },
+  { parentAccountCode: 'EXP-003', code: 'E3-5', nameAr: 'غاز',               sortOrder: 4 },
+  { parentAccountCode: 'EXP-005', code: 'E5-1', nameAr: 'صيانة آلات',        sortOrder: 0 },
+  { parentAccountCode: 'EXP-005', code: 'E5-2', nameAr: 'قطع غيار',          sortOrder: 1 },
+  { parentAccountCode: 'EXP-002', code: 'E2-1', nameAr: 'رخصة تجارية',       sortOrder: 0 },
+  { parentAccountCode: 'EXP-002', code: 'E2-2', nameAr: 'رخصة بلدية',        sortOrder: 1 },
+  { parentAccountCode: 'EXP-002', code: 'E2-3', nameAr: 'دفاع مدني',         sortOrder: 2 },
+  { parentAccountCode: 'EXP-002', code: 'E2-4', nameAr: 'إقامات وجوازات',    sortOrder: 3 },
+  { parentAccountCode: 'EXP-002', code: 'E2-5', nameAr: 'زيارات',            sortOrder: 4 },
+  { parentAccountCode: 'EXP-002', code: 'E2-6', nameAr: 'غرامات',            sortOrder: 5 },
+  { parentAccountCode: 'EXP-002', code: 'E2-7', nameAr: 'ضرائب ورسوم أخرى', sortOrder: 6 },
+  { parentAccountCode: 'EXP-007', code: 'E7-1', nameAr: 'رسوم تحويل',        sortOrder: 0 },
+  { parentAccountCode: 'EXP-007', code: 'E7-2', nameAr: 'رسوم سحب',          sortOrder: 1 },
+  { parentAccountCode: 'EXP-007', code: 'E7-3', nameAr: 'رسوم إدارة حساب',   sortOrder: 2 },
+  { parentAccountCode: 'EXP-007', code: 'E7-4', nameAr: 'فوائد ورسوم قروض',  sortOrder: 3 },
+  { parentAccountCode: 'EXP-007', code: 'E7-5', nameAr: 'رسوم أخرى',         sortOrder: 4 },
+  { parentAccountCode: 'EXP-008', code: 'E8-1', nameAr: 'أثاث',               sortOrder: 0 },
+  { parentAccountCode: 'EXP-008', code: 'E8-2', nameAr: 'معدات مكتبية',       sortOrder: 1 },
+  { parentAccountCode: 'EXP-008', code: 'E8-3', nameAr: 'أجهزة وإلكترونيات', sortOrder: 2 },
+  { parentAccountCode: 'EXP-008', code: 'E8-4', nameAr: 'مركبات',             sortOrder: 3 },
+  { parentAccountCode: 'EXP-008', code: 'E8-5', nameAr: 'آلات ومعدات',        sortOrder: 4 },
+  { parentAccountCode: 'EXP-008', code: 'E8-6', nameAr: 'أصول أخرى',          sortOrder: 5 },
+];
+
+/**
+ * تهيئة دليل الحسابات للشركة — تُستدعى فقط إن لم توجد حسابات بعد
+ */
+async function initializeAccounting(tenantId, companyId) {
+  const existingCount = await prisma.account.count({ where: { companyId } });
+  if (existingCount > 0) {
+    console.log('  ↳ دليل الحسابات موجود — تم التخطي');
+    return;
+  }
+
+  const codeToAccountId = {};
+
+  // 1. إنشاء الحسابات
+  for (const acc of MASTER_ACCOUNTS) {
+    const created = await prisma.account.create({
+      data: { tenantId, companyId, code: acc.code, nameAr: acc.nameAr, nameEn: acc.nameEn, type: acc.type, icon: acc.icon, taxExempt: acc.taxExempt, isActive: true },
+    });
+    codeToAccountId[acc.code] = created.id;
+  }
+  console.log(`  ✅ حسابات: ${MASTER_ACCOUNTS.length}`);
+
+  // 2. الخزينتان
+  const vaultSeeds = [
+    { accountCode: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash', type: 'cash' },
+    { accountCode: 'V-002', nameAr: 'البنك (مدى/تحويلات)',    nameEn: 'Bank',       type: 'bank' },
+  ];
+  for (const v of vaultSeeds) {
+    const accountId = codeToAccountId[v.accountCode];
+    if (!accountId) continue;
+    await prisma.vault.create({
+      data: { tenantId, companyId, accountId, nameAr: v.nameAr, nameEn: v.nameEn, type: v.type, isActive: true },
+    });
+  }
+  console.log('  ✅ خزينتان (كاش + بنك)');
+
+  // 3. السنة المالية الافتراضية
+  const year = new Date().getFullYear();
+  await prisma.fiscalPeriod.create({
+    data: { tenantId, companyId, nameAr: `السنة المالية ${year}`, nameEn: `Fiscal Year ${year}`, startDate: new Date(year, 0, 1), endDate: new Date(year, 11, 31), status: 'open' },
+  });
+
+  // 4. الفئات الرئيسية
+  const accountCodeToCategoryId = {};
+  for (let i = 0; i < MASTER_CATEGORIES.length; i++) {
+    const cat = MASTER_CATEGORIES[i];
+    const accountId = codeToAccountId[cat.accountCode];
+    const acc = MASTER_ACCOUNTS.find((a) => a.code === cat.accountCode);
+    const created = await prisma.category.create({
+      data: { tenantId, companyId, accountId: accountId || null, code: cat.accountCode, nameAr: cat.nameAr, nameEn: acc?.nameEn || null, type: cat.type, icon: acc?.icon || null, sortOrder: i, isActive: true },
+    });
+    accountCodeToCategoryId[cat.accountCode] = created.id;
+  }
+
+  // 5. الفئات الفرعية
+  let subCount = 0;
+  for (const sub of MASTER_SUBCATEGORIES) {
+    const parentId = accountCodeToCategoryId[sub.parentAccountCode];
+    const parentCat = MASTER_CATEGORIES.find((c) => c.accountCode === sub.parentAccountCode);
+    if (!parentId || !parentCat) continue;
+    await prisma.category.create({
+      data: { tenantId, companyId, parentId, accountId: codeToAccountId[sub.parentAccountCode] || null, code: sub.code, nameAr: sub.nameAr, nameEn: sub.nameAr, type: parentCat.type, sortOrder: sub.sortOrder || 0, isActive: true },
+    });
+    subCount++;
+  }
+  console.log(`  ✅ فئات: ${MASTER_CATEGORIES.length} رئيسية + ${subCount} فرعية`);
+}
 
 const prisma = new PrismaClient();
 
@@ -87,6 +235,10 @@ async function main() {
     });
     console.log('✅ تم إنشاء شركة افتراضية');
   }
+
+  // ─── 3b. تهيئة دليل الحسابات (إن لم يكن موجوداً) ───
+  console.log('⚙️  جاري تهيئة دليل الحسابات...');
+  await initializeAccounting(tenant.id, company.id);
 
   // ─── 4. المستخدم admin@noorix.sa ───
   let user = await prisma.user.findUnique({
