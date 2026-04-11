@@ -49,7 +49,12 @@ type ReportInvoice = {
   transactionDate: Date;
   notes: string | null;
   categoryId: string | null;
-  supplier: { nameAr: string; nameEn: string | null } | null;
+  supplier: {
+    nameAr?: string;
+    nameEn?: string | null;
+    /** فئة المورد — يُستخدم في P&L للمشتريات عندما تتجاوز/تكمّل فئة سطر الفاتورة */
+    supplierCategoryId?: string | null;
+  } | null;
   expenseLine: { id: string; nameAr: string; nameEn: string | null; categoryId: string } | null;
   dailySalesSummary: {
     summaryNumber: string;
@@ -434,6 +439,8 @@ export class ReportsService {
       credit_name_en: string | null;
       inv_kind: string | null;
       category_id: string | null;
+      supplier_id: string | null;
+      supplier_category_id: string | null;
       expense_line_id: string | null;
       el_name_ar: string | null;
       el_name_en: string | null;
@@ -464,6 +471,8 @@ export class ReportsService {
           ca.name_en         AS credit_name_en,
           i.kind             AS inv_kind,
           i.category_id,
+          i.supplier_id,
+          sup.supplier_category_id AS supplier_category_id,
           i.expense_line_id,
           el.name_ar         AS el_name_ar,
           el.name_en         AS el_name_en,
@@ -480,6 +489,7 @@ export class ReportsService {
             OR (le.reference_type = 'sale' AND i.daily_sales_summary_id = le.reference_id)
           )
         )
+        LEFT JOIN suppliers sup ON sup.id = i.supplier_id AND sup.company_id = i.company_id
         LEFT JOIN expense_lines el ON el.id = i.expense_line_id
         WHERE le.company_id = ${companyId}
           AND le.status = 'active'
@@ -487,7 +497,7 @@ export class ReportsService {
         GROUP BY
           da.type, da.code, da.id, da.name_ar, da.name_en,
           ca.type, ca.id, ca.name_ar, ca.name_en,
-          i.kind, i.category_id, i.expense_line_id,
+          i.kind, i.category_id, i.supplier_id, sup.supplier_category_id, i.expense_line_id,
           el.name_ar, el.name_en, el.category_id,
           month
       `,
@@ -570,7 +580,9 @@ export class ReportsService {
                 }
               : null,
             dailySalesSummary: null,
-            supplier: null,
+            supplier: row.supplier_id
+              ? { supplierCategoryId: row.supplier_category_id ?? null }
+              : null,
           };
           const meta = this.resolveItemMeta(pseudoInvoice as unknown as ReportInvoice, groupKey, catMap);
           // إذا لم يُحلَّ الحساب لفئة (fallback = kind:xxx) وكان الحساب مرتبطاً بفئة — استخدمها
@@ -804,12 +816,17 @@ export class ReportsService {
       where = { ...where, expenseLineId: itemKey.replace('expense-line:', '') };
     } else if (itemKey?.startsWith('category:')) {
       const catIds = this.getCategoryAndDescendantIds(itemKey.replace('category:', ''), categories);
+      const categoryOr: Prisma.InvoiceWhereInput[] = [
+        { categoryId: { in: [...catIds] } },
+        { expenseLine: { categoryId: { in: [...catIds] } } },
+      ];
+      // المشتريات: جزء من المبلغ يُجمَّع تحت فئة المورد (مثل لوحة «فئات الموردين») مع category_id=جذر
+      if (groupKey === 'purchases') {
+        categoryOr.push({ supplier: { supplierCategoryId: { in: [...catIds] } } });
+      }
       where = {
         ...where,
-        OR: [
-          { categoryId: { in: [...catIds] } },
-          { expenseLine: { categoryId: { in: [...catIds] } } },
-        ],
+        OR: categoryOr,
       };
     } else if (itemKey?.startsWith('sales-channel:')) {
       where = {
@@ -833,7 +850,7 @@ export class ReportsService {
         transactionDate: true,
         notes: true,
         categoryId: true,
-        supplier: { select: { nameAr: true, nameEn: true } },
+        supplier: { select: { nameAr: true, nameEn: true, supplierCategoryId: true } },
         expenseLine: { select: { id: true, nameAr: true, nameEn: true, categoryId: true } },
         dailySalesSummary: {
           select: {
@@ -913,6 +930,16 @@ export class ReportsService {
       }
     }
     return set;
+  }
+
+  /** هل catId فرع (أو أعمق) تحت ancestorId — للمشتريات: فئة المورد الفرعية تحت فئة سطر الفاتورة */
+  private categoryIsDescendantOf(catId: string, ancestorId: string, categories: Map<string, CategoryNode>): boolean {
+    let c = categories.get(catId);
+    while (c?.parentId) {
+      if (c.parentId === ancestorId) return true;
+      c = categories.get(c.parentId);
+    }
+    return false;
   }
 
   private findInCategoryTree(items: ExpenseTreeNode[], key: string): ExpenseTreeNode | null {
@@ -1080,6 +1107,26 @@ export class ReportsService {
           : (invoice.expenseLine.nameEn || invoice.expenseLine.nameAr),
         sortOrder: (parent?.sortOrder ?? category?.sortOrder ?? 0) * 1000 + 10,
       };
+    }
+
+    /**
+     * المشتريات: لوحة التحكم تُجمّع حسب فئة المورد (supplierCategoryId)؛ التقرير كان يعتمد فقط على
+     * category_id على الفاتورة — فيُجمَع كل شيء على الجذر (مثلاً PUR-001) ولا تظهر الفروع.
+     * - إن وُجدت فئة مورد فرعية تحت فئة سطر الفاتورة → نستخدم الفرع (يتوافق مع «فئات الموردين»).
+     * - إن لم يُضبط category_id على الفاتورة → نستخدم فئة المورد إن وُجدت.
+     */
+    if (groupKey === 'purchases' && invoice.supplier?.supplierCategoryId != null) {
+      const invId = invoice.categoryId ?? null;
+      const supId = invoice.supplier.supplierCategoryId;
+      const supCat = categories.get(supId);
+      if (supCat) {
+        if (invId && supId !== invId && this.categoryIsDescendantOf(supId, invId, categories)) {
+          return this.resolveCategoryMeta(supCat, categories);
+        }
+        if (!invId) {
+          return this.resolveCategoryMeta(supCat, categories);
+        }
+      }
     }
 
     const categoryId = invoice.categoryId || null;
