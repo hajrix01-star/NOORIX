@@ -804,7 +804,7 @@ export class InvoiceService {
    * ملخص دفعات المشتريات/المصروفات في الفترة — استعلام واحد ثم تجميع في الذاكرة.
    * يُستخدم بدل جلب صفحة واحدة (50) من الفواتير فقط.
    */
-  async findPurchaseBatchSummaries(companyId: string, startDate?: string, endDate?: string, q?: string) {
+  async findPurchaseBatchSummaries(companyId: string, startDate?: string, endDate?: string, q?: string, lang = 'ar') {
     const dateFilter = this.buildDateFilter(startDate, endDate);
     const where: Prisma.InvoiceWhereInput = {
       companyId,
@@ -851,10 +851,13 @@ export class InvoiceService {
       const cancelledCount = invs.filter((i) => i.status === 'cancelled').length;
       const status =
         cancelledCount === 0 ? 'active' : activeCount === 0 ? 'cancelled' : 'partial';
+      const pickName = (ar?: string | null, en?: string | null) =>
+        lang === 'en' ? (en || ar || '') : (ar || en || '');
+
       const supplierNames = [
         ...new Set(
           invs
-            .map((i) => i.supplier?.nameAr || i.supplier?.nameEn || i.notes || '')
+            .map((i) => pickName(i.supplier?.nameAr, i.supplier?.nameEn) || i.notes || '')
             .filter(Boolean),
         ),
       ].join(' | ');
@@ -865,7 +868,7 @@ export class InvoiceService {
       const vaultLabels = [
         ...new Set(
           invs
-            .map((i) => i.vault?.nameAr || i.vault?.nameEn || '')
+            .map((i) => pickName(i.vault?.nameAr, i.vault?.nameEn))
             .filter(Boolean),
         ),
       ];

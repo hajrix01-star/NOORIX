@@ -692,11 +692,12 @@ export async function fetchAllSalesSummariesForExport(
 }
 
 /** ملخص دفعات المشتريات في الفترة — من السيرفر (بدل صفحة فواتير واحدة) */
-export async function getPurchaseBatchSummaries(companyId, startDate, endDate, q) {
+export async function getPurchaseBatchSummaries(companyId, startDate, endDate, q, lang) {
   const params = { companyId };
   if (startDate) params.startDate = String(startDate).slice(0, 10);
   if (endDate) params.endDate = String(endDate).slice(0, 10);
   if (q && String(q).trim()) params.q = String(q).trim();
+  if (lang) params.lang = lang;
   const res = await apiGet('/api/v1/invoices/purchase-batch-summaries', params);
   if (!res.success) return { success: false, error: res.error, data: { batches: [], rowCount: 0 } };
   const raw = res.data?.data ?? res.data;

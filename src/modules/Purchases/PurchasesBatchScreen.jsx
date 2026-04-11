@@ -92,9 +92,9 @@ export default function PurchasesBatchScreen() {
   const [showFinancialCols, setShowFinancialCols] = useState(false);
 
   const { data: batchSummaryData, isLoading: batchesLoading, isError: batchesError, error: batchesErr } = useQuery({
-    queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ],
+    queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ, lang],
     queryFn: async () => {
-      const res = await getPurchaseBatchSummaries(companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ || undefined);
+      const res = await getPurchaseBatchSummaries(companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ || undefined, lang);
       throwIfApiFailed(res, t('loadBatchFailed'));
       return res.data;
     },

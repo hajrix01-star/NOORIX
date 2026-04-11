@@ -50,9 +50,10 @@ export class InvoiceController {
     @Query('startDate') startDate?: string,
     @Query('endDate')   endDate?:   string,
     @Query('q')         q?:         string,
+    @Query('lang')      lang?:      string,
   ) {
     if (!companyId) return { batches: [], rowCount: 0 };
-    return this.invoiceService.findPurchaseBatchSummaries(companyId, startDate, endDate, q);
+    return this.invoiceService.findPurchaseBatchSummaries(companyId, startDate, endDate, q, lang);
   }
 
   @Get('day-close-report')
