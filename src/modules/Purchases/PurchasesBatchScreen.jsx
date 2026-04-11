@@ -89,6 +89,7 @@ export default function PurchasesBatchScreen() {
 
   const [batchSearchInput, setBatchSearchInput] = useState('');
   const debouncedBatchQ = useDebouncedValue(batchSearchInput.trim(), 300);
+  const [showFinancialCols, setShowFinancialCols] = useState(false);
 
   const { data: batchSummaryData, isLoading: batchesLoading, isError: batchesError, error: batchesErr } = useQuery({
     queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ],
@@ -176,73 +177,60 @@ export default function PurchasesBatchScreen() {
     }
   }, [companyId, dateFilter.startDate, dateFilter.endDate, queryClient, t, showToast]);
 
-  const batchesColumns = useMemo(() => [
-    /* رقم الدفعة — ضيق، محتوى ثابت مثل INV-0001 */
-    { key: 'batchId', label: t('batchId'), sortable: true, shrink: true,
-      render: (v) => (
-        <span className="font-bold whitespace-nowrap" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v}</span>
-      )},
-    /* التاريخ — ضيق، نص ثابت */
-    { key: 'transactionDate', label: t('transactionDate'), sortable: true, shrink: true,
-      render: (v) => (
-        <span className="text-[12px] text-noorix-muted whitespace-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(v)}</span>
-      )},
-    /* عدد الفواتير — ضيق جداً */
-    { key: 'invoiceCount', label: t('invoiceCount'), numeric: true, sortable: true, shrink: true,
-      render: (v) => (
-        <span className="font-bold" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span>
-      )},
-    /* المورد — minWidth يضمن عدم انهيار العمود مع table-layout:auto */
-    { key: 'supplierNames', label: t('supplier'), sortable: true, minWidth: 160,
-      render: (v) => (
-        <span className="truncate block min-w-0">{v || '—'}</span>
-      )},
-    { key: 'vaultName', label: t('vault'), sortable: true, shrink: true, minWidth: 120,
-      render: (v) => (
-        <span className="truncate block min-w-0 max-w-[200px]">{v || '—'}</span>
-      )},
-    /* الأعمدة المالية — ضيقة، محاذاة يمين */
-    { key: 'netAmount',   label: t('net'),   numeric: true, sortable: true, shrink: true,
-      render: (v) => <span className="text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
-    { key: 'taxAmount',   label: t('tax'),   numeric: true, sortable: true, shrink: true,
-      render: (v) => <span className="text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
-    { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, shrink: true,
-      render: (v) => <span className="font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
-    /* الحالة — شارة ضيقة */
-    { key: 'status', label: t('statusLabel'), shrink: true,
-      render: (v) => <Badge {...Badge.fromStatus(v, statusBadgeMap)} size="sm" /> },
-    /* الإجراءات — بدون shrink + minWidth يمنع تداخل الأزرار مع بقية الأعمدة */
-    { key: 'actions', label: t('actions'), align: 'center', minWidth: 220,
-      render: (_, row) => {
-        const canCancel = row.status === 'active' || row.status === 'partial';
-        return (
-          <div className="noorix-actions-row flex flex-wrap justify-center max-w-[280px]">
-            <Button
-              size="sm"
-              onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
-              disabled={batchActionLoading === row.batchId}
-              title={t('print')}>
-              {batchActionLoading === row.batchId ? '…' : t('print')}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => openBatchWithInvoices(row, setEditingBatch)}
-              disabled={batchActionLoading === row.batchId}
-              title={t('edit')}>
-              ✎ {batchActionLoading === row.batchId ? '…' : t('edit')}
-            </Button>
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={() => handleCancelBatch(row)} disabled={!canCancel || batchActionLoading === row.batchId}
-              title={t('cancel')}>
-              × {t('cancel')}
-            </Button>
-          </div>
-        );
+  const batchesColumns = useMemo(() => {
+    const financialCols = showFinancialCols ? [
+      { key: 'netAmount', label: t('net'), numeric: true, sortable: true, shrink: true,
+        render: (v) => <span className="text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+      { key: 'taxAmount', label: t('tax'), numeric: true, sortable: true, shrink: true,
+        render: (v) => <span className="text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+    ] : [];
+
+    return [
+      { key: 'batchId', label: t('batchId'), sortable: true, shrink: true,
+        render: (v) => (
+          <span className="font-bold whitespace-nowrap" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v}</span>
+        )},
+      { key: 'transactionDate', label: t('transactionDate'), sortable: true, shrink: true,
+        render: (v) => (
+          <span className="text-[12px] text-noorix-muted whitespace-nowrap" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(v)}</span>
+        )},
+      { key: 'invoiceCount', label: t('invoiceCount'), numeric: true, sortable: true, shrink: true,
+        render: (v) => (
+          <span className="font-bold" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span>
+        )},
+      { key: 'supplierNames', label: t('supplier'), sortable: true, minWidth: 160,
+        render: (v) => (
+          <span className="truncate block min-w-0">{v || '—'}</span>
+        )},
+      { key: 'vaultName', label: t('vault'), sortable: true, shrink: true, minWidth: 120,
+        render: (v) => (
+          <span className="truncate block min-w-0 max-w-[200px]">{v || '—'}</span>
+        )},
+      ...financialCols,
+      { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, shrink: true,
+        render: (v) => <span className="font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+      { key: 'status', label: t('statusLabel'), shrink: true,
+        render: (v) => <Badge {...Badge.fromStatus(v, statusBadgeMap)} size="sm" /> },
+      { key: 'actions', label: t('actions'), align: 'center', minWidth: 220,
+        render: (_, row) => {
+          const canCancel = row.status === 'active' || row.status === 'partial';
+          return (
+            <div className="noorix-actions-row flex flex-wrap justify-center max-w-[280px]">
+              <Button size="sm" onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId} title={t('print')}>
+                {batchActionLoading === row.batchId ? '…' : t('print')}
+              </Button>
+              <Button size="sm" onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId} title={t('edit')}>
+                ✎ {batchActionLoading === row.batchId ? '…' : t('edit')}
+              </Button>
+              <Button size="sm" variant="danger" onClick={() => handleCancelBatch(row)} disabled={!canCancel || batchActionLoading === row.batchId} title={t('cancel')}>
+                × {t('cancel')}
+              </Button>
+            </div>
+          );
+        },
       },
-    },
-  ], [t, statusBadgeMap, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
+    ];
+  }, [t, statusBadgeMap, batchActionLoading, showFinancialCols, openBatchWithInvoices, handleCancelBatch]);
 
   const renderBatchMobileCard = useCallback((row) => {
     const canCancel = row.status === 'active' || row.status === 'partial';
@@ -283,14 +271,18 @@ export default function PurchasesBatchScreen() {
     );
   }, [statusBadgeMap, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
 
-  /* صف التذييل: # + batchId + تاريخ + عدد + مورد + خزنة + صافي + ضريبة + إجمالي + حالة + إجراءات = 11 عموداً */
+  /* صف التذييل — ديناميكي حسب الأعمدة الظاهرة */
   const batchesFooterCells = (
     <>
       <td colSpan={6} className="text-[12px] text-noorix-muted py-2 px-2.5 align-middle">
         {t('totalBatches', activeOnly.length) || `الإجمالي (${activeOnly.length} دفعة)`}
       </td>
-      <td className="text-noorix-green whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)}</td>
-      <td className="text-noorix-amber whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)}</td>
+      {showFinancialCols && (
+        <>
+          <td className="text-noorix-green whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalNet)}</td>
+          <td className="text-noorix-amber whitespace-nowrap py-2 px-2.5 text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalTax)}</td>
+        </>
+      )}
       <td className="whitespace-nowrap py-2 px-2.5 text-noorix-violet font-[900] text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(totalAmount)}</td>
       <td colSpan={2} className="py-2 px-2.5" />
     </>
@@ -562,6 +554,14 @@ export default function PurchasesBatchScreen() {
               <>
                 <span className="text-[12px] text-noorix-muted">— {dateFilter.label}</span>
                 <Badge color="blue" size="sm">{t('batchCount', displayedTotal)}</Badge>
+                <Button
+                  size="sm"
+                  variant={showFinancialCols ? 'primary' : 'ghost'}
+                  onClick={() => setShowFinancialCols((v) => !v)}
+                  title={showFinancialCols ? 'إخفاء الصافي والضريبة' : 'إظهار الصافي والضريبة'}
+                >
+                  {showFinancialCols ? '◂ إخفاء التفاصيل' : '▸ صافي / ضريبة'}
+                </Button>
               </>
             }
             searchValue={batchSearchInput}
