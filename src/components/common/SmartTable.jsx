@@ -17,6 +17,62 @@ function getAlign(col) {
   return 'start';
 }
 
+const HIDDEN_STYLE = { width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' };
+
+/**
+ * يحوّل footerRow (مصفوفة شرائح) إلى خلايا <td> مدركة لإخفاء الأعمدة.
+ * كل شريحة { keys, content?, className? } تمتد على مجموع أعمدة keys؛
+ * إن كانت كل أعمدة الشريحة مخفية تُصيَّر بعرض صفري.
+ */
+function buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowNumberWidth, cellPad }) {
+  const cells = [];
+
+  if (showRowNumbers) {
+    cells.push(
+      <td key="__num__" style={{ width: rowNumberWidth || 36, padding: cellPad.td }} />,
+    );
+  }
+
+  // بناء خريطة: أول مفتاح في الشريحة → الشريحة
+  const segByFirstKey = new Map();
+  footerRow.forEach((seg) => {
+    if (seg.keys?.length) segByFirstKey.set(seg.keys[0], seg);
+  });
+
+  let i = 0;
+  while (i < columns.length) {
+    const col = columns[i];
+    const seg = segByFirstKey.get(col.key);
+
+    if (seg) {
+      const colSpan = seg.keys.length;
+      const allHidden = seg.keys.every((k) => hiddenCols.has(k));
+
+      cells.push(
+        <td
+          key={col.key}
+          colSpan={colSpan > 1 ? colSpan : undefined}
+          className={allHidden ? undefined : (seg.className || '')}
+          aria-hidden={allHidden || undefined}
+          style={allHidden ? HIDDEN_STYLE : undefined}
+        >
+          {allHidden ? null : seg.content}
+        </td>,
+      );
+      i += colSpan;
+    } else {
+      cells.push(
+        hiddenCols.has(col.key)
+          ? <td key={col.key} aria-hidden style={HIDDEN_STYLE} />
+          : <td key={col.key} style={{ padding: cellPad.td }} />,
+      );
+      i++;
+    }
+  }
+
+  return cells;
+}
+
 // ── Pagination ───────────────────────────────────────────────
 const Pagination = memo(function Pagination({ page, totalPages, onPageChange, t }) {
   const go = useCallback((p) => { if (p >= 1 && p <= totalPages) onPageChange(p); }, [totalPages, onPageChange]);
@@ -46,6 +102,12 @@ const SmartTable = memo(function SmartTable({
   isError        = false,
   errorMessage   = 'فشل تحميل البيانات',
   footerCells    = null,
+  /**
+   * بديل footerCells المدرك لإخفاء الأعمدة.
+   * مصفوفة شرائح: [{ keys: string[], content?: ReactNode, className?: string }]
+   * keys = مفاتيح الأعمدة التي تمتد عليها الخلية (بالترتيب وبدون فجوات).
+   */
+  footerRow      = null,
   title,
   badge,
   searchValue,
@@ -414,9 +476,13 @@ const SmartTable = memo(function SmartTable({
                 </tr>
               ))}
             </tbody>
-            {footerCells && (
+            {(footerCells || footerRow) && (
               <tfoot>
-                <tr>{footerCells}</tr>
+                <tr>
+                  {footerRow
+                    ? buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowNumberWidth, cellPad })
+                    : footerCells}
+                </tr>
               </tfoot>
             )}
           </table>

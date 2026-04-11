@@ -322,17 +322,35 @@ export default function InvoicesListScreen() {
     return n || '—';
   }, [t, lang]);
 
-  const footerCells = (
-    <>
-      <td colSpan={7} className="nx-tfoot-label text-[12px] text-center">
-        {t('totalInvoices', serverAll.count)} {total > PAGE_SIZE && <span className="text-[11px]" style={{ opacity: 0.65 }}>({t('allPages')})</span>}
-      </td>
-      <td className="nx-tfoot-num nx-cell-num--green text-center"><FmtNum n={Number(serverAll.net)} /></td>
-      <td className="nx-tfoot-num nx-cell-num--amber text-center"><FmtNum n={Number(serverAll.tax)} /></td>
-      <td className="nx-tfoot-num nx-cell-num--violet text-center"><FmtNum n={Number(serverAll.total)} /></td>
-      <td colSpan={3} />
-    </>
-  );
+  const footerRow = useMemo(() => [
+    {
+      keys: ['invoiceNumber', 'supplierInvoiceNumber', 'supplierName', 'notesOrEmployee', 'kind', 'vaultLabel'],
+      className: 'nx-tfoot-label text-[12px] text-center',
+      content: (
+        <>
+          {t('totalInvoices', serverAll.count)}
+          {total > PAGE_SIZE && (
+            <span className="text-[11px]" style={{ opacity: 0.65 }}> ({t('allPages')})</span>
+          )}
+        </>
+      ),
+    },
+    {
+      keys: ['netAmount'],
+      className: 'nx-tfoot-num nx-cell-num--green text-center',
+      content: <FmtNum n={Number(serverAll.net)} />,
+    },
+    {
+      keys: ['taxAmount'],
+      className: 'nx-tfoot-num nx-cell-num--amber text-center',
+      content: <FmtNum n={Number(serverAll.tax)} />,
+    },
+    {
+      keys: ['totalAmount'],
+      className: 'nx-tfoot-num nx-cell-num--violet text-center',
+      content: <FmtNum n={Number(serverAll.total)} />,
+    },
+  ], [t, serverAll, total]);
 
   const renderMobileCard = useCallback((row) => (
     <div>
@@ -662,7 +680,7 @@ export default function InvoicesListScreen() {
           isLoading={isLoading}
           isError={isError}
           errorMessage={error?.message || t('loadInvoicesFailed')}
-          footerCells={footerCells}
+          footerRow={footerRow}
           title={t('invoicesTitle')}
           badge={
             <>
