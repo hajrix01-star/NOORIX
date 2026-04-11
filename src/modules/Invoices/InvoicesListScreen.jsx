@@ -186,17 +186,17 @@ export default function InvoicesListScreen() {
   }, [t, deleteInvoiceMut]);
 
   const columns = useMemo(() => [
-    { key: 'invoiceNumber', label: t('documentNumber'), align: 'center', shrink: true, width: '11%',
+    { key: 'invoiceNumber', label: t('documentNumber'), align: 'center', shrink: true, width: '12%',
       render: (v) => <span className="nx-cell-num nx-cell-accent nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), align: 'center', shrink: true, width: '9%',
+    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), align: 'center', shrink: true, width: '7%',
       render: (v) => <span className="nx-cell-num nx-cell-muted nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'supplierName',  label: t('supplier'), align: 'center', width: '10%',
+    { key: 'supplierName',  label: t('supplier'), align: 'center', width: '8%',
       render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'notesOrEmployee', label: t('invoiceNotesColumn') || 'ملاحظة', align: 'center', width: '10%',
+    { key: 'notesOrEmployee', label: t('invoiceNotesColumn') || 'ملاحظة', align: 'center', width: '9%',
       render: (_, row) => <span className="nx-cell-ellipsis" title={row.notes || ''}>{row.notes || '—'}</span> },
-    { key: 'kind',          label: t('type'), align: 'center', shrink: true, width: '5%',
+    { key: 'kind',          label: t('type'), align: 'center', shrink: true, width: '6%',
       render: (v) => <Badge {...Badge.fromStatus(v, KIND_MAP)} size="sm" /> },
-    { key: 'vaultLabel', label: t('invoiceVaultColumn'), align: 'center', width: '22%',
+    { key: 'vaultLabel', label: t('invoiceVaultColumn'), align: 'center', width: '20%',
       render: (_, row) => {
         const a = row.vaultAllocations;
         if (a?.length > 0) {
@@ -230,17 +230,17 @@ export default function InvoicesListScreen() {
         return <span className="nx-cell-ellipsis text-[12px] text-center" title={vn || ''}>{vn || '—'}</span>;
       },
     },
-    { key: 'netAmount',     label: t('net'),    align: 'center', numeric: true, shrink: true, width: '5%',
+    { key: 'netAmount',     label: t('net'),    align: 'center', numeric: true, shrink: true, width: '7%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
-    { key: 'taxAmount',     label: t('tax'),    align: 'center', numeric: true, shrink: true, width: '4%',
+    { key: 'taxAmount',     label: t('tax'),    align: 'center', numeric: true, shrink: true, width: '6%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--amber" /> },
     { key: 'totalAmount',   label: t('total'),  align: 'center', numeric: true, shrink: true, width: '7%',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" /> },
-    { key: 'transactionDate', label: t('date'), align: 'center', sortable: true, shrink: true, width: '6%',
+    { key: 'transactionDate', label: t('date'), align: 'center', sortable: true, shrink: true, width: '7%',
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span> },
-    { key: 'status',        label: t('statusLabel'), align: 'center', shrink: true, width: '5%',
+    { key: 'status',        label: t('statusLabel'), align: 'center', shrink: true, width: '6%',
       render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
-    { key: 'actions', label: t('actions'), align: 'center', width: '6%', shrink: true,
+    { key: 'actions', label: t('actions'), align: 'center', width: '5%', shrink: true,
       render: (_, row) => (
         <InvoiceActionsCell
           row={row}
