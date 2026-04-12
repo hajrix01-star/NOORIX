@@ -27,8 +27,40 @@ import ImportExportModal  from '../../components/ImportExportModal';
 import { formatInvoiceForExport } from '../../utils/importTemplates';
 import DayCloseReportModal from './components/DayCloseReportModal';
 import { buildActiveCancelledStatusMap, buildInvoiceKindBadgeMap } from '../../constants/badgeMaps';
+import { vaultDisplayName } from '../../utils/vaultDisplay';
 
 const PAGE_SIZE = 50;
+/** أقصى عدد أعمدة خزائن في تصدير Excel (اسم + نوع + مبلغ لكل خزينة) */
+const MAX_VAULT_SLOTS = 5;
+
+function vaultTypeLabelForExport(type, t) {
+  const map = { cash: 'vaultTypeCash', bank: 'vaultTypeBank', app: 'vaultTypeApp' };
+  const k = map[type];
+  return k ? t(k) : (type ? String(type) : '—');
+}
+
+function getAllocationsForExport(inv, lang, t) {
+  const out = [];
+  const a = inv.vaultAllocations;
+  if (Array.isArray(a) && a.length > 0) {
+    for (const al of a) {
+      out.push({
+        name: vaultDisplayName(al.vault, lang),
+        type: vaultTypeLabelForExport(al.vault?.type, t),
+        amount: Number(al.amount ?? 0),
+      });
+    }
+    return out;
+  }
+  if (inv.vault) {
+    out.push({
+      name: vaultDisplayName(inv.vault, lang),
+      type: vaultTypeLabelForExport(inv.vault?.type, t),
+      amount: Number(inv.totalAmount ?? 0),
+    });
+  }
+  return out;
+}
 
 /* ══ نافذة عرض الفاتورة (قراءة فقط) ══════════════════════════════════════════ */
 function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
@@ -101,20 +133,6 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
       </div>
     </Modal>
   );
-}
-
-function vaultExportLabel(inv, lang, fmt) {
-  const a = inv.vaultAllocations;
-  if (a?.length > 0) {
-    return a.map((al) => {
-      const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
-      return `${vn || '—'}: ${fmt(al.amount)} SR`;
-    }).join(' | ');
-  }
-  if (inv.vault) {
-    return lang === 'en' ? inv.vault.nameEn || inv.vault.nameAr : inv.vault.nameAr || inv.vault.nameEn;
-  }
-  return '—';
 }
 
 export default function InvoicesListScreen() {
@@ -337,34 +355,52 @@ export default function InvoicesListScreen() {
       : (lang === 'en' ? (inv.supplier?.nameEn || inv.supplier?.nameAr || '') : (inv.supplier?.nameAr || inv.supplier?.nameEn || ''));
     const kindLabel = KIND_MAP[inv.kind]?.label ?? inv.kind ?? '—';
     const statusLabel = STATUS_MAP[inv.status]?.label ?? inv.status ?? '—';
-    return {
+    const allocs = getAllocationsForExport(inv, lang, t);
+    const row = {
       invoiceNumber: inv.invoiceNumber ?? '',
       supplierInvoiceNumber: inv.supplierInvoiceNumber ?? '',
       supplierName: supplierName || '—',
       notes: inv.notes ?? '',
       kind: kindLabel,
-      vault: vaultExportLabel(inv, lang, fmt),
       netAmount: Number(inv.netAmount ?? 0),
       taxAmount: Number(inv.taxAmount ?? 0),
       totalAmount: Number(inv.totalAmount ?? 0),
       transactionDate: inv.transactionDate ? formatSaudiDateISO(inv.transactionDate) : '—',
       status: statusLabel,
     };
+    for (let i = 0; i < MAX_VAULT_SLOTS; i++) {
+      const slot = i + 1;
+      const al = allocs[i];
+      row[`vault${slot}Name`] = al?.name ?? '';
+      row[`vault${slot}Type`] = al?.type ?? '';
+      row[`vault${slot}Amount`] = al != null ? al.amount : '';
+    }
+    return row;
   }, [KIND_MAP, STATUS_MAP, t, lang]);
 
-  const exportColumnDefs = useMemo(() => [
-    { key: 'invoiceNumber', label: t('documentNumber') },
-    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber') },
-    { key: 'supplierName', label: t('supplier') },
-    { key: 'notes', label: t('invoiceNotesColumn') || 'ملاحظة' },
-    { key: 'kind', label: t('type') },
-    { key: 'vault', label: t('invoiceVaultColumn') },
-    { key: 'netAmount', label: t('net') },
-    { key: 'taxAmount', label: t('tax') },
-    { key: 'totalAmount', label: t('total') },
-    { key: 'transactionDate', label: t('date') },
-    { key: 'status', label: t('statusLabel') },
-  ], [t]);
+  const exportColumnDefs = useMemo(() => {
+    const vaultCols = [];
+    for (let s = 1; s <= MAX_VAULT_SLOTS; s++) {
+      vaultCols.push(
+        { key: `vault${s}Name`, label: t('invoicesExportVaultSlotName', s) },
+        { key: `vault${s}Type`, label: t('invoicesExportVaultSlotType', s) },
+        { key: `vault${s}Amount`, label: t('invoicesExportVaultSlotAmount', s) },
+      );
+    }
+    return [
+      { key: 'invoiceNumber', label: t('documentNumber') },
+      { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber') },
+      { key: 'supplierName', label: t('supplier') },
+      { key: 'notes', label: t('invoiceNotesColumn') || 'ملاحظة' },
+      { key: 'kind', label: t('type') },
+      ...vaultCols,
+      { key: 'netAmount', label: t('net') },
+      { key: 'taxAmount', label: t('tax') },
+      { key: 'totalAmount', label: t('total') },
+      { key: 'transactionDate', label: t('date') },
+      { key: 'status', label: t('statusLabel') },
+    ];
+  }, [t]);
 
   const handleExportExcel = useCallback(async () => {
     if (!companyId || displayedTotal === 0) return;
@@ -437,7 +473,9 @@ export default function InvoicesListScreen() {
       }).join('');
       const head = `<tr>${exportColumnDefs.map((c) => `<th>${esc(c.label)}</th>`).join('')}</tr>`;
       const nc = exportColumnDefs.length;
-      const foot = `<tr><td colspan="6">${esc(t('totalInvoices', serverAll.count))}</td><td>${esc(fmt(Number(serverAll.net)))} SR</td><td>${esc(fmt(Number(serverAll.tax)))} SR</td><td>${esc(fmt(Number(serverAll.total)))} SR</td><td colspan="2"></td></tr>`;
+      const baseMetaCols = 5;
+      const vaultBlockCols = MAX_VAULT_SLOTS * 3;
+      const foot = `<tr><td colspan="${baseMetaCols}">${esc(t('totalInvoices', serverAll.count))}</td><td colspan="${vaultBlockCols}"></td><td>${esc(fmt(Number(serverAll.net)))} SR</td><td>${esc(fmt(Number(serverAll.tax)))} SR</td><td>${esc(fmt(Number(serverAll.total)))} SR</td><td colspan="2"></td></tr>`;
       const table = `<table><thead>${head}</thead><tbody>${rowsHtml || `<tr><td colspan="${nc}">${esc(t('noInvoicesInPeriod'))}</td></tr>`}</tbody><tfoot>${foot}</tfoot></table>`;
       openPrintWindow({
         title: t('invoicesTitle'),
