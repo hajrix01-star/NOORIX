@@ -29,6 +29,7 @@ jobs:
 
           TS=$(date +%Y%m%d_%H%M%S)
           FNAME="noorix_backup_${TS}.dump"
+          export FNAME
 
           # ── تشغيل pg_dump على الـ VPS ونقل الملف ──
           ssh -i ~/.ssh/id_rsa "${VPS_USER}@${VPS_HOST}" \
@@ -75,5 +76,3 @@ jobs:
               print(f"❌ Upload failed: {result.get('error')}")
               raise SystemExit(1)
           PYEOF
-        env:
-          FNAME: "noorix_backup_$(date +%Y%m%d_%H%M%S)"
