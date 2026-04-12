@@ -53,7 +53,7 @@ export default function AppBrandingTab() {
     setTaglineEn('Business Management System');
     setLogoUrl('');
     setColor('var(--noorix-navy)');
-    setLoginDomain('noorix.sa');
+    setLoginDomain('hajrix.com');
   };
 
   return (
@@ -190,7 +190,7 @@ export default function AppBrandingTab() {
             type="text"
             value={loginDomain}
             onChange={(e) => setLoginDomain(e.target.value.replace(/^@/, '').replace(/\s/g, ''))}
-            placeholder="noorix.sa"
+            placeholder="hajrix.com"
             className="rounded-e-[10px] rounded-s-none border-s-0 ltr text-left"
             maxLength={60}
           />

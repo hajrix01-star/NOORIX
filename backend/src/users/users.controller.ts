@@ -19,7 +19,7 @@ export class UsersController {
   create(
     @Body()
     body: {
-      email: string;
+      email?: string;
       password: string;
       nameAr?: string;
       nameEn?: string;

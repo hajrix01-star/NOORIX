@@ -1,5 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
+import { OFFICIAL_EMAIL_DOMAIN } from '../common/official-email';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }  from '../common/tenant-context';
 
@@ -26,8 +28,35 @@ export class UsersService {
     });
   }
 
+  /** جزء محلي من البريد من الاسم (لاتيني من الاسم الإنجليزي أو الأحرف اللاتينية في الاسم العربي). */
+  private buildEmailLocalPart(nameAr: string, nameEn?: string): string {
+    const en = (nameEn || '').trim().toLowerCase();
+    const fromEn = en.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (fromEn.length >= 2) return fromEn.slice(0, 48);
+    const fromArLatin = nameAr
+      .trim()
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .toLowerCase()
+      .replace(/^-+|-+$/g, '');
+    if (fromArLatin.length >= 2) return fromArLatin.slice(0, 48);
+    return `user-${randomBytes(4).toString('hex')}`;
+  }
+
+  /** يضمن عدم تكرار البريد داخل المستأجر (محلي + @النطاق الرسمي). */
+  private async allocateOfficialEmail(nameAr: string, nameEn?: string): Promise<string> {
+    const base = this.buildEmailLocalPart(nameAr, nameEn);
+    const domain = OFFICIAL_EMAIL_DOMAIN;
+    for (let i = 0; i < 80; i++) {
+      const local = i === 0 ? base : `${base}-${i}`;
+      const email = `${local}@${domain}`;
+      const existing = await this.prisma.user.findUnique({ where: { email } });
+      if (!existing) return email;
+    }
+    return `${base}-${randomBytes(4).toString('hex')}@${domain}`;
+  }
+
   async create(data: {
-    email: string;
+    email?: string;
     password: string;
     nameAr?: string;
     nameEn?: string;
@@ -35,7 +64,14 @@ export class UsersService {
     roleName: string;
     companyIds: string[];
   }) {
-    const email = data.email.toLowerCase().trim();
+    const nameArTrim = data.nameAr?.trim() || '';
+    let email = (data.email || '').toLowerCase().trim();
+    if (!email) {
+      if (!nameArTrim) {
+        throw new BadRequestException('الاسم مطلوب عند عدم إدخال البريد الإلكتروني');
+      }
+      email = await this.allocateOfficialEmail(nameArTrim, data.nameEn?.trim());
+    }
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) throw new ConflictException('البريد الإلكتروني أو اسم المستخدم مسجّل مسبقاً');
 
@@ -49,7 +85,7 @@ export class UsersService {
         tenantId,
         email,
         passwordHash,
-        nameAr: data.nameAr?.trim() || null,
+        nameAr: nameArTrim || null,
         nameEn: data.nameEn?.trim() || null,
         preferredLang: (data.preferredLang === 'en' ? 'en' : 'ar'),
         roleId: role.id,

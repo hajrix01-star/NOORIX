@@ -29,7 +29,7 @@ const DEFAULTS = {
   taglineEn:   'Business Management System',
   logo:        '',
   color:       '#0a1f44',
-  loginDomain: 'noorix.sa',
+  loginDomain: 'hajrix.com',
 };
 
 const get = (key) => localStorage.getItem(KEYS[key]) || DEFAULTS[key];

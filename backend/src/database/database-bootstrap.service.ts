@@ -1,13 +1,14 @@
 /**
  * DatabaseBootstrapService — تشغيل الـ Seed عند بدء التطبيق.
- * يضمن وجود المستخدم الافتراضي admin@noorix.sa في كل بيئة (تطوير/إنتاج).
+ * يضمن وجود المستخدم الافتراضي (admin@النطاق الرسمي) في كل بيئة (تطوير/إنتاج).
  */
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { DEFAULT_ADMIN_EMAIL } from '../common/official-email';
 import { PrismaService } from '../prisma/prisma.service';
 import { SYSTEM_ROLE_SEEDS } from '../auth/constants/permissions';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@noorix.sa';
+const ADMIN_EMAIL = DEFAULT_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'Hajrim2h';
 const DEFAULT_TENANT_ID = 'default-tenant-noorix-2024';
 

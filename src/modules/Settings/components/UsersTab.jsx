@@ -14,7 +14,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ email: '', password: '', nameAr: '', nameEn: '', roleName: '', preferredLang: 'ar', companyIds: [] });
+  const [form, setForm] = useState({ password: '', nameAr: '', roleName: '', preferredLang: 'ar', companyIds: [] });
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -35,7 +35,10 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   const createMutation = useApiMutation({
     mutationFn: createUser,
     invalidateQueries: [['users']],
-    successToast: () => t('userAdded'),
+    successToast: (res) => {
+      const email = res?.data?.email;
+      return email ? t('userAddedWithEmail', email) : t('userAdded');
+    },
     errorToast: (e) => e?.message || t('addFailed'),
     onSuccess: () => { setShowForm(false); },
   });
@@ -90,7 +93,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   return (
     <ScreenShell>
       <div className="flex items-center justify-end">
-        <Button variant="primary" onClick={() => { setForm({ email: '', password: '', nameAr: '', nameEn: '', roleName: roles[0]?.name || '', companyIds: [] }); setShowForm(true); }}>
+        <Button variant="primary" onClick={() => { setForm({ password: '', nameAr: '', roleName: roles[0]?.name || '', preferredLang: 'ar', companyIds: [] }); setShowForm(true); }}>
           {t('addUser')}
         </Button>
       </div>
@@ -98,11 +101,11 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
       {showForm && (
         <div className="noorix-surface-card p-5">
           <h4 className="text-[14px] m-0 mb-4">{t('newUser')}</h4>
-          <form onSubmit={(e) => { e.preventDefault(); if (!form.email?.trim() || !form.password?.trim()) return; createMutation.mutate({ email: form.email.trim(), password: form.password, nameAr: form.nameAr?.trim(), nameEn: form.nameEn?.trim(), preferredLang: form.preferredLang, roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c) => c.id) }); }}>
+          <form onSubmit={(e) => { e.preventDefault(); if (!form.nameAr?.trim() || !form.password?.trim()) return; createMutation.mutate({ password: form.password, nameAr: form.nameAr.trim(), preferredLang: form.preferredLang, roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c) => c.id) }); }}>
             <div className="grid gap-3 mb-[14px] max-w-[400px]">
-              <Input type="email" label={`${t('email')} *`} value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} required />
+              <Input type="text" label={t('userCreateNameLabel')} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} required />
+              <p className="text-[11px] text-noorix-muted m-0 -mt-2">{t('userEmailAutoHint')}</p>
               <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} required />
-              <Input type="text" label={t('nameAr')} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} />
               <Input type="select" label={t('preferredLang')} value={form.preferredLang} onChange={(e) => setForm((p) => ({ ...p, preferredLang: e.target.value }))}>
                 <option value="ar">{t('langAr')}</option>
                 <option value="en">{t('langEn')}</option>

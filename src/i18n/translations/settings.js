@@ -174,6 +174,12 @@ export default {
   newPasswordHint: { ar: 'كلمة مرور جديدة (فارغة = بدون تغيير)', en: 'New password (empty = no change)' },
   noUsers: { ar: 'لا يوجد مستخدمون. اضغط "+ إضافة مستخدم".', en: 'No users. Click "+ Add user".' },
   userAdded: { ar: 'تمت إضافة المستخدم بنجاح', en: 'User added successfully' },
+  userAddedWithEmail: { ar: 'تمت إضافة المستخدم — البريد: {0}', en: 'User added — email: {0}' },
+  userCreateNameLabel: { ar: 'الاسم *', en: 'Name *' },
+  userEmailAutoHint: {
+    ar: 'يُنشأ البريد تلقائياً على النطاق hajrix.com',
+    en: 'Email is created automatically on the hajrix.com domain',
+  },
   userArchived: { ar: 'تمت أرشفة المستخدم', en: 'User archived' },
   userRestored: { ar: 'تمت استعادة المستخدم', en: 'User restored' },
   newUser: { ar: 'مستخدم جديد', en: 'New user' },

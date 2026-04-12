@@ -1,7 +1,7 @@
 /**
  * NOORIX Seed — يعمل على قاعدة بيانات جديدة (إنتاج) أو موجودة (تطوير)
  * ينشئ: Tenant، Roles، Company، User، UserCompany + تهيئة دليل الحسابات
- * بيانات الدخول الافتراضية: admin@noorix.sa / 123
+ * بيانات الدخول الافتراضية: admin@hajrix.com / 123
  */
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
@@ -171,7 +171,7 @@ const ALL_PERMISSIONS = [
 ];
 
 const DEFAULT_TENANT_ID = 'default-tenant-noorix-2024';
-const ADMIN_EMAIL = 'admin@noorix.sa';
+const ADMIN_EMAIL = 'admin@hajrix.com';
 const ADMIN_PASSWORD = '123';
 
 async function main() {
@@ -241,7 +241,7 @@ async function main() {
   console.log('⚙️  جاري تهيئة دليل الحسابات...');
   await initializeAccounting(tenant.id, company.id);
 
-  // ─── 4. المستخدم admin@noorix.sa ───
+  // ─── 4. المستخدم admin@hajrix.com ───
   let user = await prisma.user.findUnique({
     where: { email: ADMIN_EMAIL },
   });

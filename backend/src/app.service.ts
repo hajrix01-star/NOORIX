@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DEFAULT_ADMIN_EMAIL } from './common/official-email';
 import { PrismaService } from './prisma/prisma.service';
 import { getGeminiApiKey, getGeminiModel, isGeminiAvailable } from './config/gemini.config';
 
@@ -55,7 +56,7 @@ export class AppService {
       dbLatencyMs = Date.now() - t0;
       dbConnected = true;
       const admin = await this.prisma.user.findUnique({
-        where: { email: 'admin@noorix.sa' },
+        where: { email: DEFAULT_ADMIN_EMAIL },
         select: { id: true },
       });
       adminExists = !!admin;
