@@ -2,7 +2,7 @@
  * PurchasesBatchScreen — إدخال جماعي لفواتير الموردين
  * تصميم احترافي متكامل — جدول موحد مثل الفواتير، اختصارات مدمجة، ملخص متسق
  */
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Decimal from 'decimal.js';
 import { Button, Badge, Input, ScreenTabs, ScreenShell } from '../../ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -64,6 +64,8 @@ export default function PurchasesBatchScreen() {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('entry');
   const [batchDate, setBatchDate] = useState(getSaudiToday());
+  /** آخر تاريخ عملية مُطبَّق على الصفوف — لمزامنة رفع/خفض تاريخ الفاتورة مع تاريخ العملية */
+  const prevBatchDateRef = useRef(batchDate);
   const [batchVaultId, setBatchVaultId] = useState('');
   const [rows, setRows]           = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [editingBatch, setEditingBatch] = useState(null);
@@ -89,6 +91,7 @@ export default function PurchasesBatchScreen() {
   }, [activeVaults, batchVaultId]);
 
   const [batchSearchInput, setBatchSearchInput] = useState('');
+  const [showCancelledBatches, setShowCancelledBatches] = useState(false);
   const debouncedBatchQ = useDebouncedValue(batchSearchInput.trim(), 300);
 
   const { data: batchSummaryData, isLoading: batchesLoading, isError: batchesError, error: batchesErr } = useQuery({
@@ -120,8 +123,14 @@ export default function PurchasesBatchScreen() {
     }));
   }, [batchSummaryData]);
 
+  /** افتراضياً إخفاء الدفعات الملغاة — زر لإظهارها */
+  const batchesForTable = useMemo(() => {
+    if (showCancelledBatches) return batchesTableData;
+    return batchesTableData.filter((b) => b.status !== 'cancelled');
+  }, [batchesTableData, showCancelledBatches]);
+
   const { filteredData, allFilteredData, page, setPage, sortKey, sortDir, toggleSort } =
-    useTableFilter(batchesTableData, {
+    useTableFilter(batchesForTable, {
       searchKeys: [],
       pageSize:   PAGE_SIZE,
       defaultSortKey: 'transactionDate',
@@ -130,7 +139,7 @@ export default function PurchasesBatchScreen() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedBatchQ, setPage]);
+  }, [debouncedBatchQ, showCancelledBatches, setPage]);
 
   const activeOnly = allFilteredData.filter((b) => b.status !== 'cancelled');
   const displayedTotal = allFilteredData.length;
@@ -414,17 +423,23 @@ export default function PurchasesBatchScreen() {
                 value={batchDate}
                 onChange={(e) => {
                   const newDate = e.target.value;
+                  const prevOp = prevBatchDateRef.current;
                   setBatchDate(newDate);
-                  // كل فاتورة بتاريخ أحدث من تاريخ العملية → تُقيَّد بنفس تاريخ العملية
-                  if (newDate) {
-                    setRows((prev) =>
-                      prev.map((r) =>
-                        r.invoiceDate && r.invoiceDate > newDate
-                          ? { ...r, invoiceDate: newDate }
-                          : r,
-                      ),
-                    );
-                  }
+                  if (!newDate) return;
+                  setRows((prevRows) =>
+                    prevRows.map((r) => {
+                      let inv = r.invoiceDate;
+                      if (prevOp && newDate !== prevOp) {
+                        if (newDate < prevOp) {
+                          if (inv && inv > newDate) inv = newDate;
+                        } else if (newDate > prevOp) {
+                          if (inv === prevOp) inv = newDate;
+                        }
+                      }
+                      return { ...r, invoiceDate: inv };
+                    }),
+                  );
+                  prevBatchDateRef.current = newDate;
                 }}
                 className="nx-font-numbers"
               />
@@ -551,7 +566,21 @@ export default function PurchasesBatchScreen() {
 
       {activeTab === 'history' && (
         <div className="flex flex-col gap-4 p-4">
-          <DateFilterBar filter={dateFilter} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between min-w-0">
+            <div className="min-w-0 flex-1">
+              <DateFilterBar filter={dateFilter} />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant={showCancelledBatches ? 'primary' : 'ghost'}
+              aria-pressed={showCancelledBatches}
+              onClick={() => setShowCancelledBatches((v) => !v)}
+              className="shrink-0"
+            >
+              {showCancelledBatches ? t('hideCancelledBatches') : t('showCancelledBatches')}
+            </Button>
+          </div>
 
           <SmartTable
             columns={batchesColumns}

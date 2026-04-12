@@ -107,4 +107,6 @@ export default {
   batchNotesPlaceholderServiceName: { ar: 'اسم الخدمة*', en: 'Service name*' },
   batchNotesPlaceholderEllipsis: { ar: '...', en: '...' },
   amountPlaceholderZero: { ar: '0', en: '0' },
+  showCancelledBatches: { ar: 'إظهار الدفعات الملغاة', en: 'Show cancelled batches' },
+  hideCancelledBatches: { ar: 'إخفاء الدفعات الملغاة', en: 'Hide cancelled batches' },
 };
