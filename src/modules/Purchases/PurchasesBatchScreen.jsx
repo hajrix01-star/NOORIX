@@ -474,7 +474,6 @@ export default function PurchasesBatchScreen() {
                 rows={2}
                 value={batchNotes}
                 onChange={(e) => setBatchNotes(e.target.value)}
-                placeholder={t('batchPurchasesBatchNotesPlaceholder')}
                 className="w-full min-w-0"
               />
             </div>

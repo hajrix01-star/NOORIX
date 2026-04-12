@@ -50,10 +50,6 @@ export default {
   batchPurchasesNoVaults: { ar: 'لا توجد خزائن نشطة. أضف خزنة من قسم الخزائن.', en: 'No active vaults. Add a vault from Treasury.' },
   batchPurchasesVaultPlaceholder: { ar: '— اختر الخزنة —', en: '— Select vault —' },
   batchPurchasesBatchNotes: { ar: 'ملاحظة الدفعة (لجميع الفواتير)', en: 'Batch note (all invoices)' },
-  batchPurchasesBatchNotesPlaceholder: {
-    ar: 'تُضاف بعد ملاحظة كل سطر، مفصولاً بـ « + »',
-    en: 'Appended after each line note, separated by « + »',
-  },
   shortcuts: { ar: 'اختصارات:', en: 'Shortcuts:' },
   selectSupplierBookmark: { ar: 'اختر مورد واضغط ★ لحفظه', en: 'Select supplier and press ★ to bookmark' },
   supplier: { ar: 'المورد', en: 'Supplier' },
