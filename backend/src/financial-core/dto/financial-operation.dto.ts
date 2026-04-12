@@ -40,6 +40,11 @@ export interface OutflowDto {
   installmentCount?: number;
   /** للسلف بالأقساط: مبلغ القسط الواحد */
   installmentAmount?: string;
+  /** للمصاريف الثابتة: سنة التغطية + ربع أو نطاق أشهر */
+  expenseCoverageYear?: number;
+  expenseCoverageQuarter?: number | null;
+  expenseCoverageMonthStart?: number;
+  expenseMonthsCovered?: number;
 }
 
 export interface InflowDto {

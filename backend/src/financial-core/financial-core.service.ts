@@ -129,6 +129,11 @@ export class FinancialCoreService {
         vaultId:               dto.vaultId,
         vaultSplitsSig,
         employeeId:            dto.employeeId,
+        expenseLineId:         dto.expenseLineId,
+        expenseCoverageYear:   dto.expenseCoverageYear,
+        expenseCoverageQuarter: dto.expenseCoverageQuarter,
+        expenseCoverageMonthStart: dto.expenseCoverageMonthStart,
+        expenseMonthsCovered: dto.expenseMonthsCovered,
         idempotencyKey:        dto.idempotencyKey,
       });
       const cached = await this.idempotency.getCachedResult(tenantId, dto.companyId, keyHash);
@@ -180,6 +185,12 @@ export class FinancialCoreService {
           vaultId:               invoiceVaultId,
           batchId:               dto.batchId ?? null,
           notes:                 dto.notes ?? null,
+          installmentCount:      dto.installmentCount ?? null,
+          installmentAmount:     dto.installmentAmount ? new Prisma.Decimal(dto.installmentAmount) : null,
+          expenseCoverageYear:       dto.expenseCoverageYear ?? null,
+          expenseCoverageQuarter:    dto.expenseCoverageQuarter ?? null,
+          expenseCoverageMonthStart: dto.expenseCoverageMonthStart ?? null,
+          expenseMonthsCovered:      dto.expenseMonthsCovered ?? null,
           status:                'active',
         },
       });
@@ -299,6 +310,10 @@ export class FinancialCoreService {
             notes:                 dto.notes ?? null,
             installmentCount:      dto.installmentCount ?? null,
             installmentAmount:     dto.installmentAmount ? new Prisma.Decimal(dto.installmentAmount) : null,
+            expenseCoverageYear:       dto.expenseCoverageYear ?? null,
+            expenseCoverageQuarter:    dto.expenseCoverageQuarter ?? null,
+            expenseCoverageMonthStart: dto.expenseCoverageMonthStart ?? null,
+            expenseMonthsCovered:      dto.expenseMonthsCovered ?? null,
             status:                'active',
           },
         });
@@ -1319,6 +1334,10 @@ export class FinancialCoreService {
       entryDate:       inv['entryDate'] instanceof Date
         ? (inv['entryDate'] as Date).toISOString()
         : inv['entryDate'],
+      expenseCoverageYear:       inv['expenseCoverageYear'],
+      expenseCoverageQuarter:    inv['expenseCoverageQuarter'],
+      expenseCoverageMonthStart: inv['expenseCoverageMonthStart'],
+      expenseMonthsCovered:      inv['expenseMonthsCovered'],
     };
   }
 }

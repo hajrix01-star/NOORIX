@@ -121,6 +121,12 @@ export class ExpenseLineService {
         notes: (dto.notes ?? '').trim() || null,
         referenceAmount: dto.referenceAmount != null ? dto.referenceAmount : null,
         allowPaymentAmountOverride: dto.allowPaymentAmountOverride !== false,
+        annualTotalAmount:
+          dto.kind === 'fixed_expense' && dto.annualTotalAmount != null ? dto.annualTotalAmount : null,
+        installmentIntervalMonths:
+          dto.kind === 'fixed_expense' && dto.installmentIntervalMonths != null
+            ? dto.installmentIntervalMonths
+            : null,
         isActive: dto.isActive !== false,
       },
       include: {
@@ -154,9 +160,16 @@ export class ExpenseLineService {
     }
 
     const data: Record<string, unknown> = {};
+    const nextKind = dto.kind ?? existing.kind;
     if (dto.nameAr !== undefined) data.nameAr = dto.nameAr.trim();
     if (dto.nameEn !== undefined) data.nameEn = (dto.nameEn ?? '').trim() || null;
-    if (dto.kind !== undefined) data.kind = dto.kind;
+    if (dto.kind !== undefined) {
+      data.kind = dto.kind;
+      if (dto.kind === 'expense') {
+        data.annualTotalAmount = null;
+        data.installmentIntervalMonths = null;
+      }
+    }
     if (dto.categoryId !== undefined) data.categoryId = dto.categoryId;
     if (dto.supplierId !== undefined) data.supplierId = dto.supplierId;
     if (dto.serviceNumber !== undefined) data.serviceNumber = (dto.serviceNumber ?? '').trim() || null;
@@ -165,6 +178,14 @@ export class ExpenseLineService {
       data.referenceAmount = dto.referenceAmount == null ? null : dto.referenceAmount;
     }
     if (dto.allowPaymentAmountOverride !== undefined) data.allowPaymentAmountOverride = dto.allowPaymentAmountOverride;
+    if (nextKind === 'fixed_expense' && dto.kind !== 'expense') {
+      if (dto.annualTotalAmount !== undefined) {
+        data.annualTotalAmount = dto.annualTotalAmount == null ? null : dto.annualTotalAmount;
+      }
+      if (dto.installmentIntervalMonths !== undefined) {
+        data.installmentIntervalMonths = dto.installmentIntervalMonths == null ? null : dto.installmentIntervalMonths;
+      }
+    }
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
 
     return this.prisma.expenseLine.update({

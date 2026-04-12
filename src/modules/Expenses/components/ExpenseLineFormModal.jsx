@@ -1,13 +1,16 @@
 ﻿/**
  * ExpenseLineFormModal — نموذج إنشاء/تعديل بند مصروف (هاتف 1، كهرب 1، إيجار محل)
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { createExpenseLine, updateExpenseLine } from '../../../services/api';
 import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { fmt } from '../../../utils/format';
 import { Button, AdaptiveSheet, Input } from '../../../ui';
+
+const INSTALLMENT_INTERVALS = [1, 2, 3, 4, 6, 12];
 
 export default function ExpenseLineFormModal({ companyId, editing, onClose, onSaved }) {
   const { lang, t } = useTranslation();
@@ -21,6 +24,8 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
     notes: '',
     referenceAmount: '',
     allowPaymentAmountOverride: true,
+    annualTotalAmount: '',
+    installmentIntervalMonths: '',
   });
   const [error, setError] = useState('');
 
@@ -28,6 +33,8 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
     if (editing) {
       const ref = editing.referenceAmount;
       const refNum = ref != null && ref !== '' ? Number(ref) : NaN;
+      const ann = editing.annualTotalAmount;
+      const annNum = ann != null && ann !== '' ? Number(ann) : NaN;
       setForm({
         nameAr: editing.nameAr || '',
         nameEn: editing.nameEn || '',
@@ -38,14 +45,35 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
         notes: editing.notes || '',
         referenceAmount: Number.isFinite(refNum) ? String(refNum) : '',
         allowPaymentAmountOverride: editing.allowPaymentAmountOverride !== false,
+        annualTotalAmount: Number.isFinite(annNum) ? String(annNum) : '',
+        installmentIntervalMonths:
+          editing.installmentIntervalMonths != null ? String(editing.installmentIntervalMonths) : '',
       });
     } else {
       setForm({
-        nameAr: '', nameEn: '', kind: 'expense', categoryId: '', supplierId: '', serviceNumber: '', notes: '',
-        referenceAmount: '', allowPaymentAmountOverride: true,
+        nameAr: '',
+        nameEn: '',
+        kind: 'expense',
+        categoryId: '',
+        supplierId: '',
+        serviceNumber: '',
+        notes: '',
+        referenceAmount: '',
+        allowPaymentAmountOverride: true,
+        annualTotalAmount: '',
+        installmentIntervalMonths: '',
       });
     }
   }, [editing]);
+
+  const suggestedPerPayment = useMemo(() => {
+    const annual = parseFloat(form.annualTotalAmount);
+    const interval = parseInt(form.installmentIntervalMonths, 10);
+    if (!Number.isFinite(annual) || annual <= 0 || !Number.isFinite(interval) || interval <= 0) return null;
+    if (12 % interval !== 0) return null;
+    const periods = 12 / interval;
+    return Math.round((annual / periods) * 100) / 100;
+  }, [form.annualTotalAmount, form.installmentIntervalMonths]);
 
   const { categories = [] } = useCategories(companyId);
   const { suppliers = [] } = useSuppliers(companyId);
@@ -64,6 +92,11 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
     onSuccess: () => onSaved?.(),
     onError: (err) => setError(err?.message || 'حدث خطأ'),
   });
+
+  const applySuggestedReference = () => {
+    if (suggestedPerPayment == null) return;
+    setForm((p) => ({ ...p, referenceAmount: String(suggestedPerPayment) }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -87,6 +120,19 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
       return;
     }
 
+    const annualParsed = form.annualTotalAmount?.trim() ? Number(form.annualTotalAmount) : null;
+    const intervalParsed = form.installmentIntervalMonths ? parseInt(form.installmentIntervalMonths, 10) : null;
+    if (isFixed && annualParsed != null && !Number.isNaN(annualParsed) && annualParsed > 0) {
+      if (intervalParsed == null || Number.isNaN(intervalParsed) || 12 % intervalParsed !== 0) {
+        setError(t('validationInvalidAmount') || 'فترة الدفع غير صالحة للإجمالي السنوي');
+        return;
+      }
+    }
+    if (isFixed && intervalParsed != null && !Number.isNaN(intervalParsed) && 12 % intervalParsed !== 0) {
+      setError(t('validationInvalidAmount') || 'فترة الدفع يجب أن تقسم 12 بدون باقٍ (1،2،3،4،6،12)');
+      return;
+    }
+
     if (editing) {
       updateMutation.mutate({
         id: editing.id,
@@ -100,6 +146,17 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           notes: form.notes?.trim() || undefined,
           referenceAmount: isFixed ? (refParsed != null && refParsed >= 0 ? refParsed : null) : null,
           allowPaymentAmountOverride: isFixed ? form.allowPaymentAmountOverride : true,
+          annualTotalAmount: isFixed && annualParsed != null && !Number.isNaN(annualParsed) && annualParsed > 0
+            ? annualParsed
+            : isFixed
+              ? null
+              : undefined,
+          installmentIntervalMonths:
+            isFixed && intervalParsed != null && !Number.isNaN(intervalParsed)
+              ? intervalParsed
+              : isFixed
+                ? null
+                : undefined,
         },
       });
     } else {
@@ -114,6 +171,10 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
         notes: form.notes?.trim() || undefined,
         referenceAmount: isFixed && refParsed != null && refParsed >= 0 ? refParsed : undefined,
         allowPaymentAmountOverride: isFixed ? form.allowPaymentAmountOverride : true,
+        annualTotalAmount:
+          isFixed && annualParsed != null && !Number.isNaN(annualParsed) && annualParsed > 0 ? annualParsed : undefined,
+        installmentIntervalMonths:
+          isFixed && intervalParsed != null && !Number.isNaN(intervalParsed) ? intervalParsed : undefined,
       });
     }
   };
@@ -141,7 +202,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
     >
       <form id="expense-line-form-modal" onSubmit={handleSubmit}>
         {error && (
-          <div className="p-3 mb-4 rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
+          <div className="p-3 mb-4 rounded-lg text-[13px] bg-noorix-bg-muted border border-noorix-border text-noorix-red">
             {error}
           </div>
         )}
@@ -169,12 +230,51 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           <>
             <Input
               type="number"
+              label={t('expenseLineAnnualTotal')}
+              step="0.01"
+              min="0"
+              value={form.annualTotalAmount}
+              onChange={(e) => setForm((p) => ({ ...p, annualTotalAmount: e.target.value }))}
+              placeholder="120000"
+              className="ltr"
+            />
+            <p className="text-[11px] text-noorix-muted -mt-2 mb-1">{t('expenseLineAnnualTotalHint')}</p>
+
+            <Input
+              type="select"
+              label={t('expenseLineInstallmentInterval')}
+              value={form.installmentIntervalMonths}
+              onChange={(e) => setForm((p) => ({ ...p, installmentIntervalMonths: e.target.value }))}
+            >
+              <option value="">—</option>
+              {INSTALLMENT_INTERVALS.map((n) => (
+                <option key={n} value={n}>
+                  {n} {lang === 'en' ? 'months' : 'أشهر'}
+                </option>
+              ))}
+            </Input>
+
+            {suggestedPerPayment != null && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2 mb-2">
+                <span className="text-[12px] text-noorix-muted">
+                  {t('expenseLineSuggestedPerPayment')}:{' '}
+                  <span className="font-semibold text-noorix-text ltr">{fmt(suggestedPerPayment)}</span>{' '}
+                  <span className="nx-sar">SR</span>
+                </span>
+                <Button type="button" size="sm" variant="ghost" onClick={applySuggestedReference}>
+                  {t('expenseLineApplySuggestedReference')}
+                </Button>
+              </div>
+            )}
+
+            <Input
+              type="number"
               label={t('expenseLineReferenceAmount')}
               step="0.01"
               min="0"
               value={form.referenceAmount}
               onChange={(e) => setForm((p) => ({ ...p, referenceAmount: e.target.value }))}
-              placeholder="30,000"
+              placeholder="30000"
               className="ltr"
             />
             <p className="text-[11px] text-noorix-muted -mt-2 mb-1">{t('expenseLineReferenceAmountHint')}</p>

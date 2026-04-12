@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsBoolean, IsNumber, Min } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsBoolean, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateExpenseLineDto {
@@ -41,6 +41,20 @@ export class CreateExpenseLineDto {
   @IsBoolean()
   @Type(() => Boolean)
   allowPaymentAmountOverride?: boolean;
+
+  /** إجمالي سنوي متوقع — لاقتراح مبلغ كل دفعة مع installmentIntervalMonths */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  @Max(10_000_000)
+  annualTotalAmount?: number;
+
+  /** فترة الدفع بالأشهر (يجب أن يقسم 12): 1،2،3،4،6،12 */
+  @IsOptional()
+  @IsIn([1, 2, 3, 4, 6, 12])
+  @Type(() => Number)
+  installmentIntervalMonths?: number;
 
   @IsOptional()
   @IsBoolean()

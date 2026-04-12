@@ -15,6 +15,20 @@ import { useApp } from '../../../context/AppContext';
 
 const KIND_LABELS = { fixed_expense: 'ثابت', expense: 'متغير' };
 
+function formatInvoiceCoverage(row) {
+  if (row.expenseCoverageYear == null) return '—';
+  const y = row.expenseCoverageYear;
+  if (row.expenseCoverageQuarter != null) {
+    return `Q${row.expenseCoverageQuarter} ${y}`;
+  }
+  const m = row.expenseCoverageMonthStart;
+  const len = row.expenseMonthsCovered;
+  if (m != null && len != null) {
+    return `${y}-${String(m).padStart(2, '0')} (${len})`;
+  }
+  return String(y);
+}
+
 export default function ExpenseLineDetailModal({
   lineId,
   companyId,
@@ -60,6 +74,8 @@ export default function ExpenseLineDetailModal({
       render: (_, row) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '—'}</span> },
     { key: 'transactionDate', label: 'التاريخ',
       render: (v) => <span className="nx-cell-muted">{formatSaudiDate(v) || '—'}</span> },
+    { key: 'coverage', label: t('expenseCoverageColumn'),
+      render: (_, row) => <span className="nx-cell-muted ltr">{formatInvoiceCoverage(row)}</span> },
     { key: 'totalAmount', label: 'المبلغ',
       render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green font-semibold" /> },
     { key: 'vaultName', label: 'الخزنة',
@@ -72,6 +88,7 @@ export default function ExpenseLineDetailModal({
     'رقم السند': p.invoiceNumber || '—',
     'رقم فاتورة المورد': p.supplierInvoiceNumber || '—',
     'التاريخ': formatSaudiDate(p.transactionDate) || '—',
+    التغطية: formatInvoiceCoverage(p),
     'المبلغ': Number(p.totalAmount || 0),
     'الخزنة': p.vaultName || p.vault?.nameAr || '—',
     'ملاحظات': p.notes || '—',
@@ -79,14 +96,14 @@ export default function ExpenseLineDetailModal({
 
   function handlePrintPayments() {
     const rows = payments.map((p) =>
-      `<tr><td>${(p.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(p.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(formatSaudiDate(p.transactionDate) || '—').replace(/</g, '&lt;')}</td><td>${fmt(p.totalAmount).replace(/</g, '&lt;')}</td><td>${(p.vaultName || p.vault?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(p.notes || '—').replace(/</g, '&lt;')}</td></tr>`,
+      `<tr><td>${(p.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(p.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(formatSaudiDate(p.transactionDate) || '—').replace(/</g, '&lt;')}</td><td>${String(formatInvoiceCoverage(p)).replace(/</g, '&lt;')}</td><td>${fmt(p.totalAmount).replace(/</g, '&lt;')}</td><td>${(p.vaultName || p.vault?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(p.notes || '—').replace(/</g, '&lt;')}</td></tr>`,
     ).join('');
     const lineName = line?.nameAr || line?.nameEn || '—';
     openPrintWindow({
       title: `سجل مدفوعات — ${lineName}`,
       companyName,
       subtitle: `سجل مدفوعات — ${lineName} | الإجمالي: ${fmt(totalPaid)} SR`,
-      body: `<table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>التاريخ</th><th>المبلغ</th><th>الخزنة</th><th>ملاحظات</th></tr></thead><tbody>${rows || '<tr><td colspan="6">لا توجد مدفوعات</td></tr>'}</tbody></table>`,
+      body: `<table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>التاريخ</th><th>التغطية</th><th>المبلغ</th><th>الخزنة</th><th>ملاحظات</th></tr></thead><tbody>${rows || '<tr><td colspan="7">لا توجد مدفوعات</td></tr>'}</tbody></table>`,
     });
   }
 
@@ -107,6 +124,17 @@ export default function ExpenseLineDetailModal({
             <span className="nx-sar">SR</span>
             {line.allowPaymentAmountOverride === false && (
               <span className="text-[11px] text-noorix-amber ms-1">{t('expenseLineAmountFixedAtPayment')}</span>
+            )}
+          </span>
+        )}
+        {line?.kind === 'fixed_expense' && line?.annualTotalAmount != null && (
+          <span className="text-noorix-text">
+            {t('expenseLineAnnualTotal')}: <FmtNum n={Number(line.annualTotalAmount)} className="nx-font-numbers" />{' '}
+            <span className="nx-sar">SR</span>
+            {line.installmentIntervalMonths != null && (
+              <span className="text-noorix-muted ms-1">
+                · {line.installmentIntervalMonths} {lang === 'en' ? 'mo interval' : 'شهر/فترة'}
+              </span>
             )}
           </span>
         )}

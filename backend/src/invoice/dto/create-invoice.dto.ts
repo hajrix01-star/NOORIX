@@ -154,4 +154,36 @@ export class CreateInvoiceDto {
   @Min(0.01)
   @Type(() => Number)
   installmentAmount?: number;
+
+  /** للمصاريف الثابتة: سنة التغطية المحاسبية */
+  @IsOptional()
+  @IsNumber()
+  @Min(2000)
+  @Max(2100)
+  @Type(() => Number)
+  expenseCoverageYear?: number;
+
+  /** للمصاريف الثابتة: الربع 1–4 (بديل عن نطاق الأشهر) */
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(4)
+  @Type(() => Number)
+  expenseCoverageQuarter?: number;
+
+  /** للمصاريف الثابتة: شهر بداية التغطية 1–12 */
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(12)
+  @Type(() => Number)
+  expenseCoverageMonthStart?: number;
+
+  /** للمصاريف الثابتة: عدد الأشهر المغطاة */
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(12)
+  @Type(() => Number)
+  expenseMonthsCovered?: number;
 }

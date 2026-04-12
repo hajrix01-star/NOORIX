@@ -716,6 +716,10 @@ model ExpenseLine {
   /// مبلغ مرجعي متوقع (مثلاً لكل دفعة) — يُقترَح عند تسجيل السداد ويُسمح بتعديله حسب allowPaymentAmountOverride
   referenceAmount            Decimal? @map("reference_amount") @db.Decimal(18, 2)
   allowPaymentAmountOverride Boolean  @default(true) @map("allow_payment_amount_override")
+  /// إجمالي سنوي متوقع (مثلاً 120,000) — لاقتراح مبلغ كل دفعة مع installmentIntervalMonths
+  annualTotalAmount          Decimal? @map("annual_total_amount") @db.Decimal(18, 2)
+  /// فترة الدفع بالأشهر: 1،2،3،4،6،12 (يجب أن يقسم 12 بدون باقٍ)
+  installmentIntervalMonths  Int?     @map("installment_interval_months")
   notes         String?
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -835,6 +839,14 @@ model Invoice {
   settledAmount     Decimal?  @map("settled_amount")    @db.Decimal(18, 4) // للسلف: المبلغ المسدد
   installmentCount  Int?      @map("installment_count") // للسلف بالأقساط: عدد الدفعات
   installmentAmount Decimal?  @map("installment_amount") @db.Decimal(18, 4) // للسلف بالأقساط: مبلغ القسط الواحد
+  /// للمصاريف الثابتة: سنة التغطية المحاسبية للدفعة
+  expenseCoverageYear       Int? @map("expense_coverage_year")
+  /// للمصاريف الثابتة: الربع 1–4 (إن وُجد يُشتق شهر البداية تلقائياً)
+  expenseCoverageQuarter    Int? @map("expense_coverage_quarter")
+  /// للمصاريف الثابتة: شهر بداية التغطية 1–12 (وضع الأشهر)
+  expenseCoverageMonthStart Int? @map("expense_coverage_month_start")
+  /// للمصاريف الثابتة: عدد الأشهر المغطاة بهذه الدفعة
+  expenseMonthsCovered      Int? @map("expense_months_covered")
   dailySalesSummaryId String? @unique @map("daily_sales_summary_id")  // للمبيعات: ربط بملخص المبيعات اليومي (واحد لواحد)
   status          String   @default("active")       // active | cancelled
   entryDate       DateTime @map("entry_date")       // توقيت السيرفر — غير قابل للتعديل
