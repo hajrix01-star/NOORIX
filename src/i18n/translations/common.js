@@ -33,6 +33,7 @@ export default {
   ownerTotalSales: { ar: 'إجمالي المبيعات', en: 'Total sales' },
   ownerShareOfProfit: { ar: 'نصيب من الربح', en: 'Share of profit' },
   purchasesToSalesRatio: { ar: 'نسبة المشتريات من المبيعات', en: 'Purchases to sales ratio' },
+  expensesToSalesRatio: { ar: 'نسبة المصروفات من المبيعات', en: 'Expenses to sales ratio' },
   sectionToSalesRatio: { ar: 'نسبة من المبيعات', en: 'Share of sales' },
   dashboard: { ar: 'لوحة التحكم', en: 'Dashboard' },
   smartChat: { ar: 'المحادثة الذكية', en: 'Smart Chat' },

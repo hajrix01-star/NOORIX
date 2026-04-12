@@ -40,4 +40,12 @@ export default {
   dashboardSelectDaysMode: { ar: 'تحديد أيام', en: 'Select days' },
   dashboardSelectDaysModeOff: { ar: 'إلغاء التحديد', en: 'Cancel selection' },
   dashboardNoAppSales: { ar: 'لا توجد مبيعات عبر التطبيقات في هذه الفترة', en: 'No app sales in this period' },
+  dashboardKpiFormulaSales: { ar: 'إجمالي المبيعات للفترة', en: 'Total sales for the period' },
+  dashboardKpiFormulaPurchases: { ar: 'مشتريات الفترة', en: 'Purchases for the period' },
+  dashboardKpiFormulaExpenses: { ar: 'مصروفات الفترة', en: 'Expenses for the period' },
+  dashboardKpiFormulaGrossProfit: { ar: 'مبيعات − مشتريات', en: 'Sales − purchases' },
+  dashboardKpiFormulaNetProfit: { ar: 'مبيعات − مشتريات − مصروفات', en: 'Sales − purchases − expenses' },
+  dashboardKpiPctSales: { ar: 'نسبة المبيعات من المبيعات', en: 'Sales share of total sales' },
+  dashboardKpiPctGrossProfit: { ar: 'نسبة الربح الإجمالي من المبيعات', en: 'Gross profit share of sales' },
+  dashboardKpiPctNetProfit: { ar: 'نسبة الربح الصافي من المبيعات', en: 'Net profit share of sales' },
 };

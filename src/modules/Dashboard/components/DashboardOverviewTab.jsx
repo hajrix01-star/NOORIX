@@ -137,6 +137,15 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     return ((Number(getCardValue(key) || 0) / sales) * 100).toFixed(1);
   }
 
+  /** نسبة من المبيعات لكل كرت (المبيعات = 100٪ عند وجود مبيعات) */
+  function getPctStringForCard(key) {
+    if (key === 'sales') {
+      const sales = Number(getCardValue('sales') || 0);
+      return sales > 0 ? (100).toFixed(1) : null;
+    }
+    return getSectionPercentOfSales(key);
+  }
+
   /* ── sparkline data لكل بطاقة ── */
   function getMonthlyData(key) {
     if (!report) return [];
@@ -151,11 +160,11 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   /* ── تعريف الكروت ── */
   const cards = useMemo(() => [
-    { key: 'sales',       label: monthName ? `${t('revenueGroup')} — ${monthName}` : t('annualSales'),       badgeLabel: t('sectionToSalesRatio') },
-    { key: 'purchases',   label: monthName ? `${t('purchasesGroup')} — ${monthName}` : t('annualPurchases'), badgeLabel: t('purchasesToSalesRatio') },
-    { key: 'expenses',    label: monthName ? `${t('expensesGroup')} — ${monthName}` : t('annualExpenses'),   badgeLabel: t('sectionToSalesRatio') },
-    { key: 'grossProfit', label: t('annualGrossProfit'), badgeLabel: t('reportProfitMargin') },
-    { key: 'netProfit',   label: t('annualNetProfit'),   badgeLabel: t('reportProfitMargin') },
+    { key: 'sales',       label: monthName ? `${t('revenueGroup')} — ${monthName}` : t('annualSales'),       formulaKey: 'dashboardKpiFormulaSales',       pctLabelKey: 'dashboardKpiPctSales' },
+    { key: 'purchases',   label: monthName ? `${t('purchasesGroup')} — ${monthName}` : t('annualPurchases'), formulaKey: 'dashboardKpiFormulaPurchases', pctLabelKey: 'purchasesToSalesRatio' },
+    { key: 'expenses',    label: monthName ? `${t('expensesGroup')} — ${monthName}` : t('annualExpenses'),   formulaKey: 'dashboardKpiFormulaExpenses',   pctLabelKey: 'expensesToSalesRatio' },
+    { key: 'grossProfit', label: t('annualGrossProfit'), formulaKey: 'dashboardKpiFormulaGrossProfit', pctLabelKey: 'dashboardKpiPctGrossProfit' },
+    { key: 'netProfit',   label: t('annualNetProfit'),   formulaKey: 'dashboardKpiFormulaNetProfit',   pctLabelKey: 'dashboardKpiPctNetProfit' },
   ], [monthName, t]);
 
   /* ── بيانات الرسم البياني للأداء (Recharts) ── */
@@ -429,7 +438,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           const rawVal = getCardValue(card.key);
           const isProfit = card.key === 'grossProfit' || card.key === 'netProfit';
           const isSales = card.key === 'sales';
-          const pct = isSales ? null : getSectionPercentOfSales(card.key);
+          const pct = getPctStringForCard(card.key);
           const pctNum = pct != null ? Number(pct) : null;
 
           const accentColor = KPI_CARD_SPARKLINE_COLORS[card.key] || KPI_CARD_SPARKLINE_COLORS.sales;
@@ -437,7 +446,10 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
           let badgeTone = 'neutral';
           let arrow = '';
-          if (isProfit && pctNum != null) {
+          if (isSales && pctNum != null) {
+            badgeTone = 'neutral';
+            arrow = '';
+          } else if (isProfit && pctNum != null) {
             if (pctNum > 0) { badgeTone = 'positive'; arrow = '↑ '; }
             else if (pctNum < 0) { badgeTone = 'negative'; arrow = '↓ '; }
           } else if (!isSales && pctNum != null) {
@@ -450,26 +462,31 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
             'bg-noorix-bg-muted text-noorix-muted';
 
           const periodLabel = filter?.label || String(year);
+          const pctLabelText = t(card.pctLabelKey);
+          const pctTitle = pctNum != null ? `${pctLabelText}: ${arrow}${Math.abs(pctNum)}%` : pctLabelText;
 
           return (
-            <MetricCard key={card.key} color={accentColor} className="min-h-[168px]">
-              <MetricCard.Header label={card.label} />
+            <MetricCard key={card.key} color={accentColor} className="min-h-[188px]">
+              <MetricCard.Header label={card.label} subLabel={t(card.formulaKey)} />
               <MetricCard.Value value={amountText(rawVal)} currency="SR" />
               <MetricCard.Spark data={sparkData} color={accentColor} grow />
-              <MetricCard.Footer className="mt-3 border-t border-noorix-border pt-3 pb-3">
+              <MetricCard.Footer className="mt-3 flex flex-col gap-1.5 border-t border-noorix-border pt-3 pb-3">
                 <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
-                {!isSales && pctNum != null ? (
-                  <span
-                    className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
-                    title={`${card.badgeLabel}: ${arrow}${Math.abs(pctNum)}%`}
-                  >
-                    {arrow}{Math.abs(pctNum)}%
+                <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                  <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
+                    {pctLabelText}
                   </span>
-                ) : (
-                  <span className="max-w-[min(100%,140px)] truncate text-end text-[11px] font-medium text-noorix-muted">
-                    {card.badgeLabel}
-                  </span>
-                )}
+                  {pctNum != null ? (
+                    <span
+                      className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
+                      title={pctTitle}
+                    >
+                      {arrow}{Math.abs(pctNum)}%
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>
+                  )}
+                </div>
               </MetricCard.Footer>
             </MetricCard>
           );
