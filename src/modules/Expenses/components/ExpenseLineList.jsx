@@ -134,7 +134,6 @@ export default function ExpenseLineList({
     tableData.map((r) => ({
       'اسم البند': r.nameAr || r.nameEn || '—',
       'النوع': formatKindWithCategory(r.kind, r.categoryName),
-      'الفئة': r.categoryName,
       'المورد': r.supplierName,
       'رقم الخدمة': r.serviceNumber || '—',
     })),
@@ -173,14 +172,14 @@ export default function ExpenseLineList({
 
   function handlePrint() {
     const rows = tableData.map((r) =>
-      `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${formatKindWithCategory(r.kind, r.categoryName).replace(/</g, '&lt;')}</td><td>${(r.categoryName || '—').replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td></tr>`,
+      `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${formatKindWithCategory(r.kind, r.categoryName).replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td></tr>`,
     ).join('');
     const printTitle = t('expenseLinesPrintTitle') || 'بنود المصاريف';
     openPrintWindow({
       title: printTitle,
       companyName,
       subtitle: printTitle,
-      body: `<table><thead><tr><th>اسم البند</th><th>النوع</th><th>الفئة</th><th>المورد</th><th>رقم الخدمة</th></tr></thead><tbody>${rows || '<tr><td colspan="5">لا توجد بيانات</td></tr>'}</tbody></table>`,
+      body: `<table><thead><tr><th>اسم البند</th><th>النوع</th><th>المورد</th><th>رقم الخدمة</th></tr></thead><tbody>${rows || '<tr><td colspan="4">لا توجد بيانات</td></tr>'}</tbody></table>`,
     });
   }
 
