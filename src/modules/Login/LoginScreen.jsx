@@ -108,18 +108,18 @@ export default function LoginScreen() {
           {/* شريط لوني علوي */}
           <div className="h-1 bg-gradient-to-r from-noorix-blue to-noorix-green" />
 
-          <div className="p-6 sm:p-8">
-            <h2 className="text-[20px] font-extrabold text-noorix-text m-0 mb-1.5">
+          <div className="p-6 sm:p-8 text-left">
+            <h2 className="text-[20px] font-extrabold text-noorix-text m-0 mb-1.5 text-left">
               {t('login')}
             </h2>
-            <p className="text-[13px] text-noorix-muted m-0 mb-6">
+            <p className="text-[13px] text-noorix-muted m-0 mb-6 text-left">
               {t('loginSubtitle')}
             </p>
 
-            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 text-left">
               {/* اسم المستخدم أو البريد */}
               <div>
-                <label className="text-[13px] font-bold text-noorix-text block mb-1.5">
+                <label className="text-[13px] font-bold text-noorix-text block mb-1.5 text-left">
                   {t('usernameOrEmail')}
                 </label>
                 <Input
@@ -129,15 +129,16 @@ export default function LoginScreen() {
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="username"
                   dir="ltr"
+                  className="text-left"
                 />
               </div>
 
-              {/* كلمة المرور */}
+              {/* كلمة المرور — حقل LTR مع زر إظهار على يمين الصندوق */}
               <div>
-                <label className="text-[13px] font-bold text-noorix-text block mb-1.5">
+                <label className="text-[13px] font-bold text-noorix-text block mb-1.5 text-left">
                   {t('password')}
                 </label>
-                <div className="relative">
+                <div className="relative" dir="ltr">
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     size="lg"
@@ -145,16 +146,14 @@ export default function LoginScreen() {
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
                     dir="ltr"
-                    className={cn(
-                      isEnglish ? 'pe-20' : 'ps-20',
-                      !isEnglish && 'text-end',
-                    )}
+                    className={cn('pe-20 text-left')}
                   />
                   <Button
+                    type="button"
                     variant="raw"
                     size="sm"
                     onClick={() => setShowPassword((v) => !v)}
-                    className={`absolute ${isEnglish ? 'end-2.5' : 'start-2.5'} top-1/2 -translate-y-1/2 px-2 font-bold text-noorix-muted hover:text-noorix-text hover:bg-noorix-bg-muted`}
+                    className="absolute end-2.5 top-1/2 -translate-y-1/2 px-2 font-bold text-noorix-muted hover:text-noorix-text hover:bg-noorix-bg-muted"
                   >
                     {showPassword ? t('hidePassword') : t('showPassword')}
                   </Button>
@@ -184,8 +183,8 @@ export default function LoginScreen() {
         </div>
 
         {/* تذييل */}
-        <p className="text-center text-[12px] text-noorix-muted mt-5">
-          {t('secureSession')} &nbsp;·&nbsp; Noorix © {new Date().getFullYear()}
+        <p className="text-left text-[12px] text-noorix-muted mt-5">
+          Noorix © {new Date().getFullYear()}
         </p>
       </div>
     </div>
