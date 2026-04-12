@@ -23,8 +23,8 @@ export default {
   invoicesInflowByVaultTitle: { ar: 'المبيعات حسب الخزينة', en: 'Sales by vault' },
   invoicesSalesUnassignedVault: { ar: 'بدون خزينة محددة', en: 'Unassigned vault' },
   invoicesCardNonPurchaseOutflow: {
-    ar: 'المصروفات وغير المشتريات',
-    en: 'Expenses & non-purchase outflows',
+    ar: 'المصروفات',
+    en: 'Expenses',
   },
   invoiceKindUnknown: { ar: 'نوع آخر', en: 'Other' },
   splitPaymentAcrossVaults: { ar: 'السداد من أكثر من خزنة', en: 'Pay from multiple vaults' },
