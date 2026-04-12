@@ -72,4 +72,26 @@ export default {
   stcPay: { ar: 'STC Pay', en: 'STC Pay' },
   applePay: { ar: 'Apple Pay', en: 'Apple Pay' },
   totalBalance: { ar: 'الرصيد الإجمالي', en: 'Total balance' },
+  vaultTransferTitle: { ar: 'تحويل بين خزائن', en: 'Transfer between vaults' },
+  vaultTransferHint: {
+    ar: 'يُسجَّل قيد «تحويل» في الدفتر: يُنقص رصيد خزينة المصدر ويُزاد رصيد خزينة الوجهة. لا يُنشئ فاتورة ولا يؤثر على تقرير الأرباح والخسائر.',
+    en: 'Posts a transfer ledger entry: decreases the source vault and increases the destination. No invoice; no P&L impact.',
+  },
+  vaultTransferFrom: { ar: 'من خزينة (المصدر)', en: 'From vault (source)' },
+  vaultTransferTo: { ar: 'إلى خزينة (الوجهة)', en: 'To vault (destination)' },
+  vaultTransferSubmit: { ar: 'تنفيذ التحويل', en: 'Submit transfer' },
+  vaultTransferSuccess: { ar: 'تم التحويل بين الخزائن.', en: 'Vault transfer completed.' },
+  vaultTransferSuccessRef: { ar: 'تم التحويل. المرجع: {0}', en: 'Transfer completed. Reference: {0}' },
+  vaultTransferNeedTwoVaults: {
+    ar: 'يلزم خزينتان نشطتان على الأقل لإجراء تحويل.',
+    en: 'At least two active vaults are required to transfer.',
+  },
+  vaultTransferNotesPlaceholder: {
+    ar: 'مثال: تغذية عهدة المشتريات من البنك',
+    en: 'e.g. Fund petty cash from bank',
+  },
+  vaultTransferOpen: { ar: 'تحويل بين خزائن', en: 'Vault transfer' },
+  vaultTransferNotes: { ar: 'ملاحظات', en: 'Notes' },
+  vaultTransferDate: { ar: 'تاريخ العملية', en: 'Transaction date' },
+  vaultLedgerTypeTransfer: { ar: 'تحويل بين خزائن', en: 'Inter-vault transfer' },
 };

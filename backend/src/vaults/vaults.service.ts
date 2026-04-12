@@ -10,10 +10,16 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }   from '../common/tenant-context';
 import { nowSaudi }        from '../common/utils/date-utils';
 import { CreateVaultDto }  from './dto/create-vault.dto';
+import { FinancialCoreService } from '../financial-core/financial-core.service';
+import type { TransferDto } from '../financial-core/dto/financial-operation.dto';
+import type { VaultTransferBody } from './dto/vault-transfer.dto';
 
 @Injectable()
 export class VaultsService {
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly financialCore: FinancialCoreService,
+  ) {}
 
   /**
    * جلب جميع الخزائن مع الداخل/الخارج/الرصيد.
@@ -90,6 +96,23 @@ export class VaultsService {
         balance:   balance.toNumber(),
       };
     });
+  }
+
+  /**
+   * تحويل نقد بين خزينتين — قيد محاسبي واحد (transfer) عبر FinancialCoreService.
+   * لا يُنشئ فاتورة ولا يؤثر على P&L.
+   */
+  async transfer(dto: VaultTransferBody, userId?: string) {
+    const payload: TransferDto = {
+      companyId:       dto.companyId,
+      fromVaultId:     dto.fromVaultId,
+      toVaultId:       dto.toVaultId,
+      amount:          dto.amount,
+      transactionDate: dto.transactionDate,
+      notes:           dto.notes ?? undefined,
+      idempotencyKey:  dto.idempotencyKey ?? undefined,
+    };
+    return this.financialCore.processTransfer(payload, userId);
   }
 
   async findSalesChannels(companyId: string) {

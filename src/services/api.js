@@ -909,6 +909,11 @@ export async function archiveVault(id) { return apiPatch(`/api/v1/vaults/${id}/a
 export async function deleteVault(id) { return apiDelete(`/api/v1/vaults/${id}`); }
 export async function createVault(body) { return apiPost('/api/v1/vaults', body); }
 
+/** تحويل نقد بين خزينتين — قيد transfer (بدون فاتورة) */
+export async function createVaultTransfer(body) {
+  return apiPost('/api/v1/vaults/transfer', body);
+}
+
 // ——— الموظفون ———
 /** قائمة كاملة (حدّ السيرفر) — للتوافق مع الشاشات التي لا ترسل page */
 export async function getEmployees(companyId, includeTerminated = false) {

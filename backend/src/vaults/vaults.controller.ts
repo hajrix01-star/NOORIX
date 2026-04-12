@@ -20,6 +20,7 @@ import { RolesGuard }            from '../auth/guards/roles.guard';
 import { CurrentUser, JwtUser }  from '../auth/decorators/current-user.decorator';
 import { RequirePermission }     from '../auth/decorators/require-permission.decorator';
 import { createVaultSchema, updateVaultSchema } from './dto/create-vault.dto';
+import { vaultTransferSchema }   from './dto/vault-transfer.dto';
 import { VaultsService }         from './vaults.service';
 import { preferQueryCompanyId }  from '../common/utils/company-request';
 
@@ -69,6 +70,35 @@ export class VaultsController {
     const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     if (!companyId) return [];
     return this.vaultsService.findPaymentOptions(companyId);
+  }
+
+  /**
+   * تحويل بين خزائن (نقد/بنك/تطبيق) — قيد transfer في الدفتر؛ بدون فاتورة؛ بدون أثر على الأرباح والخسائر.
+   */
+  @Post('transfer')
+  @RequirePermission('VAULTS_WRITE')
+  async transfer(
+    @Body() body: unknown,
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    try {
+      const dto = vaultTransferSchema.parse({
+        ...(typeof body === 'object' && body !== null ? body : {}),
+        companyId: companyId || (body as { companyId?: string })?.companyId,
+      });
+      if (!dto.companyId?.trim()) {
+        throw new BadRequestException('معرف الشركة مطلوب (companyId في الطلب أو الرأس)');
+      }
+      return this.vaultsService.transfer(dto, user.sub);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات التحويل غير صحيحة');
+      }
+      throw e;
+    }
   }
 
   @Get(':id/transactions')

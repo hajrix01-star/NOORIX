@@ -2,13 +2,14 @@ import { Module }               from '@nestjs/common';
 import { FinancialCoreService } from './financial-core.service';
 import { FiscalPeriodModule }   from '../fiscal-period/fiscal-period.module';
 import { IdempotencyModule }    from '../idempotency/idempotency.module';
+import { VaultBalanceModule }   from '../vault-balance/vault-balance.module';
 
 /**
  * FinancialCoreModule — يُصدَّر كـ Global لأن جميع الوحدات المالية تحتاجه.
  * PrismaModule مُسجَّل كـ @Global، لذا TenantPrismaService متاح تلقائياً.
  */
 @Module({
-  imports:   [FiscalPeriodModule, IdempotencyModule],
+  imports:   [FiscalPeriodModule, IdempotencyModule, VaultBalanceModule],
   providers: [FinancialCoreService],
   exports:   [FinancialCoreService],
 })

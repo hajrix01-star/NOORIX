@@ -31,6 +31,7 @@ import { splitTax }             from '../common/utils/math-engine';
 import { generateInvoiceSerial } from '../common/utils/invoice-serial';
 import { FiscalPeriodService }  from '../fiscal-period/fiscal-period.service';
 import { IdempotencyService }   from '../idempotency/idempotency.service';
+import { VaultBalanceService }  from '../vault-balance/vault-balance.service';
 import type {
   OutflowDto,
   InflowDto,
@@ -98,6 +99,7 @@ export class FinancialCoreService {
     private readonly db: TenantPrismaService,
     private readonly fiscalPeriod: FiscalPeriodService,
     private readonly idempotency: IdempotencyService,
+    private readonly vaultBalance: VaultBalanceService,
   ) {}
 
   // ══════════════════════════════════════════════════════════
@@ -887,6 +889,15 @@ export class FinancialCoreService {
     return this.db.withTenant(async (tx) => {
       await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
 
+      await this._assertVaultTransferEndpoints(tx, dto.companyId, dto.fromVaultId, dto.toVaultId);
+
+      const fromBalance = await this.vaultBalance.getVaultBalance(tx, dto.fromVaultId);
+      if (fromBalance.lt(amount)) {
+        throw new BadRequestException(
+          `رصيد الخزينة المُرسِل غير كافٍ. المتاح: ${fromBalance.toFixed(2)} — المطلوب: ${amount.toFixed(2)}`,
+        );
+      }
+
       const [fromAccountId, toAccountId] = await Promise.all([
         this._getVaultAccount(tx, dto.companyId, dto.fromVaultId),
         this._getVaultAccount(tx, dto.companyId, dto.toVaultId),
@@ -1138,6 +1149,33 @@ export class FinancialCoreService {
     }
     await this._assertVaultUsableForPaymentOutflow(tx, companyId, defaultVault.id);
     return [{ vaultId: defaultVault.id, amount: total }];
+  }
+
+  /** تحويل بين خزائن: الطرفان نشطان غير مؤرشفين وتابعان للشركة (لا يشترط showAsPaymentMethod — عهدة/صناديق مخفية عن السداد). */
+  private async _assertVaultTransferEndpoints(
+    tx: TxClient,
+    companyId: string,
+    fromVaultId: string,
+    toVaultId: string,
+  ) {
+    const ids = [fromVaultId, toVaultId];
+    const vaults = await tx.vault.findMany({
+      where: { id: { in: ids }, companyId },
+      select: { id: true, nameAr: true, isActive: true, isArchived: true },
+    });
+    const byId = new Map(vaults.map((v) => [v.id, v]));
+    for (const vid of ids) {
+      const v = byId.get(vid);
+      if (!v) {
+        throw new NotFoundException(`الخزنة ${vid} غير موجودة أو لا تنتمي لهذه الشركة`);
+      }
+      if (v.isArchived) {
+        throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة ولا يمكن التحويل منها أو إليها.`);
+      }
+      if (v.isActive === false) {
+        throw new BadRequestException(`الخزينة «${v.nameAr}» غير نشطة.`);
+      }
+    }
   }
 
   /** أي صرف (مشتريات، مصاريف، رواتب، سلف، …): خزنة غير مؤرشفة ومفعّل لها الظهور كسداد */

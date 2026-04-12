@@ -10,6 +10,7 @@ import { fmt, sumAmounts } from '../../utils/format';
 import VaultCard          from './components/VaultCard';
 import VaultFormModal     from './components/VaultFormModal';
 import VaultTransactionsModal from './components/VaultTransactionsModal';
+import VaultTransferModal from './components/VaultTransferModal';
 import { Button, ScreenShell, FmtNum } from '../../ui';
 
 export default function TreasuryScreen() {
@@ -22,6 +23,7 @@ export default function TreasuryScreen() {
   const [selectedVault,   setSelectedVault]  = useState(null);
   const [editVault,       setEditVault]      = useState(null);
   const [showAddForm,     setShowAddForm]    = useState(false);
+  const [showTransfer,    setShowTransfer]   = useState(false);
   const [saveError,       setSaveError]      = useState('');
 
   const dateFilter = useDateFilter();
@@ -122,6 +124,9 @@ export default function TreasuryScreen() {
             <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
             {t('showArchived')}
           </label>
+          <Button variant="ghost" size="sm" onClick={() => setShowTransfer(true)} disabled={!hasCompany}>
+            {t('vaultTransferOpen')}
+          </Button>
           <Button variant="primary" onClick={() => { setShowAddForm(true); setSaveError(''); }}>
             {t('addVaultBtn')}
           </Button>
@@ -228,6 +233,10 @@ export default function TreasuryScreen() {
           onClose={() => setSelectedVault(null)}
           dateFilter={dateFilter}
         />
+      )}
+
+      {showTransfer && hasCompany && (
+        <VaultTransferModal companyId={companyId} onClose={() => setShowTransfer(false)} />
       )}
 
       {showAddForm && (

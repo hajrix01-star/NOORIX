@@ -112,7 +112,15 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   const columns = [
     { key: 'documentNumber', label: t('documentNumber'), render: (_, r) => <span className="nx-cell-num">{r.documentNumber || r.referenceId || '—'}</span> },
     { key: 'transactionDate', label: t('date'), render: (v) => <span className="text-[12px]">{formatSaudiDate(v)}</span> },
-    { key: 'referenceType', label: t('type'), render: (v) => <span className="text-[12px]">{v || '—'}</span> },
+    {
+      key: 'referenceType',
+      label: t('type'),
+      render: (v) => (
+        <span className="text-[12px]">
+          {v === 'transfer' ? t('vaultLedgerTypeTransfer') : (v || '—')}
+        </span>
+      ),
+    },
     { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <FmtNum n={v} className="text-noorix-green nx-font-numbers" /> : <span>—</span> },
     { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <FmtNum n={v} className="text-noorix-red nx-font-numbers" /> : <span>—</span> },
   ];
@@ -123,7 +131,11 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
         <span className="font-bold text-[13px] nx-font-numbers">{row.documentNumber || row.referenceId || '—'}</span>
         <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
       </div>
-      {row.referenceType && <div className="text-[12px] text-noorix-muted mb-2">{row.referenceType}</div>}
+      {row.referenceType && (
+        <div className="text-[12px] text-noorix-muted mb-2">
+          {row.referenceType === 'transfer' ? t('vaultLedgerTypeTransfer') : row.referenceType}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted py-2 px-[10px]">
         <div>
           <div className="text-noorix-muted mb-1 text-[10px]">{t('debit')}</div>
