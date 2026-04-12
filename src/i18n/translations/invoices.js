@@ -80,6 +80,7 @@ export default {
   filterBySupplier: { ar: 'المورد', en: 'Supplier' },
   showCancelledInvoices: { ar: 'إظهار الفواتير الملغاة', en: 'Show cancelled invoices' },
   hideCancelledInvoices: { ar: 'إخفاء الفواتير الملغاة', en: 'Hide cancelled invoices' },
+  filterInvoicesWithNotesOnly: { ar: 'فقط ذات ملاحظة', en: 'With notes only' },
 
   dayCloseTitle: { ar: 'تقرير نهاية اليوم', en: 'End-of-day report' },
   dayCloseOpenBtn: { ar: 'تقرير نهاية اليوم', en: 'End-of-day report' },

@@ -10,6 +10,7 @@ import {
   IsArray,
   ValidateNested,
   Allow,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -93,6 +94,12 @@ export class CreateInvoiceBatchDto {
   @ValidateNested({ each: true })
   @Type(() => BatchInvoiceItemDto)
   items: BatchInvoiceItemDto[];
+
+  /** ملاحظة الدفعة — تُضاف لكل فاتورة بعد ملاحظة السطر (إن وُجدت)، مفصولاً بـ « + » */
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  batchNotes?: string;
 
   /** مفتاح عدم التكرار — يُرسَل من الـ Frontend لمنع الحفظ المزدوج */
   @IsOptional()

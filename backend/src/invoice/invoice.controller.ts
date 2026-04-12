@@ -85,6 +85,7 @@ export class InvoiceController {
     @Query('sortDir')     sortDir?:    string,
     @Query('q')           q?:          string,
     @Query('includeCancelled') includeCancelled?: string,
+    @Query('hasNotes')   hasNotes?:   string,
   ) {
     const role  = (user?.role  || '').toLowerCase();
     const perms = user?.permissions || [];
@@ -116,6 +117,7 @@ export class InvoiceController {
       sortDir,
       q,
       includeCancelled === '1' || includeCancelled === 'true',
+      hasNotes,
     );
   }
 

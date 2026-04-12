@@ -754,6 +754,7 @@ export async function fetchAllInvoicesForExport({
   categoryId,
   expenseLineId,
   includeCancelled = true,
+  hasNotes,
 }) {
   if (!companyId) return [];
   const pageSize = 150;
@@ -776,6 +777,7 @@ export async function fetchAllInvoicesForExport({
       categoryId,
       expenseLineId,
       includeCancelled,
+      hasNotes,
     );
     throwIfApiFailed(res, 'فشل تحميل الفواتير للتصدير');
     const { items = [], total = 0 } = res.data || {};
@@ -1163,7 +1165,7 @@ export async function updateInvoice(id, body, companyId) {
 export async function deleteInvoice(id, companyId) {
   return apiDelete(`/api/v1/invoices/${id}?companyId=${companyId}`);
 }
-export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled = true) {
+export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled = true, hasNotes) {
   const params = { companyId, page: String(page), pageSize: String(pageSize) };
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
   if (startDate) params.startDate = String(startDate).slice(0, 10);
@@ -1178,6 +1180,7 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
   if (expenseLineId) params.expenseLineId = expenseLineId;
   params.includeCancelled = includeCancelled ? 'true' : 'false';
   if (q && String(q).trim()) params.q = String(q).trim();
+  if (hasNotes === true) params.hasNotes = 'true';
   const res = await apiGet('/api/v1/invoices', params);
   if (!res.success) return res;
   const data = res.data?.data ?? res.data;

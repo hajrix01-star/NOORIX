@@ -153,6 +153,7 @@ export default function InvoicesListScreen() {
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
   const [showCancelled, setShowCancelled] = useState(false);
+  const [filterHasNotesOnly, setFilterHasNotesOnly] = useState(false);
   const [urlExtra, setUrlExtra] = useState({ kind: '', categoryId: '', expenseLineId: '' });
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('transactionDate');
@@ -165,7 +166,7 @@ export default function InvoicesListScreen() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId, showCancelled, urlExtra.kind, urlExtra.categoryId, urlExtra.expenseLineId]);
+  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId, showCancelled, filterHasNotesOnly, urlExtra.kind, urlExtra.categoryId, urlExtra.expenseLineId]);
 
   useEffect(() => {
     const keys = ['from', 'to', 'kind', 'supplierId', 'categoryId', 'expenseLineId', 'q'];
@@ -327,6 +328,7 @@ export default function InvoicesListScreen() {
     categoryId: urlExtra.categoryId || undefined,
     expenseLineId: urlExtra.expenseLineId || undefined,
     includeCancelled: showCancelled,
+    hasNotes: filterHasNotesOnly || undefined,
   });
 
   // بيانات مُحوَّلة لـ SmartTable
@@ -418,6 +420,7 @@ export default function InvoicesListScreen() {
         categoryId: urlExtra.categoryId || undefined,
         expenseLineId: urlExtra.expenseLineId || undefined,
         includeCancelled: showCancelled,
+        hasNotes: filterHasNotesOnly || undefined,
       });
       const rows = all.map(mapInvoiceToExportRow);
       const safeStart = String(dateFilter.startDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'start';
@@ -441,7 +444,7 @@ export default function InvoicesListScreen() {
     companyId, displayedTotal, dateFilter.startDate, dateFilter.endDate, dateFilter.label,
     kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
     urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs,
-    companyName, t, lang, showToast,
+    companyName, t, lang, showToast, filterHasNotesOnly,
   ]);
 
   // المجاميع الحقيقية من السيرفر (كل النتائج المُفلترة، ليس الصفحة فقط)
@@ -465,6 +468,7 @@ export default function InvoicesListScreen() {
         categoryId: urlExtra.categoryId || undefined,
         expenseLineId: urlExtra.expenseLineId || undefined,
         includeCancelled: showCancelled,
+        hasNotes: filterHasNotesOnly || undefined,
       });
       const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const rowsHtml = all.map((inv) => {
@@ -494,7 +498,7 @@ export default function InvoicesListScreen() {
     companyId, displayedTotal, dateFilter.startDate, dateFilter.endDate, dateFilter.label,
     kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
     urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs, t,
-    companyName, logoUrl, serverAll, fmt, showToast,
+    companyName, logoUrl, serverAll, fmt, showToast, filterHasNotesOnly,
   ]);
 
   const vaultRowLabel = useCallback((row) => {
@@ -681,8 +685,10 @@ export default function InvoicesListScreen() {
             kindForExport || undefined, undefined, undefined,
             filterSupplierId || undefined, debouncedQ || undefined,
             urlExtra.categoryId || undefined, urlExtra.expenseLineId || undefined,
+            true,
+            filterHasNotesOnly || undefined,
           );
-          return (res?.items ?? []).map(formatInvoiceForExport);
+          return (res?.data?.items ?? []).map(formatInvoiceForExport);
         }}
         onImportSuccess={(count) => {
           invalidateOnFinancialMutation(queryClient);
@@ -830,6 +836,14 @@ export default function InvoicesListScreen() {
               onClick={() => setShowImportExport(true)}
             >
               {t('importExportLabel')}
+            </Button>
+            <Button
+              size="sm"
+              variant={filterHasNotesOnly ? 'primary' : 'ghost'}
+              aria-pressed={filterHasNotesOnly}
+              onClick={() => { setFilterHasNotesOnly((v) => !v); setPage(1); }}
+            >
+              {t('filterInvoicesWithNotesOnly')}
             </Button>
             <Button
               size="sm"

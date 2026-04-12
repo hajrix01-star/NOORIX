@@ -141,6 +141,7 @@ export class InvoiceService {
   async createBatchWithLedger(dto: CreateInvoiceBatchDto, userId?: string | null) {
     try {
       const batchId = `B-${Date.now()}`;
+      const batchNotesPart = dto.batchNotes?.trim() || '';
       const validItems = dto.items.filter((i) => {
         if (Number(i.totalAmount) <= 0) return false;
         const hasSupplierRef = !!(i.supplierId || i.expenseLineId);
@@ -149,7 +150,7 @@ export class InvoiceService {
         if (hasSupplierRef && isTaxable && !hasSupplierNumber) return false;
         if (i.supplierId) return true;
         if (i.expenseLineId) return true;
-        if ((i.kind === 'fixed_expense' || i.kind === 'expense') && i.notes?.trim()) return true;
+        if ((i.kind === 'fixed_expense' || i.kind === 'expense') && (i.notes?.trim() || batchNotesPart)) return true;
         return false;
       });
       if (validItems.length === 0) {
@@ -158,6 +159,13 @@ export class InvoiceService {
       const txDate = typeof dto.transactionDate === 'string'
         ? dto.transactionDate
         : new Date(dto.transactionDate).toISOString().slice(0, 10);
+
+      const combineLineAndBatchNotes = (lineNotes: string | undefined): string | undefined => {
+        const line = lineNotes?.trim() ?? '';
+        if (!batchNotesPart) return line || undefined;
+        if (!line) return batchNotesPart;
+        return `${line} + ${batchNotesPart}`;
+      };
 
       const dtos = [];
       for (const item of validItems) {
@@ -198,7 +206,7 @@ export class InvoiceService {
           batchId,
           vaultId:         dto.vaultId ?? undefined,
           debitAccountId,
-          notes:           item.notes?.trim() || undefined,
+          notes:           combineLineAndBatchNotes(item.notes),
         });
       }
       const results = await this.financialCore.processOutflowBatch(
@@ -345,6 +353,7 @@ export class InvoiceService {
     sortDir: 'asc' | 'desc' | string = 'desc',
     q?: string,
     includeCancelled = true,
+    hasNotes?: string | boolean,
   ) {
     // معالجة التواريخ: YYYY-MM-DD → بداية اليوم ونهاية اليوم (UTC) — مطابق لـ SalesService
     const dateFilter =
@@ -366,6 +375,15 @@ export class InvoiceService {
     const supplierFilter = supplierId ? { supplierId } : {};
     const categoryFilter = categoryId ? { categoryId } : {};
     const expenseLineFilter = expenseLineId ? { expenseLineId } : {};
+
+    const wantHasNotesOnly =
+      hasNotes === true ||
+      hasNotes === 'true' ||
+      hasNotes === '1' ||
+      String(hasNotes || '').toLowerCase() === 'yes';
+    const notesPresenceFilter: Prisma.InvoiceWhereInput = wantHasNotesOnly
+      ? { AND: [{ notes: { not: null } }, { NOT: { notes: { equals: '' } } }] }
+      : {};
 
     const needle = (q || '').trim().slice(0, 120);
     const searchFilter: Prisma.InvoiceWhereInput =
@@ -421,6 +439,7 @@ export class InvoiceService {
       ...categoryFilter,
       ...expenseLineFilter,
       ...searchFilter,
+      ...notesPresenceFilter,
     };
 
     const dir: Prisma.SortOrder = String(sortDir).toLowerCase() === 'asc' ? 'asc' : 'desc';

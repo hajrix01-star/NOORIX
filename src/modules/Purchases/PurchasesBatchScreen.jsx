@@ -67,6 +67,8 @@ export default function PurchasesBatchScreen() {
   /** آخر تاريخ عملية مُطبَّق على الصفوف — لمزامنة رفع/خفض تاريخ الفاتورة مع تاريخ العملية */
   const prevBatchDateRef = useRef(batchDate);
   const [batchVaultId, setBatchVaultId] = useState('');
+  /** تُطبَّق على كل فاتورة في الدفعة بعد ملاحظة السطر، مفصولاً بـ « + » */
+  const [batchNotes, setBatchNotes] = useState('');
   const [rows, setRows]           = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [editingBatch, setEditingBatch] = useState(null);
   const [printingBatch, setPrintingBatch] = useState(null);
@@ -305,11 +307,12 @@ export default function PurchasesBatchScreen() {
 
   const saveMutation = useApiMutation({
     mutationFn: async () => {
+      const batchPart = batchNotes.trim();
       const valid = rows.filter((r) => {
         try {
           if (!r.invoiceNumber || new Decimal(r.totalInclusive || 0).lte(0)) return false;
           if (r.supplierId) return true;
-          if ((r.kind === 'fixed_expense' || r.kind === 'expense') && r.notes?.trim()) return true;
+          if ((r.kind === 'fixed_expense' || r.kind === 'expense') && (r.notes?.trim() || batchPart)) return true;
           return false;
         } catch { return false; }
       });
@@ -319,6 +322,7 @@ export default function PurchasesBatchScreen() {
         companyId,
         transactionDate: batchDate,
         vaultId: batchVaultId || undefined,
+        batchNotes: batchPart || undefined,
         idempotencyKey,
         items: valid.map((r) => {
           let notes = r.notes?.trim();
@@ -348,6 +352,7 @@ export default function PurchasesBatchScreen() {
     onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
       setRows([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
+      setBatchNotes('');
     },
   });
 
@@ -459,6 +464,19 @@ export default function PurchasesBatchScreen() {
                   <option key={v.id} value={v.id}>{vaultDisplayName(v, language)}</option>
                 ))}
               </Input>
+            </div>
+            <div className="batch-purchases-entry-toolbar__control batch-purchases-entry-toolbar__control--grow min-w-0 flex-1 basis-[min(100%,280px)]">
+              <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-batch-notes">{t('batchPurchasesBatchNotes')}</label>
+              <Input
+                id="batch-purchase-batch-notes"
+                type="text"
+                multiline
+                rows={2}
+                value={batchNotes}
+                onChange={(e) => setBatchNotes(e.target.value)}
+                placeholder={t('batchPurchasesBatchNotesPlaceholder')}
+                className="w-full min-w-0"
+              />
             </div>
           </div>
 
