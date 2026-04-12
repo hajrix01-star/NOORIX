@@ -65,6 +65,7 @@ export default {
   addExpenseLine: { ar: 'إضافة بند مصروف', en: 'Add expense line' },
   fixedExpense:        { ar: 'ثابت',                         en: 'Fixed' },
   variableExpense:     { ar: 'متغير',                        en: 'Variable' },
+  variableExpenseType: { ar: 'مصروف متغير', en: 'Variable expense' },
   bookmarkUpdateFailed:{ ar: 'تعذّر تحديث المفضلة',         en: 'Failed to update bookmark' },
   loadBatchFailed:     { ar: 'فشل تحميل الدفعات',           en: 'Failed to load batches' },
   taxPct:              { ar: 'ض%',                           en: 'VAT%' },

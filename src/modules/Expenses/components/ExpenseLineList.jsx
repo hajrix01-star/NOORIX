@@ -11,10 +11,6 @@ import { Button, Badge, Input, ScreenShell, cn } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 
-const KIND_LABELS = {
-  fixed_expense: { label: 'ثابت', bg: 'var(--noorix-muted-12)', color: 'var(--noorix-text-muted)' },
-  expense: { label: 'متغير', bg: 'var(--noorix-amber-12)', color: 'var(--noorix-accent-amber)' },
-};
 
 const REFRESH_ICON = (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
@@ -43,6 +39,20 @@ export default function ExpenseLineList({
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
 
+  /** نوع البند (ثابت/متغير) + اسم الفئة المختارة عند العرض */
+  const formatKindWithCategory = useCallback((kind, categoryName) => {
+    const cat = categoryName && categoryName !== '—' ? String(categoryName).trim() : '';
+    if (kind === 'fixed_expense') {
+      const base = t('fixedExpenseType');
+      return cat ? `${base} / ${cat}` : base;
+    }
+    if (kind === 'expense') {
+      const base = t('variableExpenseType');
+      return cat ? `${base} / ${cat}` : base;
+    }
+    return kind;
+  }, [t]);
+
   const columns = useMemo(() => [
     {
       key: 'nameAr',
@@ -64,9 +74,15 @@ export default function ExpenseLineList({
       key: 'kind',
       label: 'النوع',
       sortable: true,
-      width: 110,
-      minWidth: 100,
-      render: (v) => <Badge {...Badge.fromStatus(v, kindBadgeMap)} size="sm" />,
+      minWidth: 180,
+      render: (v, row) => {
+        const { color } = Badge.fromStatus(v, kindBadgeMap);
+        return (
+          <Badge color={color} size="sm" className="max-w-[min(100%,14rem)] whitespace-normal text-start leading-snug">
+            {formatKindWithCategory(v, row.categoryName)}
+          </Badge>
+        );
+      },
     },
     {
       key: 'categoryName',
@@ -101,12 +117,15 @@ export default function ExpenseLineList({
         </span>
       ),
     },
-  ], [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t]);
+  ], [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, formatKindWithCategory]);
 
   const tableData = useMemo(() =>
     expenseLines.map((line) => ({
       ...line,
-      categoryName: line.category?.nameAr || line.category?.nameEn || '—',
+      categoryName:
+        (lang === 'en'
+          ? line.category?.nameEn || line.category?.nameAr
+          : line.category?.nameAr || line.category?.nameEn) || '—',
       supplierName: (lang === 'en' ? line.supplier?.nameEn || line.supplier?.nameAr : line.supplier?.nameAr || line.supplier?.nameEn) || '—',
     })),
   [expenseLines, lang]);
@@ -114,12 +133,12 @@ export default function ExpenseLineList({
   const exportData = useMemo(() =>
     tableData.map((r) => ({
       'اسم البند': r.nameAr || r.nameEn || '—',
-      'النوع': KIND_LABELS[r.kind]?.label || r.kind,
+      'النوع': formatKindWithCategory(r.kind, r.categoryName),
       'الفئة': r.categoryName,
       'المورد': r.supplierName,
       'رقم الخدمة': r.serviceNumber || '—',
     })),
-  [tableData]);
+  [tableData, formatKindWithCategory]);
 
   const renderMobileCard = useCallback((row) => (
     <div>
@@ -132,7 +151,13 @@ export default function ExpenseLineList({
         >
           {row.nameAr || row.nameEn || '—'}
         </Button>
-        <Badge {...Badge.fromStatus(row.kind, kindBadgeMap)} size="sm" />
+        <Badge
+          color={Badge.fromStatus(row.kind, kindBadgeMap).color}
+          size="sm"
+          className="max-w-[min(100%,12rem)] shrink-0 whitespace-normal text-start leading-snug"
+        >
+          {formatKindWithCategory(row.kind, row.categoryName)}
+        </Badge>
       </div>
       <div className="text-[12px] text-noorix-muted mb-2 flex flex-wrap gap-2.5">
         {row.categoryName && row.categoryName !== '—' && <span>{row.categoryName}</span>}
@@ -144,11 +169,11 @@ export default function ExpenseLineList({
         <Button size="sm" variant="danger" onClick={() => onDeleteLine?.(row)}>{t('delete')}</Button>
       </div>
     </div>
-  ), [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t]);
+  ), [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, formatKindWithCategory]);
 
   function handlePrint() {
     const rows = tableData.map((r) =>
-      `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${(KIND_LABELS[r.kind]?.label || r.kind).replace(/</g, '&lt;')}</td><td>${(r.categoryName || '—').replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td></tr>`,
+      `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${formatKindWithCategory(r.kind, r.categoryName).replace(/</g, '&lt;')}</td><td>${(r.categoryName || '—').replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td></tr>`,
     ).join('');
     const printTitle = t('expenseLinesPrintTitle') || 'بنود المصاريف';
     openPrintWindow({
