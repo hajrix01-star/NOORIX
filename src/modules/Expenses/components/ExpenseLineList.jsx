@@ -58,7 +58,7 @@ export default function ExpenseLineList({
       key: 'nameAr',
       label: 'اسم البند',
       sortable: true,
-      minWidth: 160,
+      width: '18%',
       render: (v, row) => (
         <Button
           variant="raw"
@@ -74,7 +74,7 @@ export default function ExpenseLineList({
       key: 'kind',
       label: 'النوع',
       sortable: true,
-      minWidth: 180,
+      width: '22%',
       render: (v, row) => {
         const { color } = Badge.fromStatus(v, kindBadgeMap);
         return (
@@ -88,33 +88,33 @@ export default function ExpenseLineList({
       key: 'categoryName',
       label: 'الفئة',
       sortable: true,
-      minWidth: 120,
-      render: (v) => <span className="nx-cell-ellipsis text-[13px]">{v || '—'}</span>,
+      width: '14%',
+      render: (v) => <span className="block min-w-0 truncate text-[13px]" title={v || ''}>{v || '—'}</span>,
     },
     {
       key: 'supplierName',
       label: 'المورد',
       sortable: true,
-      minWidth: 120,
-      render: (v) => <span className="nx-cell-ellipsis text-[13px]">{v || '—'}</span>,
+      width: '14%',
+      render: (v) => <span className="block min-w-0 truncate text-[13px]" title={v || ''}>{v || '—'}</span>,
     },
     {
       key: 'serviceNumber',
       label: 'رقم الخدمة',
-      width: 120,
-      minWidth: 100,
+      width: '10%',
+      align: 'center',
       render: (v) => <span className="nx-cell-num text-[13px]">{v || '—'}</span>,
     },
     {
       key: 'actions',
-      label: 'إجراءات',
-      width: '5%',
+      label: t('actions'),
+      width: '14%',
       align: 'center',
       render: (_, row) => (
-        <span className="inline-flex gap-1.5">
+        <div className="noorix-actions-row flex flex-wrap justify-center gap-1.5">
           <Button size="sm" onClick={(e) => { e.stopPropagation(); onEditLine?.(row); }}>{t('edit')}</Button>
           <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); onDeleteLine?.(row); }}>{t('delete')}</Button>
-        </span>
+        </div>
       ),
     },
   ], [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, formatKindWithCategory]);
@@ -232,7 +232,7 @@ export default function ExpenseLineList({
       <SmartTable
         compact
         showRowNumbers
-        rowNumberWidth="1%"
+        rowNumberWidth={40}
         innerPadding={8}
         columns={columns}
         data={tableData}
@@ -243,6 +243,10 @@ export default function ExpenseLineList({
         emptyMessage={t('expenseLinesEmptyState')}
         keyExtractor={(row) => row.id}
         renderMobileCard={renderMobileCard}
+        tableId="expense-lines"
+        tableLayout="fixed"
+        tableMinWidth={1100}
+        stickyActionColumn={false}
       />
     </ScreenShell>
   );

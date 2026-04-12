@@ -124,10 +124,11 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
   });
 
   const columns = [
-    { key: 'index', label: '#', shrink: true, render: (v) => <span className="nx-cell-muted">{v}</span> },
+    { key: 'index', label: '#', shrink: true, width: '3%', align: 'center', render: (v) => <span className="nx-cell-muted">{v}</span> },
     {
       key: 'expenseLineId',
       label: 'بند المصروف (يُملأ تلقائياً)',
+      width: '17%',
       render: (_, row) => (
         <Input
           type="select"
@@ -144,11 +145,12 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         </Input>
       ),
     },
-    { key: 'categoryName', label: 'الفئة', render: (v) => <span className="nx-cell-muted">{v}</span> },
-    { key: 'supplierName', label: 'المورد', render: (v) => <span className="nx-cell-muted">{v}</span> },
+    { key: 'categoryName', label: 'الفئة', width: '8%', render: (v) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={v}>{v}</span> },
+    { key: 'supplierName', label: 'المورد', width: '9%', render: (v) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={v}>{v}</span> },
     {
       key: 'supplierInvoiceNumber',
       label: 'رقم فاتورة المورد',
+      width: '9%',
       render: (v, row) => (
         <Input
           type="text"
@@ -162,6 +164,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     {
       key: 'totalInclusive',
       label: 'الإجمالي',
+      width: '8%',
       render: (v, row) => (
         <Input
           type="number"
@@ -173,11 +176,12 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         />
       ),
     },
-    { key: 'net', label: 'الصافي', numeric: true, render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
-    { key: 'tax', label: 'الضريبة', numeric: true, render: (v) => <FmtNum n={v} className="nx-cell-num text-noorix-amber" /> },
+    { key: 'net', label: 'الصافي', numeric: true, width: '7%', align: 'center', render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
+    { key: 'tax', label: 'الضريبة', numeric: true, width: '7%', align: 'center', render: (v) => <FmtNum n={v} className="nx-cell-num text-noorix-amber" /> },
     {
       key: 'notes',
       label: 'ملاحظات',
+      width: '11%',
       render: (v, row) => (
         <Input
           type="text"
@@ -190,12 +194,15 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     },
     {
       key: 'actions',
-      label: '',
-      shrink: true,
+      label: t('actions'),
+      align: 'center',
+      width: '11%',
       render: (_, row) => (
-        <Button variant="danger" size="sm" onClick={() => removeRow(row.index - 1)}>
-          حذف
-        </Button>
+        <div className="noorix-actions-row flex flex-wrap justify-center">
+          <Button variant="danger" size="sm" onClick={() => removeRow(row.index - 1)}>
+            حذف
+          </Button>
+        </div>
       ),
     },
   ];
@@ -248,9 +255,13 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         title={t('expenseBatchTab')}
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{rows.length}</span>}
         showSearchInHeader={false}
+        tableId="expense-batch"
+        tableLayout="fixed"
+        tableMinWidth={1280}
+        stickyActionColumn={false}
       />
 
-      <div className="noorix-summary-bar noorix-summary-bar--4 mt-4">
+      <div className="noorix-summary-bar noorix-summary-bar--4 mt-6">
         <div className="noorix-summary-bar__item">
           <div className="noorix-summary-bar__label">عدد الصفوف</div>
           <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{rows.length}</div>
