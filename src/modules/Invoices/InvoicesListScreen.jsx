@@ -15,7 +15,9 @@ import { useInvoices }    from '../../hooks/useInvoices';
 import { useSuppliers }   from '../../hooks/useSuppliers';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDate, formatSaudiDateISO } from '../../utils/saudiDate';
-import { updateInvoice, getInvoices, deleteInvoice } from '../../services/api';
+import { updateInvoice, getInvoices, deleteInvoice, fetchAllInvoicesForExport } from '../../services/api';
+import { exportToExcel } from '../../utils/exportUtils';
+import { openPrintWindow } from '../../utils/printUtils';
 import { Badge, Button, Modal, Input, ScreenShell, FmtNum, cn } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import SmartTable         from '../../components/common/SmartTable';
@@ -101,8 +103,22 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
   );
 }
 
+function vaultExportLabel(inv, lang, fmt) {
+  const a = inv.vaultAllocations;
+  if (a?.length > 0) {
+    return a.map((al) => {
+      const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
+      return `${vn || '—'}: ${fmt(al.amount)} SR`;
+    }).join(' | ');
+  }
+  if (inv.vault) {
+    return lang === 'en' ? inv.vault.nameEn || inv.vault.nameAr : inv.vault.nameAr || inv.vault.nameEn;
+  }
+  return '—';
+}
+
 export default function InvoicesListScreen() {
-  const { activeCompanyId, userRole } = useApp();
+  const { activeCompanyId, userRole, companies } = useApp();
   const { t, lang } = useTranslation();
   const [searchParams] = useSearchParams();
   const urlDrillKeyRef = useRef('');
@@ -110,6 +126,10 @@ export default function InvoicesListScreen() {
   const dateFilter          = useDateFilter();
   const queryClient         = useQueryClient();
   const { showToast }       = useToast();
+  const [exportBusy, setExportBusy] = useState(false);
+  const activeCo = companies?.find((c) => c.id === activeCompanyId);
+  const companyName = (lang === 'en' ? (activeCo?.nameEn || activeCo?.nameAr) : (activeCo?.nameAr || activeCo?.nameEn)) || '';
+  const logoUrl = activeCo?.logoUrl || '';
   const [editingInvoice, setEditingInvoice]   = useState(null);
   const [viewingInvoice, setViewingInvoice]   = useState(null);
   const [filterKind, setFilterKind] = useState('');
@@ -311,10 +331,133 @@ export default function InvoicesListScreen() {
     }
   };
 
+  const mapInvoiceToExportRow = useCallback((inv) => {
+    const supplierName = inv.kind === 'sale'
+      ? (t('categoryTypeSale') || 'مبيعات')
+      : (lang === 'en' ? (inv.supplier?.nameEn || inv.supplier?.nameAr || '') : (inv.supplier?.nameAr || inv.supplier?.nameEn || ''));
+    const kindLabel = KIND_MAP[inv.kind]?.label ?? inv.kind ?? '—';
+    const statusLabel = STATUS_MAP[inv.status]?.label ?? inv.status ?? '—';
+    return {
+      invoiceNumber: inv.invoiceNumber ?? '',
+      supplierInvoiceNumber: inv.supplierInvoiceNumber ?? '',
+      supplierName: supplierName || '—',
+      notes: inv.notes ?? '',
+      kind: kindLabel,
+      vault: vaultExportLabel(inv, lang, fmt),
+      netAmount: Number(inv.netAmount ?? 0),
+      taxAmount: Number(inv.taxAmount ?? 0),
+      totalAmount: Number(inv.totalAmount ?? 0),
+      transactionDate: inv.transactionDate ? formatSaudiDateISO(inv.transactionDate) : '—',
+      status: statusLabel,
+    };
+  }, [KIND_MAP, STATUS_MAP, t, lang]);
+
+  const exportColumnDefs = useMemo(() => [
+    { key: 'invoiceNumber', label: t('documentNumber') },
+    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber') },
+    { key: 'supplierName', label: t('supplier') },
+    { key: 'notes', label: t('invoiceNotesColumn') || 'ملاحظة' },
+    { key: 'kind', label: t('type') },
+    { key: 'vault', label: t('invoiceVaultColumn') },
+    { key: 'netAmount', label: t('net') },
+    { key: 'taxAmount', label: t('tax') },
+    { key: 'totalAmount', label: t('total') },
+    { key: 'transactionDate', label: t('date') },
+    { key: 'status', label: t('statusLabel') },
+  ], [t]);
+
+  const handleExportExcel = useCallback(async () => {
+    if (!companyId || displayedTotal === 0) return;
+    setExportBusy(true);
+    try {
+      const all = await fetchAllInvoicesForExport({
+        companyId,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+        kind: kindForApi,
+        sortBy: sortKey,
+        sortDir,
+        supplierId: filterSupplierId || undefined,
+        q: debouncedQ || undefined,
+        categoryId: urlExtra.categoryId || undefined,
+        expenseLineId: urlExtra.expenseLineId || undefined,
+        includeCancelled: showCancelled,
+      });
+      const rows = all.map(mapInvoiceToExportRow);
+      const safeStart = String(dateFilter.startDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'start';
+      const safeEnd = String(dateFilter.endDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'end';
+      await exportToExcel({
+        data: rows,
+        filename: `invoices-${safeStart}_${safeEnd}.xlsx`,
+        title: `${t('invoicesTitle')} — ${dateFilter.label || ''}`,
+        companyName,
+        sheetName: lang === 'en' ? 'Invoices' : 'فواتير',
+        columns: exportColumnDefs,
+        rtl: true,
+      });
+      showToast(t('exportSuccess') || 'تم التصدير', 'success');
+    } catch (e) {
+      showToast(e?.message || t('exportFailed'), 'error');
+    } finally {
+      setExportBusy(false);
+    }
+  }, [
+    companyId, displayedTotal, dateFilter.startDate, dateFilter.endDate, dateFilter.label,
+    kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
+    urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs,
+    companyName, t, lang, showToast,
+  ]);
+
   // المجاميع الحقيقية من السيرفر (كل النتائج المُفلترة، ليس الصفحة فقط)
   const serverAll     = sums.all;
   const serverInflow  = sums.inflow;
   const serverOutflow = sums.outflow;
+
+  const handlePrintInvoices = useCallback(async () => {
+    if (!companyId || displayedTotal === 0) return;
+    setExportBusy(true);
+    try {
+      const all = await fetchAllInvoicesForExport({
+        companyId,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+        kind: kindForApi,
+        sortBy: sortKey,
+        sortDir,
+        supplierId: filterSupplierId || undefined,
+        q: debouncedQ || undefined,
+        categoryId: urlExtra.categoryId || undefined,
+        expenseLineId: urlExtra.expenseLineId || undefined,
+        includeCancelled: showCancelled,
+      });
+      const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const rowsHtml = all.map((inv) => {
+        const r = mapInvoiceToExportRow(inv);
+        return `<tr>${exportColumnDefs.map((c) => `<td>${esc(r[c.key])}</td>`).join('')}</tr>`;
+      }).join('');
+      const head = `<tr>${exportColumnDefs.map((c) => `<th>${esc(c.label)}</th>`).join('')}</tr>`;
+      const nc = exportColumnDefs.length;
+      const foot = `<tr><td colspan="6">${esc(t('totalInvoices', serverAll.count))}</td><td>${esc(fmt(Number(serverAll.net)))} SR</td><td>${esc(fmt(Number(serverAll.tax)))} SR</td><td>${esc(fmt(Number(serverAll.total)))} SR</td><td colspan="2"></td></tr>`;
+      const table = `<table><thead>${head}</thead><tbody>${rowsHtml || `<tr><td colspan="${nc}">${esc(t('noInvoicesInPeriod'))}</td></tr>`}</tbody><tfoot>${foot}</tfoot></table>`;
+      openPrintWindow({
+        title: t('invoicesTitle'),
+        companyName,
+        subtitle: `${t('invoicesTitle')} — ${dateFilter.label || ''}`,
+        logoUrl,
+        landscape: true,
+        body: table,
+      });
+    } catch (e) {
+      showToast(e?.message || t('exportFailed'), 'error');
+    } finally {
+      setExportBusy(false);
+    }
+  }, [
+    companyId, displayedTotal, dateFilter.startDate, dateFilter.endDate, dateFilter.label,
+    kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
+    urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs, t,
+    companyName, logoUrl, serverAll, fmt, showToast,
+  ]);
 
   const vaultRowLabel = useCallback((row) => {
     if (row.unassigned) return t('invoicesSalesUnassignedVault');
@@ -434,7 +577,30 @@ export default function InvoicesListScreen() {
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('invoicesTitle')}</h1>
       </div>
 
-      <DateFilterBar filter={dateFilter} />
+      <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
+        <DateFilterBar filter={dateFilter} />
+        {companyId && (
+          <div className="nx-toolbar">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleExportExcel}
+              disabled={exportBusy || displayedTotal === 0}
+            >
+              {exportBusy ? '…' : t('exportExcel')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={handlePrintInvoices}
+              disabled={exportBusy || displayedTotal === 0}
+            >
+              {t('print')}
+            </Button>
+          </div>
+        )}
+      </div>
 
       {!companyId && (
         <div className="noorix-surface-card nx-empty-state">

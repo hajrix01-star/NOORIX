@@ -741,6 +741,52 @@ export async function fetchAllInvoicesForBatch(companyId, batchId, startDate, en
   return all;
 }
 
+/** جلب كل الفواتير المطابقة للفلتر — للتصدير والطباعة (صفحات متتابعة) */
+export async function fetchAllInvoicesForExport({
+  companyId,
+  startDate,
+  endDate,
+  kind,
+  sortBy = 'transactionDate',
+  sortDir = 'desc',
+  supplierId,
+  q,
+  categoryId,
+  expenseLineId,
+  includeCancelled = true,
+}) {
+  if (!companyId) return [];
+  const pageSize = 150;
+  let page = 1;
+  const acc = [];
+  for (let guard = 0; guard < 500; guard++) {
+    const res = await getInvoices(
+      companyId,
+      startDate,
+      endDate,
+      page,
+      pageSize,
+      undefined,
+      undefined,
+      kind,
+      sortBy,
+      sortDir,
+      supplierId,
+      q,
+      categoryId,
+      expenseLineId,
+      includeCancelled,
+    );
+    throwIfApiFailed(res, 'فشل تحميل الفواتير للتصدير');
+    const { items = [], total = 0 } = res.data || {};
+    acc.push(...items);
+    const t = Number(total) || 0;
+    if (acc.length >= t || items.length < pageSize) break;
+    page += 1;
+  }
+  return acc;
+}
+
 // ——— التقارير ———
 export async function getGeneralProfitLossReport(companyId, year) {
   return apiGet('/api/v1/reports/general-profit-loss', { companyId, year: String(year) });
