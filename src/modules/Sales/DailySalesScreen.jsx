@@ -497,18 +497,18 @@ export default function DailySalesScreen() {
         <div className="text-[11px] font-bold text-noorix-muted mb-1.5">{t('salesChannels')}</div>
         <SalesChannelsChips channels={row.channels} lang={lang} />
       </div>
-      <div className="grid grid-cols-3 gap-2 mt-1">
+      <div className="nx-mc__grid nx-mc__grid--3 mt-1">
         <div>
-          <div className="text-[11px] text-noorix-muted mb-0.5">{t('total')}</div>
-          <div dir="ltr" className="text-[13px] font-bold text-noorix-green"><FmtNum n={row.totalAmount} /></div>
+          <div className="nx-mc__stat-label">{t('total')}</div>
+          <div className="nx-mc__stat-value text-[13px] font-bold text-noorix-green"><FmtNum n={row.totalAmount} /></div>
         </div>
         <div>
-          <div className="text-[11px] text-noorix-muted mb-0.5">{t('customers')}</div>
-          <div className="text-[13px] font-bold text-noorix-blue">{row.customerCount ?? 0}</div>
+          <div className="nx-mc__stat-label">{t('customers')}</div>
+          <div className="nx-mc__stat-value text-[13px] font-bold text-noorix-blue">{row.customerCount ?? 0}</div>
         </div>
         <div>
-          <div className="text-[11px] text-noorix-muted mb-0.5">{t('avgPerOrder')}</div>
-          <div dir="ltr" className="text-[13px] font-bold text-noorix-violet"><FmtNum n={row.avgPerCustomer} /></div>
+          <div className="nx-mc__stat-label">{t('avgPerOrder')}</div>
+          <div className="nx-mc__stat-value text-[13px] font-bold text-noorix-violet"><FmtNum n={row.avgPerCustomer} /></div>
         </div>
       </div>
       <div className="flex justify-end mt-1">

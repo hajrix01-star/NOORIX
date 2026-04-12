@@ -1405,6 +1405,18 @@
    12. Mobile Card Helpers — مساعدات بطاقات الجوال
    ═══════════════════════════════════════════════════════════ */
 
+/* صفوف SmartTable في عرض الجوال: حدود + خلفية متناوبة (أزرق فاتح جداً) */
+.nx-mobile-card-row {
+  border-radius: 0.5rem;
+  border: 1px solid var(--noorix-border);
+}
+.nx-mobile-card-row--base {
+  background: var(--noorix-bg);
+}
+.nx-mobile-card-row--stripe {
+  background: var(--noorix-blue-10);
+}
+
 .nx-mc__header {
   display: flex;
   justify-content: space-between;

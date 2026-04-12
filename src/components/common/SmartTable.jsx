@@ -140,8 +140,8 @@ const SmartTable = memo(function SmartTable({
   getRowClassName,
   getRowStyle,
   renderMobileCard,
-  /** صفوف متناوبة الخلفية في عرض بطاقات الجوال (تمييز بصري بين السجلات) */
-  stripeMobileCards = false,
+  /** صفوف متناوبة الخلفية في عرض بطاقات الجوال — افتراضي مفعّل؛ عطّل بـ false */
+  stripeMobileCards = true,
   stickyActionColumn = true,
   /** معرف فريد للجدول — لما يُمرَّر يُفعّل السحب لتغيير عرض الأعمدة + الحفظ في localStorage */
   tableId,
@@ -353,9 +353,9 @@ const SmartTable = memo(function SmartTable({
         </div>
       )}
 
-      {/* ── بطاقات الجوال ── */}
+      {/* ── بطاقات الجوال — حدود مستقلة + شريط أزرق فاتح متناوب (token: --noorix-blue-10) ── */}
       {!isLoading && showCards && (
-        <div>
+        <div className="flex flex-col gap-2 px-3 py-2">
           {data.length === 0 ? (
             <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
               {emptyMsg}
@@ -364,9 +364,10 @@ const SmartTable = memo(function SmartTable({
             <div
               key={row.id ?? i}
               className={cn(
-                'px-4 py-3',
-                stripeMobileCards && (i % 2 === 1 ? 'bg-noorix-bg-muted/50' : 'bg-noorix-bg'),
-                i < data.length - 1 && 'border-b border-noorix-border',
+                'nx-mobile-card-row px-4 py-3',
+                stripeMobileCards
+                  ? (i % 2 === 1 ? 'nx-mobile-card-row--stripe' : 'nx-mobile-card-row--base')
+                  : 'nx-mobile-card-row--base',
               )}
             >
               {renderMobileCard(row, i)}
