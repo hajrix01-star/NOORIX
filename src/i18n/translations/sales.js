@@ -98,4 +98,10 @@ export default {
   salesWhatsAppAvgInvoiceLine: { ar: '🧾 متوسط الفاتورة:', en: '🧾 Avg. sale:' },
   salesWhatsAppCashLine: { ar: '💵 الصندوق:', en: '💵 Cash on hand:' },
   salesWhatsAppNoChannels: { ar: '• لا يوجد تفصيل قنوات.', en: '• No channel breakdown.' },
+  /** صف إدخال دفعة المشتريات — زر الضريبة والوصولية */
+  batchRowTaxIncludeVat: { ar: '✓ 15%', en: '✓ 15%' },
+  batchRowTaxExemptShort: { ar: '⊘ إبطال', en: '⊘ Exempt' },
+  batchRowTaxToggleTitleOn: { ar: '15% — انقر لإبطال الضريبة', en: '15% — click to exempt VAT' },
+  batchRowTaxToggleTitleOff: { ar: '0% — انقر لتفعيل الضريبة', en: '0% — click to apply VAT' },
+  batchRowLineAriaLabel: { ar: 'سطر فاتورة رقم {0}', en: 'Invoice line {0}' },
 };

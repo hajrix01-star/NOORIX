@@ -41,7 +41,15 @@ function matchesQuery(s, normalized) {
   );
 }
 
-export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds = [], placeholder = '—' }) {
+export function SupplierSelect({
+  suppliers = [],
+  value,
+  onChange,
+  bookmarkedIds = [],
+  placeholder = '—',
+  /** يُمرَّر لحقل البحث الداخلي — ربط تسمية النموذج العمودي */
+  id,
+}) {
   const { lang } = useTranslation();
   const anchorRef = useRef(null);
   const menuRef = useRef(null);
@@ -273,6 +281,7 @@ export function SupplierSelect({ suppliers = [], value, onChange, bookmarkedIds 
   return (
     <div className="relative" ref={anchorRef}>
       <Input
+        id={id}
         value={query}
         onFocus={() => { setOpen(true); }}
         onClick={() => { setOpen(true); }}

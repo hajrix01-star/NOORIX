@@ -1,7 +1,7 @@
 /**
  * منطق مشترك لصف إدخال دفعة المشتريات (جدول أو بطاقة جوال)
  */
-import { useMemo } from 'react';
+import { useMemo, useId } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { calcReverseVat } from '../../../utils/format';
 
@@ -96,4 +96,21 @@ export function useBatchRowLogic({
     inputSm,
     cp,
   };
+}
+
+/** معرفات فريدة لربط التسميات بالحقول في الوضع العمودي */
+export function useBatchRowFieldIds() {
+  const uid = useId();
+  return useMemo(
+    () => ({
+      supplier: `${uid}-supplier`,
+      invoiceNumber: `${uid}-invoice`,
+      totalInclusive: `${uid}-total`,
+      invoiceDate: `${uid}-invdate`,
+      kind: `${uid}-kind`,
+      category: `${uid}-category`,
+      notes: `${uid}-notes`,
+    }),
+    [uid],
+  );
 }
