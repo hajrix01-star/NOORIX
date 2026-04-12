@@ -8,8 +8,8 @@ const bcrypt = require('bcrypt');
 
 // ─── ثوابت تهيئة المحاسبة (مطابقة لـ accounting-init.service.ts) ───
 const MASTER_ACCOUNTS = [
-  { code: 'V-001',   nameAr: 'الخزينة الرئيسية (كاش)',       nameEn: 'Main Cash Vault',         type: 'asset',    icon: '💵', taxExempt: false },
-  { code: 'V-002',   nameAr: 'البنك (مدى/تحويلات)',           nameEn: 'Bank (Mada/Transfer)',     type: 'asset',    icon: '💳', taxExempt: false },
+  { code: 'V-001',   nameAr: 'نقد',                            nameEn: 'CASH',                      type: 'asset',    icon: '💵', taxExempt: false },
+  { code: 'V-002',   nameAr: 'بنك',                            nameEn: 'BANK',                      type: 'asset',    icon: '💳', taxExempt: false },
   { code: 'AR-001',  nameAr: 'الذمم المدينة (عملاء)',         nameEn: 'Accounts Receivable',      type: 'asset',    icon: '🧾', taxExempt: false },
   { code: 'AP-001',  nameAr: 'الذمم الدائنة (موردون)',        nameEn: 'Accounts Payable',         type: 'liability',icon: '📋', taxExempt: false },
   { code: 'TAX-001', nameAr: 'ضريبة القيمة المضافة',          nameEn: 'VAT',                      type: 'liability',icon: '📝', taxExempt: false },
@@ -111,8 +111,8 @@ async function initializeAccounting(tenantId, companyId) {
 
   // 2. الخزينتان
   const vaultSeeds = [
-    { accountCode: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash', type: 'cash' },
-    { accountCode: 'V-002', nameAr: 'البنك (مدى/تحويلات)',    nameEn: 'Bank',       type: 'bank' },
+    { accountCode: 'V-001', nameAr: 'نقد', nameEn: 'CASH', type: 'cash' },
+    { accountCode: 'V-002', nameAr: 'بنك', nameEn: 'BANK', type: 'bank' },
   ];
   for (const v of vaultSeeds) {
     const accountId = codeToAccountId[v.accountCode];

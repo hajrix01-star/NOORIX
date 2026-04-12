@@ -16,8 +16,8 @@ const prisma = new PrismaClient();
 
 // نسخة مبسطة من MASTER_ACCOUNTS + MASTER_VAULTS + MASTER_CATEGORIES
 const MASTER_ACCOUNTS = [
-  { code: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash Vault', type: 'asset', icon: '💵', taxExempt: false },
-  { code: 'V-002', nameAr: 'البنك (مدى/تحويلات)', nameEn: 'Bank (Mada/Transfer)', type: 'asset', icon: '💳', taxExempt: false },
+  { code: 'V-001', nameAr: 'نقد', nameEn: 'CASH', type: 'asset', icon: '💵', taxExempt: false },
+  { code: 'V-002', nameAr: 'بنك', nameEn: 'BANK', type: 'asset', icon: '💳', taxExempt: false },
   { code: 'PUR-001', nameAr: 'مواد غذائية', nameEn: 'Food & Materials', type: 'expense', icon: '🥩', taxExempt: false },
   { code: 'PUR-002', nameAr: 'مشروبات', nameEn: 'Beverages', type: 'expense', icon: '🥤', taxExempt: false },
   { code: 'PUR-003', nameAr: 'تعبئة وتغليف', nameEn: 'Packaging', type: 'expense', icon: '📦', taxExempt: false },
@@ -32,8 +32,8 @@ const MASTER_ACCOUNTS = [
   { code: 'TAX-001', nameAr: 'ضريبة القيمة المضافة', nameEn: 'VAT', type: 'liability', icon: '📝', taxExempt: false },
 ];
 const MASTER_VAULTS = [
-  { accountCode: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash', type: 'cash' },
-  { accountCode: 'V-002', nameAr: 'البنك (مدى/تحويلات)', nameEn: 'Bank (Mada/Transfer)', type: 'bank' },
+  { accountCode: 'V-001', nameAr: 'نقد', nameEn: 'CASH', type: 'cash' },
+  { accountCode: 'V-002', nameAr: 'بنك', nameEn: 'BANK', type: 'bank' },
 ];
 const MASTER_CATEGORIES = [
   { accountCode: 'PUR-001', nameAr: 'مواد غذائية', type: 'purchase' },
@@ -74,8 +74,8 @@ async function runAccountingInit(prisma, tenantId, companyId) {
 }
 
 const EXPECTED_ACCOUNTS = [
-  { code: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', icon: '💵' },
-  { code: 'V-002', nameAr: 'البنك (مدى/تحويلات)', icon: '💳' },
+  { code: 'V-001', nameAr: 'نقد', icon: '💵' },
+  { code: 'V-002', nameAr: 'بنك', icon: '💳' },
   { code: 'PUR-001', nameAr: 'مواد غذائية', icon: '🥩' },
   { code: 'PUR-002', nameAr: 'مشروبات', icon: '🥤' },
   { code: 'PUR-003', nameAr: 'تعبئة وتغليف', icon: '📦' },

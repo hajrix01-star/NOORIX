@@ -38,8 +38,8 @@ export interface MasterCategorySeed {
 /** قالب الحسابات الافتراضي — يُزرع لكل شركة جديدة */
 const MASTER_ACCOUNTS: MasterAccountSeed[] = [
   // أ- الأصول
-  { code: 'V-001',  nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash Vault',           type: 'asset',   icon: '💵', taxExempt: false },
-  { code: 'V-002',  nameAr: 'البنك (مدى/تحويلات)',    nameEn: 'Bank (Mada/Transfer)',        type: 'asset',   icon: '💳', taxExempt: false },
+  { code: 'V-001',  nameAr: 'نقد',                    nameEn: 'CASH',                        type: 'asset',   icon: '💵', taxExempt: false },
+  { code: 'V-002',  nameAr: 'بنك',                    nameEn: 'BANK',                        type: 'asset',   icon: '💳', taxExempt: false },
   { code: 'AR-001', nameAr: 'الذمم المدينة (عملاء)',  nameEn: 'Accounts Receivable',         type: 'asset',   icon: '🧾', taxExempt: false },
   // ب- الخصوم
   { code: 'AP-001', nameAr: 'الذمم الدائنة (موردون)', nameEn: 'Accounts Payable',            type: 'liability',icon: '📋', taxExempt: false },
@@ -63,8 +63,8 @@ const MASTER_ACCOUNTS: MasterAccountSeed[] = [
 ];
 
 const MASTER_VAULTS: MasterVaultSeed[] = [
-  { accountCode: 'V-001', nameAr: 'الخزينة الرئيسية (كاش)', nameEn: 'Main Cash', type: 'cash' },
-  { accountCode: 'V-002', nameAr: 'البنك (مدى/تحويلات)', nameEn: 'Bank (Mada/Transfer)', type: 'bank' },
+  { accountCode: 'V-001', nameAr: 'نقد', nameEn: 'CASH', type: 'cash' },
+  { accountCode: 'V-002', nameAr: 'بنك', nameEn: 'BANK', type: 'bank' },
 ];
 
 /** فئات مرتبطة بحسابات — للعرض في واجهة الفئات وتقارير P&L */
