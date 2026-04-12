@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsBoolean, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateExpenseLineDto {
@@ -29,6 +29,17 @@ export class UpdateExpenseLineDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  referenceAmount?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  allowPaymentAmountOverride?: boolean;
 
   @IsOptional()
   @IsBoolean()

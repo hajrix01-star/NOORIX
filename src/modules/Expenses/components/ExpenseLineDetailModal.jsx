@@ -101,6 +101,15 @@ export default function ExpenseLineDetailModal({
         <span>الفئة: {line?.category?.nameAr || '—'}</span>
         <span>المورد: {(lang === 'en' ? line?.supplier?.nameEn || line?.supplier?.nameAr : line?.supplier?.nameAr || line?.supplier?.nameEn) || '—'}</span>
         {line?.serviceNumber && <span>رقم الخدمة: {line.serviceNumber}</span>}
+        {line?.referenceAmount != null && line.referenceAmount !== '' && (
+          <span className="text-noorix-text font-medium">
+            {t('expenseLineReferenceLabelShort')}: <FmtNum n={Number(line.referenceAmount)} className="nx-font-numbers" />{' '}
+            <span className="nx-sar">SR</span>
+            {line.allowPaymentAmountOverride === false && (
+              <span className="text-[11px] text-noorix-amber ms-1">{t('expenseLineAmountFixedAtPayment')}</span>
+            )}
+          </span>
+        )}
       </div>
 
       <div className="nx-page-header mb-3">

@@ -50,6 +50,37 @@ export default {
   paymentHistoryTab: { ar: 'سجل المدفوعات', en: 'Payment history' },
   expenseLinesEmptyState: { ar: 'لا توجد بنود مصاريف. أضف بنداً جديداً للبدء.', en: 'No expense lines. Add a line to get started.' },
   expenseLinesPrintTitle: { ar: 'بنود المصاريف', en: 'Expense lines' },
+  expenseLineReferenceAmount: {
+    ar: 'المبلغ المرجعي (للدفعة أو المتوقع)',
+    en: 'Reference amount (per payment or expected)',
+  },
+  expenseLineReferenceAmountHint: {
+    ar: 'يُعرض كاقتراضي عند «تسجيل مصروف» ويمكن تعديله إذا سمحت بالأسفل.',
+    en: 'Prefilled when recording payment; editable if allowed below.',
+  },
+  expenseLineAllowPaymentAmountOverride: {
+    ar: 'السماح بتغيير المبلغ عند تسجيل السداد',
+    en: 'Allow changing amount when recording payment',
+  },
+  expenseLineAllowPaymentAmountOverrideHint: {
+    ar: 'عند إلغاء التفعيل يُثبَّت المبلغ على المرجعي أعلاه.',
+    en: 'If off, the amount is fixed to the reference above.',
+  },
+  expensePaymentPrefilledFromLine: {
+    ar: 'تم اقتراح المبلغ من بند المصروف — يمكنك تعديله.',
+    en: 'Amount suggested from the expense line — you may edit it.',
+  },
+  expensePaymentAmountLocked: {
+    ar: 'المبلغ مربوط بالمرجعي المحدد في البند.',
+    en: 'Amount is locked to the reference set on the line.',
+  },
+  validationInvalidAmount: { ar: 'المبلغ غير صالح', en: 'Invalid amount' },
+  expenseLineReferenceLabelShort: { ar: 'المرجعي', en: 'Reference' },
+  expenseLineAmountFixedAtPayment: { ar: '(مثبت عند السداد)', en: '(Locked at payment)' },
+  expenseLineNotesPlaceholderFixed: {
+    ar: 'مثال: إيجار 120,000 سنوياً — دفع كل 3 أشهر (30,000 لكل دفعة)',
+    en: 'e.g. Rent 120,000/year — paid quarterly (30,000 per installment)',
+  },
   expenseRecordNew: { ar: '+ تسجيل مصروف جديد', en: '+ Record new expense' },
   expenseBatchRowsValidHint: { ar: 'جاهزة للحفظ', en: 'Ready to save' },
   expenseBatchAddRow: { ar: '+ إضافة صف', en: '+ Add row' },

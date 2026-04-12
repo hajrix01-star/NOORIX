@@ -2,7 +2,7 @@
  * ExpenseFormModal — نموذج تسجيل مصروف (إصدار فاتورة)
  * افتراضياً: خزنة واحدة للمبلغ كاملاً. اختياري: إضافة خزنة ثانية بمبلغ محدد (الباقي من الأولى).
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -38,6 +38,28 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   const { paymentVaults: activeVaults = [] } = useVaults({ companyId });
 
   const selectedLine = expenseLines.find((l) => l.id === form.expenseLineId);
+
+  const lastExpenseLineIdForPrefillRef = useRef(null);
+  useEffect(() => {
+    if (!form.expenseLineId) {
+      lastExpenseLineIdForPrefillRef.current = null;
+      return;
+    }
+    const line = expenseLines.find((l) => l.id === form.expenseLineId);
+    if (!line) return;
+    if (lastExpenseLineIdForPrefillRef.current === form.expenseLineId) return;
+    lastExpenseLineIdForPrefillRef.current = form.expenseLineId;
+    setForm((p) => ({
+      ...p,
+      totalAmount: line.referenceAmount != null ? String(line.referenceAmount) : '',
+    }));
+  }, [form.expenseLineId, expenseLines]);
+
+  const amountLocked = Boolean(
+    selectedLine &&
+      selectedLine.referenceAmount != null &&
+      selectedLine.allowPaymentAmountOverride === false,
+  );
 
   const createMutation = useApiMutation({
     mutationFn: (body) => createInvoice(body),
@@ -79,6 +101,13 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
     }
 
     const total = Number(form.totalAmount);
+    if (amountLocked && selectedLine?.referenceAmount != null) {
+      const refN = Number(selectedLine.referenceAmount);
+      if (Number.isFinite(refN) && Math.abs(total - refN) > 0.009) {
+        setError(t('expensePaymentAmountLocked'));
+        return;
+      }
+    }
 
     const basePayload = {
       companyId,
@@ -182,7 +211,15 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           onChange={(e) => setForm((p) => ({ ...p, totalAmount: e.target.value }))}
           placeholder="0.00"
           required
+          disabled={amountLocked}
+          className="ltr"
         />
+        {selectedLine?.referenceAmount != null && selectedLine.allowPaymentAmountOverride !== false && !amountLocked && (
+          <p className="text-[11px] text-noorix-muted -mt-2">{t('expensePaymentPrefilledFromLine')}</p>
+        )}
+        {amountLocked && (
+          <p className="text-[11px] text-noorix-muted -mt-2">{t('expensePaymentAmountLocked')}</p>
+        )}
 
         <Input
           type="date"

@@ -713,6 +713,9 @@ model ExpenseLine {
   categoryId    String   @map("category_id")
   supplierId    String   @map("supplier_id")
   serviceNumber String?  @map("service_number")  // رقم الخدمة/العداد
+  /// مبلغ مرجعي متوقع (مثلاً لكل دفعة) — يُقترَح عند تسجيل السداد ويُسمح بتعديله حسب allowPaymentAmountOverride
+  referenceAmount            Decimal? @map("reference_amount") @db.Decimal(18, 2)
+  allowPaymentAmountOverride Boolean  @default(true) @map("allow_payment_amount_override")
   notes         String?
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")

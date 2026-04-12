@@ -119,6 +119,8 @@ export class ExpenseLineService {
         supplierId: dto.supplierId,
         serviceNumber: (dto.serviceNumber ?? '').trim() || null,
         notes: (dto.notes ?? '').trim() || null,
+        referenceAmount: dto.referenceAmount != null ? dto.referenceAmount : null,
+        allowPaymentAmountOverride: dto.allowPaymentAmountOverride !== false,
         isActive: dto.isActive !== false,
       },
       include: {
@@ -159,6 +161,10 @@ export class ExpenseLineService {
     if (dto.supplierId !== undefined) data.supplierId = dto.supplierId;
     if (dto.serviceNumber !== undefined) data.serviceNumber = (dto.serviceNumber ?? '').trim() || null;
     if (dto.notes !== undefined) data.notes = (dto.notes ?? '').trim() || null;
+    if (dto.referenceAmount !== undefined) {
+      data.referenceAmount = dto.referenceAmount == null ? null : dto.referenceAmount;
+    }
+    if (dto.allowPaymentAmountOverride !== undefined) data.allowPaymentAmountOverride = dto.allowPaymentAmountOverride;
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
 
     return this.prisma.expenseLine.update({

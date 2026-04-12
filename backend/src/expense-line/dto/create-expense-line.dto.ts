@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsBoolean, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateExpenseLineDto {
@@ -28,6 +28,19 @@ export class CreateExpenseLineDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  /** مبلغ مرجعي (مثلاً لكل دفعة دورية) */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  referenceAmount?: number;
+
+  /** إن false: عند السداد يُثبَّت المبلغ على referenceAmount */
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  allowPaymentAmountOverride?: boolean;
 
   @IsOptional()
   @IsBoolean()

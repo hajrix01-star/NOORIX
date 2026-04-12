@@ -10,7 +10,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, AdaptiveSheet, Input } from '../../../ui';
 
 export default function ExpenseLineFormModal({ companyId, editing, onClose, onSaved }) {
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
   const [form, setForm] = useState({
     nameAr: '',
     nameEn: '',
@@ -19,11 +19,15 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
     supplierId: '',
     serviceNumber: '',
     notes: '',
+    referenceAmount: '',
+    allowPaymentAmountOverride: true,
   });
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (editing) {
+      const ref = editing.referenceAmount;
+      const refNum = ref != null && ref !== '' ? Number(ref) : NaN;
       setForm({
         nameAr: editing.nameAr || '',
         nameEn: editing.nameEn || '',
@@ -32,9 +36,14 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
         supplierId: editing.supplierId || '',
         serviceNumber: editing.serviceNumber || '',
         notes: editing.notes || '',
+        referenceAmount: Number.isFinite(refNum) ? String(refNum) : '',
+        allowPaymentAmountOverride: editing.allowPaymentAmountOverride !== false,
       });
     } else {
-      setForm({ nameAr: '', nameEn: '', kind: 'expense', categoryId: '', supplierId: '', serviceNumber: '', notes: '' });
+      setForm({
+        nameAr: '', nameEn: '', kind: 'expense', categoryId: '', supplierId: '', serviceNumber: '', notes: '',
+        referenceAmount: '', allowPaymentAmountOverride: true,
+      });
     }
   }, [editing]);
 
@@ -71,6 +80,13 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
       setError('المورد مطلوب');
       return;
     }
+    const isFixed = form.kind === 'fixed_expense';
+    const refParsed = form.referenceAmount?.trim() ? Number(form.referenceAmount) : null;
+    if (isFixed && form.referenceAmount?.trim() && (Number.isNaN(refParsed) || refParsed < 0)) {
+      setError(t('validationInvalidAmount') || 'مبلغ غير صالح');
+      return;
+    }
+
     if (editing) {
       updateMutation.mutate({
         id: editing.id,
@@ -82,6 +98,8 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           supplierId: form.supplierId,
           serviceNumber: form.serviceNumber?.trim() || undefined,
           notes: form.notes?.trim() || undefined,
+          referenceAmount: isFixed ? (refParsed != null && refParsed >= 0 ? refParsed : null) : null,
+          allowPaymentAmountOverride: isFixed ? form.allowPaymentAmountOverride : true,
         },
       });
     } else {
@@ -94,6 +112,8 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
         supplierId: form.supplierId,
         serviceNumber: form.serviceNumber?.trim() || undefined,
         notes: form.notes?.trim() || undefined,
+        referenceAmount: isFixed && refParsed != null && refParsed >= 0 ? refParsed : undefined,
+        allowPaymentAmountOverride: isFixed ? form.allowPaymentAmountOverride : true,
       });
     }
   };
@@ -145,6 +165,34 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           <option value="fixed_expense">ثابت</option>
         </Input>
 
+        {form.kind === 'fixed_expense' && (
+          <>
+            <Input
+              type="number"
+              label={t('expenseLineReferenceAmount')}
+              step="0.01"
+              min="0"
+              value={form.referenceAmount}
+              onChange={(e) => setForm((p) => ({ ...p, referenceAmount: e.target.value }))}
+              placeholder="30,000"
+              className="ltr"
+            />
+            <p className="text-[11px] text-noorix-muted -mt-2 mb-1">{t('expenseLineReferenceAmountHint')}</p>
+            <label className="flex items-start gap-2.5 text-[13px] text-noorix-text cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-0.5 shrink-0"
+                checked={form.allowPaymentAmountOverride}
+                onChange={(e) => setForm((p) => ({ ...p, allowPaymentAmountOverride: e.target.checked }))}
+              />
+              <span>
+                <span className="font-medium">{t('expenseLineAllowPaymentAmountOverride')}</span>
+                <span className="block text-[11px] text-noorix-muted mt-0.5">{t('expenseLineAllowPaymentAmountOverrideHint')}</span>
+              </span>
+            </label>
+          </>
+        )}
+
         <Input
           type="select"
           label="الفئة *"
@@ -189,7 +237,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           label="ملاحظات"
           value={form.notes}
           onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-          placeholder="اختياري"
+          placeholder={form.kind === 'fixed_expense' ? t('expenseLineNotesPlaceholderFixed') : 'اختياري'}
           rows={3}
         />
       </form>
