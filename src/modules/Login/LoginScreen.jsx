@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getText } from '../../i18n/translations';
 import { login as apiLogin } from '../../services/api';
 import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor, getLoginDomain } from '../../utils/appBranding';
-import { Button, Input } from '../../ui';
+import { Button, Input, cn } from '../../ui';
 
 function getLang() {
   return (typeof document !== 'undefined' && document.documentElement?.lang === 'en') ? 'en' : 'ar';
@@ -31,13 +31,22 @@ export default function LoginScreen() {
   const brandColor   = getBrandColor();
   const loginDomain  = getLoginDomain();
 
+  /** بريد كامل أو اسم مستخدم + نطاق الهوية (نفس السجل في قاعدة البيانات كبريد). */
+  const resolveLoginIdentifier = (raw) => {
+    const s = raw.trim();
+    if (!s) return s;
+    if (s.includes('@')) return s;
+    const domain = (loginDomain || '').trim();
+    return domain ? `${s}@${domain}` : s;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (!email.trim() || !password) { setError(t('invalidCredentials')); return; }
     setLoading(true);
     try {
-      const res = await apiLogin(email.trim(), password);
+      const res = await apiLogin(resolveLoginIdentifier(email), password);
       if (!res.success) {
         setError(res.isNetworkError ? t('serverConnectionError') : (res.error || t('invalidCredentials')));
         return;
@@ -108,22 +117,16 @@ export default function LoginScreen() {
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-              {/* البريد الإلكتروني */}
+              {/* اسم المستخدم أو البريد */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[13px] font-bold text-noorix-text">{t('usernameOrEmail')}</span>
-                  {loginDomain && (
-                    <span className="text-[11px] text-noorix-muted ltr" style={{ fontFamily: 'monospace' }}>
-                      @{loginDomain}
-                    </span>
-                  )}
-                </div>
+                <label className="text-[13px] font-bold text-noorix-text block mb-1.5">
+                  {t('usernameOrEmail')}
+                </label>
                 <Input
                   type="text"
                   size="lg"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={`user@${loginDomain}`}
                   autoComplete="username"
                   dir="ltr"
                 />
@@ -142,7 +145,10 @@ export default function LoginScreen() {
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
                     dir="ltr"
-                    className={isEnglish ? 'pe-20' : 'ps-20'}
+                    className={cn(
+                      isEnglish ? 'pe-20' : 'ps-20',
+                      !isEnglish && 'text-end',
+                    )}
                   />
                   <Button
                     variant="raw"

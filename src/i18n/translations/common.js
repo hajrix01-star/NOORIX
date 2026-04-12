@@ -356,7 +356,7 @@ export default {
   verifying: { ar: 'جاري التحقق...', en: 'Verifying...' },
   showPassword: { ar: 'إظهار', en: 'Show' },
   hidePassword: { ar: 'إخفاء', en: 'Hide' },
-  secureSession: { ar: 'جلسة آمنة — تنتهي بعد 15 دقيقة من الخمول تلقائياً', en: 'Secure session — expires after 15 minutes of inactivity' },
+  secureSession: { ar: 'جلسة آمنة — تنتهي عند تسجيل الخروج أو انتهاء صلاحية الرمز', en: 'Secure session — ends when you sign out or when the token expires' },
   roleOwner: { ar: 'مالك النظام', en: 'System Owner' },
   roleSuperAdmin: { ar: 'مدير عام', en: 'Super Admin' },
   roleAccountant: { ar: 'محاسب', en: 'Accountant' },

@@ -8,9 +8,8 @@
  * JWT هو نظام stateless: لا يوجد blacklist للتوكنات من جهة الـ backend.
  * تسجيل الخروج يعتمد على:
  *   1. الفرونتند يحذف التوكن من sessionStorage عبر clearAuth() فور الضغط على logout.
- *   2. Access token قصير المدة (راجع JWT_EXPIRES_IN في .env) — ينتهي تلقائياً.
- *   3. session timeout تلقائي بعد 15 دقيقة من الخمول (AuthContext.jsx).
- *   4. عند تعطيل المستخدم (isActive=false) يُرفض Refresh Token فوراً.
+ *   2. Access token — مدته من JWT_EXPIRES_IN في .env؛ ينتهي تلقائياً عند انتهاء الصلاحية.
+ *   3. عند تعطيل المستخدم (isActive=false) يُرفض Refresh Token فوراً.
  *
  * الحل البديل لو أردت invalidation فوري: Redis blacklist أو تخزين tokenVersion
  * في جدول users ومقارنتها عند كل طلب — لم يُطبَّق حالياً لتبسيط البنية.
