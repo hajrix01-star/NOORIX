@@ -1422,7 +1422,7 @@
 .nx-mc__grid {
   display: grid;
   gap: 6px;
-  background: var(--noorix-bg-page);
+  background: var(--noorix-bg-muted);
   border-radius: 8px;
   padding: 8px 10px;
   margin-bottom: 10px;
@@ -1431,10 +1431,21 @@
 .nx-mc__grid--3 { grid-template-columns: 1fr 1fr 1fr; }
 .nx-mc__grid--2 { grid-template-columns: 1fr 1fr; }
 
+/* خلية إحصاء: تسمية + قيمة في عمود واحد بمحاذاة متسقة (وسط) */
+.nx-mc__grid > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
 .nx-mc__stat-label {
   font-size: 10px;
   color: var(--noorix-text-muted);
   margin-bottom: 2px;
+  width: 100%;
+  text-align: center;
 }
 
 .nx-mc__stat-value {
@@ -1443,6 +1454,8 @@
   font-family: var(--noorix-font-numbers);
   direction: ltr;
   unicode-bidi: isolate;
+  width: 100%;
+  text-align: center;
 }
 
 .nx-mc__actions {

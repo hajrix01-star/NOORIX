@@ -8,6 +8,7 @@ import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
 import Button from '../../ui/Button';
 import Input  from '../../ui/Input';
+import { cn } from '../../ui/cn';
 
 const ALIGN_MAP = { right: 'right', left: 'left', center: 'center', start: 'start', end: 'end' };
 
@@ -139,6 +140,8 @@ const SmartTable = memo(function SmartTable({
   getRowClassName,
   getRowStyle,
   renderMobileCard,
+  /** صفوف متناوبة الخلفية في عرض بطاقات الجوال (تمييز بصري بين السجلات) */
+  stripeMobileCards = false,
   stickyActionColumn = true,
   /** معرف فريد للجدول — لما يُمرَّر يُفعّل السحب لتغيير عرض الأعمدة + الحفظ في localStorage */
   tableId,
@@ -360,7 +363,11 @@ const SmartTable = memo(function SmartTable({
           ) : data.map((row, i) => (
             <div
               key={row.id ?? i}
-              className={`px-4 py-3${i < data.length - 1 ? ' border-b border-noorix-border' : ''}`}
+              className={cn(
+                'px-4 py-3',
+                stripeMobileCards && (i % 2 === 1 ? 'bg-noorix-bg-muted/50' : 'bg-noorix-bg'),
+                i < data.length - 1 && 'border-b border-noorix-border',
+              )}
             >
               {renderMobileCard(row, i)}
             </div>

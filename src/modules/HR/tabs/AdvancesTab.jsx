@@ -234,19 +234,24 @@ export default function AdvancesTab() {
             className={cn('shrink-0', settled && 'line-through')}
           />
         </div>
-        <div className="text-[11px] text-noorix-muted mb-2">{formatSaudiDate(row.transactionDate)}</div>
-        <div className="grid grid-cols-3 rounded-lg gap-1.5 bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
+        <div className="text-[11px] text-noorix-muted mb-2 text-end">{formatSaudiDate(row.transactionDate)}</div>
+        <div className="nx-mc__grid nx-mc__grid--3 mb-2.5">
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('advanceAmount')}</div>
-            <div className="text-[14px] font-bold nx-font-numbers">{hrFmt(row.totalAmountNum)}</div>
+            <div className="nx-mc__stat-label">{t('advanceAmount')}</div>
+            <div className="nx-mc__stat-value text-[14px] font-bold">{hrFmt(row.totalAmountNum)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('advanceSettledAmount')}</div>
-            <div className="text-[13px] text-noorix-green nx-font-numbers">{hrFmt(row.settledAmountNum)}</div>
+            <div className="nx-mc__stat-label">{t('advanceSettledAmount')}</div>
+            <div className="nx-mc__stat-value text-[13px] text-noorix-green">{hrFmt(row.settledAmountNum)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('advanceRemainingAmount')}</div>
-            <div className="text-[13px] nx-font-numbers" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>{hrFmt(row.remainingAmount)}</div>
+            <div className="nx-mc__stat-label">{t('advanceRemainingAmount')}</div>
+            <div
+              className="nx-mc__stat-value text-[13px]"
+              style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}
+            >
+              {hrFmt(row.remainingAmount)}
+            </div>
           </div>
         </div>
         {row.installmentCount > 1 && (
@@ -327,6 +332,7 @@ export default function AdvancesTab() {
         footerCells={footerCells}
         emptyMessage={t('noDataInPeriod')}
         renderMobileCard={renderMobileCard}
+        stripeMobileCards
       />
 
       {showAdvance && (

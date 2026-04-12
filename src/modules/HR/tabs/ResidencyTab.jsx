@@ -137,18 +137,21 @@ export default function ResidencyTab() {
           <Badge {...Badge.fromStatus(residencyStatusKey(row.status), residencyStatusMap)} size="sm" className="shrink-0" />
         </div>
         {row.iqamaNumber && (
-          <div className="text-[12px] text-noorix-muted mb-2 nx-font-numbers">{row.iqamaNumber}</div>
+          <div className="text-[12px] text-noorix-muted mb-2 nx-font-numbers text-end">{row.iqamaNumber}</div>
         )}
-        <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
+        <div className="nx-mc__grid nx-mc__grid--2 mb-2.5">
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('startDate')}</div>
-            <div className="text-[13px] nx-font-numbers">{formatSaudiDate(row.issueDate)}</div>
+            <div className="nx-mc__stat-label">{t('startDate')}</div>
+            <div className="nx-mc__stat-value text-[13px]">{formatSaudiDate(row.issueDate)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('expiryDate')}</div>
-            <div className="text-[13px] nx-font-numbers" style={{ color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}>
+            <div className="nx-mc__stat-label">{t('expiryDate')}</div>
+            <div
+              className="nx-mc__stat-value text-[13px]"
+              style={{ color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}
+            >
               {formatSaudiDate(row.expiryDate)}
-              {soon && <span className="mr-1 text-[10px] px-1 py-px rounded bg-noorix-amber/20">⚠</span>}
+              {soon && <span className="me-1 text-[10px] px-1 py-px rounded bg-noorix-amber/20">⚠</span>}
             </div>
           </div>
         </div>
@@ -211,6 +214,7 @@ export default function ResidencyTab() {
         onSort={toggleSort}
         emptyMessage={t('noDataInPeriod')}
         renderMobileCard={renderMobileCard}
+        stripeMobileCards
       />
 
       {showAdd && (

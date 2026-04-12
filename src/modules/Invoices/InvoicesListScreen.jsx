@@ -363,12 +363,16 @@ export default function InvoicesListScreen() {
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
       </div>
-      <div className="flex items-center gap-8 text-[13px] mb-2">
-        <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
-        {row.supplierName && <span className="nx-cell-muted">{row.supplierName}</span>}
+      <div className="mb-2 flex flex-col gap-1.5 items-stretch text-end">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
+        </div>
+        {row.supplierName ? (
+          <div className="text-[13px] text-noorix-muted leading-snug break-words">{row.supplierName}</div>
+        ) : null}
       </div>
       <div className="mb-2">
-        <div className="text-[10px] font-bold text-noorix-muted mb-1">{t('invoiceVaultColumn')}</div>
+        <div className="text-[10px] font-bold text-noorix-muted mb-1 text-end">{t('invoiceVaultColumn')}</div>
         {row.vaultAllocations?.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {row.vaultAllocations.map((al) => {
@@ -695,6 +699,7 @@ export default function InvoicesListScreen() {
           onSort={toggleSort}
           emptyMessage={t('noInvoicesInPeriod')}
           renderMobileCard={renderMobileCard}
+          stripeMobileCards
         />
         </>
       )}

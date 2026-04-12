@@ -372,7 +372,7 @@ export default function StaffListScreen({ embedded }) {
       <Button
         variant="raw"
         size="auto"
-        className="nx-mc__name text-noorix-blue font-bold text-[14px] hover:underline cursor-pointer p-0 bg-transparent text-start"
+        className="nx-mc__name w-full text-noorix-blue font-bold text-[14px] hover:underline cursor-pointer p-0 bg-transparent text-end"
         onClick={() => navigate(`/hr/employee/${row.id}`)}
       >
         {employeeDisplayName(row, lang)}
@@ -495,6 +495,7 @@ export default function StaffListScreen({ embedded }) {
             onSort={toggleSort}
             emptyMessage={t('noEmployees')}
             renderMobileCard={renderMobileCard}
+            stripeMobileCards
           />
         </>
       )}

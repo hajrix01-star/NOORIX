@@ -247,22 +247,24 @@ export default function PurchasesBatchScreen() {
           <span>{formatSaudiDate(row.transactionDate)}</span>
           {row.invoiceCount > 0 && <span className="font-bold text-noorix-blue">{row.invoiceCount} {t('invoices')}</span>}
         </div>
-        {row.supplierNames && <div className="text-[13px] mb-1 truncate">{row.supplierNames}</div>}
-        <div className="text-[12px] mb-2 text-noorix-muted truncate">
+        {row.supplierNames && (
+          <div className="text-[13px] mb-1 text-end leading-snug break-words">{row.supplierNames}</div>
+        )}
+        <div className="text-[12px] mb-2 text-noorix-muted text-end break-words">
           {t('vault')}: {row.vaultName || '—'}
         </div>
-        <div className="grid grid-cols-3 rounded-lg gap-1.5 bg-noorix-bg py-2 px-2.5 mb-2.5">
+        <div className="nx-mc__grid nx-mc__grid--3 mb-2.5">
           <div>
-            <div className="text-noorix-muted text-[10px] mb-0.5">{t('net')}</div>
-            <div className="text-[13px] text-noorix-green font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.netAmount)}</div>
+            <div className="nx-mc__stat-label">{t('net')}</div>
+            <div className="nx-mc__stat-value text-[13px] text-noorix-green">{fmt(row.netAmount)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted text-[10px] mb-0.5">{t('tax')}</div>
-            <div className="text-[13px] text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.taxAmount)}</div>
+            <div className="nx-mc__stat-label">{t('tax')}</div>
+            <div className="nx-mc__stat-value text-[13px] text-noorix-amber">{fmt(row.taxAmount)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted text-[10px] mb-0.5">{t('total')}</div>
-            <div className="text-[14px] font-extrabold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(row.totalAmount)}</div>
+            <div className="nx-mc__stat-label">{t('total')}</div>
+            <div className="nx-mc__stat-value text-[14px] font-extrabold text-noorix-text">{fmt(row.totalAmount)}</div>
           </div>
         </div>
         <div className="flex gap-1.5 flex-wrap justify-end">
@@ -613,6 +615,7 @@ export default function PurchasesBatchScreen() {
             onSort={toggleSort}
             emptyMessage={t('noBatchesInPeriod')}
             renderMobileCard={renderBatchMobileCard}
+            stripeMobileCards
             stickyActionColumn={false}
           />
         </div>

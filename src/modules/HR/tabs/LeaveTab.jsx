@@ -112,21 +112,21 @@ export default function LeaveTab() {
           <span className="font-bold text-[14px]">{row.employeeName}</span>
           <Badge {...Badge.fromStatus(row.status, leaveStatusMap)} size="sm" className="shrink-0" />
         </div>
-        <div className="text-[13px] text-noorix-muted mb-2">
+        <div className="text-[13px] text-noorix-muted mb-2 text-end">
           {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
         </div>
-        <div className="grid grid-cols-3 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
+        <div className="nx-mc__grid nx-mc__grid--3 mb-2.5">
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('startDate')}</div>
-            <div className="text-[13px] nx-font-numbers">{formatSaudiDate(row.startDate)}</div>
+            <div className="nx-mc__stat-label">{t('startDate')}</div>
+            <div className="nx-mc__stat-value text-[13px]">{formatSaudiDate(row.startDate)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('endDate')}</div>
-            <div className="text-[13px] nx-font-numbers">{formatSaudiDate(row.endDate)}</div>
+            <div className="nx-mc__stat-label">{t('endDate')}</div>
+            <div className="nx-mc__stat-value text-[13px]">{formatSaudiDate(row.endDate)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('daysCount')}</div>
-            <div className="text-[14px] font-bold nx-font-numbers">{row.daysCount ?? '—'}</div>
+            <div className="nx-mc__stat-label">{t('daysCount')}</div>
+            <div className="nx-mc__stat-value text-[14px] font-bold">{row.daysCount ?? '—'}</div>
           </div>
         </div>
         {row.status === 'pending' && (
@@ -187,6 +187,7 @@ export default function LeaveTab() {
         onSort={toggleSort}
         emptyMessage={t('noDataInPeriod')}
         renderMobileCard={renderMobileCard}
+        stripeMobileCards
       />
 
       {showAdd && (

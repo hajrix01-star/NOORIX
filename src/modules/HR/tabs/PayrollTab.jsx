@@ -214,15 +214,15 @@ export default function PayrollTab() {
           <span className="nx-cell-num nx-cell-accent text-[14px]">{row.runNumber}</span>
           <Badge {...Badge.fromStatus(row.status, payrollStatusMap)} size="sm" className="shrink-0" />
         </div>
-        {row.month && <div className="nx-cell-muted mb-2">{row.month}</div>}
-          <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-noorix-bg-muted mb-2.5 py-2 px-[10px]">
+        {row.month && <div className="nx-cell-muted mb-2 text-end">{row.month}</div>}
+        <div className="nx-mc__grid nx-mc__grid--2 mb-2.5">
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('payrollGross')}</div>
-            <div className="text-[14px] nx-font-numbers">{hrFmt(row.grossTotal)}</div>
+            <div className="nx-mc__stat-label">{t('payrollGross')}</div>
+            <div className="nx-mc__stat-value text-[14px]">{hrFmt(row.grossTotal)}</div>
           </div>
           <div>
-            <div className="text-noorix-muted mb-1 text-[10px]">{t('payrollNet')}</div>
-            <div className="text-[15px] font-extrabold text-noorix-green nx-font-numbers">{hrFmt(row.netTotal)}</div>
+            <div className="nx-mc__stat-label">{t('payrollNet')}</div>
+            <div className="nx-mc__stat-value text-[15px] font-extrabold text-noorix-green">{hrFmt(row.netTotal)}</div>
           </div>
         </div>
         <div className="flex flex items-center justify-end">
@@ -311,6 +311,7 @@ export default function PayrollTab() {
         footerCells={footerCells}
         emptyMessage={t('noDataInPeriod')}
         renderMobileCard={renderMobileCard}
+        stripeMobileCards
       />
 
       {showCreate && (

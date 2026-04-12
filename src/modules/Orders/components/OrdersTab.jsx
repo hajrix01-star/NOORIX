@@ -278,29 +278,31 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
               {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
             </Badge>
           </div>
-          <div className="text-[12px] text-noorix-muted">{formatSaudiDate(o.orderDate)}</div>
+          <div className="text-[12px] text-noorix-muted text-end">{formatSaudiDate(o.orderDate)}</div>
           <div className="grid grid-cols-2 gap-2 rounded-lg bg-noorix-bg-muted py-2 px-2.5">
-            <div>
-              <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersTotalItems')}</div>
-              <div className="text-[13px] font-semibold nx-font-numbers">{(o.items ?? []).length}</div>
+            <div className="flex min-w-0 flex-col items-center">
+              <div className="text-[10px] text-noorix-muted mb-0.5 w-full text-center">{t('ordersTotalItems')}</div>
+              <div className="text-[13px] font-semibold nx-font-numbers w-full text-center">{(o.items ?? []).length}</div>
             </div>
-            <div>
-              <div className="text-[10px] text-noorix-muted mb-0.5">{t('orderTotalAmount')}</div>
-              <div dir="ltr" className="text-[13px] font-bold nx-font-numbers text-noorix-navy"><FmtNum n={Number(o.totalAmount ?? 0)} /> SR</div>
+            <div className="flex min-w-0 flex-col items-center">
+              <div className="text-[10px] text-noorix-muted mb-0.5 w-full text-center">{t('orderTotalAmount')}</div>
+              <div dir="ltr" className="text-[13px] font-bold nx-font-numbers text-noorix-navy w-full text-center"><FmtNum n={Number(o.totalAmount ?? 0)} /> SR</div>
             </div>
             {pettyGiven != null && (
-              <div>
-                <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersPettyCashGiven')}</div>
-                <div dir="ltr" className="text-[13px] nx-font-numbers text-noorix-blue"><FmtNum n={pettyGiven} /> SR</div>
+              <div className="flex min-w-0 flex-col items-center">
+                <div className="text-[10px] text-noorix-muted mb-0.5 w-full text-center">{t('ordersPettyCashGiven')}</div>
+                <div dir="ltr" className="text-[13px] nx-font-numbers text-noorix-blue w-full text-center"><FmtNum n={pettyGiven} /> SR</div>
               </div>
             )}
             {cumRem != null && (
-              <div>
-                <div className="text-[10px] text-noorix-muted mb-0.5">{t('ordersCumulativeRemaining')}</div>
-                <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
-                  {cumRem >= 0 ? '' : '−'}
-                  <FmtNum n={Math.abs(cumRem)} /> SR
-                </Badge>
+              <div className="flex min-w-0 flex-col items-center">
+                <div className="text-[10px] text-noorix-muted mb-0.5 w-full text-center">{t('ordersCumulativeRemaining')}</div>
+                <div className="flex w-full justify-center">
+                  <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
+                    {cumRem >= 0 ? '' : '−'}
+                    <FmtNum n={Math.abs(cumRem)} /> SR
+                  </Badge>
+                </div>
               </div>
             )}
           </div>
@@ -451,6 +453,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
         pageSize={Math.max(filteredOrders.length, 1)}
         footerCells={ordersFooterCells}
         renderMobileCard={ordersRenderMobileCard}
+        stripeMobileCards
         badge={
           <div className="noorix-print-hide flex flex-wrap items-center gap-2 w-full min-w-0">
             <span className="text-[13px] font-semibold text-noorix-muted shrink-0">{t('ordersFilterByType')}:</span>
