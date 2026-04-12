@@ -4,6 +4,7 @@
 import { useMemo, useId } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { calcReverseVat } from '../../../utils/format';
+import { patchForCategoryChange, patchForSupplierChange } from '../utils/batchRowModel';
 
 export const BATCH_ROW_INPUT_BASE = {
   width: '100%',
@@ -47,39 +48,11 @@ export function useBatchRowLogic({
   }, [filteredByKind, row.categoryId, categories]);
 
   function handleCategoryChange(cat) {
-    if (!cat) {
-      onUpdate(index, { categoryId: '', debitAccountId: '' });
-      return;
-    }
-    const update = {
-      categoryId: cat.id,
-      debitAccountId: cat.accountId || cat.account?.id,
-    };
-    if (!row.supplierId) {
-      update.isTaxable = !(cat.account?.taxExempt ?? false);
-    }
-    onUpdate(index, update);
+    onUpdate(index, patchForCategoryChange(cat, row));
   }
 
   function handleSupplierChange(supplierId) {
-    if (!supplierId) {
-      onUpdate(index, { supplierId: '', categoryId: '', debitAccountId: '', kind: 'purchase' });
-      return;
-    }
-    const supplier = suppliers.find((s) => s.id === supplierId);
-    const cat =
-      supplier?.supplierCategory ??
-      (supplier?.supplierCategoryId ? categories.find((c) => c.id === supplier.supplierCategoryId) : null);
-    const kind = cat?.type === 'expense' ? 'expense' : 'purchase';
-    const isTaxable = supplier?.isTaxRegistered !== false;
-
-    onUpdate(index, {
-      supplierId,
-      kind,
-      categoryId: cat ? cat.id : '',
-      debitAccountId: cat ? cat.accountId || cat.account?.id || '' : '',
-      isTaxable,
-    });
+    onUpdate(index, patchForSupplierChange(supplierId, suppliers, categories));
   }
 
   const inputSm = { ...BATCH_ROW_INPUT_BASE, padding: '6px 7px', fontSize: 12 };

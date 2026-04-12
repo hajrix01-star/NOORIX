@@ -71,7 +71,7 @@ function BatchRowTable({
           step="0.1"
           value={row.totalInclusive}
           onChange={(e) => onUpdate(index, 'totalInclusive', e.target.value)}
-          placeholder="0"
+          placeholder={t('amountPlaceholderZero')}
           className="font-bold text-[13px] w-full"
           style={{ ...inputSm, textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)' }}
           aria-label={`${t('total')} — ${t('batchRowLineAriaLabel', index + 1)}`}
@@ -147,7 +147,7 @@ function BatchRowTable({
         <Input
           value={row.notes || ''}
           onChange={(e) => onUpdate(index, 'notes', e.target.value)}
-          placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? 'اسم الخدمة*' : '...'}
+          placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? t('batchNotesPlaceholderServiceName') : t('batchNotesPlaceholderEllipsis')}
           className="w-full"
           style={inputSm}
           title={!row.supplierId ? (t('notesRequiredForNoSupplier') || '') : ''}
@@ -255,7 +255,7 @@ function BatchRowStack({
             size="sm"
             value={row.totalInclusive}
             onChange={(e) => onUpdate(index, 'totalInclusive', e.target.value)}
-            placeholder="0"
+            placeholder={t('amountPlaceholderZero')}
             className="font-bold w-full nx-font-numbers"
           />
         </FormRow>
@@ -325,7 +325,7 @@ function BatchRowStack({
           size="sm"
           value={row.notes || ''}
           onChange={(e) => onUpdate(index, 'notes', e.target.value)}
-          placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? 'اسم الخدمة*' : '...'}
+          placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? t('batchNotesPlaceholderServiceName') : t('batchNotesPlaceholderEllipsis')}
           className="w-full"
           title={!row.supplierId ? (t('notesRequiredForNoSupplier') || '') : ''}
         />

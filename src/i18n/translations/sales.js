@@ -104,4 +104,7 @@ export default {
   batchRowTaxToggleTitleOn: { ar: '15% — انقر لإبطال الضريبة', en: '15% — click to exempt VAT' },
   batchRowTaxToggleTitleOff: { ar: '0% — انقر لتفعيل الضريبة', en: '0% — click to apply VAT' },
   batchRowLineAriaLabel: { ar: 'سطر فاتورة رقم {0}', en: 'Invoice line {0}' },
+  batchNotesPlaceholderServiceName: { ar: 'اسم الخدمة*', en: 'Service name*' },
+  batchNotesPlaceholderEllipsis: { ar: '...', en: '...' },
+  amountPlaceholderZero: { ar: '0', en: '0' },
 };

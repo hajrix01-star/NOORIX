@@ -7,18 +7,6 @@ import { Button, Input, FmtNum, Card, FormRow } from '../../../ui';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { useBatchRowFieldIds } from './useBatchRowLogic';
 
-const INPUT_STYLE = {
-  width: '100%',
-  padding: '6px 8px',
-  borderRadius: 6,
-  fontSize: 12,
-  border: '1px solid var(--noorix-border)',
-  background: 'var(--noorix-bg-surface)',
-  color: 'var(--noorix-text)',
-  fontFamily: 'inherit',
-  boxSizing: 'border-box',
-};
-
 export function BatchEditInvoiceLine({
   inv,
   i,
@@ -70,7 +58,7 @@ export function BatchEditInvoiceLine({
                 value={inv.supplierId || ''}
                 onChange={(v) => updateInv(i, 'supplierId', v)}
                 bookmarkedIds={[]}
-                placeholder="—"
+                placeholder={t('selectSupplierPlaceholder')}
               />
             )}
           </div>
@@ -143,11 +131,7 @@ export function BatchEditInvoiceLine({
   /* جدول */
   return (
     <tr
-      style={{
-        borderBottom: '1px solid var(--noorix-border)',
-        opacity: cancelled ? 0.5 : 1,
-        background: cancelled ? 'var(--noorix-bg-page)' : 'transparent',
-      }}
+      className={`border-b border-noorix-border ${cancelled ? 'opacity-50 bg-noorix-bg' : ''}`}
     >
       <td className="text-center text-noorix-muted font-semibold p-1.5">{i + 1}</td>
       <td className="p-1.5">
@@ -159,7 +143,7 @@ export function BatchEditInvoiceLine({
             value={inv.supplierId || ''}
             onChange={(v) => updateInv(i, 'supplierId', v)}
             bookmarkedIds={[]}
-            placeholder="—"
+            placeholder={t('selectSupplierPlaceholder')}
           />
         )}
       </td>
@@ -168,9 +152,10 @@ export function BatchEditInvoiceLine({
           <span className="nx-cell-muted">{inv.supplierInvoiceNumber || inv.invoiceNumber}</span>
         ) : (
           <Input
+            size="sm"
             value={inv.supplierInvoiceNumber ?? inv.invoiceNumber ?? ''}
             onChange={(e) => updateInv(i, 'supplierInvoiceNumber', e.target.value)}
-            style={INPUT_STYLE}
+            className="w-full"
             aria-label={`${t('supplierInvoiceNumber')} — ${t('batchRowLineAriaLabel', i + 1)}`}
           />
         )}
@@ -183,6 +168,7 @@ export function BatchEditInvoiceLine({
             type="number"
             min="0"
             step="0.1"
+            size="sm"
             value={inv.totalAmount ?? ''}
             onChange={(e) => {
               const v = parseFloat(e.target.value);
@@ -191,7 +177,7 @@ export function BatchEditInvoiceLine({
                 updateInv(i, { totalAmount: v, netAmount: net, taxAmount: tax });
               }
             }}
-            style={{ ...INPUT_STYLE, fontFamily: 'var(--noorix-font-numbers)' }}
+            className="w-full nx-font-numbers text-end"
             aria-label={`${t('total')} — ${t('batchRowLineAriaLabel', i + 1)}`}
           />
         )}
@@ -202,8 +188,10 @@ export function BatchEditInvoiceLine({
         ) : (
           <Input
             type="select"
+            size="sm"
             value={inv.kind || 'purchase'}
             onChange={(e) => updateInv(i, 'kind', e.target.value)}
+            className="w-full"
             aria-label={`${t('kind')} — ${t('batchRowLineAriaLabel', i + 1)}`}
           >
             <option value="purchase">{t('purchaseType')}</option>
