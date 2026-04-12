@@ -28,6 +28,7 @@ import { BatchEditPanel } from './components/BatchEditPanel';
 import { BatchPrintSheet } from './components/BatchPrintSheet';
 import { BatchSummaryBar } from './components/BatchSummaryBar';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import { buildActiveCancelledPartialStatusMap } from '../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
@@ -289,6 +290,7 @@ export default function PurchasesBatchScreen() {
   ], [t, activeOnly.length, totalNet, totalTax, totalAmount]);
 
   const summary = useBatchSummary(rows);
+  const batchEntryNarrow = useIsNarrow700();
 
   const saveMutation = useApiMutation({
     mutationFn: async () => {
@@ -449,48 +451,69 @@ export default function PurchasesBatchScreen() {
             </div>
           )}
 
-          {/* جدول الإدخال */}
+          {/* جدول الإدخال — عمودي بالبطاقات تحت 700px */}
           <div className="px-3 pb-4">
+            {batchEntryNarrow ? (
+              <div className="flex flex-col gap-3 min-w-0">
+                {rows.map((r, i) => (
+                  <BatchRow
+                    key={r.key}
+                    layout="stack"
+                    row={r}
+                    index={i}
+                    suppliers={suppliers}
+                    categories={flatCategories}
+                    bookmarkedIds={bookmarks}
+                    onUpdate={updateRow}
+                    onRemove={removeRow}
+                    onBookmark={toggleBookmark}
+                    maxInvoiceDate={batchDate}
+                  />
+                ))}
+              </div>
+            ) : (
               <div className="noorix-table-frame batch-purchases-table w-full overflow-x-auto">
-              <table className="noorix-table w-full table-fixed min-w-[900px]">
-                <colgroup><col style={{ width: '3%' }} /><col style={{ width: '20%' }} /><col style={{ width: '11%' }} /><col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '11%' }} /><col style={{ width: '5%' }} /><col style={{ width: '14%' }} /><col style={{ width: '3%' }} /></colgroup>
-                <thead>
-                  <tr>
-                    {[
-                      { label: '#',                        align: 'center' },
-                      { label: t('supplier'),              align: 'right'  },
-                      { label: t('supplierInvoiceNumber'), align: 'center' },
-                      { label: t('total'),                 align: 'center' },
-                      { label: `${t('net')} / ${t('tax')}`, align: 'center' },
-                      { label: t('date'),                  align: 'center' },
-                      { label: t('type'),                  align: 'center' },
-                      { label: t('category'),              align: 'center' },
-                      { label: t('taxPct'),                 align: 'center', title: t('taxPctTitle') },
-                      { label: t('notes'),                 align: 'right'  },
-                      { label: '',                         align: 'center' },
-                    ].map(({ label, align, title }, i) => (
-                      <th key={i} title={title} className="text-[11px] font-bold text-noorix-muted overflow-hidden whitespace-nowrap py-2 px-1.5" style={{ textAlign: align }}>{label}</th>
+                <table className="noorix-table w-full table-fixed min-w-[900px]">
+                  <colgroup><col style={{ width: '3%' }} /><col style={{ width: '20%' }} /><col style={{ width: '11%' }} /><col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '11%' }} /><col style={{ width: '5%' }} /><col style={{ width: '14%' }} /><col style={{ width: '3%' }} /></colgroup>
+                  <thead>
+                    <tr>
+                      {[
+                        { label: '#', align: 'center' },
+                        { label: t('supplier'), align: 'right' },
+                        { label: t('supplierInvoiceNumber'), align: 'center' },
+                        { label: t('total'), align: 'center' },
+                        { label: `${t('net')} / ${t('tax')}`, align: 'center' },
+                        { label: t('date'), align: 'center' },
+                        { label: t('type'), align: 'center' },
+                        { label: t('category'), align: 'center' },
+                        { label: t('taxPct'), align: 'center', title: t('taxPctTitle') },
+                        { label: t('notes'), align: 'right' },
+                        { label: '', align: 'center' },
+                      ].map(({ label, align, title }, i) => (
+                        <th key={i} title={title} className="text-[11px] font-bold text-noorix-muted overflow-hidden whitespace-nowrap py-2 px-1.5" style={{ textAlign: align }}>{label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, i) => (
+                      <BatchRow
+                        key={r.key}
+                        layout="table"
+                        row={r}
+                        index={i}
+                        suppliers={suppliers}
+                        categories={flatCategories}
+                        bookmarkedIds={bookmarks}
+                        onUpdate={updateRow}
+                        onRemove={removeRow}
+                        onBookmark={toggleBookmark}
+                        maxInvoiceDate={batchDate}
+                      />
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => (
-                    <BatchRow
-                      key={r.key}
-                      row={r}
-                      index={i}
-                      suppliers={suppliers}
-                      categories={flatCategories}
-                      bookmarkedIds={bookmarks}
-                      onUpdate={updateRow}
-                      onRemove={removeRow}
-                      onBookmark={toggleBookmark}
-                      maxInvoiceDate={batchDate}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             <Button
               onClick={addRow}
