@@ -64,7 +64,7 @@ export default {
   invoiceNotesPlaceholder: { ar: 'اسم العملية — اسم الموظف أو الخدمة (مثال: سداد فاتورة — شركة الكهرباء)', en: 'Operation name — employee or service (e.g. invoice payment — Electric Co)' },
   notesLabel: { ar: 'ملاحظة', en: 'Notes' },
   noteLabel: { ar: 'ملاحظة / Note:', en: 'Note:' },
-  fixedExpenseType: { ar: 'مصروف ثابت/حكومي', en: 'Fixed/Govt expense' },
+  fixedExpenseType: { ar: 'مصروف ثابت', en: 'Fixed expense' },
   notesRequiredForNoSupplier: { ar: 'تفاصيل مطلوبة بدون مورد', en: 'Details required when no supplier' },
   invoiceCancelled: { ar: 'تم إلغاء الفاتورة', en: 'Invoice cancelled' },
   deleteInvoiceConfirm: { ar: 'حذف الفاتورة "{0}"؟ سيتم إخفاؤها تشغيلياً مع الحفاظ على الأثر المحاسبي وسجل القيود.', en: 'Delete invoice "{0}"? It will be operationally removed while preserving accounting history and ledger records.' },
