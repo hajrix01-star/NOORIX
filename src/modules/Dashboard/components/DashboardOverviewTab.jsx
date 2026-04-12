@@ -302,12 +302,23 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     <div className="flex flex-col gap-5">
 
       {/* ── رسوم بيانية: أعلى الموردين + فئات الموردين ── */}
-      <div className="grid gap-5" style={{ gridTemplateColumns: supplierCategoriesData.length > 0 ? 'minmax(0,1fr) 300px' : '1fr' }}>
+      <div
+        className={cn(
+          'grid gap-5',
+          supplierCategoriesData.length > 0
+            ? 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px]'
+            : 'grid-cols-1',
+        )}
+      >
 
         {/* أعلى الموردين — أفقي */}
-        <div className="noorix-surface-card p-5">
-          <div className="text-[14px] font-bold text-noorix-text mb-0.5">{t('periodAnalyticsTopSuppliers')}</div>
-          <div className="text-[12px] text-noorix-muted mb-4">{supplierFrom} — {supplierTo}</div>
+        <div className="noorix-surface-card p-4 lg:p-5">
+          <div className="text-[14px] font-bold text-noorix-text mb-0.5 max-lg:text-center lg:text-start">
+            {t('periodAnalyticsTopSuppliers')}
+          </div>
+          <div className="text-[12px] text-noorix-muted mb-4 max-lg:text-center lg:text-start">
+            {supplierFrom} — {supplierTo}
+          </div>
           {isPeriodLoading ? (
             <div className="h-[220px] flex items-center justify-center text-noorix-muted text-[12px]">{t('loading')}</div>
           ) : topSuppliersChartData.length === 0 ? (
@@ -370,9 +381,11 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
         {/* فئات الموردين — donut */}
         {supplierCategoriesData.length > 0 && (
-          <div className="noorix-surface-card p-5 flex flex-col">
-            <div className="text-[14px] font-bold text-noorix-text mb-0.5">{t('supplierCategories')}</div>
-            <div className="text-[12px] text-noorix-muted mb-4">
+          <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
+            <div className="text-[14px] font-bold text-noorix-text mb-0.5 w-full max-lg:text-center lg:text-start">
+              {t('supplierCategories')}
+            </div>
+            <div className="text-[12px] text-noorix-muted mb-4 w-full max-lg:text-center lg:text-start">
               {t('suppliersTotal')}: {suppliers.length}
             </div>
             <ResponsiveContainer width="100%" height={170}>
@@ -391,7 +404,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                 <Tooltip content={<PieTooltip />} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex flex-col gap-1.5 mt-3">
+            <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
               {supplierCategoriesData.slice(0, 5).map((cat) => (
                 <div key={cat.name} className="flex items-center justify-between gap-2 text-[12px]">
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -465,13 +478,20 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       </div>{/* /nx-kpi-container */}
 
       {/* ── الرسوم البيانية: الأداء الشهري + توزيع القنوات ── */}
-      <div className="grid gap-5" style={{ gridTemplateColumns: channelData.length > 0 ? '1fr 340px' : '1fr' }}>
+      <div
+        className={cn(
+          'grid gap-5',
+          channelData.length > 0
+            ? 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px]'
+            : 'grid-cols-1',
+        )}
+      >
 
         {/* تحليل الأداء الشهري */}
-        <div className="noorix-surface-card p-5">
+        <div className="noorix-surface-card p-4 lg:p-5">
           {/* رأس: العنوان + الإجمالي + أزرار Toggle */}
-          <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-            <div>
+          <div className="flex flex-col gap-3 mb-4 max-lg:items-center lg:flex-row lg:items-start lg:justify-between lg:gap-3">
+            <div className="min-w-0 max-lg:text-center lg:text-start">
               <div className="text-[14px] font-bold text-noorix-text">{t('dashboardSalesTimeline')}</div>
               <div className="text-[12px] text-noorix-muted mt-0.5">
                 {timelineGrain === 'monthly'
@@ -480,7 +500,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
               </div>
             </div>
             {/* يومي / شهري + إخفاء/إظهار الخطوط */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap max-lg:justify-center">
               <div
                 role="tablist"
                 dir={uiDir}
@@ -601,9 +621,11 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
         {/* توزيع المبيعات حسب القنوات */}
         {channelData.length > 0 && (
-          <div className="noorix-surface-card p-5 flex flex-col">
-            <div className="text-[14px] font-bold text-noorix-text mb-1">{t('reportChannels')}</div>
-            <div className="text-[12px] text-noorix-muted mb-4">
+          <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
+            <div className="text-[14px] font-bold text-noorix-text mb-1 w-full max-lg:text-center lg:text-start">
+              {t('reportChannels')}
+            </div>
+            <div className="text-[12px] text-noorix-muted mb-4 w-full max-lg:text-center lg:text-start">
               {timelineGrain === 'daily' ? timelineMonthName : year}
             </div>
 
@@ -627,7 +649,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
             </ResponsiveContainer>
 
             {/* قائمة القنوات */}
-            <div className="flex flex-col gap-1.5 mt-3">
+            <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
               {channelData.slice(0, 5).map((ch, i) => (
                 <div key={ch.name} className="flex items-center justify-between gap-2 text-[12px]">
                   <div className="flex items-center gap-1.5 min-w-0">
