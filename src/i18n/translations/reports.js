@@ -40,7 +40,7 @@ export default {
   reportTotalAmount: { ar: 'الإجمالي', en: 'Total amount' },
   reportSource: { ar: 'المصدر', en: 'Source' },
   reportChannels: { ar: 'قنوات البيع', en: 'Sales channels' },
-  reportMonthlyAverage: { ar: 'متوسط شهري', en: 'Monthly average' },
+  reportMonthlyAverage: { ar: 'متوسط شهري (الشهور ذات الحركة)', en: 'Monthly average (months with activity)' },
   reportAnnualTotal: { ar: 'الإجمالي السنوي', en: 'Annual total' },
   reportMonthTotal: { ar: 'إجمالي الشهر', en: 'Month total' },
   reportSalesShare: { ar: 'النسبة من المبيعات', en: 'Share of sales' },

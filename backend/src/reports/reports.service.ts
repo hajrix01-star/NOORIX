@@ -231,15 +231,34 @@ export class ReportsService {
     const selectedRow =
       itemKey && allGroup?.items
         ? groupKey === 'expenses'
-          ? this.findInCategoryTree(allGroup.items as ExpenseTreeNode[], itemKey)
+          ? this.resolveExpenseTreeNode(allGroup.items as ExpenseTreeNode[], itemKey)
           : (allGroup.items as GeneralRowModel[]).find((row) => row.key === itemKey)
         : allGroup;
-    const contextAmount = month != null
-      ? selectedRow?.months[month - 1] ?? '0'
-      : selectedRow?.total ?? '0';
-    const contextPercentOfSales = month != null
-      ? selectedRow?.percentOfSalesMonths[month - 1] ?? '0'
-      : selectedRow?.percentOfSalesYear ?? '0';
+    let contextAmount =
+      month != null
+        ? selectedRow?.months?.[month - 1] ?? '0'
+        : selectedRow?.total ?? '0';
+    let contextPercentOfSales =
+      month != null
+        ? selectedRow?.percentOfSalesMonths?.[month - 1] ?? '0'
+        : selectedRow?.percentOfSalesYear ?? '0';
+
+    /** إن وُجدت فواتير للفترة بينما صف التقرير صفراً (اختلاف تجميع/مفتاح) نُوحّد المبلغ مع الفواتير */
+    if (
+      month != null &&
+      itemKey &&
+      !itemKey.startsWith('account:') &&
+      detailItems.length > 0 &&
+      Math.abs(parseFloat(String(contextAmount || '0'))) < 0.0001
+    ) {
+      const sumNet = detailItems.reduce((s, inv) => s + parseFloat(inv.netAmount || '0'), 0);
+      if (sumNet > 0.0001) {
+        contextAmount = sumNet.toFixed(2);
+        const salesM = parseFloat(salesGroup?.months?.[month - 1] || '0');
+        contextPercentOfSales =
+          salesM > 0.0001 ? new Decimal(sumNet).div(salesM).mul(100).toFixed(2) : '0';
+      }
+    }
 
     const finalTitle =
       itemKey?.startsWith('account:') && selectedRow
@@ -292,24 +311,34 @@ export class ReportsService {
     const selectedItem =
       itemKey && group?.items
         ? groupKey === 'expenses'
-          ? this.findInCategoryTree(group.items as ExpenseTreeNode[], itemKey)
+          ? this.resolveExpenseTreeNode(group.items as ExpenseTreeNode[], itemKey)
           : (group.items as GeneralRowModel[]).find((entry) => entry.key === itemKey)
         : null;
+
+    /** عند تمرير itemKey لا نُسقط على إجمالي المجموعة — كان يُظهر إجمالي المصاريف كأنه بند فرعي */
+    const monthRow = (index: number) =>
+      itemKey
+        ? (selectedItem?.months?.[index] ?? '0')
+        : (group?.months?.[index] ?? '0');
+    const pctRow = (index: number) =>
+      itemKey
+        ? (selectedItem?.percentOfSalesMonths?.[index] ?? '0')
+        : (group?.percentOfSalesMonths?.[index] ?? '0');
 
     return {
       year,
       groupKey,
       itemKey: itemKey ?? null,
-      labelAr: selectedItem?.labelAr || group?.labelAr || GROUP_LABELS[groupKey].ar,
-      labelEn: selectedItem?.labelEn || group?.labelEn || GROUP_LABELS[groupKey].en,
-      total: selectedItem?.total || group?.total || '0',
-      percentOfSalesYear: selectedItem?.percentOfSalesYear || group?.percentOfSalesYear || '0',
+      labelAr: (itemKey ? selectedItem?.labelAr : group?.labelAr) || GROUP_LABELS[groupKey].ar,
+      labelEn: (itemKey ? selectedItem?.labelEn : group?.labelEn) || GROUP_LABELS[groupKey].en,
+      total: itemKey ? (selectedItem?.total ?? '0') : (group?.total ?? '0'),
+      percentOfSalesYear: itemKey ? (selectedItem?.percentOfSalesYear ?? '0') : (group?.percentOfSalesYear ?? '0'),
       points: report.months.map((month, index) => ({
         month: month.index,
         label: month.label,
-        amount: selectedItem?.months[index] || group?.months[index] || '0',
-        salesAmount: salesGroup?.months[index] ?? '0',
-        percentOfSales: selectedItem?.percentOfSalesMonths[index] || group?.percentOfSalesMonths[index] || '0',
+        amount: monthRow(index),
+        salesAmount: salesGroup?.months?.[index] ?? '0',
+        percentOfSales: pctRow(index),
       })),
     };
   }
@@ -951,6 +980,23 @@ export class ReportsService {
       }
     }
     return null;
+  }
+
+  /** كل عقد الفئات/البنود (للبحث عندما يفشل المسار المتداخل فقط) */
+  private flattenExpenseTreeNodes(items: ExpenseTreeNode[]): ExpenseTreeNode[] {
+    const out: ExpenseTreeNode[] = [];
+    for (const item of items) {
+      out.push(item);
+      if (item.children?.length) {
+        out.push(...this.flattenExpenseTreeNodes(item.children));
+      }
+    }
+    return out;
+  }
+
+  /** حل بند المصاريف الهرمي — نفس المفتاح قد يظهر كجذر أو فرع */
+  private resolveExpenseTreeNode(items: ExpenseTreeNode[], key: string): ExpenseTreeNode | null {
+    return this.findInCategoryTree(items, key) ?? this.flattenExpenseTreeNodes(items).find((n) => n.key === key) ?? null;
   }
 
   /** بناء شجرة فئات هرمية لأي مجموعة (مبيعات، مشتريات، مصاريف) */

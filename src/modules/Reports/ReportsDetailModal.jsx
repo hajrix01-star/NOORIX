@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
-import { amountText, moneyText, percentText, truncateText } from './reportHelpers';
+import { amountText, moneyText, percentText, truncateText, isEmptyMetric } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button, AdaptiveSheet, MetricCard } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
@@ -50,11 +50,44 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     return points.reduce((best, point) => (Number(point.amount || 0) > Number(best.amount || 0) ? point : best), points[0]);
   }, [trend]);
 
+  const trendPointForSelectedMonth = useMemo(() => {
+    if (state?.month == null || !trend?.points?.length) return null;
+    return trend.points.find((p) => p.month === state.month) ?? null;
+  }, [state?.month, trend?.points]);
+
+  /** يتطابق مع الخادم؛ احتياط إذا تأخّر أحد الطلبين */
+  const displayContextAmount = useMemo(() => {
+    if (!data) return null;
+    if (!isEmptyMetric(data.contextAmount)) return data.contextAmount;
+    if (trendPointForSelectedMonth != null && !isEmptyMetric(trendPointForSelectedMonth.amount)) {
+      return String(trendPointForSelectedMonth.amount);
+    }
+    return data.contextAmount;
+  }, [data, trendPointForSelectedMonth]);
+
+  const displayAnnualAmount = useMemo(() => {
+    if (!data) return null;
+    if (!isEmptyMetric(data.annualAmount)) return data.annualAmount;
+    if (trend != null && !isEmptyMetric(trend.total)) return String(trend.total);
+    return data.annualAmount;
+  }, [data, trend]);
+
+  const displayContextPercent = useMemo(() => {
+    if (!data) return null;
+    if (!isEmptyMetric(data.contextPercentOfSales)) return data.contextPercentOfSales;
+    if (trendPointForSelectedMonth != null && !isEmptyMetric(trendPointForSelectedMonth.percentOfSales)) {
+      return String(trendPointForSelectedMonth.percentOfSales);
+    }
+    return data.contextPercentOfSales;
+  }, [data, trendPointForSelectedMonth]);
+
   const averageAmount = useMemo(() => {
     const points = trend?.points || [];
     if (!points.length) return '0';
-    const total = points.reduce((sum, point) => sum + Number(point.amount || 0), 0);
-    return String(total / points.length);
+    const withData = points.filter((point) => !isEmptyMetric(point.amount));
+    const slice = withData.length ? withData : points;
+    const total = slice.reduce((sum, point) => sum + Math.abs(Number(point.amount || 0)), 0);
+    return String(total / slice.length);
   }, [trend]);
 
   const modalTitle = data
@@ -95,17 +128,17 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           <div className="grid gap-3 mb-4 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
             <MetricCard color="var(--color-nx-purchases)">
               <MetricCard.Header label={data.month ? t('selectedMonth') : t('reportBreakdown')} />
-              <MetricCard.Value value={moneyText(data.contextAmount)} />
+              <MetricCard.Value value={moneyText(displayContextAmount)} />
             </MetricCard>
             {data.kind === 'invoices' && (
               <>
                 <MetricCard color="var(--color-nx-sales)">
                   <MetricCard.Header label={t('reportAnnualTotal')} />
-                  <MetricCard.Value value={moneyText(data.annualAmount)} />
+                  <MetricCard.Value value={moneyText(displayAnnualAmount)} />
                 </MetricCard>
                 <MetricCard color="var(--color-nx-net-profit)">
                   <MetricCard.Header label={t('reportSalesShare')} />
-                  <MetricCard.Value value={percentText(data.contextPercentOfSales)} />
+                  <MetricCard.Value value={percentText(displayContextPercent)} />
                 </MetricCard>
                 <MetricCard color="var(--color-nx-purchases)">
                   <MetricCard.Header label={t('reportInvoicesCount')} />
@@ -142,7 +175,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   <MetricCard.Header label={t('selectedMonth')} />
                   <MetricCard.Value value={data?.monthLabel || t('allMonths')} />
                   <MetricCard.Section>
-                    <span className="text-[12px] text-noorix-muted">{moneyText(data?.contextAmount)}</span>
+                    <span className="text-[12px] text-noorix-muted">{moneyText(displayContextAmount)}</span>
                   </MetricCard.Section>
                 </MetricCard>
               </div>
@@ -209,7 +242,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     </div>
                   </div>
                   <div className="text-[12px] text-noorix-muted">
-                    {t('reportAnnualTotal')}: <strong className="nx-font-numbers">{moneyText(data.annualAmount)}</strong>
+                    {t('reportAnnualTotal')}: <strong className="nx-font-numbers">{moneyText(displayAnnualAmount)}</strong>
                   </div>
                 </div>
                 <SmartTable
