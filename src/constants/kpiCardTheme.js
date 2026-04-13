@@ -51,6 +51,9 @@ export const KPI_RECHARTS_COLORS = {
   expenses:    '#A32D2D',
 };
 
+/** مرآة `--noorix-accent-amber` — للطباعة/قوالب HTML حيث لا يعمل `var()` */
+export const AMBER_ACCENT_HEX = '#d97706';
+
 export const VAULT_RECHARTS_COLORS = {
   cash: '#3B6D11',  /* = --color-nx-profit */
   bank: '#185FA5',  /* = --color-nx-sales  */

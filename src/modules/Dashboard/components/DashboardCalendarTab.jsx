@@ -7,6 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useSales } from '../../../hooks/useSales';
 import { CARD_COLORS } from '../../../utils/cardStyles';
+import { KPI_RECHARTS_COLORS, AMBER_ACCENT_HEX } from '../../../constants/kpiCardTheme';
 import { fmt } from '../../../utils/format';
 import { openPrintWindow } from '../../../utils/printUtils';
 import CalendarDayDetailPanel from './CalendarDayDetailPanel';
@@ -48,14 +49,39 @@ function dateInRange(dateStr, fromDate, toDate) {
   return dateStr >= fromDate && dateStr <= toDate;
 }
 
-function getAchievementColor(ratio) {
-  if (ratio >= 1) return 'rgb(22, 163, 74)';
-  if (ratio <= 0) return 'rgb(220, 38, 38)';
-  const t = Math.min(1, ratio);
-  const r = Math.round(220 - (220 - 22) * t);
-  const g = Math.round(38 + (163 - 38) * t);
-  const b = Math.round(38 + (74 - 38) * t);
-  return `rgb(${r}, ${g}, ${b})`;
+/** شرائح ثابتة: أحمر &lt;80% | أصفر 80–99% | أخضر 100–119% | أزرق ≥120% من الهدف */
+const ACHIEVEMENT_BG = {
+  red:    'color-mix(in srgb, var(--color-nx-expenses) 34%, transparent)',
+  yellow: 'color-mix(in srgb, var(--noorix-accent-amber) 32%, transparent)',
+  green:  'color-mix(in srgb, var(--color-nx-profit) 32%, transparent)',
+  blue:   'color-mix(in srgb, var(--color-nx-sales) 32%, transparent)',
+};
+
+function achievementBandFromRatio(ratio) {
+  if (ratio >= 1.2) return 'blue';
+  if (ratio >= 1) return 'green';
+  if (ratio >= 0.8) return 'yellow';
+  return 'red';
+}
+
+function hexToRgba(hex, alpha) {
+  const h = String(hex).replace('#', '');
+  if (h.length !== 6) return `rgba(0,0,0,${alpha})`;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function achievementBgForPrint(band) {
+  const a = 0.38;
+  switch (band) {
+    case 'blue':   return hexToRgba(KPI_RECHARTS_COLORS.sales, a);
+    case 'green':  return hexToRgba(KPI_RECHARTS_COLORS.grossProfit, a);
+    case 'yellow': return hexToRgba(AMBER_ACCENT_HEX, a);
+    case 'red':
+    default:       return hexToRgba(KPI_RECHARTS_COLORS.expenses, a);
+  }
 }
 
 export default function DashboardCalendarTab({ companyId, year, selectedMonth, filter }) {
@@ -232,7 +258,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   const handlePrintCalendar = useCallback(() => {
     const cells = daysInMonth.map((item) => {
       const { day, dateStr, amount, dayTarget, special } = item;
-      const ratio = dayTarget != null && dayTarget > 0 ? amount / dayTarget : (amount > 0 ? 1 : 0);
+      const ratio = dayTarget != null && dayTarget > 0 ? amount / dayTarget : 0;
       const achieved = dayTarget != null && amount >= dayTarget;
       let bg = '#f8fafc';
       if (amount > 0) {
@@ -241,11 +267,11 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
           bg = `rgba(${r},${g},${b},0.35)`;
         } else if (dayTarget != null && dayTarget > 0) {
-          const c = getAchievementColor(ratio);
-          bg = c.replace('rgb(', 'rgba(').replace(')', ', 0.4)');
+          const band = achievementBandFromRatio(ratio);
+          bg = achievementBgForPrint(band);
         } else {
           const intensity = Math.min(1, amount / maxAmount);
-          bg = `rgba(22,163,74,${0.2 + intensity * 0.5})`;
+          bg = hexToRgba(KPI_RECHARTS_COLORS.grossProfit, 0.2 + intensity * 0.28);
         }
       }
       return `<td style="padding:6px;text-align:center;border:1px solid #ddd;background:${bg}">${day}<br><span style="font-weight:700">${fmt(amount, 0)}</span>${achieved ? ' ✓' : ''}</td>`;
@@ -402,8 +428,37 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     title={`${dateStr}: ${fmt(amount)} SR${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
                   >
                     <span className="text-[12px] font-bold text-noorix-text">{day}</span>
-                    <span className="text-[11px]" style={{ fontFamily: 'var(--noorix-font-numbers)', color: amount > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>{fmt(amount, 0)}</span>
-                    {achieved && <span className="text-[8px]" style={{ color: 'var(--noorix-accent-green)' }}>✓</span>}
+                    <span
+                      className="text-[11px] nx-font-numbers"
+                      style={{
+                        color:
+                          amount <= 0
+                            ? 'var(--noorix-text-muted)'
+                            : special
+                              ? 'var(--noorix-text)'
+                              : ratioVsTarget != null && ratioVsTarget >= 1.2
+                                ? 'var(--color-nx-sales)'
+                                : ratioVsTarget != null && ratioVsTarget >= 1
+                                  ? 'var(--color-nx-profit)'
+                                  : ratioVsTarget != null && ratioVsTarget >= 0.8
+                                    ? 'var(--noorix-accent-amber)'
+                                    : ratioVsTarget != null
+                                      ? 'var(--color-nx-expenses)'
+                                      : 'var(--color-nx-profit)',
+                      }}
+                    >
+                      {fmt(amount, 0)}
+                    </span>
+                    {achieved && (
+                      <span
+                        className="text-[8px]"
+                        style={{
+                          color: ratioVsTarget != null && ratioVsTarget >= 1.2 ? 'var(--color-nx-sales)' : 'var(--color-nx-profit)',
+                        }}
+                      >
+                        ✓
+                      </span>
+                    )}
                     {hasNote && <span className="text-[8px] w-[6px] h-[6px] rounded-full inline-block" style={{ color: 'var(--noorix-accent-blue)', background: 'var(--noorix-accent-blue)' }} />}
                     {special && specialColor && (
                       <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-md" style={{ background: specialColor }} />
@@ -437,19 +492,23 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
               <span>{t('dashboardLegendGray')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'rgb(220, 38, 38)' }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--color-nx-expenses)' }} />
               <span>{t('dashboardLegendRed')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'rgb(234, 179, 8)' }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--noorix-accent-amber)' }} />
               <span>{t('dashboardLegendYellow')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'rgb(22, 163, 74)' }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--color-nx-profit)' }} />
               <span>{t('dashboardLegendGreen')}</span>
             </div>
             <div className="flex items-center gap-8">
-              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--noorix-green-50)' }} />
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--color-nx-sales)' }} />
+              <span>{t('dashboardLegendBlue')}</span>
+            </div>
+            <div className="flex items-center gap-8">
+              <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'color-mix(in srgb, var(--color-nx-profit) 45%, transparent)' }} />
               <span>{t('dashboardLegendGreenNoTarget')}</span>
             </div>
             <div className="flex items-center gap-8">
