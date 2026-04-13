@@ -19,7 +19,7 @@ const TYPE_MAP = {
 };
 
 export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuccess, onClose }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
 
