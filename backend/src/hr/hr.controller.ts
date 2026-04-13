@@ -36,6 +36,7 @@ import { HRService } from './hr.service';
 import { CreatePayrollRunDto } from './dto/create-payroll-run.dto';
 import { UpdatePayrollRunDto, UpdatePayrollRunStatusDto } from './dto/update-payroll-run.dto';
 import { CreateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
+import { ReturnFromLeaveDto } from './dto/return-from-leave.dto';
 import { CreateResidencyDto } from './dto/create-residency.dto';
 import { UpdateResidencyDto } from './dto/update-residency.dto';
 import { CreateDocumentDto } from './dto/create-document.dto';
@@ -202,6 +203,19 @@ export class HRController {
   ) {
     const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.updateLeaveStatus(id, dto, companyId, user.sub);
+  }
+
+  @Post('leaves/:id/return')
+  @RequirePermission('HR_WRITE')
+  returnFromLeave(
+    @Param('id') id: string,
+    @Body() dto: ReturnFromLeaveDto,
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    return this.hrService.returnFromLeave(id, dto, companyId, user.sub);
   }
 
   @Get('leave-salary-settlements')

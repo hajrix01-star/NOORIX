@@ -28,6 +28,7 @@ import type { CreateMovementDto } from './dto/create-movement.dto';
 import type { CreateAllowanceDto } from './dto/create-allowance.dto';
 import type { CreateDeductionDto } from './dto/create-deduction.dto';
 import type { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
+import type { ReturnFromLeaveDto } from './dto/return-from-leave.dto';
 import { toMoneyDecimal2 } from '../common/utils/money-decimal';
 import {
   computeCalendarLeaveSalarySettlement,
@@ -132,6 +133,60 @@ export class HRService {
     const mo = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${mo}-${day}`;
+  }
+
+  /** YYYY-MM-DD بتوقيت السعودية لتاريخ مخزّن. */
+  private dateToSaudiYmd(d: Date): string {
+    return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
+  }
+
+  private isSaudiYmdInLeaveRange(ymd: string, start: Date, end: Date): boolean {
+    const s = this.dateToSaudiYmd(start);
+    const e = this.dateToSaudiYmd(end);
+    return ymd >= s && ymd <= e;
+  }
+
+  private daysInclusiveBetweenSaudiYmd(startYmd: string, endYmd: string): number {
+    const d0 = new Date(`${startYmd}T00:00:00.000Z`);
+    const d1 = new Date(`${endYmd}T00:00:00.000Z`);
+    if (d1 < d0) return 0;
+    const n = Math.round((d1.getTime() - d0.getTime()) / 86400000) + 1;
+    return Math.max(1, n);
+  }
+
+  /** إن كان اليوم (سعودي) ضمن فترة إجازة معتمدة → on_leave. وإلا وكان on_leave → active. */
+  private async syncEmployeeLeavePresence(employeeId: string, companyId: string): Promise<void> {
+    const today = this.saudiDateYmd();
+    const leaves = await this.prisma.leave.findMany({
+      where: { employeeId, companyId, status: 'approved' },
+      select: { startDate: true, endDate: true },
+    });
+    const anyInRange = leaves.some((l) => this.isSaudiYmdInLeaveRange(today, l.startDate, l.endDate));
+    if (anyInRange) {
+      await this.prisma.employee.updateMany({
+        where: { id: employeeId, companyId, status: { in: ['active', 'on_leave'] } },
+        data: { status: 'on_leave' },
+      });
+    } else {
+      await this.prisma.employee.updateMany({
+        where: { id: employeeId, companyId, status: 'on_leave' },
+        data: { status: 'active' },
+      });
+    }
+  }
+
+  private async maybeSetEmployeeOnLeaveAfterApproval(
+    employeeId: string,
+    companyId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<void> {
+    const today = this.saudiDateYmd();
+    if (!this.isSaudiYmdInLeaveRange(today, startDate, endDate)) return;
+    await this.prisma.employee.updateMany({
+      where: { id: employeeId, companyId, status: { in: ['active', 'on_leave'] } },
+      data: { status: 'on_leave' },
+    });
   }
 
   private parseAdvanceDeferMonth(notes?: string | null): string {
@@ -1062,6 +1117,10 @@ export class HRService {
         newValue: { status: dto.status },
       });
 
+      if (existing.status === 'approved' && dto.status === 'rejected') {
+        await this.syncEmployeeLeavePresence(existing.employeeId, companyId);
+      }
+
       return updated;
     }
 
@@ -1101,7 +1160,67 @@ export class HRService {
       throw err;
     }
 
+    await this.maybeSetEmployeeOnLeaveAfterApproval(
+      updated.employeeId,
+      updated.companyId,
+      updated.startDate,
+      updated.endDate,
+    );
+
     return await this.prisma.leave.findFirst({
+      where: { id },
+      include: { employee: true, salarySettlement: true },
+    });
+  }
+
+  /**
+   * تسجيل عودة من إجازة معتمدة: يحدّث نهاية الإجازة إذا كانت العودة مبكرة، ويضبط حالة الموظف (نشط إن لم تعد هناك إجازة سارية).
+   */
+  async returnFromLeave(
+    id: string,
+    dto: ReturnFromLeaveDto,
+    companyId: string,
+    userId?: string,
+  ) {
+    const leave = await this.prisma.leave.findFirst({
+      where: { id, companyId, status: 'approved' },
+    });
+    if (!leave) {
+      throw new NotFoundException('الإجازة غير موجودة أو ليست معتمدة.');
+    }
+
+    const actualYmd = (dto.actualReturnDate?.slice(0, 10) || this.saudiDateYmd()).trim();
+    const startYmd = this.dateToSaudiYmd(leave.startDate);
+    const endYmdOriginal = this.dateToSaudiYmd(leave.endDate);
+
+    if (actualYmd < startYmd) {
+      throw new BadRequestException('تاريخ العودة لا يمكن أن يكون قبل بداية الإجازة.');
+    }
+    if (actualYmd > endYmdOriginal) {
+      throw new BadRequestException('تاريخ العودة لا يمكن أن يكون بعد آخر يوم مسجّل للإجازة.');
+    }
+
+    const newEnd = new Date(`${actualYmd}T00:00:00.000Z`);
+    const daysCount = this.daysInclusiveBetweenSaudiYmd(startYmd, actualYmd);
+
+    await this.prisma.leave.update({
+      where: { id },
+      data: { endDate: newEnd, daysCount },
+    });
+
+    await this.syncEmployeeLeavePresence(leave.employeeId, companyId);
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'update',
+      entity: 'leave',
+      entityId: id,
+      oldValue: { endDate: leave.endDate, daysCount: leave.daysCount },
+      newValue: { endDate: newEnd, daysCount, actualReturnYmd: actualYmd },
+    });
+
+    return this.prisma.leave.findFirst({
       where: { id },
       include: { employee: true, salarySettlement: true },
     });

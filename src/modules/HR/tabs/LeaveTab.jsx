@@ -1,11 +1,11 @@
 ﻿/**
  * LeaveTab — الإجازات (احترافي كامل)
  */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getLeaves, updateLeaveStatus } from '../../../services/api';
+import { getLeaves, updateLeaveStatus, returnFromLeave } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
@@ -15,7 +15,8 @@ import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, Modal } from '../../../ui';
+import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { buildLeaveRequestStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
@@ -27,12 +28,31 @@ const TYPE_MAP = {
   other: 'leaveOther',
 };
 
+function saudiTodayYmd() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
+}
+
+function sliceYmd(iso) {
+  return String(iso || '').slice(0, 10);
+}
+
+/** اليوم (سعودي) ضمن فترة إجازة معتمدة — لعرض زر العودة */
+function canShowLeaveReturnRow(row) {
+  if (row.status !== 'approved') return false;
+  const t = saudiTodayYmd();
+  const s = sliceYmd(row.startDate);
+  const e = sliceYmd(row.endDate);
+  return t >= s && t <= e;
+}
+
 export default function LeaveTab() {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
   const [year, setYear] = useState(new Date().getFullYear());
   const [showAdd, setShowAdd] = useState(false);
+  const [returnRow, setReturnRow] = useState(null);
+  const [returnDate, setReturnDate] = useState('');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -55,10 +75,39 @@ export default function LeaveTab() {
       ['leaves', companyId],
       ['leave-salary-settlements', companyId],
       ['movements', companyId],
+      ['employees', companyId, false],
+      ['employees', companyId],
     ],
     successToast: () => t('leaveStatusUpdated'),
     errorToast: (e) => e?.message || t('saveFailed'),
   });
+
+  const returnMutation = useApiMutation({
+    mutationFn: async ({ id, actualReturnDate }) => {
+      const res = await returnFromLeave(id, companyId, actualReturnDate);
+      rejectIfApiFailed(res, t('saveFailed'));
+      return res;
+    },
+    invalidateQueries: [
+      ['leaves', companyId, year],
+      ['leaves', companyId],
+      ['leave-salary-settlements', companyId],
+      ['movements', companyId],
+      ['employees', companyId, false],
+      ['employees', companyId],
+    ],
+    successToast: () => t('leaveReturnedOk'),
+    errorToast: (e) => e?.message || t('saveFailed'),
+  });
+
+  useEffect(() => {
+    if (!returnRow) return;
+    const tday = saudiTodayYmd();
+    const s = sliceYmd(returnRow.startDate);
+    const e = sliceYmd(returnRow.endDate);
+    const d = tday >= s && tday <= e ? tday : e;
+    setReturnDate(d);
+  }, [returnRow]);
 
   const items = useMemo(() => (data ?? []).map((l) => ({
     ...l,
@@ -104,6 +153,7 @@ export default function LeaveTab() {
           type="leave"
           onApprove={row.status === 'pending' ? () => updateStatusMutation.mutate({ id: row.id, status: 'approved' }) : undefined}
           onReject={row.status === 'pending' ? () => updateStatusMutation.mutate({ id: row.id, status: 'rejected' }) : undefined}
+          onReturnFromLeave={canShowLeaveReturnRow(row) ? () => setReturnRow(row) : undefined}
         />
       ) },
   ], [t, leaveStatusMap, updateStatusMutation]);
@@ -149,6 +199,11 @@ export default function LeaveTab() {
             <Button variant="success" size="sm" onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'approved' })}>{t('statusApproved')}</Button>
             <Button variant="danger" size="sm" onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'rejected' })}>{t('statusRejected')}</Button>
           </div>
+        )}
+        {canShowLeaveReturnRow(row) && (
+          <Button variant="primary" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setReturnRow(row)}>
+            {t('leaveReturnFromLeave')}
+          </Button>
         )}
       </div>
     );
@@ -215,6 +270,45 @@ export default function LeaveTab() {
           onClose={() => setShowAdd(false)}
         />
       )}
+
+      <Modal
+        open={!!returnRow}
+        onClose={() => setReturnRow(null)}
+        title={t('leaveReturnFromLeave')}
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setReturnRow(null)}>{t('cancel')}</Button>
+            <Button
+              variant="primary"
+              disabled={returnMutation.isPending || !returnDate}
+              onClick={() => {
+                if (!returnRow) return;
+                returnMutation.mutate(
+                  { id: returnRow.id, actualReturnDate: returnDate },
+                  {
+                    onSuccess: () => setReturnRow(null),
+                  },
+                );
+              }}
+            >
+              {returnMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-[13px] text-noorix-muted mb-3">{t('leaveReturnEarlyHint')}</p>
+        {returnRow && (
+          <Input
+            type="date"
+            label={t('leaveActualReturnDate')}
+            value={returnDate}
+            min={sliceYmd(returnRow.startDate)}
+            max={sliceYmd(returnRow.endDate)}
+            onChange={(e) => setReturnDate(e.target.value)}
+          />
+        )}
+      </Modal>
     </ScreenShell>
   );
 }

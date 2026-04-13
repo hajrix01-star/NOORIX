@@ -1042,6 +1042,12 @@ export async function getLeaveSalarySettlements(companyId, payrollMonth) {
   return apiGet('/api/v1/hr/leave-salary-settlements', { companyId, payrollMonth });
 }
 
+export async function returnFromLeave(id, companyId, actualReturnDate) {
+  const body = {};
+  if (actualReturnDate) body.actualReturnDate = String(actualReturnDate).slice(0, 10);
+  return apiPost(`/api/v1/hr/leaves/${id}/return?companyId=${companyId}`, body);
+}
+
 export async function getResidencies(companyId, employeeId) {
   const params = { companyId };
   if (employeeId) params.employeeId = employeeId;

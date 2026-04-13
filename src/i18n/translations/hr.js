@@ -281,11 +281,18 @@ export default {
     en: 'Unpaid leave deduction ({0} d): {1}',
   },
   payrollLeaveSettlementHint: {
-    ar: 'صُرف راتب (تسوية تقويمية) لموظفين عند اعتماد إجازة سنوية في هذا الشهر — لن يُضافوا تلقائياً إلى المسيرة لتجنب الازدواج.',
-    en: 'Some employees were paid a calendar salary settlement when annual leave was approved this month — they are excluded from this run to avoid double payment.',
+    ar: 'صُرف راتب (تسوية تقويمية) لموظفين عند اعتماد إجازة سنوية في هذا الشهر — لن يُضافوا تلقائياً إلى المسيرة لتجنب الازدواج. (هذا الاستبعاد لا يعتمد على حالة «في إجازة» في ملف الموظف، بل على وجود تسوية راتب لذلك الشهر.)',
+    en: 'Employees who received a calendar salary settlement when annual leave was approved this month are excluded from this run. This is based on that settlement, not the employee "On leave" flag.',
   },
   leaveSalarySettledBadge: { ar: 'تسوية راتب', en: 'Salary settled' },
   leaveStatusUpdated: { ar: 'تم تحديث حالة الإجازة', en: 'Leave status updated' },
+  leaveReturnFromLeave: { ar: 'عودة من الإجازة', en: 'Return from leave' },
+  leaveReturnEarlyHint: {
+    ar: 'اختر تاريخ العودة الفعلي. إذا كان قبل آخر يوم مسجّل تُقصّر الإجازة تلقائياً.',
+    en: 'Pick the actual return date. If before the recorded end date, the leave is shortened.',
+  },
+  leaveActualReturnDate: { ar: 'تاريخ العودة الفعلي', en: 'Actual return date' },
+  leaveReturnedOk: { ar: 'تم تسجيل العودة من الإجازة', en: 'Return from leave recorded' },
   overtimeWorkDaysPerMonth: { ar: 'أيام العمل لحساب الأوفر تايم (شهرياً)', en: 'Work days for monthly overtime' },
   overtimeWorkDaysHelp: {
     ar: '26 ≈ شهر 30 يوم مع ~4 أيام راحة (نمط شائع). 30 = دوام كل أيام الشهر. يُحفظ تلقائياً مع الموظف ويُستخدم في الملف والمسيرة.',
