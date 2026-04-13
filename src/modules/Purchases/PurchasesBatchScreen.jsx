@@ -549,6 +549,7 @@ export default function PurchasesBatchScreen() {
             )}
 
             <Button
+              size="sm"
               onClick={addRow}
               className="mt-3"
             >
@@ -565,6 +566,7 @@ export default function PurchasesBatchScreen() {
             {/* أزرار الإجراءات */}
             <div className="nx-toolbar mt-5">
               <Button
+                size="sm"
                 variant="primary"
                 disabled={saveMutation.isPending || summary.count === 0 || !batchVaultId || activeVaults.length === 0}
                 onClick={() => saveMutation.mutate()}
@@ -573,6 +575,7 @@ export default function PurchasesBatchScreen() {
                 {saveMutation.isPending ? t('saving') : t('saveBatch', summary.count)}
               </Button>
               <Button
+                size="sm"
                 onClick={() => window.print()}
               >
                 {t('print')}

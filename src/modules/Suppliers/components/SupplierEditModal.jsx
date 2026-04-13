@@ -130,8 +130,8 @@ export const SupplierEditModal = memo(function SupplierEditModal({
         </label>
 
         <div className="nx-toolbar flex items-center justify-end mt-[14px]">
-          <Button type="button" onClick={onClose}>{t('cancel')}</Button>
-          <Button type="submit" variant="primary" disabled={isSaving || !form.nameAr.trim()}>
+          <Button type="button" size="sm" onClick={onClose}>{t('cancel')}</Button>
+          <Button type="submit" size="sm" variant="primary" disabled={isSaving || !form.nameAr.trim()}>
             {isSaving ? t('saving') : t('saveChanges')}
           </Button>
         </div>

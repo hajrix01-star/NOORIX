@@ -238,11 +238,11 @@ export default function TaxReportTab() {
           <Input type="select" label={lang === 'ar' ? 'الفترة' : 'Period'} value={period} onChange={(e) => setPeriod(e.target.value)}>
             {periodOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </Input>
-          <Button onClick={handleImportFromSystem} disabled={!activeCompanyId || importLoading}>
+          <Button size="sm" onClick={handleImportFromSystem} disabled={!activeCompanyId || importLoading}>
             {importLoading ? t('loading') : (lang === 'ar' ? 'استيراد من النظام' : 'Import from system')}
           </Button>
-          <Button onClick={handlePrint}>{t('print')}</Button>
-          <Button onClick={handleExportExcel}>{t('exportExcel')}</Button>
+          <Button size="sm" onClick={handlePrint}>{t('print')}</Button>
+          <Button size="sm" onClick={handleExportExcel}>{t('exportExcel')}</Button>
         </div>
       </div>
 

@@ -615,17 +615,17 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
       </div>
 
       <div className="nx-toolbar mb-4">
-        <Button variant="primary" onClick={openNew}>+ {t('bankTreeAddCategory')}</Button>
+        <Button size="sm" variant="primary" onClick={openNew}>+ {t('bankTreeAddCategory')}</Button>
         {!isLoading && sortedCategories.length === 0 && inactiveCategories.length === 0 ? (
-          <Button disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
+          <Button size="sm" disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
             {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
           </Button>
         ) : null}
         {activeFlat.length > 0 && categories.length === 0 ? (
-          <Button onClick={() => setShowMigrate(true)}>{t('bankTreeMigrateOldRules', String(activeFlat.length))}</Button>
+          <Button size="sm" onClick={() => setShowMigrate(true)}>{t('bankTreeMigrateOldRules', String(activeFlat.length))}</Button>
         ) : null}
-        <Button disabled={exportBusy} onClick={handleExportRules}>{exportBusy ? '…' : t('bankRulesExport')}</Button>
-        <Button onClick={openImportModal}>{t('bankRulesImport')}</Button>
+        <Button size="sm" disabled={exportBusy} onClick={handleExportRules}>{exportBusy ? '…' : t('bankRulesExport')}</Button>
+        <Button size="sm" onClick={openImportModal}>{t('bankRulesImport')}</Button>
       </div>
 
       {isLoading ? <p className="text-noorix-muted">{t('loading')}…</p> : null}
@@ -639,8 +639,8 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
             {t('bankTreeSeedDefaultsHint')}
           </p>
           <div className="flex flex-wrap gap-2.5 text-center justify-center">
-            <Button variant="primary" onClick={openNew}>{t('bankTreeCreateFirst')}</Button>
-            <Button disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
+            <Button size="sm" variant="primary" onClick={openNew}>{t('bankTreeCreateFirst')}</Button>
+            <Button size="sm" disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
               {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
             </Button>
           </div>

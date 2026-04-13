@@ -99,9 +99,10 @@ export default function BankStatementDetailView({
     <div className="grid gap-5">
       {/* ── رأس الصفحة: زر الرجوع + أدوات ── */}
       <div className="nx-page-header noorix-surface-card py-[14px] px-[18px]">
-        <Button onClick={onBack}>← {t('bankBackToList')}</Button>
+        <Button size="sm" onClick={onBack}>← {t('bankBackToList')}</Button>
         <div className="nx-toolbar">
           <Button
+            size="sm"
             disabled={vm.reclassifyMutation.isPending}
             onClick={() => {
               vm.reclassifyMutation.mutate(undefined, {
@@ -113,6 +114,7 @@ export default function BankStatementDetailView({
             {vm.reclassifyMutation.isPending ? '⟳ ' + t('loading') : t('bankReclassify')}
           </Button>
           <Button
+            size="sm"
             onClick={() =>
               exportBankStatementExcel({
                 statement: stmt,
@@ -126,6 +128,7 @@ export default function BankStatementDetailView({
             {t('bankExportExcel')}
           </Button>
           <Button
+            size="sm"
             onClick={() =>
               printBankStatement({
                 statement: stmt,
@@ -137,7 +140,7 @@ export default function BankStatementDetailView({
           >
             {t('bankPrint')}
           </Button>
-          {onDelete && <Button variant="danger" onClick={onDelete}>{t('delete')}</Button>}
+          {onDelete && <Button size="sm" variant="danger" onClick={onDelete}>{t('delete')}</Button>}
         </div>
       </div>
 

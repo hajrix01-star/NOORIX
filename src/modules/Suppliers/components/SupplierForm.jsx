@@ -112,11 +112,11 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
         </label>
 
         <div className="nx-toolbar mt-[14px]">
-          <Button type="submit" variant="primary" disabled={isSaving || !form.nameAr.trim()}>
+          <Button type="submit" size="sm" variant="primary" disabled={isSaving || !form.nameAr.trim()}>
             {isSaving ? t('saving') : t('saveSupplier')}
           </Button>
           {onCancel && (
-            <Button type="button" onClick={onCancel}>{t('cancel')}</Button>
+            <Button type="button" size="sm" onClick={onCancel}>{t('cancel')}</Button>
           )}
         </div>
       </form>

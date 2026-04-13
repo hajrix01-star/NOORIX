@@ -157,7 +157,7 @@ export default function BankStatementAnalysisScreen() {
           variant="danger"
           footer={
             <>
-              <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>{t('cancel')}</Button>
+              <Button variant="ghost" size="sm" onClick={() => setDeleteConfirmId(null)}>{t('cancel')}</Button>
               <Button variant="danger" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteConfirmId)}>
                 {deleteMutation.isPending ? t('loading') : t('delete')}
               </Button>
@@ -175,7 +175,7 @@ export default function BankStatementAnalysisScreen() {
     <ScreenShell>
       <div className="nx-page-header">
         <ScreenTitle>{t('reportBankStatementAnalysis')}</ScreenTitle>
-        <Button variant="primary" onClick={() => setShowUpload(true)}>
+        <Button variant="primary" size="sm" onClick={() => setShowUpload(true)}>
           <span aria-hidden className="text-[18px] leading-none opacity-[0.95]">＋</span>
           {t('bankStatementUploadNew')}
         </Button>
@@ -243,7 +243,7 @@ export default function BankStatementAnalysisScreen() {
                   <div className="text-[48px] mb-3 opacity-50"></div>
                   <div className="text-[16px] font-semibold mb-1.5">{t('bankStatementEmptyTitle')}</div>
                   <div className="text-[13px] text-noorix-muted mb-4">{t('bankStatementEmptyDesc')}</div>
-                  <Button variant="primary" onClick={() => setShowUpload(true)}>
+                  <Button variant="primary" size="sm" onClick={() => setShowUpload(true)}>
                     <span aria-hidden className="text-[18px] leading-none">＋</span>
                     {t('bankStatementUploadNew')}
                   </Button>

@@ -422,7 +422,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
       <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
         <DateFilterBar filter={dateFilter} />
         <div className="nx-toolbar">
-          <Button variant="primary" className="noorix-print-hide" onClick={() => { setEditingOrder(null); setShowModal(true); }}>
+          <Button variant="primary" size="sm" className="noorix-print-hide" onClick={() => { setEditingOrder(null); setShowModal(true); }}>
             + {t('ordersNewOrder')}
           </Button>
         </div>
@@ -501,10 +501,10 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
           className="orders-view-drawer"
           footer={
             <>
-              <Button variant="primary" onClick={() => handlePrintOrder(viewingOrder)}>
+              <Button variant="primary" size="sm" onClick={() => handlePrintOrder(viewingOrder)}>
                 {t('ordersPrintOrder')}
               </Button>
-              <Button onClick={() => handleExportSingleOrder(viewingOrder)}>
+              <Button size="sm" onClick={() => handleExportSingleOrder(viewingOrder)}>
                 {t('exportExcel')}
               </Button>
             </>

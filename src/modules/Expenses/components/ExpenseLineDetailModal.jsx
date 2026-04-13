@@ -142,9 +142,9 @@ export default function ExpenseLineDetailModal({
       <div className="nx-page-header mb-3">
         <h3 className="text-[16px] font-semibold m-0">سجل المدفوعات</h3>
         <div className="nx-toolbar">
-          <Button onClick={handlePrintPayments} disabled={!payments.length}>طباعة</Button>
-          <Button onClick={() => exportToExcel(paymentExportData, `payments-${line?.nameAr || 'line'}.xlsx`)} disabled={!payments.length}>Excel</Button>
-          <Button onClick={() => exportTableToPdf({ data: paymentExportData, title: `سجل مدفوعات - ${line?.nameAr || line?.nameEn || ''}`, companyName, filename: `payments-${line?.nameAr || 'line'}.pdf` })} disabled={!payments.length}>طباعة / PDF</Button>
+          <Button size="sm" onClick={handlePrintPayments} disabled={!payments.length}>طباعة</Button>
+          <Button size="sm" onClick={() => exportToExcel(paymentExportData, `payments-${line?.nameAr || 'line'}.xlsx`)} disabled={!payments.length}>Excel</Button>
+          <Button size="sm" onClick={() => exportTableToPdf({ data: paymentExportData, title: `سجل مدفوعات - ${line?.nameAr || line?.nameEn || ''}`, companyName, filename: `payments-${line?.nameAr || 'line'}.pdf` })} disabled={!payments.length}>طباعة / PDF</Button>
         </div>
       </div>
 

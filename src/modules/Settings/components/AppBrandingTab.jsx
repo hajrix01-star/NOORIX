@@ -165,12 +165,12 @@ export default function AppBrandingTab() {
               onChange={(e) => setLogoUrl(e.target.value)}
               placeholder="https://رابط-الشعار.com/logo.png"
             />
-            <Button type="button" onClick={() => fileRef.current?.click()}>
+            <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
               رفع صورة من الجهاز
             </Button>
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
             {logoUrl && (
-              <Button type="button" variant="danger" onClick={() => setLogoUrl('')}>
+              <Button type="button" size="sm" variant="danger" onClick={() => setLogoUrl('')}>
                 ✕ إزالة الشعار
               </Button>
             )}
@@ -224,10 +224,10 @@ export default function AppBrandingTab() {
 
       {/* ── أزرار ─────────────────────────────────────────────────────────── */}
       <div className="nx-toolbar">
-        <Button type="button" variant="primary" onClick={handleSave}>
+        <Button type="button" size="sm" variant="primary" onClick={handleSave}>
           {saved ? '✓ تم الحفظ' : 'حفظ وتطبيق'}
         </Button>
-        <Button type="button" onClick={handleReset}>
+        <Button type="button" size="sm" onClick={handleReset}>
           إعادة الضبط الافتراضي
         </Button>
       </div>

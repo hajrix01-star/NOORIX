@@ -360,7 +360,7 @@ export default function EmployeeProfileScreen() {
       <ScreenShell>
         <div className="noorix-surface-card p-8 flex flex-col items-center gap-4 text-center">
           <p className="text-noorix-muted text-[14px] m-0">{t('noEmployees')}</p>
-          <Button onClick={() => navigate('/hr')}>{t('employeeProfileBack')}</Button>
+          <Button size="sm" onClick={() => navigate('/hr')}>{t('employeeProfileBack')}</Button>
         </div>
       </ScreenShell>
     );
@@ -412,16 +412,16 @@ export default function EmployeeProfileScreen() {
   return (
     <ScreenShell>
       <div className="nx-page-header employee-profile-header-bar">
-        <Button onClick={() => navigate('/hr')}>{t('employeeProfileBack')}</Button>
+        <Button size="sm" onClick={() => navigate('/hr')}>{t('employeeProfileBack')}</Button>
         <div className="nx-toolbar">
-          <Button onClick={() => setDocModal('salary')}>{t('salaryCertificate') || 'تعريف راتب'}</Button>
-          <Button onClick={() => setDocModal('contract')}>{t('documentContract') || 'عقد'}</Button>
-          <Button onClick={() => setDocModal('settlement')}>{t('finalSettlement') || 'مخالصة'}</Button>
+          <Button size="sm" onClick={() => setDocModal('salary')}>{t('salaryCertificate') || 'تعريف راتب'}</Button>
+          <Button size="sm" onClick={() => setDocModal('contract')}>{t('documentContract') || 'عقد'}</Button>
+          <Button size="sm" onClick={() => setDocModal('settlement')}>{t('finalSettlement') || 'مخالصة'}</Button>
           {employee.status === 'active' && (
-            <Button variant="primary" onClick={() => setShowAdvance(true)}>{t('payAdvance')}</Button>
+            <Button variant="primary" size="sm" onClick={() => setShowAdvance(true)}>{t('payAdvance')}</Button>
           )}
           {canDeleteEmployee && (
-            <Button variant="danger" onClick={handlePermanentDeleteFromProfile}>
+            <Button variant="danger" size="sm" onClick={handlePermanentDeleteFromProfile}>
               {t('deleteEmployeePermanent')}
             </Button>
           )}

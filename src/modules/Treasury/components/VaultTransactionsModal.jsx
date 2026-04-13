@@ -212,8 +212,8 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
       className="vault-transactions-drawer"
     >
       <div className="nx-toolbar mb-4">
-        <Button onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>Excel</Button>
-        <Button onClick={handlePrintPdf} disabled={!items.length}>طباعة / PDF</Button>
+        <Button size="sm" onClick={handleExportExcel} disabled={!(data?.total ?? 0)}>Excel</Button>
+        <Button size="sm" onClick={handlePrintPdf} disabled={!items.length}>طباعة / PDF</Button>
       </div>
 
       {isPaginatedTotal && (

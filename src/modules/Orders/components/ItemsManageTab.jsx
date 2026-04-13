@@ -678,8 +678,8 @@ export function ItemsManageTab({ companyId }) {
                               </div>
                             </div>
                             <div className="nx-toolbar">
-                              <Button variant="primary" onClick={handleUpdateProduct}>{t('save')}</Button>
-                              <Button onClick={() => setEditingProduct(null)}>{t('cancel')}</Button>
+                              <Button size="sm" variant="primary" onClick={handleUpdateProduct}>{t('save')}</Button>
+                              <Button size="sm" onClick={() => setEditingProduct(null)}>{t('cancel')}</Button>
                             </div>
                           </div>
                         </td>
@@ -746,7 +746,7 @@ export function ItemsManageTab({ companyId }) {
                   placeholder={t('categoryNameEn')}
                 />
               </div>
-              <Button variant="primary" onClick={handleCreateCategory} disabled={createCategory.isPending || !companyId}>
+              <Button size="sm" variant="primary" onClick={handleCreateCategory} disabled={createCategory.isPending || !companyId}>
                 {createCategory.isPending ? t('saving') : t('add')}
               </Button>
             </div>

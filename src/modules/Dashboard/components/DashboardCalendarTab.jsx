@@ -331,13 +331,14 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           </div>
           <div className="nx-toolbar">
             <Button
+              size="sm"
               variant={isSelectionMode ? 'primary' : undefined}
               onClick={() => { setIsSelectionMode((p) => !p); if (isSelectionMode) setSelectedDates(new Set()); }}
             >
               {isSelectionMode ? '✓ ' + t('dashboardSelectDaysModeOff') : '☑ ' + t('dashboardSelectDaysMode')}
             </Button>
-            <Button onClick={() => setShowTargetsPanel(!showTargetsPanel)}>⚙ {t('dashboardSetTarget')}</Button>
-            <Button variant="primary" onClick={handlePrintCalendar}>{t('print')}</Button>
+            <Button size="sm" onClick={() => setShowTargetsPanel(!showTargetsPanel)}>⚙ {t('dashboardSetTarget')}</Button>
+            <Button size="sm" variant="primary" onClick={handlePrintCalendar}>{t('print')}</Button>
           </div>
         </div>
 
@@ -508,10 +509,10 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           <div className="mt-3 rounded-lg p-2.5" style={{ background: 'var(--noorix-blue-8)', border: '1px solid var(--noorix-blue-20)' }}>
             <div className="text-[11px] font-bold mb-1.5">{t('dashboardSelectedDays')}: {selectedDatesSorted.length}</div>
             <div className="nx-toolbar">
-              <Button variant="primary" onClick={() => setShowAddSpecialModal(true)}>
+              <Button size="sm" variant="primary" onClick={() => setShowAddSpecialModal(true)}>
                 + {t('dashboardAddAsSpecialDays')}
               </Button>
-              <Button onClick={() => setSelectedDates(new Set())}>{t('cancel')}</Button>
+              <Button size="sm" onClick={() => setSelectedDates(new Set())}>{t('cancel')}</Button>
             </div>
           </div>
         )}

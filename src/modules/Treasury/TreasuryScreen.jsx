@@ -142,7 +142,7 @@ export default function TreasuryScreen() {
           <Button variant="ghost" size="sm" onClick={() => setShowTransfer(true)} disabled={!hasCompany}>
             {t('vaultTransferOpen')}
           </Button>
-          <Button variant="primary" onClick={() => { setShowAddForm(true); setSaveError(''); }}>
+          <Button variant="primary" size="sm" onClick={() => { setShowAddForm(true); setSaveError(''); }}>
             {t('addVaultBtn')}
           </Button>
         </div>
@@ -234,7 +234,7 @@ export default function TreasuryScreen() {
               </div>
               <h3 className="text-[15px] mb-1.5 m-0">{t('noVaults')}</h3>
               <p className="text-noorix-muted text-[13px] mb-4 m-0">{t('addFirstVault')}</p>
-              <Button variant="primary" onClick={() => setShowAddForm(true)}>{t('addVault')}</Button>
+              <Button variant="primary" size="sm" onClick={() => setShowAddForm(true)}>{t('addVault')}</Button>
             </div>
           )}
         </>

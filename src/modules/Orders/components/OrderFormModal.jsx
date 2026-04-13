@@ -197,8 +197,8 @@ export function OrderFormModal({
               {t('sendWhatsApp')} ? {t('order')}
             </Button>
             <div className="nx-toolbar justify-center">
-              <Button onClick={() => { resetForm(); }}>{t('ordersAddNewOrder')}</Button>
-              <Button onClick={() => { onClose?.(); resetForm(); }}>{t('close')}</Button>
+              <Button size="sm" onClick={() => { resetForm(); }}>{t('ordersAddNewOrder')}</Button>
+              <Button size="sm" onClick={() => { onClose?.(); resetForm(); }}>{t('close')}</Button>
             </div>
           </div>
         </div>

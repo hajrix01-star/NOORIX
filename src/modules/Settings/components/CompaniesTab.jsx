@@ -164,7 +164,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
       {isError && (
         <div className="p-3 rounded-lg text-[13px] bg-noorix-red/10 border border-noorix-red">
           لا يمكن الاتصال بالسيرفر.
-          <Button onClick={() => refetch()} className="mr-2 text-[12px]">إعادة المحاولة</Button>
+          <Button size="sm" onClick={() => refetch()} className="mr-2 text-[12px]">إعادة المحاولة</Button>
         </div>
       )}
 
@@ -177,7 +177,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
       )}
 
       <div className="nx-toolbar">
-        <Button variant={showAddForm ? undefined : 'primary'} onClick={() => setShowAddForm((v) => !v)}>
+        <Button size="sm" variant={showAddForm ? undefined : 'primary'} onClick={() => setShowAddForm((v) => !v)}>
           {showAddForm ? 'إلغاء الإضافة' : 'إضافة شركة'}
         </Button>
         {!isEmpty && (

@@ -138,9 +138,9 @@ export default function ReportsScreen() {
             </Input>
           )}
           <div className="nx-toolbar">
-            <Button onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
-            <Button onClick={handleExportPdf} disabled={!report}>طباعة / PDF</Button>
-            <Button onClick={handlePrint} disabled={!report}>{t('print')}</Button>
+            <Button size="sm" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
+            <Button size="sm" onClick={handleExportPdf} disabled={!report}>طباعة / PDF</Button>
+            <Button size="sm" onClick={handlePrint} disabled={!report}>{t('print')}</Button>
           </div>
         </div>
       </div>
