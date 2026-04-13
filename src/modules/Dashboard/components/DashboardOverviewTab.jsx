@@ -66,7 +66,9 @@ function PieTooltip({ active, payload }) {
   return (
     <div style={{ background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', borderRadius: 6, padding: '7px 11px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: 12 }}>
       <div style={{ fontWeight: 700, color: p.payload.fill }}>{p.name}</div>
-      <div style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, color: 'var(--noorix-text)' }}>{fmt(p.value, 0)} SR</div>
+      <div style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 700, color: 'var(--noorix-text)' }} className="ltr">
+        {fmt(p.value)} <span className="nx-sar">SR</span>
+      </div>
       <div style={{ color: 'var(--noorix-text-muted)', fontSize: 11 }}>{p.payload.pct}%</div>
     </div>
   );
@@ -256,37 +258,40 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     }));
   }, [periodData, lang]);
 
-  /* ── فئات الموردين: من تحليل الفترة (موردون لهم حركة صرف/مشتريات فقط) — متسق مع الفلتر الزمني ── */
-  const supplierCategoriesData = useMemo(() => {
-    const raw = periodData?.supplierCategoryBreakdown;
+  /* ── مبيعات الفئات (طلبات): مبالغ حسب فئة المنتج — نفس فترة أعلى الموردين ── */
+  const salesCategoriesData = useMemo(() => {
+    const raw = periodData?.salesCategoryBreakdown;
     if (!Array.isArray(raw) || raw.length === 0) return [];
-    const total = Number(periodData?.suppliersInPeriodCount) || raw.reduce((s, r) => s + r.count, 0) || 1;
-    return raw.map((row, i) => ({
-      name: lang === 'ar' ? row.nameAr : (row.nameEn || row.nameAr) || '—',
-      value: row.count,
-      pct: ((row.count / total) * 100).toFixed(1),
-      fill: PIE_COLORS[i % PIE_COLORS.length],
-    }));
+    const total = Number(periodData?.salesCategoryTotal) || raw.reduce((s, r) => s + Number(r.amount || 0), 0) || 1;
+    return raw.map((row, i) => {
+      const amt = Number(row.amount || 0);
+      return {
+        name: lang === 'ar' ? row.nameAr : (row.nameEn || row.nameAr) || '—',
+        value: amt,
+        pct: ((amt / total) * 100).toFixed(1),
+        fill: PIE_COLORS[i % PIE_COLORS.length],
+      };
+    });
   }, [periodData, lang]);
 
   /** دمج الفئات بعد الخامسة في «أخرى» ليتطابق المخطط مع القائمة والإجمالي */
-  const supplierCategoriesPieData = useMemo(() => {
-    if (supplierCategoriesData.length === 0) return [];
-    if (supplierCategoriesData.length <= 6) return supplierCategoriesData;
-    const top = supplierCategoriesData.slice(0, 5);
-    const rest = supplierCategoriesData.slice(5);
+  const salesCategoriesPieData = useMemo(() => {
+    if (salesCategoriesData.length === 0) return [];
+    if (salesCategoriesData.length <= 6) return salesCategoriesData;
+    const top = salesCategoriesData.slice(0, 5);
+    const rest = salesCategoriesData.slice(5);
     const othersValue = rest.reduce((s, r) => s + r.value, 0);
-    const total = supplierCategoriesData.reduce((s, r) => s + r.value, 0) || 1;
+    const total = salesCategoriesData.reduce((s, r) => s + r.value, 0) || 1;
     return [
       ...top,
       {
-        name: t('dashboardSupplierCategoriesOthers'),
+        name: t('dashboardSalesByCategoryOthers'),
         value: othersValue,
         pct: ((othersValue / total) * 100).toFixed(1),
         fill: PIE_COLORS[5 % PIE_COLORS.length],
       },
     ];
-  }, [supplierCategoriesData, t]);
+  }, [salesCategoriesData, t]);
 
   /* ── ثوابت السلاسل الزمنية — قبل أي return مشروط ── */
   const salesSeries   = t('annualSales');
@@ -348,11 +353,11 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   return (
     <div className="flex flex-col gap-5">
 
-      {/* ── رسوم بيانية: أعلى الموردين + فئات الموردين ── */}
+      {/* ── رسوم بيانية: أعلى الموردين + مبيعات الفئات (طلبات) ── */}
       <div
         className={cn(
           'grid gap-5',
-          (isPeriodLoading || supplierCategoriesPieData.length > 0)
+          (isPeriodLoading || salesCategoriesPieData.length > 0)
             ? 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px]'
             : 'grid-cols-1',
         )}
@@ -426,36 +431,44 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           )}
         </div>
 
-        {/* فئات الموردين — donut (نفس فترة أعلى الموردين) */}
-        {(isPeriodLoading || supplierCategoriesPieData.length > 0) && (
+        {/* مبيعات الفئات (طلبات) — donut — نفس فترة أعلى الموردين */}
+        {(isPeriodLoading || salesCategoriesPieData.length > 0) && (
           <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
             <div className="text-[14px] font-bold text-noorix-text mb-0.5 w-full max-lg:text-center lg:text-start">
-              {t('supplierCategories')}
+              {selectedMonth != null ? t('dashboardSalesByCategoryTitleMonth') : t('dashboardSalesByCategoryTitlePeriod')}
             </div>
             <div className="text-[12px] text-noorix-muted mb-1 w-full max-lg:text-center lg:text-start">
               {supplierFrom} — {supplierTo}
             </div>
             <div className="text-[12px] text-noorix-muted mb-4 w-full max-lg:text-center lg:text-start">
-              {t('dashboardSuppliersInPeriod')}: {isPeriodLoading ? '…' : (periodData?.suppliersInPeriodCount ?? 0)}
+              {t('dashboardOrdersSalesTotalForPeriod')}:{' '}
+              {isPeriodLoading ? (
+                '…'
+              ) : (
+                <>
+                  <span className="font-bold text-noorix-text ltr">{fmt(Number(periodData?.salesCategoryTotal || 0))}</span>{' '}
+                  <span className="nx-sar">SR</span>
+                </>
+              )}
             </div>
             {isPeriodLoading ? (
               <div className="h-[170px] flex items-center justify-center text-noorix-muted text-[12px]">{t('loading')}</div>
-            ) : supplierCategoriesPieData.length === 0 ? (
+            ) : salesCategoriesPieData.length === 0 ? (
               <div className="h-[170px] flex flex-col items-center justify-center text-noorix-muted text-[12px] gap-2">
-                <div>{t('dashboardNoSuppliersInPeriod')}</div>
+                <div>{t('dashboardNoOrderSalesByCategory')}</div>
               </div>
             ) : (
               <>
                 <ResponsiveContainer width="100%" height={170}>
                   <PieChart>
                     <Pie
-                      data={supplierCategoriesPieData}
+                      data={salesCategoriesPieData}
                       cx="50%" cy="50%"
                       innerRadius={50} outerRadius={78}
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {supplierCategoriesPieData.map((entry, i) => (
+                      {salesCategoriesPieData.map((entry, i) => (
                         <Cell key={`${entry.name}-${i}`} fill={entry.fill} />
                       ))}
                     </Pie>
@@ -463,14 +476,15 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
-                  {supplierCategoriesPieData.map((cat) => (
+                  {salesCategoriesPieData.map((cat) => (
                     <div key={cat.name} className="flex items-center justify-between gap-2 text-[12px]">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: cat.fill }} />
                         <span className="text-noorix-text truncate">{cat.name}</span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="font-bold text-noorix-text">{cat.value}</span>
+                        <span className="font-bold text-noorix-text ltr">{fmt(cat.value)}</span>
+                        <span className="nx-sar">SR</span>
                         <span className="text-noorix-muted">({cat.pct}%)</span>
                       </div>
                     </div>

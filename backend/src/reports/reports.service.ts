@@ -1454,6 +1454,37 @@ export class ReportsService {
       supplierCategoryBreakdown.sort((a, b) => b.count - a.count);
     }
 
+    /** مبيعات أصناف الطلبات حسب فئة المنتج (order_categories) — نفس نطاق التواريخ */
+    const salesCategoryRows = await this.prisma.$queryRaw<
+      { category_id: string | null; name_ar: string; name_en: string | null; total: unknown }[]
+    >`
+      SELECT
+        op.category_id AS category_id,
+        COALESCE(MAX(oc.name_ar), 'غير مصنّف') AS name_ar,
+        MAX(oc.name_en) AS name_en,
+        SUM(oi.amount) AS total
+      FROM order_items oi
+      INNER JOIN orders ord ON oi.order_id = ord.id
+      INNER JOIN order_products op ON oi.product_id = op.id
+      LEFT JOIN order_categories oc ON op.category_id = oc.id
+      WHERE ord.company_id = ${companyId}
+        AND ord.status = 'active'
+        AND ord.order_date >= ${start}
+        AND ord.order_date <= ${end}
+      GROUP BY op.category_id
+      ORDER BY SUM(oi.amount) DESC
+    `;
+
+    const salesCategoryBreakdown = salesCategoryRows.map((r) => ({
+      categoryId: r.category_id,
+      nameAr: r.name_ar,
+      nameEn: r.name_en,
+      amount: new Decimal(r.total != null ? String(r.total) : '0').toFixed(4),
+    }));
+    const salesCategoryTotal = salesCategoryBreakdown
+      .reduce((s, row) => s.plus(new Decimal(row.amount || '0')), new Decimal(0))
+      .toFixed(4);
+
     return {
       startDate: String(startDateStr).slice(0, 10),
       endDate: String(endDateStr).slice(0, 10),
@@ -1461,6 +1492,8 @@ export class ReportsService {
       topSuppliers,
       supplierCategoryBreakdown,
       suppliersInPeriodCount: supplierIdsInPeriod.length,
+      salesCategoryBreakdown,
+      salesCategoryTotal,
     };
   }
 }
