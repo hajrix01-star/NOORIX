@@ -236,7 +236,12 @@ export default function TreasuryScreen() {
       )}
 
       {showTransfer && hasCompany && (
-        <VaultTransferModal companyId={companyId} onClose={() => setShowTransfer(false)} />
+        <VaultTransferModal
+          companyId={companyId}
+          startDate={startDate}
+          endDate={endDate}
+          onClose={() => setShowTransfer(false)}
+        />
       )}
 
       {showAddForm && (

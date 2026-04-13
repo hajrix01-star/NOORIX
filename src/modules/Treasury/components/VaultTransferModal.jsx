@@ -15,16 +15,21 @@ import { fmt } from '../../../utils/format';
 import { useToast } from '../../../context/ToastContext';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
-export default function VaultTransferModal({ companyId, onClose }) {
+export default function VaultTransferModal({ companyId, startDate = null, endDate = null, onClose }) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  /** أرصدة كاملة (بدون فلترة فترة) — مطابقة للتحقق من الرصيد في الخادم */
+  /** نفس استعلام شاشة الخزائن — أرقام الداخل/الخارج/الرصيد حسب الفلتر النشط */
   const { data: rawVaults = [], isLoading: vaultsLoading } = useQuery({
-    queryKey: ['vaults', companyId, false, '', ''],
+    queryKey: ['vaults', companyId, false, startDate ?? '', endDate ?? ''],
     queryFn: async () => {
-      const res = await getVaults(companyId, false);
+      const res = await getVaults(
+        companyId,
+        false,
+        startDate || undefined,
+        endDate || undefined,
+      );
       throwIfApiFailed(res, t('loadMovementsFailed'));
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
