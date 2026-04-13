@@ -94,4 +94,6 @@ export default {
   vaultTransferNotes: { ar: 'ملاحظات', en: 'Notes' },
   vaultTransferDate: { ar: 'تاريخ العملية', en: 'Transaction date' },
   vaultLedgerTypeTransfer: { ar: 'تحويل بين خزائن', en: 'Inter-vault transfer' },
+  /** عمود حركات الخزينة — يُذكر فيه وجهة التحويل */
+  vaultTransactionTransferDestination: { ar: 'إلى الخزينة: {0}', en: 'To vault: {0}' },
 };
