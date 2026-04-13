@@ -128,6 +128,20 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     return map;
   }, [summaries]);
 
+  /** إجمالي المبيعات ÷ عدد الأيام التي وُجدت فيها مبيعات &gt; 0 فقط */
+  const salesDailyAvgOnActiveDays = useMemo(() => {
+    let sum = 0;
+    let count = 0;
+    for (const amt of dailySales.values()) {
+      if (amt > 0) {
+        sum += amt;
+        count += 1;
+      }
+    }
+    if (count === 0) return null;
+    return sum / count;
+  }, [dailySales]);
+
   const daysInMonth = useMemo(() => {
     const days = [];
     for (let d = 1; d <= lastDay; d++) {
@@ -327,6 +341,15 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           </div>
         </div>
 
+        {salesDailyAvgOnActiveDays != null && (
+          <div className="text-[11px] text-noorix-muted mb-2 flex flex-wrap items-baseline gap-1">
+            <span>{t('dashboardSalesDailyAvgActiveDays')}</span>
+            <span className="font-semibold text-noorix-text nx-font-numbers">
+              <FmtNum n={salesDailyAvgOnActiveDays} /> <span className="nx-sar">SR</span>
+            </span>
+          </div>
+        )}
+
         {showTargetsPanel && (
           <div className="p-3 mb-3 bg-noorix-bg-muted rounded-lg text-[12px]">
             <div className="font-bold mb-2">{t('dashboardTargetOverall')}</div>
@@ -400,11 +423,11 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     bg = `rgba(${r},${g},${b},0.35)`;
                   } else if (dayTarget != null && dayTarget > 0) {
                     const ratio = amount / dayTarget;
-                    const c = getAchievementColor(ratio);
-                    bg = c.replace('rgb(', 'rgba(').replace(')', ', 0.35)');
+                    const band = achievementBandFromRatio(ratio);
+                    bg = ACHIEVEMENT_BG[band];
                   } else {
                     const intensity = Math.min(1, amount / maxAmount);
-                    bg = `rgba(22,163,74,${0.2 + intensity * 0.5})`;
+                    bg = `color-mix(in srgb, var(--color-nx-profit) ${Math.round(16 + intensity * 26)}%, transparent)`;
                   }
                 } else if (special && specialColor) {
                   const hex = specialColor.replace('#', '');
@@ -412,6 +435,15 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                   bg = `rgba(${r},${g},${b},0.2)`;
                 }
                 const achieved = dayTarget != null && amount >= dayTarget;
+                const ratioVsTarget = dayTarget != null && dayTarget > 0 ? amount / dayTarget : null;
+                let cellBorder = '1px solid var(--noorix-border)';
+                if (isSelected) cellBorder = '2px solid var(--noorix-accent-blue)';
+                else if (selectedDay?.dateStr === dateStr) cellBorder = '2px solid var(--noorix-accent-blue)';
+                else if (ratioVsTarget != null && amount > 0) {
+                  if (ratioVsTarget >= 1.2) cellBorder = '2px solid var(--color-nx-sales)';
+                  else if (ratioVsTarget >= 1) cellBorder = '2px solid var(--color-nx-profit)';
+                  else if (special && specialColor) cellBorder = `2px solid ${specialColor}`;
+                } else if (special && specialColor) cellBorder = `2px solid ${specialColor}`;
                 const hasNote = dayNotes[dateStr];
                 return (
                   <div
@@ -423,7 +455,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     className="aspect-square rounded-md flex flex-col items-center justify-center p-[2px] min-h-12 cursor-pointer relative"
                     style={{
                       background: bg,
-                      border: isSelected ? '2px solid var(--noorix-accent-blue)' : selectedDay?.dateStr === dateStr ? '2px solid var(--noorix-accent-blue)' : achieved ? '2px solid #16a34a' : special ? `2px solid ${specialColor}` : '1px solid var(--noorix-border)',
+                      border: cellBorder,
                     }}
                     title={`${dateStr}: ${fmt(amount)} SR${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
                   >

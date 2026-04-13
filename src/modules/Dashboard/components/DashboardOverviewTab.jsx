@@ -110,6 +110,39 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const yearEnd   = `${year}-12-31`;
   const { summaries: yearSummaries } = useSales({ companyId, startDate: yearStart, endDate: yearEnd });
 
+  const monthSalesAvgBounds = useMemo(() => {
+    if (selectedMonth == null) return { start: null, end: null };
+    const ld = lastDayOfMonth(year, selectedMonth);
+    return { start: ymd(year, selectedMonth, 1), end: ymd(year, selectedMonth, ld) };
+  }, [year, selectedMonth]);
+
+  const { summaries: monthSalesForDailyAvg } = useSales({
+    companyId,
+    startDate: monthSalesAvgBounds.start,
+    endDate: monthSalesAvgBounds.end,
+    enabled: !!companyId && selectedMonth != null,
+  });
+
+  /** متوسط يومي للإيراد: المجموع ÷ عدد الأيام التي فيها إيراد &gt; 0 (شهر مُختار فقط) */
+  const revenueDailyAvgActiveDays = useMemo(() => {
+    if (!monthSalesForDailyAvg?.length) return null;
+    const byDay = new Map();
+    monthSalesForDailyAvg.forEach((s) => {
+      const d = String(s.transactionDate || '').slice(0, 10);
+      byDay.set(d, (byDay.get(d) || 0) + Number(s.totalAmount || 0));
+    });
+    let sum = 0;
+    let n = 0;
+    for (const amt of byDay.values()) {
+      if (amt > 0) {
+        sum += amt;
+        n += 1;
+      }
+    }
+    if (n === 0) return null;
+    return sum / n;
+  }, [monthSalesForDailyAvg]);
+
   /* ── بيانات أعلى الموردين + فئاتهم ── */
   const { from: supplierFrom, to: supplierTo } = useMemo(
     () => monthDateBounds(year, selectedMonth ?? null),
@@ -472,6 +505,14 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
               <MetricCard.Spark data={sparkData} color={accentColor} grow />
               <MetricCard.Footer className="mt-3 flex flex-col gap-1.5 border-t border-noorix-border pt-3 pb-3">
                 <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
+                {isSales && revenueDailyAvgActiveDays != null && (
+                  <div className="text-[11px] text-noorix-muted flex flex-wrap items-baseline gap-1">
+                    <span>{t('dashboardSalesDailyAvgActiveDays')}</span>
+                    <span className="font-semibold text-noorix-text nx-font-numbers">
+                      <FmtNum n={revenueDailyAvgActiveDays} /> <span className="nx-sar">SR</span>
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                   <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
                     {pctLabelText}

@@ -42,6 +42,8 @@ export default {
   dashboardSelectDaysModeOff: { ar: 'إلغاء التحديد', en: 'Cancel selection' },
   dashboardNoAppSales: { ar: 'لا توجد مبيعات عبر التطبيقات في هذه الفترة', en: 'No app sales in this period' },
   dashboardKpiFormulaSales: { ar: 'إجمالي المبيعات للفترة', en: 'Total sales for the period' },
+  /** متوسط يومي: المجموع ÷ عدد الأيام ذات الإيراد &gt; 0 فقط */
+  dashboardSalesDailyAvgActiveDays: { ar: 'المعدل اليومي (أيام بها إيراد فقط)', en: 'Daily average (days with revenue only)' },
   dashboardKpiFormulaPurchases: { ar: 'مشتريات الفترة', en: 'Purchases for the period' },
   dashboardKpiFormulaExpenses: { ar: 'مصروفات الفترة', en: 'Expenses for the period' },
   dashboardKpiFormulaGrossProfit: { ar: 'مبيعات − مشتريات', en: 'Sales − purchases' },
