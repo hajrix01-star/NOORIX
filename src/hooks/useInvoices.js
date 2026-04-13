@@ -6,13 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { getInvoices, throwIfApiFailed } from '../services/api';
 
 /**
- * @param {{ companyId: string, startDate: string, endDate: string, page?: number, pageSize?: number, kind?: string, sortBy?: string, sortDir?: 'asc'|'desc', supplierId?: string, q?: string, categoryId?: string, expenseLineId?: string, includeCancelled?: boolean, hasNotes?: boolean }} params
+ * @param {{ companyId: string, startDate: string, endDate: string, page?: number, pageSize?: number, kind?: string, sortBy?: string, sortDir?: 'asc'|'desc', supplierId?: string, q?: string, categoryId?: string, expenseLineId?: string, includeCancelled?: boolean, hasNotes?: boolean, vaultId?: string }} params
  */
-export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize = 50, kind, sortBy = 'transactionDate', sortDir = 'desc', supplierId, q, categoryId, expenseLineId, includeCancelled = true, hasNotes }) {
+export function useInvoices({ companyId, startDate, endDate, page = 1, pageSize = 50, kind, sortBy = 'transactionDate', sortDir = 'desc', supplierId, q, categoryId, expenseLineId, includeCancelled = true, hasNotes, vaultId }) {
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['invoices', companyId, startDate, endDate, page, pageSize, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled, hasNotes],
+    queryKey: ['invoices', companyId, startDate, endDate, page, pageSize, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled, hasNotes, vaultId],
     queryFn: async () => {
-      const res = await getInvoices(companyId, startDate, endDate, page, pageSize, null, null, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled, hasNotes);
+      const res = await getInvoices(companyId, startDate, endDate, page, pageSize, null, null, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled, hasNotes, vaultId);
       throwIfApiFailed(res, 'فشل تحميل الفواتير');
       return res.data;
     },

@@ -349,6 +349,7 @@ export class InvoiceService {
     supplierId?: string,
     categoryId?: string,
     expenseLineId?: string,
+    vaultId?: string,
     sortBy = 'transactionDate',
     sortDir: 'asc' | 'desc' | string = 'desc',
     q?: string,
@@ -375,6 +376,11 @@ export class InvoiceService {
     const supplierFilter = supplierId ? { supplierId } : {};
     const categoryFilter = categoryId ? { categoryId } : {};
     const expenseLineFilter = expenseLineId ? { expenseLineId } : {};
+    const vaultFilter: Prisma.InvoiceWhereInput = vaultId
+      ? {
+          OR: [{ vaultId }, { vaultAllocations: { some: { vaultId } } }],
+        }
+      : {};
 
     const wantHasNotesOnly =
       hasNotes === true ||
@@ -438,6 +444,7 @@ export class InvoiceService {
       ...supplierFilter,
       ...categoryFilter,
       ...expenseLineFilter,
+      ...vaultFilter,
       ...searchFilter,
       ...notesPresenceFilter,
     };

@@ -13,6 +13,7 @@ import { useToast }       from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useInvoices }    from '../../hooks/useInvoices';
 import { useSuppliers }   from '../../hooks/useSuppliers';
+import { useVaults }      from '../../hooks/useVaults';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDate, formatSaudiDateISO } from '../../utils/saudiDate';
 import { updateInvoice, getInvoices, deleteInvoice, fetchAllInvoicesForExport } from '../../services/api';
@@ -152,6 +153,7 @@ export default function InvoicesListScreen() {
   const [viewingInvoice, setViewingInvoice]   = useState(null);
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
+  const [filterVaultId, setFilterVaultId] = useState('');
   const [showCancelled, setShowCancelled] = useState(false);
   const [filterHasNotesOnly, setFilterHasNotesOnly] = useState(false);
   const [urlExtra, setUrlExtra] = useState({ kind: '', categoryId: '', expenseLineId: '' });
@@ -306,6 +308,7 @@ export default function InvoicesListScreen() {
   ], [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice, fmt]);
 
   const { suppliers } = useSuppliers(companyId);
+  const { vaultsList = [] } = useVaults({ companyId });
 
   const dayCloseDefaultYmd = useMemo(
     () => (dateFilter.endDate || dateFilter.startDate || '').slice(0, 10),
@@ -329,6 +332,7 @@ export default function InvoicesListScreen() {
     expenseLineId: urlExtra.expenseLineId || undefined,
     includeCancelled: showCancelled,
     hasNotes: filterHasNotesOnly || undefined,
+    vaultId: filterVaultId || undefined,
   });
 
   // بيانات مُحوَّلة لـ SmartTable
@@ -421,6 +425,7 @@ export default function InvoicesListScreen() {
         expenseLineId: urlExtra.expenseLineId || undefined,
         includeCancelled: showCancelled,
         hasNotes: filterHasNotesOnly || undefined,
+        vaultId: filterVaultId || undefined,
       });
       const rows = all.map(mapInvoiceToExportRow);
       const safeStart = String(dateFilter.startDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'start';
@@ -444,7 +449,7 @@ export default function InvoicesListScreen() {
     companyId, displayedTotal, dateFilter.startDate, dateFilter.endDate, dateFilter.label,
     kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
     urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs,
-    companyName, t, lang, showToast, filterHasNotesOnly,
+    companyName, t, lang, showToast, filterHasNotesOnly, filterVaultId,
   ]);
 
   // المجاميع الحقيقية من السيرفر (كل النتائج المُفلترة، ليس الصفحة فقط)
@@ -469,6 +474,7 @@ export default function InvoicesListScreen() {
         expenseLineId: urlExtra.expenseLineId || undefined,
         includeCancelled: showCancelled,
         hasNotes: filterHasNotesOnly || undefined,
+        vaultId: filterVaultId || undefined,
       });
       const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const rowsHtml = all.map((inv) => {
@@ -498,7 +504,7 @@ export default function InvoicesListScreen() {
     companyId, displayedTotal, dateFilter.startDate, dateFilter.endDate, dateFilter.label,
     kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
     urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs, t,
-    companyName, logoUrl, serverAll, fmt, showToast, filterHasNotesOnly,
+    companyName, logoUrl, serverAll, fmt, showToast, filterHasNotesOnly, filterVaultId,
   ]);
 
   const vaultRowLabel = useCallback((row) => {
@@ -687,6 +693,7 @@ export default function InvoicesListScreen() {
             urlExtra.categoryId || undefined, urlExtra.expenseLineId || undefined,
             true,
             filterHasNotesOnly || undefined,
+            filterVaultId || undefined,
           );
           return (res?.data?.items ?? []).map(formatInvoiceForExport);
         }}
@@ -879,6 +886,21 @@ export default function InvoicesListScreen() {
               <option value="">{t('allSuppliers')}</option>
               {(suppliers || []).map((s) => (
                 <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id}</option>
+              ))}
+            </Input>
+            <span className="noorix-exec-filters__icon" title={t('invoiceVaultColumn')} aria-hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M12 10v4M8 12h8"/></svg>
+            </span>
+            <Input
+              type="select"
+              value={filterVaultId}
+              onChange={(e) => { setFilterVaultId(e.target.value); setPage(1); }}
+              className="noorix-exec-filters__select"
+              aria-label={t('invoiceVaultColumn')}
+            >
+              <option value="">{t('invoicesFilterVaultAll')}</option>
+              {vaultsList.map((v) => (
+                <option key={v.id} value={v.id}>{vaultDisplayName(v, lang) || v.id}</option>
               ))}
             </Input>
           </div>

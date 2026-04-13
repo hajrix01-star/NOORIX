@@ -18,6 +18,8 @@ export default {
   invoiceKindHrExpense: { ar: 'إقامة/HR', en: 'Residency/HR' },
   invoiceNotesColumn: { ar: 'ملاحظة', en: 'Notes' },
   invoiceVaultColumn: { ar: 'الخزنة', en: 'Vault' },
+  /** فلتر قائمة الفواتير */
+  invoicesFilterVaultAll: { ar: 'كل الخزائن', en: 'All vaults' },
   /** تصدير Excel — عمود لكل خزينة (حتى {0} خزائن) */
   invoicesExportVaultSlotName: { ar: 'خزينة {0} — الاسم', en: 'Vault {0} — name' },
   invoicesExportVaultSlotType: { ar: 'خزينة {0} — نوع الخزنة', en: 'Vault {0} — vault type' },
