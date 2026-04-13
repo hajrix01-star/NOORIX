@@ -308,7 +308,7 @@ export default function InvoicesListScreen() {
   ], [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice, fmt]);
 
   const { suppliers } = useSuppliers(companyId);
-  const { vaultsList = [] } = useVaults({ companyId });
+  const { vaultsList = [], paymentVaults = [] } = useVaults({ companyId });
 
   const dayCloseDefaultYmd = useMemo(
     () => (dateFilter.endDate || dateFilter.startDate || '').slice(0, 10),
@@ -661,6 +661,7 @@ export default function InvoicesListScreen() {
           invoice={editingInvoice}
           suppliers={suppliers}
           companyId={companyId}
+          vaultsList={paymentVaults}
           onSaved={() => {
             invalidateOnFinancialMutation(queryClient);
             setEditingInvoice(null);

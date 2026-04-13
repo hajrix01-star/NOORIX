@@ -45,6 +45,10 @@ export default {
     en: 'Enter at least two vaults with valid amounts',
   },
   selectVault: { ar: 'اختر الخزنة', en: 'Select vault' },
+  invoiceEditVaultMultiHint: {
+    ar: 'كانت الفاتورة موزعة على أكثر من خزنة؛ عند الحفظ يُجمَّع المبلغ كاملاً في الخزنة المختارة ويُحدَّث دفتر الأستاذ.',
+    en: 'This invoice was split across vaults; saving consolidates the full amount into the selected vault and updates the ledger.',
+  },
   addSecondVaultBtn: { ar: '+ إضافة خزنة ثانية', en: '+ Add second vault' },
   secondVaultSelectLabel: { ar: 'الخزينة الثانية', en: 'Second vault' },
   removeSecondVaultBtn: { ar: 'إلغاء الخزنة الثانية', en: 'Remove second vault' },

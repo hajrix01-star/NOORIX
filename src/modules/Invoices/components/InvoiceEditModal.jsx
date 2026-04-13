@@ -1,13 +1,13 @@
 ﻿/**
  * InvoiceEditModal — نافذة تعديل الفاتورة
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { updateInvoice } from '../../../services/api';
-import { fmt } from '../../../utils/format';
+import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
 // بلا مورد نهائياً (رواتب وسلف — فواتير نظام داخلية)
@@ -15,8 +15,8 @@ const NO_SUPPLIER_KINDS = new Set(['salary', 'advance']);
 // مورد اختياري (مصاريف ثابتة وHR)
 const OPTIONAL_SUPPLIER_KINDS = new Set(['fixed_expense', 'hr_expense']);
 
-export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClose }) {
-  const { t } = useTranslation();
+export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }) {
+  const { t, lang } = useTranslation();
   const [form, setForm] = useState({
     supplierId: '',
     supplierInvoiceNumber: '',
@@ -26,12 +26,22 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
     taxAmount: '',
     transactionDate: '',
     notes: '',
+    vaultId: '',
   });
   const [error, setError] = useState('');
 
   const kind = invoice?.kind;
   const hasSupplier = !NO_SUPPLIER_KINDS.has(kind);           // purchase, expense, fixed_expense, hr_expense
   const supplierRequired = !NO_SUPPLIER_KINDS.has(kind) && !OPTIONAL_SUPPLIER_KINDS.has(kind); // purchase, expense فقط
+
+  const initialVaultKey = useMemo(() => {
+    if (!invoice) return '';
+    const allocs = invoice.vaultAllocations;
+    if (allocs?.length >= 1) return allocs[0].vaultId || '';
+    return invoice.vaultId || '';
+  }, [invoice]);
+
+  const isMultiVault = (invoice?.vaultAllocations?.length || 0) > 1;
 
   const saveMutation = useApiMutation({
     mutationFn: ({ id, body }) => updateInvoice(id, body, companyId),
@@ -48,6 +58,10 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
     const taxable = invoice.isTaxable !== false;
     const total = Number(invoice.totalAmount || 0);
     const { net, tax } = splitTaxFromTotalAsNumbers(total, taxable);
+    const resolvedVaultId =
+      invoice.vaultAllocations?.length >= 1
+        ? invoice.vaultAllocations[0].vaultId
+        : invoice.vaultId || '';
     setForm({
       supplierId: invoice.supplierId || '',
       supplierInvoiceNumber: invoice.supplierInvoiceNumber || invoice.invoiceNumber || '',
@@ -56,6 +70,8 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
       netAmount: net > 0 ? net.toFixed(2) : '',
       taxAmount: tax > 0 ? tax.toFixed(2) : '',
       transactionDate: invoice.transactionDate ? new Date(invoice.transactionDate).toISOString().slice(0, 10) : '',
+      notes: invoice.notes || '',
+      vaultId: resolvedVaultId || '',
     });
   }, [invoice]);
 
@@ -81,6 +97,10 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
       setError(t('totalMustBePositiveShort'));
       return;
     }
+    if (vaultsList.length > 0 && !String(form.vaultId || '').trim()) {
+      setError(t('selectVault'));
+      return;
+    }
     const body = {
       totalAmount: total,
       transactionDate: form.transactionDate || undefined,
@@ -96,6 +116,11 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
     } else {
       body.netAmount = total;
       body.taxAmount = 0;
+    }
+    if (form.vaultId) {
+      if (isMultiVault || form.vaultId !== initialVaultKey) {
+        body.vaultId = form.vaultId;
+      }
     }
     saveMutation.mutate({ id: invoice.id, body });
   }
@@ -127,7 +152,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
         </p>
 
         {error && (
-          <div className="p-2.5 rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
+          <div className="p-2.5 rounded-lg text-[13px] bg-noorix-bg-muted text-noorix-red">
             {error}
           </div>
         )}
@@ -189,6 +214,27 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, onSaved, onClo
           value={form.transactionDate}
           onChange={(e) => updateField('transactionDate', e.target.value)}
         />
+
+        {vaultsList.length > 0 && (
+          <div>
+            <Input
+              type="select"
+              label={t('invoiceVaultColumn')}
+              value={form.vaultId}
+              onChange={(e) => updateField('vaultId', e.target.value)}
+            >
+              <option value="">{t('selectVault')}</option>
+              {vaultsList.map((v) => (
+                <option key={v.id} value={v.id}>{vaultDisplayName(v, lang) || v.id}</option>
+              ))}
+            </Input>
+            {isMultiVault && (
+              <p className="text-[11px] text-noorix-muted m-0 mt-1">
+                {t('invoiceEditVaultMultiHint')}
+              </p>
+            )}
+          </div>
+        )}
 
         <Input
           label={t('notesLabel')}

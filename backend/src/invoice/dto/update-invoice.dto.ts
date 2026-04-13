@@ -1,5 +1,18 @@
-import { IsOptional, IsString, IsNumber, Min, IsIn, IsDateString, Allow, IsInt } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  IsIn,
+  IsDateString,
+  Allow,
+  IsInt,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
 import { Type } from 'class-transformer';
+import { InvoiceVaultSplitDto } from './invoice-vault-split.dto';
 
 export class UpdateInvoiceDto {
   @IsOptional()
@@ -54,6 +67,14 @@ export class UpdateInvoiceDto {
   @IsOptional()
   @IsString()
   vaultId?: string;
+
+  /** توزيع السداد على أكثر من خزنة — يتجاوز vaultId عند الإرسال */
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => InvoiceVaultSplitDto)
+  vaultSplits?: InvoiceVaultSplitDto[];
 
   @IsOptional()
   @IsString()

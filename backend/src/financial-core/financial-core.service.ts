@@ -369,6 +369,135 @@ export class FinancialCoreService {
     });
   }
 
+  /**
+   * إعادة بناء قيود الصرف وتخصيصات الخزنة عند تغيير الخزنة أو توزيع الخزائن من تعديل الفاتورة.
+   * يُستدعى داخل نفس transaction تحديث الفاتورة (بعد تحديث صف الفاتورة والمبالغ).
+   */
+  async rebuildOutflowInvoiceLedgerAfterVaultChange(
+    tx: TxClient,
+    companyId: string,
+    invoiceId: string,
+    opts: {
+      vaultId?: string | null;
+      vaultSplits?: Array<{ vaultId: string; amount: number }> | null;
+    },
+    callerUserId?: string,
+  ): Promise<void> {
+    const userId = this._resolveUserId(callerUserId);
+
+    const inv = await tx.invoice.findFirstOrThrow({
+      where: { id: invoiceId, companyId },
+      select: {
+        id: true,
+        tenantId: true,
+        kind: true,
+        status: true,
+        totalAmount: true,
+        netAmount: true,
+        taxAmount: true,
+        transactionDate: true,
+        entryDate: true,
+        dailySalesSummaryId: true,
+        employeeId: true,
+      },
+    });
+
+    if (inv.kind === 'sale' || inv.dailySalesSummaryId) {
+      return;
+    }
+    if (inv.status !== 'active') {
+      throw new BadRequestException('لا يمكن تعديل خزنة فاتورة غير نشطة.');
+    }
+
+    const hasVaultSplits = opts.vaultSplits != null && opts.vaultSplits.length > 0;
+    const hasVaultId =
+      opts.vaultId != null && String(opts.vaultId).trim() !== '';
+    if (!hasVaultSplits && !hasVaultId) {
+      throw new BadRequestException('حدد خزنة أو توزيع خزائن لتحديث القيود.');
+    }
+
+    const txDateStr = inv.transactionDate.toISOString().slice(0, 10);
+    await this.fiscalPeriod.assertPeriodOpenForDate(tx, companyId, inv.transactionDate);
+
+    const txDto: OutflowDto = {
+      companyId,
+      kind: inv.kind,
+      totalAmount: inv.totalAmount.toString(),
+      netAmount: inv.netAmount.toString(),
+      taxAmount: inv.taxAmount.toString(),
+      transactionDate: txDateStr,
+      ...(hasVaultSplits
+        ? {
+            vaultSplits: opts.vaultSplits!.map((s) => ({
+              vaultId: s.vaultId,
+              amount:  String(s.amount),
+            })),
+          }
+        : { vaultId: opts.vaultId! }),
+    };
+
+    const splits = await this._resolveOutflowVaultSplits(tx, companyId, txDto);
+
+    const first = await tx.ledgerEntry.findFirst({
+      where: {
+        companyId,
+        referenceId: invoiceId,
+        referenceType: { in: ['invoice', 'salary', 'advance'] },
+        status: 'active',
+      },
+      orderBy: { createdAt: 'asc' },
+      select: { entryDate: true, debitAccountId: true },
+    });
+    const entryDate = first?.entryDate ?? inv.entryDate;
+    const debitAccountId =
+      first?.debitAccountId ??
+      (await this._getDefaultExpenseAccount(tx, companyId, inv.kind));
+
+    const referenceType =
+      inv.kind === 'salary' ? 'salary' : inv.kind === 'advance' ? 'advance' : 'invoice';
+
+    await tx.invoiceVaultAllocation.deleteMany({ where: { invoiceId } });
+    await tx.ledgerEntry.deleteMany({
+      where: {
+        companyId,
+        referenceId: invoiceId,
+        referenceType: { in: ['invoice', 'salary', 'advance'] },
+        status: 'active',
+      },
+    });
+
+    for (const split of splits) {
+      const creditAccountId = await this._getVaultAccount(tx, companyId, split.vaultId);
+      validateJournalBalance([{ amount: split.amount }], [{ amount: split.amount }]);
+      await tx.ledgerEntry.create({
+        data: {
+          tenantId: inv.tenantId,
+          companyId,
+          debitAccountId,
+          creditAccountId,
+          amount: split.amount,
+          transactionDate: inv.transactionDate,
+          entryDate,
+          referenceType,
+          referenceId: invoiceId,
+          vaultId: split.vaultId,
+          employeeId: inv.employeeId ?? null,
+          createdById: userId,
+          status: 'active',
+        },
+      });
+
+      await tx.invoiceVaultAllocation.create({
+        data: {
+          tenantId: inv.tenantId,
+          invoiceId: inv.id,
+          vaultId: split.vaultId,
+          amount: split.amount,
+        },
+      });
+    }
+  }
+
   // ══════════════════════════════════════════════════════════
   // 2. INFLOW — دخل: المبيعات اليومية (ملخص بقنوات متعددة)
   // ══════════════════════════════════════════════════════════

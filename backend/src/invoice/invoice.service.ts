@@ -268,7 +268,11 @@ export class InvoiceService {
       if (dto.transactionDate !== undefined) updateData.transactionDate = new Date(dto.transactionDate);
       if (dto.settledAt       !== undefined) updateData.settledAt       = dto.settledAt ? new Date(dto.settledAt) : null;
       if (dto.settledAmount   !== undefined) updateData.settledAmount   = new Prisma.Decimal(dto.settledAmount);
-      if (dto.vaultId         !== undefined) updateData.vaultId         = dto.vaultId;
+      if (dto.vaultSplits !== undefined && dto.vaultSplits.length > 0) {
+        updateData.vaultId = dto.vaultSplits.length === 1 ? dto.vaultSplits[0].vaultId : null;
+      } else if (dto.vaultId !== undefined) {
+        updateData.vaultId = dto.vaultId;
+      }
       if (dto.paymentMethodId !== undefined) updateData.paymentMethodId = dto.paymentMethodId;
       if (dto.status          !== undefined) updateData.status          = dto.status;
       if (dto.notes           !== undefined) updateData.notes           = dto.notes;
@@ -306,6 +310,28 @@ export class InvoiceService {
           },
           data: { transactionDate: newDate },
         });
+      }
+
+      const vaultRebuildPayload =
+        dto.vaultSplits !== undefined && dto.vaultSplits.length > 0
+          ? {
+              vaultSplits: dto.vaultSplits.map((s) => ({
+                vaultId: s.vaultId,
+                amount:  Number(s.amount),
+              })),
+            }
+          : dto.vaultId !== undefined
+            ? { vaultId: dto.vaultId }
+            : null;
+
+      if (vaultRebuildPayload) {
+        await this.financialCore.rebuildOutflowInvoiceLedgerAfterVaultChange(
+          tx,
+          companyId,
+          id,
+          vaultRebuildPayload,
+          userId ?? undefined,
+        );
       }
 
       await tx.auditLog.create({
