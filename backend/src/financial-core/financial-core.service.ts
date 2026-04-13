@@ -382,6 +382,7 @@ export class FinancialCoreService {
       vaultSplits?: Array<{ vaultId: string; amount: number }> | null;
     },
     callerUserId?: string,
+    ledgerOpts?: { preserveDebitAccount?: boolean },
   ): Promise<void> {
     const userId = this._resolveUserId(callerUserId);
 
@@ -450,12 +451,178 @@ export class FinancialCoreService {
     });
     const entryDate = first?.entryDate ?? inv.entryDate;
     const debitAccountId =
-      first?.debitAccountId ??
-      (await this._getDefaultExpenseAccount(tx, companyId, inv.kind));
+      ledgerOpts?.preserveDebitAccount === false
+        ? await this._getDefaultExpenseAccount(tx, companyId, inv.kind)
+        : first?.debitAccountId ??
+          (await this._getDefaultExpenseAccount(tx, companyId, inv.kind));
 
     const referenceType =
       inv.kind === 'salary' ? 'salary' : inv.kind === 'advance' ? 'advance' : 'invoice';
 
+    await this._replaceOutflowInvoiceLedgerAndAllocations(
+      tx,
+      companyId,
+      inv,
+      invoiceId,
+      splits,
+      debitAccountId,
+      entryDate,
+      referenceType,
+      userId,
+    );
+  }
+
+  /**
+   * إعادة بناء قيود الصرف لتطابق مبالغ الفاتورة الحالية (بعد تعديل الإجمالي/الصافي/الضريبة أو نوع المصروف)
+   * دون تغيير توزيع الخزائن نسبياً عند التعدد؛ خزنة واحدة أو بلا تخصيصات تُحلّ كما في الإنشاء.
+   */
+  async rebuildOutflowInvoiceLedgerToMatchInvoice(
+    tx: TxClient,
+    companyId: string,
+    invoiceId: string,
+    callerUserId?: string,
+    ledgerOpts?: { preserveDebitAccount?: boolean },
+  ): Promise<void> {
+    const userId = this._resolveUserId(callerUserId);
+
+    const inv = await tx.invoice.findFirstOrThrow({
+      where: { id: invoiceId, companyId },
+      select: {
+        id: true,
+        tenantId: true,
+        kind: true,
+        status: true,
+        totalAmount: true,
+        netAmount: true,
+        taxAmount: true,
+        transactionDate: true,
+        entryDate: true,
+        dailySalesSummaryId: true,
+        employeeId: true,
+        vaultId: true,
+        vaultAllocations: {
+          orderBy: { id: 'asc' },
+          select:  { vaultId: true, amount: true },
+        },
+      },
+    });
+
+    if (inv.kind === 'sale' || inv.dailySalesSummaryId) {
+      return;
+    }
+    if (inv.status !== 'active') {
+      throw new BadRequestException('لا يمكن تعديل قيود فاتورة غير نشطة.');
+    }
+
+    await this.fiscalPeriod.assertPeriodOpenForDate(tx, companyId, inv.transactionDate);
+
+    const newTotal = new Prisma.Decimal(inv.totalAmount);
+    const allocs = inv.vaultAllocations ?? [];
+
+    let splits: Array<{ vaultId: string; amount: Prisma.Decimal }>;
+    if (allocs.length >= 2) {
+      splits = this._scaleVaultAllocationsToTotal(
+        allocs.map((a) => ({
+          vaultId: a.vaultId,
+          amount:  new Prisma.Decimal(a.amount),
+        })),
+        newTotal,
+      );
+    } else if (allocs.length === 1) {
+      splits = [{ vaultId: allocs[0].vaultId, amount: newTotal }];
+    } else {
+      const txDateStr = inv.transactionDate.toISOString().slice(0, 10);
+      const txDto: OutflowDto = {
+        companyId,
+        kind: inv.kind,
+        totalAmount: inv.totalAmount.toString(),
+        netAmount: inv.netAmount.toString(),
+        taxAmount: inv.taxAmount.toString(),
+        transactionDate: txDateStr,
+        ...(inv.vaultId ? { vaultId: inv.vaultId } : {}),
+      };
+      splits = await this._resolveOutflowVaultSplits(tx, companyId, txDto);
+    }
+
+    const first = await tx.ledgerEntry.findFirst({
+      where: {
+        companyId,
+        referenceId: invoiceId,
+        referenceType: { in: ['invoice', 'salary', 'advance'] },
+        status: 'active',
+      },
+      orderBy: { createdAt: 'asc' },
+      select: { entryDate: true, debitAccountId: true },
+    });
+    const entryDate = first?.entryDate ?? inv.entryDate;
+    const debitAccountId =
+      ledgerOpts?.preserveDebitAccount === false
+        ? await this._getDefaultExpenseAccount(tx, companyId, inv.kind)
+        : first?.debitAccountId ??
+          (await this._getDefaultExpenseAccount(tx, companyId, inv.kind));
+
+    const referenceType =
+      inv.kind === 'salary' ? 'salary' : inv.kind === 'advance' ? 'advance' : 'invoice';
+
+    await this._replaceOutflowInvoiceLedgerAndAllocations(
+      tx,
+      companyId,
+      inv,
+      invoiceId,
+      splits,
+      debitAccountId,
+      entryDate,
+      referenceType,
+      userId,
+    );
+  }
+
+  /** توزيع نسبي للمبالغ على الخزائن عند تعدد التخصيصات بعد تغيير إجمالي الفاتورة */
+  private _scaleVaultAllocationsToTotal(
+    rows: Array<{ vaultId: string; amount: Prisma.Decimal }>,
+    newTotal: Prisma.Decimal,
+  ): Array<{ vaultId: string; amount: Prisma.Decimal }> {
+    if (rows.length === 0) {
+      return [];
+    }
+    if (rows.length === 1) {
+      return [{ vaultId: rows[0].vaultId, amount: newTotal }];
+    }
+    const oldSum = rows.reduce((acc, r) => acc.plus(r.amount), new Prisma.Decimal(0));
+    if (oldSum.lte(0)) {
+      throw new BadRequestException('مجموع تخصيصات الخزنة السابقة غير صالح لتعديل المبلغ.');
+    }
+    const result: Array<{ vaultId: string; amount: Prisma.Decimal }> = [];
+    let acc = new Prisma.Decimal(0);
+    for (let i = 0; i < rows.length; i++) {
+      if (i === rows.length - 1) {
+        result.push({ vaultId: rows[i].vaultId, amount: newTotal.minus(acc) });
+      } else {
+        const raw = rows[i].amount.mul(newTotal).div(oldSum);
+        const rounded = new Prisma.Decimal(raw.toFixed(4));
+        result.push({ vaultId: rows[i].vaultId, amount: rounded });
+        acc = acc.plus(rounded);
+      }
+    }
+    return result;
+  }
+
+  private async _replaceOutflowInvoiceLedgerAndAllocations(
+    tx: TxClient,
+    companyId: string,
+    inv: {
+      tenantId: string;
+      id: string;
+      transactionDate: Date;
+      employeeId: string | null;
+    },
+    invoiceId: string,
+    splits: Array<{ vaultId: string; amount: Prisma.Decimal }>,
+    debitAccountId: string,
+    entryDate: Date,
+    referenceType: string,
+    userId: string,
+  ): Promise<void> {
     await tx.invoiceVaultAllocation.deleteMany({ where: { invoiceId } });
     await tx.ledgerEntry.deleteMany({
       where: {

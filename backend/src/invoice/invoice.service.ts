@@ -324,6 +324,16 @@ export class InvoiceService {
             ? { vaultId: dto.vaultId }
             : null;
 
+      const kindChanged =
+        dto.kind !== undefined && dto.kind !== oldInvoice.kind;
+
+      const monetaryChanged =
+        !oldInvoice.totalAmount.equals(newInvoice.totalAmount) ||
+        !oldInvoice.netAmount.equals(newInvoice.netAmount) ||
+        !oldInvoice.taxAmount.equals(newInvoice.taxAmount);
+
+      const ledgerSyncOpts = { preserveDebitAccount: !kindChanged } as const;
+
       if (vaultRebuildPayload) {
         await this.financialCore.rebuildOutflowInvoiceLedgerAfterVaultChange(
           tx,
@@ -331,6 +341,15 @@ export class InvoiceService {
           id,
           vaultRebuildPayload,
           userId ?? undefined,
+          ledgerSyncOpts,
+        );
+      } else if (monetaryChanged || kindChanged) {
+        await this.financialCore.rebuildOutflowInvoiceLedgerToMatchInvoice(
+          tx,
+          companyId,
+          id,
+          userId ?? undefined,
+          ledgerSyncOpts,
         );
       }
 

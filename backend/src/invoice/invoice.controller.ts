@@ -2,9 +2,10 @@
  * InvoiceController — فواتير المبيعات والمشتريات والمصروفات
  *
  * الصلاحيات:
- *   POST/PATCH → INVOICES_WRITE أو PURCHASES_WRITE
- *   GET        → INVOICES_READ  أو PURCHASES_READ
- *              (الفلترة بالـ kind تتم تلقائياً حسب ما يملكه المستخدم)
+ *   POST → INVOICES_WRITE أو PURCHASES_WRITE
+ *   PATCH (تعديل فاتورة) → المالك فقط
+ *   GET → INVOICES_READ أو PURCHASES_READ
+ *         (الفلترة بالـ kind تتم تلقائياً حسب ما يملكه المستخدم)
  */
 import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard }             from '@nestjs/passport';
@@ -133,7 +134,7 @@ export class InvoiceController {
   }
 
   @Patch(':id')
-  @RequireAnyPermission('INVOICES_WRITE', 'PURCHASES_WRITE')
+  @Roles('owner')
   async update(
     @Param('id')        id:        string,
     @Body()             dto:       UpdateInvoiceDto,

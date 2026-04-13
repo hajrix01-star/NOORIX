@@ -13,9 +13,10 @@ export const InvoiceActionsCell = memo(function InvoiceActionsCell({
 
   const canPrint = hasPermission(userRole, 'INVOICES_READ', userPermissions);
   const canEdit  = hasPermission(userRole, 'INVOICES_WRITE', userPermissions);
-  const canDel   = (userRole || '').toLowerCase() === 'owner';
+  const isOwner    = (userRole || '').toLowerCase() === 'owner';
+  const canDel   = isOwner;
   const canView  = !!onView && canPrint;
-  const showEdit = canEdit && row.status === 'active' && row.kind !== 'sale';
+  const showEdit = isOwner && row.status === 'active' && row.kind !== 'sale';
   const showDel  = canDel && !!onDelete;
   const showAny  = canPrint || canEdit || canDel || canView;
 
