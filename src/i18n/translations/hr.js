@@ -126,6 +126,26 @@ export default {
   addLeave: { ar: '+ إضافة إجازة', en: '+ Add leave' },
   editLeave: { ar: 'تعديل الإجازة', en: 'Edit leave' },
   leaveUpdated: { ar: 'تم تحديث الإجازة بنجاح', en: 'Leave updated successfully' },
+  leaveEditVoidSettlementTitle: {
+    ar: 'إلغاء تسوية الراتب المرتبطة',
+    en: 'Void linked salary settlement',
+  },
+  leaveEditVoidSettlementBody: {
+    ar:
+      'هذه الإجازة مرتبطة بتسوية راتب صادرة (فاتورة وصرف من الخزنة). لتطبيق التعديل على التواريخ أو النوع أو الحالة أو الموظف، سيتم إلغاء فاتورة التسوية وعكس القيود المحاسبية وحذف سجل التسوية من الإجازة. يمكنكم إعادة إصدار تسوية جديدة لاحقاً إن لزم.',
+    en:
+      'This leave has an issued salary settlement (invoice and vault payment). To apply changes to dates, type, status, or employee, the settlement invoice will be cancelled, ledger entries reversed, and the leave settlement record removed. You may issue a new settlement later if needed.',
+  },
+  deleteLeaveVoidSettlementConfirm: {
+    ar:
+      'هذه الإجازة لها تسوية راتب صادرة. عند الحذف سيتم إلغاء فاتورة التسوية وعكس القيود ثم حذف الإجازة. هل تريد المتابعة؟',
+    en:
+      'This leave has an issued salary settlement. Deleting will void the settlement invoice, reverse ledger entries, then remove the leave. Continue?',
+  },
+  leaveVoidConfirmProceed: {
+    ar: 'إلغاء التسوية ومواصلة الحفظ',
+    en: 'Void settlement and save',
+  },
   addResidency: { ar: '+ إضافة إقامة', en: '+ Add residency' },
   expiryDate: { ar: 'تاريخ الانتهاء', en: 'Expiry date' },
   residencyExpiringSoon: { ar: 'تنتهي خلال 90 يوم', en: 'Expiring within 90 days' },

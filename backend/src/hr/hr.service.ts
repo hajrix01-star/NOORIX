@@ -1137,7 +1137,71 @@ export class HRService {
     });
   }
 
-  async deleteLeave(id: string, companyId: string, userId?: string) {
+  /**
+   * إلغاء تسوية راتب الإجازة: حذف سجل التسوية + حركة ملف الموظف المرتبطة بفاتورة الراتب، ثم إلغاء الفاتورة وعكس القيود.
+   */
+  private async voidLeaveSalarySettlementForLeave(
+    leaveId: string,
+    companyId: string,
+    userId: string | undefined,
+    reason: string,
+  ): Promise<void> {
+    const st = await this.prisma.leaveSalarySettlement.findUnique({
+      where: { leaveId },
+    });
+    if (!st) return;
+
+    const inv = await this.prisma.invoice.findFirst({
+      where: { id: st.invoiceId, companyId },
+    });
+    if (!inv) {
+      throw new BadRequestException('فاتورة تسوية الراتب غير موجودة — يتطلب مراجعة يدوية.');
+    }
+    const invoiceId = st.invoiceId;
+    const invoiceNum = inv.invoiceNumber;
+    const employeeId = st.employeeId;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.leaveSalarySettlement.delete({ where: { leaveId } });
+      if (invoiceNum) {
+        await tx.employeeMovement.deleteMany({
+          where: {
+            companyId,
+            employeeId,
+            movementType: 'other',
+            notes: { contains: invoiceNum },
+          },
+        });
+      }
+    });
+
+    await this.financialCore.cancelOperation(
+      {
+        companyId,
+        referenceType: 'salary',
+        referenceId: invoiceId,
+        reason,
+      },
+      userId,
+    );
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'update',
+      entity: 'leave',
+      entityId: leaveId,
+      oldValue: { voidedSalarySettlement: true, invoiceId },
+      newValue: { reason },
+    });
+  }
+
+  async deleteLeave(
+    id: string,
+    companyId: string,
+    userId?: string,
+    voidSettlement?: boolean,
+  ) {
     const existing = await this.prisma.leave.findFirst({
       where: { id, companyId },
     });
@@ -1147,9 +1211,18 @@ export class HRService {
       where: { leaveId: id },
     });
     if (st) {
-      throw new BadRequestException(
-        'لا يمكن حذف إجازة مرتبطة بتسوية راتب مُصرفة. راجع الفواتير أو المحاسبة.',
-      );
+      if (voidSettlement) {
+        await this.voidLeaveSalarySettlementForLeave(
+          id,
+          companyId,
+          userId,
+          'حذف إجازة مرتبطة بتسوية راتب — إلغاء التسوية بموافقة المستخدم',
+        );
+      } else {
+        throw new BadRequestException(
+          'لا يمكن حذف إجازة مرتبطة بتسوية راتب مُصرفة. أرسل voidSettlement=true بعد تأكيد إلغاء التسوية، أو ألغِ الفاتورة من قسم الحسابات.',
+        );
+      }
     }
 
     await this.prisma.leave.delete({ where: { id } });
@@ -1213,7 +1286,8 @@ export class HRService {
   }
 
   /**
-   * تعديل إجازة (معتمدة أو غير معتمدة). ممنوع إن وُجدت تسوية راتب مُصرفة لهذه الإجازة.
+   * تعديل إجازة (معتمدة أو غير معتمدة).
+   * إن وُجدت تسوية راتب: تعديل الملاحظات فقط مسموح دون لمس التسوية؛ أي تغيير جوهري يتطلب voidSalarySettlement: true.
    */
   async updateLeave(
     id: string,
@@ -1229,9 +1303,26 @@ export class HRService {
       throw new NotFoundException(`الإجازة ${id} غير موجودة.`);
     }
     if (existing.salarySettlement) {
-      throw new BadRequestException(
-        'لا يمكن تعديل إجازة مرتبطة بتسوية راتب مُصرفة. راجع الفواتير أو المحاسبة.',
-      );
+      const structural =
+        dto.leaveType != null ||
+        dto.startDate != null ||
+        dto.endDate != null ||
+        dto.daysCount != null ||
+        dto.status != null ||
+        dto.employeeId != null;
+      if (structural && dto.voidSalarySettlement !== true) {
+        throw new BadRequestException(
+          'تعديل إجازة لها تسوية راتب صادرة يتطلب إلغاء التسوية أولاً: أرسل voidSalarySettlement: true بعد تأكيد المستخدم (يُلغى صرف الراتب وعكس القيود ثم يُحذف سجل التسوية).',
+        );
+      }
+      if (structural && dto.voidSalarySettlement === true) {
+        await this.voidLeaveSalarySettlementForLeave(
+          id,
+          companyId,
+          userId,
+          'تعديل إجازة بعد تسوية راتب — إلغاء التسوية بموافقة المستخدم',
+        );
+      }
     }
 
     const hasAny =
@@ -1351,9 +1442,18 @@ export class HRService {
         where: { leaveId: id },
       });
       if (st) {
-        throw new BadRequestException(
-          'لا يمكن رفض إجازة تم صرف تسوية راتب لها. راجع الفاتورة المالية أو ألغِ العملية من قسم الحسابات عند الحاجة.',
-        );
+        if (dto.voidSalarySettlement === true) {
+          await this.voidLeaveSalarySettlementForLeave(
+            id,
+            companyId,
+            userId,
+            'رفض إجازة بعد تسوية راتب — إلغاء التسوية بموافقة المستخدم',
+          );
+        } else {
+          throw new BadRequestException(
+            'لا يمكن رفض إجازة تم صرف تسوية راتب لها إلا بإلغاء التسوية: أرسل voidSalarySettlement: true بعد تأكيد المستخدم.',
+          );
+        }
       }
     }
 

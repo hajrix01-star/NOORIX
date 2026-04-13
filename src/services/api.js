@@ -1064,8 +1064,10 @@ export async function issueLeaveSalarySettlement(id, companyId, body = {}) {
   return apiPost(`/api/v1/hr/leaves/${id}/salary-settlement?companyId=${companyId}`, payload);
 }
 
-export async function deleteLeave(id, companyId) {
-  return apiDelete(`/api/v1/hr/leaves/${id}?companyId=${companyId}`);
+export async function deleteLeave(id, companyId, voidSettlement = false) {
+  let q = `companyId=${encodeURIComponent(companyId)}`;
+  if (voidSettlement) q += '&voidSettlement=true';
+  return apiDelete(`/api/v1/hr/leaves/${encodeURIComponent(id)}?${q}`);
 }
 
 export async function returnFromLeave(id, companyId, actualReturnDate) {

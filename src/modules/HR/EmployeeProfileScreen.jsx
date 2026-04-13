@@ -313,6 +313,7 @@ export default function EmployeeProfileScreen() {
     queryClient.invalidateQueries({ queryKey: ['employee', id] });
     queryClient.invalidateQueries({ queryKey: ['custom-allowances', companyId, id] });
     queryClient.invalidateQueries({ queryKey: ['leaves', companyId, id] });
+    queryClient.invalidateQueries({ queryKey: ['leave-salary-settlements', companyId] });
     queryClient.invalidateQueries({ queryKey: ['residencies', companyId, id] });
     queryClient.invalidateQueries({ queryKey: ['documents', companyId, id] });
     queryClient.invalidateQueries({ queryKey: ['invoices', companyId] });
@@ -635,7 +636,7 @@ export default function EmployeeProfileScreen() {
                     <HRActionsCell
                       row={row}
                       type="leave"
-                      onEdit={!row.salarySettlement ? () => setEditProfileLeave(row) : undefined}
+                      onEdit={() => setEditProfileLeave(row)}
                     />
                   ),
                 }]

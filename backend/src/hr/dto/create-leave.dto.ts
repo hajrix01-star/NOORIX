@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsIn,
   Min,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -47,6 +48,11 @@ export class UpdateLeaveStatusDto {
   @IsString()
   @IsIn(['pending', 'approved', 'rejected'])
   status: string;
+
+  /** عند رفض إجازة معتمدة وصُرفت لها تسوية راتب — يُلغى الصرف والفاتورة أولاً */
+  @IsOptional()
+  @IsBoolean()
+  voidSalarySettlement?: boolean;
 }
 
 /** تحديث جزئي لإجازة — يُرسل حقل واحد أو أكثر */
@@ -82,4 +88,12 @@ export class UpdateLeaveDto {
   @IsOptional()
   @IsString()
   employeeId?: string;
+
+  /**
+   * عند وجود تسوية راتب مُصرفة: إلزامي لأي تعديل يغيّر بيانات الإجازة الجوهرية
+   * (النوع، التواريخ، العدد، الحالة، الموظف). يُلغي فاتورة الراتب وعكس القيود ثم يحذف سجل التسوية.
+   */
+  @IsOptional()
+  @IsBoolean()
+  voidSalarySettlement?: boolean;
 }

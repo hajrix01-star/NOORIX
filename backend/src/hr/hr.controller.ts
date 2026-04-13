@@ -261,11 +261,17 @@ export class HRController {
   deleteLeave(
     @Param('id') id: string,
     @Query('companyId') queryCompanyId: string,
+    @Query('voidSettlement') voidSettlement: string | undefined,
     @Headers('x-company-id') headerCompanyId: string,
     @CurrentUser() user: JwtUser,
   ) {
     const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
-    return this.hrService.deleteLeave(id, companyId, user.sub);
+    return this.hrService.deleteLeave(
+      id,
+      companyId,
+      user.sub,
+      voidSettlement === 'true',
+    );
   }
 
   @Get('leave-salary-settlements')

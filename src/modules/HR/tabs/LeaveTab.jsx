@@ -49,13 +49,6 @@ function canShowLeaveReturnRow(row) {
   return t >= s && t <= e;
 }
 
-function canDeleteLeave(row) {
-  return !row.salarySettlement;
-}
-
-function canEditLeave(row) {
-  return !row.salarySettlement;
-}
 
 function canShowSalarySettlement(row) {
   return row.status === 'approved' && row.leaveType === 'annual' && !row.salarySettlement;
@@ -137,8 +130,10 @@ export default function LeaveTab() {
   }, [settlementPreview]);
 
   const deleteLeaveMutation = useApiMutation({
-    mutationFn: async (id) => {
-      const res = await deleteLeave(id, companyId);
+    mutationFn: async (payload) => {
+      const id = typeof payload === 'string' ? payload : payload.id;
+      const voidSettlement = typeof payload === 'object' && payload.voidSettlement;
+      const res = await deleteLeave(id, companyId, voidSettlement);
       rejectIfApiFailed(res, t('saveFailed'));
       return res;
     },
@@ -149,6 +144,7 @@ export default function LeaveTab() {
       ['movements', companyId],
       ['employees', companyId, false],
       ['employees', companyId],
+      { queryKey: ['invoices', companyId] },
     ],
     successToast: () => t('leaveDeleted'),
     errorToast: (e) => e?.message || t('saveFailed'),
@@ -217,13 +213,14 @@ export default function LeaveTab() {
         <HRActionsCell
           row={row}
           type="leave"
-          onEdit={canEditLeave(row) ? () => setEditLeave(row) : undefined}
+          onEdit={() => setEditLeave(row)}
           onReturnFromLeave={canShowLeaveReturnRow(row) ? () => setReturnRow(row) : undefined}
           onLeaveSalarySettlement={canShowSalarySettlement(row) ? () => setSettlementRow(row) : undefined}
-          onDelete={canDeleteLeave(row) ? () => {
+          onDelete={() => {
             if (!window.confirm(t('deleteLeaveConfirm'))) return;
-            deleteLeaveMutation.mutate(row.id);
-          } : undefined}
+            if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
+            deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
+          }}
         />
       ) },
   ], [t, deleteLeaveMutation]);
@@ -273,24 +270,21 @@ export default function LeaveTab() {
             {t('leaveSalarySettlement')}
           </Button>
         )}
-        {canEditLeave(row) && (
-          <Button variant="ghost" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setEditLeave(row)}>
-            {t('edit')}
-          </Button>
-        )}
-        {canDeleteLeave(row) && (
-          <Button
-            variant="danger"
-            size="sm"
-            className="w-full mt-2 min-h-[44px]"
-            onClick={() => {
-              if (!window.confirm(t('deleteLeaveConfirm'))) return;
-              deleteLeaveMutation.mutate(row.id);
-            }}
-          >
-            {t('delete')}
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setEditLeave(row)}>
+          {t('edit')}
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          className="w-full mt-2 min-h-[44px]"
+          onClick={() => {
+            if (!window.confirm(t('deleteLeaveConfirm'))) return;
+            if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
+            deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
+          }}
+        >
+          {t('delete')}
+        </Button>
       </div>
     );
   }, [t, deleteLeaveMutation]);
@@ -355,8 +349,11 @@ export default function LeaveTab() {
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['leaves', companyId] });
             queryClient.invalidateQueries({ queryKey: ['leaves', companyId, year] });
+            queryClient.invalidateQueries({ queryKey: ['leave-salary-settlements', companyId] });
             queryClient.invalidateQueries({ queryKey: ['employees', companyId, false] });
             queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
+            queryClient.invalidateQueries({ queryKey: ['invoices', companyId] });
+            queryClient.invalidateQueries({ queryKey: ['movements', companyId] });
             showToast(editLeave ? t('leaveUpdated') : t('leaveAdded'), 'success');
           }}
           onClose={() => {
