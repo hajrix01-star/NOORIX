@@ -47,4 +47,9 @@ export class UpdateLeaveStatusDto {
   @IsString()
   @IsIn(['pending', 'approved', 'rejected'])
   status: string;
+
+  /** خزنة الصرف عند الموافقة على إجازة سنوية (تسوية راتب). إن لم تُمرَّر تُستخدم أول خزنة متاحة. */
+  @IsOptional()
+  @IsString()
+  vaultId?: string;
 }

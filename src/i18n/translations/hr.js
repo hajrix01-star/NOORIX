@@ -280,6 +280,12 @@ export default {
     ar: 'خصم إجازة غير مدفوعة ({0} يوم): {1}',
     en: 'Unpaid leave deduction ({0} d): {1}',
   },
+  payrollLeaveSettlementHint: {
+    ar: 'صُرف راتب (تسوية تقويمية) لموظفين عند اعتماد إجازة سنوية في هذا الشهر — لن يُضافوا تلقائياً إلى المسيرة لتجنب الازدواج.',
+    en: 'Some employees were paid a calendar salary settlement when annual leave was approved this month — they are excluded from this run to avoid double payment.',
+  },
+  leaveSalarySettledBadge: { ar: 'تسوية راتب', en: 'Salary settled' },
+  leaveStatusUpdated: { ar: 'تم تحديث حالة الإجازة', en: 'Leave status updated' },
   overtimeWorkDaysPerMonth: { ar: 'أيام العمل لحساب الأوفر تايم (شهرياً)', en: 'Work days for monthly overtime' },
   overtimeWorkDaysHelp: {
     ar: '26 ≈ شهر 30 يوم مع ~4 أيام راحة (نمط شائع). 30 = دوام كل أيام الشهر. يُحفظ تلقائياً مع الموظف ويُستخدم في الملف والمسيرة.',

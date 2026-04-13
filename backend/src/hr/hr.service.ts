@@ -29,6 +29,9 @@ import type { CreateAllowanceDto } from './dto/create-allowance.dto';
 import type { CreateDeductionDto } from './dto/create-deduction.dto';
 import type { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
 import { toMoneyDecimal2 } from '../common/utils/money-decimal';
+import {
+  computeCalendarLeaveSalarySettlement,
+} from './utils/leave-salary-settlement.util';
 
 @Injectable()
 export class HRService {
@@ -822,8 +825,161 @@ export class HRService {
     }
     return this.prisma.leave.findMany({
       where,
-      include: { employee: true },
+      include: { employee: true, salarySettlement: true },
       orderBy: { startDate: 'desc' },
+    });
+  }
+
+  async findLeaveSalarySettlements(companyId: string, payrollMonthStr: string) {
+    const d = new Date(payrollMonthStr);
+    if (Number.isNaN(d.getTime())) {
+      throw new BadRequestException('تاريخ شهر المسيرة غير صالح.');
+    }
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return this.prisma.leaveSalarySettlement.findMany({
+      where: { companyId, payrollMonth: d },
+      include: {
+        employee: {
+          select: { id: true, name: true, nameEn: true, employeeSerial: true },
+        },
+        leave: { select: { id: true, startDate: true, endDate: true, leaveType: true } },
+        invoice: { select: { id: true, invoiceNumber: true, totalAmount: true, transactionDate: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * عند الموافقة على إجازة سنوية: صرف تسويم راتب تقويمي حتى يوم بداية الإجازة + فاتورة راتب + حركة في ملف الموظف.
+   * idempotency: لا يُكرَّر إن وُجد سجل تسوية لنفس الإجازة.
+   */
+  private async maybeIssueLeaveSalarySettlement(
+    leave: {
+      id: string;
+      employeeId: string;
+      companyId: string;
+      leaveType: string;
+      startDate: Date;
+    },
+    userId: string,
+    vaultId?: string,
+  ): Promise<void> {
+    const tenantId = TenantContext.getTenantId();
+    if (leave.leaveType !== 'annual') return;
+
+    const existingSet = await this.prisma.leaveSalarySettlement.findUnique({
+      where: { leaveId: leave.id },
+    });
+    if (existingSet) return;
+
+    const emp = await this.prisma.employee.findFirst({
+      where: { id: leave.employeeId, companyId: leave.companyId },
+      include: { customAllowances: true },
+    });
+    if (!emp) throw new BadRequestException('الموظف غير موجود.');
+    if (emp.status === 'terminated') {
+      throw new BadRequestException('لا يمكن صرف تسوية راتب لموظف منتهي الخدمة.');
+    }
+
+    const customSum = (emp.customAllowances ?? []).reduce(
+      (s, r) => s + Number(r.amount ?? 0),
+      0,
+    );
+
+    const { payrollMonth, daysInMonth, calendarDaysPaid, grossAmount } =
+      computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), customSum);
+
+    if (calendarDaysPaid <= 0 || grossAmount <= 0) {
+      throw new BadRequestException(
+        'لا يمكن احتساب تسوية راتب — تاريخ بداية الإجازة خارج نطاق العمل في الشهر أو المبلغ صفر.',
+      );
+    }
+
+    const dup = await this.prisma.leaveSalarySettlement.findFirst({
+      where: {
+        employeeId: emp.id,
+        payrollMonth,
+      },
+    });
+    if (dup) {
+      throw new BadRequestException(
+        'يوجد بالفعل تسوية راتب لنفس الموظف في نفس الشهر. لا يمكن تكرار الصرف.',
+      );
+    }
+
+    let vaultIdToUse = vaultId;
+    if (!vaultIdToUse) {
+      const v = await this.prisma.vault.findFirst({
+        where: {
+          companyId: leave.companyId,
+          isActive: true,
+          isArchived: false,
+          showAsPaymentMethod: true,
+        },
+        select: { id: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (!v) {
+        throw new BadRequestException(
+          'لا توجد خزنة نشطة. يرجى إنشاء خزنة أو تمرير vaultId عند الموافقة.',
+        );
+      }
+      vaultIdToUse = v.id;
+    }
+    await this.assertVaultsUsableForPayment(leave.companyId, [vaultIdToUse]);
+
+    const txDate = this.saudiDateYmd();
+    const amountStr = grossAmount.toFixed(2);
+    const ym = `${payrollMonth.getFullYear()}-${String(payrollMonth.getMonth() + 1).padStart(2, '0')}`;
+    const sd = new Date(leave.startDate);
+    const startStrFormatted = `${sd.getFullYear()}-${String(sd.getMonth() + 1).padStart(2, '0')}-${String(sd.getDate()).padStart(2, '0')}`;
+    const notes = `تسوية راتب حتى يوم السفر — إجازة سنوية من ${startStrFormatted} (${calendarDaysPaid}/${daysInMonth} يوم تقويمي، شهر ${ym})`;
+
+    const { invoice } = await this.financialCore.processOutflow(
+      {
+        companyId: leave.companyId,
+        employeeId: emp.id,
+        kind: 'salary',
+        totalAmount: amountStr,
+        netAmount: amountStr,
+        taxAmount: '0',
+        transactionDate: txDate,
+        vaultSplits: [{ vaultId: vaultIdToUse, amount: amountStr }],
+        notes,
+        idempotencyKey: `leave-salary-settlement:${leave.id}`,
+      },
+      userId,
+    );
+
+    await this.prisma.leaveSalarySettlement.create({
+      data: {
+        tenantId,
+        companyId: leave.companyId,
+        leaveId: leave.id,
+        employeeId: emp.id,
+        payrollMonth,
+        invoiceId: invoice.id,
+        grossAmount: new Prisma.Decimal(amountStr),
+        netAmount: new Prisma.Decimal(amountStr),
+        calendarDaysPaid,
+        daysInMonth,
+        transactionDate: new Date(`${txDate}T00:00:00.000Z`),
+      },
+    });
+
+    await this.prisma.employeeMovement.create({
+      data: {
+        tenantId,
+        companyId: leave.companyId,
+        employeeId: emp.id,
+        movementType: 'other',
+        amount: toMoneyDecimal2(grossAmount),
+        previousValue: null,
+        newValue: amountStr,
+        effectiveDate: new Date(`${txDate}T00:00:00.000Z`),
+        notes: `تسوية راتب إجازة سنوية (تقويمي) — ${calendarDaysPaid}/${daysInMonth} يوم — ${invoice.invoiceNumber}`,
+      },
     });
   }
 
@@ -875,10 +1031,44 @@ export class HRService {
     });
     if (!existing) throw new NotFoundException(`الإجازة ${id} غير موجودة.`);
 
+    if (dto.status === 'rejected' && existing.status === 'approved') {
+      const st = await this.prisma.leaveSalarySettlement.findUnique({
+        where: { leaveId: id },
+      });
+      if (st) {
+        throw new BadRequestException(
+          'لا يمكن رفض إجازة تم صرف تسوية راتب لها. راجع الفاتورة المالية أو ألغِ العملية من قسم الحسابات عند الحاجة.',
+        );
+      }
+    }
+
+    const transitioningToApproved =
+      dto.status === 'approved' && existing.status !== 'approved';
+
+    if (!transitioningToApproved) {
+      const updated = await this.prisma.leave.update({
+        where: { id },
+        data: { status: dto.status },
+        include: { employee: true, salarySettlement: true },
+      });
+
+      await this.audit.log({
+        companyId,
+        userId,
+        action: 'update',
+        entity: 'leave',
+        entityId: id,
+        oldValue: { status: existing.status },
+        newValue: { status: dto.status },
+      });
+
+      return updated;
+    }
+
     const updated = await this.prisma.leave.update({
       where: { id },
-      data: { status: dto.status },
-      include: { employee: true },
+      data: { status: 'approved' },
+      include: { employee: true, salarySettlement: true },
     });
 
     await this.audit.log({
@@ -891,7 +1081,30 @@ export class HRService {
       newValue: { status: dto.status },
     });
 
-    return updated;
+    try {
+      await this.maybeIssueLeaveSalarySettlement(
+        {
+          id: updated.id,
+          employeeId: updated.employeeId,
+          companyId: updated.companyId,
+          leaveType: updated.leaveType,
+          startDate: updated.startDate,
+        },
+        userId ?? '',
+        dto.vaultId,
+      );
+    } catch (err) {
+      await this.prisma.leave.update({
+        where: { id },
+        data: { status: existing.status },
+      });
+      throw err;
+    }
+
+    return await this.prisma.leave.findFirst({
+      where: { id },
+      include: { employee: true, salarySettlement: true },
+    });
   }
 
   // ══════════════════════════════════════════════════════════

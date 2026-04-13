@@ -1033,8 +1033,13 @@ export async function getLeaves(companyId, employeeId, year) {
 export async function createLeave(body) {
   return apiPost('/api/v1/hr/leaves', body);
 }
-export async function updateLeaveStatus(id, companyId, status) {
-  return apiPatch(`/api/v1/hr/leaves/${id}/status?companyId=${companyId}`, { status });
+export async function updateLeaveStatus(id, companyId, status, vaultId) {
+  const body = vaultId ? { status, vaultId } : { status };
+  return apiPatch(`/api/v1/hr/leaves/${id}/status?companyId=${companyId}`, body);
+}
+
+export async function getLeaveSalarySettlements(companyId, payrollMonth) {
+  return apiGet('/api/v1/hr/leave-salary-settlements', { companyId, payrollMonth });
 }
 
 export async function getResidencies(companyId, employeeId) {

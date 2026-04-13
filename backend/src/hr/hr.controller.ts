@@ -204,6 +204,17 @@ export class HRController {
     return this.hrService.updateLeaveStatus(id, dto, companyId, user.sub);
   }
 
+  @Get('leave-salary-settlements')
+  @RequirePermission('HR_READ')
+  findLeaveSalarySettlements(
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+    @Query('payrollMonth') payrollMonth: string,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    return this.hrService.findLeaveSalarySettlements(companyId, payrollMonth);
+  }
+
   // ══════════════════════════════════════════════════════════
   // RESIDENCIES
   // ══════════════════════════════════════════════════════════

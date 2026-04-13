@@ -421,6 +421,7 @@ model Employee {
   movements       EmployeeMovement[]
   customAllowances EmployeeCustomAllowance[]
   deductions      EmployeeDeduction[]
+  leaveSalarySettlements LeaveSalarySettlement[]
 
   @@unique([companyId, employeeSerial])
   @@index([tenantId])
@@ -524,12 +525,40 @@ model Leave {
 
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  salarySettlement LeaveSalarySettlement?
 
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, employeeId])
   @@index([companyId, startDate])
   @@map("leaves")
+}
+
+/// تسوية راتب تقويمية عند الموافقة على إجازة سنوية (صرف فوري؛ تُستبعد من مسيرة نهاية الشهر)
+model LeaveSalarySettlement {
+  id               String   @id @default(cuid())
+  tenantId         String   @map("tenant_id")
+  companyId        String   @map("company_id")
+  leaveId          String   @unique @map("leave_id")
+  employeeId       String   @map("employee_id")
+  payrollMonth     DateTime @map("payroll_month") // أول يوم من الشهر المعني
+  invoiceId        String   @unique @map("invoice_id")
+  grossAmount      Decimal  @map("gross_amount") @db.Decimal(18, 4)
+  netAmount        Decimal  @map("net_amount") @db.Decimal(18, 4)
+  calendarDaysPaid Int      @map("calendar_days_paid")
+  daysInMonth      Int      @map("days_in_month")
+  transactionDate  DateTime @map("transaction_date")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  leave    Leave    @relation(fields: [leaveId], references: [id], onDelete: Restrict)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  invoice  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, payrollMonth])
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, payrollMonth])
+  @@map("leave_salary_settlements")
 }
 
 // ── الإقامات ───────────────────────────────────────────────
@@ -860,6 +889,7 @@ model Invoice {
   expenseLine   ExpenseLine?        @relation(fields: [expenseLineId], references: [id], onDelete: SetNull)
   dailySalesSummary DailySalesSummary? @relation(fields: [dailySalesSummaryId], references: [id], onDelete: SetNull)
   vaultAllocations InvoiceVaultAllocation[]
+  leaveSalarySettlement LeaveSalarySettlement?
 
   @@unique([companyId, invoiceNumber])
   @@index([tenantId])

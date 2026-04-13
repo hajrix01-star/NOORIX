@@ -11,6 +11,7 @@ import {
   getLeaves,
   getPayrollRun,
   getPayrollRuns,
+  getLeaveSalarySettlements,
   createPayrollRun,
   updatePayrollRun,
   throwIfApiFailed,
@@ -156,6 +157,24 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     enabled: !!cid,
   });
 
+  const { data: leaveSalarySettlements = [] } = useQuery({
+    queryKey: ['leave-salary-settlements', cid, payrollMonth],
+    queryFn: async () => {
+      const res = await getLeaveSalarySettlements(cid, payrollMonth || defaultMonth);
+      if (!res?.success) return [];
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    enabled: !!cid && !!payrollMonth,
+  });
+
+  const leaveSettledEmployeeIds = useMemo(() => {
+    const set = new Set();
+    for (const s of leaveSalarySettlements) {
+      if (s?.employeeId) set.add(s.employeeId);
+    }
+    return set;
+  }, [leaveSalarySettlements]);
+
   const existingMonthSet = useMemo(() => {
     const set = new Set();
     (existingRuns || []).forEach((r) => {
@@ -198,8 +217,11 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   const eligibleEmployees = useMemo(() => {
     const pm = payrollMonth || defaultMonth;
-    return activeEmployees.filter((e) => getEmploymentProrationInMonth(e, pm).factor > 0);
-  }, [activeEmployees, payrollMonth, defaultMonth]);
+    return activeEmployees.filter((e) => {
+      if (leaveSettledEmployeeIds.has(e.id)) return false;
+      return getEmploymentProrationInMonth(e, pm).factor > 0;
+    });
+  }, [activeEmployees, payrollMonth, defaultMonth, leaveSettledEmployeeIds]);
 
   const displayEmployees = useMemo(() => {
     const map = new Map();
@@ -541,6 +563,12 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
             </div>
           </div>
         </div>
+
+        {leaveSettledEmployeeIds.size > 0 && (
+          <div className="text-[12px] text-noorix-muted bg-noorix-bg-muted border border-noorix-border rounded-lg px-3 py-2 mb-1 shrink-0">
+            {t('payrollLeaveSettlementHint')}
+          </div>
+        )}
 
         <div className="flex items-center justify-between gap-2 flex-wrap pt-2 pb-1.5 shrink-0">
           <span className="text-[13px] font-bold">{t('employeesList')} ({items.length})</span>

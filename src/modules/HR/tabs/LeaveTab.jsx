@@ -49,9 +49,14 @@ export default function LeaveTab() {
   });
 
   const updateStatusMutation = useApiMutation({
-    mutationFn: ({ id, status }) => updateLeaveStatus(id, companyId, status),
-    invalidateQueries: [['leaves', companyId]],
-    successToast: () => t('leaveAdded'),
+    mutationFn: ({ id, status, vaultId }) => updateLeaveStatus(id, companyId, status, vaultId),
+    invalidateQueries: [
+      ['leaves', companyId, year],
+      ['leaves', companyId],
+      ['leave-salary-settlements', companyId],
+      ['movements', companyId],
+    ],
+    successToast: () => t('leaveStatusUpdated'),
     errorToast: (e) => e?.message || t('saveFailed'),
   });
 
@@ -81,9 +86,16 @@ export default function LeaveTab() {
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'daysCount', label: t('daysCount'), numeric: true, sortable: true, width: 90, minWidth: 85,
       render: (v) => <span className="nx-cell-num">{v ?? '—'}</span> },
-    { key: 'status', label: t('status'), width: 120, minWidth: 110,
-      render: (v) => (
-        <Badge {...Badge.fromStatus(v, leaveStatusMap)} size="sm" />
+    { key: 'status', label: t('status'), width: 140, minWidth: 130,
+      render: (v, row) => (
+        <div className="flex flex-wrap items-center gap-1 justify-center">
+          <Badge {...Badge.fromStatus(v, leaveStatusMap)} size="sm" />
+          {row.salarySettlement && (
+            <span className="text-[10px] font-semibold text-noorix-green whitespace-nowrap">
+              {t('leaveSalarySettledBadge')}
+            </span>
+          )}
+        </div>
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
@@ -115,6 +127,9 @@ export default function LeaveTab() {
         <div className="text-[13px] text-noorix-muted mb-2 text-end">
           {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
         </div>
+        {row.salarySettlement && (
+          <div className="text-[11px] font-semibold text-noorix-green text-end mb-1">{t('leaveSalarySettledBadge')}</div>
+        )}
         <div className="nx-mc__grid nx-mc__grid--3 mb-2.5">
           <div>
             <div className="nx-mc__stat-label">{t('startDate')}</div>
