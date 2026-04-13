@@ -128,12 +128,9 @@ export class HRService {
     return run;
   }
 
+  /** YYYY-MM-DD بتوقيت السعودية — يجب أن يطابق منطق dateToSaudiYmd لتواريخ الإجازة المخزّنة */
   private saudiDateYmd(): string {
-    const d = nowSaudi();
-    const y = d.getFullYear();
-    const mo = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${mo}-${day}`;
+    return this.dateToSaudiYmd(new Date());
   }
 
   /** YYYY-MM-DD بتوقيت السعودية لتاريخ مخزّن. */
