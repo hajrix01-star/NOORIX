@@ -34,7 +34,13 @@ const PAGE_SIZE = 50;
 
 /** عرض قنوات البيع في الجدول والجوال — شرائح واضحة بدل نص مفصول بـ | */
 function SalesChannelsChips({ channels, lang }) {
-  const list = Array.isArray(channels) ? channels : [];
+  const list = Array.isArray(channels)
+    ? [...channels].sort(
+        (a, b) =>
+          (a.vault?.sortOrder ?? 0) - (b.vault?.sortOrder ?? 0) ||
+          String(a.vault?.nameAr || '').localeCompare(String(b.vault?.nameAr || ''), 'ar'),
+      )
+    : [];
   if (list.length === 0) {
     return <span className="text-[12px] text-noorix-muted">—</span>;
   }

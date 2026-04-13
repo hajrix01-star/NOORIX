@@ -110,8 +110,12 @@ export class SalesService {
         take:    size,
         include: {
           channels: {
+            orderBy: [
+              { vault: { sortOrder: 'asc' } },
+              { vault: { nameAr: 'asc' } },
+            ],
             include: {
-              vault: { select: { nameAr: true, type: true, paymentMethod: true } },
+              vault: { select: { nameAr: true, type: true, paymentMethod: true, sortOrder: true } },
             },
           },
           createdBy: { select: { nameAr: true } },

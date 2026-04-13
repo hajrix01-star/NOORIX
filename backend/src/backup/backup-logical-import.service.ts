@@ -200,6 +200,9 @@ export class BackupLogicalImportService {
               showAsPaymentMethod: (v as { showAsPaymentMethod?: boolean }).showAsPaymentMethod !== false,
               paymentMethod: (v.paymentMethod as string | null) ?? null,
               notes: (v.notes as string | null) ?? null,
+              sortOrder: typeof (v as { sortOrder?: unknown }).sortOrder === 'number'
+                ? ((v as { sortOrder: number }).sortOrder)
+                : 0,
               createdAt: ddate(v.createdAt),
               updatedAt: ddate(v.updatedAt),
             },

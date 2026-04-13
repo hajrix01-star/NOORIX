@@ -11,6 +11,7 @@ import VaultCard          from './components/VaultCard';
 import VaultFormModal     from './components/VaultFormModal';
 import VaultTransactionsModal from './components/VaultTransactionsModal';
 import VaultTransferModal from './components/VaultTransferModal';
+import { VaultReorderModal } from './components/VaultReorderModal';
 import { Button, ScreenShell, FmtNum } from '../../ui';
 
 export default function TreasuryScreen() {
@@ -24,6 +25,7 @@ export default function TreasuryScreen() {
   const [editVault,       setEditVault]      = useState(null);
   const [showAddForm,     setShowAddForm]    = useState(false);
   const [showTransfer,    setShowTransfer]   = useState(false);
+  const [showReorder,     setShowReorder]    = useState(false);
   const [saveError,       setSaveError]      = useState('');
 
   const dateFilter = useDateFilter();
@@ -41,12 +43,14 @@ export default function TreasuryScreen() {
     update: updateMut,
     archive: archiveMut,
     remove: removeMut,
+    reorder: reorderMut,
   } = useVaults({ companyId, includeArchived, startDate, endDate });
 
   useEffect(() => {
     setSelectedVault(null);
     setEditVault(null);
     setShowAddForm(false);
+    setShowReorder(false);
     setSaveError('');
   }, [companyId]);
 
@@ -72,8 +76,16 @@ export default function TreasuryScreen() {
     });
   };
 
-  const salesChannels  = useMemo(() => vaultsList.filter((v) => v.isActive !== false && v.isSalesChannel && !v.isArchived), [vaultsList]);
-  const otherVaults    = useMemo(() => vaultsList.filter((v) => v.isActive !== false && !v.isSalesChannel && !v.isArchived), [vaultsList]);
+  const cmpVaultOrder = (a, b) =>
+    (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || String(a.nameAr).localeCompare(String(b.nameAr), 'ar');
+  const salesChannels  = useMemo(
+    () => vaultsList.filter((v) => v.isActive !== false && v.isSalesChannel && !v.isArchived).sort(cmpVaultOrder),
+    [vaultsList],
+  );
+  const otherVaults    = useMemo(
+    () => vaultsList.filter((v) => v.isActive !== false && !v.isSalesChannel && !v.isArchived).sort(cmpVaultOrder),
+    [vaultsList],
+  );
   const archivedVaults = useMemo(
     () => includeArchived ? vaultsList.filter((v) => v.isActive !== false && v.isArchived) : [],
     [vaultsList, includeArchived],
@@ -124,6 +136,9 @@ export default function TreasuryScreen() {
             <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
             {t('showArchived')}
           </label>
+          <Button variant="ghost" size="sm" onClick={() => setShowReorder(true)} disabled={!hasCompany}>
+            {t('vaultReorderTitle')}
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowTransfer(true)} disabled={!hasCompany}>
             {t('vaultTransferOpen')}
           </Button>
@@ -241,6 +256,24 @@ export default function TreasuryScreen() {
           startDate={startDate}
           endDate={endDate}
           onClose={() => setShowTransfer(false)}
+        />
+      )}
+
+      {showReorder && hasCompany && (
+        <VaultReorderModal
+          open={showReorder}
+          onClose={() => setShowReorder(false)}
+          vaultsList={vaultsList}
+          isSaving={reorderMut.isPending}
+          onApply={(vaultIds) => {
+            reorderMut.mutate(vaultIds, {
+              onSuccess: () => {
+                setShowReorder(false);
+                notify(t('vaultReorderSuccess'));
+              },
+              onError: (e) => notify(e?.message || t('updateFailed'), 'error'),
+            });
+          }}
         />
       )}
 

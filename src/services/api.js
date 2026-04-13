@@ -907,6 +907,10 @@ export async function getVaultTransactions(vaultId, companyId, startDate, endDat
   return apiGet(`/api/v1/vaults/${vaultId}/transactions`, params);
 }
 export async function updateVault(id, body) { return apiPatch(`/api/v1/vaults/${id}`, body); }
+/** ترتيب الخزائن النشطة — الجسم: { vaultIds: string[] } */
+export async function reorderVaults(vaultIds) {
+  return apiPatch('/api/v1/vaults/reorder', { vaultIds });
+}
 export async function archiveVault(id) { return apiPatch(`/api/v1/vaults/${id}/archive`, {}); }
 export async function deleteVault(id) { return apiDelete(`/api/v1/vaults/${id}`); }
 export async function createVault(body) { return apiPost('/api/v1/vaults', body); }

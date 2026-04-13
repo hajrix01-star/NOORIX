@@ -21,6 +21,11 @@ export const updateVaultSchema = z.object({
   showAsPaymentMethod: z.boolean().optional(),
   paymentMethod:  z.string().optional().nullable(),
   notes:          z.string().optional().nullable(),
+  sortOrder:      z.number().int().min(0).optional(),
+});
+
+export const reorderVaultsSchema = z.object({
+  vaultIds: z.array(z.string().min(1)).min(1),
 });
 
 export type CreateVaultDto = z.infer<typeof createVaultSchema>;

@@ -808,6 +808,8 @@ model Vault {
   showAsPaymentMethod Boolean @default(true) @map("show_as_payment_method")
   paymentMethod  String?  @map("payment_method")
   notes          String?
+  /// ترتيب العرض في الخزائن، قنوات المبيعات، وقوائم السداد (الأصغر يظهر أولاً)
+  sortOrder      Int      @default(0) @map("sort_order")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt      @map("updated_at")
 
@@ -823,6 +825,7 @@ model Vault {
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, isArchived])
+  @@index([companyId, sortOrder])
   @@map("vaults")
 }
 

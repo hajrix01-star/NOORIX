@@ -40,13 +40,15 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
   }, [summary]);
 
   const mergedSalesChannels = useMemo(() => {
-    const live = Array.isArray(salesChannels) ? salesChannels : [];
+    const live = Array.isArray(salesChannels) ? [...salesChannels] : [];
+    live.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || String(a.nameAr || '').localeCompare(String(b.nameAr || ''), 'ar'));
     const legacy = (summary?.channels || [])
       .filter((c) => c?.vaultId && !live.some((v) => v.id === c.vaultId))
       .map((c) => ({
         id: c.vaultId,
         nameAr: c.vault?.nameAr || 'قناة سابقة',
         type: c.vault?.type || 'cash',
+        sortOrder: c.vault?.sortOrder ?? 9999,
         isLegacyDisabled: true,
       }));
     return [...live, ...legacy];

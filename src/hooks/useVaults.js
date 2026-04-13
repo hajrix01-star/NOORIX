@@ -9,6 +9,7 @@ import {
   getPaymentVaults,
   createVault,
   updateVault,
+  reorderVaults,
   archiveVault,
   deleteVault,
   throwIfApiFailed,
@@ -51,6 +52,7 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ['vaults', companyId] }),
       queryClient.invalidateQueries({ queryKey: ['payment-vaults', companyId] }),
+      queryClient.invalidateQueries({ queryKey: ['sales-channels', companyId] }),
     ]);
 
   const createMutation = useApiMutation({
@@ -77,6 +79,12 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
     showErrorToast: false,
   });
 
+  const reorderMutation = useApiMutation({
+    mutationFn: (vaultIds) => reorderVaults(vaultIds),
+    onSuccess: invalidate,
+    showErrorToast: false,
+  });
+
   return {
     vaultsList,
     paymentVaults,
@@ -87,5 +95,6 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
     update:  updateMutation,
     archive: archiveMutation,
     remove:  deleteMutation,
+    reorder: reorderMutation,
   };
 }

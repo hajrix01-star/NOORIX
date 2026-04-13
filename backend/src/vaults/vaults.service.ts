@@ -37,7 +37,7 @@ export class VaultsService {
     // ── 1. جلب الخزائن ──────────────────────────────────────
     const vaults = await this.prisma.vault.findMany({
       where,
-      orderBy: [{ isArchived: 'asc' }, { nameAr: 'asc' }],
+      orderBy: [{ isArchived: 'asc' }, { sortOrder: 'asc' }, { nameAr: 'asc' }],
       include: { account: { select: { id: true, code: true, nameAr: true } } },
     });
 
@@ -123,7 +123,7 @@ export class VaultsService {
         isArchived: false,
         isSalesChannel: true,
       },
-      orderBy: [{ nameAr: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
       include: { account: { select: { id: true, code: true, nameAr: true } } },
     });
 
@@ -138,7 +138,7 @@ export class VaultsService {
         isArchived: false,
         showAsPaymentMethod: true,
       },
-      orderBy: [{ nameAr: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
       include: { account: { select: { id: true, code: true, nameAr: true } } },
     });
 
@@ -156,7 +156,7 @@ export class VaultsService {
 
     const vaults = await this.prisma.vault.findMany({
       where,
-      orderBy: [{ isArchived: 'asc' }, { nameAr: 'asc' }],
+      orderBy: [{ isArchived: 'asc' }, { sortOrder: 'asc' }, { nameAr: 'asc' }],
       include: { account: { select: { id: true, code: true, nameAr: true } } },
     });
     if (vaults.length === 0) return [];
@@ -436,6 +436,12 @@ export class VaultsService {
         .reduce((a, b) => Math.max(a, b), 0);
       const code = `V-${String(maxNum + 1).padStart(3, '0')}`;
 
+      const sortAgg = await tx.vault.aggregate({
+        where: { companyId: dto.companyId, isActive: true, isArchived: false },
+        _max:  { sortOrder: true },
+      });
+      const nextSortOrder = (sortAgg._max.sortOrder ?? -1) + 1;
+
       const account = await tx.account.create({
         data: {
           tenantId,
@@ -459,6 +465,7 @@ export class VaultsService {
           showAsPaymentMethod: dto.showAsPaymentMethod ?? true,
           paymentMethod:  normalizedPaymentMethod,
           notes:          (dto.notes ?? '').trim() || null,
+          sortOrder:      nextSortOrder,
         },
         include: { account: { select: { id: true, code: true, nameAr: true } } },
       });
@@ -492,6 +499,7 @@ export class VaultsService {
     showAsPaymentMethod?: boolean;
     paymentMethod?:  string | null;
     notes?:          string | null;
+    sortOrder?:      number;
   }, userId?: string) {
     const tenantId = TenantContext.tryGetTenantId() ?? '';
     const vault    = await this.prisma.vault.findFirst({ where: { id, companyId } });
@@ -513,6 +521,7 @@ export class VaultsService {
         ...(data.showAsPaymentMethod !== undefined ? { showAsPaymentMethod: data.showAsPaymentMethod } : {}),
         ...(normalizedPaymentMethod !== undefined ? { paymentMethod: normalizedPaymentMethod } : {}),
         ...(data.notes          !== undefined ? { notes:          data.notes?.trim() || null  } : {}),
+        ...(data.sortOrder     !== undefined ? { sortOrder:      data.sortOrder } : {}),
       },
       include: { account: { select: { id: true, code: true, nameAr: true } } },
     });
@@ -532,6 +541,37 @@ export class VaultsService {
     });
 
     return updated;
+  }
+
+  /**
+   * ترتيب الخزائن النشطة غير المؤرشفة — يُحدّث sortOrder بحيث يطابق ترتيب المعرفات المرسلة.
+   */
+  async reorder(companyId: string, vaultIds: string[]) {
+    const existing = await this.prisma.vault.findMany({
+      where: { companyId, isActive: true, isArchived: false },
+      select: { id: true },
+    });
+    if (existing.length === 0) {
+      throw new BadRequestException('لا توجد خزائن للترتيب.');
+    }
+    const setIds = new Set(existing.map((v) => v.id));
+    if (vaultIds.length !== setIds.size) {
+      throw new BadRequestException('يجب أن يتضمّن الترتيب كل الخزائن النشطة غير المؤرشفة دون زيادة أو نقص.');
+    }
+    for (const id of vaultIds) {
+      if (!setIds.has(id)) {
+        throw new BadRequestException('معرف خزنة غير صالح أو لا ينتمي للخزائن النشطة.');
+      }
+    }
+    await this.prisma.$transaction(
+      vaultIds.map((id, i) =>
+        this.prisma.vault.update({
+          where: { id },
+          data:  { sortOrder: i },
+        }),
+      ),
+    );
+    return { success: true };
   }
 
   /**

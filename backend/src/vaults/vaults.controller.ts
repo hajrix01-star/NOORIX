@@ -19,7 +19,7 @@ import { CompanyAccessGuard }    from '../auth/guards/company-access.guard';
 import { RolesGuard }            from '../auth/guards/roles.guard';
 import { CurrentUser, JwtUser }  from '../auth/decorators/current-user.decorator';
 import { RequirePermission }     from '../auth/decorators/require-permission.decorator';
-import { createVaultSchema, updateVaultSchema } from './dto/create-vault.dto';
+import { createVaultSchema, reorderVaultsSchema, updateVaultSchema } from './dto/create-vault.dto';
 import { vaultTransferSchema }   from './dto/vault-transfer.dto';
 import { VaultsService }         from './vaults.service';
 import { preferQueryCompanyId }  from '../common/utils/company-request';
@@ -121,6 +121,28 @@ export class VaultsController {
     const s = startDate as string;
     const e = endDate as string;
     return this.vaultsService.findOneWithTransactions(id, companyId, s, e, pageNum, size);
+  }
+
+  @Patch('reorder')
+  @RequirePermission('VAULTS_WRITE')
+  async reorderVaults(
+    @Body()                  body:             unknown,
+    @Query('companyId')      queryCompanyId:   string,
+    @Headers('x-company-id') headerCompanyId:  string,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    if (!companyId) {
+      throw new BadRequestException('معرف الشركة مطلوب');
+    }
+    try {
+      const dto = reorderVaultsSchema.parse(body);
+      return this.vaultsService.reorder(companyId, dto.vaultIds);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات الترتيب غير صحيحة');
+      }
+      throw e;
+    }
   }
 
   @Post()
