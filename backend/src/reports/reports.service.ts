@@ -1454,35 +1454,53 @@ export class ReportsService {
       supplierCategoryBreakdown.sort((a, b) => b.count - a.count);
     }
 
-    /** مبيعات أصناف الطلبات حسب فئة المنتج (order_categories) — نفس نطاق التواريخ */
-    const salesCategoryRows = await this.prisma.$queryRaw<
-      { category_id: string | null; name_ar: string; name_en: string | null; total: unknown }[]
-    >`
-      SELECT
-        op.category_id AS category_id,
-        COALESCE(MAX(oc.name_ar), 'غير مصنّف') AS name_ar,
-        MAX(oc.name_en) AS name_en,
-        SUM(oi.amount) AS total
-      FROM order_items oi
-      INNER JOIN orders ord ON oi.order_id = ord.id
-      INNER JOIN order_products op ON oi.product_id = op.id
-      LEFT JOIN order_categories oc ON op.category_id = oc.id
-      WHERE ord.company_id = ${companyId}
-        AND ord.status = 'active'
-        AND ord.order_date >= ${start}
-        AND ord.order_date <= ${end}
-      GROUP BY op.category_id
-      ORDER BY SUM(oi.amount) DESC
-    `;
+    /** مشتريات حسب فئة الفاتورة (categories على فواتير kind=purchase) — نفس نطاق التواريخ */
+    const purchaseCategoryGroups = await this.prisma.invoice.groupBy({
+      by: ['categoryId'],
+      where: {
+        ...baseWhere,
+        kind: 'purchase',
+      },
+      _sum: { totalAmount: true },
+    });
 
-    const salesCategoryBreakdown = salesCategoryRows.map((r) => ({
-      categoryId: r.category_id,
-      nameAr: r.name_ar,
-      nameEn: r.name_en,
-      amount: new Decimal(r.total != null ? String(r.total) : '0').toFixed(4),
-    }));
-    const salesCategoryTotal = salesCategoryBreakdown
-      .reduce((s, row) => s.plus(new Decimal(row.amount || '0')), new Decimal(0))
+    const purchaseCatIds = purchaseCategoryGroups
+      .map((g) => g.categoryId)
+      .filter((id): id is string => id != null);
+    const purchaseCategoriesMeta =
+      purchaseCatIds.length > 0
+        ? await this.prisma.category.findMany({
+            where: { id: { in: purchaseCatIds }, companyId },
+            select: { id: true, nameAr: true, nameEn: true },
+          })
+        : [];
+    const purchaseCatNameById = new Map(purchaseCategoriesMeta.map((c) => [c.id, c]));
+
+    let purchaseCategoryBreakdown: { categoryId: string | null; nameAr: string; nameEn: string | null; amount: string }[] =
+      purchaseCategoryGroups.map((g) => {
+        const amtStr = g._sum.totalAmount?.toString() ?? '0';
+        if (g.categoryId == null) {
+          return {
+            categoryId: null,
+            nameAr: 'غير مصنّف',
+            nameEn: 'Uncategorized',
+            amount: new Decimal(amtStr).toFixed(4),
+          };
+        }
+        const cat = purchaseCatNameById.get(g.categoryId);
+        return {
+          categoryId: g.categoryId,
+          nameAr: cat?.nameAr ?? '—',
+          nameEn: cat?.nameEn ?? null,
+          amount: new Decimal(amtStr).toFixed(4),
+        };
+      });
+    purchaseCategoryBreakdown = purchaseCategoryBreakdown
+      .filter((row) => new Decimal(row.amount).gt(0))
+      .sort((a, b) => new Decimal(b.amount).cmp(a.amount));
+
+    const purchaseCategoryTotal = purchaseCategoryBreakdown
+      .reduce((s, row) => s.plus(new Decimal(row.amount)), new Decimal(0))
       .toFixed(4);
 
     return {
@@ -1492,8 +1510,8 @@ export class ReportsService {
       topSuppliers,
       supplierCategoryBreakdown,
       suppliersInPeriodCount: supplierIdsInPeriod.length,
-      salesCategoryBreakdown,
-      salesCategoryTotal,
+      purchaseCategoryBreakdown,
+      purchaseCategoryTotal,
     };
   }
 }

@@ -258,11 +258,11 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     }));
   }, [periodData, lang]);
 
-  /* ── مبيعات الفئات (طلبات): مبالغ حسب فئة المنتج — نفس فترة أعلى الموردين ── */
-  const salesCategoriesData = useMemo(() => {
-    const raw = periodData?.salesCategoryBreakdown;
+  /* ── مشتريات حسب فئة الفاتورة (فواتير مشتريات) — نفس فترة أعلى الموردين ── */
+  const purchaseCategoriesData = useMemo(() => {
+    const raw = periodData?.purchaseCategoryBreakdown;
     if (!Array.isArray(raw) || raw.length === 0) return [];
-    const total = Number(periodData?.salesCategoryTotal) || raw.reduce((s, r) => s + Number(r.amount || 0), 0) || 1;
+    const total = Number(periodData?.purchaseCategoryTotal) || raw.reduce((s, r) => s + Number(r.amount || 0), 0) || 1;
     return raw.map((row, i) => {
       const amt = Number(row.amount || 0);
       return {
@@ -275,23 +275,23 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   }, [periodData, lang]);
 
   /** دمج الفئات بعد الخامسة في «أخرى» ليتطابق المخطط مع القائمة والإجمالي */
-  const salesCategoriesPieData = useMemo(() => {
-    if (salesCategoriesData.length === 0) return [];
-    if (salesCategoriesData.length <= 6) return salesCategoriesData;
-    const top = salesCategoriesData.slice(0, 5);
-    const rest = salesCategoriesData.slice(5);
+  const purchaseCategoriesPieData = useMemo(() => {
+    if (purchaseCategoriesData.length === 0) return [];
+    if (purchaseCategoriesData.length <= 6) return purchaseCategoriesData;
+    const top = purchaseCategoriesData.slice(0, 5);
+    const rest = purchaseCategoriesData.slice(5);
     const othersValue = rest.reduce((s, r) => s + r.value, 0);
-    const total = salesCategoriesData.reduce((s, r) => s + r.value, 0) || 1;
+    const total = purchaseCategoriesData.reduce((s, r) => s + r.value, 0) || 1;
     return [
       ...top,
       {
-        name: t('dashboardSalesByCategoryOthers'),
+        name: t('dashboardPurchasesByCategoryOthers'),
         value: othersValue,
         pct: ((othersValue / total) * 100).toFixed(1),
         fill: PIE_COLORS[5 % PIE_COLORS.length],
       },
     ];
-  }, [salesCategoriesData, t]);
+  }, [purchaseCategoriesData, t]);
 
   /* ── ثوابت السلاسل الزمنية — قبل أي return مشروط ── */
   const salesSeries   = t('annualSales');
@@ -353,15 +353,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   return (
     <div className="flex flex-col gap-5">
 
-      {/* ── رسوم بيانية: أعلى الموردين + مبيعات الفئات (طلبات) ── */}
-      <div
-        className={cn(
-          'grid gap-5',
-          (isPeriodLoading || salesCategoriesPieData.length > 0)
-            ? 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px]'
-            : 'grid-cols-1',
-        )}
-      >
+      {/* ── رسوم بيانية: أعلى الموردين + مشتريات الفئات (فواتير مشتريات) ── */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
 
         {/* أعلى الموردين — أفقي */}
         <div className="noorix-surface-card p-4 lg:p-5">
@@ -431,69 +424,67 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           )}
         </div>
 
-        {/* مبيعات الفئات (طلبات) — donut — نفس فترة أعلى الموردين */}
-        {(isPeriodLoading || salesCategoriesPieData.length > 0) && (
-          <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
-            <div className="text-[14px] font-bold text-noorix-text mb-0.5 w-full max-lg:text-center lg:text-start">
-              {selectedMonth != null ? t('dashboardSalesByCategoryTitleMonth') : t('dashboardSalesByCategoryTitlePeriod')}
-            </div>
-            <div className="text-[12px] text-noorix-muted mb-1 w-full max-lg:text-center lg:text-start">
-              {supplierFrom} — {supplierTo}
-            </div>
-            <div className="text-[12px] text-noorix-muted mb-4 w-full max-lg:text-center lg:text-start">
-              {t('dashboardOrdersSalesTotalForPeriod')}:{' '}
-              {isPeriodLoading ? (
-                '…'
-              ) : (
-                <>
-                  <span className="font-bold text-noorix-text ltr">{fmt(Number(periodData?.salesCategoryTotal || 0))}</span>{' '}
-                  <span className="nx-sar">SR</span>
-                </>
-              )}
-            </div>
+        {/* مشتريات الفئات — donut — فواتير kind=purchase حسب categoryId */}
+        <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
+          <div className="text-[14px] font-bold text-noorix-text mb-0.5 w-full max-lg:text-center lg:text-start">
+            {selectedMonth != null ? t('dashboardPurchasesByCategoryTitleMonth') : t('dashboardPurchasesByCategoryTitlePeriod')}
+          </div>
+          <div className="text-[12px] text-noorix-muted mb-1 w-full max-lg:text-center lg:text-start">
+            {supplierFrom} — {supplierTo}
+          </div>
+          <div className="text-[12px] text-noorix-muted mb-4 w-full max-lg:text-center lg:text-start">
+            {t('dashboardPurchasesTotalForPeriod')}:{' '}
             {isPeriodLoading ? (
-              <div className="h-[170px] flex items-center justify-center text-noorix-muted text-[12px]">{t('loading')}</div>
-            ) : salesCategoriesPieData.length === 0 ? (
-              <div className="h-[170px] flex flex-col items-center justify-center text-noorix-muted text-[12px] gap-2">
-                <div>{t('dashboardNoOrderSalesByCategory')}</div>
-              </div>
+              '…'
             ) : (
               <>
-                <ResponsiveContainer width="100%" height={170}>
-                  <PieChart>
-                    <Pie
-                      data={salesCategoriesPieData}
-                      cx="50%" cy="50%"
-                      innerRadius={50} outerRadius={78}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {salesCategoriesPieData.map((entry, i) => (
-                        <Cell key={`${entry.name}-${i}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<PieTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
-                  {salesCategoriesPieData.map((cat) => (
-                    <div key={cat.name} className="flex items-center justify-between gap-2 text-[12px]">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: cat.fill }} />
-                        <span className="text-noorix-text truncate">{cat.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="font-bold text-noorix-text ltr">{fmt(cat.value)}</span>
-                        <span className="nx-sar">SR</span>
-                        <span className="text-noorix-muted">({cat.pct}%)</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <span className="font-bold text-noorix-text ltr">{fmt(Number(periodData?.purchaseCategoryTotal || 0))}</span>{' '}
+                <span className="nx-sar">SR</span>
               </>
             )}
           </div>
-        )}
+          {isPeriodLoading ? (
+            <div className="h-[170px] flex items-center justify-center text-noorix-muted text-[12px]">{t('loading')}</div>
+          ) : purchaseCategoriesPieData.length === 0 ? (
+            <div className="h-[170px] flex flex-col items-center justify-center text-noorix-muted text-[12px] gap-2 text-center px-1">
+              <div>{t('dashboardNoPurchasesByCategory')}</div>
+            </div>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={170}>
+                <PieChart>
+                  <Pie
+                    data={purchaseCategoriesPieData}
+                    cx="50%" cy="50%"
+                    innerRadius={50} outerRadius={78}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {purchaseCategoriesPieData.map((entry, i) => (
+                      <Cell key={`${entry.name}-${i}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<PieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
+                {purchaseCategoriesPieData.map((cat, idx) => (
+                  <div key={`${cat.name}-${idx}`} className="flex items-center justify-between gap-2 text-[12px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: cat.fill }} />
+                      <span className="text-noorix-text truncate">{cat.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="font-bold text-noorix-text ltr">{fmt(cat.value)}</span>
+                      <span className="nx-sar">SR</span>
+                      <span className="text-noorix-muted">({cat.pct}%)</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* ── كروت KPI — الغلاف يحمل container-type ── */}

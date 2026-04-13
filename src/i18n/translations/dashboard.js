@@ -47,14 +47,14 @@ export default {
   /** فئات الموردين — نفس فترة التحليل */
   dashboardSuppliersInPeriod: { ar: 'موردون بحركة في الفترة', en: 'Suppliers with activity in period' },
   dashboardNoSuppliersInPeriod: { ar: 'لا يوجد موردون بفواتير مشتريات/مصروف في هذه الفترة.', en: 'No suppliers with purchase/expense invoices in this period.' },
-  /** مبيعات الطلبات حسب فئة المنتج — لوحة التحكم */
-  dashboardSalesByCategoryTitleMonth: { ar: 'مبيعات الفئات لهذا الشهر', en: 'Category sales this month' },
-  dashboardSalesByCategoryTitlePeriod: { ar: 'مبيعات الفئات للفترة', en: 'Category sales for the period' },
-  dashboardOrdersSalesTotalForPeriod: { ar: 'إجمالي مبيعات الطلبات للفترة', en: 'Total order sales for the period' },
-  dashboardNoOrderSalesByCategory: { ar: 'لا توجد مبيعات طلبات حسب الفئة في هذه الفترة.', en: 'No order sales by category in this period.' },
+  /** مشتريات حسب فئة الفاتورة — لوحة التحكم */
+  dashboardPurchasesByCategoryTitleMonth: { ar: 'مشتريات الفئات لهذا الشهر', en: 'Purchases by category this month' },
+  dashboardPurchasesByCategoryTitlePeriod: { ar: 'مشتريات الفئات للفترة', en: 'Purchases by category for the period' },
+  dashboardPurchasesTotalForPeriod: { ar: 'إجمالي المشتريات للفترة', en: 'Total purchases for the period' },
+  dashboardNoPurchasesByCategory: { ar: 'لا توجد مشتريات مصنّفة حسب الفئة في هذه الفترة.', en: 'No categorized purchases in this period.' },
   /** دمج الفئات السادسة فما فوق في المخطط والقائمة */
   dashboardSupplierCategoriesOthers: { ar: 'أخرى (فئات إضافية)', en: 'Other (additional categories)' },
-  dashboardSalesByCategoryOthers: { ar: 'أخرى (فئات)', en: 'Other (categories)' },
+  dashboardPurchasesByCategoryOthers: { ar: 'أخرى (فئات)', en: 'Other (categories)' },
   dashboardKpiFormulaPurchases: { ar: 'مشتريات الفترة', en: 'Purchases for the period' },
   dashboardKpiFormulaExpenses: { ar: 'مصروفات الفترة', en: 'Expenses for the period' },
   dashboardKpiFormulaGrossProfit: { ar: 'مبيعات − مشتريات', en: 'Sales − purchases' },
