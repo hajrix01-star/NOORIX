@@ -8,9 +8,8 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { getPayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
-import SmartTable from '../../../components/common/SmartTable';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Badge, Button, AdaptiveSheet } from '../../../ui';
+import { Badge, Button, AdaptiveSheet, SmartTable } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { openPrintWindow } from '../../../utils/printUtils';
 

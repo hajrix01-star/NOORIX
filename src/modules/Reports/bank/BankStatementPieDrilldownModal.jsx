@@ -4,8 +4,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { fmt } from '../../../utils/format';
 import { getTxKey, FALLBACK_CATEGORIES } from './bankAnalysisUtils';
-import { Button, AdaptiveSheet, Input, FmtNum } from '../../../ui';
-import SmartTable from '../../../components/common/SmartTable';
+import { Button, AdaptiveSheet, Input, FmtNum, SmartTable } from '../../../ui';
 
 export default function BankStatementPieDrilldownModal({
   open,

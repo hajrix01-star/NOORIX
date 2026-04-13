@@ -11,8 +11,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
-import SmartTable from '../../../components/common/SmartTable';
-import { Button, AdaptiveSheet , FmtNum } from '../../../ui';
+import { Button, AdaptiveSheet , FmtNum, SmartTable } from '../../../ui';
 
 const PAGE_SIZE = 50;
 

@@ -14,11 +14,10 @@ import { sumAmounts } from '../../../utils/format';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
-import SmartTable from '../../../components/common/SmartTable';
 import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn , FmtNum } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 

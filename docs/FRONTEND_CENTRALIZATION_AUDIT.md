@@ -107,7 +107,7 @@
 - تبويبات يدوية: `modules/Settings/SettingsScreen.jsx`, `modules/Orders/OrdersScreen.jsx`, `modules/OcrInvoices/OcrInvoicesScreen.jsx`, `modules/Reports/BankStatementAnalysisScreen.jsx`
 - كباب: `components/common/InvoiceActionsCell.jsx`, `SalesActionsCell.jsx`, `modules/HR/components/HRActionsCell.jsx`
 - لغة مزدوجة: `App.jsx`, `main.jsx`
-- breakpoint: `modules/Settings/SettingsScreen.jsx`, `modules/Reports/ReportsScreen.jsx`, `modules/Owner/OwnerDashboardScreen.jsx`, `modules/Reports/ReportsDetailModal.jsx`, `components/common/SmartTable.jsx`, `modules/Suppliers/components/SupplierTable.jsx`, `components/UserMenu.jsx`
+- breakpoint: `modules/Settings/SettingsScreen.jsx`, `modules/Reports/ReportsScreen.jsx`, `modules/Owner/OwnerDashboardScreen.jsx`, `modules/Reports/ReportsDetailModal.jsx`, `ui/SmartTable.jsx`, `modules/Suppliers/components/SupplierTable.jsx`, `components/UserMenu.jsx`
 
 ---
 

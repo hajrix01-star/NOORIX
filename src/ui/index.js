@@ -30,8 +30,7 @@ export { FmtNum } from './FmtNum';
 /**
  * SmartTable — الجدول الذكي المركزي
  * Pagination | Sort | Search | Loading Skeleton | Mobile Cards | Sticky Actions
- * مصدر: src/components/common/SmartTable.jsx (يُستدعى من ui/ للحفاظ على مرجع واحد)
  */
-export { default as SmartTable } from '../components/common/SmartTable';
+export { default as SmartTable } from './SmartTable';
 
 export { cn } from './cn';

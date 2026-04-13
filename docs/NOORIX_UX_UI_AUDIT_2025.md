@@ -91,5 +91,5 @@
 - `src/index.css` — shimmer، touch targets، modal font، ndfb touch
 - `src/components/Toast.jsx` — fontFamily
 - `src/components/LoadingFallback.jsx` — spinner + fontFamily
-- `src/components/common/SmartTable.jsx` — loading skeleton
+- `src/ui/SmartTable.jsx` — loading skeleton
 - `src/modules/Orders/components/OrdersTab.jsx` — Cairo في الطباعة

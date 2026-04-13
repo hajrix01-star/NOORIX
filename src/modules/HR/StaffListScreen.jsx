@@ -27,8 +27,7 @@ import {
   getEmployeesBulk,
   throwIfApiFailed,
 } from '../../services/api';
-import { Badge, Button, Modal, Input, ScreenShell, cn , FmtNum } from '../../ui';
-import SmartTable from '../../components/common/SmartTable';
+import { Badge, Button, Modal, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../ui';
 import { HRActionsCell } from './components/HRActionsCell';
 import { StaffFormModal } from './components/StaffFormModal';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';

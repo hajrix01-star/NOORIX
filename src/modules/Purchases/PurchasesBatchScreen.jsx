@@ -4,7 +4,7 @@
  */
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Decimal from 'decimal.js';
-import { Button, Badge, Input, ScreenTabs, ScreenShell } from '../../ui';
+import { Button, Badge, Input, ScreenTabs, ScreenShell, SmartTable } from '../../ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
@@ -22,7 +22,6 @@ import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { fmt, sumAmounts } from '../../utils/format';
 import { useTranslation } from '../../i18n/useTranslation';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
-import SmartTable from '../../components/common/SmartTable';
 import { BatchRow } from './components/BatchRow';
 import { BatchEditPanel } from './components/BatchEditPanel';
 import { BatchPrintSheet } from './components/BatchPrintSheet';

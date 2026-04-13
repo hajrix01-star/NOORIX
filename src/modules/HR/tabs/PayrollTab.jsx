@@ -14,13 +14,12 @@ import { exportToExcel } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { getSaudiToday } from '../../../utils/saudiDate';
-import SmartTable from '../../../components/common/SmartTable';
 import { PayrollRunFormModal } from '../components/PayrollRunFormModal';
 import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, Input, ScreenShell, Modal , FmtNum } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, Modal , FmtNum, SmartTable } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 

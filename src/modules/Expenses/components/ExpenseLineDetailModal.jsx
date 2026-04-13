@@ -9,8 +9,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
-import SmartTable from '../../../components/common/SmartTable';
-import { Button, AdaptiveSheet , FmtNum } from '../../../ui';
+import { Button, AdaptiveSheet , FmtNum, SmartTable } from '../../../ui';
 import { useApp } from '../../../context/AppContext';
 
 const KIND_LABELS = { fixed_expense: 'ثابت', expense: 'متغير' };

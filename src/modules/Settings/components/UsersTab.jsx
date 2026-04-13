@@ -7,8 +7,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import SmartTable from '../../../components/common/SmartTable';
-import { Button, Badge, Input, AdaptiveSheet, ScreenShell } from '../../../ui';
+import { Button, Badge, Input, AdaptiveSheet, ScreenShell, SmartTable } from '../../../ui';
 
 export default function UsersTab({ userRole, activeCompanies = [] }) {
   const { t } = useTranslation();

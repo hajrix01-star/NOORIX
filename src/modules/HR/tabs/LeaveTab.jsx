@@ -16,13 +16,12 @@ import {
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
-import SmartTable from '../../../components/common/SmartTable';
 import { LeaveFormModal } from '../components/LeaveFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell, Modal, Spinner } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, Modal, Spinner, SmartTable } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { buildLeaveRequestStatusMap } from '../../../constants/badgeMaps';
 

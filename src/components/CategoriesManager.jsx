@@ -6,8 +6,7 @@ import React, { useState, useMemo, memo } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from '../i18n/useTranslation';
 import { useToast } from '../context/ToastContext';
-import SmartTable from './common/SmartTable';
-import { Button, Input, Card, Badge, FormRow } from '../ui';
+import { Button, Input, Card, Badge, FormRow, SmartTable } from '../ui';
 
 const TYPE_MAP = {
   purchase: { labelKey: 'categoryTypes' },

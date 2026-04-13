@@ -7,8 +7,7 @@ import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { fmt } from '../../utils/format';
 import { percentText, truncateText, isEmptyMetric, metricCardAmountValue } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
-import { Button, AdaptiveSheet, MetricCard, ScreenTabs } from '../../ui';
-import SmartTable from '../../components/common/SmartTable';
+import { Button, AdaptiveSheet, MetricCard, ScreenTabs, SmartTable } from '../../ui';
 import {
   ResponsiveContainer,
   BarChart,

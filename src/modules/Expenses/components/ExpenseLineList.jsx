@@ -6,8 +6,7 @@ import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
-import SmartTable from '../../../components/common/SmartTable';
-import { Button, Badge, Input, ScreenShell, cn } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, cn, SmartTable } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 

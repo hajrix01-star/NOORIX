@@ -42,4 +42,4 @@ rg "0 1px 4px" src --glob "*.jsx"
 
 - Tokens: `src/index.css` (`:root` → `--noorix-card-*`, `.noorix-surface-card`, `.noorix-auth-card`).
 - UI rule: `.cursor/rules/ui-components.mdc` — section «كروت السطح».
-- Components: `src/ui/Card.jsx`, `src/components/common/SmartTable.jsx`.
+- Components: `src/ui/Card.jsx`, `src/ui/SmartTable.jsx`.

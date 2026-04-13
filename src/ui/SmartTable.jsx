@@ -3,12 +3,12 @@
  * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards | Column Resize
  */
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from '../../i18n/useTranslation';
-import { useIsNarrow700 } from '../../hooks/useMediaQuery';
-import { useUiDir } from '../../hooks/useUiDir';
-import Button from '../../ui/Button';
-import Input  from '../../ui/Input';
-import { cn } from '../../ui/cn';
+import { useTranslation } from '../i18n/useTranslation';
+import { useIsNarrow700 } from '../hooks/useMediaQuery';
+import { useUiDir } from '../hooks/useUiDir';
+import Button from './Button';
+import Input  from './Input';
+import { cn } from './cn';
 
 const ALIGN_MAP = { right: 'right', left: 'left', center: 'center', start: 'start', end: 'end' };
 

@@ -10,13 +10,12 @@ import { getResidencies, deleteResidency } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
-import SmartTable from '../../../components/common/SmartTable';
 import { ResidencyFormModal } from '../components/ResidencyFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, SmartTable } from '../../../ui';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;

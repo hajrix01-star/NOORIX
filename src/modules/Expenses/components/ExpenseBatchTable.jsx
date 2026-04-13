@@ -10,9 +10,8 @@ import { createInvoiceBatch, getExpenseLines } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { fmt, calcReverseVat } from '../../../utils/format';
-import SmartTable from '../../../components/common/SmartTable';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, ScreenShell, cn , FmtNum } from '../../../ui';
+import { Button, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
 
 const EMPTY_ROW = () => ({
   key: `${Date.now()}-${Math.random()}`,
