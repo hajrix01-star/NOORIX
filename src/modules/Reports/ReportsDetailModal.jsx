@@ -1,7 +1,7 @@
 ﻿/**
  * ReportsDetailModal — تفاصيل بند تقرير ربح وخسارة (AdaptiveSheet: مودال على العريض، لوح على الضيق)
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { fmt } from '../../utils/format';
@@ -11,9 +11,13 @@ import { Button, AdaptiveSheet, MetricCard } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import { useIsMobile640 } from '../../hooks/useMediaQuery';
 
+/** حل وسط: عرض أكثر من 8 دون إغراق النافذة؛ التصفح على البيانات المحمّلة (حتى 500 من الخادم). */
+const DETAIL_INVOICES_PAGE_SIZE = 15;
+
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }) {
   const navigate = useNavigate();
   const isMobile = useIsMobile640();
+  const [invoiceListPage, setInvoiceListPage] = useState(1);
   const { data, isLoading, error } = useReportDetails({
     companyId,
     year,
@@ -86,6 +90,17 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     }
     return data.contextPercentOfSales;
   }, [data, trendPointForSelectedMonth]);
+
+  useEffect(() => {
+    setInvoiceListPage(1);
+  }, [state?.groupKey, state?.itemKey, state?.month, year]);
+
+  const invoiceRows = data?.items ?? [];
+  const invoiceTotal = invoiceRows.length;
+  const invoicePageRows = useMemo(() => {
+    const start = (invoiceListPage - 1) * DETAIL_INVOICES_PAGE_SIZE;
+    return invoiceRows.slice(start, start + DETAIL_INVOICES_PAGE_SIZE);
+  }, [invoiceRows, invoiceListPage]);
 
   const averageAmount = useMemo(() => {
     const points = trend?.points || [];
@@ -282,8 +297,13 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   <div>
                     <div className="text-[13px] font-extrabold">{t('reportSmartSummary')}</div>
                     <div className="mt-1 text-[12px] text-noorix-muted">
-                      {t('reportShowingLatest', Math.min(data.items?.length || 0, 8), data.items?.length || 0)}
+                      {t('reportDetailListSummary', { count: invoiceTotal })}
                     </div>
+                    {invoiceTotal >= 500 && (
+                      <div className="mt-1.5 text-[11px] text-noorix-amber leading-snug max-w-[52ch]">
+                        {t('reportDetailListCapHint')}
+                      </div>
+                    )}
                   </div>
                   <div className="text-[12px] text-noorix-muted inline-flex flex-wrap items-baseline gap-x-1">
                     {t('reportAnnualTotal')}:
@@ -294,6 +314,10 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   </div>
                 </div>
                 <SmartTable
+                  total={invoiceTotal}
+                  page={invoiceListPage}
+                  pageSize={DETAIL_INVOICES_PAGE_SIZE}
+                  onPageChange={setInvoiceListPage}
                   columns={[
                     { key: 'transactionDate', label: t('transactionDate'),
                       render: (v) => String(v || '').slice(0, 10) },
@@ -324,7 +348,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     { key: 'notes', label: t('notes'),
                       render: (v) => <span className="text-noorix-muted truncate">{truncateText(v)}</span> },
                   ]}
-                  data={(data.items || []).slice(0, 8)}
+                  data={invoicePageRows}
                   keyExtractor={(item) => item.id}
                   emptyMessage={t('noDataInPeriod')}
                 />

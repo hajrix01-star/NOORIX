@@ -55,6 +55,12 @@ export default {
   reportTopMonth: { ar: 'أعلى شهر', en: 'Top month' },
   reportSmartSummary: { ar: 'ملخص ذكي مختصر', en: 'Smart summary' },
   reportShowingLatest: { ar: 'عرض آخر {0} من أصل {1} سجل', en: 'Showing latest {0} of {1} records' },
+  /** تفاصيل P&L — قائمة المستندات */
+  reportDetailListSummary: { ar: 'إجمالي {count} سجل مطابق', en: '{count} matching records' },
+  reportDetailListCapHint: {
+    ar: 'يُحمَّل أحدث 500 مستنداً فقط لهذا البند. لعرض كامل أو تصفية أدق استخدم «فتح في قائمة الفواتير» أدناه.',
+    en: 'Only the latest 500 matching documents are loaded. Use Open in invoices below for the full list or finer filters.',
+  },
   reportSourceOrSupplier: { ar: 'المصدر / المورد', en: 'Source / supplier' },
   reportProfitMargin: { ar: 'نسبة الربح', en: 'Profit margin' },
   uncategorized: { ar: 'غير مصنف', en: 'Uncategorized' },
