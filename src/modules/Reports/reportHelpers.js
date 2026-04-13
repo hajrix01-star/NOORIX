@@ -28,6 +28,12 @@ export function moneyText(value) {
   return text === '-' ? '-' : `${text} SAR`;
 }
 
+/** قيمة لـ MetricCard.Value (رقم أو '-' للعرض كنص) — العملة تُمرَّر عبر currency="SR" */
+export function metricCardAmountValue(value) {
+  if (isEmptyMetric(value)) return '-';
+  return Number(value);
+}
+
 export function percentText(value) {
   return isEmptyMetric(value) ? '-' : `${formatSmartNumber(value, 1)}%`;
 }

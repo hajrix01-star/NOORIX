@@ -4,7 +4,8 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
-import { amountText, moneyText, percentText, truncateText, isEmptyMetric } from './reportHelpers';
+import { fmt } from '../../utils/format';
+import { percentText, truncateText, isEmptyMetric, metricCardAmountValue } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button, AdaptiveSheet, MetricCard } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
@@ -21,7 +22,12 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     itemKey: state?.itemKey || undefined,
     enabled: !!state,
   });
-  const { data: trend, isLoading: trendLoading } = useReportTrend({
+  const {
+    data: trend,
+    isLoading: trendLoading,
+    isError: trendIsError,
+    error: trendError,
+  } = useReportTrend({
     companyId,
     year,
     groupKey: state?.groupKey,
@@ -97,6 +103,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
   const footerContent = drillTarget ? (
     <Button
       variant="primary"
+      size="md"
       onClick={() => {
         const qs = drillToSearchParams(drillTarget.query);
         navigate(`${drillTarget.path}?${qs}`);
@@ -113,7 +120,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
 
   return (
     <AdaptiveSheet open={!!state} onClose={onClose} title={modalTitle} size="xl" side="start" className="reports-detail-drawer" footer={footerContent}>
-      {(isLoading || trendLoading) && (
+      {isLoading && (
         <div className="p-6 text-center text-noorix-muted">{t('loading')}</div>
       )}
 
@@ -128,16 +135,16 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
           <div className="grid gap-3 mb-4 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
             <MetricCard color="var(--color-nx-purchases)">
               <MetricCard.Header label={data.month ? t('selectedMonth') : t('reportBreakdown')} />
-              <MetricCard.Value value={moneyText(displayContextAmount)} />
+              <MetricCard.Value value={metricCardAmountValue(displayContextAmount)} currency="SR" />
             </MetricCard>
             {data.kind === 'invoices' && (
               <>
                 <MetricCard color="var(--color-nx-sales)">
                   <MetricCard.Header label={t('reportAnnualTotal')} />
-                  <MetricCard.Value value={moneyText(displayAnnualAmount)} />
+                  <MetricCard.Value value={metricCardAmountValue(displayAnnualAmount)} currency="SR" />
                 </MetricCard>
                 <MetricCard color="var(--color-nx-net-profit)">
-                  <MetricCard.Header label={t('reportSalesShare')} />
+                  <MetricCard.Header label={data.month ? t('reportSalesShareMonth') : t('reportSalesShareYear')} />
                   <MetricCard.Value value={percentText(displayContextPercent)} />
                 </MetricCard>
                 <MetricCard color="var(--color-nx-purchases)">
@@ -148,34 +155,62 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
             )}
           </div>
 
+          {state?.showTrend && trendIsError && (
+            <div className="p-4 mb-4 rounded-xl text-noorix-amber border border-noorix-amber/30 bg-noorix-amber/10 text-[13px]">
+              {trendError?.message || t('reportTrendLoadError')}
+            </div>
+          )}
+
+          {state?.showTrend && trendLoading && !trend && !trendIsError && (
+            <div className="py-3 text-center text-noorix-muted text-[13px]">{t('loading')}</div>
+          )}
+
           {state?.showTrend && trend && (
             <div className="noorix-surface-card p-4 mb-4">
-              <div className="flex items-center justify-between gap-3 mb-3 flex flex-wrap">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <div>
                   <div className="text-[14px] font-extrabold">{t('reportTrend')}</div>
                   <div className="mt-1 text-noorix-muted text-[12px]">{t('reportTimeline')}</div>
                 </div>
                 <div className="text-[12px] text-noorix-muted">
-                  {t('reportSalesShare')}: <strong className="nx-font-numbers">{percentText(trend.percentOfSalesYear)}</strong>
+                  {t('reportSalesShareYear')}: <strong className="nx-font-numbers">{percentText(trend.percentOfSalesYear)}</strong>
                 </div>
               </div>
               <div className="grid gap-2.5 mb-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
                 <MetricCard color="var(--color-nx-purchases)">
                   <MetricCard.Header label={t('reportMonthlyAverage')} />
-                  <MetricCard.Value value={moneyText(averageAmount)} />
+                  <MetricCard.Value value={metricCardAmountValue(averageAmount)} currency="SR" />
                 </MetricCard>
                 <MetricCard color="var(--color-nx-profit)">
                   <MetricCard.Header label={t('reportTopMonth')} />
                   <MetricCard.Value value={peakPoint?.label || '—'} />
                   <MetricCard.Section>
-                    <span className="text-[12px] text-noorix-muted">{moneyText(peakPoint?.amount)}</span>
+                    <span className="text-[12px] text-noorix-muted inline-flex items-baseline gap-x-1">
+                      {!isEmptyMetric(peakPoint?.amount) ? (
+                        <>
+                          <span className="nx-font-numbers">{fmt(Number(peakPoint.amount))}</span>
+                          <span className="nx-sar">SR</span>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </span>
                   </MetricCard.Section>
                 </MetricCard>
                 <MetricCard color="var(--color-nx-sales)">
                   <MetricCard.Header label={t('selectedMonth')} />
                   <MetricCard.Value value={data?.monthLabel || t('allMonths')} />
                   <MetricCard.Section>
-                    <span className="text-[12px] text-noorix-muted">{moneyText(displayContextAmount)}</span>
+                    <span className="text-[12px] text-noorix-muted inline-flex items-baseline gap-x-1">
+                      {!isEmptyMetric(displayContextAmount) ? (
+                        <>
+                          <span className="nx-font-numbers">{fmt(Number(displayContextAmount))}</span>
+                          <span className="nx-sar">SR</span>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </span>
                   </MetricCard.Section>
                 </MetricCard>
               </div>
@@ -189,7 +224,10 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                       <div className="bg-noorix-bg-muted overflow-hidden rounded-full h-3">
                         <div className="h-full rounded-full" style={{ width, background: amount >= 0 ? 'var(--color-nx-profit)' : 'var(--color-nx-expenses)' }} />
                       </div>
-                      <div className="text-end nx-font-numbers font-bold">{moneyText(point.amount)}</div>
+                      <div className="text-end nx-font-numbers font-bold inline-flex items-baseline justify-end gap-x-1">
+                        <span>{fmt(Number(point.amount))}</span>
+                        <span className="nx-sar">SR</span>
+                      </div>
                       <div className="text-end nx-font-numbers text-[12px] text-nx-profit">{percentText(point.percentOfSales)}</div>
                     </div>
                   );
@@ -209,7 +247,10 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                     }}
                   >
                     <div className="text-[11px] text-noorix-muted mb-1.5">{point.label}</div>
-                    <div className="text-[13px] font-extrabold nx-font-numbers">{amountText(point.amount)}</div>
+                    <div className="text-[13px] font-extrabold nx-font-numbers inline-flex items-baseline gap-x-1 flex-wrap">
+                      <span>{fmt(Number(point.amount))}</span>
+                      <span className="nx-sar">SR</span>
+                    </div>
                     <div className="text-[11px] mt-1 text-nx-profit">{percentText(point.percentOfSales)}</div>
                   </div>
                 ))}
@@ -225,7 +266,10 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   className="reports-detail-derived-item flex items-center justify-between border border-noorix-border rounded-xl px-3 py-2"
                 >
                   <div className="font-bold">{lang === 'en' ? item.labelEn : item.labelAr}</div>
-                  <div className="nx-font-numbers font-extrabold">{moneyText(item.amount)}</div>
+                  <div className="nx-font-numbers font-extrabold inline-flex items-baseline gap-x-1">
+                    <span>{fmt(Number(item.amount))}</span>
+                    <span className="nx-sar">SR</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -241,8 +285,12 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                       {t('reportShowingLatest', Math.min(data.items?.length || 0, 8), data.items?.length || 0)}
                     </div>
                   </div>
-                  <div className="text-[12px] text-noorix-muted">
-                    {t('reportAnnualTotal')}: <strong className="nx-font-numbers">{moneyText(displayAnnualAmount)}</strong>
+                  <div className="text-[12px] text-noorix-muted inline-flex flex-wrap items-baseline gap-x-1">
+                    {t('reportAnnualTotal')}:
+                    <strong className="nx-font-numbers inline-flex items-baseline gap-x-1">
+                      <span>{!isEmptyMetric(displayAnnualAmount) ? fmt(Number(displayAnnualAmount)) : '—'}</span>
+                      {!isEmptyMetric(displayAnnualAmount) && <span className="nx-sar">SR</span>}
+                    </strong>
                   </div>
                 </div>
                 <SmartTable
@@ -264,8 +312,13 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                           )}
                         </div>
                       ) },
-                    { key: 'netAmount', label: t('reportNetAmount'), numeric: true,
-                      render: (v) => <span className="nx-font-numbers font-bold">{amountText(v)}</span> },
+                    { key: 'totalAmount', label: t('reportAmountInclTax'), numeric: true,
+                      render: (v) => (
+                        <span className="nx-font-numbers font-bold inline-flex items-baseline gap-x-1">
+                          <span>{fmt(Number(v))}</span>
+                          <span className="nx-sar">SR</span>
+                        </span>
+                      ) },
                     { key: 'percentOfSales', label: t('reportSalesShare'),
                       render: (_, item) => <span className="nx-font-numbers text-nx-profit">{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
                     { key: 'notes', label: t('notes'),

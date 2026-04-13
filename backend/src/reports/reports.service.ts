@@ -221,10 +221,28 @@ export class ReportsService {
       notes: string | null;
     }>;
 
+    const useInvoiceGross = !!itemKey && !itemKey.startsWith('account:');
+    let yearAgg: { _sum: { totalAmount: unknown } } | null = null;
+    let monthAgg: { _sum: { totalAmount: unknown } } | null = null;
+
     if (itemKey?.startsWith('account:')) {
       detailItems = await this.loadDetailFromLedger(companyId, year, month, groupKey, itemKey);
     } else {
-      detailItems = await this.loadDetailInvoices(companyId, year, month, groupKey, itemKey, categories);
+      const yearWhere = useInvoiceGross ? this.buildPlInvoiceWhere(companyId, year, undefined, groupKey as GroupKey, itemKey, categories) : null;
+      const monthWhere =
+        useInvoiceGross && month != null ? this.buildPlInvoiceWhere(companyId, year, month, groupKey as GroupKey, itemKey, categories) : null;
+      const [detailResult, yAgg, mAgg] = await Promise.all([
+        this.loadDetailInvoices(companyId, year, month, groupKey, itemKey, categories),
+        useInvoiceGross && yearWhere
+          ? this.prisma.invoice.aggregate({ where: yearWhere, _sum: { totalAmount: true } })
+          : Promise.resolve(null),
+        useInvoiceGross && monthWhere
+          ? this.prisma.invoice.aggregate({ where: monthWhere, _sum: { totalAmount: true } })
+          : Promise.resolve(null),
+      ]);
+      detailItems = detailResult;
+      yearAgg = yAgg;
+      monthAgg = mAgg;
     }
 
     const allGroup = report.groups.find((row) => row.key === groupKey);
@@ -242,21 +260,23 @@ export class ReportsService {
       month != null
         ? selectedRow?.percentOfSalesMonths?.[month - 1] ?? '0'
         : selectedRow?.percentOfSalesYear ?? '0';
+    let annualAmount = selectedRow?.total ?? '0';
+    let annualPercentOfSales = selectedRow?.percentOfSalesYear ?? '0';
 
-    /** إن وُجدت فواتير للفترة بينما صف التقرير صفراً (اختلاف تجميع/مفتاح) نُوحّد المبلغ مع الفواتير */
-    if (
-      month != null &&
-      itemKey &&
-      !itemKey.startsWith('account:') &&
-      detailItems.length > 0 &&
-      Math.abs(parseFloat(String(contextAmount || '0'))) < 0.0001
-    ) {
-      const sumNet = detailItems.reduce((s, inv) => s + parseFloat(inv.netAmount || '0'), 0);
-      if (sumNet > 0.0001) {
-        contextAmount = sumNet.toFixed(2);
-        const salesM = parseFloat(salesGroup?.months?.[month - 1] || '0');
-        contextPercentOfSales =
-          salesM > 0.0001 ? new Decimal(sumNet).div(salesM).mul(100).toFixed(2) : '0';
+    /** إجمالي الفاتورة (شامل الضريبة) عند تفصيل بند من الفواتير — يتوافق مع جدول التفاصيل */
+    if (useInvoiceGross && yearAgg) {
+      const yVal = this.dec(String(yearAgg._sum.totalAmount ?? 0));
+      annualAmount = yVal.toFixed(2);
+      const salesYear = parseFloat(salesGroup?.total ?? '0');
+      annualPercentOfSales = salesYear > 0.0001 ? yVal.div(salesYear).mul(100).toFixed(2) : '0';
+      if (month != null && monthAgg) {
+        const mVal = this.dec(String(monthAgg._sum.totalAmount ?? 0));
+        contextAmount = mVal.toFixed(2);
+        const salesM = parseFloat(salesGroup?.months?.[month - 1] ?? '0');
+        contextPercentOfSales = salesM > 0.0001 ? mVal.div(salesM).mul(100).toFixed(2) : '0';
+      } else {
+        contextAmount = yVal.toFixed(2);
+        contextPercentOfSales = annualPercentOfSales;
       }
     }
 
@@ -276,8 +296,8 @@ export class ReportsService {
       titleEn: finalTitle.labelEn,
       contextAmount,
       contextPercentOfSales,
-      annualAmount: selectedRow?.total ?? '0',
-      annualPercentOfSales: selectedRow?.percentOfSalesYear ?? '0',
+      annualAmount,
+      annualPercentOfSales,
       invoiceCount: detailItems.length,
       items: detailItems,
     };
@@ -315,15 +335,51 @@ export class ReportsService {
           : (group.items as GeneralRowModel[]).find((entry) => entry.key === itemKey)
         : null;
 
-    /** عند تمرير itemKey لا نُسقط على إجمالي المجموعة — كان يُظهر إجمالي المصاريف كأنه بند فرعي */
-    const monthRow = (index: number) =>
-      itemKey
-        ? (selectedItem?.months?.[index] ?? '0')
-        : (group?.months?.[index] ?? '0');
-    const pctRow = (index: number) =>
-      itemKey
-        ? (selectedItem?.percentOfSalesMonths?.[index] ?? '0')
-        : (group?.percentOfSalesMonths?.[index] ?? '0');
+    const useInvoiceGross = itemKey && !itemKey.startsWith('account:');
+    let invoiceMonths: Decimal[] | null = null;
+    if (useInvoiceGross) {
+      const catRows = await this.prisma.category.findMany({
+        where: { companyId, isActive: true },
+        select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true },
+      });
+      const categories = new Map(catRows.map((c) => [c.id, { ...c } as CategoryNode]));
+      invoiceMonths = await this.sumInvoiceTotalAmountByMonth(companyId, year, groupKey as GroupKey, itemKey, categories);
+    }
+
+    const monthRow = (index: number) => {
+      if (invoiceMonths) {
+        return invoiceMonths[index].toFixed(2);
+      }
+      if (itemKey) {
+        return selectedItem?.months?.[index] ?? '0';
+      }
+      return group?.months?.[index] ?? '0';
+    };
+
+    const pctRow = (index: number) => {
+      if (invoiceMonths) {
+        const salesM = parseFloat(salesGroup?.months?.[index] ?? '0');
+        const amt = invoiceMonths[index];
+        return salesM > 0.0001 ? amt.div(salesM).mul(100).toFixed(2) : '0';
+      }
+      if (itemKey) {
+        return selectedItem?.percentOfSalesMonths?.[index] ?? '0';
+      }
+      return group?.percentOfSalesMonths?.[index] ?? '0';
+    };
+
+    const itemYearTotal = invoiceMonths
+      ? invoiceMonths.reduce((a, b) => a.plus(b), new Decimal(0))
+      : new Decimal(itemKey ? selectedItem?.total ?? '0' : group?.total ?? '0');
+    const salesYearTotal = parseFloat(salesGroup?.total ?? '0');
+    const totalStr = invoiceMonths ? itemYearTotal.toFixed(2) : itemKey ? (selectedItem?.total ?? '0') : (group?.total ?? '0');
+    const percentOfSalesYearStr = invoiceMonths
+      ? salesYearTotal > 0.0001
+        ? itemYearTotal.div(salesYearTotal).mul(100).toFixed(2)
+        : '0'
+      : itemKey
+        ? (selectedItem?.percentOfSalesYear ?? '0')
+        : (group?.percentOfSalesYear ?? '0');
 
     return {
       year,
@@ -331,8 +387,8 @@ export class ReportsService {
       itemKey: itemKey ?? null,
       labelAr: (itemKey ? selectedItem?.labelAr : group?.labelAr) || GROUP_LABELS[groupKey].ar,
       labelEn: (itemKey ? selectedItem?.labelEn : group?.labelEn) || GROUP_LABELS[groupKey].en,
-      total: itemKey ? (selectedItem?.total ?? '0') : (group?.total ?? '0'),
-      percentOfSalesYear: itemKey ? (selectedItem?.percentOfSalesYear ?? '0') : (group?.percentOfSalesYear ?? '0'),
+      total: totalStr,
+      percentOfSalesYear: percentOfSalesYearStr,
       points: report.months.map((month, index) => ({
         month: month.index,
         label: month.label,
@@ -806,17 +862,16 @@ export class ReportsService {
   }
 
   /**
-   * استعلام مستهدف لتفاصيل التقرير — يُفلتر في SQL بدلاً من تحميل كل الفواتير.
-   * الحد الأقصى 500 فاتورة لكل طلب تفاصيل.
+   * فلتر فواتير تقرير ربح وخسارة — نفس منطق التفاصيل والاتجاه (إجمالي الفاتورة شامل الضريبة).
    */
-  private async loadDetailInvoices(
+  private buildPlInvoiceWhere(
     companyId: string,
     year: number,
     month: number | undefined,
     groupKey: GroupKey,
     itemKey: string | undefined,
     categories: Map<string, CategoryNode>,
-  ) {
+  ): Prisma.InvoiceWhereInput {
     const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
@@ -849,7 +904,6 @@ export class ReportsService {
         { categoryId: { in: [...catIds] } },
         { expenseLine: { categoryId: { in: [...catIds] } } },
       ];
-      // مشتريات ومصاريف: مطابقة تفاصيل التقرير مع تجميع فئة المورد
       if (groupKey === 'purchases' || groupKey === 'expenses') {
         categoryOr.push({ supplier: { supplierCategoryId: { in: [...catIds] } } });
       }
@@ -863,6 +917,44 @@ export class ReportsService {
         dailySalesSummary: { channels: { some: { vaultId: itemKey.replace('sales-channel:', '') } } },
       };
     }
+
+    return where;
+  }
+
+  /** مجموع إجمالي الفاتورة (شامل الضريبة) لكل شهر من السنة للبند */
+  private async sumInvoiceTotalAmountByMonth(
+    companyId: string,
+    year: number,
+    groupKey: GroupKey,
+    itemKey: string | undefined,
+    categories: Map<string, CategoryNode>,
+  ): Promise<Decimal[]> {
+    const where = this.buildPlInvoiceWhere(companyId, year, undefined, groupKey, itemKey, categories);
+    const rows = await this.prisma.invoice.findMany({
+      where,
+      select: { transactionDate: true, totalAmount: true },
+    });
+    const months = Array.from({ length: 12 }, () => new Decimal(0));
+    for (const r of rows) {
+      const m = r.transactionDate.getUTCMonth();
+      months[m] = months[m].plus(this.dec(r.totalAmount));
+    }
+    return months;
+  }
+
+  /**
+   * استعلام مستهدف لتفاصيل التقرير — يُفلتر في SQL بدلاً من تحميل كل الفواتير.
+   * الحد الأقصى 500 فاتورة لكل طلب تفاصيل.
+   */
+  private async loadDetailInvoices(
+    companyId: string,
+    year: number,
+    month: number | undefined,
+    groupKey: GroupKey,
+    itemKey: string | undefined,
+    categories: Map<string, CategoryNode>,
+  ) {
+    const where = this.buildPlInvoiceWhere(companyId, year, month, groupKey, itemKey, categories);
 
     const invoices = await this.prisma.invoice.findMany({
       where,
