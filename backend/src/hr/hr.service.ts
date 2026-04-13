@@ -1192,7 +1192,8 @@ export class HRService {
         startDate,
         endDate,
         daysCount,
-        status: dto.status ?? 'pending',
+        /** افتراضي: معتمد — مسار المالك الواحد دون خطوة اعتماد منفصلة */
+        status: dto.status ?? 'approved',
         notes: dto.notes,
       },
       include: { employee: true },

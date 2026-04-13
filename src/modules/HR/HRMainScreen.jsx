@@ -115,7 +115,7 @@ export default function HRMainScreen() {
     return diff >= 0 && diff <= EXPIRY_DAYS;
   }).length;
 
-  const pendingLeavesCount = leavesData.filter((l) => l.status === 'pending').length;
+  const registeredLeavesCount = leavesData.length;
 
   const outstandingAdvances = advancesData.filter(
     (a) => a.status !== 'cancelled' && a.settlementStatus !== 'settled',
@@ -142,7 +142,7 @@ export default function HRMainScreen() {
           terminatedCount={terminatedCount}
           monthlyPayrollTotal={monthlyPayrollTotal}
           expiringResidencyCount={expiringCount}
-          pendingLeavesCount={pendingLeavesCount}
+          registeredLeavesCount={registeredLeavesCount}
           outstandingAdvancesCount={outstandingAdvancesCount}
           outstandingAdvancesAmount={outstandingAdvancesAmount}
         />

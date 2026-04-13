@@ -87,7 +87,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
         startDate: `${startDate}T00:00:00.000Z`,
         endDate: `${endDate}T00:00:00.000Z`,
         daysCount: daysCount ? parseInt(daysCount, 10) : undefined,
-        status: 'pending',
+        status: 'approved',
         notes: notes || undefined,
       };
       const res = await createLeave(payload);
@@ -177,7 +177,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
         />
 
         {error && (
-          <div className="mb-3 p-[10px] rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
+          <div className="mb-3 p-[10px] rounded-lg text-[13px] bg-noorix-bg-muted text-noorix-red">
             {error}
           </div>
         )}

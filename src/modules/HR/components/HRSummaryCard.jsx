@@ -21,7 +21,7 @@ export default function HRSummaryCard({
   terminatedCount = 0,
   monthlyPayrollTotal = 0,
   expiringResidencyCount = 0,
-  pendingLeavesCount = 0,
+  registeredLeavesCount = 0,
   outstandingAdvancesCount = 0,
   outstandingAdvancesAmount = 0,
   isLoading = false,
@@ -94,16 +94,10 @@ export default function HRSummaryCard({
         )}
       </MetricCard>
 
-      {/* 5 — طلبات الإجازة المعلقة */}
-      <MetricCard
-        color={pendingLeavesCount > 0 ? COLOR_LEAVES : COLOR_RESIDENCY}
-        className={CARD_CLASS}
-      >
-        <MetricCard.Header label={t('hrStatsPendingLeaves')} />
-        <MetricCard.Value
-          value={pendingLeavesCount}
-          color={pendingLeavesCount > 0 ? COLOR_LEAVES : undefined}
-        />
+      {/* 5 — إجازات مسجّلة (السنة الحالية) — بدون مسار اعتماد منفصل */}
+      <MetricCard color={COLOR_LEAVES} className={CARD_CLASS}>
+        <MetricCard.Header label={t('hrStatsLeavesYear')} />
+        <MetricCard.Value value={registeredLeavesCount} color={COLOR_LEAVES} />
       </MetricCard>
 
     </div>

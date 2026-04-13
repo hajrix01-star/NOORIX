@@ -97,6 +97,8 @@ export default {
   hrSummaryCardTitle: { ar: 'ملخص شؤون الموظفين', en: 'HR Summary' },
   hrStatsMonthlyPayroll: { ar: 'إجمالي الرواتب الشهري', en: 'Monthly payroll total' },
   hrStatsPendingLeaves: { ar: 'طلبات إجازة معلقة', en: 'Pending leave requests' },
+  /** ملخص HR — بعد إلغاء مسار الاعتماد: عدد سجلات الإجازة للسنة الحالية */
+  hrStatsLeavesYear: { ar: 'إجازات مسجّلة (السنة)', en: 'Leave records (year)' },
   hrStatsAdvancesAmount: { ar: 'مبلغ السلف المعلقة', en: 'Outstanding advances amount' },
   hrStatsTerminated: { ar: 'موظفون منتهية خدمتهم', en: 'Terminated employees' },
   payrollRunNumber: { ar: 'رقم المسيرة', en: 'Run number' },

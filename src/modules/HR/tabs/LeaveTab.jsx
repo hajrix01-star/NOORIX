@@ -7,7 +7,6 @@ import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
   getLeaves,
-  updateLeaveStatus,
   returnFromLeave,
   getLeaveSalarySettlementPreview,
   issueLeaveSalarySettlement,
@@ -21,9 +20,8 @@ import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell, Modal, Spinner, SmartTable } from '../../../ui';
+import { Button, Input, ScreenShell, Modal, Spinner, SmartTable } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
-import { buildLeaveRequestStatusMap } from '../../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 
@@ -82,20 +80,6 @@ export default function LeaveTab() {
       return arr;
     },
     enabled: !!companyId,
-  });
-
-  const updateStatusMutation = useApiMutation({
-    mutationFn: ({ id, status }) => updateLeaveStatus(id, companyId, status),
-    invalidateQueries: [
-      ['leaves', companyId, year],
-      ['leaves', companyId],
-      ['leave-salary-settlements', companyId],
-      ['movements', companyId],
-      ['employees', companyId, false],
-      ['employees', companyId],
-    ],
-    successToast: () => t('leaveStatusUpdated'),
-    errorToast: (e) => e?.message || t('saveFailed'),
   });
 
   const returnMutation = useApiMutation({
@@ -193,8 +177,6 @@ export default function LeaveTab() {
     ...l,
     employeeName: employeeDisplayName(l.employee || { name: l.employeeName }, lang),
   })), [data, lang]);
-  const leaveStatusMap = useMemo(() => buildLeaveRequestStatusMap(t), [t]);
-
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
     useTableFilter(items, {
       searchKeys: ['employeeName', 'leaveType'],
@@ -215,24 +197,21 @@ export default function LeaveTab() {
       render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'daysCount', label: t('daysCount'), numeric: true, sortable: true, width: 90, minWidth: 85,
       render: (v) => <span className="nx-cell-num">{v ?? '—'}</span> },
-    { key: 'status', label: t('status'), width: 140, minWidth: 130,
-      render: (v, row) => (
-        <div className="flex flex-wrap items-center gap-1 justify-center">
-          <Badge {...Badge.fromStatus(v, leaveStatusMap)} size="sm" />
-          {row.salarySettlement && (
-            <span className="text-[10px] font-semibold text-noorix-green whitespace-nowrap">
-              {t('leaveSalarySettledBadge')}
-            </span>
-          )}
-        </div>
+    { key: 'salarySettlement', label: t('leaveSalarySettlement'), width: 120, minWidth: 100,
+      render: (_, row) => (
+        row.salarySettlement ? (
+          <span className="text-[11px] font-semibold text-noorix-green whitespace-nowrap">
+            {t('leaveSalarySettledBadge')}
+          </span>
+        ) : (
+          <span className="text-noorix-muted text-[12px]">—</span>
+        )
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
         <HRActionsCell
           row={row}
           type="leave"
-          onApprove={row.status === 'pending' ? () => updateStatusMutation.mutate({ id: row.id, status: 'approved' }) : undefined}
-          onReject={row.status === 'pending' ? () => updateStatusMutation.mutate({ id: row.id, status: 'rejected' }) : undefined}
           onReturnFromLeave={canShowLeaveReturnRow(row) ? () => setReturnRow(row) : undefined}
           onLeaveSalarySettlement={canShowSalarySettlement(row) ? () => setSettlementRow(row) : undefined}
           onDelete={canDeleteLeave(row) ? () => {
@@ -241,7 +220,7 @@ export default function LeaveTab() {
           } : undefined}
         />
       ) },
-  ], [t, leaveStatusMap, updateStatusMutation, deleteLeaveMutation]);
+  ], [t, deleteLeaveMutation]);
 
   const exportData = allFilteredData.map((r) => ({
     employeeName: r.employeeName || '—',
@@ -249,7 +228,7 @@ export default function LeaveTab() {
     startDate: formatSaudiDate(r.startDate),
     endDate: formatSaudiDate(r.endDate),
     daysCount: r.daysCount ?? '—',
-    status: leaveStatusMap[r.status]?.label || r.status,
+    salarySettlement: r.salarySettlement ? t('leaveSalarySettledBadge') : '—',
   }));
 
   const renderMobileCard = useCallback((row) => {
@@ -257,7 +236,6 @@ export default function LeaveTab() {
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="font-bold text-[14px]">{row.employeeName}</span>
-          <Badge {...Badge.fromStatus(row.status, leaveStatusMap)} size="sm" className="shrink-0" />
         </div>
         <div className="text-[13px] text-noorix-muted mb-2 text-end">
           {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
@@ -279,12 +257,6 @@ export default function LeaveTab() {
             <div className="nx-mc__stat-value text-[14px] font-bold">{row.daysCount ?? '—'}</div>
           </div>
         </div>
-        {row.status === 'pending' && (
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="success" size="sm" onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'approved' })}>{t('statusApproved')}</Button>
-            <Button variant="danger" size="sm" onClick={() => updateStatusMutation.mutate({ id: row.id, status: 'rejected' })}>{t('statusRejected')}</Button>
-          </div>
-        )}
         {canShowLeaveReturnRow(row) && (
           <Button variant="primary" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setReturnRow(row)}>
             {t('leaveReturnFromLeave')}
@@ -310,7 +282,7 @@ export default function LeaveTab() {
         )}
       </div>
     );
-  }, [leaveStatusMap, t, updateStatusMutation, deleteLeaveMutation]);
+  }, [t, deleteLeaveMutation]);
 
   return (
     <ScreenShell>
