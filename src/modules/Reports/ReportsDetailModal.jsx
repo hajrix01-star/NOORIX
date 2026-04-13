@@ -7,7 +7,7 @@ import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { fmt } from '../../utils/format';
 import { percentText, truncateText, isEmptyMetric, metricCardAmountValue } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
-import { Button, AdaptiveSheet, MetricCard } from '../../ui';
+import { Button, AdaptiveSheet, MetricCard, ScreenTabs } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
 import { useIsMobile640 } from '../../hooks/useMediaQuery';
 
@@ -18,6 +18,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
   const navigate = useNavigate();
   const isMobile = useIsMobile640();
   const [invoiceListPage, setInvoiceListPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('summary');
   const { data, isLoading, error } = useReportDetails({
     companyId,
     year,
@@ -91,9 +92,23 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     return data.contextPercentOfSales;
   }, [data, trendPointForSelectedMonth]);
 
+  const tabItems = useMemo(() => {
+    const out = [{ id: 'summary', label: t('reportTabSummary') }];
+    if (state?.showTrend) out.push({ id: 'trend', label: t('reportTabTrend') });
+    if (data?.kind === 'invoices') out.push({ id: 'documents', label: t('reportTabDocuments') });
+    if (data?.kind === 'derived') out.push({ id: 'breakdown', label: t('reportTabBreakdown') });
+    return out;
+  }, [state?.showTrend, data?.kind, t]);
+
   useEffect(() => {
     setInvoiceListPage(1);
+    setActiveTab('summary');
   }, [state?.groupKey, state?.itemKey, state?.month, year]);
+
+  useEffect(() => {
+    const ids = new Set(tabItems.map((x) => x.id));
+    if (!ids.has(activeTab)) setActiveTab('summary');
+  }, [tabItems, activeTab]);
 
   const invoiceRows = data?.items ?? [];
   const invoiceTotal = invoiceRows.length;
@@ -146,134 +161,144 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
       )}
 
       {!isLoading && !error && data && (
-        <>
-          <div className="grid gap-3 mb-4 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
-            <MetricCard color="var(--color-nx-purchases)">
-              <MetricCard.Header label={data.month ? t('selectedMonth') : t('reportBreakdown')} />
-              <MetricCard.Value value={metricCardAmountValue(displayContextAmount)} currency="SR" />
-            </MetricCard>
-            {data.kind === 'invoices' && (
-              <>
-                <MetricCard color="var(--color-nx-sales)">
-                  <MetricCard.Header label={t('reportAnnualTotal')} />
-                  <MetricCard.Value value={metricCardAmountValue(displayAnnualAmount)} currency="SR" />
-                </MetricCard>
-                <MetricCard color="var(--color-nx-net-profit)">
-                  <MetricCard.Header label={data.month ? t('reportSalesShareMonth') : t('reportSalesShareYear')} />
-                  <MetricCard.Value value={percentText(displayContextPercent)} />
-                </MetricCard>
-                <MetricCard color="var(--color-nx-purchases)">
-                  <MetricCard.Header label={t('reportInvoicesCount')} />
-                  <MetricCard.Value value={Number(data.invoiceCount || 0).toLocaleString('en')} />
-                </MetricCard>
-              </>
-            )}
-          </div>
-
-          {state?.showTrend && trendIsError && (
-            <div className="p-4 mb-4 rounded-xl text-noorix-amber border border-noorix-amber/30 bg-noorix-amber/10 text-[13px]">
-              {trendError?.message || t('reportTrendLoadError')}
+        <ScreenTabs
+          items={tabItems}
+          value={activeTab}
+          onChange={setActiveTab}
+          contentClassName="nx-tab-content px-0 pt-3 pb-1 min-h-[160px]"
+          animateContent={false}
+        >
+          {activeTab === 'summary' && (
+            <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
+              <MetricCard color="var(--color-nx-purchases)">
+                <MetricCard.Header label={data.month ? t('selectedMonth') : t('reportBreakdown')} />
+                <MetricCard.Value value={metricCardAmountValue(displayContextAmount)} currency="SR" />
+              </MetricCard>
+              {data.kind === 'invoices' && (
+                <>
+                  <MetricCard color="var(--color-nx-sales)">
+                    <MetricCard.Header label={t('reportAnnualTotal')} />
+                    <MetricCard.Value value={metricCardAmountValue(displayAnnualAmount)} currency="SR" />
+                  </MetricCard>
+                  <MetricCard color="var(--color-nx-net-profit)">
+                    <MetricCard.Header label={data.month ? t('reportSalesShareMonth') : t('reportSalesShareYear')} />
+                    <MetricCard.Value value={percentText(displayContextPercent)} />
+                  </MetricCard>
+                  <MetricCard color="var(--color-nx-purchases)">
+                    <MetricCard.Header label={t('reportInvoicesCount')} />
+                    <MetricCard.Value value={Number(data.invoiceCount || 0).toLocaleString('en')} />
+                  </MetricCard>
+                </>
+              )}
             </div>
           )}
 
-          {state?.showTrend && trendLoading && !trend && !trendIsError && (
-            <div className="py-3 text-center text-noorix-muted text-[13px]">{t('loading')}</div>
-          )}
-
-          {state?.showTrend && trend && (
-            <div className="noorix-surface-card p-4 mb-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                <div>
-                  <div className="text-[14px] font-extrabold">{t('reportTrend')}</div>
-                  <div className="mt-1 text-noorix-muted text-[12px]">{t('reportTimeline')}</div>
+          {activeTab === 'trend' && state?.showTrend && (
+            <>
+              {trendIsError && (
+                <div className="p-4 mb-2 rounded-xl text-noorix-amber border border-noorix-amber/30 bg-noorix-amber/10 text-[13px]">
+                  {trendError?.message || t('reportTrendLoadError')}
                 </div>
-                <div className="text-[12px] text-noorix-muted">
-                  {t('reportSalesShareYear')}: <strong className="nx-font-numbers">{percentText(trend.percentOfSalesYear)}</strong>
-                </div>
-              </div>
-              <div className="grid gap-2.5 mb-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
-                <MetricCard color="var(--color-nx-purchases)">
-                  <MetricCard.Header label={t('reportMonthlyAverage')} />
-                  <MetricCard.Value value={metricCardAmountValue(averageAmount)} currency="SR" />
-                </MetricCard>
-                <MetricCard color="var(--color-nx-profit)">
-                  <MetricCard.Header label={t('reportTopMonth')} />
-                  <MetricCard.Value value={peakPoint?.label || '—'} />
-                  <MetricCard.Section>
-                    <span className="text-[12px] text-noorix-muted inline-flex items-baseline gap-x-1">
-                      {!isEmptyMetric(peakPoint?.amount) ? (
-                        <>
-                          <span className="nx-font-numbers">{fmt(Number(peakPoint.amount))}</span>
-                          <span className="nx-sar">SR</span>
-                        </>
-                      ) : (
-                        '—'
-                      )}
-                    </span>
-                  </MetricCard.Section>
-                </MetricCard>
-                <MetricCard color="var(--color-nx-sales)">
-                  <MetricCard.Header label={t('selectedMonth')} />
-                  <MetricCard.Value value={data?.monthLabel || t('allMonths')} />
-                  <MetricCard.Section>
-                    <span className="text-[12px] text-noorix-muted inline-flex items-baseline gap-x-1">
-                      {!isEmptyMetric(displayContextAmount) ? (
-                        <>
-                          <span className="nx-font-numbers">{fmt(Number(displayContextAmount))}</span>
-                          <span className="nx-sar">SR</span>
-                        </>
-                      ) : (
-                        '—'
-                      )}
-                    </span>
-                  </MetricCard.Section>
-                </MetricCard>
-              </div>
-              <div className="grid gap-2 mb-4">
-                {(trend.points || []).map((point) => {
-                  const amount = Number(point.amount || 0);
-                  const width = `${(Math.abs(amount) / maxAmount) * 100}%`;
-                  return (
-                    <div key={point.month} className="grid gap-2.5 items-center [grid-template-columns:52px_1fr_120px_78px]">
-                      <div className="text-[12px] text-noorix-muted">{point.label}</div>
-                      <div className="bg-noorix-bg-muted overflow-hidden rounded-full h-3">
-                        <div className="h-full rounded-full" style={{ width, background: amount >= 0 ? 'var(--color-nx-profit)' : 'var(--color-nx-expenses)' }} />
-                      </div>
-                      <div className="text-end nx-font-numbers font-bold inline-flex items-baseline justify-end gap-x-1">
-                        <span>{fmt(Number(point.amount))}</span>
-                        <span className="nx-sar">SR</span>
-                      </div>
-                      <div className="text-end nx-font-numbers text-[12px] text-nx-profit">{percentText(point.percentOfSales)}</div>
+              )}
+              {trendLoading && !trend && !trendIsError && (
+                <div className="py-6 text-center text-noorix-muted text-[13px]">{t('loading')}</div>
+              )}
+              {trend && (
+                <div className="noorix-surface-card p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <div>
+                      <div className="text-[14px] font-extrabold">{t('reportTrend')}</div>
+                      <div className="mt-1 text-noorix-muted text-[12px]">{t('reportTimeline')}</div>
                     </div>
-                  );
-                })}
-              </div>
-              <div
-                className="reports-detail-timeline-grid grid gap-2"
-                style={{ gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(120px, 1fr))' : 'repeat(12, minmax(62px, 1fr))' }}
-              >
-                {(trend.points || []).map((point) => (
-                  <div
-                    key={`timeline-${point.month}`}
-                    className="rounded-xl p-2"
-                    style={{
-                      background: state?.month === point.month ? 'var(--noorix-blue-10)' : 'var(--noorix-bg-muted)',
-                      border: state?.month === point.month ? '1px solid var(--noorix-blue-28)' : '1px solid var(--noorix-border)',
-                    }}
-                  >
-                    <div className="text-[11px] text-noorix-muted mb-1.5">{point.label}</div>
-                    <div className="text-[13px] font-extrabold nx-font-numbers inline-flex items-baseline gap-x-1 flex-wrap">
-                      <span>{fmt(Number(point.amount))}</span>
-                      <span className="nx-sar">SR</span>
+                    <div className="text-[12px] text-noorix-muted">
+                      {t('reportSalesShareYear')}: <strong className="nx-font-numbers">{percentText(trend.percentOfSalesYear)}</strong>
                     </div>
-                    <div className="text-[11px] mt-1 text-nx-profit">{percentText(point.percentOfSales)}</div>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="grid gap-2.5 mb-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
+                    <MetricCard color="var(--color-nx-purchases)">
+                      <MetricCard.Header label={t('reportMonthlyAverage')} />
+                      <MetricCard.Value value={metricCardAmountValue(averageAmount)} currency="SR" />
+                    </MetricCard>
+                    <MetricCard color="var(--color-nx-profit)">
+                      <MetricCard.Header label={t('reportTopMonth')} />
+                      <MetricCard.Value value={peakPoint?.label || '—'} />
+                      <MetricCard.Section>
+                        <span className="text-[12px] text-noorix-muted inline-flex items-baseline gap-x-1">
+                          {!isEmptyMetric(peakPoint?.amount) ? (
+                            <>
+                              <span className="nx-font-numbers">{fmt(Number(peakPoint.amount))}</span>
+                              <span className="nx-sar">SR</span>
+                            </>
+                          ) : (
+                            '—'
+                          )}
+                        </span>
+                      </MetricCard.Section>
+                    </MetricCard>
+                    <MetricCard color="var(--color-nx-sales)">
+                      <MetricCard.Header label={t('selectedMonth')} />
+                      <MetricCard.Value value={data?.monthLabel || t('allMonths')} />
+                      <MetricCard.Section>
+                        <span className="text-[12px] text-noorix-muted inline-flex items-baseline gap-x-1">
+                          {!isEmptyMetric(displayContextAmount) ? (
+                            <>
+                              <span className="nx-font-numbers">{fmt(Number(displayContextAmount))}</span>
+                              <span className="nx-sar">SR</span>
+                            </>
+                          ) : (
+                            '—'
+                          )}
+                        </span>
+                      </MetricCard.Section>
+                    </MetricCard>
+                  </div>
+                  <div className="grid gap-2 mb-4">
+                    {(trend.points || []).map((point) => {
+                      const amount = Number(point.amount || 0);
+                      const width = `${(Math.abs(amount) / maxAmount) * 100}%`;
+                      return (
+                        <div key={point.month} className="grid gap-2.5 items-center [grid-template-columns:52px_1fr_120px_78px]">
+                          <div className="text-[12px] text-noorix-muted">{point.label}</div>
+                          <div className="bg-noorix-bg-muted overflow-hidden rounded-full h-3">
+                            <div className="h-full rounded-full" style={{ width, background: amount >= 0 ? 'var(--color-nx-profit)' : 'var(--color-nx-expenses)' }} />
+                          </div>
+                          <div className="text-end nx-font-numbers font-bold inline-flex items-baseline justify-end gap-x-1">
+                            <span>{fmt(Number(point.amount))}</span>
+                            <span className="nx-sar">SR</span>
+                          </div>
+                          <div className="text-end nx-font-numbers text-[12px] text-nx-profit">{percentText(point.percentOfSales)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div
+                    className="reports-detail-timeline-grid grid gap-2"
+                    style={{ gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(120px, 1fr))' : 'repeat(12, minmax(62px, 1fr))' }}
+                  >
+                    {(trend.points || []).map((point) => (
+                      <div
+                        key={`timeline-${point.month}`}
+                        className="rounded-xl p-2"
+                        style={{
+                          background: state?.month === point.month ? 'var(--noorix-blue-10)' : 'var(--noorix-bg-muted)',
+                          border: state?.month === point.month ? '1px solid var(--noorix-blue-28)' : '1px solid var(--noorix-border)',
+                        }}
+                      >
+                        <div className="text-[11px] text-noorix-muted mb-1.5">{point.label}</div>
+                        <div className="text-[13px] font-extrabold nx-font-numbers inline-flex items-baseline gap-x-1 flex-wrap">
+                          <span>{fmt(Number(point.amount))}</span>
+                          <span className="nx-sar">SR</span>
+                        </div>
+                        <div className="text-[11px] mt-1 text-nx-profit">{percentText(point.percentOfSales)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
-          {data.kind === 'derived' && (
+          {activeTab === 'breakdown' && data.kind === 'derived' && (
             <div className="reports-detail-derived-list grid gap-2.5">
               {(data.items || []).map((item) => (
                 <div
@@ -290,7 +315,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
             </div>
           )}
 
-          {data.kind === 'invoices' && (
+          {activeTab === 'documents' && data.kind === 'invoices' && (
             <div className="w-full max-w-[1200px] mx-auto">
               <div className="noorix-surface-card overflow-hidden p-0">
                 <div className="nx-section-header">
@@ -355,7 +380,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
               </div>
             </div>
           )}
-        </>
+        </ScreenTabs>
       )}
     </AdaptiveSheet>
   );
