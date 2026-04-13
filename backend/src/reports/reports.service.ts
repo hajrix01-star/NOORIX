@@ -1361,11 +1361,60 @@ export class ReportsService {
       invoiceCount: g._count._all,
     }));
 
+    /** موردون لهم فواتير صرف/مشتريات في الفترة — تجميع العدد حسب فئة المورد */
+    const distinctSupplierRows = await this.prisma.invoice.findMany({
+      where: {
+        ...baseWhere,
+        supplierId: { not: null },
+        kind: { in: [...outflowKinds] },
+      },
+      select: { supplierId: true },
+      distinct: ['supplierId'],
+    });
+    const supplierIdsInPeriod = distinctSupplierRows.map((r) => r.supplierId as string);
+
+    let supplierCategoryBreakdown: { categoryId: string | null; nameAr: string; nameEn: string | null; count: number }[] = [];
+    if (supplierIdsInPeriod.length > 0) {
+      const supsForCat = await this.prisma.supplier.findMany({
+        where: { id: { in: supplierIdsInPeriod }, companyId, isDeleted: false },
+        select: {
+          id: true,
+          supplierCategoryId: true,
+          supplierCategory: { select: { nameAr: true, nameEn: true } },
+        },
+      });
+      const countByCat = new Map<string | null, number>();
+      for (const s of supsForCat) {
+        const cid = s.supplierCategoryId;
+        countByCat.set(cid, (countByCat.get(cid) ?? 0) + 1);
+      }
+      const foundIds = new Set(supsForCat.map((s) => s.id));
+      const orphanCount = supplierIdsInPeriod.filter((id) => !foundIds.has(id)).length;
+      if (orphanCount > 0) {
+        countByCat.set(null, (countByCat.get(null) ?? 0) + orphanCount);
+      }
+      supplierCategoryBreakdown = Array.from(countByCat.entries()).map(([categoryId, count]) => {
+        if (categoryId === null) {
+          return { categoryId: null, nameAr: 'غير مصنّف', nameEn: 'Uncategorized', count };
+        }
+        const sample = supsForCat.find((x) => x.supplierCategoryId === categoryId);
+        return {
+          categoryId,
+          nameAr: sample?.supplierCategory?.nameAr ?? '—',
+          nameEn: sample?.supplierCategory?.nameEn ?? null,
+          count,
+        };
+      });
+      supplierCategoryBreakdown.sort((a, b) => b.count - a.count);
+    }
+
     return {
       startDate: String(startDateStr).slice(0, 10),
       endDate: String(endDateStr).slice(0, 10),
       totalsByKind,
       topSuppliers,
+      supplierCategoryBreakdown,
+      suppliersInPeriodCount: supplierIdsInPeriod.length,
     };
   }
 }

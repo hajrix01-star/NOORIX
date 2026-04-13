@@ -11,8 +11,6 @@ import {
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useReportsGeneralProfitLoss, usePeriodAnalytics } from '../../../hooks/useReports';
-import { useSuppliers } from '../../../hooks/useSuppliers';
-import { useCategories } from '../../../hooks/useCategories';
 import { monthDateBounds } from '../../../utils/reportDrillLinks';
 import { useSales } from '../../../hooks/useSales';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
@@ -151,9 +149,6 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const { data: periodData, isLoading: isPeriodLoading } = usePeriodAnalytics({
     companyId, startDate: supplierFrom, endDate: supplierTo, enabled: !!companyId,
   });
-  const { suppliers, isLoading: isSuppliersLoading } = useSuppliers(companyId);
-  const { flatCategories } = useCategories(companyId);
-
   /* ── دوال القيم ── */
   function getCardValue(key) {
     if (!report) return '0';
@@ -261,27 +256,37 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     }));
   }, [periodData, lang]);
 
-  /* ── بيانات رسم بياني فئات الموردين ── */
+  /* ── فئات الموردين: من تحليل الفترة (موردون لهم حركة صرف/مشتريات فقط) — متسق مع الفلتر الزمني ── */
   const supplierCategoriesData = useMemo(() => {
-    if (!suppliers.length) return [];
-    const map = {};
-    for (const s of suppliers) {
-      const cat = flatCategories.find((c) => c.id === s.supplierCategoryId);
-      const catName = cat
-        ? (lang === 'ar' ? cat.nameAr || cat.nameEn : cat.nameEn || cat.nameAr) || '—'
-        : (lang === 'ar' ? 'غير مصنّف' : 'Uncategorized');
-      map[catName] = (map[catName] || 0) + 1;
-    }
-    const catTotal = Object.values(map).reduce((s, v) => s + v, 0) || 1;
-    return Object.entries(map)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, value], i) => ({
-        name,
-        value,
-        pct: ((value / catTotal) * 100).toFixed(1),
-        fill: PIE_COLORS[i % PIE_COLORS.length],
-      }));
-  }, [suppliers, flatCategories, lang]);
+    const raw = periodData?.supplierCategoryBreakdown;
+    if (!Array.isArray(raw) || raw.length === 0) return [];
+    const total = Number(periodData?.suppliersInPeriodCount) || raw.reduce((s, r) => s + r.count, 0) || 1;
+    return raw.map((row, i) => ({
+      name: lang === 'ar' ? row.nameAr : (row.nameEn || row.nameAr) || '—',
+      value: row.count,
+      pct: ((row.count / total) * 100).toFixed(1),
+      fill: PIE_COLORS[i % PIE_COLORS.length],
+    }));
+  }, [periodData, lang]);
+
+  /** دمج الفئات بعد الخامسة في «أخرى» ليتطابق المخطط مع القائمة والإجمالي */
+  const supplierCategoriesPieData = useMemo(() => {
+    if (supplierCategoriesData.length === 0) return [];
+    if (supplierCategoriesData.length <= 6) return supplierCategoriesData;
+    const top = supplierCategoriesData.slice(0, 5);
+    const rest = supplierCategoriesData.slice(5);
+    const othersValue = rest.reduce((s, r) => s + r.value, 0);
+    const total = supplierCategoriesData.reduce((s, r) => s + r.value, 0) || 1;
+    return [
+      ...top,
+      {
+        name: t('dashboardSupplierCategoriesOthers'),
+        value: othersValue,
+        pct: ((othersValue / total) * 100).toFixed(1),
+        fill: PIE_COLORS[5 % PIE_COLORS.length],
+      },
+    ];
+  }, [supplierCategoriesData, t]);
 
   /* ── ثوابت السلاسل الزمنية — قبل أي return مشروط ── */
   const salesSeries   = t('annualSales');
@@ -347,7 +352,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       <div
         className={cn(
           'grid gap-5',
-          supplierCategoriesData.length > 0
+          (isPeriodLoading || supplierCategoriesPieData.length > 0)
             ? 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px]'
             : 'grid-cols-1',
         )}
@@ -421,45 +426,58 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           )}
         </div>
 
-        {/* فئات الموردين — donut */}
-        {supplierCategoriesData.length > 0 && (
+        {/* فئات الموردين — donut (نفس فترة أعلى الموردين) */}
+        {(isPeriodLoading || supplierCategoriesPieData.length > 0) && (
           <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
             <div className="text-[14px] font-bold text-noorix-text mb-0.5 w-full max-lg:text-center lg:text-start">
               {t('supplierCategories')}
             </div>
+            <div className="text-[12px] text-noorix-muted mb-1 w-full max-lg:text-center lg:text-start">
+              {supplierFrom} — {supplierTo}
+            </div>
             <div className="text-[12px] text-noorix-muted mb-4 w-full max-lg:text-center lg:text-start">
-              {t('suppliersTotal')}: {suppliers.length}
+              {t('dashboardSuppliersInPeriod')}: {isPeriodLoading ? '…' : (periodData?.suppliersInPeriodCount ?? 0)}
             </div>
-            <ResponsiveContainer width="100%" height={170}>
-              <PieChart>
-                <Pie
-                  data={supplierCategoriesData}
-                  cx="50%" cy="50%"
-                  innerRadius={50} outerRadius={78}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {supplierCategoriesData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+            {isPeriodLoading ? (
+              <div className="h-[170px] flex items-center justify-center text-noorix-muted text-[12px]">{t('loading')}</div>
+            ) : supplierCategoriesPieData.length === 0 ? (
+              <div className="h-[170px] flex flex-col items-center justify-center text-noorix-muted text-[12px] gap-2">
+                <div>{t('dashboardNoSuppliersInPeriod')}</div>
+              </div>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={170}>
+                  <PieChart>
+                    <Pie
+                      data={supplierCategoriesPieData}
+                      cx="50%" cy="50%"
+                      innerRadius={50} outerRadius={78}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {supplierCategoriesPieData.map((entry, i) => (
+                        <Cell key={`${entry.name}-${i}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<PieTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
+                  {supplierCategoriesPieData.map((cat) => (
+                    <div key={cat.name} className="flex items-center justify-between gap-2 text-[12px]">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: cat.fill }} />
+                        <span className="text-noorix-text truncate">{cat.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="font-bold text-noorix-text">{cat.value}</span>
+                        <span className="text-noorix-muted">({cat.pct}%)</span>
+                      </div>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip content={<PieTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
-              {supplierCategoriesData.slice(0, 5).map((cat) => (
-                <div key={cat.name} className="flex items-center justify-between gap-2 text-[12px]">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: cat.fill }} />
-                    <span className="text-noorix-text truncate">{cat.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="font-bold text-noorix-text">{cat.value}</span>
-                    <span className="text-noorix-muted">({cat.pct}%)</span>
-                  </div>
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         )}
       </div>
