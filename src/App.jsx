@@ -267,20 +267,41 @@ export default function App() {
   }, [activeCompanyId, queryClient]);
 
 
-  // مراقبة حالة الاتصال بالسيرفر
+  // مراقبة حالة الاتصال بالسيرفر — إعادة فحص عند العودة للتبويب/الشبكة لتفادي بقاء التحذير بعد سبات الجهاز أو إخفاء التبويب
   const [serverDown, setServerDown] = useState(false);
+  const connectionProbeMountedRef = useRef(true);
+  useEffect(() => {
+    connectionProbeMountedRef.current = true;
+    return () => { connectionProbeMountedRef.current = false; };
+  }, []);
+
+  const probeConnection = useCallback(async () => {
+    let { ok } = await checkApiConnection();
+    if (!ok) {
+      await new Promise((r) => setTimeout(r, 1000));
+      if (!connectionProbeMountedRef.current) return;
+      const second = await checkApiConnection();
+      ok = second.ok;
+    }
+    if (connectionProbeMountedRef.current) setServerDown(!ok);
+  }, []);
+
   useEffect(() => {
     if (isLoginPage) return;
-    let mounted = true;
-    async function probe() {
-      const { ok } = await checkApiConnection();
-      if (mounted) setServerDown(!ok);
-    }
-    probe();
-    // إعادة الفحص كل 30 ثانية
-    const t = setInterval(probe, 30_000);
-    return () => { mounted = false; clearInterval(t); };
-  }, [isLoginPage]);
+    probeConnection();
+    const t = setInterval(probeConnection, 30_000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') probeConnection();
+    };
+    const onOnline = () => probeConnection();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onOnline);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', onOnline);
+    };
+  }, [isLoginPage, probeConnection]);
 
   // غير مصادق → صفحة الدخول دائماً
   if (!isAuthenticated && !isLoginPage) {
@@ -307,7 +328,7 @@ export default function App() {
             toggleLanguage={toggleLanguage}
             language={language}
             serverDown={serverDown}
-            onRetryConnection={async () => { const { ok } = await checkApiConnection(); setServerDown(!ok); }}
+            onRetryConnection={probeConnection}
             isAuthenticated={isAuthenticated}
             user={user}
             onLogout={handleLogout}
