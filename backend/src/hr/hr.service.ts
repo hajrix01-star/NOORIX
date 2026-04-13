@@ -1207,6 +1207,10 @@ export class HRService {
       newValue: { leaveType: leave.leaveType, daysCount: leave.daysCount },
     });
 
+    if (leave.status === 'approved') {
+      await this.syncEmployeeLeavePresence(leave.employeeId, dto.companyId);
+    }
+
     return leave;
   }
 
