@@ -1,12 +1,11 @@
 ﻿/**
- * LeaveFormModal — إضافة إجازة جديدة
+ * LeaveFormModal — إضافة أو تعديل إجازة (معتمدة أو غير معتمدة)
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
-import { getEmployees } from '../../../services/api';
-import { createLeave } from '../../../services/api';
+import { getEmployees, createLeave, updateLeave } from '../../../services/api';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { assertApiOk } from '../../../utils/apiResponse';
@@ -18,19 +17,59 @@ const TYPE_MAP = {
   other: 'leaveOther',
 };
 
-export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuccess, onClose }) {
+const STATUS_OPTIONS = [
+  { value: 'pending', labelKey: 'statusPending' },
+  { value: 'approved', labelKey: 'statusApproved' },
+  { value: 'rejected', labelKey: 'statusRejected' },
+];
+
+function sliceYmd(iso) {
+  return String(iso || '').slice(0, 10);
+}
+
+export function LeaveFormModal({
+  companyId,
+  employeeId: initialEmployeeId,
+  editLeave = null,
+  lockEmployeeSelector = false,
+  onSuccess,
+  onClose,
+}) {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
+  const isEdit = Boolean(editLeave?.id);
 
-  const [employeeId, setEmployeeId] = useState(initialEmployeeId || '');
+  const [employeeId, setEmployeeId] = useState('');
   const [leaveType, setLeaveType] = useState('annual');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [daysCount, setDaysCount] = useState('');
+  const [status, setStatus] = useState('approved');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isEdit && editLeave) {
+      setEmployeeId(editLeave.employeeId || '');
+      setLeaveType(editLeave.leaveType || 'annual');
+      setStartDate(sliceYmd(editLeave.startDate));
+      setEndDate(sliceYmd(editLeave.endDate));
+      setDaysCount(editLeave.daysCount != null ? String(editLeave.daysCount) : '');
+      setStatus(editLeave.status || 'approved');
+      setNotes(editLeave.notes || '');
+    } else {
+      setEmployeeId(initialEmployeeId || '');
+      setLeaveType('annual');
+      setStartDate('');
+      setEndDate('');
+      setDaysCount('');
+      setStatus('approved');
+      setNotes('');
+    }
+    setError('');
+  }, [isEdit, editLeave?.id, initialEmployeeId]);
 
   const { data: employees = [] } = useQuery({
     queryKey: ['employees', cid, false],
@@ -44,10 +83,6 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
 
   const activeEmployees = (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
 
-  React.useEffect(() => {
-    if (initialEmployeeId && !employeeId) setEmployeeId(initialEmployeeId);
-  }, [initialEmployeeId]);
-
   const handleStartEndChange = (field, value) => {
     if (field === 'startDate') {
       setStartDate(value);
@@ -55,9 +90,11 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
     } else {
       setEndDate(value);
     }
-    if (startDate && endDate) {
-      const s = new Date(field === 'startDate' ? value : startDate);
-      const e = new Date(field === 'endDate' ? value : endDate);
+    const sStr = field === 'startDate' ? value : startDate;
+    const eStr = field === 'endDate' ? value : endDate;
+    if (sStr && eStr) {
+      const s = new Date(sStr);
+      const e = new Date(eStr);
       if (e >= s) {
         const days = Math.ceil((e - s) / (24 * 60 * 60 * 1000)) + 1;
         setDaysCount(String(days));
@@ -80,18 +117,23 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
     }
     setSubmitting(true);
     try {
-      const payload = {
-        companyId: cid,
+      const base = {
         employeeId,
         leaveType,
         startDate: `${startDate}T00:00:00.000Z`,
         endDate: `${endDate}T00:00:00.000Z`,
         daysCount: daysCount ? parseInt(daysCount, 10) : undefined,
-        status: 'approved',
+        status,
         notes: notes || undefined,
       };
-      const res = await createLeave(payload);
-      assertApiOk(res, t('saveFailed'));
+      if (isEdit) {
+        const res = await updateLeave(editLeave.id, cid, base);
+        assertApiOk(res, t('saveFailed'));
+      } else {
+        const payload = { companyId: cid, ...base };
+        const res = await createLeave(payload);
+        assertApiOk(res, t('saveFailed'));
+      }
       onSuccess?.();
       onClose?.();
     } catch (err) {
@@ -105,7 +147,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
     <AdaptiveSheet
       open={true}
       onClose={onClose}
-      title={t('addLeave')}
+      title={isEdit ? t('editLeave') : t('addLeave')}
       size="md"
       side="start"
       className="leave-form-drawer"
@@ -113,7 +155,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
           <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? t('saving') : t('add')}
+            {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}
           </Button>
         </>
       }
@@ -125,6 +167,7 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
           value={employeeId}
           onChange={(e) => setEmployeeId(e.target.value)}
           required
+          disabled={lockEmployeeSelector}
         >
           <option value="">—</option>
           {activeEmployees.map((emp) => (
@@ -168,6 +211,17 @@ export function LeaveFormModal({ companyId, employeeId: initialEmployeeId, onSuc
           onChange={(e) => setDaysCount(e.target.value)}
           placeholder="0"
         />
+
+        <Input
+          type="select"
+          label={t('status')}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
+          ))}
+        </Input>
 
         <Input
           label={t('notes')}

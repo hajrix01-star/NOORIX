@@ -36,6 +36,8 @@ import {
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovementModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
+import { LeaveFormModal } from './components/LeaveFormModal';
+import { HRActionsCell } from './components/HRActionsCell';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildLeaveRequestStatusMap, buildResidencyRecordStatusMap, buildPayrollRunStatusMap } from '../../constants/badgeMaps';
 
@@ -66,6 +68,8 @@ export default function EmployeeProfileScreen() {
   const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
+  const canEditHrLeave =
+    Array.isArray(userPermissions) && userPermissions.includes('HR_WRITE');
   const canRecordCareer =
     Array.isArray(userPermissions) &&
     userPermissions.includes('EMPLOYEES_WRITE') &&
@@ -78,6 +82,7 @@ export default function EmployeeProfileScreen() {
   const [docModal, setDocModal] = useState(null);
   const { showToast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [editProfileLeave, setEditProfileLeave] = useState(null);
   const docFileRef = React.useRef(null);
 
   const { data: employee, isLoading, error } = useEmployee(id, companyId);
@@ -615,11 +620,26 @@ export default function EmployeeProfileScreen() {
           rowNumberWidth="1%"
           innerPadding={8}
           columns={[
-            { key: 'leaveType', label: t('leaveType'), width: '18%', render: (v) => t(TYPE_MAP[v] || 'leaveOther') },
-            { key: 'startDate', label: t('startDate'), width: '18%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
-            { key: 'endDate',   label: t('endDate'),   width: '18%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
-            { key: 'daysCount', label: t('daysCount'), numeric: true, width: '12%', render: (v) => <span className="nx-cell-num">{v ?? '—'}</span> },
-            { key: 'status',    label: t('status'),    width: '18%', render: (v) => <Badge {...Badge.fromStatus(v, leaveProfileStatusMap)} size="sm" /> },
+            { key: 'leaveType', label: t('leaveType'), width: '16%', render: (v) => t(TYPE_MAP[v] || 'leaveOther') },
+            { key: 'startDate', label: t('startDate'), width: '16%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'endDate',   label: t('endDate'),   width: '16%', render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+            { key: 'daysCount', label: t('daysCount'), numeric: true, width: '10%', render: (v) => <span className="nx-cell-num">{v ?? '—'}</span> },
+            { key: 'status',    label: t('status'),    width: '14%', render: (v) => <Badge {...Badge.fromStatus(v, leaveProfileStatusMap)} size="sm" /> },
+            ...(canEditHrLeave
+              ? [{
+                  key: 'actions',
+                  label: t('actions'),
+                  width: '10%',
+                  align: 'center',
+                  render: (_, row) => (
+                    <HRActionsCell
+                      row={row}
+                      type="leave"
+                      onEdit={!row.salarySettlement ? () => setEditProfileLeave(row) : undefined}
+                    />
+                  ),
+                }]
+              : []),
           ]}
           data={leaves}
           total={leaves.length}
@@ -779,6 +799,20 @@ export default function EmployeeProfileScreen() {
             queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
             showToast(t('careerMovementSaved'), 'success');
           }}
+        />
+      )}
+      {editProfileLeave && (
+        <LeaveFormModal
+          key={editProfileLeave.id}
+          companyId={companyId}
+          employeeId={id}
+          editLeave={editProfileLeave}
+          lockEmployeeSelector
+          onSuccess={() => {
+            invalidateAll();
+            showToast(t('leaveUpdated'), 'success');
+          }}
+          onClose={() => setEditProfileLeave(null)}
         />
       )}
     </ScreenShell>

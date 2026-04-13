@@ -124,6 +124,8 @@ export default {
   endDate: { ar: 'تاريخ النهاية', en: 'End date' },
   daysCount: { ar: 'عدد الأيام', en: 'Days count' },
   addLeave: { ar: '+ إضافة إجازة', en: '+ Add leave' },
+  editLeave: { ar: 'تعديل الإجازة', en: 'Edit leave' },
+  leaveUpdated: { ar: 'تم تحديث الإجازة بنجاح', en: 'Leave updated successfully' },
   addResidency: { ar: '+ إضافة إقامة', en: '+ Add residency' },
   expiryDate: { ar: 'تاريخ الانتهاء', en: 'Expiry date' },
   residencyExpiringSoon: { ar: 'تنتهي خلال 90 يوم', en: 'Expiring within 90 days' },

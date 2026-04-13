@@ -1037,6 +1037,11 @@ export async function getLeaves(companyId, employeeId, year) {
 export async function createLeave(body) {
   return apiPost('/api/v1/hr/leaves', body);
 }
+
+export async function updateLeave(id, companyId, body) {
+  return apiPatch(`/api/v1/hr/leaves/${encodeURIComponent(id)}?companyId=${encodeURIComponent(companyId)}`, body);
+}
+
 export async function updateLeaveStatus(id, companyId, status) {
   return apiPatch(`/api/v1/hr/leaves/${id}/status?companyId=${companyId}`, { status });
 }

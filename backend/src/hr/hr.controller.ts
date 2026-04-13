@@ -35,7 +35,7 @@ import { preferQueryCompanyId } from '../common/utils/company-request';
 import { HRService } from './hr.service';
 import { CreatePayrollRunDto } from './dto/create-payroll-run.dto';
 import { UpdatePayrollRunDto, UpdatePayrollRunStatusDto } from './dto/update-payroll-run.dto';
-import { CreateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
+import { CreateLeaveDto, UpdateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import { ReturnFromLeaveDto } from './dto/return-from-leave.dto';
 import { IssueLeaveSalarySettlementDto } from './dto/issue-leave-salary-settlement.dto';
 import { CreateResidencyDto } from './dto/create-residency.dto';
@@ -191,6 +191,19 @@ export class HRController {
   @RequirePermission('HR_WRITE')
   createLeave(@Body() dto: CreateLeaveDto, @CurrentUser() user: JwtUser) {
     return this.hrService.createLeave(dto, user.sub);
+  }
+
+  @Patch('leaves/:id')
+  @RequirePermission('HR_WRITE')
+  updateLeave(
+    @Param('id') id: string,
+    @Body() dto: UpdateLeaveDto,
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    return this.hrService.updateLeave(id, dto, companyId, user.sub);
   }
 
   @Patch('leaves/:id/status')

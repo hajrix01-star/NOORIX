@@ -48,3 +48,38 @@ export class UpdateLeaveStatusDto {
   @IsIn(['pending', 'approved', 'rejected'])
   status: string;
 }
+
+/** تحديث جزئي لإجازة — يُرسل حقل واحد أو أكثر */
+export class UpdateLeaveDto {
+  @IsOptional()
+  @IsString()
+  @IsIn(LEAVE_TYPES)
+  leaveType?: (typeof LEAVE_TYPES)[number];
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Type(() => Number)
+  daysCount?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['pending', 'approved', 'rejected'])
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsString()
+  employeeId?: string;
+}

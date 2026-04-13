@@ -20,7 +20,7 @@ import type {
   PayrollRunItemDto,
 } from './dto/create-payroll-run.dto';
 import type { UpdatePayrollRunDto, UpdatePayrollRunStatusDto } from './dto/update-payroll-run.dto';
-import type { CreateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
+import type { CreateLeaveDto, UpdateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import type { CreateResidencyDto } from './dto/create-residency.dto';
 import type { UpdateResidencyDto } from './dto/update-residency.dto';
 import type { CreateDocumentDto } from './dto/create-document.dto';
@@ -1210,6 +1210,129 @@ export class HRService {
     }
 
     return leave;
+  }
+
+  /**
+   * تعديل إجازة (معتمدة أو غير معتمدة). ممنوع إن وُجدت تسوية راتب مُصرفة لهذه الإجازة.
+   */
+  async updateLeave(
+    id: string,
+    dto: UpdateLeaveDto,
+    companyId: string,
+    userId?: string,
+  ) {
+    const existing = await this.prisma.leave.findFirst({
+      where: { id, companyId },
+      include: { salarySettlement: true },
+    });
+    if (!existing) {
+      throw new NotFoundException(`الإجازة ${id} غير موجودة.`);
+    }
+    if (existing.salarySettlement) {
+      throw new BadRequestException(
+        'لا يمكن تعديل إجازة مرتبطة بتسوية راتب مُصرفة. راجع الفواتير أو المحاسبة.',
+      );
+    }
+
+    const hasAny =
+      dto.leaveType != null ||
+      dto.startDate != null ||
+      dto.endDate != null ||
+      dto.daysCount != null ||
+      dto.status != null ||
+      dto.notes !== undefined ||
+      dto.employeeId != null;
+    if (!hasAny) {
+      throw new BadRequestException('لا يوجد حقول للتحديث.');
+    }
+
+    if (dto.employeeId != null && dto.employeeId !== existing.employeeId) {
+      const emp = await this.prisma.employee.findFirst({
+        where: { id: dto.employeeId, companyId },
+        select: { id: true },
+      });
+      if (!emp) {
+        throw new BadRequestException('الموظف غير موجود أو لا ينتمي لهذه الشركة.');
+      }
+    }
+
+    const startDate =
+      dto.startDate != null ? new Date(dto.startDate) : existing.startDate;
+    const endDate =
+      dto.endDate != null ? new Date(dto.endDate) : existing.endDate;
+    if (endDate.getTime() < startDate.getTime()) {
+      throw new BadRequestException(
+        'تاريخ نهاية الإجازة يجب أن يكون بعد تاريخ البداية.',
+      );
+    }
+
+    let daysCount = existing.daysCount;
+    if (dto.daysCount != null) {
+      daysCount = dto.daysCount;
+    } else if (dto.startDate != null || dto.endDate != null) {
+      const diff = Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      daysCount = Math.max(1, diff + 1);
+    }
+
+    const data: Prisma.LeaveUpdateInput = {};
+    if (dto.leaveType != null) data.leaveType = dto.leaveType;
+    if (dto.startDate != null) data.startDate = startDate;
+    if (dto.endDate != null) data.endDate = endDate;
+    if (
+      dto.daysCount != null ||
+      dto.startDate != null ||
+      dto.endDate != null
+    ) {
+      data.daysCount = daysCount;
+    }
+    if (dto.status != null) data.status = dto.status;
+    if (dto.notes !== undefined) data.notes = dto.notes;
+    if (dto.employeeId != null) {
+      data.employee = { connect: { id: dto.employeeId } };
+    }
+
+    const updated = await this.prisma.leave.update({
+      where: { id },
+      data,
+      include: { employee: true, salarySettlement: true },
+    });
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'update',
+      entity: 'leave',
+      entityId: id,
+      oldValue: {
+        leaveType: existing.leaveType,
+        startDate: existing.startDate,
+        endDate: existing.endDate,
+        daysCount: existing.daysCount,
+        status: existing.status,
+        employeeId: existing.employeeId,
+      },
+      newValue: {
+        leaveType: updated.leaveType,
+        startDate: updated.startDate,
+        endDate: updated.endDate,
+        daysCount: updated.daysCount,
+        status: updated.status,
+        employeeId: updated.employeeId,
+      },
+    });
+
+    const toSync = new Set<string>();
+    toSync.add(existing.employeeId);
+    if (updated.employeeId !== existing.employeeId) {
+      toSync.add(updated.employeeId);
+    }
+    for (const eid of toSync) {
+      await this.syncEmployeeLeavePresence(eid, companyId);
+    }
+
+    return updated;
   }
 
   async updateLeaveStatus(

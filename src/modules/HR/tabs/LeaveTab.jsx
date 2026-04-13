@@ -53,6 +53,10 @@ function canDeleteLeave(row) {
   return !row.salarySettlement;
 }
 
+function canEditLeave(row) {
+  return !row.salarySettlement;
+}
+
 function canShowSalarySettlement(row) {
   return row.status === 'approved' && row.leaveType === 'annual' && !row.salarySettlement;
 }
@@ -63,6 +67,7 @@ export default function LeaveTab() {
   const companyId = activeCompanyId ?? '';
   const [year, setYear] = useState(new Date().getFullYear());
   const [showAdd, setShowAdd] = useState(false);
+  const [editLeave, setEditLeave] = useState(null);
   const [returnRow, setReturnRow] = useState(null);
   const [returnDate, setReturnDate] = useState('');
   const [settlementRow, setSettlementRow] = useState(null);
@@ -212,6 +217,7 @@ export default function LeaveTab() {
         <HRActionsCell
           row={row}
           type="leave"
+          onEdit={canEditLeave(row) ? () => setEditLeave(row) : undefined}
           onReturnFromLeave={canShowLeaveReturnRow(row) ? () => setReturnRow(row) : undefined}
           onLeaveSalarySettlement={canShowSalarySettlement(row) ? () => setSettlementRow(row) : undefined}
           onDelete={canDeleteLeave(row) ? () => {
@@ -265,6 +271,11 @@ export default function LeaveTab() {
         {canShowSalarySettlement(row) && (
           <Button variant="success" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setSettlementRow(row)}>
             {t('leaveSalarySettlement')}
+          </Button>
+        )}
+        {canEditLeave(row) && (
+          <Button variant="ghost" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setEditLeave(row)}>
+            {t('edit')}
           </Button>
         )}
         {canDeleteLeave(row) && (
@@ -335,14 +346,23 @@ export default function LeaveTab() {
         stripeMobileCards
       />
 
-      {showAdd && (
+      {(showAdd || editLeave) && (
         <LeaveFormModal
+          key={editLeave?.id ?? 'new-leave'}
           companyId={companyId}
+          employeeId={editLeave?.employeeId}
+          editLeave={editLeave}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['leaves', companyId] });
-            showToast(t('leaveAdded'), 'success');
+            queryClient.invalidateQueries({ queryKey: ['leaves', companyId, year] });
+            queryClient.invalidateQueries({ queryKey: ['employees', companyId, false] });
+            queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
+            showToast(editLeave ? t('leaveUpdated') : t('leaveAdded'), 'success');
           }}
-          onClose={() => setShowAdd(false)}
+          onClose={() => {
+            setShowAdd(false);
+            setEditLeave(null);
+          }}
         />
       )}
 
