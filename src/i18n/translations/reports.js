@@ -65,6 +65,7 @@ export default {
   reportTabTrend: { ar: 'تطور شهري', en: 'Monthly trend' },
   reportTabDocuments: { ar: 'المستندات', en: 'Documents' },
   reportTabBreakdown: { ar: 'تفصيل البند', en: 'Breakdown' },
+  reportTrendChartCaption: { ar: 'المبلغ شهرياً · نسبة من المبيعات فوق كل عمود', en: 'Monthly amount · % of sales above each column' },
   reportSourceOrSupplier: { ar: 'المصدر / المورد', en: 'Source / supplier' },
   reportProfitMargin: { ar: 'نسبة الربح', en: 'Profit margin' },
   uncategorized: { ar: 'غير مصنف', en: 'Uncategorized' },

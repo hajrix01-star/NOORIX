@@ -9,14 +9,24 @@ import { percentText, truncateText, isEmptyMetric, metricCardAmountValue } from 
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button, AdaptiveSheet, MetricCard, ScreenTabs } from '../../ui';
 import SmartTable from '../../components/common/SmartTable';
-import { useIsMobile640 } from '../../hooks/useMediaQuery';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Cell,
+  LabelList,
+} from 'recharts';
+import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 
 /** حل وسط: عرض أكثر من 8 دون إغراق النافذة؛ التصفح على البيانات المحمّلة (حتى 500 من الخادم). */
 const DETAIL_INVOICES_PAGE_SIZE = 15;
 
 export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }) {
   const navigate = useNavigate();
-  const isMobile = useIsMobile640();
   const [invoiceListPage, setInvoiceListPage] = useState(1);
   const [activeTab, setActiveTab] = useState('summary');
   const { data, isLoading, error } = useReportDetails({
@@ -50,10 +60,20 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     });
   }, [state, year]);
 
-  const maxAmount = useMemo(() => {
-    const values = (trend?.points || []).map((point) => Math.abs(Number(point.amount || 0)));
-    return Math.max(1, ...values);
-  }, [trend]);
+  const trendChartData = useMemo(() => {
+    if (!trend?.points?.length) return [];
+    return trend.points.map((point) => {
+      const raw = Number(point.amount || 0);
+      return {
+        key: String(point.month),
+        name: point.label,
+        amount: Math.abs(raw),
+        rawAmount: raw,
+        pctStr: percentText(point.percentOfSales),
+        isSelected: state?.month === point.month,
+      };
+    });
+  }, [trend?.points, state?.month]);
 
   const peakPoint = useMemo(() => {
     const points = trend?.points || [];
@@ -252,46 +272,66 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                       </MetricCard.Section>
                     </MetricCard>
                   </div>
-                  <div className="grid gap-2 mb-4">
-                    {(trend.points || []).map((point) => {
-                      const amount = Number(point.amount || 0);
-                      const width = `${(Math.abs(amount) / maxAmount) * 100}%`;
-                      return (
-                        <div key={point.month} className="grid gap-2.5 items-center [grid-template-columns:52px_1fr_120px_78px]">
-                          <div className="text-[12px] text-noorix-muted">{point.label}</div>
-                          <div className="bg-noorix-bg-muted overflow-hidden rounded-full h-3">
-                            <div className="h-full rounded-full" style={{ width, background: amount >= 0 ? 'var(--color-nx-profit)' : 'var(--color-nx-expenses)' }} />
-                          </div>
-                          <div className="text-end nx-font-numbers font-bold inline-flex items-baseline justify-end gap-x-1">
-                            <span>{fmt(Number(point.amount))}</span>
-                            <span className="nx-sar">SR</span>
-                          </div>
-                          <div className="text-end nx-font-numbers text-[12px] text-nx-profit">{percentText(point.percentOfSales)}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div
-                    className="reports-detail-timeline-grid grid gap-2"
-                    style={{ gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(120px, 1fr))' : 'repeat(12, minmax(62px, 1fr))' }}
-                  >
-                    {(trend.points || []).map((point) => (
-                      <div
-                        key={`timeline-${point.month}`}
-                        className="rounded-xl p-2"
-                        style={{
-                          background: state?.month === point.month ? 'var(--noorix-blue-10)' : 'var(--noorix-bg-muted)',
-                          border: state?.month === point.month ? '1px solid var(--noorix-blue-28)' : '1px solid var(--noorix-border)',
-                        }}
-                      >
-                        <div className="text-[11px] text-noorix-muted mb-1.5">{point.label}</div>
-                        <div className="text-[13px] font-extrabold nx-font-numbers inline-flex items-baseline gap-x-1 flex-wrap">
-                          <span>{fmt(Number(point.amount))}</span>
-                          <span className="nx-sar">SR</span>
-                        </div>
-                        <div className="text-[11px] mt-1 text-nx-profit">{percentText(point.percentOfSales)}</div>
-                      </div>
-                    ))}
+                  <div className="mt-1 rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-2 sm:p-4" dir="ltr">
+                    <div className="mb-2 text-[11px] font-semibold text-noorix-muted sm:text-[12px]">
+                      {t('reportTrendChartCaption')}
+                    </div>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={trendChartData} margin={{ top: 24, right: 6, left: 0, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--noorix-border)" />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
+                          axisLine={{ stroke: 'var(--noorix-border)' }}
+                          tickLine={false}
+                          interval={0}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
+                          tickFormatter={(v) => fmt(v, 0)}
+                          width={44}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          cursor={{ fill: 'color-mix(in srgb, var(--color-nx-sales) 8%, transparent)' }}
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            const d = payload[0]?.payload;
+                            return (
+                              <div className="rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2 shadow-md text-[12px]">
+                                <div className="mb-1 font-bold text-noorix-text">{d?.name}</div>
+                                <div className="nx-font-numbers font-semibold text-noorix-text">
+                                  {fmt(d?.rawAmount)} <span className="nx-sar">SR</span>
+                                </div>
+                                <div className="mt-1 text-[11px] text-nx-profit">
+                                  {t('reportSalesShare')}: {d?.pctStr}
+                                </div>
+                              </div>
+                            );
+                          }}
+                        />
+                        <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={52}>
+                          {trendChartData.map((entry) => (
+                            <Cell
+                              key={entry.key}
+                              fill={entry.rawAmount >= 0 ? KPI_RECHARTS_COLORS.grossProfit : KPI_RECHARTS_COLORS.expenses}
+                              stroke={entry.isSelected ? KPI_RECHARTS_COLORS.sales : 'transparent'}
+                              strokeWidth={entry.isSelected ? 2 : 0}
+                            />
+                          ))}
+                          <LabelList
+                            dataKey="pctStr"
+                            position="top"
+                            style={{
+                              fontSize: 10,
+                              fill: 'var(--noorix-text-muted)',
+                              fontFamily: 'var(--noorix-font-numbers)',
+                            }}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               )}
