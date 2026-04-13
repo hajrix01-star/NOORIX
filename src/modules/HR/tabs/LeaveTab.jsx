@@ -5,7 +5,14 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getLeaves, updateLeaveStatus, returnFromLeave } from '../../../services/api';
+import {
+  getLeaves,
+  updateLeaveStatus,
+  returnFromLeave,
+  getLeaveSalarySettlementPreview,
+  issueLeaveSalarySettlement,
+  deleteLeave,
+} from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
@@ -15,7 +22,7 @@ import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell, Modal } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, Modal, Spinner } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { buildLeaveRequestStatusMap } from '../../../constants/badgeMaps';
 
@@ -45,6 +52,14 @@ function canShowLeaveReturnRow(row) {
   return t >= s && t <= e;
 }
 
+function canDeleteLeave(row) {
+  return !row.salarySettlement;
+}
+
+function canShowSalarySettlement(row) {
+  return row.status === 'approved' && row.leaveType === 'annual' && !row.salarySettlement;
+}
+
 export default function LeaveTab() {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
@@ -53,6 +68,8 @@ export default function LeaveTab() {
   const [showAdd, setShowAdd] = useState(false);
   const [returnRow, setReturnRow] = useState(null);
   const [returnDate, setReturnDate] = useState('');
+  const [settlementRow, setSettlementRow] = useState(null);
+  const [settlementAmount, setSettlementAmount] = useState('');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -69,7 +86,7 @@ export default function LeaveTab() {
   });
 
   const updateStatusMutation = useApiMutation({
-    mutationFn: ({ id, status, vaultId }) => updateLeaveStatus(id, companyId, status, vaultId),
+    mutationFn: ({ id, status }) => updateLeaveStatus(id, companyId, status),
     invalidateQueries: [
       ['leaves', companyId, year],
       ['leaves', companyId],
@@ -108,6 +125,70 @@ export default function LeaveTab() {
     const d = tday >= s && tday <= e ? tday : e;
     setReturnDate(d);
   }, [returnRow]);
+
+  const {
+    data: settlementPreview,
+    isLoading: settlementPreviewLoading,
+    isError: settlementPreviewError,
+    error: settlementPreviewErr,
+  } = useQuery({
+    queryKey: ['leave-salary-settlement-preview', companyId, settlementRow?.id],
+    queryFn: async () => {
+      const res = await getLeaveSalarySettlementPreview(settlementRow.id, companyId);
+      rejectIfApiFailed(res, t('saveFailed'));
+      return res.data;
+    },
+    enabled: !!companyId && !!settlementRow?.id,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (settlementPreview?.suggestedAmount != null) {
+      setSettlementAmount(String(settlementPreview.suggestedAmount));
+    }
+  }, [settlementPreview]);
+
+  const deleteLeaveMutation = useApiMutation({
+    mutationFn: async (id) => {
+      const res = await deleteLeave(id, companyId);
+      rejectIfApiFailed(res, t('saveFailed'));
+      return res;
+    },
+    invalidateQueries: [
+      ['leaves', companyId, year],
+      ['leaves', companyId],
+      ['leave-salary-settlements', companyId],
+      ['movements', companyId],
+      ['employees', companyId, false],
+      ['employees', companyId],
+    ],
+    successToast: () => t('leaveDeleted'),
+    errorToast: (e) => e?.message || t('saveFailed'),
+  });
+
+  const issueSettlementMutation = useApiMutation({
+    mutationFn: async ({ id, grossAmount }) => {
+      const raw = String(grossAmount ?? '').replace(/,/g, '').trim();
+      const n = parseFloat(raw);
+      if (!Number.isFinite(n) || n < 0.01) {
+        throw new Error(t('requiredFields'));
+      }
+      const res = await issueLeaveSalarySettlement(id, companyId, { grossAmount: n });
+      rejectIfApiFailed(res, t('saveFailed'));
+      return res;
+    },
+    invalidateQueries: [
+      ['leaves', companyId, year],
+      ['leaves', companyId],
+      ['leave-salary-settlements', companyId],
+      ['movements', companyId],
+      ['employees', companyId, false],
+      ['employees', companyId],
+      { queryKey: ['invoices', companyId] },
+    ],
+    successToast: () => t('leaveSalarySettlementSaved'),
+    errorToast: (e) => e?.message || t('saveFailed'),
+  });
 
   const items = useMemo(() => (data ?? []).map((l) => ({
     ...l,
@@ -154,9 +235,14 @@ export default function LeaveTab() {
           onApprove={row.status === 'pending' ? () => updateStatusMutation.mutate({ id: row.id, status: 'approved' }) : undefined}
           onReject={row.status === 'pending' ? () => updateStatusMutation.mutate({ id: row.id, status: 'rejected' }) : undefined}
           onReturnFromLeave={canShowLeaveReturnRow(row) ? () => setReturnRow(row) : undefined}
+          onLeaveSalarySettlement={canShowSalarySettlement(row) ? () => setSettlementRow(row) : undefined}
+          onDelete={canDeleteLeave(row) ? () => {
+            if (!window.confirm(t('deleteLeaveConfirm'))) return;
+            deleteLeaveMutation.mutate(row.id);
+          } : undefined}
         />
       ) },
-  ], [t, leaveStatusMap, updateStatusMutation]);
+  ], [t, leaveStatusMap, updateStatusMutation, deleteLeaveMutation]);
 
   const exportData = allFilteredData.map((r) => ({
     employeeName: r.employeeName || '—',
@@ -205,9 +291,27 @@ export default function LeaveTab() {
             {t('leaveReturnFromLeave')}
           </Button>
         )}
+        {canShowSalarySettlement(row) && (
+          <Button variant="success" size="sm" className="w-full mt-2 min-h-[44px]" onClick={() => setSettlementRow(row)}>
+            {t('leaveSalarySettlement')}
+          </Button>
+        )}
+        {canDeleteLeave(row) && (
+          <Button
+            variant="danger"
+            size="sm"
+            className="w-full mt-2 min-h-[44px]"
+            onClick={() => {
+              if (!window.confirm(t('deleteLeaveConfirm'))) return;
+              deleteLeaveMutation.mutate(row.id);
+            }}
+          >
+            {t('delete')}
+          </Button>
+        )}
       </div>
     );
-  }, [leaveStatusMap, t, updateStatusMutation]);
+  }, [leaveStatusMap, t, updateStatusMutation, deleteLeaveMutation]);
 
   return (
     <ScreenShell>
@@ -270,6 +374,83 @@ export default function LeaveTab() {
           onClose={() => setShowAdd(false)}
         />
       )}
+
+      <Modal
+        open={!!settlementRow}
+        onClose={() => {
+          setSettlementRow(null);
+          setSettlementAmount('');
+        }}
+        title={t('leaveSalarySettlementTitle')}
+        size="sm"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSettlementRow(null);
+                setSettlementAmount('');
+              }}
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={
+                issueSettlementMutation.isPending
+                || settlementPreviewLoading
+                || !settlementPreview
+                || !settlementAmount
+              }
+              onClick={() => {
+                if (!settlementRow) return;
+                issueSettlementMutation.mutate(
+                  { id: settlementRow.id, grossAmount: settlementAmount },
+                  {
+                    onSuccess: () => {
+                      setSettlementRow(null);
+                      setSettlementAmount('');
+                    },
+                  },
+                );
+              }}
+            >
+              {issueSettlementMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </>
+        }
+      >
+        {settlementPreviewLoading && (
+          <div className="flex justify-center py-6">
+            <Spinner />
+          </div>
+        )}
+        {!settlementPreviewLoading && settlementPreviewError && (
+          <p className="text-[13px] text-noorix-red">
+            {settlementPreviewErr?.message || t('saveFailed')}
+          </p>
+        )}
+        {!settlementPreviewLoading && settlementPreview && (
+          <>
+            <p className="text-[12px] text-noorix-muted mb-2">
+              {t(
+                'leaveSalarySettlementCalendarHint',
+                String(settlementPreview.calendarDaysPaid),
+                String(settlementPreview.daysInMonth),
+              )}
+            </p>
+            <Input
+              type="number"
+              step="0.01"
+              min="0.01"
+              label={t('leaveSalarySettlementAmountLabel')}
+              value={settlementAmount}
+              onChange={(e) => setSettlementAmount(e.target.value)}
+              className="ltr"
+            />
+          </>
+        )}
+      </Modal>
 
       <Modal
         open={!!returnRow}

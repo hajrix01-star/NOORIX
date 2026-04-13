@@ -37,6 +37,7 @@ import { CreatePayrollRunDto } from './dto/create-payroll-run.dto';
 import { UpdatePayrollRunDto, UpdatePayrollRunStatusDto } from './dto/update-payroll-run.dto';
 import { CreateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import { ReturnFromLeaveDto } from './dto/return-from-leave.dto';
+import { IssueLeaveSalarySettlementDto } from './dto/issue-leave-salary-settlement.dto';
 import { CreateResidencyDto } from './dto/create-residency.dto';
 import { UpdateResidencyDto } from './dto/update-residency.dto';
 import { CreateDocumentDto } from './dto/create-document.dto';
@@ -216,6 +217,42 @@ export class HRController {
   ) {
     const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.returnFromLeave(id, dto, companyId, user.sub);
+  }
+
+  @Get('leaves/:id/salary-settlement-preview')
+  @RequirePermission('HR_READ')
+  getLeaveSalarySettlementPreview(
+    @Param('id') id: string,
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    return this.hrService.getLeaveSalarySettlementPreview(id, companyId);
+  }
+
+  @Post('leaves/:id/salary-settlement')
+  @RequirePermission('HR_WRITE')
+  issueLeaveSalarySettlement(
+    @Param('id') id: string,
+    @Body() dto: IssueLeaveSalarySettlementDto,
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    return this.hrService.issueLeaveSalarySettlement(id, companyId, dto, user.sub);
+  }
+
+  @Delete('leaves/:id')
+  @RequirePermission('HR_WRITE')
+  deleteLeave(
+    @Param('id') id: string,
+    @Query('companyId') queryCompanyId: string,
+    @Headers('x-company-id') headerCompanyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+    return this.hrService.deleteLeave(id, companyId, user.sub);
   }
 
   @Get('leave-salary-settlements')

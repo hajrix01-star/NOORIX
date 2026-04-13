@@ -1033,13 +1033,30 @@ export async function getLeaves(companyId, employeeId, year) {
 export async function createLeave(body) {
   return apiPost('/api/v1/hr/leaves', body);
 }
-export async function updateLeaveStatus(id, companyId, status, vaultId) {
-  const body = vaultId ? { status, vaultId } : { status };
-  return apiPatch(`/api/v1/hr/leaves/${id}/status?companyId=${companyId}`, body);
+export async function updateLeaveStatus(id, companyId, status) {
+  return apiPatch(`/api/v1/hr/leaves/${id}/status?companyId=${companyId}`, { status });
 }
 
 export async function getLeaveSalarySettlements(companyId, payrollMonth) {
   return apiGet('/api/v1/hr/leave-salary-settlements', { companyId, payrollMonth });
+}
+
+export async function getLeaveSalarySettlementPreview(id, companyId) {
+  return apiGet(`/api/v1/hr/leaves/${id}/salary-settlement-preview`, { companyId });
+}
+
+export async function issueLeaveSalarySettlement(id, companyId, body = {}) {
+  const payload = {};
+  if (body.grossAmount != null && body.grossAmount !== '') {
+    const n = Number(body.grossAmount);
+    if (Number.isFinite(n)) payload.grossAmount = n;
+  }
+  if (body.vaultId) payload.vaultId = body.vaultId;
+  return apiPost(`/api/v1/hr/leaves/${id}/salary-settlement?companyId=${companyId}`, payload);
+}
+
+export async function deleteLeave(id, companyId) {
+  return apiDelete(`/api/v1/hr/leaves/${id}?companyId=${companyId}`);
 }
 
 export async function returnFromLeave(id, companyId, actualReturnDate) {

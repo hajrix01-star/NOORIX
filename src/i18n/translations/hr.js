@@ -293,6 +293,19 @@ export default {
   },
   leaveActualReturnDate: { ar: 'تاريخ العودة الفعلي', en: 'Actual return date' },
   leaveReturnedOk: { ar: 'تم تسجيل العودة من الإجازة', en: 'Return from leave recorded' },
+  leaveSalarySettlement: { ar: 'تسوية راتب (إجازة سنوية)', en: 'Salary settlement (annual)' },
+  leaveSalarySettlementTitle: { ar: 'تسوية راتب — إجازة سنوية', en: 'Salary settlement — annual leave' },
+  leaveSalarySettlementCalendarHint: {
+    ar: 'أيام تقويمية حتى السفر: {0} من {1}',
+    en: 'Calendar days until travel: {0} of {1}',
+  },
+  leaveSalarySettlementAmountLabel: { ar: 'المبلغ المراد صرفه', en: 'Amount to pay' },
+  leaveSalarySettlementSaved: { ar: 'تم صرف تسوية الراتب', en: 'Salary settlement issued' },
+  deleteLeaveConfirm: {
+    ar: 'حذف سجل الإجازة؟ لا يمكن حذف إجازة لها تسوية راتب مُصرفة.',
+    en: 'Delete this leave record? Leaves with an issued salary settlement cannot be deleted.',
+  },
+  leaveDeleted: { ar: 'تم حذف الإجازة', en: 'Leave deleted' },
   overtimeWorkDaysPerMonth: { ar: 'أيام العمل لحساب الأوفر تايم (شهرياً)', en: 'Work days for monthly overtime' },
   overtimeWorkDaysHelp: {
     ar: '26 ≈ شهر 30 يوم مع ~4 أيام راحة (نمط شائع). 30 = دوام كل أيام الشهر. يُحفظ تلقائياً مع الموظف ويُستخدم في الملف والمسيرة.',
