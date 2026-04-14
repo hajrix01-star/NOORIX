@@ -156,6 +156,8 @@ export default function InvoicesListScreen() {
   const [showCancelled, setShowCancelled] = useState(false);
   const [filterHasNotesOnly, setFilterHasNotesOnly] = useState(false);
   const [urlExtra, setUrlExtra] = useState({ kind: '', categoryId: '', expenseLineId: '' });
+  /** فلتر دفعة مشتريات — يُزامَن من ?batchId= في الرابط */
+  const [filterBatchId, setFilterBatchId] = useState('');
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
@@ -332,6 +334,7 @@ export default function InvoicesListScreen() {
     includeCancelled: showCancelled,
     hasNotes: filterHasNotesOnly || undefined,
     vaultId: filterVaultId || undefined,
+    batchId: filterBatchId || undefined,
   });
 
   // بيانات مُحوَّلة لـ SmartTable
@@ -425,6 +428,7 @@ export default function InvoicesListScreen() {
         includeCancelled: showCancelled,
         hasNotes: filterHasNotesOnly || undefined,
         vaultId: filterVaultId || undefined,
+        batchId: filterBatchId || undefined,
       });
       const rows = all.map(mapInvoiceToExportRow);
       const safeStart = String(dateFilter.startDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'start';
@@ -474,6 +478,7 @@ export default function InvoicesListScreen() {
         includeCancelled: showCancelled,
         hasNotes: filterHasNotesOnly || undefined,
         vaultId: filterVaultId || undefined,
+        batchId: filterBatchId || undefined,
       });
       const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const rowsHtml = all.map((inv) => {
@@ -503,7 +508,7 @@ export default function InvoicesListScreen() {
     companyId, displayedTotal, dateFilter.startDate, dateFilter.endDate, dateFilter.label,
     kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
     urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs, t,
-    companyName, logoUrl, serverAll, fmt, showToast, filterHasNotesOnly, filterVaultId,
+    companyName, logoUrl, serverAll, fmt, showToast, filterHasNotesOnly, filterVaultId, filterBatchId,
   ]);
 
   const vaultRowLabel = useCallback((row) => {

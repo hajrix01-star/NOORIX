@@ -3,6 +3,7 @@
  * تصميم احترافي متكامل — جدول موحد مثل الفواتير، اختصارات مدمجة، ملخص متسق
  */
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import Decimal from 'decimal.js';
 import { Button, Badge, Input, ScreenTabs, ScreenShell, SmartTable } from '../../ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -197,9 +198,25 @@ export default function PurchasesBatchScreen() {
         <span className="text-[12px] text-noorix-muted" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(v)}</span>
       )},
     { key: 'invoiceCount', label: t('invoicesColHeader'), numeric: true, sortable: true, width: '6%',
-      render: (v) => (
-        <span className="font-bold" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v ?? 0}</span>
-      )},
+      render: (v, row) => {
+        const n = v ?? 0;
+        const from = String(dateFilter.startDate || '').slice(0, 10);
+        const to = String(dateFilter.endDate || '').slice(0, 10);
+        const href = `/invoices?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&batchId=${encodeURIComponent(row.batchId)}`;
+        if (n <= 0) {
+          return <span className="font-bold text-noorix-muted tabular-nums nx-font-numbers">{n}</span>;
+        }
+        return (
+          <Link
+            to={href}
+            className="font-bold text-noorix-blue hover:underline tabular-nums nx-font-numbers focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-noorix-blue rounded"
+            title={t('invoicesColHeader')}
+            aria-label={`${t('invoicesColHeader')}: ${n}`}
+          >
+            {n}
+          </Link>
+        );
+      }},
     { key: 'supplierNames', label: t('supplier'), sortable: true, width: '20%',
       render: (v) => (
         <span className="nx-cell-ellipsis block">{v || '—'}</span>
@@ -234,7 +251,7 @@ export default function PurchasesBatchScreen() {
         );
       },
     },
-  ], [t, statusBadgeMap, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
+  ], [t, statusBadgeMap, batchActionLoading, openBatchWithInvoices, handleCancelBatch, dateFilter.startDate, dateFilter.endDate]);
 
   const renderBatchMobileCard = useCallback((row) => {
     const canCancel = row.status === 'active' || row.status === 'partial';
@@ -246,7 +263,14 @@ export default function PurchasesBatchScreen() {
         </div>
         <div className="flex gap-2.5 text-[12px] text-noorix-muted mb-1.5">
           <span>{formatSaudiDate(row.transactionDate)}</span>
-          {row.invoiceCount > 0 && <span className="font-bold text-noorix-blue">{row.invoiceCount} {t('invoices')}</span>}
+          {row.invoiceCount > 0 && (
+            <Link
+              to={`/invoices?from=${encodeURIComponent(String(dateFilter.startDate || '').slice(0, 10))}&to=${encodeURIComponent(String(dateFilter.endDate || '').slice(0, 10))}&batchId=${encodeURIComponent(row.batchId)}`}
+              className="font-bold text-noorix-blue hover:underline"
+            >
+              {row.invoiceCount} {t('invoices')}
+            </Link>
+          )}
         </div>
         {row.supplierNames && (
           <div className="text-[13px] mb-1 text-end leading-snug break-words">{row.supplierNames}</div>
@@ -275,7 +299,7 @@ export default function PurchasesBatchScreen() {
         </div>
       </div>
     );
-  }, [statusBadgeMap, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch]);
+  }, [statusBadgeMap, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch, dateFilter.startDate, dateFilter.endDate]);
 
   /* صف التذييل — مدرك لإخفاء الأعمدة عبر footerRow */
   const batchesFooterRow = useMemo(() => [

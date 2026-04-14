@@ -756,6 +756,7 @@ export async function fetchAllInvoicesForExport({
   includeCancelled = true,
   hasNotes,
   vaultId,
+  batchId,
 }) {
   if (!companyId) return [];
   const pageSize = 150;
@@ -768,7 +769,7 @@ export async function fetchAllInvoicesForExport({
       endDate,
       page,
       pageSize,
-      undefined,
+      batchId || undefined,
       undefined,
       kind,
       sortBy,
