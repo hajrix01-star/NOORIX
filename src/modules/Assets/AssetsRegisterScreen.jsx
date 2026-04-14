@@ -150,7 +150,7 @@ export default function AssetsRegisterScreen() {
       {
         key: 'nameAr',
         header: t('assetName'),
-        render: (row) => (
+        render: (_, row) => (
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="font-semibold text-noorix-text truncate">{row.nameAr}</span>
             {row.nameEn ? <span className="text-[12px] text-noorix-muted truncate">{row.nameEn}</span> : null}
@@ -160,18 +160,18 @@ export default function AssetsRegisterScreen() {
       {
         key: 'serialNumber',
         header: t('assetSerial'),
-        render: (row) => <span className="text-[13px] ltr inline-block">{row.serialNumber || '—'}</span>,
+        render: (_, row) => <span className="text-[13px] ltr inline-block">{row.serialNumber || '—'}</span>,
       },
       {
         key: 'purchaseDate',
         header: t('assetPurchaseDate'),
-        render: (row) => <span className="text-[13px] ltr">{formatDate(row.purchaseDate)}</span>,
+        render: (_, row) => <span className="text-[13px] ltr">{formatDate(row.purchaseDate)}</span>,
       },
       {
         key: 'acquisitionCost',
         header: t('assetAcquisitionCost'),
         numeric: true,
-        render: (row) =>
+        render: (_, row) =>
           row.acquisitionCost != null ? (
             <span className="ltr">
               {fmt(Number(row.acquisitionCost))} <span className="nx-sar">SR</span>
@@ -183,7 +183,7 @@ export default function AssetsRegisterScreen() {
       {
         key: 'supplier',
         header: t('assetSupplier'),
-        render: (row) => (
+        render: (_, row) => (
           <span className="text-[13px] truncate max-w-[140px] inline-block">
             {row.supplier
               ? lang === 'en'
@@ -196,12 +196,12 @@ export default function AssetsRegisterScreen() {
       {
         key: 'warrantyEndDate',
         header: t('assetWarrantyEnd'),
-        render: (row) => <span className="text-[13px] ltr">{formatDate(row.warrantyEndDate)}</span>,
+        render: (_, row) => <span className="text-[13px] ltr">{formatDate(row.warrantyEndDate)}</span>,
       },
       {
         key: 'warrantyStatus',
         header: t('assetWarrantyFilter'),
-        render: (row) => {
+        render: (_, row) => {
           const b = warrantyBadgeMap[row.warrantyStatus] || warrantyBadgeMap.none;
           return <Badge color={b.color} size="sm">{b.label}</Badge>;
         },
@@ -210,7 +210,7 @@ export default function AssetsRegisterScreen() {
         key: 'daysToWarrantyEnd',
         header: t('assetDaysToEnd'),
         numeric: true,
-        render: (row) =>
+        render: (_, row) =>
           row.daysToWarrantyEnd != null ? (
             <span className="ltr font-medium">{row.daysToWarrantyEnd}</span>
           ) : (
@@ -222,7 +222,7 @@ export default function AssetsRegisterScreen() {
             {
               key: 'actions',
               header: '',
-              render: (row) => (
+              render: (_, row) => (
                 <KebabMenu
                   ariaLabel={t('edit')}
                   items={[
@@ -340,34 +340,58 @@ export default function AssetsRegisterScreen() {
       {
         key: 'invoiceNumber',
         header: t('invoiceNumber'),
-        render: (row) => (
+        render: (_, row) => (
           <span className="font-bold text-noorix-blue ltr nx-font-numbers">{row.invoiceNumber}</span>
         ),
       },
       {
+        key: 'kind',
+        header: t('type'),
+        render: (_, row) => {
+          const kindLabel =
+            row.kind === 'purchase'
+              ? t('purchaseType')
+              : row.kind === 'fixed_expense'
+                ? t('fixedExpenseType')
+                : row.kind === 'expense'
+                  ? t('expenseType')
+                  : row.kind;
+          return <span className="text-[12px] font-medium text-noorix-muted whitespace-nowrap">{kindLabel}</span>;
+        },
+      },
+      {
         key: 'supplierInvoiceNumber',
         header: t('supplierInvoiceNumber'),
-        render: (row) => (
+        render: (_, row) => (
           <span className="text-[13px] ltr nx-font-numbers">{row.supplierInvoiceNumber || '—'}</span>
         ),
       },
       {
         key: 'supplier',
         header: t('assetSupplier'),
-        render: (row) => (
-          <span className="text-[13px] truncate max-w-[180px] inline-block">
-            {row.supplier
-              ? lang === 'en'
-                ? row.supplier.nameEn || row.supplier.nameAr
-                : row.supplier.nameAr || row.supplier.nameEn
-              : '—'}
-          </span>
+        render: (_, row) => (
+          <div className="flex flex-col gap-0.5 min-w-0 max-w-[200px]">
+            <span className="text-[13px] truncate">
+              {row.supplier
+                ? lang === 'en'
+                  ? row.supplier.nameEn || row.supplier.nameAr
+                  : row.supplier.nameAr || row.supplier.nameEn
+                : '—'}
+            </span>
+            {row.expenseLine ? (
+              <span className="text-[11px] text-noorix-muted truncate" title={row.expenseLine.nameAr}>
+                {lang === 'en'
+                  ? row.expenseLine.nameEn || row.expenseLine.nameAr
+                  : row.expenseLine.nameAr || row.expenseLine.nameEn}
+              </span>
+            ) : null}
+          </div>
         ),
       },
       {
         key: 'transactionDate',
         header: t('transactionDate'),
-        render: (row) => (
+        render: (_, row) => (
           <span className="text-[13px] text-noorix-muted ltr">{formatSaudiDate(row.transactionDate)}</span>
         ),
       },
@@ -375,7 +399,7 @@ export default function AssetsRegisterScreen() {
         key: 'totalAmount',
         header: t('total'),
         numeric: true,
-        render: (row) => (
+        render: (_, row) => (
           <span className="ltr font-semibold">
             {fmt(Number(row.totalAmount))} <span className="nx-sar">SR</span>
           </span>
@@ -386,7 +410,7 @@ export default function AssetsRegisterScreen() {
             {
               key: 'actions',
               header: '',
-              render: (row) => (
+              render: (_, row) => (
                 <Button size="sm" variant="primary" onClick={() => setPendingInvoiceForComplete(row)}>
                   {t('warrantyQueueComplete')}
                 </Button>
@@ -405,6 +429,15 @@ export default function AssetsRegisterScreen() {
           <div className="min-w-0">
             <div className="font-bold text-noorix-blue ltr nx-font-numbers">{row.invoiceNumber}</div>
             <div className="text-[12px] text-noorix-muted ltr">{row.supplierInvoiceNumber || '—'}</div>
+            <div className="text-[11px] text-noorix-muted mt-0.5">
+              {row.kind === 'purchase'
+                ? t('purchaseType')
+                : row.kind === 'fixed_expense'
+                  ? t('fixedExpenseType')
+                  : row.kind === 'expense'
+                    ? t('expenseType')
+                    : row.kind}
+            </div>
           </div>
           {canWrite ? (
             <Button size="sm" variant="primary" onClick={() => setPendingInvoiceForComplete(row)}>
@@ -418,6 +451,13 @@ export default function AssetsRegisterScreen() {
               ? row.supplier.nameEn || row.supplier.nameAr
               : row.supplier.nameAr || row.supplier.nameEn
             : '—'}
+          {row.expenseLine ? (
+            <div className="text-[12px] text-noorix-muted mt-1">
+              {lang === 'en'
+                ? row.expenseLine.nameEn || row.expenseLine.nameAr
+                : row.expenseLine.nameAr || row.expenseLine.nameEn}
+            </div>
+          ) : null}
         </div>
         <div className="grid grid-cols-2 gap-2 text-[12px]">
           <div>
@@ -536,7 +576,7 @@ export default function AssetsRegisterScreen() {
             showSearchInHeader={false}
             emptyMessage={t('warrantyQueueEmpty')}
             renderMobileCard={renderPendingMobileCard}
-            tableMinWidth={800}
+            tableMinWidth={980}
           />
         )}
       </ScreenTabs>

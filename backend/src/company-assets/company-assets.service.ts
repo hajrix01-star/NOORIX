@@ -263,19 +263,36 @@ export class CompanyAssetsService {
       orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }],
       include: {
         supplier: { select: { id: true, nameAr: true, nameEn: true } },
+        expenseLine: {
+          select: {
+            nameAr: true,
+            nameEn: true,
+            supplier: { select: { id: true, nameAr: true, nameEn: true } },
+          },
+        },
       },
     });
-    return rows.map((inv) => ({
-      id: inv.id,
-      invoiceNumber: inv.invoiceNumber,
-      supplierInvoiceNumber: inv.supplierInvoiceNumber,
-      transactionDate: inv.transactionDate,
-      totalAmount: inv.totalAmount.toString(),
-      netAmount: inv.netAmount.toString(),
-      taxAmount: inv.taxAmount.toString(),
-      notes: inv.notes,
-      supplier: inv.supplier,
-    }));
+    return rows.map((inv) => {
+      const supplier = inv.supplier ?? inv.expenseLine?.supplier ?? null;
+      return {
+        id: inv.id,
+        kind: inv.kind,
+        invoiceNumber: inv.invoiceNumber,
+        supplierInvoiceNumber: inv.supplierInvoiceNumber,
+        transactionDate: inv.transactionDate,
+        totalAmount: inv.totalAmount.toString(),
+        netAmount: inv.netAmount.toString(),
+        taxAmount: inv.taxAmount.toString(),
+        notes: inv.notes,
+        supplier,
+        expenseLine: inv.expenseLine
+          ? {
+              nameAr: inv.expenseLine.nameAr,
+              nameEn: inv.expenseLine.nameEn ?? undefined,
+            }
+          : null,
+      };
+    });
   }
 
   async findOne(id: string, companyId: string) {

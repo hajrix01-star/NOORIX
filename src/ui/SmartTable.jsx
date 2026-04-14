@@ -12,6 +12,12 @@ import { cn } from './cn';
 
 const ALIGN_MAP = { right: 'right', left: 'left', center: 'center', start: 'start', end: 'end' };
 
+/** عنوان العمود — يدعم `label` أو `header` (متوافق مع شاشات تستخدم header فقط) */
+function columnLabel(col) {
+  if (col == null) return '';
+  return col.label ?? col.header ?? '';
+}
+
 function getAlign(col) {
   if (col.align) return ALIGN_MAP[col.align] || 'start';
   if (col.numeric) return 'right';
@@ -309,7 +315,7 @@ const SmartTable = memo(function SmartTable({
                           checked={!hiddenCols.has(col.key)}
                           onChange={() => toggleColVis(col.key)}
                         />
-                        <span>{col.label}</span>
+                        <span>{columnLabel(col)}</span>
                       </label>
                     ))}
                   </div>
@@ -421,7 +427,7 @@ const SmartTable = memo(function SmartTable({
                       }}
                       onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
                     >
-                      {col.label}
+                      {columnLabel(col)}
                       {col.sortable && (
                         <span className="text-[13px] opacity-30 ms-1" style={{ opacity: isSorted ? 1 : 0.3 }}>
                           {isSorted ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
