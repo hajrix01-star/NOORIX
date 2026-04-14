@@ -139,6 +139,10 @@ export default function InvoicesListScreen() {
   const { activeCompanyId, userRole, companies } = useApp();
   const { t, lang } = useTranslation();
   const [searchParams] = useSearchParams();
+  /** من الرابط مباشرة — أول إطار يطابق فلتر الدفعة قبل useEffect */
+  const fromUrl = searchParams.get('from')?.slice(0, 10) || '';
+  const toUrl = searchParams.get('to')?.slice(0, 10) || '';
+  const invoiceBatchIdFromUrl = searchParams.get('batchId')?.trim() || '';
   const urlDrillKeyRef = useRef('');
   const companyId           = activeCompanyId ?? '';
   const dateFilter          = useDateFilter();
@@ -156,8 +160,6 @@ export default function InvoicesListScreen() {
   const [showCancelled, setShowCancelled] = useState(false);
   const [filterHasNotesOnly, setFilterHasNotesOnly] = useState(false);
   const [urlExtra, setUrlExtra] = useState({ kind: '', categoryId: '', expenseLineId: '' });
-  /** فلتر دفعة مشتريات — يُزامَن من ?batchId= في الرابط */
-  const [filterBatchId, setFilterBatchId] = useState('');
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
@@ -167,12 +169,22 @@ export default function InvoicesListScreen() {
   const [searchText, setSearchText] = useState(qInit);
   const debouncedQ = useDebouncedValue((searchText || '').trim(), 300);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId, showCancelled, filterHasNotesOnly, urlExtra.kind, urlExtra.categoryId, urlExtra.expenseLineId]);
+  /** تواريخ الاستعلام: إن وُجد from+to في الرابط يُطبَّقان فوراً (قبل مزامنة useEffect مع dateFilter) */
+  const invoiceQueryStartDate = useMemo(
+    () => (fromUrl && toUrl ? fromUrl : dateFilter.startDate),
+    [fromUrl, toUrl, dateFilter.startDate],
+  );
+  const invoiceQueryEndDate = useMemo(
+    () => (fromUrl && toUrl ? toUrl : dateFilter.endDate),
+    [fromUrl, toUrl, dateFilter.endDate],
+  );
 
   useEffect(() => {
-    const keys = ['from', 'to', 'kind', 'supplierId', 'categoryId', 'expenseLineId', 'q'];
+    setPage(1);
+  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId, showCancelled, filterHasNotesOnly, urlExtra.kind, urlExtra.categoryId, urlExtra.expenseLineId, invoiceBatchIdFromUrl, fromUrl, toUrl]);
+
+  useEffect(() => {
+    const keys = ['from', 'to', 'kind', 'supplierId', 'categoryId', 'expenseLineId', 'q', 'batchId'];
     const parts = keys.map((k) => searchParams.get(k) || '');
     const drillKey = parts.join('\u001f');
     if (!parts.some(Boolean)) {
@@ -320,8 +332,8 @@ export default function InvoicesListScreen() {
 
   const { items, total, sums, inflowByVault, outflowSummary, isLoading, isError, error } = useInvoices({
     companyId,
-    startDate: dateFilter.startDate,
-    endDate:   dateFilter.endDate,
+    startDate: invoiceQueryStartDate,
+    endDate:   invoiceQueryEndDate,
     page,
     pageSize:  PAGE_SIZE,
     kind: kindForApi,
@@ -334,7 +346,7 @@ export default function InvoicesListScreen() {
     includeCancelled: showCancelled,
     hasNotes: filterHasNotesOnly || undefined,
     vaultId: filterVaultId || undefined,
-    batchId: filterBatchId || undefined,
+    batchId: invoiceBatchIdFromUrl || undefined,
   });
 
   // بيانات مُحوَّلة لـ SmartTable
@@ -416,8 +428,8 @@ export default function InvoicesListScreen() {
     try {
       const all = await fetchAllInvoicesForExport({
         companyId,
-        startDate: dateFilter.startDate,
-        endDate: dateFilter.endDate,
+        startDate: invoiceQueryStartDate,
+        endDate: invoiceQueryEndDate,
         kind: kindForApi,
         sortBy: sortKey,
         sortDir,
@@ -428,11 +440,11 @@ export default function InvoicesListScreen() {
         includeCancelled: showCancelled,
         hasNotes: filterHasNotesOnly || undefined,
         vaultId: filterVaultId || undefined,
-        batchId: filterBatchId || undefined,
+        batchId: invoiceBatchIdFromUrl || undefined,
       });
       const rows = all.map(mapInvoiceToExportRow);
-      const safeStart = String(dateFilter.startDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'start';
-      const safeEnd = String(dateFilter.endDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'end';
+      const safeStart = String(invoiceQueryStartDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'start';
+      const safeEnd = String(invoiceQueryEndDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'end';
       await exportToExcel({
         data: rows,
         filename: `invoices-${safeStart}_${safeEnd}.xlsx`,
@@ -449,10 +461,10 @@ export default function InvoicesListScreen() {
       setExportBusy(false);
     }
   }, [
-    companyId, displayedTotal, dateFilter.startDate, dateFilter.endDate, dateFilter.label,
+    companyId, displayedTotal, invoiceQueryStartDate, invoiceQueryEndDate, dateFilter.label,
     kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
     urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs,
-    companyName, t, lang, showToast, filterHasNotesOnly, filterVaultId,
+    companyName, t, lang, showToast, filterHasNotesOnly, filterVaultId, invoiceBatchIdFromUrl,
   ]);
 
   // المجاميع الحقيقية من السيرفر (كل النتائج المُفلترة، ليس الصفحة فقط)
@@ -466,8 +478,8 @@ export default function InvoicesListScreen() {
     try {
       const all = await fetchAllInvoicesForExport({
         companyId,
-        startDate: dateFilter.startDate,
-        endDate: dateFilter.endDate,
+        startDate: invoiceQueryStartDate,
+        endDate: invoiceQueryEndDate,
         kind: kindForApi,
         sortBy: sortKey,
         sortDir,
@@ -478,7 +490,7 @@ export default function InvoicesListScreen() {
         includeCancelled: showCancelled,
         hasNotes: filterHasNotesOnly || undefined,
         vaultId: filterVaultId || undefined,
-        batchId: filterBatchId || undefined,
+        batchId: invoiceBatchIdFromUrl || undefined,
       });
       const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const rowsHtml = all.map((inv) => {
@@ -494,7 +506,7 @@ export default function InvoicesListScreen() {
       openPrintWindow({
         title: t('invoicesTitle'),
         companyName,
-        subtitle: `${t('invoicesTitle')} — ${dateFilter.label || ''}`,
+        subtitle: `${t('invoicesTitle')} — ${(fromUrl && toUrl ? `${fromUrl} — ${toUrl}` : dateFilter.label) || ''}`,
         logoUrl,
         landscape: true,
         body: table,
@@ -505,10 +517,10 @@ export default function InvoicesListScreen() {
       setExportBusy(false);
     }
   }, [
-    companyId, displayedTotal, dateFilter.startDate, dateFilter.endDate, dateFilter.label,
+    companyId, displayedTotal, invoiceQueryStartDate, invoiceQueryEndDate, fromUrl, toUrl, dateFilter.label,
     kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
     urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs, t,
-    companyName, logoUrl, serverAll, fmt, showToast, filterHasNotesOnly, filterVaultId, filterBatchId,
+    companyName, logoUrl, serverAll, fmt, showToast, filterHasNotesOnly, filterVaultId, invoiceBatchIdFromUrl,
   ]);
 
   const vaultRowLabel = useCallback((row) => {
