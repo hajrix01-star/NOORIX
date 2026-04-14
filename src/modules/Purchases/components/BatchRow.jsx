@@ -13,6 +13,7 @@ import {
   BatchTaxToggleButton,
   BatchKindOptions,
 } from './BatchRowParts';
+import { isWarrantyFollowUpKind } from '../utils/batchRowModel';
 
 function dateErrorStyle(maxInvoiceDate, invoiceDate) {
   return maxInvoiceDate && invoiceDate > maxInvoiceDate
@@ -116,7 +117,7 @@ function BatchRowTable({
               kind,
               categoryId: '',
               debitAccountId: '',
-              warrantyFollowUp: kind === 'purchase' ? !!row.warrantyFollowUp : false,
+              warrantyFollowUp: isWarrantyFollowUpKind(kind) ? !!row.warrantyFollowUp : false,
             });
           }}
           aria-label={`${t('type')} — ${t('batchRowLineAriaLabel', index + 1)}`}
@@ -126,7 +127,7 @@ function BatchRowTable({
       </td>
 
       <td className="text-center align-middle" style={cp}>
-        {row.kind === 'purchase' ? (
+        {isWarrantyFollowUpKind(row.kind) ? (
           <label className="inline-flex items-center justify-center gap-1.5 cursor-pointer text-[11px] font-semibold text-noorix-muted">
             <input
               type="checkbox"
@@ -318,14 +319,14 @@ function BatchRowStack({
               kind,
               categoryId: '',
               debitAccountId: '',
-              warrantyFollowUp: kind === 'purchase' ? !!row.warrantyFollowUp : false,
+              warrantyFollowUp: isWarrantyFollowUpKind(kind) ? !!row.warrantyFollowUp : false,
             });
           }}
         >
           <BatchKindOptions t={t} />
         </Input>
 
-        {row.kind === 'purchase' ? (
+        {isWarrantyFollowUpKind(row.kind) ? (
           <label className="flex items-center gap-2 min-h-[44px] text-[13px] font-semibold text-noorix-text cursor-pointer">
             <input
               type="checkbox"

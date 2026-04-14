@@ -30,6 +30,7 @@ import { BatchSummaryBar } from './components/BatchSummaryBar';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import { buildActiveCancelledPartialStatusMap } from '../../constants/badgeMaps';
+import { isWarrantyFollowUpKind } from './utils/batchRowModel';
 
 const PAGE_SIZE = 50;
 
@@ -43,7 +44,7 @@ const EMPTY_ROW = () => ({
   isTaxable: true,
   categoryId: '', debitAccountId: '',
   notes: '',
-  /** يُرسل للخادم فقط عند kind === purchase */
+  /** يُرسل للخادم عند مشتريات/مصروف/مصروف ثابت */
   warrantyFollowUp: false,
 });
 
@@ -367,7 +368,7 @@ export default function PurchasesBatchScreen() {
             categoryId: r.categoryId || undefined,
             debitAccountId: r.debitAccountId || undefined,
             notes: notes || undefined,
-            ...(kind === 'purchase' && r.warrantyFollowUp ? { warrantyFollowUp: true } : {}),
+            ...(isWarrantyFollowUpKind(kind) && r.warrantyFollowUp ? { warrantyFollowUp: true } : {}),
           };
         }),
       });

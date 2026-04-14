@@ -55,3 +55,8 @@ export function patchForCategoryChange(cat, row) {
   }
   return patch;
 }
+
+/** أنواع السطر التي تدعم «متابعة ضمان» في دفعة الموردين (مشتريات / مصروفات / مصروف ثابت) */
+export function isWarrantyFollowUpKind(kind) {
+  return kind === 'purchase' || kind === 'expense' || kind === 'fixed_expense';
+}

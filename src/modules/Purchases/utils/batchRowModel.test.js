@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { patchForSupplierChange, patchForCategoryChange } from './batchRowModel';
+import { patchForSupplierChange, patchForCategoryChange, isWarrantyFollowUpKind } from './batchRowModel';
 
 describe('patchForSupplierChange', () => {
   it('clears supplier-related fields when empty', () => {
@@ -108,5 +108,17 @@ describe('patchForCategoryChange', () => {
       debitAccountId: 'a2',
       isTaxable: false,
     });
+  });
+});
+
+describe('isWarrantyFollowUpKind', () => {
+  it('is true for purchase, expense, fixed_expense', () => {
+    expect(isWarrantyFollowUpKind('purchase')).toBe(true);
+    expect(isWarrantyFollowUpKind('expense')).toBe(true);
+    expect(isWarrantyFollowUpKind('fixed_expense')).toBe(true);
+  });
+  it('is false for other kinds', () => {
+    expect(isWarrantyFollowUpKind('sale')).toBe(false);
+    expect(isWarrantyFollowUpKind('')).toBe(false);
   });
 });
