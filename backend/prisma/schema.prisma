@@ -881,6 +881,10 @@ model Invoice {
   expenseCoverageMonthStart Int? @map("expense_coverage_month_start")
   /// للمصاريف الثابتة: عدد الأشهر المغطاة بهذه الدفعة
   expenseMonthsCovered      Int? @map("expense_months_covered")
+  /// متابعة الضمان من المشتريات — بدون مدة هنا؛ تُكمَّل في قسم الضمان
+  warrantyFollowUp     Boolean  @default(false) @map("warranty_follow_up")
+  /// أُنجز إكمال بيانات الضمان من قسم الضمان (تُخرج من قائمة الانتظار)
+  warrantyFollowUpDone Boolean  @default(false) @map("warranty_follow_up_done")
   dailySalesSummaryId String? @unique @map("daily_sales_summary_id")  // للمبيعات: ربط بملخص المبيعات اليومي (واحد لواحد)
   status          String   @default("active")       // active | cancelled
   entryDate       DateTime @map("entry_date")       // توقيت السيرفر — غير قابل للتعديل
@@ -907,6 +911,7 @@ model Invoice {
   @@index([companyId, expenseLineId])
   @@index([companyId, categoryId])
   @@index([companyId, batchId])
+  @@index([companyId, kind, warrantyFollowUp, warrantyFollowUpDone])
   @@map("invoices")
 }
 
@@ -934,12 +939,36 @@ model CompanyAsset {
   company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   invoice  Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  warrantyLines CompanyAssetWarrantyLine[]
 
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, purchaseDate])
   @@index([companyId, warrantyEndDate])
   @@map("company_assets")
+}
+
+/// تفاصيل أصناف/بنود ضمان مرتبطة بأصل (إدخال من قسم الضمان)
+model CompanyAssetWarrantyLine {
+  id             String    @id @default(cuid())
+  tenantId       String    @map("tenant_id")
+  companyId      String    @map("company_id")
+  companyAssetId String    @map("company_asset_id")
+  sortOrder      Int       @default(0) @map("sort_order")
+  nameAr         String    @map("name_ar")
+  nameEn         String?   @map("name_en")
+  serialNumber   String?   @map("serial_number")
+  quantity       Decimal?  @db.Decimal(18, 4)
+  notes          String?   @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  companyAsset CompanyAsset @relation(fields: [companyAssetId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyAssetId])
+  @@map("company_asset_warranty_lines")
 }
 
 model DailySalesSummary {

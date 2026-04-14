@@ -10,6 +10,7 @@ import {
   IsArray,
   ValidateNested,
   ArrayMinSize,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { InvoiceVaultSplitDto } from './invoice-vault-split.dto';
@@ -100,4 +101,10 @@ export class UpdateInvoiceDto {
   @Min(0)
   @Type(() => Number)
   installmentAmount?: number;
+
+  /** إكمال متابعة الضمان من قسم الضمان — تُخرج الفاتورة من قائمة الانتظار */
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  warrantyFollowUpDone?: boolean;
 }

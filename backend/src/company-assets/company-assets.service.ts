@@ -1,5 +1,5 @@
 /**
- * CompanyAsset — سجل أصول تشغيلي (بدون إهلاك): ضمان، مدة، تقارير.
+ * CompanyAsset — سجل أصول تشغيلي (بدون إهلاك): ضمان، مدة، تقارير، قائمة انتظار من المشتريات.
  */
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -7,6 +7,8 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
 import { CreateCompanyAssetDto } from './dto/create-company-asset.dto';
 import { UpdateCompanyAssetDto } from './dto/update-company-asset.dto';
+import { CompleteCompanyAssetFromInvoiceDto } from './dto/complete-from-invoice.dto';
+import { WarrantyLineDto } from './dto/warranty-line.dto';
 
 function parseDateOnly(iso: string | undefined | null): Date | null {
   if (!iso || typeof iso !== 'string') return null;
@@ -16,7 +18,6 @@ function parseDateOnly(iso: string | undefined | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** إضافة أشهر بتقويم UTC مع معالجة نهاية الشهر */
 function addMonthsUtc(start: Date, months: number): Date {
   const y = start.getUTCFullYear();
   const m = start.getUTCMonth();
@@ -43,6 +44,8 @@ function daysBetweenUtc(from: Date, to: Date): number {
 
 export type WarrantyFilter = 'all' | 'active' | 'expired' | 'expiring90' | 'none';
 
+type Tx = Prisma.TransactionClient;
+
 @Injectable()
 export class CompanyAssetsService {
   constructor(private readonly prisma: TenantPrismaService) {}
@@ -65,10 +68,6 @@ export class CompanyAssetsService {
     if (!inv) throw new BadRequestException('الفاتورة غير موجودة أو لا تتبع هذه الشركة');
   }
 
-  /**
-   * يحدد تاريخي بداية ونهاية الضمان المخزّنين.
-   * أولوية نهاية صريحة؛ وإلا بداية + أشهر.
-   */
   private computeWarrantyStorage(input: {
     purchaseDate: Date | null;
     warrantyMonths: number | null;
@@ -92,22 +91,54 @@ export class CompanyAssetsService {
     };
   }
 
-  private mapRow(row: {
+  private mapWarrantyLine(l: {
     id: string;
     nameAr: string;
     nameEn: string | null;
     serialNumber: string | null;
-    location: string | null;
-    purchaseDate: Date | null;
-    acquisitionCost: Prisma.Decimal | null;
-    warrantyDescription: string | null;
-    warrantyMonths: number | null;
-    warrantyStartDate: Date | null;
-    warrantyEndDate: Date | null;
+    quantity: Prisma.Decimal | null;
     notes: string | null;
-    supplier: { id: string; nameAr: string; nameEn: string | null } | null;
-    invoice: { id: string; invoiceNumber: string; supplierInvoiceNumber: string | null } | null;
+    sortOrder: number;
   }) {
+    return {
+      id: l.id,
+      nameAr: l.nameAr,
+      nameEn: l.nameEn,
+      serialNumber: l.serialNumber,
+      quantity: l.quantity != null ? l.quantity.toString() : null,
+      notes: l.notes,
+      sortOrder: l.sortOrder,
+    };
+  }
+
+  private mapRow(
+    row: {
+      id: string;
+      nameAr: string;
+      nameEn: string | null;
+      serialNumber: string | null;
+      location: string | null;
+      purchaseDate: Date | null;
+      acquisitionCost: Prisma.Decimal | null;
+      warrantyDescription: string | null;
+      warrantyMonths: number | null;
+      warrantyStartDate: Date | null;
+      warrantyEndDate: Date | null;
+      notes: string | null;
+      supplier: { id: string; nameAr: string; nameEn: string | null } | null;
+      invoice: { id: string; invoiceNumber: string; supplierInvoiceNumber: string | null } | null;
+      _count?: { warrantyLines: number };
+      warrantyLines?: Array<{
+        id: string;
+        nameAr: string;
+        nameEn: string | null;
+        serialNumber: string | null;
+        quantity: Prisma.Decimal | null;
+        notes: string | null;
+        sortOrder: number;
+      }>;
+    },
+  ) {
     const today = utcToday();
     const end = row.warrantyEndDate;
     let warrantyStatus: 'none' | 'active' | 'expired' | 'expiring' = 'none';
@@ -118,12 +149,38 @@ export class CompanyAssetsService {
       else if (daysToWarrantyEnd <= 90) warrantyStatus = 'expiring';
       else warrantyStatus = 'active';
     }
+    const { _count, warrantyLines, ...rest } = row;
     return {
-      ...row,
+      ...rest,
       acquisitionCost: row.acquisitionCost != null ? row.acquisitionCost.toString() : null,
       warrantyStatus,
       daysToWarrantyEnd,
+      warrantyLinesCount: _count?.warrantyLines ?? warrantyLines?.length ?? 0,
+      warrantyLines: warrantyLines?.length ? warrantyLines.map((l) => this.mapWarrantyLine(l)) : undefined,
     };
+  }
+
+  private async createWarrantyLinesTx(
+    tx: Tx,
+    tenantId: string,
+    companyId: string,
+    companyAssetId: string,
+    lines: WarrantyLineDto[] | undefined,
+  ): Promise<void> {
+    if (!lines?.length) return;
+    await tx.companyAssetWarrantyLine.createMany({
+      data: lines.map((l, i) => ({
+        tenantId,
+        companyId,
+        companyAssetId,
+        sortOrder: i,
+        nameAr: l.nameAr.trim(),
+        nameEn: l.nameEn?.trim() || null,
+        serialNumber: l.serialNumber?.trim() || null,
+        quantity: l.quantity != null ? new Prisma.Decimal(String(l.quantity)) : null,
+        notes: l.notes?.trim() || null,
+      })),
+    });
   }
 
   async findAll(
@@ -173,6 +230,7 @@ export class CompanyAssetsService {
         include: {
           supplier: { select: { id: true, nameAr: true, nameEn: true } },
           invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
+          _count: { select: { warrantyLines: true } },
         },
       }),
       this.prisma.companyAsset.count({ where }),
@@ -193,12 +251,40 @@ export class CompanyAssetsService {
     };
   }
 
+  async findPendingWarrantyInvoices(companyId: string) {
+    const rows = await this.prisma.invoice.findMany({
+      where: {
+        companyId,
+        status: 'active',
+        kind: 'purchase',
+        warrantyFollowUp: true,
+        warrantyFollowUpDone: false,
+      },
+      orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }],
+      include: {
+        supplier: { select: { id: true, nameAr: true, nameEn: true } },
+      },
+    });
+    return rows.map((inv) => ({
+      id: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      supplierInvoiceNumber: inv.supplierInvoiceNumber,
+      transactionDate: inv.transactionDate,
+      totalAmount: inv.totalAmount.toString(),
+      netAmount: inv.netAmount.toString(),
+      taxAmount: inv.taxAmount.toString(),
+      notes: inv.notes,
+      supplier: inv.supplier,
+    }));
+  }
+
   async findOne(id: string, companyId: string) {
     const row = await this.prisma.companyAsset.findFirst({
       where: { id, companyId },
       include: {
         supplier: { select: { id: true, nameAr: true, nameEn: true } },
         invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
+        warrantyLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
     if (!row) throw new NotFoundException('الأصل غير موجود');
@@ -224,8 +310,8 @@ export class CompanyAssetsService {
     const cost =
       dto.acquisitionCost != null ? new Prisma.Decimal(String(dto.acquisitionCost)) : null;
 
-    return this.prisma.companyAsset
-      .create({
+    return this.prisma.$transaction(async (tx) => {
+      const asset = await tx.companyAsset.create({
         data: {
           tenantId,
           companyId: dto.companyId,
@@ -246,9 +332,102 @@ export class CompanyAssetsService {
         include: {
           supplier: { select: { id: true, nameAr: true, nameEn: true } },
           invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
+          warrantyLines: { orderBy: { sortOrder: 'asc' } },
+          _count: { select: { warrantyLines: true } },
         },
-      })
-      .then((r) => this.mapRow(r));
+      });
+      await this.createWarrantyLinesTx(tx, tenantId, dto.companyId, asset.id, dto.warrantyLines);
+      const full = await tx.companyAsset.findFirstOrThrow({
+        where: { id: asset.id },
+        include: {
+          supplier: { select: { id: true, nameAr: true, nameEn: true } },
+          invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
+          warrantyLines: { orderBy: { sortOrder: 'asc' } },
+          _count: { select: { warrantyLines: true } },
+        },
+      });
+      return this.mapRow(full);
+    });
+  }
+
+  async completeFromInvoice(dto: CompleteCompanyAssetFromInvoiceDto) {
+    const tenantId = TenantContext.getTenantId();
+    const nameAr = dto.nameAr?.trim();
+    if (!nameAr) throw new BadRequestException('اسم الأصل مطلوب');
+
+    const inv = await this.prisma.invoice.findFirst({
+      where: {
+        id: dto.invoiceId,
+        companyId: dto.companyId,
+        status: 'active',
+        kind: 'purchase',
+      },
+      include: { supplier: { select: { id: true, nameAr: true, nameEn: true } } },
+    });
+    if (!inv) throw new BadRequestException('الفاتورة غير موجودة أو ليست فاتورة مشتريات نشطة');
+    if (!inv.warrantyFollowUp) {
+      throw new BadRequestException('لم يُفعّل «متابعة الضمان» لهذه الفاتورة عند حفظ المشتريات');
+    }
+    if (inv.warrantyFollowUpDone) {
+      throw new BadRequestException('تم إكمال متابعة الضمان لهذه الفاتورة مسبقاً');
+    }
+
+    const purchaseDate = parseDateOnly(dto.purchaseDate) ?? inv.transactionDate;
+    const w = this.computeWarrantyStorage({
+      purchaseDate,
+      warrantyMonths: dto.warrantyMonths ?? null,
+      warrantyStartDate: parseDateOnly(dto.warrantyStartDate) ?? null,
+      warrantyEndDate: parseDateOnly(dto.warrantyEndDate) ?? null,
+    });
+    if (!w.warrantyEndDate && (w.warrantyMonths == null || w.warrantyMonths === 0)) {
+      throw new BadRequestException('حدد مدة الضمان (أشهر) أو تاريخ نهاية الضمان في قسم الضمان');
+    }
+
+    const cost =
+      dto.acquisitionCost != null
+        ? new Prisma.Decimal(String(dto.acquisitionCost))
+        : inv.totalAmount;
+
+    const markDone = dto.markInvoiceDone !== false;
+
+    return this.prisma.$transaction(async (tx) => {
+      const asset = await tx.companyAsset.create({
+        data: {
+          tenantId,
+          companyId: dto.companyId,
+          nameAr,
+          nameEn: dto.nameEn?.trim() || null,
+          serialNumber: dto.serialNumber?.trim() || null,
+          location: dto.location?.trim() || null,
+          purchaseDate,
+          acquisitionCost: cost,
+          supplierId: inv.supplierId,
+          invoiceId: inv.id,
+          warrantyDescription: dto.warrantyDescription?.trim() || null,
+          warrantyMonths: w.warrantyMonths,
+          warrantyStartDate: w.warrantyStartDate,
+          warrantyEndDate: w.warrantyEndDate,
+          notes: dto.notes?.trim() || null,
+        },
+      });
+      await this.createWarrantyLinesTx(tx, tenantId, dto.companyId, asset.id, dto.warrantyLines);
+      if (markDone) {
+        await tx.invoice.update({
+          where: { id: inv.id },
+          data: { warrantyFollowUpDone: true },
+        });
+      }
+      const full = await tx.companyAsset.findFirstOrThrow({
+        where: { id: asset.id },
+        include: {
+          supplier: { select: { id: true, nameAr: true, nameEn: true } },
+          invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
+          warrantyLines: { orderBy: { sortOrder: 'asc' } },
+          _count: { select: { warrantyLines: true } },
+        },
+      });
+      return this.mapRow(full);
+    });
   }
 
   async update(id: string, companyId: string, dto: UpdateCompanyAssetDto) {
@@ -292,31 +471,45 @@ export class CompanyAssetsService {
         ? new Prisma.Decimal(String(dto.acquisitionCost))
         : existing.acquisitionCost;
 
-    const row = await this.prisma.companyAsset.update({
-      where: { id },
-      data: {
-        nameAr: dto.nameAr !== undefined ? dto.nameAr.trim() : undefined,
-        nameEn: dto.nameEn !== undefined ? dto.nameEn.trim() || null : undefined,
-        serialNumber: dto.serialNumber !== undefined ? dto.serialNumber.trim() || null : undefined,
-        location: dto.location !== undefined ? dto.location.trim() || null : undefined,
-        purchaseDate: dto.purchaseDate !== undefined ? parseDateOnly(dto.purchaseDate) : undefined,
-        acquisitionCost: dto.acquisitionCost !== undefined ? cost : undefined,
-        supplierId: dto.supplierId !== undefined ? dto.supplierId || null : undefined,
-        invoiceId: dto.invoiceId !== undefined ? dto.invoiceId || null : undefined,
-        warrantyDescription:
-          dto.warrantyDescription !== undefined ? dto.warrantyDescription.trim() || null : undefined,
-        warrantyMonths: w.warrantyMonths,
-        warrantyStartDate: w.warrantyStartDate,
-        warrantyEndDate: w.warrantyEndDate,
-        notes: dto.notes !== undefined ? dto.notes.trim() || null : undefined,
-      },
-      include: {
-        supplier: { select: { id: true, nameAr: true, nameEn: true } },
-        invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
-      },
-    });
+    const tenantId = TenantContext.getTenantId();
 
-    return this.mapRow(row);
+    return this.prisma.$transaction(async (tx) => {
+      await tx.companyAsset.update({
+        where: { id },
+        data: {
+          nameAr: dto.nameAr !== undefined ? dto.nameAr.trim() : undefined,
+          nameEn: dto.nameEn !== undefined ? dto.nameEn.trim() || null : undefined,
+          serialNumber: dto.serialNumber !== undefined ? dto.serialNumber.trim() || null : undefined,
+          location: dto.location !== undefined ? dto.location.trim() || null : undefined,
+          purchaseDate: dto.purchaseDate !== undefined ? parseDateOnly(dto.purchaseDate) : undefined,
+          acquisitionCost: dto.acquisitionCost !== undefined ? cost : undefined,
+          supplierId: dto.supplierId !== undefined ? dto.supplierId || null : undefined,
+          invoiceId: dto.invoiceId !== undefined ? dto.invoiceId || null : undefined,
+          warrantyDescription:
+            dto.warrantyDescription !== undefined ? dto.warrantyDescription.trim() || null : undefined,
+          warrantyMonths: w.warrantyMonths,
+          warrantyStartDate: w.warrantyStartDate,
+          warrantyEndDate: w.warrantyEndDate,
+          notes: dto.notes !== undefined ? dto.notes.trim() || null : undefined,
+        },
+      });
+
+      if (dto.warrantyLines !== undefined) {
+        await tx.companyAssetWarrantyLine.deleteMany({ where: { companyAssetId: id } });
+        await this.createWarrantyLinesTx(tx, tenantId, companyId, id, dto.warrantyLines);
+      }
+
+      const full = await tx.companyAsset.findFirstOrThrow({
+        where: { id },
+        include: {
+          supplier: { select: { id: true, nameAr: true, nameEn: true } },
+          invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
+          warrantyLines: { orderBy: { sortOrder: 'asc' } },
+          _count: { select: { warrantyLines: true } },
+        },
+      });
+      return this.mapRow(full);
+    });
   }
 
   async remove(id: string, companyId: string) {

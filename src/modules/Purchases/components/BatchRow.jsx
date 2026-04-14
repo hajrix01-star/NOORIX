@@ -111,13 +111,35 @@ function BatchRowTable({
           type="select"
           value={row.kind}
           onChange={(e) => {
-            onUpdate(index, 'kind', e.target.value);
-            onUpdate(index, { categoryId: '', debitAccountId: '' });
+            const kind = e.target.value;
+            onUpdate(index, {
+              kind,
+              categoryId: '',
+              debitAccountId: '',
+              warrantyFollowUp: kind === 'purchase' ? !!row.warrantyFollowUp : false,
+            });
           }}
           aria-label={`${t('type')} — ${t('batchRowLineAriaLabel', index + 1)}`}
         >
           <BatchKindOptions t={t} />
         </Input>
+      </td>
+
+      <td className="text-center align-middle" style={cp}>
+        {row.kind === 'purchase' ? (
+          <label className="inline-flex items-center justify-center gap-1.5 cursor-pointer text-[11px] font-semibold text-noorix-muted">
+            <input
+              type="checkbox"
+              checked={!!row.warrantyFollowUp}
+              onChange={(e) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
+              className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
+              aria-label={`${t('warrantyFollowUpCol')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+            />
+            <span className="hidden xl:inline">{t('warrantyFollowUpShort')}</span>
+          </label>
+        ) : (
+          <span className="text-noorix-muted">—</span>
+        )}
       </td>
 
       <td style={cp}>
@@ -291,12 +313,29 @@ function BatchRowStack({
           size="sm"
           value={row.kind}
           onChange={(e) => {
-            onUpdate(index, 'kind', e.target.value);
-            onUpdate(index, { categoryId: '', debitAccountId: '' });
+            const kind = e.target.value;
+            onUpdate(index, {
+              kind,
+              categoryId: '',
+              debitAccountId: '',
+              warrantyFollowUp: kind === 'purchase' ? !!row.warrantyFollowUp : false,
+            });
           }}
         >
           <BatchKindOptions t={t} />
         </Input>
+
+        {row.kind === 'purchase' ? (
+          <label className="flex items-center gap-2 min-h-[44px] text-[13px] font-semibold text-noorix-text cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!row.warrantyFollowUp}
+              onChange={(e) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
+              className="h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
+            />
+            <span>{t('warrantyFollowUpStack')}</span>
+          </label>
+        ) : null}
 
         <Input
           id={ids.category}

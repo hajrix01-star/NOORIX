@@ -77,6 +77,12 @@ export class BatchInvoiceItemDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  /** متابعة ضمان (مشتريات فقط) — بدون مدة؛ تُكمَّل في قسم الضمان */
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  warrantyFollowUp?: boolean;
 }
 
 export class CreateInvoiceBatchDto {

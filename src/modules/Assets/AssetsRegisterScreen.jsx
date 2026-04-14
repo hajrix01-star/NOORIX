@@ -1,7 +1,7 @@
 /**
  * AssetsRegisterScreen — سجل أصول تشغيلي (ضمان، مدة، تقرير/جدول) بدون إهلاك.
  */
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -14,15 +14,18 @@ import {
   createCompanyAsset,
   updateCompanyAsset,
   deleteCompanyAsset,
+  getPendingWarrantyInvoices,
+  completeCompanyAssetFromInvoice,
 } from '../../services/api';
 import { assertApiOk } from '../../utils/apiResponse';
 import { fmt } from '../../utils/format';
 import { hasPermission, resolveUserRole, PERMISSIONS } from '../../constants/permissions';
-import { getSaudiToday } from '../../utils/saudiDate';
+import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import {
   Button,
   ScreenShell,
   ScreenTitle,
+  ScreenTabs,
   SmartTable,
   AdaptiveSheet,
   Input,
@@ -79,6 +82,19 @@ export default function AssetsRegisterScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [assetSectionTab, setAssetSectionTab] = useState('register');
+  const [pendingInvoiceForComplete, setPendingInvoiceForComplete] = useState(null);
+  const [completeSaving, setCompleteSaving] = useState(false);
+
+  const { data: pendingRows = [], isLoading: pendingLoading } = useQuery({
+    queryKey: ['company-assets', companyId, 'pending-warranty'],
+    queryFn: async () => {
+      const res = await getPendingWarrantyInvoices(companyId);
+      assertApiOk(res, t('loadingError'));
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    enabled: !!companyId,
+  });
 
   const openCreate = useCallback(() => {
     setEditing(null);
@@ -94,6 +110,12 @@ export default function AssetsRegisterScreen() {
     queryClient.invalidateQueries({ queryKey: ['company-assets'] });
     setSheetOpen(false);
     setEditing(null);
+    showToast(t('savedSuccessfully') || 'تم الحفظ');
+  }, [queryClient, showToast, t]);
+
+  const handleWarrantyCompleteSaved = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['company-assets'] });
+    setPendingInvoiceForComplete(null);
     showToast(t('savedSuccessfully') || 'تم الحفظ');
   }, [queryClient, showToast, t]);
 
@@ -293,6 +315,127 @@ export default function AssetsRegisterScreen() {
     [t],
   );
 
+  const assetTabItems = useMemo(
+    () => [
+      { id: 'register', label: t('assetsTabRegister') },
+      {
+        id: 'queue',
+        label: (
+          <span className="inline-flex items-center gap-2">
+            {t('assetsTabWarrantyQueue')}
+            {pendingRows.length > 0 ? (
+              <Badge color="amber" size="sm">
+                {pendingRows.length}
+              </Badge>
+            ) : null}
+          </span>
+        ),
+      },
+    ],
+    [t, pendingRows.length],
+  );
+
+  const pendingColumns = useMemo(
+    () => [
+      {
+        key: 'invoiceNumber',
+        header: t('invoiceNumber'),
+        render: (row) => (
+          <span className="font-bold text-noorix-blue ltr nx-font-numbers">{row.invoiceNumber}</span>
+        ),
+      },
+      {
+        key: 'supplierInvoiceNumber',
+        header: t('supplierInvoiceNumber'),
+        render: (row) => (
+          <span className="text-[13px] ltr nx-font-numbers">{row.supplierInvoiceNumber || '—'}</span>
+        ),
+      },
+      {
+        key: 'supplier',
+        header: t('assetSupplier'),
+        render: (row) => (
+          <span className="text-[13px] truncate max-w-[180px] inline-block">
+            {row.supplier
+              ? lang === 'en'
+                ? row.supplier.nameEn || row.supplier.nameAr
+                : row.supplier.nameAr || row.supplier.nameEn
+              : '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'transactionDate',
+        header: t('transactionDate'),
+        render: (row) => (
+          <span className="text-[13px] text-noorix-muted ltr">{formatSaudiDate(row.transactionDate)}</span>
+        ),
+      },
+      {
+        key: 'totalAmount',
+        header: t('total'),
+        numeric: true,
+        render: (row) => (
+          <span className="ltr font-semibold">
+            {fmt(Number(row.totalAmount))} <span className="nx-sar">SR</span>
+          </span>
+        ),
+      },
+      ...(canWrite
+        ? [
+            {
+              key: 'actions',
+              header: '',
+              render: (row) => (
+                <Button size="sm" variant="primary" onClick={() => setPendingInvoiceForComplete(row)}>
+                  {t('warrantyQueueComplete')}
+                </Button>
+              ),
+            },
+          ]
+        : []),
+    ],
+    [canWrite, lang, t],
+  );
+
+  const renderPendingMobileCard = useCallback(
+    (row) => (
+      <div className="flex flex-col gap-2 nx-mc__root">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="font-bold text-noorix-blue ltr nx-font-numbers">{row.invoiceNumber}</div>
+            <div className="text-[12px] text-noorix-muted ltr">{row.supplierInvoiceNumber || '—'}</div>
+          </div>
+          {canWrite ? (
+            <Button size="sm" variant="primary" onClick={() => setPendingInvoiceForComplete(row)}>
+              {t('warrantyQueueComplete')}
+            </Button>
+          ) : null}
+        </div>
+        <div className="text-[13px] text-end break-words">
+          {row.supplier
+            ? lang === 'en'
+              ? row.supplier.nameEn || row.supplier.nameAr
+              : row.supplier.nameAr || row.supplier.nameEn
+            : '—'}
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-[12px]">
+          <div>
+            <div className="text-noorix-muted">{t('transactionDate')}</div>
+            <div className="ltr font-medium">{formatSaudiDate(row.transactionDate)}</div>
+          </div>
+          <div>
+            <div className="text-noorix-muted">{t('total')}</div>
+            <div className="ltr font-bold text-noorix-green">
+              {fmt(Number(row.totalAmount))} <span className="nx-sar">SR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    [canWrite, lang, t],
+  );
+
   if (!companyId) {
     return (
       <ScreenShell>
@@ -315,57 +458,88 @@ export default function AssetsRegisterScreen() {
         ) : null}
       </div>
 
-      <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:items-center">
-        <Input
-          type="search"
-          size="sm"
-          className="max-w-md"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          placeholder={t('search')}
-        />
-        <Input
-          type="select"
-          size="sm"
-          className="w-full sm:w-[220px]"
-          value={warrantyFilter}
-          onChange={(e) => {
-            setWarrantyFilter(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="all">{t('warrantyFilterAll')}</option>
-          <option value="active">{t('warrantyFilterActive')}</option>
-          <option value="expiring90">{t('warrantyFilterExpiring90')}</option>
-          <option value="expired">{t('warrantyFilterExpired')}</option>
-          <option value="none">{t('warrantyFilterNone')}</option>
-        </Input>
-        <Button size="sm" variant="ghost" onClick={() => refetch()}>
-          {t('refresh')}
-        </Button>
-      </div>
+      <ScreenTabs
+        items={assetTabItems}
+        value={assetSectionTab}
+        onChange={setAssetSectionTab}
+        contentClassName="flex flex-col gap-4"
+      >
+        {assetSectionTab === 'register' && (
+          <>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:items-center">
+              <Input
+                type="search"
+                size="sm"
+                className="max-w-md"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder={t('search')}
+              />
+              <Input
+                type="select"
+                size="sm"
+                className="w-full sm:w-[220px]"
+                value={warrantyFilter}
+                onChange={(e) => {
+                  setWarrantyFilter(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="all">{t('warrantyFilterAll')}</option>
+                <option value="active">{t('warrantyFilterActive')}</option>
+                <option value="expiring90">{t('warrantyFilterExpiring90')}</option>
+                <option value="expired">{t('warrantyFilterExpired')}</option>
+                <option value="none">{t('warrantyFilterNone')}</option>
+              </Input>
+              <Button size="sm" variant="ghost" onClick={() => refetch()}>
+                {t('refresh')}
+              </Button>
+            </div>
 
-      <SmartTable
-        tableId="company-assets"
-        title={t('assetsRegister')}
-        columns={columns}
-        data={items}
-        total={total}
-        page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        isLoading={isLoading}
-        isError={isError}
-        errorMessage={error?.message || t('loadingError')}
-        footerRow={footerRow}
-        showSearchInHeader={false}
-        emptyMessage={t('expenseLinesEmptyState')}
-        renderMobileCard={renderMobileCard}
-        tableMinWidth={960}
-      />
+            <SmartTable
+              tableId="company-assets"
+              title={t('assetsRegister')}
+              columns={columns}
+              data={items}
+              total={total}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              isLoading={isLoading}
+              isError={isError}
+              errorMessage={error?.message || t('loadingError')}
+              footerRow={footerRow}
+              showSearchInHeader={false}
+              emptyMessage={t('expenseLinesEmptyState')}
+              renderMobileCard={renderMobileCard}
+              tableMinWidth={960}
+            />
+          </>
+        )}
+
+        {assetSectionTab === 'queue' && (
+          <SmartTable
+            tableId="company-assets-pending-warranty"
+            title={t('assetsTabWarrantyQueue')}
+            columns={pendingColumns}
+            data={pendingRows}
+            total={pendingRows.length}
+            page={1}
+            pageSize={Math.max(pendingRows.length, 1)}
+            onPageChange={() => {}}
+            isLoading={pendingLoading}
+            isError={false}
+            errorMessage=""
+            showSearchInHeader={false}
+            emptyMessage={t('warrantyQueueEmpty')}
+            renderMobileCard={renderPendingMobileCard}
+            tableMinWidth={800}
+          />
+        )}
+      </ScreenTabs>
 
       {sheetOpen ? (
         <AssetFormSheet
@@ -383,7 +557,339 @@ export default function AssetsRegisterScreen() {
           t={t}
         />
       ) : null}
+
+      {pendingInvoiceForComplete ? (
+        <WarrantyCompleteFromInvoiceSheet
+          companyId={companyId}
+          invoice={pendingInvoiceForComplete}
+          onClose={() => setPendingInvoiceForComplete(null)}
+          onSaved={handleWarrantyCompleteSaved}
+          saving={completeSaving}
+          setSaving={setCompleteSaving}
+          canWrite={canWrite}
+          t={t}
+          lang={lang}
+        />
+      ) : null}
     </ScreenShell>
+  );
+}
+
+function WarrantyCompleteFromInvoiceSheet({
+  companyId,
+  invoice,
+  onClose,
+  onSaved,
+  saving,
+  setSaving,
+  canWrite,
+  t,
+  lang,
+}) {
+  const [err, setErr] = useState('');
+  const [form, setForm] = useState({
+    nameAr: '',
+    nameEn: '',
+    serialNumber: '',
+    location: '',
+    purchaseDate: getSaudiToday(),
+    acquisitionCost: '',
+    warrantyDescription: '',
+    warrantyMonths: '',
+    warrantyStartDate: '',
+    warrantyEndDate: '',
+    notes: '',
+  });
+  const [lines, setLines] = useState([
+    { key: '0', nameAr: '', nameEn: '', quantity: '', notes: '' },
+  ]);
+
+  useEffect(() => {
+    if (!invoice?.id) return;
+    const tx = String(invoice.transactionDate || '').slice(0, 10);
+    const supName = invoice.supplier
+      ? lang === 'en'
+        ? invoice.supplier.nameEn || invoice.supplier.nameAr
+        : invoice.supplier.nameAr || invoice.supplier.nameEn
+      : '';
+    const ref = invoice.supplierInvoiceNumber || invoice.invoiceNumber || '';
+    setForm({
+      nameAr: supName && ref ? `${supName} — ${ref}` : supName || ref || '',
+      nameEn: '',
+      serialNumber: '',
+      location: '',
+      purchaseDate: tx || getSaudiToday(),
+      acquisitionCost: invoice.totalAmount != null ? String(invoice.totalAmount) : '',
+      warrantyDescription: '',
+      warrantyMonths: '',
+      warrantyStartDate: '',
+      warrantyEndDate: '',
+      notes: invoice.notes?.trim() || '',
+    });
+    setLines([{ key: `${invoice.id}-0`, nameAr: '', nameEn: '', quantity: '', notes: '' }]);
+    setErr('');
+  }, [invoice, lang]);
+
+  const supplierLabel = useMemo(() => {
+    if (!invoice?.supplier) return '—';
+    return lang === 'en'
+      ? invoice.supplier.nameEn || invoice.supplier.nameAr
+      : invoice.supplier.nameAr || invoice.supplier.nameEn;
+  }, [invoice, lang]);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!canWrite) return;
+    setErr('');
+    const nameAr = form.nameAr?.trim();
+    if (!nameAr) {
+      setErr(t('assetName'));
+      return;
+    }
+    const warrantyLines = lines
+      .filter((l) => l.nameAr?.trim())
+      .map((l) => ({
+        nameAr: l.nameAr.trim(),
+        nameEn: l.nameEn?.trim() || undefined,
+        quantity:
+          l.quantity !== '' && l.quantity != null && !Number.isNaN(Number(l.quantity))
+            ? Number(l.quantity)
+            : undefined,
+        notes: l.notes?.trim() || undefined,
+      }));
+    const body = {
+      companyId,
+      invoiceId: invoice.id,
+      nameAr,
+      nameEn: form.nameEn?.trim() || undefined,
+      serialNumber: form.serialNumber?.trim() || undefined,
+      location: form.location?.trim() || undefined,
+      purchaseDate: form.purchaseDate?.trim() || undefined,
+      acquisitionCost:
+        form.acquisitionCost !== '' && form.acquisitionCost != null
+          ? Number(form.acquisitionCost)
+          : undefined,
+      warrantyDescription: form.warrantyDescription?.trim() || undefined,
+      warrantyMonths:
+        form.warrantyMonths !== '' && form.warrantyMonths != null
+          ? parseInt(form.warrantyMonths, 10)
+          : undefined,
+      warrantyStartDate: form.warrantyStartDate?.trim() || undefined,
+      warrantyEndDate: form.warrantyEndDate?.trim() || undefined,
+      notes: form.notes?.trim() || undefined,
+      warrantyLines: warrantyLines.length ? warrantyLines : undefined,
+    };
+    if (body.acquisitionCost != null && (Number.isNaN(body.acquisitionCost) || body.acquisitionCost < 0)) {
+      setErr(t('validationInvalidAmount'));
+      return;
+    }
+    if (body.warrantyMonths != null && (Number.isNaN(body.warrantyMonths) || body.warrantyMonths < 0)) {
+      setErr(t('validationInvalidAmount'));
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await completeCompanyAssetFromInvoice(body);
+      assertApiOk(res, t('loadingError'));
+      onSaved();
+    } catch (e2) {
+      setErr(e2?.message || t('loadingError'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addLine = () =>
+    setLines((p) => [
+      ...p,
+      { key: `${Date.now()}-${p.length}`, nameAr: '', nameEn: '', quantity: '', notes: '' },
+    ]);
+  const removeLine = (i) => setLines((p) => (p.length <= 1 ? p : p.filter((_, idx) => idx !== i)));
+
+  return (
+    <AdaptiveSheet
+      open
+      onClose={onClose}
+      title={t('warrantyCompleteSheetTitle')}
+      size="lg"
+      footer={
+        <>
+          <Button onClick={onClose}>{t('cancel')}</Button>
+          {canWrite ? (
+            <Button variant="primary" type="submit" form="warranty-complete-form" disabled={saving}>
+              {saving ? t('loading') : t('save')}
+            </Button>
+          ) : null}
+        </>
+      }
+    >
+      <form id="warranty-complete-form" onSubmit={submit} className="flex flex-col gap-3">
+        <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2 text-[12px] text-noorix-muted">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 justify-between">
+            <span>
+              {t('warrantyInvoiceRef')}:{' '}
+              <span className="font-bold text-noorix-text ltr nx-font-numbers">{invoice.invoiceNumber}</span>
+            </span>
+            <span className="ltr">{formatSaudiDate(invoice.transactionDate)}</span>
+          </div>
+          <div className="mt-1 text-[13px] text-noorix-text">{supplierLabel}</div>
+        </div>
+        {err ? (
+          <div className="p-3 rounded-lg text-[13px] bg-noorix-bg-muted border border-noorix-border text-noorix-red">
+            {err}
+          </div>
+        ) : null}
+        <Input
+          label={t('assetName')}
+          value={form.nameAr}
+          onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
+          required
+        />
+        <Input
+          label={t('assetNameEn')}
+          value={form.nameEn}
+          onChange={(e) => setForm((p) => ({ ...p, nameEn: e.target.value }))}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input
+            label={t('assetSerial')}
+            value={form.serialNumber}
+            onChange={(e) => setForm((p) => ({ ...p, serialNumber: e.target.value }))}
+            className="ltr"
+          />
+          <Input
+            label={t('assetLocation')}
+            value={form.location}
+            onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input
+            type="date"
+            label={t('assetPurchaseDate')}
+            value={form.purchaseDate}
+            onChange={(e) => setForm((p) => ({ ...p, purchaseDate: e.target.value }))}
+          />
+          <Input
+            type="number"
+            label={t('assetAcquisitionCost')}
+            value={form.acquisitionCost}
+            onChange={(e) => setForm((p) => ({ ...p, acquisitionCost: e.target.value }))}
+            className="ltr"
+          />
+        </div>
+        <Input
+          label={t('assetWarrantyDescription')}
+          value={form.warrantyDescription}
+          onChange={(e) => setForm((p) => ({ ...p, warrantyDescription: e.target.value }))}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Input
+            type="number"
+            label={t('assetWarrantyMonths')}
+            value={form.warrantyMonths}
+            onChange={(e) => setForm((p) => ({ ...p, warrantyMonths: e.target.value }))}
+            className="ltr"
+          />
+          <Input
+            type="date"
+            label={t('assetWarrantyStart')}
+            value={form.warrantyStartDate}
+            onChange={(e) => setForm((p) => ({ ...p, warrantyStartDate: e.target.value }))}
+          />
+          <Input
+            type="date"
+            label={t('assetWarrantyEnd')}
+            value={form.warrantyEndDate}
+            onChange={(e) => setForm((p) => ({ ...p, warrantyEndDate: e.target.value }))}
+          />
+        </div>
+        <p className="text-[11px] text-noorix-muted m-0">{t('assetWarrantyEndHint')}</p>
+        <Input
+          label={t('assetNotes')}
+          value={form.notes}
+          onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+        />
+
+        <div className="border-t border-noorix-border pt-3 mt-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <span className="text-[13px] font-semibold text-noorix-text">{t('warrantyLinesOptionalTitle')}</span>
+            <Button type="button" size="sm" variant="ghost" onClick={addLine}>
+              + {t('warrantyAddLine')}
+            </Button>
+          </div>
+          <div className="flex flex-col gap-3">
+            {lines.map((line, idx) => (
+              <div
+                key={line.key}
+                className="rounded-lg border border-noorix-border bg-noorix-surface p-3 grid grid-cols-1 sm:grid-cols-12 gap-2 items-end"
+              >
+                <div className="sm:col-span-5">
+                  <Input
+                    label={t('warrantyLineName')}
+                    value={line.nameAr}
+                    onChange={(e) =>
+                      setLines((prev) =>
+                        prev.map((x, i) => (i === idx ? { ...x, nameAr: e.target.value } : x)),
+                      )
+                    }
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <Input
+                    label={t('assetNameEn')}
+                    value={line.nameEn}
+                    onChange={(e) =>
+                      setLines((prev) =>
+                        prev.map((x, i) => (i === idx ? { ...x, nameEn: e.target.value } : x)),
+                      )
+                    }
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Input
+                    type="number"
+                    label={t('warrantyLineQty')}
+                    value={line.quantity}
+                    onChange={(e) =>
+                      setLines((prev) =>
+                        prev.map((x, i) => (i === idx ? { ...x, quantity: e.target.value } : x)),
+                      )
+                    }
+                    className="ltr"
+                    min="0"
+                    step="0.1"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="danger"
+                    onClick={() => removeLine(idx)}
+                    disabled={lines.length <= 1}
+                    title={t('delete')}
+                  >
+                    ×
+                  </Button>
+                </div>
+                <div className="sm:col-span-12">
+                  <Input
+                    label={t('notes')}
+                    value={line.notes}
+                    onChange={(e) =>
+                      setLines((prev) =>
+                        prev.map((x, i) => (i === idx ? { ...x, notes: e.target.value } : x)),
+                      )
+                    }
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </form>
+    </AdaptiveSheet>
   );
 }
 

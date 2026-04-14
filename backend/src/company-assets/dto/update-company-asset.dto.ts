@@ -5,8 +5,11 @@ import {
   Min,
   Max,
   IsInt,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { WarrantyLineDto } from './warranty-line.dto';
 
 export class UpdateCompanyAssetDto {
   @IsOptional()
@@ -66,4 +69,11 @@ export class UpdateCompanyAssetDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  /** عند الإرسال تُستبدل بنود التفصيل بالكامل */
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => WarrantyLineDto)
+  warrantyLines?: WarrantyLineDto[];
 }

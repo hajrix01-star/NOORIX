@@ -45,6 +45,8 @@ export interface OutflowDto {
   expenseCoverageQuarter?: number | null;
   expenseCoverageMonthStart?: number;
   expenseMonthsCovered?: number;
+  /** متابعة ضمان من المشتريات — بدون مدة؛ تُكمَّل في قسم الضمان */
+  warrantyFollowUp?: boolean;
 }
 
 export interface InflowDto {

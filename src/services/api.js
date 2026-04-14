@@ -629,6 +629,12 @@ export async function updateCompanyAsset(id, companyId, body) {
 export async function deleteCompanyAsset(id, companyId) {
   return apiDelete(`/api/v1/company-assets/${id}?companyId=${companyId}`);
 }
+export async function getPendingWarrantyInvoices(companyId) {
+  return apiGet('/api/v1/company-assets/pending-invoices', { companyId });
+}
+export async function completeCompanyAssetFromInvoice(body) {
+  return apiPost('/api/v1/company-assets/complete-from-invoice', body);
+}
 
 // ——— ملخصات المبيعات اليومية ———
 export async function createDailySalesSummary(body) { return apiPost('/api/v1/sales/summary', body); }

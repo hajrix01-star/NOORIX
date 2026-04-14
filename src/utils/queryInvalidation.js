@@ -28,6 +28,7 @@ const FINANCIAL_QUERY_PREFIXES = [
   ['invoice-day-close'],
   ['suppliers'],
   ['deductions'],
+  ['company-assets'],
 ];
 
 /**

@@ -43,6 +43,8 @@ const EMPTY_ROW = () => ({
   isTaxable: true,
   categoryId: '', debitAccountId: '',
   notes: '',
+  /** يُرسل للخادم فقط عند kind === purchase */
+  warrantyFollowUp: false,
 });
 
 /* ── تبويبات الشاشة ─────────────────────────────────────────────── */
@@ -354,16 +356,18 @@ export default function PurchasesBatchScreen() {
           } else if (r.kind === 'expense') {
             notes = notes ? `${t('expenseType')} — ${notes}` : t('expenseType');
           }
+          const kind = r.kind || 'purchase';
           return {
             supplierId: r.supplierId || undefined,
             supplierInvoiceNumber: r.invoiceNumber?.trim() || undefined,
-            kind: r.kind || 'purchase',
+            kind,
             totalAmount: parseFloat(r.totalInclusive),
             isTaxable: r.isTaxable !== false,
             invoiceDate: r.invoiceDate,
             categoryId: r.categoryId || undefined,
             debitAccountId: r.debitAccountId || undefined,
             notes: notes || undefined,
+            ...(kind === 'purchase' && r.warrantyFollowUp ? { warrantyFollowUp: true } : {}),
           };
         }),
       });
@@ -530,8 +534,8 @@ export default function PurchasesBatchScreen() {
               </div>
             ) : (
               <div className="noorix-table-frame batch-purchases-table w-full overflow-x-auto">
-                <table className="noorix-table w-full table-fixed min-w-[900px]">
-                  <colgroup><col style={{ width: '3%' }} /><col style={{ width: '20%' }} /><col style={{ width: '11%' }} /><col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '11%' }} /><col style={{ width: '5%' }} /><col style={{ width: '14%' }} /><col style={{ width: '3%' }} /></colgroup>
+                <table className="noorix-table w-full table-fixed min-w-[980px]">
+                  <colgroup><col style={{ width: '3%' }} /><col style={{ width: '18%' }} /><col style={{ width: '10%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '7%' }} /><col style={{ width: '7%' }} /><col style={{ width: '7%' }} /><col style={{ width: '10%' }} /><col style={{ width: '5%' }} /><col style={{ width: '12%' }} /><col style={{ width: '3%' }} /></colgroup>
                   <thead>
                     <tr>
                       {[
@@ -542,6 +546,7 @@ export default function PurchasesBatchScreen() {
                         { label: `${t('net')} / ${t('tax')}`, align: 'center' },
                         { label: t('date'), align: 'center' },
                         { label: t('type'), align: 'center' },
+                        { label: t('warrantyFollowUpCol'), align: 'center', title: t('warrantyFollowUpColHint') },
                         { label: t('category'), align: 'center' },
                         { label: t('taxPct'), align: 'center', title: t('taxPctTitle') },
                         { label: t('notes'), align: 'right' },

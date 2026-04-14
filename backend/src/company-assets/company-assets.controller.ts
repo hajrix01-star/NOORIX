@@ -9,6 +9,7 @@ import { RequirePermission } from '../auth/decorators/require-permission.decorat
 import { CompanyAssetsService, WarrantyFilter } from './company-assets.service';
 import { CreateCompanyAssetDto } from './dto/create-company-asset.dto';
 import { UpdateCompanyAssetDto } from './dto/update-company-asset.dto';
+import { CompleteCompanyAssetFromInvoiceDto } from './dto/complete-from-invoice.dto';
 
 @Controller('company-assets')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -31,6 +32,19 @@ export class CompanyAssetsController {
       page: page ? parseInt(page, 10) : 1,
       pageSize: pageSize ? parseInt(pageSize, 10) : 50,
     });
+  }
+
+  @Get('pending-invoices')
+  @RequirePermission('EXPENSES_READ')
+  findPendingWarrantyInvoices(@Query('companyId') companyId: string) {
+    if (!companyId) return [];
+    return this.companyAssetsService.findPendingWarrantyInvoices(companyId);
+  }
+
+  @Post('complete-from-invoice')
+  @RequirePermission('EXPENSES_WRITE')
+  completeFromInvoice(@Body() dto: CompleteCompanyAssetFromInvoiceDto) {
+    return this.companyAssetsService.completeFromInvoice(dto);
   }
 
   @Get(':id')

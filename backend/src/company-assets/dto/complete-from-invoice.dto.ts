@@ -5,15 +5,22 @@ import {
   Min,
   Max,
   IsInt,
+  IsBoolean,
   IsArray,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { WarrantyLineDto } from './warranty-line.dto';
 
-export class CreateCompanyAssetDto {
+/**
+ * إكمال بيانات الضمان لفاتورة مشتريات كانت مُفعَّلة «متابعة ضمان» — المدة تُسجَّل هنا فقط.
+ */
+export class CompleteCompanyAssetFromInvoiceDto {
   @IsString()
   companyId: string;
+
+  @IsString()
+  invoiceId: string;
 
   @IsString()
   nameAr: string;
@@ -44,17 +51,8 @@ export class CreateCompanyAssetDto {
 
   @IsOptional()
   @IsString()
-  supplierId?: string;
-
-  @IsOptional()
-  @IsString()
-  invoiceId?: string;
-
-  @IsOptional()
-  @IsString()
   warrantyDescription?: string;
 
-  /** مدة الضمان بالأشهر (تُستخدم مع تاريخ البداية لحساب نهاية الضمان إن لم تُحدَّد نهاية صريحة) */
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -62,12 +60,10 @@ export class CreateCompanyAssetDto {
   @Max(600)
   warrantyMonths?: number;
 
-  /** YYYY-MM-DD */
   @IsOptional()
   @IsString()
   warrantyStartDate?: string;
 
-  /** YYYY-MM-DD — إن وُجدت تُستخدم كما هي ولا تُحسب من الأشهر */
   @IsOptional()
   @IsString()
   warrantyEndDate?: string;
@@ -76,10 +72,15 @@ export class CreateCompanyAssetDto {
   @IsString()
   notes?: string;
 
-  /** بنود تفصيل ضمان (من قسم الضمان) */
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => WarrantyLineDto)
   warrantyLines?: WarrantyLineDto[];
+
+  /** عند true (افتراضي): تُخرج الفاتورة من قائمة انتظار الضمان */
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  markInvoiceDone?: boolean;
 }

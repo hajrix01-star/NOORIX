@@ -131,6 +131,12 @@ export class CreateInvoiceDto {
   @IsString()
   notes?: string;
 
+  /** متابعة ضمان (مشتريات فقط) — بدون مدة؛ تُكمَّل في قسم الضمان */
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  warrantyFollowUp?: boolean;
+
   @IsOptional()
   @IsString()
   creditAccountId?: string;

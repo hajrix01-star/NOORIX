@@ -136,6 +136,7 @@ export class FinancialCoreService {
         expenseCoverageQuarter: dto.expenseCoverageQuarter,
         expenseCoverageMonthStart: dto.expenseCoverageMonthStart,
         expenseMonthsCovered: dto.expenseMonthsCovered,
+        warrantyFollowUp:     dto.warrantyFollowUp === true,
         idempotencyKey:        dto.idempotencyKey,
       });
       const cached = await this.idempotency.getCachedResult(tenantId, dto.companyId, keyHash);
@@ -193,6 +194,8 @@ export class FinancialCoreService {
           expenseCoverageQuarter:    dto.expenseCoverageQuarter ?? null,
           expenseCoverageMonthStart: dto.expenseCoverageMonthStart ?? null,
           expenseMonthsCovered:      dto.expenseMonthsCovered ?? null,
+          warrantyFollowUp:          dto.warrantyFollowUp === true,
+          warrantyFollowUpDone:      false,
           status:                'active',
         },
       });
@@ -316,6 +319,8 @@ export class FinancialCoreService {
             expenseCoverageQuarter:    dto.expenseCoverageQuarter ?? null,
             expenseCoverageMonthStart: dto.expenseCoverageMonthStart ?? null,
             expenseMonthsCovered:      dto.expenseMonthsCovered ?? null,
+            warrantyFollowUp:          dto.warrantyFollowUp === true,
+            warrantyFollowUpDone:      false,
             status:                'active',
           },
         });

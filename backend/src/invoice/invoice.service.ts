@@ -130,6 +130,8 @@ export class InvoiceService {
         expenseCoverageQuarter:    expenseCoverageQuarter ?? null,
         expenseCoverageMonthStart: expenseCoverageMonthStart,
         expenseMonthsCovered:      expenseMonthsCovered,
+        warrantyFollowUp:
+          dto.kind === 'purchase' && dto.warrantyFollowUp === true,
       },
       userId ?? undefined,
     );
@@ -207,6 +209,8 @@ export class InvoiceService {
           vaultId:         dto.vaultId ?? undefined,
           debitAccountId,
           notes:           combineLineAndBatchNotes(item.notes),
+          warrantyFollowUp:
+            kind === 'purchase' && item.warrantyFollowUp === true,
         });
       }
       const results = await this.financialCore.processOutflowBatch(
@@ -278,6 +282,7 @@ export class InvoiceService {
       if (dto.notes           !== undefined) updateData.notes           = dto.notes;
       if (dto.installmentCount  !== undefined) updateData.installmentCount  = dto.installmentCount;
       if (dto.installmentAmount !== undefined) updateData.installmentAmount = new Prisma.Decimal(dto.installmentAmount);
+      if (dto.warrantyFollowUpDone !== undefined) updateData.warrantyFollowUpDone = dto.warrantyFollowUpDone;
 
       const newInvoice = await tx.invoice.update({ where: { id }, data: updateData });
 
