@@ -256,7 +256,7 @@ export class CompanyAssetsService {
       where: {
         companyId,
         status: 'active',
-        kind: 'purchase',
+        kind: { in: ['purchase', 'expense', 'fixed_expense'] },
         warrantyFollowUp: true,
         warrantyFollowUpDone: false,
       },
@@ -360,13 +360,13 @@ export class CompanyAssetsService {
         id: dto.invoiceId,
         companyId: dto.companyId,
         status: 'active',
-        kind: 'purchase',
+        kind: { in: ['purchase', 'expense', 'fixed_expense'] },
       },
       include: { supplier: { select: { id: true, nameAr: true, nameEn: true } } },
     });
-    if (!inv) throw new BadRequestException('الفاتورة غير موجودة أو ليست فاتورة مشتريات نشطة');
+    if (!inv) throw new BadRequestException('الفاتورة غير موجودة أو ليست من نوع مشتريات/مصروف نشط');
     if (!inv.warrantyFollowUp) {
-      throw new BadRequestException('لم يُفعّل «متابعة الضمان» لهذه الفاتورة عند حفظ المشتريات');
+      throw new BadRequestException('لم يُفعّل «متابعة الضمان» لهذه الفاتورة عند الحفظ');
     }
     if (inv.warrantyFollowUpDone) {
       throw new BadRequestException('تم إكمال متابعة الضمان لهذه الفاتورة مسبقاً');

@@ -21,6 +21,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
     primaryVaultId: '',
     supplierInvoiceNumber: '',
     notes: '',
+    warrantyFollowUp: false,
     coverageMode: 'quarter',
     expenseCoverageYear: defaultYear,
     expenseCoverageQuarter: 1,
@@ -164,6 +165,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
       isTaxable: !selectedLine.category?.account?.taxExempt,
       transactionDate: form.transactionDate,
       notes: form.notes?.trim() || undefined,
+      ...(form.warrantyFollowUp ? { warrantyFollowUp: true } : {}),
     };
 
     if (selectedLine.kind === 'fixed_expense') {
@@ -423,6 +425,16 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           placeholder="مثال: كهرباء - عداد 12345 - 1,200 SR"
           rows={3}
         />
+
+        <label className="flex items-start gap-2.5 min-h-[44px] cursor-pointer rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2.5">
+          <input
+            type="checkbox"
+            checked={!!form.warrantyFollowUp}
+            onChange={(e) => setForm((p) => ({ ...p, warrantyFollowUp: e.target.checked }))}
+            className="mt-0.5 h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
+          />
+          <span className="text-[13px] font-semibold text-noorix-text leading-snug">{t('warrantyFollowUpStack')}</span>
+        </label>
       </form>
     </AdaptiveSheet>
   );

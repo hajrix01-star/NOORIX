@@ -131,7 +131,8 @@ export class InvoiceService {
         expenseCoverageMonthStart: expenseCoverageMonthStart,
         expenseMonthsCovered:      expenseMonthsCovered,
         warrantyFollowUp:
-          dto.kind === 'purchase' && dto.warrantyFollowUp === true,
+          ['purchase', 'expense', 'fixed_expense'].includes(dto.kind) &&
+          dto.warrantyFollowUp === true,
       },
       userId ?? undefined,
     );
@@ -210,7 +211,8 @@ export class InvoiceService {
           debitAccountId,
           notes:           combineLineAndBatchNotes(item.notes),
           warrantyFollowUp:
-            kind === 'purchase' && item.warrantyFollowUp === true,
+            ['purchase', 'expense', 'fixed_expense'].includes(kind) &&
+            item.warrantyFollowUp === true,
         });
       }
       const results = await this.financialCore.processOutflowBatch(

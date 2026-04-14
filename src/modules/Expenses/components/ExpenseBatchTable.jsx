@@ -19,6 +19,7 @@ const EMPTY_ROW = () => ({
   supplierInvoiceNumber: '',
   totalInclusive: '',
   notes: '',
+  warrantyFollowUp: false,
 });
 
 export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
@@ -85,6 +86,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
             totalAmount: parseFloat(r.totalInclusive),
             isTaxable: !line?.category?.account?.taxExempt,
             notes: autoNote,
+            ...(r.warrantyFollowUp ? { warrantyFollowUp: true } : {}),
           };
         }),
       });
@@ -180,7 +182,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     {
       key: 'notes',
       label: 'ملاحظات',
-      width: '11%',
+      width: '10%',
       render: (v, row) => (
         <Input
           type="text"
@@ -189,6 +191,25 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
           onChange={(e) => updateRow(row.index - 1, { notes: e.target.value })}
           placeholder="اختياري"
         />
+      ),
+    },
+    {
+      key: 'warrantyFollowUp',
+      label: t('warrantyFollowUpCol'),
+      width: '7%',
+      align: 'center',
+      render: (_, row) => (
+        <label className="inline-flex items-center justify-center gap-1 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!row.warrantyFollowUp}
+            onChange={(e) => updateRow(row.index - 1, { warrantyFollowUp: e.target.checked })}
+            className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
+            title={t('warrantyFollowUpColHint')}
+            aria-label={`${t('warrantyFollowUpCol')} — ${row.index}`}
+          />
+          <span className="hidden 2xl:inline text-[11px] font-semibold text-noorix-muted">{t('warrantyFollowUpShort')}</span>
+        </label>
       ),
     },
     {
@@ -256,7 +277,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         showSearchInHeader={false}
         tableId="expense-batch"
         tableLayout="fixed"
-        tableMinWidth={1280}
+        tableMinWidth={1380}
         stickyActionColumn={false}
       />
 
