@@ -130,6 +130,7 @@ model Company {
   bankClassificationRules BankClassificationRule[]
   bankStatementTemplates BankStatementTemplate[]
   backupJobs             BackupJob[]
+  companyAssets        CompanyAsset[]
 
   @@index([tenantId])
   @@map("companies")
@@ -724,6 +725,7 @@ model Supplier {
   supplierCategory Category?    @relation(fields: [supplierCategoryId], references: [id], onDelete: SetNull)
   invoices         Invoice[]
   expenseLines     ExpenseLine[]
+  companyAssets    CompanyAsset[]
 
   @@index([tenantId])
   @@index([companyId])
@@ -893,6 +895,7 @@ model Invoice {
   dailySalesSummary DailySalesSummary? @relation(fields: [dailySalesSummaryId], references: [id], onDelete: SetNull)
   vaultAllocations InvoiceVaultAllocation[]
   leaveSalarySettlement LeaveSalarySettlement?
+  companyAssets    CompanyAsset[]
 
   @@unique([companyId, invoiceNumber])
   @@index([tenantId])
@@ -905,6 +908,38 @@ model Invoice {
   @@index([companyId, categoryId])
   @@index([companyId, batchId])
   @@map("invoices")
+}
+
+/// سجل أصول تشغيلي (بدون إهلاك) — ضمان، مدة، ربط اختياري بفاتورة/مورد
+model CompanyAsset {
+  id                  String    @id @default(cuid())
+  tenantId            String    @map("tenant_id")
+  companyId           String    @map("company_id")
+  nameAr              String    @map("name_ar")
+  nameEn              String?   @map("name_en")
+  serialNumber        String?   @map("serial_number")
+  location            String?
+  purchaseDate        DateTime? @map("purchase_date") @db.Date
+  acquisitionCost     Decimal?  @map("acquisition_cost") @db.Decimal(18, 2)
+  supplierId          String?   @map("supplier_id")
+  invoiceId           String?   @map("invoice_id")
+  warrantyDescription String?   @map("warranty_description") @db.Text
+  warrantyMonths      Int?      @map("warranty_months")
+  warrantyStartDate   DateTime? @map("warranty_start_date") @db.Date
+  warrantyEndDate     DateTime? @map("warranty_end_date") @db.Date
+  notes               String?   @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  invoice  Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, purchaseDate])
+  @@index([companyId, warrantyEndDate])
+  @@map("company_assets")
 }
 
 model DailySalesSummary {

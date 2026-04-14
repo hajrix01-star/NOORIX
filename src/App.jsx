@@ -32,6 +32,7 @@ const TreasuryScreen = React.lazy(() => import('./modules/Treasury/TreasuryScree
 const HRMainScreen = React.lazy(() => import('./modules/HR/HRMainScreen'));
 const EmployeeProfileScreen = React.lazy(() => import('./modules/HR/EmployeeProfileScreen'));
 const ExpensesScreen = React.lazy(() => import('./modules/Expenses/ExpensesScreen'));
+const AssetsRegisterScreen = React.lazy(() => import('./modules/Assets/AssetsRegisterScreen'));
 const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
 const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvoicesScreen'));
@@ -352,6 +353,7 @@ export default function App() {
                 <Route path="/chat" element={<SmartChatScreen />} />
                 <Route path="/suppliers" element={<SuppliersScreen />} />
                 <Route path="/expenses" element={<ExpensesScreen />} />
+                <Route path="/assets" element={<AssetsRegisterScreen />} />
                 <Route path="/orders" element={<OrdersScreen />} />
                 <Route path="/invoices" element={<InvoicesListScreen />} />
                 <Route path="/treasury" element={<TreasuryScreen />} />

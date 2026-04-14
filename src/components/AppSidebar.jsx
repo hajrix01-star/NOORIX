@@ -22,6 +22,7 @@ import {
   IconChartBar,
   IconOcr,
   IconSettings,
+  IconMonitor,
 } from './SidebarIcons';
 
 const SIDEBAR_LINKS = [
@@ -34,6 +35,7 @@ const SIDEBAR_LINKS = [
   { to: '/suppliers', labelKey: 'suppliersAndCategories', icon: IconTruck, permission: 'VIEW_SUPPLIERS' },
   { to: '/treasury', labelKey: 'vaults', icon: IconDollar, permission: 'VIEW_VAULTS' },
   { to: '/expenses', labelKey: 'fixedAndVariableExpenses', icon: IconWallet, permission: 'VIEW_EXPENSES' },
+  { to: '/assets', labelKey: 'assetsRegister', icon: IconMonitor, permission: 'VIEW_EXPENSES' },
   { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_ORDERS' },
   { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: 'VIEW_EMPLOYEES' },
   {
