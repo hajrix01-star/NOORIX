@@ -42,14 +42,8 @@ export default {
   dashboardSelectDaysModeOff: { ar: 'إلغاء التحديد', en: 'Cancel selection' },
   dashboardNoAppSales: { ar: 'لا توجد مبيعات عبر التطبيقات في هذه الفترة', en: 'No app sales in this period' },
   dashboardKpiFormulaSales: { ar: 'إجمالي المبيعات للفترة', en: 'Total sales for the period' },
-  /** متوسط يومي: المجموع ÷ عدد الأيام ذات الإيراد &gt; 0 فقط — التقويم */
+  /** متوسط يومي: المجموع ÷ عدد الأيام ذات الإيراد &gt; 0 فقط */
   dashboardSalesDailyAvgActiveDays: { ar: 'المعدل اليومي (أيام بها إيراد فقط)', en: 'Daily average (days with revenue only)' },
-  /** كرت الإيرادات — لوحة التحكم */
-  dashboardRevenueDailyAvgTitle: { ar: 'المعدل اليومي', en: 'Daily average' },
-  dashboardRevenueDailyAvgHint: {
-    ar: 'متوسط إيراد اليوم في الأيام التي وُجد فيها إيراد.',
-    en: 'Average revenue per day on days that had revenue.',
-  },
   /** فئات الموردين — نفس فترة التحليل */
   dashboardSuppliersInPeriod: { ar: 'موردون بحركة في الفترة', en: 'Suppliers with activity in period' },
   dashboardNoSuppliersInPeriod: { ar: 'لا يوجد موردون بفواتير مشتريات/مصروف في هذه الفترة.', en: 'No suppliers with purchase/expense invoices in this period.' },
