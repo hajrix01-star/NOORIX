@@ -21,6 +21,7 @@ import {
   createEmployeesBatch,
   createDailySalesSummary,
   getPaymentVaults,
+  getSalesChannels,
 } from '../services/api';
 import { Button, AdaptiveSheet, ScreenTabs } from '../ui';
 import { useTranslation } from '../i18n/useTranslation';
@@ -287,9 +288,12 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
   useEffect(() => {
     if (!isOpen || !companyId) return;
     setLookupsLoading(true);
-    const promises = [
-      getPaymentVaults(companyId).catch(() => ({})),
-    ];
+    // Sales import/template columns must match «قنوات البيع» (isSalesChannel), not payment methods only.
+    const vaultPromise =
+      entityType === 'sales'
+        ? getSalesChannels(companyId).catch(() => ({}))
+        : getPaymentVaults(companyId).catch(() => ({}));
+    const promises = [vaultPromise];
     if (entityType === 'invoices') {
       promises.push(
         apiGet('/api/v1/suppliers', { companyId, pageSize: 500 }).catch(() => ({})),
