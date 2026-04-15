@@ -525,17 +525,19 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
             <MetricCard key={card.key} color={accentColor} className="min-h-[188px]">
               <MetricCard.Header label={card.label} subLabel={t(card.formulaKey)} />
               <MetricCard.Value value={amountText(rawVal)} currency="SR" />
-              <MetricCard.Spark data={sparkData} color={accentColor} grow />
-              <MetricCard.Footer className="mt-3 flex flex-col gap-1.5 border-t border-noorix-border pt-3 pb-3">
-                <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
-                {isSales && revenueDailyAvgActiveDays != null && (
-                  <div className="text-[11px] text-noorix-muted flex flex-wrap items-baseline gap-1">
-                    <span>{t('dashboardSalesDailyAvgActiveDays')}</span>
-                    <span className="font-semibold text-noorix-text nx-font-numbers">
+              {isSales && revenueDailyAvgActiveDays != null && (
+                <div className="px-4 mt-1.5">
+                  <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                    <span className="text-[11px] text-noorix-muted">{t('dashboardSalesDailyAvgActiveDays')}</span>
+                    <span className="text-[15px] font-semibold text-noorix-blue nx-font-numbers ltr">
                       <FmtNum n={revenueDailyAvgActiveDays} /> <span className="nx-sar">SR</span>
                     </span>
                   </div>
-                )}
+                </div>
+              )}
+              <MetricCard.Spark data={sparkData} color={accentColor} grow />
+              <MetricCard.Footer className="mt-3 flex flex-col gap-1.5 border-t border-noorix-border pt-3 pb-3">
+                <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
                 <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                   <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
                     {pctLabelText}
