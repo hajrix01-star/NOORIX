@@ -524,16 +524,27 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           return (
             <MetricCard key={card.key} color={accentColor} className="min-h-[188px]">
               <MetricCard.Header label={card.label} subLabel={t(card.formulaKey)} />
-              <MetricCard.Value value={amountText(rawVal)} currency="SR" />
-              {isSales && revenueDailyAvgActiveDays != null && (
-                <div className="px-4 mt-1.5">
-                  <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-                    <span className="text-[11px] text-noorix-muted">{t('dashboardSalesDailyAvgActiveDays')}</span>
-                    <span className="text-[15px] font-semibold text-noorix-blue nx-font-numbers ltr">
-                      <FmtNum n={revenueDailyAvgActiveDays} /> <span className="nx-sar">SR</span>
-                    </span>
+              {isSales && revenueDailyAvgActiveDays != null ? (
+                <div className="px-4 mt-1">
+                  <div className="flex w-full min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <div
+                      dir="ltr"
+                      className="nx-font-numbers inline-flex shrink-0 items-baseline gap-x-1 text-[22px] font-bold leading-tight tracking-[-0.5px] text-noorix-text"
+                      style={{ fontFamily: 'var(--noorix-font-numbers)' }}
+                    >
+                      {amountText(rawVal)}
+                      <span className="nx-sar">SR</span>
+                    </div>
+                    <div className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5 text-end">
+                      <span className="text-[11px] text-noorix-muted">{t('dashboardSalesDailyAvgActiveDays')}</span>
+                      <span className="text-[15px] font-semibold text-noorix-blue nx-font-numbers ltr whitespace-nowrap">
+                        <FmtNum n={revenueDailyAvgActiveDays} /> <span className="nx-sar">SR</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <MetricCard.Value value={amountText(rawVal)} currency="SR" />
               )}
               <MetricCard.Spark data={sparkData} color={accentColor} grow />
               <MetricCard.Footer className="mt-3 flex flex-col gap-1.5 border-t border-noorix-border pt-3 pb-3">
