@@ -27,6 +27,10 @@ export default {
   printTitle: { ar: 'طباعة', en: 'Print' },
   cancelTitle: { ar: 'إلغاء', en: 'Cancel' },
   selectSupplierPlaceholder: { ar: '— اختر المورد —', en: '— Select supplier —' },
+  supplierSelectSearchPlaceholder: {
+    ar: 'ابحث بالاسم أو الرقم الضريبي أو اختر المورد',
+    en: 'Search by name, VAT number, or pick a supplier',
+  },
   searchArEn: { ar: 'ابحث بالعربي أو الإنجليزي...', en: 'Search in Arabic or English...' },
   clearSelection: { ar: '✕ إلغاء الاختيار', en: '✕ Clear selection' },
   shortcutsLabel: { ar: '★ الاختصارات', en: '★ Shortcuts' },

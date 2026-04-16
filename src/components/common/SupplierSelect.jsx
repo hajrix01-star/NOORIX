@@ -32,13 +32,24 @@ function trackSupplierUsage(supplierId) {
   writeJsonStorage(SUPPLIER_USAGE_KEY, usage);
 }
 
+function digitsOnly(str) {
+  return String(str || '').replace(/\D/g, '');
+}
+
 function matchesQuery(s, normalized) {
   if (!normalized) return true;
-  return (
+  if (
     String(s.nameAr || '').toLowerCase().includes(normalized) ||
     String(s.nameEn || '').toLowerCase().includes(normalized) ||
-    String(s.code   || '').toLowerCase().includes(normalized)
-  );
+    String(s.code || '').toLowerCase().includes(normalized)
+  ) {
+    return true;
+  }
+  const tax = String(s.taxNumber || '').toLowerCase();
+  if (tax.includes(normalized)) return true;
+  const qDigits = digitsOnly(normalized);
+  if (qDigits.length >= 3 && digitsOnly(tax).includes(qDigits)) return true;
+  return false;
 }
 
 export function SupplierSelect({
@@ -50,7 +61,7 @@ export function SupplierSelect({
   /** يُمرَّر لحقل البحث الداخلي — ربط تسمية النموذج العمودي */
   id,
 }) {
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
   const anchorRef = useRef(null);
   const menuRef = useRef(null);
   const [query, setQuery] = useState('');
@@ -174,7 +185,7 @@ export function SupplierSelect({
     setUsageVersion((v) => v + 1);
   }
 
-  const ph = placeholder && placeholder !== '—' ? placeholder : 'ابحث عن المورد أو اختره';
+  const ph = placeholder && placeholder !== '—' ? placeholder : t('supplierSelectSearchPlaceholder');
 
   const menuContent = showMenu && typeof document !== 'undefined'
     ? createPortal(
