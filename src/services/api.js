@@ -783,6 +783,7 @@ export async function fetchAllInvoicesForExport({
   hasNotes,
   vaultId,
   batchId,
+  employeeId,
 }) {
   if (!companyId) return [];
   const pageSize = 150;
@@ -796,7 +797,7 @@ export async function fetchAllInvoicesForExport({
       page,
       pageSize,
       batchId || undefined,
-      undefined,
+      employeeId || undefined,
       kind,
       sortBy,
       sortDir,

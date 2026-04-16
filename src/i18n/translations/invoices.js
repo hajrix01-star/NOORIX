@@ -17,6 +17,9 @@ export default {
   cancelInvoiceConfirm: { ar: 'إلغاء هذه الفاتورة؟', en: 'Cancel this invoice?' },
   invoiceKindHrExpense: { ar: 'إقامة/HR', en: 'Residency/HR' },
   invoiceNotesColumn: { ar: 'ملاحظة', en: 'Notes' },
+  /** عمود الموظف المرتبط بالفاتورة (راتب/سلفة/HR) */
+  invoiceUserColumn: { ar: 'المستخدم', en: 'Employee' },
+  invoicesFilterEmployeeAll: { ar: 'كل المستخدمين', en: 'All employees' },
   invoiceVaultColumn: { ar: 'الخزنة', en: 'Vault' },
   /** فلتر قائمة الفواتير */
   invoicesFilterVaultAll: { ar: 'كل الخزائن', en: 'All vaults' },
