@@ -783,7 +783,7 @@ export async function fetchAllInvoicesForExport({
   hasNotes,
   vaultId,
   batchId,
-  employeeId,
+  createdByUserId,
 }) {
   if (!companyId) return [];
   const pageSize = 150;
@@ -797,7 +797,7 @@ export async function fetchAllInvoicesForExport({
       page,
       pageSize,
       batchId || undefined,
-      employeeId || undefined,
+      undefined,
       kind,
       sortBy,
       sortDir,
@@ -808,6 +808,7 @@ export async function fetchAllInvoicesForExport({
       includeCancelled,
       hasNotes,
       vaultId,
+      createdByUserId || undefined,
     );
     throwIfApiFailed(res, 'فشل تحميل الفواتير للتصدير');
     const { items = [], total = 0 } = res.data || {};
@@ -1239,7 +1240,7 @@ export async function updateInvoice(id, body, companyId) {
 export async function deleteInvoice(id, companyId) {
   return apiDelete(`/api/v1/invoices/${id}?companyId=${companyId}`);
 }
-export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled = true, hasNotes, vaultId) {
+export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled = true, hasNotes, vaultId, createdByUserId) {
   const params = { companyId, page: String(page), pageSize: String(pageSize) };
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
   if (startDate) params.startDate = String(startDate).slice(0, 10);
@@ -1253,6 +1254,7 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
   if (categoryId) params.categoryId = categoryId;
   if (expenseLineId) params.expenseLineId = expenseLineId;
   if (vaultId) params.vaultId = vaultId;
+  if (createdByUserId) params.createdByUserId = createdByUserId;
   params.includeCancelled = includeCancelled ? 'true' : 'false';
   if (q && String(q).trim()) params.q = String(q).trim();
   if (hasNotes === true) params.hasNotes = 'true';
@@ -1286,6 +1288,14 @@ export async function getInvoiceDayCloseReport(companyId, date) {
   if (!res.success) return res;
   const data = res.data?.data ?? res.data;
   return { success: true, data };
+}
+
+/** مستخدمو النظام الذين لهم فواتير في الشركة — فلتر قائمة الفواتير */
+export async function getInvoiceCreatorFilterOptions(companyId) {
+  const res = await apiGet('/api/v1/invoices/creator-filter-options', { companyId });
+  if (!res.success) return { success: false, users: [] };
+  const raw = res.data?.data ?? res.data;
+  return { success: true, users: Array.isArray(raw?.users) ? raw.users : [] };
 }
 
 // ——— النسخ الاحتياطي الذكي ———

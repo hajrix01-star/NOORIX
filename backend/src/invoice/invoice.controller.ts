@@ -67,6 +67,13 @@ export class InvoiceController {
     return this.invoiceService.getDayCloseReport(companyId, date);
   }
 
+  /** مستخدمو النظام الظاهرون كمنشئين لفواتير الشركة — لفلتر القائمة */
+  @Get('creator-filter-options')
+  @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
+  async creatorFilterOptions(@Query('companyId') companyId: string) {
+    return this.invoiceService.getCreatorFilterOptions(companyId);
+  }
+
   @Get()
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async findAll(
@@ -88,6 +95,7 @@ export class InvoiceController {
     @Query('q')           q?:          string,
     @Query('includeCancelled') includeCancelled?: string,
     @Query('hasNotes')   hasNotes?:   string,
+    @Query('createdByUserId') createdByUserId?: string,
   ) {
     const role  = (user?.role  || '').toLowerCase();
     const perms = user?.permissions || [];
@@ -116,6 +124,7 @@ export class InvoiceController {
       categoryId,
       expenseLineId,
       vaultId?.trim() || undefined,
+      createdByUserId,
       sortBy,
       sortDir,
       q,

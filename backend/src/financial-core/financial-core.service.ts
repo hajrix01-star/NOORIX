@@ -197,6 +197,7 @@ export class FinancialCoreService {
           warrantyFollowUp:          dto.warrantyFollowUp === true,
           warrantyFollowUpDone:      false,
           status:                'active',
+          createdByUserId:       userId,
         },
       });
 
@@ -322,6 +323,7 @@ export class FinancialCoreService {
             warrantyFollowUp:          dto.warrantyFollowUp === true,
             warrantyFollowUpDone:      false,
             status:                'active',
+            createdByUserId:       userId,
           },
         });
 
@@ -826,6 +828,7 @@ export class FinancialCoreService {
           notes:               dto.notes ?? null,
           dailySalesSummaryId: summary.id,
           status:              'active',
+          createdByUserId:     userId,
         },
       });
       await tx.invoiceVaultAllocation.createMany({

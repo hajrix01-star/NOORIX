@@ -8,6 +8,7 @@
 
 const FINANCIAL_QUERY_PREFIXES = [
   ['invoices'],
+  ['invoice-creator-filter-options'],
   ['vaults'],
   ['vault-transactions'],
   ['sales-summaries'],

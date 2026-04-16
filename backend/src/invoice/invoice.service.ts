@@ -389,6 +389,29 @@ export class InvoiceService {
     });
   }
 
+  /**
+   * مستخدمو النظام الذين لهم فواتير في الشركة — لقائمة فلتر «منشئ السجل».
+   */
+  async getCreatorFilterOptions(companyId: string) {
+    if (!companyId?.trim()) return { users: [] as { id: string; nameAr: string | null; nameEn: string | null; email: string }[] };
+    const distinct = await this.prisma.invoice.findMany({
+      where: { companyId, createdByUserId: { not: null } },
+      select: { createdByUserId: true },
+      distinct: ['createdByUserId'],
+    });
+    const ids = distinct.map((d) => d.createdByUserId).filter((x): x is string => !!x);
+    if (ids.length === 0) return { users: [] };
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, nameAr: true, nameEn: true, email: true },
+    });
+    users.sort((a, b) => {
+      const la = (a.nameAr || a.nameEn || a.email || '').localeCompare(b.nameAr || b.nameEn || b.email || '', 'ar');
+      return la;
+    });
+    return { users };
+  }
+
   async findAll(
     companyId: string,
     page       = 1,
@@ -402,6 +425,8 @@ export class InvoiceService {
     categoryId?: string,
     expenseLineId?: string,
     vaultId?: string,
+    /** فلتر مستخدم النظام الذي أنشأ السجل؛ القيمة `__none__` = بدون منشئ (بيانات قديمة) */
+    createdByUserId?: string,
     sortBy = 'transactionDate',
     sortDir: 'asc' | 'desc' | string = 'desc',
     q?: string,
@@ -433,6 +458,12 @@ export class InvoiceService {
           OR: [{ vaultId }, { vaultAllocations: { some: { vaultId } } }],
         }
       : {};
+    const createdByFilter: Prisma.InvoiceWhereInput =
+      createdByUserId === '__none__'
+        ? { createdByUserId: null }
+        : createdByUserId?.trim()
+          ? { createdByUserId: createdByUserId.trim() }
+          : {};
 
     const wantHasNotesOnly =
       hasNotes === true ||
@@ -497,6 +528,7 @@ export class InvoiceService {
       ...categoryFilter,
       ...expenseLineFilter,
       ...vaultFilter,
+      ...createdByFilter,
       ...searchFilter,
       ...notesPresenceFilter,
     };
@@ -525,7 +557,8 @@ export class InvoiceService {
         take:    size,
         include: {
           supplier: true,
-          employee: { select: { id: true, name: true, nameEn: true } },
+          employee: { select: { id: true, name: true } },
+          createdByUser: { select: { id: true, nameAr: true, nameEn: true, email: true } },
           expenseLine: { select: { id: true, nameAr: true, kind: true } },
           vault: { select: { id: true, nameAr: true, nameEn: true, type: true } },
           vaultAllocations: {

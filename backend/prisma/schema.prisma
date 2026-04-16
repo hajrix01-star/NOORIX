@@ -77,6 +77,7 @@ model User {
   auditLogs     AuditLog[]
   salesSummaries DailySalesSummary[] @relation("SalesCreatedBy")
   backupJobsCreated BackupJob[] @relation("BackupCreatedBy")
+  invoicesCreated Invoice[] @relation("InvoiceCreatedBy")
 
   @@index([tenantId])
   @@map("users")
@@ -888,12 +889,15 @@ model Invoice {
   dailySalesSummaryId String? @unique @map("daily_sales_summary_id")  // للمبيعات: ربط بملخص المبيعات اليومي (واحد لواحد)
   status          String   @default("active")       // active | cancelled
   entryDate       DateTime @map("entry_date")       // توقيت السيرفر — غير قابل للتعديل
+  /// مستخدم النظام الذي أنشأ السجل (فاتورة صرف/مبيعات)
+  createdByUserId String?  @map("created_by_user_id")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt      @map("updated_at")
 
   company       Company             @relation(fields: [companyId],  references: [id], onDelete: Cascade)
   supplier      Supplier?           @relation(fields: [supplierId],  references: [id], onDelete: Restrict)
   vault         Vault?              @relation(fields: [vaultId],     references: [id], onDelete: SetNull)
+  createdByUser User?               @relation("InvoiceCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   employee      Employee?           @relation(fields: [employeeId],  references: [id], onDelete: SetNull)
   expenseLine   ExpenseLine?        @relation(fields: [expenseLineId], references: [id], onDelete: SetNull)
   dailySalesSummary DailySalesSummary? @relation(fields: [dailySalesSummaryId], references: [id], onDelete: SetNull)
@@ -912,6 +916,7 @@ model Invoice {
   @@index([companyId, categoryId])
   @@index([companyId, batchId])
   @@index([companyId, kind, warrantyFollowUp, warrantyFollowUpDone])
+  @@index([companyId, createdByUserId])
   @@map("invoices")
 }
 

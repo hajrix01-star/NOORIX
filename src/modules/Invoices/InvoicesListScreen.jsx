@@ -5,19 +5,18 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useSearchParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp }         from '../../context/AppContext';
 import { useToast }       from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useInvoices }    from '../../hooks/useInvoices';
-import { useEmployees }   from '../../hooks/useEmployees';
 import { useSuppliers }   from '../../hooks/useSuppliers';
 import { useVaults }      from '../../hooks/useVaults';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDate, formatSaudiDateISO } from '../../utils/saudiDate';
-import { updateInvoice, getInvoices, deleteInvoice, fetchAllInvoicesForExport } from '../../services/api';
+import { updateInvoice, getInvoices, deleteInvoice, fetchAllInvoicesForExport, getInvoiceCreatorFilterOptions } from '../../services/api';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { Badge, Button, Modal, Input, ScreenShell, FmtNum, cn, SmartTable } from '../../ui';
@@ -157,7 +156,7 @@ export default function InvoicesListScreen() {
   const [viewingInvoice, setViewingInvoice]   = useState(null);
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
-  const [filterEmployeeId, setFilterEmployeeId] = useState('');
+  const [filterCreatedByUserId, setFilterCreatedByUserId] = useState('');
   const [filterVaultId, setFilterVaultId] = useState('');
   const [showCancelled, setShowCancelled] = useState(false);
   const [filterHasNotesOnly, setFilterHasNotesOnly] = useState(false);
@@ -183,7 +182,7 @@ export default function InvoicesListScreen() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId, filterEmployeeId, showCancelled, filterHasNotesOnly, urlExtra.kind, urlExtra.categoryId, urlExtra.expenseLineId, invoiceBatchIdFromUrl, fromUrl, toUrl]);
+  }, [debouncedQ, dateFilter.startDate, dateFilter.endDate, filterKind, filterSupplierId, filterCreatedByUserId, showCancelled, filterHasNotesOnly, urlExtra.kind, urlExtra.categoryId, urlExtra.expenseLineId, invoiceBatchIdFromUrl, fromUrl, toUrl]);
 
   useEffect(() => {
     const keys = ['from', 'to', 'kind', 'supplierId', 'categoryId', 'expenseLineId', 'q', 'batchId'];
@@ -259,7 +258,7 @@ export default function InvoicesListScreen() {
       render: (v) => <span className="nx-cell-num nx-cell-muted nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
     { key: 'supplierName',  label: t('supplier'), align: 'center', width: '7%',
       render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
-    { key: 'employeeDisplayName', label: t('invoiceUserColumn'), align: 'center', width: '8%',
+    { key: 'createdByDisplayName', label: t('invoiceUserColumn'), align: 'center', width: '8%',
       render: (v) => <span className="nx-cell-ellipsis" title={v || ''}>{v || '—'}</span> },
     { key: 'notesOrEmployee', label: t('invoiceNotesColumn') || 'ملاحظة', align: 'center', width: '8%',
       render: (_, row) => <span className="nx-cell-ellipsis" title={row.notes || ''}>{row.notes || '—'}</span> },
@@ -325,7 +324,15 @@ export default function InvoicesListScreen() {
   ], [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice, fmt]);
 
   const { suppliers } = useSuppliers(companyId);
-  const { employees: employeesForFilter = [] } = useEmployees(companyId, { includeTerminated: true });
+  const { data: creatorFilterOptions = { users: [] } } = useQuery({
+    queryKey: ['invoice-creator-filter-options', companyId],
+    queryFn: async () => {
+      const res = await getInvoiceCreatorFilterOptions(companyId);
+      return res.success ? { users: res.users } : { users: [] };
+    },
+    enabled: !!companyId,
+  });
+  const creatorUsersForFilter = creatorFilterOptions.users || [];
   const { vaultsList = [], paymentVaults = [] } = useVaults({ companyId });
 
   const dayCloseDefaultYmd = useMemo(
@@ -352,15 +359,17 @@ export default function InvoicesListScreen() {
     hasNotes: filterHasNotesOnly || undefined,
     vaultId: filterVaultId || undefined,
     batchId: invoiceBatchIdFromUrl || undefined,
-    employeeId: filterEmployeeId || undefined,
+    createdByUserId: filterCreatedByUserId || undefined,
   });
 
   // بيانات مُحوَّلة لـ SmartTable
   const tableData = useMemo(() => (items || []).map((inv) => ({
     ...inv,
     supplierName: inv.kind === 'sale' ? (t('categoryTypeSale') || 'مبيعات') : (lang === 'en' ? (inv.supplier?.nameEn || inv.supplier?.nameAr || '') : (inv.supplier?.nameAr || inv.supplier?.nameEn || '')),
-    employeeDisplayName: inv.employee
-      ? (lang === 'en' ? (inv.employee.nameEn || inv.employee.name) : inv.employee.name)
+    createdByDisplayName: inv.createdByUser
+      ? (lang === 'en'
+        ? (inv.createdByUser.nameEn || inv.createdByUser.nameAr || inv.createdByUser.email || '')
+        : (inv.createdByUser.nameAr || inv.createdByUser.nameEn || inv.createdByUser.email || ''))
       : '',
     notesOrEmployee: inv.notes || '',
   })), [items, t, lang]);
@@ -382,8 +391,10 @@ export default function InvoicesListScreen() {
     const supplierName = inv.kind === 'sale'
       ? (t('categoryTypeSale') || 'مبيعات')
       : (lang === 'en' ? (inv.supplier?.nameEn || inv.supplier?.nameAr || '') : (inv.supplier?.nameAr || inv.supplier?.nameEn || ''));
-    const employeeName = inv.employee
-      ? (lang === 'en' ? (inv.employee.nameEn || inv.employee.name) : inv.employee.name)
+    const createdByUserName = inv.createdByUser
+      ? (lang === 'en'
+        ? (inv.createdByUser.nameEn || inv.createdByUser.nameAr || inv.createdByUser.email || '')
+        : (inv.createdByUser.nameAr || inv.createdByUser.nameEn || inv.createdByUser.email || ''))
       : '';
     const kindLabel = KIND_MAP[inv.kind]?.label ?? inv.kind ?? '—';
     const statusLabel = STATUS_MAP[inv.status]?.label ?? inv.status ?? '—';
@@ -392,7 +403,7 @@ export default function InvoicesListScreen() {
       invoiceNumber: inv.invoiceNumber ?? '',
       supplierInvoiceNumber: inv.supplierInvoiceNumber ?? '',
       supplierName: supplierName || '—',
-      employeeName: employeeName || '—',
+      createdByUserName: createdByUserName || '—',
       notes: inv.notes ?? '',
       kind: kindLabel,
       netAmount: Number(inv.netAmount ?? 0),
@@ -424,7 +435,7 @@ export default function InvoicesListScreen() {
       { key: 'invoiceNumber', label: t('documentNumber') },
       { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber') },
       { key: 'supplierName', label: t('supplier') },
-      { key: 'employeeName', label: t('invoiceUserColumn') },
+      { key: 'createdByUserName', label: t('invoiceUserColumn') },
       { key: 'notes', label: t('invoiceNotesColumn') || 'ملاحظة' },
       { key: 'kind', label: t('type') },
       ...vaultCols,
@@ -455,7 +466,7 @@ export default function InvoicesListScreen() {
         hasNotes: filterHasNotesOnly || undefined,
         vaultId: filterVaultId || undefined,
         batchId: invoiceBatchIdFromUrl || undefined,
-        employeeId: filterEmployeeId || undefined,
+        createdByUserId: filterCreatedByUserId || undefined,
       });
       const rows = all.map(mapInvoiceToExportRow);
       const safeStart = String(invoiceQueryStartDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'start';
@@ -480,7 +491,7 @@ export default function InvoicesListScreen() {
     kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
     urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs,
     companyName, t, lang, showToast, filterHasNotesOnly, filterVaultId, invoiceBatchIdFromUrl,
-    filterEmployeeId,
+    filterCreatedByUserId,
   ]);
 
   // المجاميع الحقيقية من السيرفر (كل النتائج المُفلترة، ليس الصفحة فقط)
@@ -507,7 +518,7 @@ export default function InvoicesListScreen() {
         hasNotes: filterHasNotesOnly || undefined,
         vaultId: filterVaultId || undefined,
         batchId: invoiceBatchIdFromUrl || undefined,
-        employeeId: filterEmployeeId || undefined,
+        createdByUserId: filterCreatedByUserId || undefined,
       });
       const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const rowsHtml = all.map((inv) => {
@@ -538,7 +549,7 @@ export default function InvoicesListScreen() {
     kindForApi, sortKey, sortDir, filterSupplierId, debouncedQ, urlExtra.categoryId,
     urlExtra.expenseLineId, showCancelled, mapInvoiceToExportRow, exportColumnDefs, t,
     companyName, logoUrl, serverAll, fmt, showToast, filterHasNotesOnly, filterVaultId, invoiceBatchIdFromUrl,
-    filterEmployeeId,
+    filterCreatedByUserId,
   ]);
 
   const vaultRowLabel = useCallback((row) => {
@@ -549,7 +560,7 @@ export default function InvoicesListScreen() {
 
   const footerRow = useMemo(() => [
     {
-      keys: ['invoiceNumber', 'supplierInvoiceNumber', 'supplierName', 'employeeDisplayName', 'notesOrEmployee', 'kind', 'vaultLabel'],
+      keys: ['invoiceNumber', 'supplierInvoiceNumber', 'supplierName', 'createdByDisplayName', 'notesOrEmployee', 'kind', 'vaultLabel'],
       className: 'nx-tfoot-label text-[12px] text-center',
       content: (
         <>
@@ -595,10 +606,10 @@ export default function InvoicesListScreen() {
         {row.supplierName ? (
           <div className="text-[13px] text-noorix-muted leading-snug break-words">{row.supplierName}</div>
         ) : null}
-        {row.employeeDisplayName ? (
+        {row.createdByDisplayName ? (
           <div className="text-[12px] text-noorix-text leading-snug break-words">
             <span className="text-noorix-muted font-semibold">{t('invoiceUserColumn')}: </span>
-            {row.employeeDisplayName}
+            {row.createdByDisplayName}
           </div>
         ) : null}
       </div>
@@ -729,13 +740,14 @@ export default function InvoicesListScreen() {
             dateFilter.startDate, dateFilter.endDate,
             1, 2000,
             undefined,
-            filterEmployeeId || undefined,
+            undefined,
             kindForExport || undefined, undefined, undefined,
             filterSupplierId || undefined, debouncedQ || undefined,
             urlExtra.categoryId || undefined, urlExtra.expenseLineId || undefined,
             true,
             filterHasNotesOnly || undefined,
             filterVaultId || undefined,
+            filterCreatedByUserId || undefined,
           );
           return (res?.data?.items ?? []).map(formatInvoiceForExport);
         }}
@@ -935,14 +947,17 @@ export default function InvoicesListScreen() {
             </span>
             <Input
               type="select"
-              value={filterEmployeeId}
-              onChange={(e) => { setFilterEmployeeId(e.target.value); setPage(1); }}
+              value={filterCreatedByUserId}
+              onChange={(e) => { setFilterCreatedByUserId(e.target.value); setPage(1); }}
               className="noorix-exec-filters__select"
               aria-label={t('invoiceUserColumn')}
             >
-              <option value="">{t('invoicesFilterEmployeeAll')}</option>
-              {employeesForFilter.map((e) => (
-                <option key={e.id} value={e.id}>{lang === 'en' ? (e.nameEn || e.name) : e.name}</option>
+              <option value="">{t('invoicesFilterCreatorAll')}</option>
+              <option value="__none__">{t('invoicesFilterCreatorUnrecorded')}</option>
+              {creatorUsersForFilter.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {lang === 'en' ? (u.nameEn || u.nameAr || u.email) : (u.nameAr || u.nameEn || u.email)}
+                </option>
               ))}
             </Input>
             <span className="noorix-exec-filters__icon" title={t('invoiceVaultColumn')} aria-hidden>
