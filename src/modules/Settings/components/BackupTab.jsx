@@ -26,7 +26,17 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { useApp } from '../../../context/AppContext';
-import { Button, Input, AdaptiveSheet, Modal } from '../../../ui';
+import {
+  Button,
+  Input,
+  AdaptiveSheet,
+  Modal,
+  Card,
+  ScreenTitle,
+  Badge,
+  KebabMenu,
+  Divider,
+} from '../../../ui';
 import { formatSaudiDate, formatSaudiDateTime } from '../../../utils/saudiDate';
 
 function formatBackupDate(iso) {
@@ -123,6 +133,17 @@ function statusLabel(s, t) {
     skipped_duplicate: t('backupStatusSkippedDup'),
   };
   return m[s] || s;
+}
+
+function statusBadgeColor(status) {
+  const m = {
+    completed: 'green',
+    running: 'blue',
+    pending: 'sky',
+    failed: 'red',
+    skipped_duplicate: 'gray',
+  };
+  return m[status] || 'gray';
 }
 
 export default function BackupTab({ activeCompanies = [] }) {
@@ -321,298 +342,360 @@ export default function BackupTab({ activeCompanies = [] }) {
   }, [activeCompanies, companyId]);
 
   return (
-    <div className="backup-tab">
-      <div className="backup-tab__intro">
-        <h2>{t('backupHeading')}</h2>
-        <p>{t('backupIntro')}</p>
-      </div>
+    <div className="flex flex-col gap-5 w-full min-w-0 max-w-5xl mx-auto">
+      <header className="flex flex-col gap-1">
+        <ScreenTitle>{t('backupHeading')}</ScreenTitle>
+        <p className="text-[12px] text-noorix-muted m-0 leading-relaxed max-w-2xl">{t('backupIntro')}</p>
+      </header>
 
-      <div className={`backup-tab__config-grid${canSystemBackup ? ' backup-tab__config-grid--dual' : ''}`}>
-        <section className="backup-panel" aria-labelledby="backup-company-title">
-          <h3 id="backup-company-title" className="backup-panel__title">
-            {t('backupCompanySection')}
-          </h3>
-          <div className="backup-run-row">
-            <Input
-              type="select"
-              value={companyId}
-              onChange={(e) => setCompanyId(e.target.value)}
-              disabled={!activeCompanies.length}
-              aria-label={t('backupCompanySection')}
-            >
-              {activeCompanies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nameAr || c.nameEn || c.id}
-                </option>
-              ))}
-            </Input>
-            <Button
-              type="button"
-              size="sm"
-              variant="primary"
-              disabled={!companyId || !activeCompanies.length || triggerMut.isPending}
-              onClick={() => triggerMut.mutate()}
-            >
-              {triggerMut.isPending ? t('loading') : t('backupRunNow')}
-            </Button>
-          </div>
-          <h4 className="backup-subtitle mt-4">{t('backupCompanyScheduleTitle')}</h4>
-          <p className="backup-meta-line m-0 mb-2">{t('backupCompanyScheduleHint')}</p>
-          <label className="nx-checkbox backup-check-row">
-            <input
-              type="checkbox"
-              checked={coForm.enabled}
-              onChange={(e) => setCoForm((p) => ({ ...p, enabled: e.target.checked }))}
-              disabled={!companyId}
-            />
-            <span>{t('backupCompanyDailyEnabled')}</span>
-          </label>
-          <div className="backup-form-grid">
-            <div className="backup-field">
-              <label htmlFor="co-backup-h">{t('backupSystemHour')}</label>
-              <Input
-                id="co-backup-h"
-                type="number"
-                min={0}
-                max={23}
-                className="noorix-bank-filter"
-                value={coForm.scheduleHour}
-                onChange={(e) =>
-                  setCoForm((p) => ({ ...p, scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) }))
-                }
-                disabled={!companyId}
-              />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 lg:items-start">
+        <section className="min-w-0 flex flex-col gap-0" aria-labelledby="backup-company-title">
+          <Card padding="sm" className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
+              <h3 id="backup-company-title" className="text-[14px] font-bold text-noorix-text m-0">
+                {t('backupCompanyCardTitle')}
+              </h3>
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-end sm:gap-3">
+                <div className="flex-1 min-w-0">
+                  <Input
+                    type="select"
+                    label={t('backupCompanyPick')}
+                    value={companyId}
+                    onChange={(e) => setCompanyId(e.target.value)}
+                    disabled={!activeCompanies.length}
+                    aria-label={t('backupCompanySection')}
+                  >
+                    {activeCompanies.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nameAr || c.nameEn || c.id}
+                      </option>
+                    ))}
+                  </Input>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  className="sm:shrink-0 sm:min-h-[44px]"
+                  disabled={!companyId || !activeCompanies.length || triggerMut.isPending}
+                  onClick={() => triggerMut.mutate()}
+                >
+                  {triggerMut.isPending ? t('loading') : t('backupRunNow')}
+                </Button>
+              </div>
             </div>
-            <div className="backup-field">
-              <label htmlFor="co-backup-m">{t('backupSystemMinute')}</label>
-              <Input
-                id="co-backup-m"
-                type="number"
-                min={0}
-                max={59}
-                className="noorix-bank-filter"
-                value={coForm.scheduleMinute}
-                onChange={(e) =>
-                  setCoForm((p) => ({ ...p, scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)) }))
-                }
-                disabled={!companyId}
-              />
+
+            <Divider />
+
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-3">
+                <p className="text-[12px] font-semibold text-noorix-text m-0">{t('backupCompanyScheduleTitle')}</p>
+                <p className="text-[11px] text-noorix-muted m-0 sm:max-w-[14rem] sm:text-end leading-snug">
+                  {t('backupCompanyScheduleHint')}
+                </p>
+              </div>
+              <label className="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none py-0.5">
+                <input
+                  type="checkbox"
+                  checked={coForm.enabled}
+                  onChange={(e) => setCoForm((p) => ({ ...p, enabled: e.target.checked }))}
+                  disabled={!companyId}
+                />
+                <span>{t('backupCompanyDailyEnabled')}</span>
+              </label>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor="co-backup-h" className="text-[11px] font-bold text-noorix-muted">
+                    {t('backupSystemHour')}
+                  </label>
+                  <Input
+                    id="co-backup-h"
+                    type="number"
+                    min={0}
+                    max={23}
+                    className="noorix-bank-filter"
+                    value={coForm.scheduleHour}
+                    onChange={(e) =>
+                      setCoForm((p) => ({
+                        ...p,
+                        scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
+                      }))
+                    }
+                    disabled={!companyId}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor="co-backup-m" className="text-[11px] font-bold text-noorix-muted">
+                    {t('backupSystemMinute')}
+                  </label>
+                  <Input
+                    id="co-backup-m"
+                    type="number"
+                    min={0}
+                    max={59}
+                    className="noorix-bank-filter"
+                    value={coForm.scheduleMinute}
+                    onChange={(e) =>
+                      setCoForm((p) => ({
+                        ...p,
+                        scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)),
+                      }))
+                    }
+                    disabled={!companyId}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor="co-backup-ret" className="text-[11px] font-bold text-noorix-muted">
+                    {t('backupCompanyRetention')}
+                  </label>
+                  <Input
+                    id="co-backup-ret"
+                    type="number"
+                    min={1}
+                    max={50}
+                    className="noorix-bank-filter"
+                    value={coForm.retentionCount}
+                    onChange={(e) =>
+                      setCoForm((p) => ({
+                        ...p,
+                        retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 5)),
+                      }))
+                    }
+                    disabled={!companyId}
+                  />
+                </div>
+              </div>
+              {coCfgRes?.success && coCfgRes.data?.lastRunDayRiyadh != null && (
+                <p className="text-[11px] text-noorix-muted m-0">
+                  {t('backupCompanyLastRun')}: <strong dir="ltr">{coCfgRes.data.lastRunDayRiyadh}</strong>
+                </p>
+              )}
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!companyId || saveCoMut.isPending}
+                  onClick={() =>
+                    saveCoMut.mutate({
+                      companyId,
+                      enabled: coForm.enabled,
+                      scheduleHour: coForm.scheduleHour,
+                      scheduleMinute: coForm.scheduleMinute,
+                      retentionCount: coForm.retentionCount,
+                    })
+                  }
+                >
+                  {saveCoMut.isPending ? t('loading') : t('backupCompanySave')}
+                </Button>
+              </div>
             </div>
-            <div className="backup-field">
-              <label htmlFor="co-backup-ret">{t('backupCompanyRetention')}</label>
-              <Input
-                id="co-backup-ret"
-                type="number"
-                min={1}
-                max={50}
-                className="noorix-bank-filter"
-                value={coForm.retentionCount}
-                onChange={(e) =>
-                  setCoForm((p) => ({
-                    ...p,
-                    retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 5)),
-                  }))
-                }
-                disabled={!companyId}
-              />
-            </div>
-          </div>
-          {coCfgRes?.success && coCfgRes.data?.lastRunDayRiyadh != null && (
-            <div className="backup-meta-line">
-              {t('backupCompanyLastRun')}: <strong dir="ltr">{coCfgRes.data.lastRunDayRiyadh}</strong>
-            </div>
-          )}
-          <div className="backup-actions-row">
-            <Button
-              type="button"
-              size="sm"
-              disabled={!companyId || saveCoMut.isPending}
-              onClick={() =>
-                saveCoMut.mutate({
-                  companyId,
-                  enabled: coForm.enabled,
-                  scheduleHour: coForm.scheduleHour,
-                  scheduleMinute: coForm.scheduleMinute,
-                  retentionCount: coForm.retentionCount,
-                })
-              }
-            >
-              {saveCoMut.isPending ? t('loading') : t('backupCompanySave')}
-            </Button>
-          </div>
-          {!activeCompanies.length && (
-            <p className="backup-meta-line m-0">
-              {t('noActiveCompanies')}
-            </p>
-          )}
-          <ul className="backup-hint-list">
-            <li>{t('backupBulletDedup')}</li>
-            <li>{t('backupBulletExternal')}</li>
-            <li>{t('backupBulletResume')}</li>
-            <li>{t('backupBulletReport')}</li>
-            <li>{t('backupBulletDaily')}</li>
-          </ul>
+
+            {!activeCompanies.length && (
+              <p className="text-[11px] text-noorix-amber m-0">{t('noActiveCompanies')}</p>
+            )}
+
+            <details className="rounded-lg border border-dashed border-noorix-border bg-noorix-bg-muted/50 px-3 py-2.5">
+              <summary className="cursor-pointer text-[12px] font-semibold text-noorix-muted list-none flex items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                <span>{t('backupMoreInfo')}</span>
+                <span className="text-noorix-muted opacity-70" aria-hidden>
+                  +
+                </span>
+              </summary>
+              <p className="text-[11px] text-noorix-muted mt-2 m-0 leading-relaxed">{t('backupMoreInfoBody')}</p>
+            </details>
+          </Card>
         </section>
 
         {canSystemBackup && (
-          <section className="backup-panel backup-panel--system" aria-labelledby="backup-system-title">
-            <h3 id="backup-system-title" className="backup-panel__title">
-              {t('backupSystemHeading')}
-            </h3>
-            <p className="backup-meta-line m-0">
-              {t('backupSystemIntro')}
-            </p>
-            <label className="nx-checkbox backup-check-row">
-              <input
-                type="checkbox"
-                checked={sysForm.enabled}
-                onChange={(e) => setSysForm((p) => ({ ...p, enabled: e.target.checked }))}
-              />
-              <span>{t('backupSystemEnabled')}</span>
-            </label>
-            <div className="backup-form-grid">
-              <div className="backup-field">
-                <label htmlFor="backup-h">{t('backupSystemHour')}</label>
-                <Input
-                  id="backup-h"
-                  type="number"
-                  min={0}
-                  max={23}
-                  className="noorix-bank-filter"
-                  value={sysForm.scheduleHour}
-                  onChange={(e) =>
-                    setSysForm((p) => ({ ...p, scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) }))
-                  }
+          <section className="min-w-0 flex flex-col gap-0" aria-labelledby="backup-system-title">
+            <Card padding="sm" className="flex flex-col gap-4 border-l-[3px] border-l-nx-profit">
+              <div className="flex flex-col gap-1">
+                <h3 id="backup-system-title" className="text-[14px] font-bold text-noorix-text m-0">
+                  {t('backupSystemHeading')}
+                </h3>
+                <p className="text-[11px] text-noorix-muted m-0 leading-snug">{t('backupSystemIntro')}</p>
+              </div>
+              <label className="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none py-0.5">
+                <input
+                  type="checkbox"
+                  checked={sysForm.enabled}
+                  onChange={(e) => setSysForm((p) => ({ ...p, enabled: e.target.checked }))}
                 />
-              </div>
-              <div className="backup-field">
-                <label htmlFor="backup-m">{t('backupSystemMinute')}</label>
-                <Input
-                  id="backup-m"
-                  type="number"
-                  min={0}
-                  max={59}
-                  className="noorix-bank-filter"
-                  value={sysForm.scheduleMinute}
-                  onChange={(e) =>
-                    setSysForm((p) => ({ ...p, scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)) }))
-                  }
-                />
-              </div>
-              <div className="backup-field">
-                <label htmlFor="backup-ret">{t('backupSystemRetention')}</label>
-                <Input
-                  id="backup-ret"
-                  type="number"
-                  min={1}
-                  max={50}
-                  className="noorix-bank-filter"
-                  value={sysForm.retentionCount}
-                  onChange={(e) =>
-                    setSysForm((p) => ({
-                      ...p,
-                      retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 10)),
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            {sysCfgRes?.success && sysCfgRes.data?.lastRunDayRiyadh != null && (
-              <div className="backup-meta-line">
-                {t('backupSystemLastRun')}: <strong dir="ltr">{sysCfgRes.data.lastRunDayRiyadh}</strong>
-              </div>
-            )}
-            <div className="backup-actions-row">
-              <Button
-                type="button"
-                size="sm"
-                disabled={saveSysMut.isPending}
-                onClick={() =>
-                  saveSysMut.mutate({
-                    enabled: sysForm.enabled,
-                    scheduleHour: sysForm.scheduleHour,
-                    scheduleMinute: sysForm.scheduleMinute,
-                    retentionCount: sysForm.retentionCount,
-                  })
-                }
-              >
-                {saveSysMut.isPending ? t('loading') : t('backupSystemSave')}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="primary"
-                disabled={runSysMut.isPending}
-                onClick={() => runSysMut.mutate()}
-              >
-                {runSysMut.isPending ? t('loading') : t('backupSystemRunNow')}
-              </Button>
-            </div>
-
-            <h4 className="backup-subtitle">{t('backupSystemJobs')}</h4>
-            {sysJobsLoading && <div className="backup-meta-line">{t('loading')}</div>}
-            {!sysJobsLoading && (!sysJobsRes?.success || !(Array.isArray(sysJobsRes.data) ? sysJobsRes.data : []).length) && (
-              <div className="backup-meta-line">{t('backupSystemNoJobs')}</div>
-            )}
-            <div className="backup-sys-jobs">
-              {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
-                <div key={sj.id} className="backup-sys-job">
-                  <div className="flex items-center flex-wrap gap-2.5 min-w-0">
-                    <span dir="ltr" className="font-bold">
-                      {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
-                      {formatBackupDate(sj.createdAt, lang)}
-                    </span>
-                    <span className="backup-job__status m-0" data-status={sj.status || ''}>
-                      {statusLabel(sj.status, t)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-1 items-stretch">
-                    {sj.verifyOk === true && (
-                      <span className="text-[11px] text-noorix-green">{t('backupVerifyOk')}</span>
-                    )}
-                    {sj.verifyOk === false && sj.verifyError && (
-                      <span className="text-[11px] break-words text-noorix-red">{sj.verifyError}</span>
-                    )}
-                    {sj.status === 'completed' && sj.localRelativePath && (
-                      <>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          disabled={verifySysMut.isPending}
-                          onClick={() => verifySysMut.mutate(sj.id)}
-                        >
-                          {t('backupVerify')}
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="danger"
-                          disabled={restoreMut.isPending}
-                          onClick={() => {
-                            setRestorePhrase('');
-                            setRestoreModal({ jobId: sj.id });
-                          }}
-                        >
-                          {t('backupSystemRestore')}
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                <span>{t('backupSystemEnabled')}</span>
+              </label>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor="backup-h" className="text-[11px] font-bold text-noorix-muted">
+                    {t('backupSystemHour')}
+                  </label>
+                  <Input
+                    id="backup-h"
+                    type="number"
+                    min={0}
+                    max={23}
+                    className="noorix-bank-filter"
+                    value={sysForm.scheduleHour}
+                    onChange={(e) =>
+                      setSysForm((p) => ({
+                        ...p,
+                        scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
+                      }))
+                    }
+                  />
                 </div>
-              ))}
-            </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor="backup-m" className="text-[11px] font-bold text-noorix-muted">
+                    {t('backupSystemMinute')}
+                  </label>
+                  <Input
+                    id="backup-m"
+                    type="number"
+                    min={0}
+                    max={59}
+                    className="noorix-bank-filter"
+                    value={sysForm.scheduleMinute}
+                    onChange={(e) =>
+                      setSysForm((p) => ({
+                        ...p,
+                        scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)),
+                      }))
+                    }
+                  />
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor="backup-ret" className="text-[11px] font-bold text-noorix-muted">
+                    {t('backupSystemRetention')}
+                  </label>
+                  <Input
+                    id="backup-ret"
+                    type="number"
+                    min={1}
+                    max={50}
+                    className="noorix-bank-filter"
+                    value={sysForm.retentionCount}
+                    onChange={(e) =>
+                      setSysForm((p) => ({
+                        ...p,
+                        retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 10)),
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              {sysCfgRes?.success && sysCfgRes.data?.lastRunDayRiyadh != null && (
+                <p className="text-[11px] text-noorix-muted m-0">
+                  {t('backupSystemLastRun')}: <strong dir="ltr">{sysCfgRes.data.lastRunDayRiyadh}</strong>
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2 justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={saveSysMut.isPending}
+                  onClick={() =>
+                    saveSysMut.mutate({
+                      enabled: sysForm.enabled,
+                      scheduleHour: sysForm.scheduleHour,
+                      scheduleMinute: sysForm.scheduleMinute,
+                      retentionCount: sysForm.retentionCount,
+                    })
+                  }
+                >
+                  {saveSysMut.isPending ? t('loading') : t('backupSystemSave')}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  disabled={runSysMut.isPending}
+                  onClick={() => runSysMut.mutate()}
+                >
+                  {runSysMut.isPending ? t('loading') : t('backupSystemRunNow')}
+                </Button>
+              </div>
+
+              <Divider />
+
+              <div className="flex flex-col gap-2">
+                <h4 className="text-[12px] font-bold text-noorix-muted m-0 uppercase tracking-wide">
+                  {t('backupSystemJobs')}
+                </h4>
+                {sysJobsLoading && <p className="text-[12px] text-noorix-muted m-0">{t('loading')}</p>}
+                {!sysJobsLoading &&
+                  (!sysJobsRes?.success || !(Array.isArray(sysJobsRes.data) ? sysJobsRes.data : []).length) && (
+                    <p className="text-[12px] text-noorix-muted m-0">{t('backupSystemNoJobs')}</p>
+                  )}
+                <div className="flex flex-col gap-2 max-h-[min(40vh,320px)] overflow-y-auto overflow-x-hidden pr-0.5">
+                  {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
+                    <div
+                      key={sj.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2.5"
+                    >
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span dir="ltr" className="text-[13px] font-semibold text-noorix-text tabular-nums">
+                          {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
+                          {formatBackupDate(sj.createdAt, lang)}
+                        </span>
+                        <Badge color={statusBadgeColor(sj.status)} size="sm">
+                          {statusLabel(sj.status, t)}
+                        </Badge>
+                        {sj.verifyOk === true && (
+                          <span className="text-[11px] text-noorix-green font-medium">{t('backupVerifyOk')}</span>
+                        )}
+                        {sj.verifyOk === false && sj.verifyError && (
+                          <span className="text-[11px] text-noorix-red break-words max-w-[12rem]">{sj.verifyError}</span>
+                        )}
+                      </div>
+                      {sj.status === 'completed' && sj.localRelativePath && (
+                        <div className="flex shrink-0 items-center gap-1 sm:justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={verifySysMut.isPending}
+                            onClick={() => verifySysMut.mutate(sj.id)}
+                          >
+                            {t('backupVerify')}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="danger"
+                            disabled={restoreMut.isPending}
+                            onClick={() => {
+                              setRestorePhrase('');
+                              setRestoreModal({ jobId: sj.id });
+                            }}
+                          >
+                            {t('backupSystemRestore')}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
           </section>
         )}
       </div>
 
-      <section className="backup-tab__log" aria-labelledby="backup-log-title">
-        <h3 id="backup-log-title" className="backup-log-title">
-          {t('backupJobHistory')}
-        </h3>
-        {isLoading && <div className="backup-meta-line">{t('loading')}</div>}
-        {!isLoading && jobs.length === 0 && <div className="backup-meta-line">{t('backupNoJobs')}</div>}
-        <div className="backup-job-list">
+      <section className="flex flex-col gap-3 min-w-0" aria-labelledby="backup-log-title">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 id="backup-log-title" className="text-[14px] font-bold text-noorix-text m-0">
+              {t('backupJobHistory')}
+            </h3>
+            {!isLoading && jobs.length > 0 && (
+              <Badge color="gray" size="sm">
+                {jobs.length}
+              </Badge>
+            )}
+          </div>
+        </div>
+        {isLoading && <p className="text-[12px] text-noorix-muted m-0">{t('loading')}</p>}
+        {!isLoading && jobs.length === 0 && <p className="text-[12px] text-noorix-muted m-0">{t('backupNoJobs')}</p>}
+        <div className="flex flex-col gap-2 overflow-x-auto">
           {jobs.map((j) => {
             const metaParts = [
               formatSaudiDateTime(j.createdAt),
@@ -620,92 +703,70 @@ export default function BackupTab({ activeCompanies = [] }) {
               j.durationMs != null ? `${j.durationMs} ms` : '',
               j.externalUploaded ? t('backupExternalOk') : j.externalError ? t('backupExternalPending') : '',
             ].filter(Boolean);
+            const title =
+              `${scopeLabel(j.scope, t)}${j.company ? ` — ${j.company.nameAr || j.company.nameEn || ''}` : ''}${
+                j.ordinal != null ? ` · ${t('backupOrdinalLabel')} ${j.ordinal}` : ''
+              }`;
             return (
-              <article key={j.id} className="backup-job">
-                <div className="backup-job__head">
-                  <div className="backup-job__text">
-                    <h4 className="backup-job__title">
-                      {scopeLabel(j.scope, t)}
-                      {j.company ? ` — ${j.company.nameAr || j.company.nameEn || ''}` : ''}
-                      {j.ordinal != null ? ` · ${t('backupOrdinalLabel')} ${j.ordinal}` : ''}
-                    </h4>
-                    <div className="backup-job__meta">{metaParts.join(' · ')}</div>
+              <Card key={j.id} padding="sm" className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[13px] font-semibold text-noorix-text break-words">{title}</span>
+                    <Badge color={statusBadgeColor(j.status)} size="sm">
+                      {statusLabel(j.status, t)}
+                    </Badge>
                   </div>
-                  <span className="backup-job__status" data-status={j.status || ''}>
-                    {statusLabel(j.status, t)}
-                  </span>
-                </div>
-                {j.errorMessage && (
-                  <div className="backup-job__flags text-noorix-red">
-                    {j.errorMessage}
-                  </div>
-                )}
-                {j.verifyOk === true && (
-                  <div className="backup-job__flags text-noorix-green">
-                    {t('backupVerifyOk')}
-                  </div>
-                )}
-                {j.verifyOk === false && j.verifyError && (
-                  <div className="backup-job__flags text-noorix-red">
-                    {j.verifyError}
-                  </div>
-                )}
-                <div className="backup-job-actions">
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={reportMut.isPending}
-                    onClick={() => reportMut.mutate(j.id)}
-                  >
-                    {t('backupRestoreReport')}
-                  </Button>
-                  {j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath && (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={downloadMut.isPending}
-                        onClick={() => downloadMut.mutate(j.id)}
-                      >
-                        {t('backupDownload')}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="primary"
-                        disabled={importMut.isPending}
-                        onClick={() => {
-                          setImportNameAr(defaultImportCompanyName(j, t, lang));
-                          setImportConfirmed(false);
-                          setImportModal({ jobId: j.id });
-                        }}
-                      >
-                        {t('backupImportNewCompany')}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        disabled={verifyCoMut.isPending}
-                        onClick={() => verifyCoMut.mutate(j.id)}
-                      >
-                        {t('backupVerify')}
-                      </Button>
-                    </>
+                  <p className="text-[11px] text-noorix-muted m-0 mt-1 leading-snug">{metaParts.join(' · ')}</p>
+                  {j.errorMessage && (
+                    <p className="text-[11px] text-noorix-red m-0 mt-1">{j.errorMessage}</p>
                   )}
-                  {!j.externalUploaded && j.status === 'completed' && j.localRelativePath && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      disabled={retryMut.isPending}
-                      onClick={() => retryMut.mutate(j.id)}
-                    >
-                      {t('backupRetryExternal')}
-                    </Button>
+                  {j.verifyOk === true && (
+                    <p className="text-[11px] text-noorix-green m-0 mt-1 font-medium">{t('backupVerifyOk')}</p>
+                  )}
+                  {j.verifyOk === false && j.verifyError && (
+                    <p className="text-[11px] text-noorix-red m-0 mt-1 break-words">{j.verifyError}</p>
                   )}
                 </div>
-              </article>
+                <KebabMenu
+                  ariaLabel={t('backupActionsMenu')}
+                  menuWidth={200}
+                  items={[
+                    {
+                      key: 'report',
+                      label: t('backupRestoreReport'),
+                      onClick: () => reportMut.mutate(j.id),
+                    },
+                    {
+                      key: 'download',
+                      label: t('backupDownload'),
+                      hidden: !(j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath),
+                      onClick: () => downloadMut.mutate(j.id),
+                    },
+                    {
+                      key: 'import',
+                      label: t('backupImportNewCompany'),
+                      hidden: !(j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath),
+                      onClick: () => {
+                        setImportNameAr(defaultImportCompanyName(j, t, lang));
+                        setImportConfirmed(false);
+                        setImportModal({ jobId: j.id });
+                      },
+                    },
+                    {
+                      key: 'verify',
+                      label: t('backupVerify'),
+                      hidden: !(j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath),
+                      onClick: () => verifyCoMut.mutate(j.id),
+                    },
+                    {
+                      key: 'retry',
+                      label: t('backupRetryExternal'),
+                      hidden: !(!j.externalUploaded && j.status === 'completed' && j.localRelativePath),
+                      onClick: () => retryMut.mutate(j.id),
+                    },
+                  ]}
+                />
+              </Card>
             );
           })}
         </div>
