@@ -19,5 +19,10 @@ export class BackupSchedulerService {
     } catch (e) {
       this.logger.error(`Backup scheduler tick error: ${(e as Error).message}`);
     }
+    try {
+      await this.backupService.runScheduledCompanyBackups();
+    } catch (e) {
+      this.logger.error(`Company backup scheduler tick error: ${(e as Error).message}`);
+    }
   }
 }

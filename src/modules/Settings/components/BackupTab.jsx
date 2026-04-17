@@ -19,11 +19,14 @@ import {
   backupRunSystemNow,
   backupVerifySystemJob,
   backupVerifyCompanyJob,
+  backupGetCompanyConfig,
+  backupPatchCompanyConfig,
+  backupRestoreSystemFull,
 } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { useApp } from '../../../context/AppContext';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Input, AdaptiveSheet, Modal } from '../../../ui';
 import { formatSaudiDate, formatSaudiDateTime } from '../../../utils/saudiDate';
 
 function formatBackupDate(iso) {
@@ -142,6 +145,14 @@ export default function BackupTab({ activeCompanies = [] }) {
     scheduleMinute: 0,
     retentionCount: 10,
   });
+  const [coForm, setCoForm] = useState({
+    enabled: false,
+    scheduleHour: 6,
+    scheduleMinute: 0,
+    retentionCount: 5,
+  });
+  const [restoreModal, setRestoreModal] = useState(null);
+  const [restorePhrase, setRestorePhrase] = useState('');
 
   const { data: jobsRes, isLoading } = useQuery({
     queryKey: ['backup-jobs'],
@@ -162,6 +173,12 @@ export default function BackupTab({ activeCompanies = [] }) {
     refetchInterval: 20_000,
   });
 
+  const { data: coCfgRes } = useQuery({
+    queryKey: ['backup-company-config', companyId],
+    queryFn: () => backupGetCompanyConfig(companyId),
+    enabled: !!companyId,
+  });
+
   React.useEffect(() => {
     if (!sysCfgRes?.success || !sysCfgRes.data) return;
     const d = sysCfgRes.data;
@@ -176,6 +193,21 @@ export default function BackupTab({ activeCompanies = [] }) {
       retentionCount: Math.min(50, Math.max(1, Number.isFinite(r) ? r : 10)),
     });
   }, [sysCfgRes]);
+
+  React.useEffect(() => {
+    if (!coCfgRes?.success || !coCfgRes.data) return;
+    const d = coCfgRes.data;
+    if (typeof d !== 'object') return;
+    const h = Number(d.scheduleHour);
+    const m = Number(d.scheduleMinute);
+    const r = Number(d.retentionCount);
+    setCoForm({
+      enabled: !!d.enabled,
+      scheduleHour: Number.isFinite(h) ? h : 6,
+      scheduleMinute: Number.isFinite(m) ? m : 0,
+      retentionCount: Math.min(50, Math.max(1, Number.isFinite(r) ? r : 5)),
+    });
+  }, [coCfgRes]);
 
   const jobs = jobsRes?.success ? (Array.isArray(jobsRes.data) ? jobsRes.data : []) : [];
 
@@ -265,6 +297,25 @@ export default function BackupTab({ activeCompanies = [] }) {
     errorToast: (e) => e?.message || t('backupVerifyBad'),
   });
 
+  const saveCoMut = useApiMutation({
+    mutationFn: (body) => backupPatchCompanyConfig(body),
+    invalidateQueries: [['backup-company-config', companyId]],
+    successToast: () => t('backupSettingsSaved'),
+    errorToast: (e) => e?.message || t('backupError'),
+  });
+
+  const restoreMut = useApiMutation({
+    mutationFn: ({ jobId, confirmPhrase }) => backupRestoreSystemFull(jobId, confirmPhrase),
+    successToast: false,
+    errorToast: (e) => e?.message || t('backupError'),
+    onSuccess: (res) => {
+      setRestoreModal(null);
+      setRestorePhrase('');
+      const msg = res?.data?.messageAr || res?.data?.messageEn || t('backupSystemRestoreOk');
+      showToast(msg, 'success');
+    },
+  });
+
   React.useEffect(() => {
     if (!companyId && activeCompanies[0]?.id) setCompanyId(activeCompanies[0].id);
   }, [activeCompanies, companyId]);
@@ -303,6 +354,90 @@ export default function BackupTab({ activeCompanies = [] }) {
               onClick={() => triggerMut.mutate()}
             >
               {triggerMut.isPending ? t('loading') : t('backupRunNow')}
+            </Button>
+          </div>
+          <h4 className="backup-subtitle mt-4">{t('backupCompanyScheduleTitle')}</h4>
+          <p className="backup-meta-line m-0 mb-2">{t('backupCompanyScheduleHint')}</p>
+          <label className="nx-checkbox backup-check-row">
+            <input
+              type="checkbox"
+              checked={coForm.enabled}
+              onChange={(e) => setCoForm((p) => ({ ...p, enabled: e.target.checked }))}
+              disabled={!companyId}
+            />
+            <span>{t('backupCompanyDailyEnabled')}</span>
+          </label>
+          <div className="backup-form-grid">
+            <div className="backup-field">
+              <label htmlFor="co-backup-h">{t('backupSystemHour')}</label>
+              <Input
+                id="co-backup-h"
+                type="number"
+                min={0}
+                max={23}
+                className="noorix-bank-filter"
+                value={coForm.scheduleHour}
+                onChange={(e) =>
+                  setCoForm((p) => ({ ...p, scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) }))
+                }
+                disabled={!companyId}
+              />
+            </div>
+            <div className="backup-field">
+              <label htmlFor="co-backup-m">{t('backupSystemMinute')}</label>
+              <Input
+                id="co-backup-m"
+                type="number"
+                min={0}
+                max={59}
+                className="noorix-bank-filter"
+                value={coForm.scheduleMinute}
+                onChange={(e) =>
+                  setCoForm((p) => ({ ...p, scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)) }))
+                }
+                disabled={!companyId}
+              />
+            </div>
+            <div className="backup-field">
+              <label htmlFor="co-backup-ret">{t('backupCompanyRetention')}</label>
+              <Input
+                id="co-backup-ret"
+                type="number"
+                min={1}
+                max={50}
+                className="noorix-bank-filter"
+                value={coForm.retentionCount}
+                onChange={(e) =>
+                  setCoForm((p) => ({
+                    ...p,
+                    retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 5)),
+                  }))
+                }
+                disabled={!companyId}
+              />
+            </div>
+          </div>
+          {coCfgRes?.success && coCfgRes.data?.lastRunDayRiyadh != null && (
+            <div className="backup-meta-line">
+              {t('backupCompanyLastRun')}: <strong dir="ltr">{coCfgRes.data.lastRunDayRiyadh}</strong>
+            </div>
+          )}
+          <div className="backup-actions-row">
+            <Button
+              type="button"
+              size="sm"
+              disabled={!companyId || saveCoMut.isPending}
+              onClick={() =>
+                saveCoMut.mutate({
+                  companyId,
+                  enabled: coForm.enabled,
+                  scheduleHour: coForm.scheduleHour,
+                  scheduleMinute: coForm.scheduleMinute,
+                  retentionCount: coForm.retentionCount,
+                })
+              }
+            >
+              {saveCoMut.isPending ? t('loading') : t('backupCompanySave')}
             </Button>
           </div>
           {!activeCompanies.length && (
@@ -439,15 +574,29 @@ export default function BackupTab({ activeCompanies = [] }) {
                       <span className="text-[11px] break-words text-noorix-red">{sj.verifyError}</span>
                     )}
                     {sj.status === 'completed' && sj.localRelativePath && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        disabled={verifySysMut.isPending}
-                        onClick={() => verifySysMut.mutate(sj.id)}
-                      >
-                        {t('backupVerify')}
-                      </Button>
+                      <>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          disabled={verifySysMut.isPending}
+                          onClick={() => verifySysMut.mutate(sj.id)}
+                        >
+                          {t('backupVerify')}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="danger"
+                          disabled={restoreMut.isPending}
+                          onClick={() => {
+                            setRestorePhrase('');
+                            setRestoreModal({ jobId: sj.id });
+                          }}
+                        >
+                          {t('backupSystemRestore')}
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -810,6 +959,55 @@ export default function BackupTab({ activeCompanies = [] }) {
           </>
         )}
       </AdaptiveSheet>
+
+      <Modal
+        open={!!restoreModal}
+        onClose={() => !restoreMut.isPending && (setRestoreModal(null), setRestorePhrase(''))}
+        title={t('backupSystemRestore')}
+        size="md"
+        variant="danger"
+      >
+        <div
+          className="text-[13px] font-medium py-[10px] px-[14px] mb-3 rounded-md leading-[1.65] bg-noorix-red/10 border border-noorix-red/45 text-noorix-red"
+          role="alert"
+        >
+          {t('backupSystemRestoreWarn')}
+        </div>
+        <p className="text-[12px] text-noorix-muted m-0 mb-3 leading-[1.6]">{t('backupSystemRestorePhraseHint')}</p>
+        <Input
+          type="text"
+          label={t('backupSystemRestorePhraseLabel')}
+          value={restorePhrase}
+          onChange={(e) => setRestorePhrase(e.target.value)}
+          className="nx-ltr"
+          dir="ltr"
+          autoComplete="off"
+        />
+        <p className="text-[11px] text-noorix-muted mt-2 m-0">{t('backupRestoreExitHint')}</p>
+        <div className="flex items-center justify-end flex-wrap gap-2 mt-4">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={restoreMut.isPending}
+            onClick={() => (setRestoreModal(null), setRestorePhrase(''))}
+          >
+            {t('cancel')}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="danger"
+            disabled={restoreMut.isPending || !restorePhrase.trim()}
+            onClick={() =>
+              restoreModal &&
+              restoreMut.mutate({ jobId: restoreModal.jobId, confirmPhrase: restorePhrase.trim() })
+            }
+          >
+            {restoreMut.isPending ? t('loading') : t('backupSystemRestoreConfirm')}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -1,16 +1,20 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Patch,
   Post,
   Query,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
   StreamableFile,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { createReadStream } from 'fs';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
@@ -22,6 +26,8 @@ import { BackupLogicalImportService } from './backup-logical-import.service';
 import { TriggerBackupDto } from './dto/trigger-backup.dto';
 import { ImportBackupDto } from './dto/import-backup.dto';
 import { UpdateSystemBackupConfigDto } from './dto/update-system-backup-config.dto';
+import { UpdateCompanyBackupConfigDto } from './dto/update-company-backup-config.dto';
+import { RestoreFullBackupDto } from './dto/restore-full-backup.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 
 type ReqUser = {
@@ -117,6 +123,45 @@ export class BackupController {
   async verifySystemJob(@Param('id') id: string, @Req() req: { user?: ReqUser }) {
     if (!req.user?.tenantId) throw new UnauthorizedException();
     return this.backupService.verifyDatabaseFullJob(id);
+  }
+
+  @Post('system/jobs/:id/restore')
+  @Roles('owner', 'super_admin')
+  async restoreSystemFull(
+    @Param('id') id: string,
+    @Body() dto: RestoreFullBackupDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    const result = await this.backupService.restoreDatabaseFullJob(id, dto.confirmPhrase);
+    res.json(result);
+    if (result.exitAfter) {
+      res.once('finish', () => {
+        setTimeout(() => process.exit(0), 500);
+      });
+    }
+  }
+
+  @Get('company/config')
+  @RequirePermission('MANAGE_SETTINGS')
+  async getCompanyBackupConfig(@Query('companyId') companyId: string, @Req() req: { user?: ReqUser }) {
+    const u = req.user;
+    if (!u?.tenantId) throw new UnauthorizedException();
+    if (!companyId) throw new BadRequestException('companyId مطلوب');
+    if (u.companyIds?.length && !u.companyIds.includes(companyId)) {
+      throw new ForbiddenException('لا يمكنك إدارة نسخ هذه الشركة');
+    }
+    return this.backupService.getCompanyBackupConfig(u.tenantId, companyId);
+  }
+
+  @Patch('company/config')
+  @RequirePermission('MANAGE_SETTINGS')
+  async patchCompanyBackupConfig(@Body() dto: UpdateCompanyBackupConfigDto, @Req() req: { user?: ReqUser }) {
+    const u = req.user;
+    if (!u?.tenantId) throw new UnauthorizedException();
+    if (u.companyIds?.length && !u.companyIds.includes(dto.companyId)) {
+      throw new ForbiddenException('لا يمكنك إدارة نسخ هذه الشركة');
+    }
+    return this.backupService.upsertCompanyBackupConfig(u.tenantId, dto);
   }
 
   @Post('jobs/:id/verify')

@@ -16,8 +16,8 @@ export default {
   backupDesc: { ar: 'النسخ الاحتياطي الذكي لكل شركة مع تخزين محلي وخارجي.', en: 'Smart per-company backup with local and external storage.' },
   backupHeading: { ar: 'النسخ الاحتياطي الذكي', en: 'Smart backup' },
   backupIntro: {
-    ar: 'لقطة منطقية لكل شركة (فواتير، موارد بشرية، كشوف، طلبات…) تُحفظ مضغوطة على الخادم. يُمنع تخزين نسخة مكرّرة إذا لم يتغيّر المحتوى (hash). نسخ قاعدة كاملة يومياً (توقيت الرياض) يُضبط من قسم «نسخ النظام» لمالك/مدير النظام مع الاحتفاظ بآخر عشر نسخ.',
-    en: 'Per-company logical snapshots (invoices, HR, bank statements, orders…) stored compressed on the server. Duplicate content is skipped (hash). Full database backups (Riyadh time) are configured under “System backup” for owner/super admin, keeping the last 10 copies.',
+    ar: 'لقطة منطقية لكل شركة (فواتير، موارد بشرية، كشوف، طلبات…) تُحفظ مضغوطة على الخادم. يُمكن جدولة نسخ يومي لكل شركة مع الاحتفاظ بآخر 5 نسخ (قابل للتعديل) واختبار تلقائي بعد كل نسخة. نسخ قاعدة كاملة يُضبط من «نسخ النظام» لمالك/مدير النظام.',
+    en: 'Per-company logical snapshots stored compressed. Schedule daily backups per company (default keeps last 5 copies) with automatic verification after each run. Full database backups are under “System backup” for owner/super admin.',
   },
   backupCompanySection: { ar: 'نسخ شركة محددة الآن', en: 'Back up one company now' },
   backupRunNow: { ar: 'تشغيل النسخ', en: 'Run backup' },
@@ -31,8 +31,33 @@ export default {
   backupBulletResume: { ar: 'استكمال: زر «إعادة رفع خارجي» إذا فشل الرفع بسبب الشبكة.', en: 'Resume: use “Retry external upload” after network failures.' },
   backupBulletReport: { ar: 'تقرير استرجاع: يعرض أعداد السجلات ووصف اللقطة قبل أي استيراد.', en: 'Restore report: record counts and manifest before import.' },
   backupBulletDaily: {
-    ar: 'نسخ النظام: جدولة يومية من الإعدادات (افتراضي 6:00 صباحاً بتوقيت الرياض) مع اختبار سلامة الملف.',
-    en: 'System backup: daily schedule in settings (default 6:00 AM Asia/Riyadh) with integrity check.',
+    ar: 'جدولة يومية: لكل شركة من القسم أدناه، ولنسخ القاعدة الكاملة من «نسخ النظام» — مع اختبار سلامة الملف.',
+    en: 'Daily schedule: per company below, and full DB under “System backup” — with integrity verification.',
+  },
+  backupCompanyScheduleTitle: { ar: 'النسخ اليومي التلقائي لهذه الشركة', en: 'Daily automatic backup for this company' },
+  backupCompanyScheduleHint: {
+    ar: 'بتوقيت الرياض (أو المنطقة في الإعدادات). بعد كل نسخة يُجرى اختبار تلقائي ويُحذف ما زاد عن عدد النسخ المحفوظة.',
+    en: 'Uses Asia/Riyadh (or configured timezone). After each run the snapshot is verified; older copies beyond the limit are removed.',
+  },
+  backupCompanyDailyEnabled: { ar: 'تفعيل النسخ اليومي لهذه الشركة', en: 'Enable daily backup for this company' },
+  backupCompanyRetention: { ar: 'عدد نسخ الشركة المحفوظة', en: 'Company copies to keep' },
+  backupCompanyLastRun: { ar: 'آخر تشغيل مجدول (يوم)', en: 'Last scheduled run (day)' },
+  backupCompanySave: { ar: 'حفظ جدولة الشركة', en: 'Save company schedule' },
+  backupSystemRestore: { ar: 'استرداد القاعدة من هذه النسخة', en: 'Restore database from this backup' },
+  backupSystemRestoreWarn: {
+    ar: 'سيتم استبدال محتوى قاعدة البيانات الحالية بالكامل. قد ينقطع الاتصال حتى يُعاد تشغيل الخادم. لا تستخدم على بيئة إنتاج دون توقف مخطط.',
+    en: 'This replaces the entire current database. The app may stop responding until the backend is restarted. Do not use on production without a maintenance window.',
+  },
+  backupSystemRestorePhraseHint: {
+    ar: 'اكتب عبارة التأكيد بالحروف الإنجليزية كما هي (الافتراضي: RESTORE_NOORIX_FULL_DB). يمكن تغييرها على الخادم بـ BACKUP_RESTORE_CONFIRM_PHRASE.',
+    en: 'Type the confirmation phrase exactly (default: RESTORE_NOORIX_FULL_DB). Override on the server with BACKUP_RESTORE_CONFIRM_PHRASE.',
+  },
+  backupSystemRestorePhraseLabel: { ar: 'عبارة التأكيد', en: 'Confirmation phrase' },
+  backupSystemRestoreConfirm: { ar: 'تنفيذ الاسترداد', en: 'Run restore' },
+  backupSystemRestoreOk: { ar: 'اكتمل الاسترداد.', en: 'Restore completed.' },
+  backupRestoreExitHint: {
+    ar: 'لإعادة تشغيل الباكند تلقائياً بعد النجاح، عيّن على الخادم: BACKUP_RESTORE_EXIT_AFTER=true',
+    en: 'To auto-restart the backend after success, set BACKUP_RESTORE_EXIT_AFTER=true on the server.',
   },
   backupSystemHeading: { ar: 'نسخ النظام (قاعدة كاملة)', en: 'System backup (full database)' },
   backupSystemIntro: {

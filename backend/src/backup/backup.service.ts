@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import { Client } from 'pg';
 import { PrismaService } from '../prisma/prisma.service';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
@@ -76,6 +77,28 @@ export class BackupService {
     const victims = await this.prisma.backupJob.findMany({
       where: {
         scope: 'database_full',
+        status: 'completed',
+        localRelativePath: { not: null },
+      },
+      orderBy: [{ completedAt: 'desc' }, { createdAt: 'desc' }],
+      skip: keep,
+    });
+    for (const j of victims) {
+      if (j.localRelativePath) {
+        await fs.unlink(path.join(root, j.localRelativePath)).catch(() => undefined);
+      }
+      await this.prisma.backupJob.delete({ where: { id: j.id } }).catch(() => undefined);
+    }
+  }
+
+  private async pruneCompanyLogicalBackups(tenantId: string, companyId: string, retentionCount: number): Promise<void> {
+    const keep = Math.min(Math.max(retentionCount, 1), 50);
+    const root = this.getBackupRoot();
+    const victims = await this.prisma.backupJob.findMany({
+      where: {
+        tenantId,
+        companyId,
+        scope: 'company_logical',
         status: 'completed',
         localRelativePath: { not: null },
       },
@@ -240,15 +263,48 @@ export class BackupService {
     }
   }
 
-  async triggerCompanyLogicalBackup(params: {
+  /** تحقق تلقائي بعد نسخ شركة — لا يرمي للمجدول */
+  private async runAutoVerifyCompanyLogicalJob(jobId: string): Promise<void> {
+    const job = await this.prisma.backupJob.findUnique({ where: { id: jobId } });
+    if (!job || job.scope !== 'company_logical' || !job.localRelativePath || job.status !== 'completed') return;
+    const abs = path.join(this.getBackupRoot(), job.localRelativePath);
+    const now = new Date();
+    try {
+      await fs.access(abs);
+      const buf = await fs.readFile(abs);
+      const json = zlib.gunzipSync(buf).toString('utf8');
+      const snap = JSON.parse(json) as { meta?: { format?: string } };
+      if (!snap?.meta || snap.meta.format !== 'noorix-company-logical') {
+        throw new Error('تنسيق اللقطة غير صالح');
+      }
+      await this.prisma.backupJob.update({
+        where: { id: job.id },
+        data: { verifyOk: true, verifyError: null, verifiedAt: now },
+      });
+    } catch (e) {
+      const msg = (e as Error).message;
+      await this.prisma.backupJob.update({
+        where: { id: job.id },
+        data: { verifyOk: false, verifyError: msg, verifiedAt: now },
+      });
+      this.logger.warn(`Company backup auto-verify failed ${jobId}: ${msg}`);
+    }
+  }
+
+  async executeCompanyLogicalBackup(params: {
     tenantId: string;
-    userId: string;
+    userId: string | null;
     companyId: string;
     allowedCompanyIds: string[] | undefined;
+    skipPermissionCheck: boolean;
+    autoVerify: boolean;
+    retentionCount: number;
   }): Promise<{ jobId: string }> {
-    const { tenantId, userId, companyId, allowedCompanyIds } = params;
-    if (allowedCompanyIds && !allowedCompanyIds.includes(companyId)) {
-      throw new ForbiddenException('لا يمكنك نسخ هذه الشركة');
+    const { tenantId, userId, companyId, allowedCompanyIds, skipPermissionCheck, autoVerify, retentionCount } = params;
+    if (!skipPermissionCheck) {
+      if (allowedCompanyIds && !allowedCompanyIds.includes(companyId)) {
+        throw new ForbiddenException('لا يمكنك نسخ هذه الشركة');
+      }
     }
     const co = await this.prisma.company.findFirst({
       where: { id: companyId, tenantId },
@@ -263,7 +319,7 @@ export class BackupService {
         companyId,
         scope: 'company_logical',
         status: 'running',
-        createdByUserId: userId,
+        ...(userId ? { createdByUserId: userId } : {}),
       },
     });
 
@@ -335,6 +391,10 @@ export class BackupService {
           },
         },
       });
+      await this.pruneCompanyLogicalBackups(tenantId, companyId, retentionCount);
+      if (autoVerify) {
+        await this.runAutoVerifyCompanyLogicalJob(job.id);
+      }
       return { jobId: job.id };
     } catch (e) {
       const msg = (e as Error).message;
@@ -349,6 +409,60 @@ export class BackupService {
         },
       });
       throw e;
+    }
+  }
+
+  async triggerCompanyLogicalBackup(params: {
+    tenantId: string;
+    userId: string;
+    companyId: string;
+    allowedCompanyIds: string[] | undefined;
+  }): Promise<{ jobId: string }> {
+    const { tenantId, userId, companyId, allowedCompanyIds } = params;
+    const coCfg = await this.prisma.companyBackupConfig.findUnique({ where: { companyId } });
+    const retention = Math.min(50, Math.max(1, coCfg?.retentionCount ?? 5));
+    return this.executeCompanyLogicalBackup({
+      tenantId,
+      userId,
+      companyId,
+      allowedCompanyIds,
+      skipPermissionCheck: false,
+      autoVerify: true,
+      retentionCount: retention,
+    });
+  }
+
+  async runScheduledCompanyBackups(): Promise<void> {
+    const configs = await this.prisma.companyBackupConfig.findMany({
+      where: { enabled: true },
+      include: { company: { select: { id: true, tenantId: true } } },
+    });
+    for (const cfg of configs) {
+      const tz = cfg.timezone || 'Asia/Riyadh';
+      const m = moment.tz(tz);
+      const ymd = m.format('YYYY-MM-DD');
+      const h = m.hour();
+      const mi = m.minute();
+      if (h !== cfg.scheduleHour || mi !== cfg.scheduleMinute) continue;
+      if (cfg.lastRunDayRiyadh === ymd) continue;
+      await this.prisma.companyBackupConfig.update({
+        where: { id: cfg.id },
+        data: { lastRunDayRiyadh: ymd },
+      });
+      const retention = Math.min(50, Math.max(1, cfg.retentionCount ?? 5));
+      try {
+        await this.executeCompanyLogicalBackup({
+          tenantId: cfg.company.tenantId,
+          userId: null,
+          companyId: cfg.companyId,
+          allowedCompanyIds: undefined,
+          skipPermissionCheck: true,
+          autoVerify: true,
+          retentionCount: retention,
+        });
+      } catch (e) {
+        this.logger.error(`Scheduled company backup failed ${cfg.companyId}: ${(e as Error).message}`);
+      }
     }
   }
 
@@ -632,6 +746,85 @@ export class BackupService {
     });
   }
 
+  async getCompanyBackupConfig(tenantId: string, companyId: string) {
+    const co = await this.prisma.company.findFirst({
+      where: { id: companyId, tenantId },
+      select: { id: true },
+    });
+    if (!co) throw new NotFoundException('الشركة غير موجودة');
+    const row = await this.prisma.companyBackupConfig.findUnique({ where: { companyId } });
+    if (!row) {
+      return {
+        companyId,
+        enabled: false,
+        scheduleHour: 6,
+        scheduleMinute: 0,
+        retentionCount: 5,
+        timezone: 'Asia/Riyadh',
+        lastRunDayRiyadh: null as string | null,
+      };
+    }
+    return {
+      companyId: row.companyId,
+      enabled: row.enabled,
+      scheduleHour: row.scheduleHour,
+      scheduleMinute: row.scheduleMinute,
+      retentionCount: row.retentionCount,
+      timezone: row.timezone,
+      lastRunDayRiyadh: row.lastRunDayRiyadh,
+    };
+  }
+
+  async upsertCompanyBackupConfig(
+    tenantId: string,
+    dto: {
+      companyId: string;
+      enabled?: boolean;
+      scheduleHour?: number;
+      scheduleMinute?: number;
+      retentionCount?: number;
+      timezone?: string;
+    },
+  ) {
+    const co = await this.prisma.company.findFirst({
+      where: { id: dto.companyId, tenantId },
+      select: { id: true },
+    });
+    if (!co) throw new NotFoundException('الشركة غير موجودة');
+    const existing = await this.prisma.companyBackupConfig.findUnique({ where: { companyId: dto.companyId } });
+    const patch = {
+      ...(dto.enabled !== undefined ? { enabled: dto.enabled } : {}),
+      ...(dto.scheduleHour !== undefined ? { scheduleHour: Math.min(23, Math.max(0, dto.scheduleHour)) } : {}),
+      ...(dto.scheduleMinute !== undefined ? { scheduleMinute: Math.min(59, Math.max(0, dto.scheduleMinute)) } : {}),
+      ...(dto.retentionCount !== undefined
+        ? { retentionCount: Math.min(50, Math.max(1, dto.retentionCount)) }
+        : {}),
+      ...(dto.timezone !== undefined ? { timezone: dto.timezone } : {}),
+    };
+    const row = existing
+      ? await this.prisma.companyBackupConfig.update({ where: { companyId: dto.companyId }, data: patch })
+      : await this.prisma.companyBackupConfig.create({
+          data: {
+            tenantId,
+            companyId: dto.companyId,
+            enabled: dto.enabled ?? false,
+            scheduleHour: dto.scheduleHour ?? 6,
+            scheduleMinute: dto.scheduleMinute ?? 0,
+            retentionCount: dto.retentionCount ?? 5,
+            timezone: dto.timezone ?? 'Asia/Riyadh',
+          },
+        });
+    return {
+      companyId: row.companyId,
+      enabled: row.enabled,
+      scheduleHour: row.scheduleHour,
+      scheduleMinute: row.scheduleMinute,
+      retentionCount: row.retentionCount,
+      timezone: row.timezone,
+      lastRunDayRiyadh: row.lastRunDayRiyadh,
+    };
+  }
+
   async listSystemFullJobs(limit = 20) {
     const take = Math.min(Math.max(limit, 1), 50);
     return this.prisma.backupJob.findMany({
@@ -667,6 +860,89 @@ export class BackupService {
     });
     if (!v.ok) throw new BadRequestException(v.error || 'فشل التحقق من النسخة');
     return { ok: true, jobId: job.id };
+  }
+
+  /**
+   * استرداد قاعدة كاملة من نسخة database_full — خطير؛ يتطلب عبارة تأكيد.
+   * بعد النجاح يُفضّل إعادة تشغيل الباكند (انظر BACKUP_RESTORE_EXIT_AFTER).
+   */
+  async restoreDatabaseFullJob(
+    jobId: string,
+    confirmPhrase: string,
+  ): Promise<{ ok: boolean; messageAr: string; messageEn: string; exitAfter: boolean }> {
+    const expected = process.env.BACKUP_RESTORE_CONFIRM_PHRASE || 'RESTORE_NOORIX_FULL_DB';
+    if (confirmPhrase !== expected) {
+      throw new ForbiddenException('عبارة التأكيد غير صحيحة.');
+    }
+    const job = await this.prisma.backupJob.findFirst({
+      where: { id: jobId, scope: 'database_full' },
+    });
+    if (!job) throw new NotFoundException('النسخة غير موجودة');
+    if (job.status !== 'completed' || !job.localRelativePath) {
+      throw new BadRequestException('الاسترداد متاح للنسخ المكتملة التي يوجد لها ملف');
+    }
+    const absGz = path.join(this.getBackupRoot(), job.localRelativePath);
+    try {
+      await fs.access(absGz);
+    } catch {
+      throw new NotFoundException('الملف غير موجود على الخادم');
+    }
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) throw new BadRequestException('DATABASE_URL غير مُعرّف');
+    const { host, port, user, password, database } = this.parseDatabaseUrl(dbUrl.split('?')[0]);
+    const tmp = path.join(os.tmpdir(), `noorix-restore-${Date.now()}-${Math.random().toString(36).slice(2)}.dump`);
+    try {
+      const buf = await fs.readFile(absGz);
+      const unz = zlib.gunzipSync(buf);
+      await fs.writeFile(tmp, unz);
+    } catch (e) {
+      throw new BadRequestException(`تعذّر فك ملف النسخة: ${(e as Error).message}`);
+    }
+
+    const adminUrl = dbUrl.replace(/\/([^/?]+)(\?|$)/, '/postgres$2');
+    const adminClient = new Client({ connectionString: adminUrl });
+    await adminClient.connect();
+    try {
+      await adminClient.query(
+        `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()`,
+        [database],
+      );
+    } finally {
+      await adminClient.end().catch(() => undefined);
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn(
+        'pg_restore',
+        ['--clean', '--if-exists', '--no-owner', '--no-acl', '-h', host, '-p', port, '-U', user, '-d', database, tmp],
+        {
+          env: {
+            ...process.env,
+            PGPASSWORD: password,
+            PGSSLMODE: host === 'localhost' || host === '127.0.0.1' ? 'disable' : 'require',
+          },
+          stdio: ['ignore', 'pipe', 'pipe'],
+        },
+      );
+      let err = '';
+      child.stderr?.on('data', (c) => {
+        err += String(c);
+      });
+      child.on('error', (e) => reject(new BadRequestException(`تعذّر تشغيل pg_restore: ${(e as Error).message}`)));
+      child.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new BadRequestException(`فشل pg_restore: ${err || 'رمز ' + code}`));
+      });
+    });
+    await fs.unlink(tmp).catch(() => undefined);
+    const exitAfter = process.env.BACKUP_RESTORE_EXIT_AFTER === 'true';
+    return {
+      ok: true,
+      messageAr:
+        'تم استرداد القاعدة. أعد تشغيل خدمة الباكند إن لم يُعِد التشغيل تلقائياً.',
+      messageEn: 'Database restored. Restart the backend if it did not restart automatically.',
+      exitAfter,
+    };
   }
 
   async verifyCompanyLogicalJob(

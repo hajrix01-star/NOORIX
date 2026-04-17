@@ -32,6 +32,7 @@ model Tenant {
   companies  Company[]
   users      User[]
   backupJobs BackupJob[]
+  companyBackupConfigs CompanyBackupConfig[]
 
   @@map("tenants")
 }
@@ -132,6 +133,7 @@ model Company {
   bankStatementTemplates BankStatementTemplate[]
   backupJobs             BackupJob[]
   companyAssets        CompanyAsset[]
+  companyBackupConfig  CompanyBackupConfig?
 
   @@index([tenantId])
   @@map("companies")
@@ -186,6 +188,27 @@ model SystemBackupConfig {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("system_backup_config")
+}
+
+/// إعدادات النسخ التلقائي اليومي لشركة واحدة — لقطة منطقية (company_logical)
+model CompanyBackupConfig {
+  id               String   @id @default(cuid())
+  tenantId         String   @map("tenant_id")
+  companyId        String   @unique @map("company_id")
+  enabled          Boolean  @default(false)
+  scheduleHour     Int      @default(6) @map("schedule_hour")
+  scheduleMinute   Int      @default(0) @map("schedule_minute")
+  retentionCount   Int      @default(5) @map("retention_count")
+  timezone         String   @default("Asia/Riyadh")
+  lastRunDayRiyadh String?  @map("last_run_day_riyadh")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("company_backup_config")
 }
 
 // تحليل كشوف الحساب — كشف واحد مع حركاته

@@ -1371,3 +1371,20 @@ export async function backupVerifySystemJob(jobId) {
 export async function backupVerifyCompanyJob(jobId) {
   return apiPost(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/verify`, {}, { timeout: 180000 });
 }
+
+export async function backupGetCompanyConfig(companyId) {
+  return apiGet('/api/v1/backup/company/config', { companyId });
+}
+
+export async function backupPatchCompanyConfig(body) {
+  return apiPatch('/api/v1/backup/company/config', body);
+}
+
+/** استرداد قاعدة كاملة من نسخة نظام — خطير؛ يتطلب عبارة تأكيد */
+export async function backupRestoreSystemFull(jobId, confirmPhrase) {
+  return apiPost(
+    `/api/v1/backup/system/jobs/${encodeURIComponent(jobId)}/restore`,
+    { confirmPhrase },
+    { timeout: 600000 },
+  );
+}
