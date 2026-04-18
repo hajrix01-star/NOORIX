@@ -34,6 +34,14 @@ function pad2(n) {
   return String(n).padStart(2, '0');
 }
 
+/** عرض اسم مزدوج حسب لغة الواجهة */
+function pickBilingual(lang, nameAr, nameEn) {
+  const ar = nameAr != null && String(nameAr).trim() !== '' ? String(nameAr).trim() : '';
+  const en = nameEn != null && String(nameEn).trim() !== '' ? String(nameEn).trim() : '';
+  if (lang === 'en') return en || ar || '—';
+  return ar || en || '—';
+}
+
 /** تواريخ YYYY-MM-DD من البداية إلى النهاية (شاملة)، UTC تقويمية */
 function enumerateYmdDates(startStr, endStr) {
   const [sy, sm, sd] = startStr.split('-').map(Number);
@@ -48,7 +56,16 @@ function enumerateYmdDates(startStr, endStr) {
   return out;
 }
 
-function DayCloseReportBody({ data, kindLabel, t, reportDateLabel }) {
+function counterpartyLabel(op, lang) {
+  const sup = pickBilingual(lang, op.supplierNameAr ?? op.supplierName, op.supplierNameEn);
+  if (sup !== '—') return sup;
+  if (op.employeeName) return op.employeeName;
+  const el = pickBilingual(lang, op.expenseLineNameAr ?? op.expenseLineName, op.expenseLineNameEn);
+  if (el !== '—') return el;
+  return op.notes || '—';
+}
+
+function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang }) {
   return (
     <div className="grid gap-3.5">
       <div className="day-close-screen-only flex gap-2 justify-between items-baseline flex-wrap pb-2 border-b border-noorix-border">
@@ -190,7 +207,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel }) {
               ) : (
                 (data.expensesByCategory || []).map((row) => (
                   <tr key={row.categoryId}>
-                    <td>{row.nameAr}</td>
+                    <td>{pickBilingual(lang, row.nameAr, row.nameEn)}</td>
                     <td className="dc-num">{row.count}</td>
                     <td className="dc-num">{fmt(Number(row.total))}</td>
                   </tr>
@@ -214,8 +231,8 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel }) {
                 <tr><td colSpan={2} className="dc-empty">—</td></tr>
               ) : (
                 (data.outflowByPaymentMethod || []).map((row, i) => (
-                  <tr key={`${row.label}-${i}`}>
-                    <td>{row.label}</td>
+                  <tr key={row.vaultId ?? `${row.nameAr ?? row.label}-${i}`}>
+                    <td>{pickBilingual(lang, row.nameAr ?? row.label, row.nameEn)}</td>
                     <td className="dc-num">{fmt(Number(row.total))}</td>
                   </tr>
                 ))
@@ -246,7 +263,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel }) {
                   <td className="dc-num">{fmt(Number(s.cashOnHand))}</td>
                   <td className="dc-num">{fmt(Number(s.totalAmount))}</td>
                   <td className="dc-muted text-[10px]">
-                    {(s.channels || []).map((c) => `${c.vaultName}: ${fmt(Number(c.amount))}`).join(' · ') || '—'}
+                    {(s.channels || []).map((c) => `${pickBilingual(lang, c.vaultNameAr ?? c.vaultName, c.vaultNameEn)}: ${fmt(Number(c.amount))}`).join(' · ') || '—'}
                   </td>
                 </tr>
               ))}
@@ -273,7 +290,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel }) {
               ) : (
                 (data.vaults?.movementOnDayByVault || []).map((v) => (
                   <tr key={v.id}>
-                    <td>{v.nameAr} <span className="dc-muted">({v.type})</span></td>
+                    <td>{pickBilingual(lang, v.nameAr, v.nameEn)} <span className="dc-muted">({v.type})</span></td>
                     <td className="dc-num">{fmt(Number(v.totalIn))}</td>
                     <td className="dc-num">{fmt(Number(v.totalOut))}</td>
                     <td className="dc-num">{fmt(Number(v.netDay))}</td>
@@ -298,7 +315,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel }) {
               ) : (
                 (data.vaults?.balanceEndOfDayByVault || []).map((v) => (
                   <tr key={v.id}>
-                    <td>{v.nameAr} <span className="dc-muted">({v.type})</span></td>
+                    <td>{pickBilingual(lang, v.nameAr, v.nameEn)} <span className="dc-muted">({v.type})</span></td>
                     <td className="dc-num">{fmt(Number(v.balance))}</td>
                   </tr>
                 ))
@@ -332,9 +349,9 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel }) {
                   <td>{kindLabel[op.kind] || op.kind}</td>
                   <td className="dc-num">{fmt(Number(op.totalAmount))}</td>
                   <td className="dc-muted" style={{ maxWidth: 200 }}>
-                    {op.supplierName || op.employeeName || op.expenseLineName || op.notes || '—'}
+                    {counterpartyLabel(op, lang)}
                   </td>
-                  <td>{op.vaultName || '—'}</td>
+                  <td>{pickBilingual(lang, op.vaultNameAr ?? op.vaultName, op.vaultNameEn)}</td>
                   <td>{op.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td>
                 </tr>
               ))}
@@ -353,8 +370,11 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
   const companyName = useMemo(() => {
     const c = companies?.find((x) => x.id === (activeCompanyId || companyId));
-    return c?.nameAr || c?.name || '';
-  }, [companies, activeCompanyId, companyId]);
+    if (!c) return '';
+    return lang === 'en'
+      ? (c.nameEn || c.nameAr || c.name || '')
+      : (c.nameAr || c.nameEn || c.name || '');
+  }, [companies, activeCompanyId, companyId, lang]);
 
   useEffect(() => {
     if (isOpen) setDateStr((defaultDateYmd || saudiTodayYmd()).slice(0, 10));
@@ -666,6 +686,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 kindLabel={kindLabel}
                 t={t}
                 reportDateLabel={reportDateLabel}
+                lang={lang}
               />
             </div>
           )}
@@ -691,6 +712,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                     kindLabel={kindLabel}
                     t={t}
                     reportDateLabel={formatSaudiDateISO(`${item.date}T12:00:00.000Z`)}
+                    lang={lang}
                   />
                 </div>
               ))}
