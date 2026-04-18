@@ -31,6 +31,11 @@ export default {
   invoiceVaultMultiple: { ar: 'عدة خزائن', en: 'Multiple vaults' },
   invoiceVaultSplitsDetail: { ar: 'توزيع السداد', en: 'Payment split' },
   invoicesInflowByVaultTitle: { ar: 'المبيعات حسب الخزينة', en: 'Sales by vault' },
+  /** صفوف الكروت — تسميات أعمدة الداخل / الخارج / الباقي لكل خزينة (متزامنة مع الفلتر) */
+  invoicesVaultChannelFlowTitle: { ar: 'حسب الخزينة', en: 'Per vault' },
+  invoicesVaultFlowInAbbr: { ar: 'داخل', en: 'In' },
+  invoicesVaultFlowOutAbbr: { ar: 'خارج', en: 'Out' },
+  invoicesVaultFlowRemainAbbr: { ar: 'باقي', en: 'Bal.' },
   invoicesSalesUnassignedVault: { ar: 'بدون خزينة محددة', en: 'Unassigned vault' },
   invoicesCardNonPurchaseOutflow: {
     ar: 'المصروفات',

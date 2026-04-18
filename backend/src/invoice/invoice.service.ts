@@ -600,15 +600,30 @@ export class InvoiceService {
       return new Decimal(b.total).cmp(a.total) || a.kind.localeCompare(b.kind);
     });
 
-    const saleWhere = { ...activeWhere, kind: 'sale' as const };
-    const [allocGroups, legacySaleInvoices] = await Promise.all([
+    /** يتقاطع مع فلتر النوع (وغيره): لا مبيعات عند اختيار «مشتريات» فقط. */
+    const saleWhere: Prisma.InvoiceWhereInput = {
+      AND: [activeWhere, { kind: 'sale' }],
+    };
+    const nonSaleWhere: Prisma.InvoiceWhereInput = {
+      AND: [activeWhere, { kind: { not: 'sale' } }],
+    };
+    const [allocGroups, legacySaleInvoices, outflowAllocGroups, legacyOutflowInvoices] = await Promise.all([
       this.prisma.invoiceVaultAllocation.groupBy({
         by: ['vaultId'],
         where: { invoice: { is: saleWhere } },
         _sum: { amount: true },
       }),
       this.prisma.invoice.findMany({
-        where: { ...saleWhere, vaultAllocations: { none: {} } },
+        where: { AND: [saleWhere, { vaultAllocations: { none: {} } }] },
+        select: { vaultId: true, totalAmount: true },
+      }),
+      this.prisma.invoiceVaultAllocation.groupBy({
+        by: ['vaultId'],
+        where: { invoice: { is: nonSaleWhere } },
+        _sum: { amount: true },
+      }),
+      this.prisma.invoice.findMany({
+        where: { AND: [nonSaleWhere, { vaultAllocations: { none: {} } }] },
         select: { vaultId: true, totalAmount: true },
       }),
     ]);
@@ -625,7 +640,21 @@ export class InvoiceService {
       const key = inv.vaultId ?? unassignedVaultKey;
       vaultTotals.set(key, (vaultTotals.get(key) ?? new Decimal(0)).plus(amt));
     }
-    const vaultIds = [...vaultTotals.keys()].filter((id) => id !== unassignedVaultKey);
+
+    const outflowVaultTotals = new Map<string, Decimal>();
+    for (const g of outflowAllocGroups) {
+      const vid = g.vaultId;
+      const amt = new Decimal(g._sum.amount ?? 0);
+      outflowVaultTotals.set(vid, (outflowVaultTotals.get(vid) ?? new Decimal(0)).plus(amt));
+    }
+    for (const inv of legacyOutflowInvoices) {
+      const amt = new Decimal(inv.totalAmount ?? 0);
+      const key = inv.vaultId ?? unassignedVaultKey;
+      outflowVaultTotals.set(key, (outflowVaultTotals.get(key) ?? new Decimal(0)).plus(amt));
+    }
+
+    const allVaultKeys = new Set<string>([...vaultTotals.keys(), ...outflowVaultTotals.keys()]);
+    const vaultIds = [...allVaultKeys].filter((id) => id !== unassignedVaultKey);
     const vaultRows =
       vaultIds.length > 0
         ? await this.prisma.vault.findMany({
@@ -634,20 +663,37 @@ export class InvoiceService {
           })
         : [];
     const nameByVault = new Map(vaultRows.map((v) => [v.id, v]));
-    const inflowByVault = [...vaultTotals.entries()]
-      .map(([vaultId, tot]) => {
+    const inflowByVault = [...allVaultKeys]
+      .map((vaultId) => {
+        const inflow = vaultTotals.get(vaultId) ?? new Decimal(0);
+        const outflow = outflowVaultTotals.get(vaultId) ?? new Decimal(0);
+        const remainder = inflow.minus(outflow);
         if (vaultId === unassignedVaultKey) {
-          return { vaultId, nameAr: '', nameEn: '', total: tot.toString(), unassigned: true };
+          return {
+            vaultId,
+            nameAr: '',
+            nameEn: '',
+            total: inflow.toString(),
+            outflow: outflow.toString(),
+            remainder: remainder.toString(),
+            unassigned: true,
+          };
         }
         const meta = nameByVault.get(vaultId);
         return {
           vaultId,
           nameAr: meta?.nameAr ?? '',
           nameEn: meta?.nameEn ?? '',
-          total: tot.toString(),
+          total: inflow.toString(),
+          outflow: outflow.toString(),
+          remainder: remainder.toString(),
         };
       })
-      .sort((a, b) => new Decimal(b.total).cmp(a.total));
+      .sort((a, b) => {
+        const volA = new Decimal(a.total).plus(a.outflow);
+        const volB = new Decimal(b.total).plus(b.outflow);
+        return volB.cmp(volA) || new Decimal(b.remainder).abs().cmp(new Decimal(a.remainder).abs());
+      });
 
     let purchasesTotal = new Decimal(0);
     let expensesTotal = new Decimal(0);

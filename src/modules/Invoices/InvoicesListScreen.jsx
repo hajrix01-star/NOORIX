@@ -780,22 +780,51 @@ export default function InvoicesListScreen() {
                   </div>
                   <div className="mt-0.5 text-[10px] text-noorix-muted">{t('total')}</div>
                 </div>
-                <div className="text-center text-[10px] font-semibold text-noorix-muted">{t('invoicesInflowByVaultTitle')}</div>
+                <div className="text-center text-[10px] font-semibold text-noorix-muted">
+                  {t('invoicesVaultChannelFlowTitle')} — {t('invoicesVaultFlowInAbbr')} / {t('invoicesVaultFlowOutAbbr')} / {t('invoicesVaultFlowRemainAbbr')}
+                </div>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
                   {!inflowByVault?.length ? (
                     <div className="col-span-full rounded-lg border border-dashed border-noorix-border/60 py-2 text-center text-[12px] text-noorix-muted">—</div>
                   ) : (
-                    inflowByVault.map((row) => (
-                      <div
-                        key={row.vaultId}
-                        className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted/60 px-2 py-1.5"
-                      >
-                        <span className="min-w-0 truncate text-start text-[11px] font-semibold text-noorix-text">{vaultRowLabel(row)}</span>
-                        <span dir="ltr" className="shrink-0 text-[12px] font-bold tabular-nums text-nx-profit">
-                          <FmtNum n={Number(row.total)} /> <span className="nx-sar">SR</span>
-                        </span>
-                      </div>
-                    ))
+                    inflowByVault.map((row) => {
+                      const outNum = Number(row.outflow ?? 0);
+                      const remNum = Number(row.remainder ?? 0);
+                      return (
+                        <div
+                          key={row.vaultId}
+                          className="flex min-w-0 flex-col gap-1 rounded-lg border border-noorix-border bg-noorix-bg-muted/60 px-2 py-1.5"
+                        >
+                          <span className="min-w-0 truncate text-start text-[11px] font-semibold text-noorix-text">{vaultRowLabel(row)}</span>
+                          <div className="grid grid-cols-3 gap-1 text-center">
+                            <div>
+                              <div className="text-[9px] font-semibold uppercase tracking-wide text-noorix-muted">{t('invoicesVaultFlowInAbbr')}</div>
+                              <div dir="ltr" className="text-[11px] font-bold tabular-nums text-nx-profit">
+                                <FmtNum n={Number(row.total)} /> <span className="nx-sar">SR</span>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-semibold uppercase tracking-wide text-noorix-muted">{t('invoicesVaultFlowOutAbbr')}</div>
+                              <div dir="ltr" className="text-[11px] font-bold tabular-nums text-nx-expenses">
+                                <FmtNum n={outNum} /> <span className="nx-sar">SR</span>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-semibold uppercase tracking-wide text-noorix-muted">{t('invoicesVaultFlowRemainAbbr')}</div>
+                              <div
+                                dir="ltr"
+                                className={cn(
+                                  'text-[11px] font-bold tabular-nums',
+                                  remNum > 0 ? 'text-nx-profit' : remNum < 0 ? 'text-nx-expenses' : 'text-noorix-muted',
+                                )}
+                              >
+                                <FmtNum n={remNum} /> <span className="nx-sar">SR</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
