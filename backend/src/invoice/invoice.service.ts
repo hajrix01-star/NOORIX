@@ -738,17 +738,8 @@ export class InvoiceService {
     };
   }
 
-  private static readonly DAY_CLOSE_OUTFLOW_KINDS = [
-    'purchase',
-    'expense',
-    'fixed_expense',
-    'hr_expense',
-    'salary',
-    'advance',
-  ] as const;
-
   /**
-   * تقرير نهاية اليوم — ملخص مالي مضغوط ليوم واحد: فواتير، مبيعات يومية، خزائن، تحويلات، تفصيل مصروفات.
+   * تقرير نهاية اليوم — ملخص مالي مضغوط ليوم واحد: فواتير، مبيعات يومية، خزائن، تحويلات.
    */
   async getDayCloseReport(companyId: string, dateStr: string) {
     if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
@@ -769,7 +760,6 @@ export class InvoiceService {
       vaultsAsOf,
       vaultsDay,
       transferAgg,
-      byCategoryRows,
     ] = await Promise.all([
       this.prisma.invoice.groupBy({
         by:     ['kind'],
@@ -808,18 +798,6 @@ export class InvoiceService {
         _sum:  { amount: true },
         _count: { _all: true },
       }),
-      this.prisma.invoice.groupBy({
-        by:    ['categoryId'],
-        where: {
-          companyId,
-          status:     'active',
-          ...dateFilter,
-          kind:       { in: [...InvoiceService.DAY_CLOSE_OUTFLOW_KINDS] },
-          categoryId: { not: null },
-        },
-        _sum:   { totalAmount: true },
-        _count: { _all: true },
-      }),
     ]);
 
     const invoicesTruncated = invoices.length > MAX;
@@ -845,30 +823,6 @@ export class InvoiceService {
       sums.all.count += c;
     }
     byKind.sort((a, b) => a.kind.localeCompare(b.kind));
-
-    const catIds = [...new Set(byCategoryRows.map((r) => r.categoryId).filter(Boolean))] as string[];
-    const categories =
-      catIds.length > 0
-        ? await this.prisma.category.findMany({
-            where:   { id: { in: catIds }, companyId },
-            select: { id: true, nameAr: true, nameEn: true },
-          })
-        : [];
-    const catById = new Map(categories.map((c) => [c.id, c]));
-
-    const expensesByCategory = byCategoryRows
-      .filter((r) => r.categoryId)
-      .map((r) => {
-        const cat = catById.get(r.categoryId as string);
-        return {
-          categoryId: r.categoryId as string,
-          nameAr:     cat?.nameAr ?? '—',
-          nameEn:     cat?.nameEn ?? null,
-          total:      (r._sum.totalAmount ?? new Prisma.Decimal(0)).toString(),
-          count:      r._count._all,
-        };
-      })
-      .sort((a, b) => new Decimal(b.total).cmp(a.total));
 
     type VaultPayAgg = { vaultId: string; nameAr: string; nameEn: string | null; total: Decimal };
     const payByVault = new Map<string, VaultPayAgg>();
@@ -907,15 +861,6 @@ export class InvoiceService {
       }))
       .sort((a, b) => new Decimal(b.total).cmp(a.total));
 
-    const vaultsAsOfLite = vaultsAsOf.map((v) => ({
-      id:       v.id,
-      nameAr:   v.nameAr,
-      nameEn:   v.nameEn ?? null,
-      type:     v.type,
-      balance:  v.balance,
-      totalIn:  v.totalIn,
-      totalOut: v.totalOut,
-    }));
     const vaultsDayLite = vaultsDay.map((v) => ({
       id:       v.id,
       nameAr:   v.nameAr,
@@ -1002,15 +947,13 @@ export class InvoiceService {
       sums,
       byKind,
       salesSummaries: salesLite,
-      expensesByCategory,
       outflowByPaymentMethod,
       transfers: {
         count:  transferAgg._count._all,
         volume: (transferAgg._sum.amount ?? new Prisma.Decimal(0)).toString(),
       },
       vaults: {
-        balanceEndOfDayByVault: vaultsAsOfLite,
-        movementOnDayByVault:   vaultsDayLite,
+        movementOnDayByVault: vaultsDayLite,
       },
       cash: {
         dayTotalIn:  cashDayIn,

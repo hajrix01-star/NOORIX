@@ -193,34 +193,6 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
           </table>
         </div>
 
-        {!compact && (
-          <div>
-            <SectionTitle>{t('dayCloseExpensesByCategory')}</SectionTitle>
-            <table className="dc-table">
-              <thead>
-                <tr>
-                  <th>{t('category')}</th>
-                  <th className="dc-num">{t('dayCloseCount')}</th>
-                  <th className="dc-num">{t('total')} (SR)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.expensesByCategory || []).length === 0 ? (
-                  <tr><td colSpan={3} className="dc-empty">—</td></tr>
-                ) : (
-                  (data.expensesByCategory || []).map((row) => (
-                    <tr key={row.categoryId}>
-                      <td>{pickBilingual(lang, row.nameAr, row.nameEn)}</td>
-                      <td className="dc-num">{row.count}</td>
-                      <td className="dc-num">{fmt(Number(row.total))}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
         <div>
           <SectionTitle>{t('dayCloseByPaymentChannel')}</SectionTitle>
           <table className="dc-table">
@@ -278,57 +250,32 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
         </div>
       )}
 
-      <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-        <div>
-          <SectionTitle>{t('dayCloseVaultMovementDay')}</SectionTitle>
-          <table className="dc-table">
-            <thead>
-              <tr>
-                <th>{t('vault')}</th>
-                <th className="dc-num">{t('inbound')}</th>
-                <th className="dc-num">{t('outbound')}</th>
-                <th className="dc-num">{t('dayCloseNet')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(data.vaults?.movementOnDayByVault || []).length === 0 ? (
-                <tr><td colSpan={4} className="dc-empty">—</td></tr>
-              ) : (
-                (data.vaults?.movementOnDayByVault || []).map((v) => (
-                  <tr key={v.id}>
-                    <td>{pickBilingual(lang, v.nameAr, v.nameEn)} <span className="dc-muted">({v.type})</span></td>
-                    <td className="dc-num">{fmt(Number(v.totalIn))}</td>
-                    <td className="dc-num">{fmt(Number(v.totalOut))}</td>
-                    <td className="dc-num">{fmt(Number(v.netDay))}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div>
-          <SectionTitle>{t('dayCloseVaultBalanceEod')}</SectionTitle>
-          <table className="dc-table">
-            <thead>
-              <tr>
-                <th>{t('vault')}</th>
-                <th className="dc-num">{t('dayCloseBalance')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(data.vaults?.balanceEndOfDayByVault || []).length === 0 ? (
-                <tr><td colSpan={2} className="dc-empty">—</td></tr>
-              ) : (
-                (data.vaults?.balanceEndOfDayByVault || []).map((v) => (
-                  <tr key={v.id}>
-                    <td>{pickBilingual(lang, v.nameAr, v.nameEn)} <span className="dc-muted">({v.type})</span></td>
-                    <td className="dc-num">{fmt(Number(v.balance))}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div>
+        <SectionTitle>{t('dayCloseVaultMovementDay')}</SectionTitle>
+        <table className="dc-table">
+          <thead>
+            <tr>
+              <th>{t('vault')}</th>
+              <th className="dc-num">{t('inbound')}</th>
+              <th className="dc-num">{t('outbound')}</th>
+              <th className="dc-num">{t('dayCloseNet')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(data.vaults?.movementOnDayByVault || []).length === 0 ? (
+              <tr><td colSpan={4} className="dc-empty">—</td></tr>
+            ) : (
+              (data.vaults?.movementOnDayByVault || []).map((v) => (
+                <tr key={v.id}>
+                  <td>{pickBilingual(lang, v.nameAr, v.nameEn)} <span className="dc-muted">({v.type})</span></td>
+                  <td className="dc-num">{fmt(Number(v.totalIn))}</td>
+                  <td className="dc-num">{fmt(Number(v.totalOut))}</td>
+                  <td className="dc-num">{fmt(Number(v.netDay))}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       <div>

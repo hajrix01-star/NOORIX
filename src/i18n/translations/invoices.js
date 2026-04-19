@@ -103,8 +103,8 @@ export default {
   dayCloseOpenBtn: { ar: 'تقرير نهاية اليوم', en: 'End-of-day report' },
   dayCloseOpenBtnV2: { ar: 'تقرير نهاية اليوم 2', en: 'End-of-day report 2' },
   dayCloseVaultBalanceNoteCompact: {
-    ar: 'تفصيل قنوات المبيعات يظهر في «حركة الخزائن في اليوم» أدناه. أرصدة نهاية اليوم من القيود (UTC).',
-    en: 'Sales channel detail appears under «Vault movement (this day)». End-of-day balances from ledger (UTC).',
+    ar: 'تفصيل قنوات المبيعات يظهر في «حركة الخزائن في اليوم» أدناه. رصيد الكاش في الأعلى من القيود (UTC).',
+    en: 'Sales channel detail is under «Vault movement (this day)». Cash balance at top is from ledger (UTC).',
   },
   dayCloseRefresh: { ar: 'تحديث', en: 'Refresh' },
   dayClosePrint: { ar: 'طباعة', en: 'Print' },
@@ -126,8 +126,8 @@ export default {
   dayCloseLoadFailed: { ar: 'تعذر تحميل التقرير', en: 'Failed to load report' },
   dayCloseReportDate: { ar: 'تاريخ التقرير', en: 'Report date' },
   dayCloseVaultBalanceNote: {
-    ar: 'رصيد نهاية اليوم للخزائن يُحسب من القيود حتى نهاية ذلك اليوم (توقيت UTC). صف «الخزائن» يعرض كل الأنواع.',
-    en: 'End-of-day vault balances are from ledger entries through that calendar day (UTC). The vaults section lists all vault types.',
+    ar: 'رصيد الكاش في نهاية اليوم يُشتق من القيود حتى نهاية ذلك اليوم (UTC). حركة الخزائن أدناه لكل الأنواع.',
+    en: 'End-of-day cash balance is from ledger entries through that day (UTC). Vault movement below lists all vault types.',
   },
   dayCloseTruncatedWarning: {
     ar: 'تم اقتصار جدول العمليات على أول {0} سجلاً — يوجد المزيد في نفس اليوم.',
