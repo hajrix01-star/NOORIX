@@ -11,7 +11,6 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { getText } from '../../i18n/translations';
 import { useSales } from '../../hooks/useSales';
 import { useSalesChannels } from '../../hooks/useSalesChannels';
 import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport, throwIfApiFailed } from '../../services/api';
@@ -31,44 +30,6 @@ import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 import { buildActiveCancelledStatusMap } from '../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
-
-/**
- * سطر تسمية لواتساب: عربي + إنجليزي (مثل «التاريخ Date:») — إيموجي واحد عند التطابق.
- */
-function whatsAppBilingualLabel(key) {
-  const ar = getText(key, 'ar').trim();
-  const en = getText(key, 'en').trim();
-  const arTok = ar.split(/\s+/);
-  const enTok = en.split(/\s+/);
-  const sharedFirst = arTok[0] === enTok[0];
-  const lead = sharedFirst ? `${arTok[0]} ` : '';
-  const arBody = (sharedFirst ? arTok.slice(1) : arTok).join(' ');
-  const enBody = (sharedFirst ? enTok.slice(1) : enTok).join(' ');
-  const suffix = /:\s*$/.test(ar) ? ':' : '';
-  const a = arBody.replace(/:\s*$/, '').trim();
-  const b = enBody.replace(/:\s*$/, '').trim();
-  return `${lead}${a} ${b}${suffix}`;
-}
-
-/** اسم خزينة لواتساب: عربي + إنجليزي عند الاختلاف */
-function vaultWhatsAppBilingualName(vault) {
-  if (!vault) return '—';
-  const ar = (vault.nameAr || '').trim() || (vault.nameEn || '').trim() || '—';
-  const en = (vault.nameEn || '').trim() || (vault.nameAr || '').trim() || '—';
-  if (ar === en) return ar;
-  return `${ar} ${en}`;
-}
-
-/** اسم شركة لواتساب */
-function companyWhatsAppBilingual(co) {
-  if (!co) return '';
-  const ar = (co.nameAr || '').trim();
-  const en = (co.nameEn || '').trim();
-  if (!ar && !en) return '';
-  if (!ar) return en;
-  if (!en || ar === en) return ar;
-  return `${ar} ${en}`;
-}
 
 /** عرض قنوات البيع في الجدول والجوال — شرائح واضحة بدل نص مفصول بـ | */
 function SalesChannelsChips({ channels, lang }) {
@@ -258,44 +219,42 @@ export default function DailySalesScreen() {
     const cc = s.customerCount || 0;
     const total = Number(s.totalAmount || 0);
     const avg = cc > 0 ? (total / cc) : 0;
-    const name = companyWhatsAppBilingual(activeCo);
+    const name = (companyName || '').trim();
     const dateRaw = formatSaudiDate(s.transactionDate);
     let dateWithWeekday = dateRaw;
     if (dateRaw !== '—') {
-      const wdAr = formatSaudiWeekdayName(s.transactionDate, 'ar');
-      const wdEn = formatSaudiWeekdayName(s.transactionDate, 'en');
-      if (wdAr && wdEn && wdAr !== wdEn) dateWithWeekday = `${dateRaw} ${wdAr} ${wdEn}`;
-      else if (wdAr) dateWithWeekday = `${dateRaw} ${wdAr}`;
+      const wd = formatSaudiWeekdayName(s.transactionDate, lang);
+      if (wd) dateWithWeekday = `${dateRaw} ${wd}`;
     }
 
     const lines = [
-      `${whatsAppBilingualLabel('salesWhatsAppReportTitle')}${name ? ` — ${name}` : ''}`,
-      `${whatsAppBilingualLabel('salesWhatsAppDateLine')} ${dateWithWeekday}`,
-      `${whatsAppBilingualLabel('salesWhatsAppSummaryRef')} ${s.summaryNumber ?? '—'}`,
+      `${t('salesWhatsAppReportTitle')}${name ? ` ${name}` : ''}`,
+      `${t('salesWhatsAppDateLine')} ${dateWithWeekday}`,
+      `${t('salesWhatsAppSummaryRef')} ${s.summaryNumber ?? '—'}`,
       '',
     ];
 
     const chList = s.channels || [];
     if (chList.length > 0) {
       chList.forEach((ch) => {
-        lines.push(`• ${vaultWhatsAppBilingualName(ch.vault)}: ${fmt(ch.amount)} SR`);
+        lines.push(`• ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)} SR`);
       });
     } else {
-      lines.push(whatsAppBilingualLabel('salesWhatsAppNoChannels'));
+      lines.push(t('salesWhatsAppNoChannels'));
     }
 
     lines.push(
       '',
-      `${whatsAppBilingualLabel('salesWhatsAppTotalLine')} ${fmt(total)} SR`,
-      `${whatsAppBilingualLabel('salesWhatsAppCustomersLine')} ${cc}`,
-      `${whatsAppBilingualLabel('salesWhatsAppAvgInvoiceLine')} ${fmt(avg)} SR`,
+      `${t('salesWhatsAppTotalLine')} ${fmt(total)} SR`,
+      `${t('salesWhatsAppCustomersLine')} ${cc}`,
+      `${t('salesWhatsAppAvgInvoiceLine')} ${fmt(avg)} SR`,
     );
 
     if (Number(s.cashOnHand) > 0) {
-      lines.push(`${whatsAppBilingualLabel('salesWhatsAppCashLine')} ${fmt(s.cashOnHand)} SR`);
+      lines.push(`${t('salesWhatsAppCashLine')} ${fmt(s.cashOnHand)} SR`);
     }
     if (s.notes?.trim()) {
-      lines.push('', `${whatsAppBilingualLabel('salesShareNotes')}: ${s.notes.trim()}`);
+      lines.push('', `${t('salesShareNotes')}: ${s.notes.trim()}`);
     }
     return lines.join('\n');
   }
