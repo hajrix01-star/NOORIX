@@ -65,7 +65,7 @@ function counterpartyLabel(op, lang) {
   return op.notes || '—';
 }
 
-function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang }) {
+function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact = false }) {
   return (
     <div className="grid gap-3.5">
       <div className="day-close-screen-only flex gap-2 justify-between items-baseline flex-wrap pb-2 border-b border-noorix-border">
@@ -74,7 +74,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang }) {
           <div className="text-[15px] font-extrabold">{reportDateLabel}</div>
         </div>
         <div className="text-[10px] text-[var(--noorix-text-muted-2)] max-w-[340px] text-right leading-[1.45]">
-          {t('dayCloseVaultBalanceNote')}
+          {t(compact ? 'dayCloseVaultBalanceNoteCompact' : 'dayCloseVaultBalanceNote')}
         </div>
       </div>
 
@@ -151,18 +151,20 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang }) {
         </tbody>
       </table>
 
-      <div className="day-close-screen-only dc-inline-stats">
-        <div>
-          <strong>{t('dayCloseCashMovement')}</strong>
-          {' — '}
-          {t('dayCloseCashIn')} {fmt(Number(data.cash?.dayTotalIn ?? 0))} · {t('dayCloseCashOut')} {fmt(Number(data.cash?.dayTotalOut ?? 0))}
+      {!compact && (
+        <div className="day-close-screen-only dc-inline-stats">
+          <div>
+            <strong>{t('dayCloseCashMovement')}</strong>
+            {' — '}
+            {t('dayCloseCashIn')} {fmt(Number(data.cash?.dayTotalIn ?? 0))} · {t('dayCloseCashOut')} {fmt(Number(data.cash?.dayTotalOut ?? 0))}
+          </div>
+          <div>
+            <strong>{t('dayCloseTransfers')}</strong>
+            {' — '}
+            {data.transfers?.count ?? 0} / {fmt(Number(data.transfers?.volume || 0))} SR
+          </div>
         </div>
-        <div>
-          <strong>{t('dayCloseTransfers')}</strong>
-          {' — '}
-          {data.transfers?.count ?? 0} / {fmt(Number(data.transfers?.volume || 0))} SR
-        </div>
-      </div>
+      )}
 
       <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] items-start">
         <div>
@@ -191,31 +193,33 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang }) {
           </table>
         </div>
 
-        <div>
-          <SectionTitle>{t('dayCloseExpensesByCategory')}</SectionTitle>
-          <table className="dc-table">
-            <thead>
-              <tr>
-                <th>{t('category')}</th>
-                <th className="dc-num">{t('dayCloseCount')}</th>
-                <th className="dc-num">{t('total')} (SR)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(data.expensesByCategory || []).length === 0 ? (
-                <tr><td colSpan={3} className="dc-empty">—</td></tr>
-              ) : (
-                (data.expensesByCategory || []).map((row) => (
-                  <tr key={row.categoryId}>
-                    <td>{pickBilingual(lang, row.nameAr, row.nameEn)}</td>
-                    <td className="dc-num">{row.count}</td>
-                    <td className="dc-num">{fmt(Number(row.total))}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {!compact && (
+          <div>
+            <SectionTitle>{t('dayCloseExpensesByCategory')}</SectionTitle>
+            <table className="dc-table">
+              <thead>
+                <tr>
+                  <th>{t('category')}</th>
+                  <th className="dc-num">{t('dayCloseCount')}</th>
+                  <th className="dc-num">{t('total')} (SR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data.expensesByCategory || []).length === 0 ? (
+                  <tr><td colSpan={3} className="dc-empty">—</td></tr>
+                ) : (
+                  (data.expensesByCategory || []).map((row) => (
+                    <tr key={row.categoryId}>
+                      <td>{pickBilingual(lang, row.nameAr, row.nameEn)}</td>
+                      <td className="dc-num">{row.count}</td>
+                      <td className="dc-num">{fmt(Number(row.total))}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div>
           <SectionTitle>{t('dayCloseByPaymentChannel')}</SectionTitle>
@@ -252,7 +256,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang }) {
                 <th className="dc-num">{t('dayCloseCustomers')}</th>
                 <th className="dc-num">{t('dayCloseCashOnHand')}</th>
                 <th className="dc-num">{t('total')}</th>
-                <th>{t('vaults')}</th>
+                {!compact && <th>{t('vaults')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -262,9 +266,11 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang }) {
                   <td className="dc-num">{s.customerCount}</td>
                   <td className="dc-num">{fmt(Number(s.cashOnHand))}</td>
                   <td className="dc-num">{fmt(Number(s.totalAmount))}</td>
-                  <td className="dc-muted text-[10px]">
-                    {(s.channels || []).map((c) => `${pickBilingual(lang, c.vaultNameAr ?? c.vaultName, c.vaultNameEn)}: ${fmt(Number(c.amount))}`).join(' · ') || '—'}
-                  </td>
+                  {!compact && (
+                    <td className="dc-muted text-[10px]">
+                      {(s.channels || []).map((c) => `${pickBilingual(lang, c.vaultNameAr ?? c.vaultName, c.vaultNameEn)}: ${fmt(Number(c.amount))}`).join(' · ') || '—'}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -363,8 +369,9 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang }) {
   );
 }
 
-export default function DayCloseReportModal({ companyId, isOpen, onClose, defaultDateYmd }) {
+export default function DayCloseReportModal({ companyId, isOpen, onClose, defaultDateYmd, compact = false }) {
   const { t, lang } = useTranslation();
+  const reportTitle = compact ? t('dayCloseTitleV2') : t('dayCloseTitle');
   const { companies, activeCompanyId } = useApp();
   const [dateStr, setDateStr] = useState(() => defaultDateYmd || saudiTodayYmd());
 
@@ -610,7 +617,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           <div className="day-close-no-print flex flex-col gap-3 mb-[14px]">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-6 flex-wrap">
-                <h2 id="day-close-title" className="m-0 font-extrabold text-[17px]">{t('dayCloseTitle')}</h2>
+                <h2 id={compact ? 'day-close-title-v2' : 'day-close-title'} className="m-0 font-extrabold text-[17px]">{reportTitle}</h2>
                 <label className="flex items-center gap-3 text-[13px]">
                   <span className="text-noorix-muted">{t('date')}</span>
                   <Input
@@ -677,7 +684,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
               <div className="day-close-print-only dc-print-block">
                 <header className="dc-print-header">
                   <p className="dc-print-header__co">{companyName || '—'}</p>
-                  <p className="dc-print-header__doc">{t('dayCloseTitle')}</p>
+                  <p className="dc-print-header__doc">{reportTitle}</p>
                   <p className="dc-print-header__date">{t('dayCloseReportDate')}: {reportDateLabel}</p>
                 </header>
               </div>
@@ -687,6 +694,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 t={t}
                 reportDateLabel={reportDateLabel}
                 lang={lang}
+                compact={compact}
               />
             </div>
           )}
@@ -701,7 +709,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                   <div className="day-close-print-only dc-print-block">
                     <header className="dc-print-header">
                       <p className="dc-print-header__co">{companyName || '—'}</p>
-                      <p className="dc-print-header__doc">{t('dayCloseTitle')}</p>
+                      <p className="dc-print-header__doc">{reportTitle}</p>
                       <p className="dc-print-header__date">
                         {t('dayCloseReportDate')}: {formatSaudiDateISO(`${item.date}T12:00:00.000Z`)}
                       </p>
@@ -713,6 +721,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                     t={t}
                     reportDateLabel={formatSaudiDateISO(`${item.date}T12:00:00.000Z`)}
                     lang={lang}
+                    compact={compact}
                   />
                 </div>
               ))}
