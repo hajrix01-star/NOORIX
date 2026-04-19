@@ -85,7 +85,7 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
   const { data: salesData } = useQuery({
     queryKey: ['sales-summaries', companyId, startDate, endDate],
     queryFn: async () => {
-      const res = await getDailySalesSummaries(companyId, startDate, endDate);
+      const res = await getDailySalesSummaries(companyId, startDate, endDate, 1, 200);
       if (!res?.success) return { items: [] };
       const items = res.data?.items ?? (Array.isArray(res.data) ? res.data : []);
       return { items: Array.isArray(items) ? items : [] };
@@ -93,9 +93,17 @@ export function OrdersTab({ companyId, year, month, startDate: propStartDate, en
     enabled: !!companyId && !!year && !!month,
   });
 
+  /** نقد المحل: مبيعات قناة النقد فقط (خزائن type=cash)، لا إجمالي كل القنوات */
   const cashSalesTotal = useMemo(() => {
     const items = salesData?.items ?? [];
-    return items.reduce((s, v) => s + Number(v.totalAmount ?? 0), 0);
+    return items.reduce((sum, summary) => {
+      const channels = summary.channels ?? [];
+      const cashOnly = channels.reduce((acc, ch) => {
+        if (ch?.vault?.type !== 'cash') return acc;
+        return acc + Number(ch.amount ?? 0);
+      }, 0);
+      return sum + cashOnly;
+    }, 0);
   }, [salesData]);
 
   const dateFilteredOrders = useMemo(() => {
