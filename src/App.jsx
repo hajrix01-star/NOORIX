@@ -23,7 +23,9 @@ const OwnerDashboardScreen = React.lazy(() => import('./modules/Owner/OwnerDashb
 const ReportsLayout = React.lazy(() => import('./modules/Reports/ReportsLayout'));
 const ReportsScreen = React.lazy(() => import('./modules/Reports/ReportsScreen'));
 const ReportsTaxScreen = React.lazy(() => import('./modules/Reports/ReportsTaxScreen'));
+const HajriTaxLayout = React.lazy(() => import('./modules/HajriTax/HajriTaxLayout'));
 const HajriTaxScreen = React.lazy(() => import('./modules/HajriTax/HajriTaxScreen'));
+const HajriTaxQuarterOverview = React.lazy(() => import('./modules/HajriTax/HajriTaxQuarterOverview'));
 const BankStatementAnalysisScreen = React.lazy(() => import('./modules/Reports/BankStatementAnalysisScreen'));
 const SettingsScreen = React.lazy(() => import('./modules/Settings/SettingsScreen'));
 const LoginScreen = React.lazy(() => import('./modules/Login/LoginScreen'));
@@ -366,7 +368,10 @@ export default function App() {
                   <Route path="vat-registry" element={<Navigate to="/hajri-tax" replace />} />
                   <Route path="bank-statement" element={<BankStatementAnalysisScreen />} />
                 </Route>
-                <Route path="/hajri-tax" element={<HajriTaxScreen />} />
+                <Route path="/hajri-tax" element={<HajriTaxLayout />}>
+                  <Route index element={<HajriTaxScreen />} />
+                  <Route path="quarters" element={<HajriTaxQuarterOverview />} />
+                </Route>
                 <Route path="/settings" element={<SettingsScreen />} />
                 <Route path="/ocr" element={<OcrInvoicesScreen />} />
                 <Route path="/tax" element={<Navigate to="/reports/tax" replace />} />

@@ -431,6 +431,15 @@ export default {
   reportVatRegistry: { ar: 'سجل الضريبة التخطيطي', en: 'VAT planning registry' },
   /** قسم رئيسي — الاسم ثابت باللاتينية */
   hajriTax: { ar: 'HAJRI TAX', en: 'HAJRI TAX' },
+  hajriTaxTabRegistry: { ar: 'السجل والتحرير', en: 'Registry & edit' },
+  hajriTaxTabQuarters: { ar: 'عرض الأرباع', en: 'Quarter overview' },
+  hajriTaxQuarterDashboard: { ar: 'لوحة الأرباع', en: 'Quarter dashboard' },
+  hajriTaxQuarterDashboardDesc: {
+    ar: 'اختر شركة وسنة ثم راجع صافي الضريبة لكل ربع أو افتح التحرير.',
+    en: 'Pick a company and year, review net VAT per quarter, or open the editor.',
+  },
+  hajriTaxOpenEdit: { ar: 'فتح التحرير', en: 'Open editor' },
+  hajriTaxCreateOrEdit: { ar: 'إنشاء / تحرير', en: 'Create or edit' },
   reportVatRegistryDesc: {
     ar: 'معزول عن النظام المحاسبي: التعديلات والدفع هنا لا تغيّر القيود أو الفواتير. يستورد الأرقام من «تقرير الضرائب» (نفس منطق النظام).',
     en: 'Isolated from accounting: edits and payment targets here do not change ledger or invoices. Imports use the same tax report logic.',

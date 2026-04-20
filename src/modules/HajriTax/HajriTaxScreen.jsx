@@ -1,7 +1,8 @@
 /**
  * HAJRI TAX — سجل ضريبي تخطيطي معزول عن المحاسبة (قسم رئيسي مستقل).
  */
-import React, { useMemo, useState, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -22,7 +23,7 @@ import { fmt } from '../../utils/format';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { getTaxVatReport, throwIfApiFailed, upsertVatPlanning } from '../../services/api';
-import { Button, Input, FmtNum, ScreenShell, ScreenTitle } from '../../ui';
+import { Button, Input, FmtNum } from '../../ui';
 
 function clonePayload(from) {
   return mergeImportedDisclosure(defaultDisclosureData(), from || {});
@@ -31,13 +32,21 @@ function clonePayload(from) {
 export default function HajriTaxScreen() {
   const { companies } = useApp();
   const { t, lang } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
   const jsonInputRef = useRef(null);
+  const urlOpenKeyRef = useRef('');
 
   const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState(currentYear);
-  const [quarter, setQuarter] = useState(1);
-  const [companyFilter, setCompanyFilter] = useState('');
+  const [year, setYear] = useState(() => {
+    const y = Number(searchParams.get('year'));
+    return Number.isFinite(y) && y >= 2000 ? y : currentYear;
+  });
+  const [quarter, setQuarter] = useState(() => {
+    const q = Number(searchParams.get('quarter'));
+    return [1, 2, 3, 4].includes(q) ? q : 1;
+  });
+  const [companyFilter, setCompanyFilter] = useState(() => searchParams.get('company') || '');
   const [detailCompanyId, setDetailCompanyId] = useState(null);
 
   const [draftData, setDraftData] = useState(() => defaultDisclosureData());
@@ -114,7 +123,26 @@ export default function HajriTaxScreen() {
   const closeDetail = useCallback(() => {
     setDetailCompanyId(null);
     refetch();
-  }, [refetch]);
+    setSearchParams((sp) => {
+      const next = new URLSearchParams(sp);
+      next.delete('edit');
+      return next;
+    });
+  }, [refetch, setSearchParams]);
+
+  useEffect(() => {
+    if (listLoading) return;
+    if (searchParams.get('edit') !== '1') {
+      urlOpenKeyRef.current = '';
+      return;
+    }
+    const c = searchParams.get('company');
+    if (!c || !companies?.some((x) => x.id === c)) return;
+    const key = `${c}|${searchParams.get('year')}|${searchParams.get('quarter')}|1`;
+    if (urlOpenKeyRef.current === key) return;
+    urlOpenKeyRef.current = key;
+    openCompanyDetail(c);
+  }, [listLoading, searchParams, companies, openCompanyDetail]);
 
   const updateRow = useCallback((key, field, value) => {
     const num = parseFloat(String(value).replace(/,/g, '')) || 0;
@@ -312,21 +340,16 @@ export default function HajriTaxScreen() {
 
   if (!companies?.length) {
     return (
-      <ScreenShell>
-        <ScreenTitle>{t('hajriTax')}</ScreenTitle>
-        <div className="noorix-surface-card p-5 text-center text-noorix-muted">
-          {t('pleaseSelectCompany')}
-        </div>
-      </ScreenShell>
+      <div className="noorix-surface-card p-5 text-center text-noorix-muted">
+        {t('pleaseSelectCompany')}
+      </div>
     );
   }
 
   if (detailCompanyId) {
     const { name, tax } = companyMeta(detailCompanyId);
     return (
-      <ScreenShell>
-        <ScreenTitle>{t('hajriTax')}</ScreenTitle>
-        <p className="text-[13px] text-noorix-muted mb-4">{t('reportVatRegistryDesc')}</p>
+      <>
         <div className="grid gap-6">
         <div className="nx-page-header flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -454,15 +477,12 @@ export default function HajriTaxScreen() {
           </div>
         </div>
       </div>
-      </ScreenShell>
+      </>
     );
   }
 
   return (
-    <ScreenShell>
-      <ScreenTitle>{t('hajriTax')}</ScreenTitle>
-      <p className="text-[13px] text-noorix-muted mb-4">{t('reportVatRegistryDesc')}</p>
-      <div className="grid gap-6">
+    <div className="grid gap-6">
       <div className="nx-page-header flex flex-wrap justify-end gap-4">
         <div className="nx-toolbar flex flex-wrap gap-2 items-end">
           <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
@@ -526,7 +546,6 @@ export default function HajriTaxScreen() {
           </div>
         </div>
       )}
-      </div>
-    </ScreenShell>
+    </div>
   );
 }
