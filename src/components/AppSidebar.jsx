@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
+import { apiGet } from '../services/api';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
 import { Button } from '../ui';
@@ -34,7 +35,6 @@ const SIDEBAR_LINKS = [
   { to: '/owner', labelKey: 'ownerDashboard', icon: IconCrown, permission: 'VIEW_OWNER' },
   {
     external: true,
-    href: `${HAJRI_TAX_APP_URL}/`,
     labelKey: 'hajriTaxSidebar',
     icon: IconCalculator,
     permission: 'VIEW_OWNER',
@@ -84,6 +84,8 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
     if (isReportsExpanded) setReportsOpen(true);
   }, [isReportsExpanded]);
 
+  const [hajriTaxOpening, setHajriTaxOpening] = useState(false);
+
   const [brandName,    setBrandName]    = useState(() => getBrandName(lang));
   const [brandLogo,    setBrandLogo]    = useState(getBrandLogo);
   const [brandTagline, setBrandTagline] = useState(() => getBrandTagline(lang));
@@ -110,6 +112,22 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
       setReportsOpen(true);
       navigate('/reports');
       onClose();
+    }
+  };
+
+  const hajriTaxFallbackHref = `${HAJRI_TAX_APP_URL}/`;
+
+  const handleHajriTaxClick = async (e) => {
+    e.preventDefault();
+    if (hajriTaxOpening) return;
+    onClose();
+    setHajriTaxOpening(true);
+    try {
+      const res = await apiGet('/api/v1/owner/hajri-tax/launch-url');
+      const url = res?.success && res.data?.url ? res.data.url : hajriTaxFallbackHref;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } finally {
+      setHajriTaxOpening(false);
     }
   };
 
@@ -150,11 +168,12 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
               link.external ? (
                 <li key="hajri-tax-external" className="app-nav-item">
                   <a
-                    href={link.href}
+                    href={hajriTaxFallbackHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="app-nav-link"
-                    onClick={onClose}
+                    className={`app-nav-link${hajriTaxOpening ? ' opacity-70 pointer-events-none' : ''}`}
+                    aria-busy={hajriTaxOpening}
+                    onClick={handleHajriTaxClick}
                   >
                     <span className="app-nav-link__label">
                       <link.icon />

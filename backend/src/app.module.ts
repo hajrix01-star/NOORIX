@@ -33,6 +33,7 @@ import { DatabaseModule }       from './database/database.module';
 import { BackupModule }         from './backup/backup.module';
 import { OcrInvoicesModule }   from './ocr-invoices/ocr-invoices.module';
 import { CompanyAssetsModule } from './company-assets/company-assets.module';
+import { HajriTaxModule } from './hajri-tax/hajri-tax.module';
 import { PermissionCacheModule } from './auth/permission-cache.service';
 import { TenantMiddleware }    from './common/tenant.middleware';
 import { JwtModule }           from '@nestjs/jwt';
@@ -77,6 +78,7 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'noorix-dev-secret-DO-NOT-USE-IN-PR
     BackupModule,
     OcrInvoicesModule,
     CompanyAssetsModule,
+    HajriTaxModule,
     JwtModule.register({ secret: JWT_SECRET }),
   ],
   controllers: [AppController],
