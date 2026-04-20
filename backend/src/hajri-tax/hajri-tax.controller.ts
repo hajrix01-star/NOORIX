@@ -7,6 +7,25 @@ import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
+const DEFAULT_HAJRI_TAX_BASE = 'https://hajrix.com/tax';
+const HAJRIX_TAX_ROOT_HOSTS = new Set(['hajrix.com', 'www.hajrix.com']);
+
+/** يطابق الواجهة: جذر hajrix.com بدون ‎/tax‎ يفتح نوريكس في الإطار بدل تطبيق الضرائب. */
+function normalizeHajriTaxBaseUrl(raw: string): string {
+  const s = (raw?.trim() || DEFAULT_HAJRI_TAX_BASE).replace(/\/$/, '');
+  try {
+    const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(s);
+    const u = new URL(hasScheme ? s : `https://${s}`);
+    const p = u.pathname.replace(/\/$/, '') || '';
+    if ((!p || p === '/') && HAJRIX_TAX_ROOT_HOSTS.has(u.hostname)) {
+      u.pathname = '/tax';
+    }
+    return u.toString().replace(/\/$/, '');
+  } catch {
+    return DEFAULT_HAJRI_TAX_BASE;
+  }
+}
+
 @Controller('owner/hajri-tax')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles('owner', 'super_admin')
@@ -19,7 +38,7 @@ export class HajriTaxController {
    */
   @Get('launch-url')
   getLaunchUrl(): { url: string } {
-    const base = (process.env.HAJRI_TAX_BASE_URL || 'https://hajrix.com/tax').replace(/\/$/, '');
+    const base = normalizeHajriTaxBaseUrl(process.env.HAJRI_TAX_BASE_URL || DEFAULT_HAJRI_TAX_BASE);
     const appId = process.env.HAJRI_TAX_APP_ID?.trim();
     const accessToken = process.env.HAJRI_TAX_ACCESS_TOKEN?.trim();
     const appBaseUrl = process.env.HAJRI_TAX_APP_BASE_URL?.trim();
