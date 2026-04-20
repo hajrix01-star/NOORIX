@@ -20,6 +20,21 @@ VITE_TAX_APP_BASE_URL=https://your-backend-host.example
 
 `npm run build` — المخرجات في `dist/`.
 
+للنشر تحت مسار فرعي (مثل الموقع الرئيسي):
+
+```bash
+set VITE_BASE_PATH=/tax/
+npm run build
+```
+
+## النشر (CI)
+
+مع الدفع إلى `main` يبني GitHub Actions مشروع **نووريكس** ثم **tax-hajri** ويرفع الملفات إلى **`/var/www/hajrix.com/tax/`** على الـ VPS (عبر `rsync`).
+
+- الرابط المتوقع بعد ضبط Nginx: **`https://hajrix.com/tax/`**
+- أسرار اختيارية للبناء: `VITE_TAX_APP_ID`، `VITE_TAX_APP_BASE_URL`، `VITE_TAX_FUNCTIONS_VERSION` في إعدادات المستودع على GitHub.
+- مثال موقع Nginx: `tax-hajri/deploy/nginx-location.example`
+
 ## المتغيرات
 
 | المتغير | الوصف |
