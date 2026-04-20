@@ -151,6 +151,7 @@ export const ROUTE_PERMISSION = {
   '/orders':        PERMISSIONS.VIEW_ORDERS,
   '/hr':            PERMISSIONS.VIEW_EMPLOYEES,
   '/reports':       PERMISSIONS.VIEW_REPORTS,
+  '/hajri-tax':     PERMISSIONS.VIEW_REPORTS,
   '/settings':      PERMISSIONS.MANAGE_SETTINGS,
   '/theme-preview': PERMISSIONS.VIEW_DASHBOARD,
   '/ocr':           PERMISSIONS.VIEW_OCR,
@@ -175,6 +176,9 @@ export function getRouteRequiredPermissions(pathname) {
   }
   if (pathname.startsWith('/reports')) {
     return [ROUTE_PERMISSION['/reports']];
+  }
+  if (pathname.startsWith('/hajri-tax')) {
+    return [ROUTE_PERMISSION['/hajri-tax']];
   }
   return null;
 }

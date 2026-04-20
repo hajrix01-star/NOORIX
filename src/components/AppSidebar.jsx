@@ -38,6 +38,7 @@ const SIDEBAR_LINKS = [
   { to: '/assets', labelKey: 'assetsRegister', icon: IconMonitor, permission: 'VIEW_EXPENSES' },
   { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_ORDERS' },
   { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: 'VIEW_EMPLOYEES' },
+  { to: '/hajri-tax', labelKey: 'hajriTax', icon: IconDocument, permission: 'VIEW_REPORTS' },
   {
     to: '/reports',
     labelKey: 'reports',
@@ -46,7 +47,6 @@ const SIDEBAR_LINKS = [
     children: [
       { to: '/reports/general', labelKey: 'reportGeneralReport', icon: IconChartBar },
       { to: '/reports/tax', labelKey: 'reportTax', icon: IconDocument },
-      { to: '/reports/vat-registry', labelKey: 'reportVatRegistry', icon: IconDocument },
       { to: '/reports/bank-statement', labelKey: 'reportBankStatementAnalysis', icon: IconChartBar },
     ],
   },

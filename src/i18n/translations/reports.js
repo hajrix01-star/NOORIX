@@ -429,6 +429,8 @@ export default {
     en: 'This will permanently delete the statement and all its transactions.',
   },
   reportVatRegistry: { ar: 'سجل الضريبة التخطيطي', en: 'VAT planning registry' },
+  /** قسم رئيسي — الاسم ثابت باللاتينية */
+  hajriTax: { ar: 'HAJRI TAX', en: 'HAJRI TAX' },
   reportVatRegistryDesc: {
     ar: 'معزول عن النظام المحاسبي: التعديلات والدفع هنا لا تغيّر القيود أو الفواتير. يستورد الأرقام من «تقرير الضرائب» (نفس منطق النظام).',
     en: 'Isolated from accounting: edits and payment targets here do not change ledger or invoices. Imports use the same tax report logic.',

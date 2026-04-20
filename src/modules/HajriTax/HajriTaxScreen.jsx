@@ -1,5 +1,5 @@
 /**
- * سجل الضريبة التخطيطي — معزول عن المحاسبة؛ استيراد من تقرير الضريبة؛ حفظ لكل شركة وربع.
+ * HAJRI TAX — سجل ضريبي تخطيطي معزول عن المحاسبة (قسم رئيسي مستقل).
  */
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,13 +22,13 @@ import { fmt } from '../../utils/format';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { getTaxVatReport, throwIfApiFailed, upsertVatPlanning } from '../../services/api';
-import { Button, Input, FmtNum } from '../../ui';
+import { Button, Input, FmtNum, ScreenShell, ScreenTitle } from '../../ui';
 
 function clonePayload(from) {
   return mergeImportedDisclosure(defaultDisclosureData(), from || {});
 }
 
-export default function VatPlanningScreen() {
+export default function HajriTaxScreen() {
   const { companies } = useApp();
   const { t, lang } = useTranslation();
   const qc = useQueryClient();
@@ -204,7 +204,7 @@ export default function VatPlanningScreen() {
       return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmt(amt)}</td><td>${r.isTotal ? '—' : fmt(getRowValue(draftData, r.key, 'adjustment'))}</td><td>${fmt(vat)}</td></tr>`;
     }).join('');
     openPrintWindow({
-      title: t('reportVatRegistry'),
+      title: t('hajriTax'),
       companyName: name || '',
       subtitle: `${periodLabel} — ${lang === 'ar' ? 'تخطيط ضريبي (لا يؤثر على المحاسبة)' : 'Planning only (no accounting impact)'}`,
       body: `<p>${lang === 'ar' ? 'مبلغ الدفع المستهدف:' : 'Target payment:'} ${fmt(parseFloat(paymentTargetStr) || 0)} SR</p>
@@ -225,7 +225,7 @@ export default function VatPlanningScreen() {
       if (!r.isTotal) rows.push({ Item: label(r), Amount: getRowValue(draftData, r.key, 'amount'), VAT: getRowValue(draftData, r.key, 'vat') });
     });
     rows.push({ Item: lang === 'ar' ? 'صافي مستحق' : 'Net payable', Amount: '', VAT: netPayableDraft });
-    exportToExcel(rows, `vat-registry-${detailCompanyId}-${periodLabel}.xlsx`);
+    exportToExcel(rows, `hajri-tax-${detailCompanyId}-${periodLabel}.xlsx`);
   }, [draftData, lang, detailCompanyId, netPayableDraft, periodLabel]);
 
   const exportConsolidatedExcel = useCallback(() => {
@@ -237,7 +237,7 @@ export default function VatPlanningScreen() {
       [t('vatNotes')]: r.notes,
       [t('vatLastUpdated')]: r.updatedAt ? String(r.updatedAt).slice(0, 19) : '—',
     }));
-    exportToExcel(rows, `vat-registry-consolidated-${periodLabel}.xlsx`);
+    exportToExcel(rows, `hajri-tax-consolidated-${periodLabel}.xlsx`);
   }, [overviewRows, lang, t, periodLabel]);
 
   const printConsolidated = useCallback(() => {
@@ -248,7 +248,7 @@ export default function VatPlanningScreen() {
       })
       .join('');
     openPrintWindow({
-      title: lang === 'ar' ? 'تقرير ضريبي شامل (تخطيط)' : 'Consolidated VAT planning',
+      title: `${t('hajriTax')} — ${lang === 'ar' ? 'تقرير شامل' : 'Consolidated'}`,
       companyName: '',
       subtitle: periodLabel,
       body: `<table class="w-full"><thead><tr><th>${lang === 'ar' ? 'الشركة' : 'Company'}</th><th>${t('vatNetPayable')}</th><th>${t('vatPaymentTarget')}</th><th>${t('vatNotes')}</th></tr></thead><tbody>${bodyRows}</tbody></table>`,
@@ -272,7 +272,7 @@ export default function VatPlanningScreen() {
     );
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `vat-registry-${periodLabel}.json`;
+    a.download = `hajri-tax-${periodLabel}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   }, [filteredCompanies, resolveRecord, year, quarter, periodLabel]);
@@ -312,21 +312,25 @@ export default function VatPlanningScreen() {
 
   if (!companies?.length) {
     return (
-      <div className="noorix-surface-card p-5 text-center text-noorix-muted">
-        {t('pleaseSelectCompany')}
-      </div>
+      <ScreenShell>
+        <ScreenTitle>{t('hajriTax')}</ScreenTitle>
+        <div className="noorix-surface-card p-5 text-center text-noorix-muted">
+          {t('pleaseSelectCompany')}
+        </div>
+      </ScreenShell>
     );
   }
 
   if (detailCompanyId) {
     const { name, tax } = companyMeta(detailCompanyId);
     return (
-      <div className="grid gap-6">
+      <ScreenShell>
+        <ScreenTitle>{t('hajriTax')}</ScreenTitle>
+        <p className="text-[13px] text-noorix-muted mb-4">{t('reportVatRegistryDesc')}</p>
+        <div className="grid gap-6">
         <div className="nx-page-header flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-[18px] font-bold m-0">{t('reportVatRegistry')}</h2>
-            <p className="mt-1.5 text-[13px] text-noorix-muted">{t('reportVatRegistryDesc')}</p>
-            <p className="mt-1 text-[12px] font-semibold text-noorix-blue">{name}{tax ? ` · ${tax}` : ''}</p>
+            <p className="text-[14px] font-bold m-0 text-noorix-blue">{name}{tax ? ` · ${tax}` : ''}</p>
           </div>
           <div className="nx-toolbar flex flex-wrap gap-2">
             <Button size="sm" variant="ghost" onClick={closeDetail}>{t('vatBackToList')}</Button>
@@ -450,16 +454,16 @@ export default function VatPlanningScreen() {
           </div>
         </div>
       </div>
+      </ScreenShell>
     );
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="nx-page-header">
-        <div>
-          <h2 className="text-[18px] font-bold m-0">{t('reportVatRegistry')}</h2>
-          <p className="mt-1.5 text-[13px] text-noorix-muted">{t('reportVatRegistryDesc')}</p>
-        </div>
+    <ScreenShell>
+      <ScreenTitle>{t('hajriTax')}</ScreenTitle>
+      <p className="text-[13px] text-noorix-muted mb-4">{t('reportVatRegistryDesc')}</p>
+      <div className="grid gap-6">
+      <div className="nx-page-header flex flex-wrap justify-end gap-4">
         <div className="nx-toolbar flex flex-wrap gap-2 items-end">
           <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
@@ -522,6 +526,7 @@ export default function VatPlanningScreen() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ScreenShell>
   );
 }
