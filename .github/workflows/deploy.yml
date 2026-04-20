@@ -26,6 +26,8 @@ jobs:
         run: npm run build
         env:
           CI: false
+          # يُدمَج في الواجهة — يجب أن يشير إلى مجلد tax-hajri (‎/tax‎) وليس جذر نوريكس
+          VITE_HAJRI_TAX_URL: https://hajrix.com/tax
 
       - name: Install and build HAJRI TAX (tax-hajri)
         working-directory: tax-hajri

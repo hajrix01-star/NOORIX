@@ -26,19 +26,28 @@ export function resolveTaxHajriSegment(pathname) {
   return TAX_HAJRI_SEGMENTS.companies;
 }
 
-/** إن وُجد الجذر فقط على هذه النطاقات، تطبيق الضرائب الحقيقي تحت ‎/tax‎ وليس SPA نوريكس. */
+/**
+ * نطاقات معروفة: الجذر = واجهة نوريكس، والتطبيق الضريبي تحت ‎/tax/‎.
+ * (يُكمّل قاعدة ‎same-origin‎ أدناه.)
+ */
 const HAJRIX_TAX_ROOT_HOSTS = new Set(['hajrix.com', 'www.hajrix.com']);
 
 const DEFAULT_HAJRI_TAX_BASE = 'https://hajrix.com/tax';
 
 /**
- * يصلح ضبطاً شائعاً: ‎VITE_HAJRI_TAX_URL=https://hajrix.com‎ فيفتح ‎/Companies‎ على نوريكس → 404 داخل الإطار.
- * لا يغيّر مساراً صريحاً غير الجذر (مثلاً ‎/tax‎ أو استضافة مخصصة).
+ * يصلح أشيع سبب لـ 404 داخل الإطار: ‎VITE_HAJRI_TAX_URL‎ يشير لجذر الموقع (نفس أصل نوريكس) بدون ‎/tax‎
+ * → يُحمَّل ‎/Companies‎ على SPA نوريكس. ينطبق على أي دومين (ليس فقط hajrix.com).
  */
-function applyHajrixDomainRootToTaxPath(url) {
+function applyTaxAppRootPath(url) {
   try {
     const p = url.pathname.replace(/\/$/, '') || '';
     if (p && p !== '/') return;
+
+    if (typeof window !== 'undefined' && window.location?.origin && url.origin === window.location.origin) {
+      url.pathname = '/tax';
+      return;
+    }
+
     if (HAJRIX_TAX_ROOT_HOSTS.has(url.hostname)) {
       url.pathname = '/tax';
     }
@@ -63,16 +72,40 @@ export function getHajriTaxAppPublicBase() {
           : 'https://hajrix.com';
       const path = initial.endsWith('/') ? initial : `${initial}/`;
       const u = new URL(path, origin);
-      applyHajrixDomainRootToTaxPath(u);
+      applyTaxAppRootPath(u);
       return u.toString().replace(/\/$/, '');
     }
 
     const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(initial);
     const u = new URL(hasScheme ? initial : `https://${initial}`);
-    applyHajrixDomainRootToTaxPath(u);
+    applyTaxAppRootPath(u);
     return u.toString().replace(/\/$/, '');
   } catch {
     return DEFAULT_HAJRI_TAX_BASE;
+  }
+}
+
+/** صفحات tax-hajri على الجذر الخاطئ (بدون ‎/tax‎) تظهر كـ 404 من نوريكس */
+const TAX_HAJRI_PAGE_KEYS = new Set(['Companies', 'TaxForm', 'TaxReports']);
+
+/**
+ * إن كان العنوان يحمّل نفس أصل نوريكس لكن المسار ليس تحت ‎/tax/‎ وهو اسم صفحة ضريبية → ‎/tax/…‎
+ */
+function ensureSameOriginIframeUnderTax(absoluteUrl) {
+  if (typeof window === 'undefined') return absoluteUrl;
+  try {
+    const u = new URL(absoluteUrl);
+    if (u.origin !== window.location.origin) return absoluteUrl;
+    if (u.pathname === '/tax' || u.pathname.startsWith('/tax/')) return absoluteUrl;
+    const top = u.pathname.replace(/^\//, '').split('/').filter(Boolean)[0];
+    if (!top || !TAX_HAJRI_PAGE_KEYS.has(top)) return absoluteUrl;
+    const fixed = new URL(`${u.origin}/tax/${u.pathname.replace(/^\//, '')}`);
+    u.searchParams.forEach((value, key) => {
+      fixed.searchParams.set(key, value);
+    });
+    return fixed.toString();
+  } catch {
+    return absoluteUrl;
   }
 }
 
@@ -90,5 +123,5 @@ export function buildHajriTaxEmbeddedUrl(launchUrl, segment) {
   } catch {
     /* إن فشل التحليل نُرجع العنوان بدون استعلام */
   }
-  return out.toString();
+  return ensureSameOriginIframeUnderTax(out.toString());
 }
