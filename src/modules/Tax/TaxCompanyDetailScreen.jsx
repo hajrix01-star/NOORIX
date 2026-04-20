@@ -79,7 +79,7 @@ export default function TaxCompanyDetailScreen() {
 
   const declarationRows = periodCodes.map((code, i) => {
     const q = declQueries[i];
-    const net = q.data ? netVatFromImportedTaxData(q.data) : null;
+    const netVat = q.data ? netVatFromImportedTaxData(q.data) : null;
     return {
       code,
       label: periodLabel(lang, code),
