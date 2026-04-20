@@ -36,11 +36,6 @@ const AssetsRegisterScreen = React.lazy(() => import('./modules/Assets/AssetsReg
 const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
 const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvoicesScreen'));
-const TaxHubLayout = React.lazy(() => import('./modules/Tax/TaxHubLayout'));
-const TaxHubHomeScreen = React.lazy(() => import('./modules/Tax/TaxHubHomeScreen'));
-const TaxCompanyDetailScreen = React.lazy(() => import('./modules/Tax/TaxCompanyDetailScreen'));
-const TaxHajriEmbedScreen = React.lazy(() => import('./modules/Tax/TaxHajriEmbedScreen'));
-
 function getInitialLanguage() {
   if (typeof window === 'undefined') return 'ar';
   const stored = readStoredLanguage();
@@ -371,16 +366,9 @@ export default function App() {
                 </Route>
                 <Route path="/settings" element={<SettingsScreen />} />
                 <Route path="/ocr" element={<OcrInvoicesScreen />} />
-                <Route path="/tax" element={<Navigate to="/hajri-tax" replace />} />
-                <Route path="/tax/form" element={<Navigate to="/hajri-tax/form" replace />} />
-                <Route path="/tax/reports" element={<Navigate to="/hajri-tax/reports" replace />} />
-                <Route path="/hajri-tax" element={<TaxHubLayout />}>
-                  <Route index element={<TaxHubHomeScreen />} />
-                  <Route path="company/:companyId" element={<TaxCompanyDetailScreen />} />
-                  <Route path="app" element={<TaxHajriEmbedScreen />} />
-                  <Route path="form" element={<TaxHajriEmbedScreen />} />
-                  <Route path="reports" element={<TaxHajriEmbedScreen />} />
-                </Route>
+                <Route path="/tax" element={<Navigate to="/reports/tax" replace />} />
+                <Route path="/tax/form" element={<Navigate to="/reports/tax" replace />} />
+                <Route path="/tax/reports" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />
               </Routes>

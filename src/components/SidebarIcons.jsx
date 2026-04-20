@@ -140,16 +140,6 @@ export function IconOcr({ color = '#8b5cf6', ...props }) {
   );
 }
 
-/** HAJRI TAX — رابط تطبيق ضريبي خارجي */
-export function IconCalculator({ color = 'var(--noorix-accent-amber)', ...props }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect x="4" y="2" width="16" height="20" rx="2" />
-      <path d="M8 6h8M8 10h2M12 10h2M16 10h2M8 14h2M12 14h2M16 14h2M8 18h2M12 18h2M16 18h2" />
-    </svg>
-  );
-}
-
 export function IconSettings({ color = 'var(--noorix-text-muted)', ...props }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>

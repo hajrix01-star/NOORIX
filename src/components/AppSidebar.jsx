@@ -23,23 +23,10 @@ import {
   IconOcr,
   IconSettings,
   IconMonitor,
-  IconCalculator,
 } from './SidebarIcons';
 
 const SIDEBAR_LINKS = [
   { to: '/owner', labelKey: 'ownerDashboard', icon: IconCrown, permission: 'VIEW_OWNER' },
-  {
-    to: '/hajri-tax',
-    labelKey: 'hajriTaxSidebar',
-    icon: IconCalculator,
-    permission: 'VIEW_OWNER',
-    ownerOnly: true,
-    children: [
-      { to: '/hajri-tax', labelKey: 'taxNavCompanies', icon: IconDocument, end: true },
-      { to: '/hajri-tax/form', labelKey: 'taxNavForms', icon: IconDocument },
-      { to: '/hajri-tax/reports', labelKey: 'taxNavReports', icon: IconChartBar },
-    ],
-  },
   { to: '/', end: true, labelKey: 'dashboard', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
   { to: '/chat', labelKey: 'smartChat', icon: IconChat, permission: 'VIEW_CHAT' },
   { to: '/sales', labelKey: 'sales', icon: IconCart, permission: 'VIEW_SALES' },
@@ -84,12 +71,6 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
     if (isReportsExpanded) setReportsOpen(true);
   }, [isReportsExpanded]);
 
-  const isTaxExpanded = location.pathname.startsWith('/hajri-tax');
-  const [taxOpen, setTaxOpen] = useState(isTaxExpanded);
-  useEffect(() => {
-    if (isTaxExpanded) setTaxOpen(true);
-  }, [isTaxExpanded]);
-
   const [brandName,    setBrandName]    = useState(() => getBrandName(lang));
   const [brandLogo,    setBrandLogo]    = useState(getBrandLogo);
   const [brandTagline, setBrandTagline] = useState(() => getBrandTagline(lang));
@@ -115,16 +96,6 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
     } else {
       setReportsOpen(true);
       navigate('/reports');
-      onClose();
-    }
-  };
-
-  const handleTaxParentClick = () => {
-    if (taxOpen) {
-      setTaxOpen(false);
-    } else {
-      setTaxOpen(true);
-      navigate('/hajri-tax');
       onClose();
     }
   };
@@ -182,42 +153,6 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
                         <li key={child.to} className="app-nav-item">
                           <NavLink
                             to={child.to}
-                            className={navLinkClass}
-                            onClick={onClose}
-                            onPointerEnter={() => prefetchRouteChunk(child.to)}
-                            onPointerDown={() => prefetchRouteChunk(child.to)}
-                            onFocus={() => prefetchRouteChunk(child.to)}
-                          >
-                            <span className="app-nav-link__label">
-                              <child.icon />
-                              <span>{t(child.labelKey)}</span>
-                            </span>
-                          </NavLink>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ) : link.children && link.to === '/hajri-tax' ? (
-                <li key={link.to} className="app-nav-item app-nav-item--has-children">
-                  <Button
-                    variant="ghost"
-                    className={`app-nav-link${location.pathname.startsWith(link.to) ? ' app-nav-link--active' : ''}`}
-                    onClick={handleTaxParentClick}
-                  >
-                    <span className="app-nav-link__label">
-                      <link.icon />
-                      <span>{t(link.labelKey)}</span>
-                    </span>
-                    <span className="app-nav-link__chevron" aria-hidden>{taxOpen ? '▾' : '▸'}</span>
-                  </Button>
-                  {taxOpen && (
-                    <ul className="app-nav-list app-nav-list--nested">
-                      {link.children.map((child) => (
-                        <li key={child.to + (child.end ? '-end' : '')} className="app-nav-item">
-                          <NavLink
-                            to={child.to}
-                            end={child.end}
                             className={navLinkClass}
                             onClick={onClose}
                             onPointerEnter={() => prefetchRouteChunk(child.to)}

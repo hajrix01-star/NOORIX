@@ -26,18 +26,6 @@ jobs:
         run: npm run build
         env:
           CI: false
-          # يُدمَج في الواجهة — يجب أن يشير إلى مجلد tax-hajri (‎/tax‎) وليس جذر نوريكس
-          VITE_HAJRI_TAX_URL: https://hajrix.com/tax
-
-      - name: Install and build HAJRI TAX (tax-hajri)
-        working-directory: tax-hajri
-        run: npm ci && npm run build
-        env:
-          CI: false
-          VITE_BASE_PATH: /tax/
-          VITE_TAX_APP_ID: ${{ secrets.VITE_TAX_APP_ID }}
-          VITE_TAX_APP_BASE_URL: ${{ secrets.VITE_TAX_APP_BASE_URL }}
-          VITE_TAX_FUNCTIONS_VERSION: ${{ secrets.VITE_TAX_FUNCTIONS_VERSION }}
 
       # فرض IPv4 يقلّل أعطال "i/o timeout" عندما يحاول الـ runner الاتصال عبر IPv6 وفشل المسار.
       # إذا كان SSH على منفذ غير 22: أضف Secret باسم VPS_SSH_PORT بقيمة المنفذ (مثلاً 2222).
@@ -54,23 +42,6 @@ jobs:
           source: 'dist/*'
           target: '/var/www/hajrix.com/'
           strip_components: 1
-
-      - name: Deploy HAJRI TAX to VPS (rsync)
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
-          HOST: ${{ secrets.VPS_HOST }}
-          USER: ${{ secrets.VPS_USERNAME }}
-          PORT: ${{ secrets.VPS_SSH_PORT }}
-        run: |
-          set -e
-          PORT="${PORT:-22}"
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_tax_key
-          chmod 600 ~/.ssh/deploy_tax_key
-          ssh-keyscan -p "$PORT" -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_tax_key -p $PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts" \
-            tax-hajri/dist/ "$USER@$HOST:/var/www/hajrix.com/tax/"
 
       - name: Backend pull, migrate, build, PM2 + reload Nginx
         uses: appleboy/ssh-action@v1
