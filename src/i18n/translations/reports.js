@@ -541,4 +541,38 @@ export default {
     ar: 'أنت تعرض الإقرار للقراءة فقط. اضغط «تحرير» للتعديل.',
     en: 'Read-only view. Choose «Edit» to modify.',
   },
+  hajriTaxBulkImportTitle: { ar: 'استيراد جماعي (Excel)', en: 'Bulk import (Excel)' },
+  hajriTaxBulkImportTemplateTitle: {
+    ar: 'قالب استيراد أقراص HAJRI TAX — صف لكل شركة وربع',
+    en: 'HAJRI TAX bulk template — one row per company & quarter',
+  },
+  hajriTaxBulkImportIntro: {
+    ar: 'حمّل القالب، عبّئ صفوفاً كاملة لجميع الشركات والأرباع، ثم ارفع الملف. يُحدَّث السجل تلقائياً.',
+    en: 'Download the template, fill one row per company and quarter for all companies, then upload. The registry updates automatically.',
+  },
+  hajriTaxBulkImportColumnsHint: { ar: 'الأعمدة', en: 'Columns' },
+  hajriTaxBulkImportRuleCompany: {
+    ar: 'company_id (من الإعدادات) أو company_name_ar لمطابقة اسم الشركة العربي.',
+    en: 'Use company_id (from settings) or company_name_ar to match the Arabic company name.',
+  },
+  hajriTaxBulkImportRuleQuarter: {
+    ar: 'year رقم السنة؛ quarter من 1–4 أو Q1…Q4.',
+    en: 'year as number; quarter 1–4 or Q1…Q4.',
+  },
+  hajriTaxBulkImportRuleDecimals: {
+    ar: 'المبالغ والضرائب بمنزلتين عشريتين (تُقرّب تلقائياً عند الحفظ).',
+    en: 'Amounts and VAT use two decimals (rounded on save).',
+  },
+  hajriTaxBulkDownloadTemplate: { ar: 'تحميل القالب (Excel)', en: 'Download template (Excel)' },
+  hajriTaxBulkImportChooseFile: { ar: 'رفع ملف Excel', en: 'Upload Excel file' },
+  hajriTaxBulkImportEmpty: { ar: 'لا توجد صفوف صالحة في الملف.', en: 'No valid rows in the file.' },
+  hajriTaxBulkImportRow: { ar: 'صف', en: 'Row' },
+  hajriTaxBulkImportSkipBadMeta: {
+    ar: 'تخطّي: شركة أو سنة أو ربع غير صالح.',
+    en: 'Skipped: invalid company, year, or quarter.',
+  },
+  hajriTaxBulkImportDone: {
+    ar: 'تم استيراد {ok} سجلًا. متخطّى أو خطأ: {errors}.',
+    en: 'Imported {ok} record(s). Skipped/errors: {errors}.',
+  },
 };

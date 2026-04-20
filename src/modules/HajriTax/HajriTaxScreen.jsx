@@ -13,6 +13,8 @@ import {
   SUMMARY_ROWS,
   defaultDisclosureData,
   mergeImportedDisclosure,
+  normalizeDisclosureDecimals,
+  roundMoney2,
   computeNetPayable,
   computeOutputTotal,
   computeInputTotal,
@@ -27,6 +29,7 @@ import { Button, Input } from '../../ui';
 import HajriTaxDetailEditor from './HajriTaxDetailEditor';
 import HajriTaxRegistryList from './HajriTaxRegistryList';
 import HajriTaxNewDeclarationModal from './HajriTaxNewDeclarationModal';
+import HajriTaxBulkImportModal from './HajriTaxBulkImportModal';
 
 function clonePayload(from) {
   return mergeImportedDisclosure(defaultDisclosureData(), from || {});
@@ -55,6 +58,7 @@ export default function HajriTaxScreen() {
   const [detailCompanyId, setDetailCompanyId] = useState(null);
   const [detailReadOnly, setDetailReadOnly] = useState(false);
   const [showNewDeclarationModal, setShowNewDeclarationModal] = useState(false);
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
 
   const [draftData, setDraftData] = useState(() => defaultDisclosureData());
   const [paymentTargetStr, setPaymentTargetStr] = useState('');
@@ -214,7 +218,9 @@ export default function HajriTaxScreen() {
 
   const updateRow = useCallback((key, field, value) => {
     if (detailReadOnly) return;
-    const num = parseFloat(String(value).replace(/,/g, '')) || 0;
+    const raw = String(value).replace(/,/g, '').trim();
+    const parsed = raw === '' ? 0 : parseFloat(raw);
+    const num = roundMoney2(Number.isFinite(parsed) ? parsed : 0);
     setDraftData((prev) => {
       const next = { ...prev };
       const isSummaryField = !field || SUMMARY_ROWS.some((r) => r.key === key);
@@ -225,16 +231,25 @@ export default function HajriTaxScreen() {
   }, [detailReadOnly]);
 
   const renderEditableCell = useCallback(
-    (key, field) => (
-      <Input
-        type="text"
-        inputMode="decimal"
-        readOnly={detailReadOnly}
-        value={getRowValue(draftData, key, field) || ''}
-        onChange={(e) => updateRow(key, field, e.target.value)}
-        placeholder="0"
-      />
-    ),
+    (key, field) => {
+      const raw = getRowValue(draftData, key, field);
+      const display =
+        raw === '' || raw === null || raw === undefined
+          ? ''
+          : Number.isFinite(Number(raw))
+            ? roundMoney2(Number(raw)).toFixed(2)
+            : '';
+      return (
+        <Input
+          type="text"
+          inputMode="decimal"
+          readOnly={detailReadOnly}
+          value={display}
+          onChange={(e) => updateRow(key, field, e.target.value)}
+          placeholder="0.00"
+        />
+      );
+    },
     [draftData, updateRow, detailReadOnly],
   );
 
@@ -270,7 +285,7 @@ export default function HajriTaxScreen() {
       });
       throwIfApiFailed(res, 'فشل استيراد تقرير الضريبة');
       const imported = res.data;
-      setDraftData((prev) => mergeImportedDisclosure(prev, imported));
+      setDraftData((prev) => normalizeDisclosureDecimals(mergeImportedDisclosure(prev, imported)));
       setSourceSnapshot(imported && typeof imported === 'object' ? { ...imported } : imported);
       setImportIso(new Date().toISOString());
     } finally {
@@ -292,7 +307,7 @@ export default function HajriTaxScreen() {
       companyId: detailCompanyId,
       year,
       quarter,
-      payload: draftData,
+      payload: normalizeDisclosureDecimals(draftData),
       sourceSnapshot: sourceSnapshot ?? undefined,
       paymentTarget: Number.isFinite(pt) ? pt : null,
       notes: notes.trim() || null,
@@ -432,7 +447,7 @@ export default function HajriTaxScreen() {
           companyId: item.companyId,
           year: Number(y),
           quarter: Number(q),
-          payload: item.payload || defaultDisclosureData(),
+          payload: normalizeDisclosureDecimals(item.payload || defaultDisclosureData()),
           paymentTarget: item.paymentTarget ?? null,
           notes: item.notes ?? null,
           sourceSnapshot: item.sourceSnapshot ?? undefined,
@@ -512,6 +527,9 @@ export default function HajriTaxScreen() {
       <Button size="sm" variant="ghost" onClick={() => jsonInputRef.current?.click()}>
         {t('vatJsonImport')}
       </Button>
+      <Button size="sm" variant="ghost" onClick={() => setShowBulkImportModal(true)}>
+        {t('hajriTaxBulkImportTitle')}
+      </Button>
       <input ref={jsonInputRef} type="file" accept=".json,application/json" className="hidden" onChange={onJsonImport} />
     </>
   );
@@ -543,6 +561,17 @@ export default function HajriTaxScreen() {
         companies={companies}
         lang={lang}
         t={t}
+      />
+      <HajriTaxBulkImportModal
+        open={showBulkImportModal}
+        onClose={() => setShowBulkImportModal(false)}
+        companies={companies}
+        lang={lang}
+        t={t}
+        onImported={() => {
+          refetchRegistry();
+          refetch();
+        }}
       />
     </>
   );

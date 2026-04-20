@@ -2,7 +2,7 @@
  * شكل إدخال الإقرار الضريبي التخطيطي — عمود رئيسي + شريط جانبي (ملخص + محاكي سداد)
  */
 import React from 'react';
-import { OUTPUT_ROWS, INPUT_ROWS } from '../../constants/taxDisclosure';
+import { OUTPUT_ROWS, INPUT_ROWS, roundMoney2 } from '../../constants/taxDisclosure';
 import { fmtTax } from '../../utils/format';
 import { Button, Input, FmtNum } from '../../ui';
 
@@ -181,7 +181,11 @@ export default function HajriTaxDetailEditor({
                 inputMode="decimal"
                 readOnly={readOnly}
                 label={lang === 'ar' ? 'تصحيحات من فترة سابقة' : 'Prior period adjustments'}
-                value={priorAdj || ''}
+                value={
+                  priorAdj === '' || priorAdj === null || priorAdj === undefined
+                    ? ''
+                    : roundMoney2(Number(priorAdj)).toFixed(2)
+                }
                 onChange={(e) => updateRow('prior_adjustments', null, e.target.value)}
                 placeholder="0"
               />
@@ -190,7 +194,11 @@ export default function HajriTaxDetailEditor({
                 inputMode="decimal"
                 readOnly={readOnly}
                 label={lang === 'ar' ? 'رصيد مرحّل' : 'Balance carried forward'}
-                value={balanceCarried || ''}
+                value={
+                  balanceCarried === '' || balanceCarried === null || balanceCarried === undefined
+                    ? ''
+                    : roundMoney2(Number(balanceCarried)).toFixed(2)
+                }
                 onChange={(e) => updateRow('balance_carried', null, e.target.value)}
                 placeholder="0"
               />
@@ -198,7 +206,7 @@ export default function HajriTaxDetailEditor({
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-noorix-border pt-3">
               <span className="text-[13px] font-semibold text-noorix-text">{t('vatNetVatLine')}</span>
               <span className="nx-font-numbers text-[15px] font-bold">
-                <FmtNum n={netVat} /> <span className="nx-sar">SR</span>
+                <FmtNum n={netVat} tax /> <span className="nx-sar">SR</span>
               </span>
             </div>
           </section>
@@ -231,7 +239,7 @@ export default function HajriTaxDetailEditor({
                 <div
                   className={`mt-1 nx-font-numbers text-[22px] font-extrabold ${dueNet ? 'text-[var(--noorix-accent-red)]' : 'text-[var(--noorix-accent-green)]'}`}
                 >
-                  <FmtNum n={netPayableDraft} /> <span className="nx-sar text-[15px]">SR</span>
+                  <FmtNum n={netPayableDraft} tax /> <span className="nx-sar text-[15px]">SR</span>
                 </div>
                 <p className="mt-2 mb-0 text-[11px] text-noorix-muted">
                   {dueNet ? t('vatAmountDueAuthority') : t('vatAmountRefundable')}

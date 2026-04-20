@@ -79,11 +79,39 @@ export function computeNetPayable(data) {
   return netVat + priorAdj + balanceCarried;
 }
 
+/** تقريب مالي إلى منزلتين عشريتين (عرض وتخزين الحقول الضريبية). */
+export function roundMoney2(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return 0;
+  return Math.round(x * 100) / 100;
+}
+
+/** يطبّق منزلتين على كل المبالغ في نموذج الإفصاح بعد الاستيراد أو التعديل. */
+export function normalizeDisclosureDecimals(data) {
+  if (!data || typeof data !== 'object') return defaultDisclosureData();
+  const next = JSON.parse(JSON.stringify(data));
+  [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r) => !r.isTotal).forEach((r) => {
+    const k = r.key;
+    if (!next[k] || typeof next[k] !== 'object') {
+      next[k] = { amount: 0, adjustment: 0, vat: 0 };
+    }
+    next[k].amount = roundMoney2(next[k].amount);
+    next[k].vat = roundMoney2(next[k].vat);
+    next[k].adjustment = roundMoney2(next[k].adjustment);
+  });
+  SUMMARY_ROWS.forEach((r) => {
+    next[r.key] = roundMoney2(next[r.key]);
+  });
+  return next;
+}
+
 /**
  * دمج أرقام مستوردة من تقرير الضريبة في النظام (نفس شكل API tax-vat).
  */
 export function mergeImportedDisclosure(stored, imported) {
-  if (!imported || typeof imported !== 'object') return stored ? { ...stored } : defaultDisclosureData();
+  if (!imported || typeof imported !== 'object') {
+    return normalizeDisclosureDecimals(stored ? { ...stored } : defaultDisclosureData());
+  }
   const next = { ...(stored || defaultDisclosureData()) };
   const rowKeys = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r) => !r.isTotal).map((r) => r.key);
   for (const key of rowKeys) {
@@ -91,7 +119,7 @@ export function mergeImportedDisclosure(stored, imported) {
       next[key] = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), ...imported[key] };
     }
   }
-  return next;
+  return normalizeDisclosureDecimals(next);
 }
 
 /**
@@ -100,7 +128,7 @@ export function mergeImportedDisclosure(stored, imported) {
  */
 export function scaleInputVatForPaymentTarget(data, paymentTarget) {
   const target = Number(paymentTarget);
-  if (!Number.isFinite(target)) return { ...data };
+  if (!Number.isFinite(target)) return normalizeDisclosureDecimals({ ...data });
 
   const outputTotal = computeOutputTotal(data);
   const priorAdj = getRowValue(data, 'prior_adjustments');
@@ -116,7 +144,7 @@ export function scaleInputVatForPaymentTarget(data, paymentTarget) {
         next[r.key] = { ...next[r.key], vat: 0, amount: 0 };
       }
     });
-    return next;
+    return normalizeDisclosureDecimals(next);
   }
 
   if (desiredInput === 0) {
@@ -126,7 +154,7 @@ export function scaleInputVatForPaymentTarget(data, paymentTarget) {
         next[r.key] = { ...next[r.key], vat: 0, amount: 0 };
       }
     });
-    return next;
+    return normalizeDisclosureDecimals(next);
   }
 
   if (currentInput <= 0) {
@@ -137,10 +165,10 @@ export function scaleInputVatForPaymentTarget(data, paymentTarget) {
     }
     next[stdKey] = {
       ...next[stdKey],
-      vat: desiredInput,
-      amount: +(desiredInput / 0.15).toFixed(4),
+      vat: roundMoney2(desiredInput),
+      amount: roundMoney2(desiredInput / 0.15),
     };
-    return next;
+    return normalizeDisclosureDecimals(next);
   }
 
   const factor = desiredInput / currentInput;
@@ -151,11 +179,36 @@ export function scaleInputVatForPaymentTarget(data, paymentTarget) {
     const oldVat = Number(row.vat) || 0;
     const oldAmt = Number(row.amount) || 0;
     const newVat = oldVat * factor;
-    row.vat = +newVat.toFixed(4);
-    row.amount = oldAmt ? +(oldAmt * factor).toFixed(4) : +(newVat / 0.15).toFixed(4);
+    row.vat = roundMoney2(newVat);
+    row.amount = oldAmt ? roundMoney2(oldAmt * factor) : roundMoney2(newVat / 0.15);
   });
 
-  return next;
+  return normalizeDisclosureDecimals(next);
+}
+
+/** بناء payload إفصاح من صف استيراد Excel (أعمدة بالإنجليزية من القالب). */
+export function disclosureFromBulkFlatRow(vals) {
+  const salesAmt = roundMoney2(vals.sales_amount ?? 0);
+  const salesVat = roundMoney2(vals.sales_vat ?? 0);
+  const purAmt = roundMoney2(vals.purchases_amount ?? 0);
+  const purVat = roundMoney2(vals.purchases_vat ?? 0);
+  const salesAdj = roundMoney2(vals.sales_adj ?? 0);
+  const purAdj = roundMoney2(vals.purchases_adj ?? 0);
+  const prior = roundMoney2(vals.prior_adjustments ?? 0);
+  const bal = roundMoney2(vals.balance_carried ?? 0);
+  const netVat = roundMoney2(salesVat - purVat);
+  const netPay = roundMoney2(netVat + prior + bal);
+  return normalizeDisclosureDecimals({
+    ...defaultDisclosureData(),
+    standard_sales: { amount: salesAmt, adjustment: salesAdj, vat: salesVat },
+    standard_purchases: { amount: purAmt, adjustment: purAdj, vat: purVat },
+    prior_adjustments: prior,
+    balance_carried: bal,
+    vat_due: salesVat,
+    vat_recoverable: purVat,
+    net_vat: netVat,
+    net_payable_refund: netPay,
+  });
 }
 
 export function periodKeyFromQuarter(year, quarter) {
