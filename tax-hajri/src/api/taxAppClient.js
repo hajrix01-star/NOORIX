@@ -1,16 +1,34 @@
 /**
  * عميل الواجهة الخلفية لتطبيق HAJRI TAX (كيانات، مصادقة، سجلات).
+ * يُعاد بناء العميل عند تغيّر appId/token/appBaseUrl (مثلاً بعد فتح رابط يحمل access_token).
  */
 import { createClient } from 'hajri-sdk';
-import { appParams } from '@/lib/app-params';
+import { getAppParams } from '@/lib/app-params';
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
+let _cachedClient = null;
+let _cacheKey = '';
 
-export const taxAppClient = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  requiresAuth: false,
-  appBaseUrl,
-});
+function getUnderlyingClient() {
+  const { appId, token, functionsVersion, appBaseUrl } = getAppParams();
+  const key = `${appId ?? ''}\0${token ?? ''}\0${appBaseUrl ?? ''}`;
+  if (_cachedClient && key === _cacheKey) return _cachedClient;
+  _cacheKey = key;
+  _cachedClient = createClient({
+    appId,
+    token,
+    functionsVersion,
+    serverUrl: '',
+    requiresAuth: false,
+    appBaseUrl,
+  });
+  return _cachedClient;
+}
+
+export const taxAppClient = new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      return getUnderlyingClient()[prop];
+    },
+  },
+);

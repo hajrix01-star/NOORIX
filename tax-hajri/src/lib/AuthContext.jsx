@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { taxAppClient } from '@/api/taxAppClient';
-import { appParams } from '@/lib/app-params';
+import { getAppParams } from '@/lib/app-params';
 import { createAxiosClient } from 'hajri-sdk/dist/utils/axios-client';
 
 const AuthContext = createContext();
@@ -22,23 +22,28 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
       
-      // First, check app public settings (with token if available)
-      // This will tell us if auth is required, user not registered, etc.
+      // أصل واجهة الإعدادات العامة: إن وُجد app_base_url (من البناء أو من رابط التشغيل) نستخدمه
+      // بدل الاعتماد على /api على نفس النطاق فقط — وإلا يفشل الطلب على hajrix.com إذا لم يُوجَّه /api إلى Hajri.
+      const params = getAppParams();
+      const publicApiRoot = params.appBaseUrl
+        ? `${String(params.appBaseUrl).replace(/\/$/, '')}/api/apps/public`
+        : '/api/apps/public';
+
       const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
+        baseURL: publicApiRoot,
         headers: {
-          'X-App-Id': appParams.appId
+          'X-App-Id': params.appId
         },
-        token: appParams.token, // Include token if available
+        token: params.token, // Include token if available
         interceptResponses: true
       });
       
       try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
+        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${params.appId}`);
         setAppPublicSettings(publicSettings);
         
         // If we got the app public settings successfully, check if user is authenticated
-        if (appParams.token) {
+        if (params.token) {
           await checkUserAuth();
         } else {
           setIsLoadingAuth(false);

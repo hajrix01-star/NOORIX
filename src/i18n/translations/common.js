@@ -25,6 +25,10 @@ export default {
   ownerDashboard: { ar: 'لوحة المالك', en: 'Owner Dashboard' },
   /** رابط تطبيق HAJRI TAX — يظهر للمالك فقط */
   hajriTaxSidebar: { ar: 'HAJRI TAX (الضرائب)', en: 'HAJRI TAX (tax app)' },
+  hajriTaxLaunchFailed: {
+    ar: 'تعذّر جلب رابط الضرائب — يُفتح الرابط العادي (قد يُطلب تسجيل الدخول).',
+    en: 'Could not fetch the tax app link — opening the default URL (login may be required).',
+  },
   ownerDashboardDesc: { ar: 'مؤشرات شاملة لجميع الشركات: المبيعات الشهرية، الأرباح المجمعة، وتوزيع الأرباح.', en: 'Comprehensive indicators for all companies: monthly sales, aggregated profits, and profit distribution.' },
   ownerSelectCompanies: { ar: 'اختر الشركات', en: 'Select companies' },
   ownerAllCompanies: { ar: 'كل الشركات', en: 'All companies' },

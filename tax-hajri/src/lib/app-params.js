@@ -34,7 +34,11 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
   return null;
 };
 
-const getAppParams = () => {
+/**
+ * يقرأ معاملات التطبيق من الرابط ثم localStorage (للتوافق مع روابط التشغيل من نوركس).
+ * يُستدعى عند الحاجة وليس مرة واحدة فقط — مهم عند تمرير access_token في الاستعلام.
+ */
+export function getAppParams() {
   if (getAppParamValue('clear_access_token') === 'true') {
     storage.removeItem('hajri_tax_access_token');
     storage.removeItem('token');
@@ -46,8 +50,7 @@ const getAppParams = () => {
     functionsVersion: getAppParamValue('functions_version', { defaultValue: import.meta.env.VITE_TAX_FUNCTIONS_VERSION }),
     appBaseUrl: getAppParamValue('app_base_url', { defaultValue: import.meta.env.VITE_TAX_APP_BASE_URL }),
   };
-};
+}
 
-export const appParams = {
-  ...getAppParams(),
-};
+/** لقطعة أول تحميل — يُفضّل استخدام getAppParams() داخل التدفقات */
+export const appParams = getAppParams();

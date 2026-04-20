@@ -6,6 +6,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { apiGet } from '../services/api';
+import { useToast } from '../context/ToastContext';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
 import { Button } from '../ui';
@@ -69,6 +70,7 @@ const SIDEBAR_LINKS = [
 
 export default function AppSidebar({ isOpen, onClose, userRole, userPermissions }) {
   const { t, lang } = useTranslation();
+  const { showToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const navLinkClass = ({ isActive }) =>
@@ -124,7 +126,12 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
     setHajriTaxOpening(true);
     try {
       const res = await apiGet('/api/v1/owner/hajri-tax/launch-url');
-      const url = res?.success && res.data?.url ? res.data.url : hajriTaxFallbackHref;
+      if (!res?.success) {
+        showToast(res?.error || t('hajriTaxLaunchFailed'), 'error');
+        window.open(hajriTaxFallbackHref, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      const url = res.data?.url || hajriTaxFallbackHref;
       window.open(url, '_blank', 'noopener,noreferrer');
     } finally {
       setHajriTaxOpening(false);
