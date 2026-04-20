@@ -8,7 +8,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
-import { fmt } from '../../utils/format';
+import { fmtTax } from '../../utils/format';
 import { Button, Input, FmtNum } from '../../ui';
 import { TAX_REPORT_STORAGE_PREFIX } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
@@ -100,12 +100,12 @@ export default function TaxReportTab() {
     const outRows = OUTPUT_ROWS.map((r) => {
       const amt = r.isTotal ? outputTotal : getRowValue(data, r.key, 'amount');
       const vat = r.isTotal ? outputTotal : getRowValue(data, r.key, 'vat');
-      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmt(amt)}</td><td>${r.isTotal ? '—' : fmt(getRowValue(data, r.key, 'adjustment'))}</td><td>${fmt(vat)}</td></tr>`;
+      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtTax(amt)}</td><td>${r.isTotal ? '—' : fmtTax(getRowValue(data, r.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
     }).join('');
     const inRows = INPUT_ROWS.map((r) => {
       const amt = r.isTotal ? inputTotal : getRowValue(data, r.key, 'amount');
       const vat = r.isTotal ? inputTotal : getRowValue(data, r.key, 'vat');
-      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmt(amt)}</td><td>${r.isTotal ? '—' : fmt(getRowValue(data, r.key, 'adjustment'))}</td><td>${fmt(vat)}</td></tr>`;
+      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtTax(amt)}</td><td>${r.isTotal ? '—' : fmtTax(getRowValue(data, r.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
     }).join('');
     const vatTitle = lang === 'ar' ? 'نموذج الإفصاح الضريبي — ضريبة القيمة المضافة' : 'VAT Tax Disclosure Form';
     openPrintWindow({
@@ -116,12 +116,12 @@ export default function TaxReportTab() {
 <tbody><tr><td colspan="4" style="background:#f0fdf4;font-weight:700">${lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)'}</td></tr>${outRows}
 <tr><td colspan="4" style="background:#fef2f2;font-weight:700">${lang === 'ar' ? 'ضريبة المشتريات والمصروفات (ما سُجّلت ضريبته فقط)' : 'Purchases & expenses VAT (tax lines only)'}</td></tr>${inRows}
 <tr><td colspan="4" style="background:#eff6ff;font-weight:700">${lang === 'ar' ? 'الملخص' : 'Summary'}</td></tr>
-<tr><td>${lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td><td colspan="3">${fmt(outputTotal)} SR</td></tr>
-<tr><td>${lang === 'ar' ? 'إجمالي ضريبة المشتريات والمصروفات (مسجّلة فقط)' : 'Total VAT on purchases & expenses (recorded only)'}</td><td colspan="3">${fmt(inputTotal)} SR</td></tr>
-<tr><td>${lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td><td colspan="3">${fmt(netVat)} SR</td></tr>
-<tr><td>${lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td><td colspan="3">${fmt(priorAdj)}</td></tr>
-<tr><td>${lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td><td colspan="3">${fmt(balanceCarried)}</td></tr>
-<tr style="background:#dbeafe;font-weight:800"><td>${lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td><td colspan="3">${fmt(netPayable)} SR</td></tr>
+<tr><td>${lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td><td colspan="3">${fmtTax(outputTotal)} SR</td></tr>
+<tr><td>${lang === 'ar' ? 'إجمالي ضريبة المشتريات والمصروفات (مسجّلة فقط)' : 'Total VAT on purchases & expenses (recorded only)'}</td><td colspan="3">${fmtTax(inputTotal)} SR</td></tr>
+<tr><td>${lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td><td colspan="3">${fmtTax(netVat)} SR</td></tr>
+<tr><td>${lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td><td colspan="3">${fmtTax(priorAdj)}</td></tr>
+<tr><td>${lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td><td colspan="3">${fmtTax(balanceCarried)}</td></tr>
+<tr style="background:#dbeafe;font-weight:800"><td>${lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td><td colspan="3">${fmtTax(netPayable)} SR</td></tr>
 </tbody></table>`,
     });
   };
@@ -249,13 +249,13 @@ export default function TaxReportTab() {
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
                     <td className="text-center border-b border-noorix-border py-2 px-3">
-                      {r.isTotal ? fmt(outputTotal) : renderEditableCell(r.key, 'amount')}
+                      {r.isTotal ? fmtTax(outputTotal) : renderEditableCell(r.key, 'amount')}
                     </td>
                     <td className="text-center border-b border-noorix-border py-2 px-3">
                       {r.isTotal ? '—' : renderEditableCell(r.key, 'adjustment')}
                     </td>
                     <td className="text-center border-b border-noorix-border nx-font-numbers py-2 px-3">
-                      {r.isTotal ? fmt(outputTotal) : renderEditableCell(r.key, 'vat')}
+                      {r.isTotal ? fmtTax(outputTotal) : renderEditableCell(r.key, 'vat')}
                     </td>
                   </tr>
                 ))}
@@ -270,13 +270,13 @@ export default function TaxReportTab() {
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
                     <td className="text-center border-b border-noorix-border py-2 px-3">
-                      {r.isTotal ? fmt(inputTotal) : renderEditableCell(r.key, 'amount')}
+                      {r.isTotal ? fmtTax(inputTotal) : renderEditableCell(r.key, 'amount')}
                     </td>
                     <td className="text-center border-b border-noorix-border py-2 px-3">
                       {r.isTotal ? '—' : renderEditableCell(r.key, 'adjustment')}
                     </td>
                     <td className="text-center border-b border-noorix-border nx-font-numbers py-2 px-3">
-                      {r.isTotal ? fmt(inputTotal) : renderEditableCell(r.key, 'vat')}
+                      {r.isTotal ? fmtTax(inputTotal) : renderEditableCell(r.key, 'vat')}
                     </td>
                   </tr>
                 ))}
@@ -287,15 +287,15 @@ export default function TaxReportTab() {
                 </tr>
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3"><FmtNum n={outputTotal} /> <span className="nx-sar">SR</span></td>
+                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3"><FmtNum n={outputTotal} tax /> <span className="nx-sar">SR</span></td>
                 </tr>
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'إجمالي ضريبة المشتريات والمصروفات (مسجّلة فقط)' : 'Total VAT on purchases & expenses (recorded only)'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3"><FmtNum n={inputTotal} /> <span className="nx-sar">SR</span></td>
+                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3"><FmtNum n={inputTotal} tax /> <span className="nx-sar">SR</span></td>
                 </tr>
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td>
-                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers font-bold py-[10px] px-3"><FmtNum n={netVat} /> <span className="nx-sar">SR</span></td>
+                  <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers font-bold py-[10px] px-3"><FmtNum n={netVat} tax /> <span className="nx-sar">SR</span></td>
                 </tr>
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td>
@@ -312,7 +312,7 @@ export default function TaxReportTab() {
                 <tr className="bg-[var(--noorix-blue-8)] border-t-2 border-noorix-blue">
                   <td className="font-extrabold p-3">{lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td>
                   <td colSpan={3} className="text-end nx-font-numbers font-extrabold p-3" style={{ color: netPayable >= 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-accent-green)' }}>
-                    <FmtNum n={netPayable} /> <span className="nx-sar">SR</span> {netPayable >= 0 ? (lang === 'ar' ? '(مستحقة)' : '(payable)') : (lang === 'ar' ? '(مطالب بها)' : '(refundable)')}
+                    <FmtNum n={netPayable} tax /> <span className="nx-sar">SR</span> {netPayable >= 0 ? (lang === 'ar' ? '(مستحقة)' : '(payable)') : (lang === 'ar' ? '(مطالب بها)' : '(refundable)')}
                   </td>
                 </tr>
               </tbody>

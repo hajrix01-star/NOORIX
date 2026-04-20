@@ -1,5 +1,5 @@
 import React from 'react';
-import { fmt } from '../utils/format';
+import { fmt, fmtTax } from '../utils/format';
 
 /**
  * FmtNum — يعرض الجزء الصحيح بالخط العادي
@@ -9,9 +9,10 @@ import { fmt } from '../utils/format';
  * <FmtNum n={1234.5} />          → "1,234" + ".5" (خافت صغير)
  * <FmtNum n={5000} />            → "5,000" (بدون كسر)
  * <FmtNum n={v} className="nx-cell-num" />
+ * <FmtNum n={v} tax />  — خانتان عشريتان (الضريبة)
  */
-export function FmtNum({ n, maxDecimals = 1, className }) {
-  const str = fmt(n, maxDecimals);
+export function FmtNum({ n, maxDecimals = 1, tax = false, className }) {
+  const str = tax ? fmtTax(n) : fmt(n, maxDecimals);
   const dotIdx = str.indexOf('.');
 
   if (dotIdx === -1) {

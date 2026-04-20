@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { OUTPUT_ROWS, INPUT_ROWS } from '../../constants/taxDisclosure';
-import { fmt } from '../../utils/format';
+import { fmtTax } from '../../utils/format';
 import { Button, Input, FmtNum } from '../../ui';
 
 export default function HajriTaxDetailEditor({
@@ -59,7 +59,7 @@ export default function HajriTaxDetailEditor({
             <div className="flex flex-wrap items-baseline gap-2 sm:gap-6">
               <span className="text-[11px] text-noorix-muted">{t(totalVatLabelKey)}</span>
               <span className="nx-font-numbers text-[16px] font-bold">
-                {fmt(sectionTotal)} <span className="nx-sar text-[13px]">SR</span>
+                {fmtTax(sectionTotal)} <span className="nx-sar text-[13px]">SR</span>
               </span>
             </div>
           </div>
@@ -211,13 +211,13 @@ export default function HajriTaxDetailEditor({
               <div className="rounded-xl border border-noorix-blue/25 bg-[var(--noorix-blue-6)] px-4 py-3">
                 <div className="text-[12px] text-noorix-muted">{t('vatTotalOutputVat')}</div>
                 <div className="nx-font-numbers text-[18px] font-bold text-noorix-blue">
-                  {fmt(outputTotal)} <span className="nx-sar text-[13px]">SR</span>
+                  {fmtTax(outputTotal)} <span className="nx-sar text-[13px]">SR</span>
                 </div>
               </div>
               <div className="rounded-xl border border-noorix-green/25 bg-[var(--noorix-green-6)] px-4 py-3">
                 <div className="text-[12px] text-noorix-muted">{t('vatTotalInputVat')}</div>
                 <div className="nx-font-numbers text-[18px] font-bold text-noorix-green">
-                  {fmt(inputTotal)} <span className="nx-sar text-[13px]">SR</span>
+                  {fmtTax(inputTotal)} <span className="nx-sar text-[13px]">SR</span>
                 </div>
               </div>
               <div
@@ -271,14 +271,14 @@ export default function HajriTaxDetailEditor({
                     {simulatorRequiredInputVat != null ? (
                       <p className="m-0">
                         {t('vatSimulatorExplainInputVat', {
-                          inputVat: fmt(simulatorRequiredInputVat),
-                          target: fmt(paymentTargetParsed),
+                          inputVat: fmtTax(simulatorRequiredInputVat),
+                          target: fmtTax(paymentTargetParsed),
                         })}
                       </p>
                     ) : null}
                     {simulatorEstimatedBaseAt15 != null ? (
                       <p className="m-0">
-                        {t('vatSimulatorExplainBase', { base: fmt(simulatorEstimatedBaseAt15) })}
+                        {t('vatSimulatorExplainBase', { base: fmtTax(simulatorEstimatedBaseAt15) })}
                       </p>
                     ) : null}
                   </div>

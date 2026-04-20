@@ -8,7 +8,7 @@ import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getVatPlanningList, throwIfApiFailed } from '../../services/api';
 import { defaultDisclosureData, computeNetPayable } from '../../constants/taxDisclosure';
-import { fmt } from '../../utils/format';
+import { fmtTax } from '../../utils/format';
 import { Button } from '../../ui';
 
 const QUARTER_LABEL_AR = {
@@ -171,7 +171,7 @@ export default function HajriTaxQuarterOverview() {
                     <div
                       className={`text-[18px] font-bold nx-font-numbers ${net >= 0 ? 'text-[var(--noorix-accent-red)]' : 'text-[var(--noorix-accent-green)]'}`}
                     >
-                      {fmt(net)} <span className="nx-sar text-[13px]">SR</span>
+                      {fmtTax(net)} <span className="nx-sar text-[13px]">SR</span>
                     </div>
                   </div>
 

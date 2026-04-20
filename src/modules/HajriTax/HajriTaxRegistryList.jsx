@@ -3,7 +3,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Button, Input } from '../../ui';
-import { fmt } from '../../utils/format';
+import { fmtTax } from '../../utils/format';
 import { computeNetPayable, defaultDisclosureData } from '../../constants/taxDisclosure';
 
 export default function HajriTaxRegistryList({
@@ -148,9 +148,9 @@ export default function HajriTaxRegistryList({
                       </td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers">{row.year}</td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end font-medium">Q{row.quarter}</td>
-                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers">{fmt(net)}</td>
+                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers">{fmtTax(net)}</td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers">
-                        {Number.isFinite(pt) ? fmt(pt) : '—'}
+                        {Number.isFinite(pt) ? fmtTax(pt) : '—'}
                       </td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end text-[12px] text-noorix-muted">
                         {updated}

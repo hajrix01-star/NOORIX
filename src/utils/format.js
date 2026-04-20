@@ -25,6 +25,18 @@ export function fmt(n, maxDecimals = 1) {
 }
 
 /**
+ * تنسيق مبالغ الضريبة في واجهات الإفصاح (Hajri + تقرير الضريبة) — خانتان عشريتان دائمًا.
+ */
+export function fmtTax(n) {
+  const raw = n instanceof Decimal ? n.toNumber() : Number(n ?? 0);
+  const num = Number.isFinite(raw) ? raw : 0;
+  return num.toLocaleString('en', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/**
  * حساب الضريبة العكسية للتنسيق والعرض.
  */
 export function calcReverseVat(totalInclusive, isTaxable) {
