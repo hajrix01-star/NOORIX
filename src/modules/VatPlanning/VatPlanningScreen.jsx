@@ -71,6 +71,11 @@ export default function VatPlanningScreen() {
     return base.filter((c) => c.id === companyFilter);
   }, [companies, companyFilter]);
 
+  const resolveRecord = useCallback(
+    (companyId) => recordByCompany.get(companyId),
+    [recordByCompany],
+  );
+
   /** صفوف الجدول: كل الشركات المفلترة — حتى بدون سجل محفوظ (ربع بدون مبيعات) */
   const overviewRows = useMemo(() => {
     return filteredCompanies.map((c) => {
@@ -90,11 +95,6 @@ export default function VatPlanningScreen() {
       };
     });
   }, [filteredCompanies, resolveRecord]);
-
-  const resolveRecord = useCallback(
-    (companyId) => recordByCompany.get(companyId),
-    [recordByCompany],
-  );
 
   const openCompanyDetail = useCallback(
     (companyId) => {
