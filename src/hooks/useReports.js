@@ -58,11 +58,13 @@ export function usePeriodAnalytics({ companyId, startDate, endDate, enabled = tr
   });
 }
 
-export function useTaxReport({ companyId, year, period, enabled = true }) {
+export function useTaxReport({ companyId, year, period, salesAmountIncludesVat = false, enabled = true }) {
   return useQuery({
-    queryKey: ['reports', 'tax-vat', companyId, year, period],
+    queryKey: ['reports', 'tax-vat', companyId, year, period, salesAmountIncludesVat],
     queryFn: async () => {
-      const res = await getTaxVatReport(companyId, year, period);
+      const res = await getTaxVatReport(companyId, year, period, {
+        salesAmountIncludesVat,
+      });
       throwIfApiFailed(res, 'فشل تحميل التقرير الضريبي');
       return res.data;
     },

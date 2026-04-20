@@ -1372,7 +1372,12 @@ export class ReportsService {
   /**
    * تقرير الضرائب — تجميع مخرجات ومدخلات ضريبة القيمة المضافة من الفواتير
    */
-  async getTaxVatReport(companyId: string, year: number, period: string) {
+  async getTaxVatReport(
+    companyId: string,
+    year: number,
+    period: string,
+    salesAmountIncludesVat = false,
+  ) {
     let startMonth: number;
     let endMonth: number;
     if (period.startsWith('Q')) {
@@ -1408,8 +1413,9 @@ export class ReportsService {
     const standard_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
     const exempt_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
 
-    /** عند غياب ضريبة مسجّلة: الأساس = مجموع صافي المبيعات؛ الضريبة = الأساس × 15٪ (تبسيط واضح) */
+    /** بدون ضريبة مسجّلة: إما الأساس × 15٪ أو إجمالٍ شامل ← يُقسَّم على 1.15 */
     const VAT_STANDARD_RATE = new Decimal('0.15');
+    const VAT_INCLUSIVE_DIVISOR = new Decimal('1').plus(VAT_STANDARD_RATE);
 
     for (const row of vatRows) {
       const net = this.dec(row.net_sum);
@@ -1419,10 +1425,18 @@ export class ReportsService {
           standard_sales.amount = standard_sales.amount.plus(net);
           standard_sales.vat = standard_sales.vat.plus(tax);
         } else if (net.gt(0)) {
-          const baseExcl = net;
-          const vatImputed = baseExcl.mul(VAT_STANDARD_RATE);
-          standard_sales.amount = standard_sales.amount.plus(baseExcl);
-          standard_sales.vat = standard_sales.vat.plus(vatImputed);
+          if (salesAmountIncludesVat) {
+            const grossInclusive = net;
+            const baseExcl = grossInclusive.div(VAT_INCLUSIVE_DIVISOR);
+            const vatImputed = grossInclusive.minus(baseExcl);
+            standard_sales.amount = standard_sales.amount.plus(baseExcl);
+            standard_sales.vat = standard_sales.vat.plus(vatImputed);
+          } else {
+            const baseExcl = net;
+            const vatImputed = baseExcl.mul(VAT_STANDARD_RATE);
+            standard_sales.amount = standard_sales.amount.plus(baseExcl);
+            standard_sales.vat = standard_sales.vat.plus(vatImputed);
+          }
         }
       } else {
         if (row.has_tax) { standard_purchases.amount = standard_purchases.amount.plus(net); standard_purchases.vat = standard_purchases.vat.plus(tax); }

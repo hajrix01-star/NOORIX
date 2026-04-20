@@ -48,6 +48,7 @@ export default function TaxReportTab() {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [period, setPeriod] = useState('Q1'); // Q1, Q2, Q3, Q4, M1..M12
+  const [salesAmountIncludesVat, setSalesAmountIncludesVat] = useState(false);
   const periodKey = `${year}-${period}`;
   const [data, setData] = useState(() => loadStoredData(activeCompanyId || '', periodKey));
 
@@ -55,6 +56,7 @@ export default function TaxReportTab() {
     companyId: activeCompanyId,
     year,
     period,
+    salesAmountIncludesVat,
     enabled: !!activeCompanyId,
   });
 
@@ -177,7 +179,19 @@ export default function TaxReportTab() {
             {lang === 'ar' ? 'مطابق لنموذج مصلحة الزكاة والضريبة والجمارك. جميع الحقول قابلة للتعديل.' : 'Matches ZATCA tax disclosure form. All fields are editable.'}
           </p>
         </div>
-        <div className="nx-toolbar">
+        <div className="nx-toolbar flex-wrap">
+          <label className="flex max-w-[min(100%,22rem)] cursor-pointer items-start gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-blue-6)] px-3 py-2 text-[11px] leading-snug text-noorix-text">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
+              checked={salesAmountIncludesVat}
+              onChange={(e) => setSalesAmountIncludesVat(e.target.checked)}
+            />
+            <span>
+              <span className="font-semibold">{t('taxImportSalesInclusiveLabel')}</span>
+              <span className="block text-noorix-muted mt-0.5">{t('taxImportSalesInclusiveHint')}</span>
+            </span>
+          </label>
           <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {[currentYear, currentYear - 1, currentYear - 2].map((y) => <option key={y} value={y}>{y}</option>)}
           </Input>

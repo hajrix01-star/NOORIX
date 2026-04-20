@@ -49,7 +49,12 @@ export class ReportsController {
   @Get('tax-vat')
   @RequirePermission('REPORTS_READ')
   async getTaxVat(@Query() query: GetTaxVatQueryDto) {
-    return this.reportsService.getTaxVatReport(query.companyId, query.year, query.period);
+    return this.reportsService.getTaxVatReport(
+      query.companyId,
+      query.year,
+      query.period,
+      query.salesAmountIncludesVat === true,
+    );
   }
 
   @Get('period-analytics')

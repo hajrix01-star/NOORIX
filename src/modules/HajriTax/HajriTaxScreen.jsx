@@ -58,6 +58,8 @@ export default function HajriTaxScreen() {
   const [saveHint, setSaveHint] = useState('');
   const [showSimulator, setShowSimulator] = useState(true);
   const [importingReport, setImportingReport] = useState(false);
+  /** استيراد مبيعات بدون ضريبة مسجّلة: إذا كان صافي الفاتورة إجماليًا شاملاً 15% وليس أساسًا خاضعًا */
+  const [salesAmountIncludesVat, setSalesAmountIncludesVat] = useState(false);
 
   const periodStr = `Q${quarter}`;
   const periodLabel = `${year}-${periodStr}`;
@@ -198,7 +200,9 @@ export default function HajriTaxScreen() {
     if (!detailCompanyId) return;
     setImportingReport(true);
     try {
-      const res = await getTaxVatReport(detailCompanyId, year, periodStr);
+      const res = await getTaxVatReport(detailCompanyId, year, periodStr, {
+        salesAmountIncludesVat,
+      });
       throwIfApiFailed(res, 'فشل استيراد تقرير الضريبة');
       const imported = res.data;
       setDraftData((prev) => mergeImportedDisclosure(prev, imported));
@@ -207,7 +211,7 @@ export default function HajriTaxScreen() {
     } finally {
       setImportingReport(false);
     }
-  }, [detailCompanyId, year, periodStr]);
+  }, [detailCompanyId, year, periodStr, salesAmountIncludesVat]);
 
   const handleBalancePayment = useCallback(() => {
     const target = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
@@ -406,6 +410,8 @@ export default function HajriTaxScreen() {
         paymentTargetParsed={paymentTargetParsed}
         renderEditableCell={renderEditableCell}
         updateRow={updateRow}
+        salesAmountIncludesVat={salesAmountIncludesVat}
+        setSalesAmountIncludesVat={setSalesAmountIncludesVat}
       />
     );
   }

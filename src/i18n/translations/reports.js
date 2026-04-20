@@ -507,4 +507,13 @@ export default {
     en: 'Planning-only disclosure isolated from accounting; verify before official filing.',
   },
   vatSaveDeclaration: { ar: 'حفظ الإقرار', en: 'Save declaration' },
+  /** استيراد المبيعات عندما tax_amount = 0 في الفاتورة */
+  taxImportSalesInclusiveLabel: {
+    ar: 'مبالغ المبيعات (بدون ضريبة مسجّلة في الفاتورة) هي إجمالٍ شامل 15%',
+    en: 'Sales totals without invoice VAT lines are VAT-inclusive (15%)',
+  },
+  taxImportSalesInclusiveHint: {
+    ar: 'عطّلها إذا كان الصافي خاضعًا قبل الضريبة؛ يُحسب حينها الضريبة = الأساس × 15%.',
+    en: 'Turn off if net amounts are tax-exclusive; VAT will be base × 15%.',
+  },
 };

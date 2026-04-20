@@ -39,6 +39,8 @@ export default function HajriTaxDetailEditor({
   paymentTargetParsed,
   renderEditableCell,
   updateRow,
+  salesAmountIncludesVat,
+  setSalesAmountIncludesVat,
 }) {
   const dueNet = netPayableDraft >= 0;
 
@@ -84,7 +86,20 @@ export default function HajriTaxDetailEditor({
             {t('vatDeclarationPeriodLabel', { period: periodLabel })}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
+          <label className="flex max-w-xl cursor-pointer items-start gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-blue-6)] px-3 py-2 text-[12px] leading-snug text-noorix-text">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
+              checked={salesAmountIncludesVat}
+              onChange={(e) => setSalesAmountIncludesVat(e.target.checked)}
+            />
+            <span>
+              <span className="font-semibold">{t('taxImportSalesInclusiveLabel')}</span>
+              <span className="block text-[11px] text-noorix-muted mt-0.5">{t('taxImportSalesInclusiveHint')}</span>
+            </span>
+          </label>
+          <div className="flex flex-wrap gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={closeDetail}>
             {t('vatBackToList')}
           </Button>
@@ -106,6 +121,7 @@ export default function HajriTaxDetailEditor({
           <Button type="button" variant="ghost" size="sm" onClick={exportDetailExcel}>
             {t('exportExcel')}
           </Button>
+          </div>
         </div>
       </div>
 

@@ -836,8 +836,11 @@ export async function getGeneralProfitLossTrend(companyId, year, groupKey, itemK
   return apiGet('/api/v1/reports/general-profit-loss/trend', params);
 }
 
-export async function getTaxVatReport(companyId, year, period) {
-  return apiGet('/api/v1/reports/tax-vat', { companyId, year: String(year), period });
+/** @param {{ salesAmountIncludesVat?: boolean }} [opts] — عند true: المبيعات بدون ضريبة مسجّلة تُفسَّر كإجمالٍ شامل 15% */
+export async function getTaxVatReport(companyId, year, period, opts = {}) {
+  const params = { companyId, year: String(year), period };
+  if (opts.salesAmountIncludesVat === true) params.salesAmountIncludesVat = 'true';
+  return apiGet('/api/v1/reports/tax-vat', params);
 }
 
 /** سجل الضريبة التخطيطي (معزول عن المحاسبة) — REPORTS_READ */

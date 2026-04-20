@@ -1,5 +1,5 @@
-import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsString, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 const PERIODS = ['Q1', 'Q2', 'Q3', 'Q4', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'] as const;
 
@@ -15,4 +15,10 @@ export class GetTaxVatQueryDto {
 
   @IsIn(PERIODS)
   period: (typeof PERIODS)[number];
+
+  /** عند تفعيله: مبالغ المبيعات بدون ضريبة مسجّلة تُفسَّر كإجمالٍ شامٍ 15% (يُستخرج الأساس والضريبة). وإلا: الأساس × 15% */
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === '1')
+  @IsBoolean()
+  salesAmountIncludesVat?: boolean;
 }
