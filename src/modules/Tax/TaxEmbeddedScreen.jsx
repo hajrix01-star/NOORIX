@@ -7,12 +7,9 @@ import { useToast } from '../../context/ToastContext';
 import { Button } from '../../ui';
 import {
   buildHajriTaxEmbeddedUrl,
+  getHajriTaxAppPublicBase,
   resolveTaxHajriSegment,
 } from './taxEmbeddedUrl';
-
-const HAJRI_TAX_FALLBACK = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_HAJRI_TAX_URL)
-  ? String(import.meta.env.VITE_HAJRI_TAX_URL).replace(/\/$/, '')
-  : 'https://hajrix.com/tax';
 
 /** يجب ألا يكون ‎/tax‎ — يتعارض مع تطبيق الضرائب المستضاف على ‎/tax/‎ */
 const ALLOWED_TAX_PATHS = new Set(['/hajri-tax', '/hajri-tax/form', '/hajri-tax/reports']);
@@ -29,20 +26,21 @@ export default function TaxEmbeddedScreen() {
       const res = await apiGet('/api/v1/owner/hajri-tax/launch-url');
       if (!res?.success) {
         showToast(res?.error || t('hajriTaxLaunchFailed'), 'error');
-        return { url: `${HAJRI_TAX_FALLBACK}/` };
+        return { url: `${getHajriTaxAppPublicBase()}/` };
       }
-      return { url: res.data?.url || `${HAJRI_TAX_FALLBACK}/` };
+      return { url: res.data?.url || `${getHajriTaxAppPublicBase()}/` };
     },
     staleTime: 2 * 60 * 1000,
     retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   const iframeSrc = useMemo(() => {
-    const base = data?.url || `${HAJRI_TAX_FALLBACK}/`;
-    return buildHajriTaxEmbeddedUrl(base, segment);
+    const launch = data?.url || `${getHajriTaxAppPublicBase()}/`;
+    return buildHajriTaxEmbeddedUrl(launch, segment);
   }, [data?.url, segment]);
 
-  /** يمنع حلقة التضمين: لا نحمّل واجهة نوركس (/hajri-tax) داخل الـ iframe */
+  /** لا نحمّل مسار واجهة نووريكس (/hajri-tax) داخل الـ iframe */
   const iframeBlockedSameApp = useMemo(() => {
     if (typeof window === 'undefined' || !iframeSrc) return false;
     try {

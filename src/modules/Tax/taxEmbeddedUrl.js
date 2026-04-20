@@ -27,11 +27,27 @@ export function resolveTaxHajriSegment(pathname) {
 }
 
 /**
- * يبني عنوان iframe مع الحفاظ على استعلام التشغيل (app_id، access_token، …).
+ * أصل تطبيق الضرائب المنشور (مسار ‎/tax/‎ على الخادم) — يُبنى منه الـ iframe دائماً.
+ * لا نستخدم pathname من رابط التشغيل لأن الخادم قد يعيد خطأً مثل ‎…/hajri-tax/‎ inُحمَّل نوريكس داخل الـ iframe.
+ */
+export function getHajriTaxAppPublicBase() {
+  const raw = typeof import.meta !== 'undefined' && import.meta.env?.VITE_HAJRI_TAX_URL;
+  return (raw ? String(raw) : 'https://hajrix.com/tax').replace(/\/$/, '');
+}
+
+/**
+ * يبني عنوان iframe: المسار دائماً تحت ‎getHajriTaxAppBase()/segment‎ (مثل ‎/tax/Companies‎)،
+ * ويُنسَخ فقط استعلام رابط التشغيل (app_id، access_token، app_base_url، …).
  */
 export function buildHajriTaxEmbeddedUrl(launchUrl, segment) {
-  const u = new URL(launchUrl);
-  const base = u.pathname.replace(/\/$/, '');
-  u.pathname = `${base}/${segment}`;
-  return u.toString();
+  const out = new URL(`${getHajriTaxAppPublicBase()}/${segment}`);
+  try {
+    const src = new URL(launchUrl);
+    src.searchParams.forEach((value, key) => {
+      out.searchParams.set(key, value);
+    });
+  } catch {
+    /* إن فشل التحليل نُرجع العنوان بدون استعلام */
+  }
+  return out.toString();
 }
