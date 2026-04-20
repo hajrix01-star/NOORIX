@@ -24,9 +24,9 @@ const routeLoaders = {
   '/reports/bank-statement': () => import('../modules/Reports/BankStatementAnalysisScreen'),
   '/settings': () => import('../modules/Settings/SettingsScreen'),
   '/theme-preview': () => import('../modules/ThemePreviewScreen'),
-  '/hajri-tax': () => import('../modules/Tax/TaxEmbeddedScreen'),
-  '/hajri-tax/form': () => import('../modules/Tax/TaxEmbeddedScreen'),
-  '/hajri-tax/reports': () => import('../modules/Tax/TaxEmbeddedScreen'),
+  '/hajri-tax': () => import('../modules/Tax/TaxHubLayout'),
+  '/hajri-tax/form': () => import('../modules/Tax/TaxHubLayout'),
+  '/hajri-tax/reports': () => import('../modules/Tax/TaxHubLayout'),
 };
 
 /** يمنع استدعاءات متكررة لنفس المسار أثناء التحميل */

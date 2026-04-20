@@ -84,7 +84,7 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
     if (isReportsExpanded) setReportsOpen(true);
   }, [isReportsExpanded]);
 
-  const isTaxExpanded = location.pathname.startsWith('/tax');
+  const isTaxExpanded = location.pathname.startsWith('/hajri-tax');
   const [taxOpen, setTaxOpen] = useState(isTaxExpanded);
   useEffect(() => {
     if (isTaxExpanded) setTaxOpen(true);

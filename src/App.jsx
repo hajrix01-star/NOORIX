@@ -36,7 +36,9 @@ const AssetsRegisterScreen = React.lazy(() => import('./modules/Assets/AssetsReg
 const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
 const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvoicesScreen'));
-const TaxEmbeddedScreen = React.lazy(() => import('./modules/Tax/TaxEmbeddedScreen'));
+const TaxHubLayout = React.lazy(() => import('./modules/Tax/TaxHubLayout'));
+const TaxHubHomeScreen = React.lazy(() => import('./modules/Tax/TaxHubHomeScreen'));
+const TaxCompanyDetailScreen = React.lazy(() => import('./modules/Tax/TaxCompanyDetailScreen'));
 
 function getInitialLanguage() {
   if (typeof window === 'undefined') return 'ar';
@@ -371,7 +373,12 @@ export default function App() {
                 <Route path="/tax" element={<Navigate to="/hajri-tax" replace />} />
                 <Route path="/tax/form" element={<Navigate to="/hajri-tax/form" replace />} />
                 <Route path="/tax/reports" element={<Navigate to="/hajri-tax/reports" replace />} />
-                <Route path="/hajri-tax/*" element={<TaxEmbeddedScreen />} />
+                <Route path="/hajri-tax" element={<TaxHubLayout />}>
+                  <Route index element={<TaxHubHomeScreen />} />
+                  <Route path="company/:companyId" element={<TaxCompanyDetailScreen />} />
+                  <Route path="form" element={<Navigate to="/reports/tax" replace />} />
+                  <Route path="reports" element={<Navigate to="/reports/tax" replace />} />
+                </Route>
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />
               </Routes>
