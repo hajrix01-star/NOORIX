@@ -1403,16 +1403,29 @@ export class ReportsService {
     `;
 
     const standard_sales = { amount: new Decimal(0), vat: new Decimal(0) };
+    /** لم يعد يُجمّع من المبيعات — كل المبيعات غير المعفاة منطقيًا هنا تذهب للمبيعات الخاضعة */
     const exempt_sales = { amount: new Decimal(0), vat: new Decimal(0) };
     const standard_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
     const exempt_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
+
+    /** عند غياب ضريبة مسجّلة في الفاتورة: اعتبار مجموع net_amount للمبيعات إجماليًا شاملاً 15٪ واستخراج الأساس والضريبة */
+    const VAT_STANDARD_RATE = new Decimal('0.15');
+    const VAT_INCLUSIVE_DIVISOR = new Decimal('1').plus(VAT_STANDARD_RATE);
 
     for (const row of vatRows) {
       const net = this.dec(row.net_sum);
       const tax = this.dec(row.tax_sum);
       if (row.kind === 'sale') {
-        if (row.has_tax) { standard_sales.amount = standard_sales.amount.plus(net); standard_sales.vat = standard_sales.vat.plus(tax); }
-        else if (net.gt(0)) { exempt_sales.amount = exempt_sales.amount.plus(net); }
+        if (row.has_tax) {
+          standard_sales.amount = standard_sales.amount.plus(net);
+          standard_sales.vat = standard_sales.vat.plus(tax);
+        } else if (net.gt(0)) {
+          const grossInclusive = net;
+          const baseExcl = grossInclusive.div(VAT_INCLUSIVE_DIVISOR);
+          const vatImputed = grossInclusive.minus(baseExcl);
+          standard_sales.amount = standard_sales.amount.plus(baseExcl);
+          standard_sales.vat = standard_sales.vat.plus(vatImputed);
+        }
       } else {
         if (row.has_tax) { standard_purchases.amount = standard_purchases.amount.plus(net); standard_purchases.vat = standard_purchases.vat.plus(tax); }
         else if (net.gt(0)) { exempt_purchases.amount = exempt_purchases.amount.plus(net); }
