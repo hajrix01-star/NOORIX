@@ -29,6 +29,16 @@ export default {
     ar: 'تعذّر جلب رابط الضرائب — يُفتح الرابط العادي (قد يُطلب تسجيل الدخول).',
     en: 'Could not fetch the tax app link — opening the default URL (login may be required).',
   },
+  /** تضمين HAJRI TAX داخل نوركس */
+  hajriTaxEmbedTitle: { ar: 'الضرائب (HAJRI TAX)', en: 'Tax (HAJRI TAX)' },
+  hajriTaxEmbedHint: {
+    ar: 'تطبيق الضرائب يُعرض هنا ضمن نووريكس. يمكنك فتحه في تبويب جديد أو تحديث الجلسة عند الحاجة.',
+    en: 'The tax app is embedded here inside Noorix. Open in a new tab or refresh the session if needed.',
+  },
+  hajriTaxOpenInNewTab: { ar: 'فتح في تبويب جديد', en: 'Open in new tab' },
+  taxNavCompanies: { ar: 'الشركات', en: 'Companies' },
+  taxNavForms: { ar: 'النماذج والإقرارات', en: 'Forms & filings' },
+  taxNavReports: { ar: 'تقارير الضريبة', en: 'Tax reports' },
   ownerDashboardDesc: { ar: 'مؤشرات شاملة لجميع الشركات: المبيعات الشهرية، الأرباح المجمعة، وتوزيع الأرباح.', en: 'Comprehensive indicators for all companies: monthly sales, aggregated profits, and profit distribution.' },
   ownerSelectCompanies: { ar: 'اختر الشركات', en: 'Select companies' },
   ownerAllCompanies: { ar: 'كل الشركات', en: 'All companies' },

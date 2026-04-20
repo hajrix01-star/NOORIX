@@ -36,6 +36,7 @@ const AssetsRegisterScreen = React.lazy(() => import('./modules/Assets/AssetsReg
 const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
 const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvoicesScreen'));
+const TaxEmbeddedScreen = React.lazy(() => import('./modules/Tax/TaxEmbeddedScreen'));
 
 function getInitialLanguage() {
   if (typeof window === 'undefined') return 'ar';
@@ -367,6 +368,7 @@ export default function App() {
                 </Route>
                 <Route path="/settings" element={<SettingsScreen />} />
                 <Route path="/ocr" element={<OcrInvoicesScreen />} />
+                <Route path="/tax/*" element={<TaxEmbeddedScreen />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />
               </Routes>

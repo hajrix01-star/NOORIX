@@ -24,6 +24,9 @@ const routeLoaders = {
   '/reports/bank-statement': () => import('../modules/Reports/BankStatementAnalysisScreen'),
   '/settings': () => import('../modules/Settings/SettingsScreen'),
   '/theme-preview': () => import('../modules/ThemePreviewScreen'),
+  '/tax': () => import('../modules/Tax/TaxEmbeddedScreen'),
+  '/tax/form': () => import('../modules/Tax/TaxEmbeddedScreen'),
+  '/tax/reports': () => import('../modules/Tax/TaxEmbeddedScreen'),
 };
 
 /** يمنع استدعاءات متكررة لنفس المسار أثناء التحميل */

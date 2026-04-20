@@ -154,6 +154,7 @@ export const ROUTE_PERMISSION = {
   '/settings':      PERMISSIONS.MANAGE_SETTINGS,
   '/theme-preview': PERMISSIONS.VIEW_DASHBOARD,
   '/ocr':           PERMISSIONS.VIEW_OCR,
+  '/tax':           PERMISSIONS.VIEW_OWNER,
 };
 
 export const REDIRECT_ONLY_PATHS = new Set([
@@ -175,6 +176,9 @@ export function getRouteRequiredPermissions(pathname) {
   }
   if (pathname.startsWith('/reports')) {
     return [ROUTE_PERMISSION['/reports']];
+  }
+  if (pathname.startsWith('/tax')) {
+    return [PERMISSIONS.VIEW_OWNER];
   }
   return null;
 }

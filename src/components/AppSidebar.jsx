@@ -5,8 +5,6 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
-import { apiGet } from '../services/api';
-import { useToast } from '../context/ToastContext';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
 import { Button } from '../ui';
@@ -28,18 +26,19 @@ import {
   IconCalculator,
 } from './SidebarIcons';
 
-const HAJRI_TAX_APP_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_HAJRI_TAX_URL)
-  ? String(import.meta.env.VITE_HAJRI_TAX_URL).replace(/\/$/, '')
-  : 'https://hajrix.com/tax';
-
 const SIDEBAR_LINKS = [
   { to: '/owner', labelKey: 'ownerDashboard', icon: IconCrown, permission: 'VIEW_OWNER' },
   {
-    external: true,
+    to: '/tax',
     labelKey: 'hajriTaxSidebar',
     icon: IconCalculator,
     permission: 'VIEW_OWNER',
     ownerOnly: true,
+    children: [
+      { to: '/tax', labelKey: 'taxNavCompanies', icon: IconDocument, end: true },
+      { to: '/tax/form', labelKey: 'taxNavForms', icon: IconDocument },
+      { to: '/tax/reports', labelKey: 'taxNavReports', icon: IconChartBar },
+    ],
   },
   { to: '/', end: true, labelKey: 'dashboard', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
   { to: '/chat', labelKey: 'smartChat', icon: IconChat, permission: 'VIEW_CHAT' },
@@ -70,7 +69,6 @@ const SIDEBAR_LINKS = [
 
 export default function AppSidebar({ isOpen, onClose, userRole, userPermissions }) {
   const { t, lang } = useTranslation();
-  const { showToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const navLinkClass = ({ isActive }) =>
@@ -80,13 +78,17 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
     return hasPermission(userRole, link.permission, userPermissions);
   });
 
-  const isReportsExpanded = visibleLinks.some((l) => l.children?.some((c) => location.pathname.startsWith(c.to)));
+  const isReportsExpanded = visibleLinks.some((l) => l.to === '/reports' && l.children?.some((c) => location.pathname.startsWith(c.to)));
   const [reportsOpen, setReportsOpen] = useState(isReportsExpanded);
   useEffect(() => {
     if (isReportsExpanded) setReportsOpen(true);
   }, [isReportsExpanded]);
 
-  const [hajriTaxOpening, setHajriTaxOpening] = useState(false);
+  const isTaxExpanded = location.pathname.startsWith('/tax');
+  const [taxOpen, setTaxOpen] = useState(isTaxExpanded);
+  useEffect(() => {
+    if (isTaxExpanded) setTaxOpen(true);
+  }, [isTaxExpanded]);
 
   const [brandName,    setBrandName]    = useState(() => getBrandName(lang));
   const [brandLogo,    setBrandLogo]    = useState(getBrandLogo);
@@ -117,24 +119,13 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
     }
   };
 
-  const hajriTaxFallbackHref = `${HAJRI_TAX_APP_URL}/`;
-
-  const handleHajriTaxClick = async (e) => {
-    e.preventDefault();
-    if (hajriTaxOpening) return;
-    onClose();
-    setHajriTaxOpening(true);
-    try {
-      const res = await apiGet('/api/v1/owner/hajri-tax/launch-url');
-      if (!res?.success) {
-        showToast(res?.error || t('hajriTaxLaunchFailed'), 'error');
-        window.open(hajriTaxFallbackHref, '_blank', 'noopener,noreferrer');
-        return;
-      }
-      const url = res.data?.url || hajriTaxFallbackHref;
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } finally {
-      setHajriTaxOpening(false);
+  const handleTaxParentClick = () => {
+    if (taxOpen) {
+      setTaxOpen(false);
+    } else {
+      setTaxOpen(true);
+      navigate('/tax');
+      onClose();
     }
   };
 
@@ -172,23 +163,7 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
         <div className="app-sidebar__nav">
           <ul className="app-nav-list">
             {visibleLinks.map((link) =>
-              link.external ? (
-                <li key="hajri-tax-external" className="app-nav-item">
-                  <a
-                    href={hajriTaxFallbackHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`app-nav-link${hajriTaxOpening ? ' opacity-70 pointer-events-none' : ''}`}
-                    aria-busy={hajriTaxOpening}
-                    onClick={handleHajriTaxClick}
-                  >
-                    <span className="app-nav-link__label">
-                      <link.icon />
-                      <span>{t(link.labelKey)}</span>
-                    </span>
-                  </a>
-                </li>
-              ) : link.children ? (
+              link.children && link.to === '/reports' ? (
                 <li key={link.to} className="app-nav-item app-nav-item--has-children">
                   <Button
                     variant="ghost"
@@ -207,6 +182,42 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
                         <li key={child.to} className="app-nav-item">
                           <NavLink
                             to={child.to}
+                            className={navLinkClass}
+                            onClick={onClose}
+                            onPointerEnter={() => prefetchRouteChunk(child.to)}
+                            onPointerDown={() => prefetchRouteChunk(child.to)}
+                            onFocus={() => prefetchRouteChunk(child.to)}
+                          >
+                            <span className="app-nav-link__label">
+                              <child.icon />
+                              <span>{t(child.labelKey)}</span>
+                            </span>
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ) : link.children && link.to === '/tax' ? (
+                <li key={link.to} className="app-nav-item app-nav-item--has-children">
+                  <Button
+                    variant="ghost"
+                    className={`app-nav-link${location.pathname.startsWith(link.to) ? ' app-nav-link--active' : ''}`}
+                    onClick={handleTaxParentClick}
+                  >
+                    <span className="app-nav-link__label">
+                      <link.icon />
+                      <span>{t(link.labelKey)}</span>
+                    </span>
+                    <span className="app-nav-link__chevron" aria-hidden>{taxOpen ? '▾' : '▸'}</span>
+                  </Button>
+                  {taxOpen && (
+                    <ul className="app-nav-list app-nav-list--nested">
+                      {link.children.map((child) => (
+                        <li key={child.to + (child.end ? '-end' : '')} className="app-nav-item">
+                          <NavLink
+                            to={child.to}
+                            end={child.end}
                             className={navLinkClass}
                             onClick={onClose}
                             onPointerEnter={() => prefetchRouteChunk(child.to)}
