@@ -135,6 +135,37 @@ export default {
     ar: 'المبلغ مربوط بالمرجعي المحدد في البند.',
     en: 'Amount is locked to the reference set on the line.',
   },
+  expenseTaxAccountExemptHint: {
+    ar: 'حساب الفئة معفى — هذه الدفعة بدون ضريبة.',
+    en: 'Category account is tax-exempt — this payment has no VAT.',
+  },
+  expenseTaxSupplierNotRegisteredHint: {
+    ar: 'المورد غير مسجّل في الضريبة — المبلغ يُسجَّل بدون ضريبة.',
+    en: 'Supplier is not VAT-registered — amount is recorded with no VAT.',
+  },
+  expenseTaxDefaultFromSupplierHint: {
+    ar: 'الافتراض: خاضع للضريبة لأن المورد مسجّل. يمكنك إعفاء هذه الدفعة استثناءً أدناه.',
+    en: 'Default: taxable because the supplier is VAT-registered. You may exempt this payment as an exception below.',
+  },
+  expenseTaxExemptThisPayment: {
+    ar: 'معفى من الضريبة لهذه الدفعة فقط (استثناء)',
+    en: 'Tax-exempt for this payment only (exception)',
+  },
+  expenseTaxBreakdownTitle: {
+    ar: 'تفكيك المبلغ الشامل',
+    en: 'Inclusive amount breakdown',
+  },
+  expenseTaxBreakdownNet: { ar: 'الصافي قبل الضريبة', en: 'Net (before VAT)' },
+  expenseTaxBreakdownVat: { ar: 'ضريبة القيمة المضافة ١٥٪', en: 'VAT 15%' },
+  expenseTaxBreakdownNoVat: {
+    ar: 'بدون ضريبة — كامل المبلغ صافي.',
+    en: 'No VAT — full amount is net.',
+  },
+  expenseBatchTaxExemptShort: { ar: 'إعفاء', en: 'Exempt' },
+  expenseBatchTaxExemptHint: {
+    ar: 'إعفاء ضريبي لهذا الصف فقط (استثناء رغم تسجيل المورد)',
+    en: 'Tax-exempt for this row only (exception despite supplier registration)',
+  },
   validationInvalidAmount: { ar: 'المبلغ غير صالح', en: 'Invalid amount' },
   expenseLineReferenceLabelShort: { ar: 'المرجعي', en: 'Reference' },
   expenseLineAmountFixedAtPayment: { ar: '(مثبت عند السداد)', en: '(Locked at payment)' },

@@ -26,7 +26,7 @@ export class ExpenseLineService {
       orderBy: [{ kind: 'asc' }, { nameAr: 'asc' }],
       include: {
         category: { select: { id: true, nameAr: true, nameEn: true, accountId: true, account: true } },
-        supplier: { select: { id: true, nameAr: true, nameEn: true } },
+        supplier: { select: { id: true, nameAr: true, nameEn: true, isTaxRegistered: true } },
       },
     });
   }
@@ -36,7 +36,7 @@ export class ExpenseLineService {
       where: { id, companyId },
       include: {
         category: { select: { id: true, nameAr: true, nameEn: true, accountId: true, account: true } },
-        supplier: { select: { id: true, nameAr: true, nameEn: true, phone: true } },
+        supplier: { select: { id: true, nameAr: true, nameEn: true, phone: true, isTaxRegistered: true } },
       },
     });
     if (!line) throw new NotFoundException('بند المصروف غير موجود');

@@ -9,10 +9,17 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { createInvoice, getExpenseLines } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { getSaudiToday } from '../../../utils/saudiDate';
+import { fmt } from '../../../utils/format';
+import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { Button, AdaptiveSheet, Input } from '../../../ui';
+import {
+  canExemptThisExpensePayment,
+  isExpensePaymentTaxable,
+  supplierAppliesVat,
+} from '../utils/expenseTax';
 
 export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const defaultYear = useMemo(() => parseInt(getSaudiToday().slice(0, 4), 10), []);
   const [form, setForm] = useState({
     expenseLineId: '',
@@ -32,6 +39,8 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   const [secondVaultId, setSecondVaultId] = useState('');
   const [secondAmount, setSecondAmount] = useState('');
   const [error, setError] = useState('');
+  /** إعفاء ضريبي استثنائي لهذه الدفعة فقط */
+  const [exemptThisPayment, setExemptThisPayment] = useState(false);
 
   const { data: expenseLines = [] } = useQuery({
     queryKey: ['expense-lines', companyId],
@@ -45,6 +54,28 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   const { paymentVaults: activeVaults = [] } = useVaults({ companyId });
 
   const selectedLine = expenseLines.find((l) => l.id === form.expenseLineId);
+
+  const isTaxable = useMemo(
+    () => isExpensePaymentTaxable(selectedLine, exemptThisPayment),
+    [selectedLine, exemptThisPayment],
+  );
+
+  const taxPreview = useMemo(() => {
+    const totalNum = parseFloat(String(form.totalAmount).replace(/,/g, ''));
+    if (!Number.isFinite(totalNum) || totalNum <= 0) return null;
+    return splitTaxFromTotalAsNumbers(totalNum, isTaxable);
+  }, [form.totalAmount, isTaxable]);
+
+  const taxStatusKind = useMemo(() => {
+    if (!selectedLine) return null;
+    if (selectedLine.category?.account?.taxExempt) return 'account_exempt';
+    if (!supplierAppliesVat(selectedLine.supplier)) return 'supplier_not_registered';
+    return 'default_taxable';
+  }, [selectedLine]);
+
+  useEffect(() => {
+    setExemptThisPayment(false);
+  }, [form.expenseLineId]);
 
   const lastExpenseLineIdForPrefillRef = useRef(null);
   useEffect(() => {
@@ -114,7 +145,6 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
       return;
     }
 
-    const isTaxable = !selectedLine.category?.account?.taxExempt;
     if (isTaxable && !form.supplierInvoiceNumber?.trim()) {
       setError('رقم فاتورة المورد مطلوب للفواتير الخاضعة للضريبة');
       return;
@@ -162,7 +192,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
       supplierInvoiceNumber: form.supplierInvoiceNumber.trim(),
       kind: selectedLine.kind,
       totalAmount: total,
-      isTaxable: !selectedLine.category?.account?.taxExempt,
+      isTaxable,
       transactionDate: form.transactionDate,
       notes: form.notes?.trim() || undefined,
       ...(form.warrantyFollowUp ? { warrantyFollowUp: true } : {}),
@@ -252,15 +282,41 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
 
         <Input
           type="text"
-          label={`رقم فاتورة المورد ${selectedLine?.category?.account?.taxExempt ? '(اختياري — معفى من الضريبة)' : '*'}`}
+          label={
+            lang === 'en'
+              ? `Supplier invoice #${isTaxable ? ' *' : ' (optional)'}`
+              : `رقم فاتورة المورد ${isTaxable ? '*' : '(اختياري)'}`
+          }
           value={form.supplierInvoiceNumber}
           onChange={(e) => setForm((p) => ({ ...p, supplierInvoiceNumber: e.target.value }))}
           placeholder="الرقم الموجود على فاتورة المورد (مثال: INV-2024-001)"
         />
 
+        {selectedLine && taxStatusKind === 'account_exempt' && (
+          <p className="m-0 text-[12px] text-noorix-muted">{t('expenseTaxAccountExemptHint')}</p>
+        )}
+        {selectedLine && taxStatusKind === 'supplier_not_registered' && (
+          <p className="m-0 text-[12px] text-noorix-muted">{t('expenseTaxSupplierNotRegisteredHint')}</p>
+        )}
+        {selectedLine && taxStatusKind === 'default_taxable' && (
+          <p className="m-0 text-[12px] text-noorix-muted">{t('expenseTaxDefaultFromSupplierHint')}</p>
+        )}
+
+        {selectedLine && canExemptThisExpensePayment(selectedLine) && (
+          <label className="flex items-start gap-2.5 min-h-[44px] cursor-pointer rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={exemptThisPayment}
+              onChange={(e) => setExemptThisPayment(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
+            />
+            <span className="text-[13px] font-semibold text-noorix-text leading-snug">{t('expenseTaxExemptThisPayment')}</span>
+          </label>
+        )}
+
         <Input
           type="number"
-          label="المبلغ (شامل الضريبة) *"
+          label={lang === 'en' ? 'Amount (VAT-inclusive) *' : 'المبلغ (شامل الضريبة) *'}
           step="0.01"
           min="0.01"
           value={form.totalAmount}
@@ -270,6 +326,23 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           disabled={amountLocked}
           className="ltr"
         />
+        {taxPreview && (
+          <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2.5 text-[12px] leading-relaxed text-noorix-text">
+            <div className="mb-1 font-semibold text-noorix-muted">{t('expenseTaxBreakdownTitle')}</div>
+            {isTaxable ? (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 nx-font-numbers">
+                <span>
+                  {t('expenseTaxBreakdownNet')}: {fmt(taxPreview.net)} <span className="nx-sar text-[11px]">SR</span>
+                </span>
+                <span>
+                  {t('expenseTaxBreakdownVat')}: {fmt(taxPreview.tax)} <span className="nx-sar text-[11px]">SR</span>
+                </span>
+              </div>
+            ) : (
+              <span>{t('expenseTaxBreakdownNoVat')}</span>
+            )}
+          </div>
+        )}
         {selectedLine?.referenceAmount != null && selectedLine.allowPaymentAmountOverride !== false && !amountLocked && (
           <p className="text-[11px] text-noorix-muted -mt-2">{t('expensePaymentPrefilledFromLine')}</p>
         )}
