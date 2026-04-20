@@ -12,6 +12,26 @@ import type { JwtUser } from '../auth/decorators/current-user.decorator';
 export class VatPlanningController {
   constructor(private readonly service: VatPlanningService) {}
 
+  /** سجل الإقرارات المحفوظة مع فلاتر اختيارية */
+  @Get('registry')
+  @SkipCompanyCheck()
+  @RequirePermission('REPORTS_READ')
+  async listRegistry(
+    @Query('year') yearStr: string | undefined,
+    @Query('quarter') quarterStr: string | undefined,
+    @Query('companyId') companyId: string | undefined,
+    @Req() req: { user: JwtUser },
+  ) {
+    const yearParsed = yearStr !== undefined && yearStr !== '' ? parseInt(yearStr, 10) : NaN;
+    const quarterParsed = quarterStr !== undefined && quarterStr !== '' ? parseInt(quarterStr, 10) : NaN;
+    const year = Number.isFinite(yearParsed) ? yearParsed : undefined;
+    const quarter =
+      Number.isFinite(quarterParsed) && quarterParsed >= 1 && quarterParsed <= 4
+        ? quarterParsed
+        : undefined;
+    return this.service.listRegistry(req.user, { year, quarter, companyId });
+  }
+
   @Get()
   @SkipCompanyCheck()
   @RequirePermission('REPORTS_READ')

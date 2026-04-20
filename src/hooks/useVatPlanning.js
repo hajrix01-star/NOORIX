@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getVatPlanningList, upsertVatPlanning, throwIfApiFailed } from '../services/api';
+import { getVatPlanningList, getVatPlanningRegistry, upsertVatPlanning, throwIfApiFailed } from '../services/api';
 
 export function useVatPlanningList(year, quarter, companyId, enabled = true) {
   return useQuery({
@@ -11,6 +11,20 @@ export function useVatPlanningList(year, quarter, companyId, enabled = true) {
       return Array.isArray(raw) ? raw : [];
     },
     enabled: !!enabled && Number.isFinite(year) && Number.isFinite(quarter),
+  });
+}
+
+/** قائمة الإقرارات المسجّلة (فلاتر اختيارية) */
+export function useVatPlanningRegistry(filters, enabled = true) {
+  return useQuery({
+    queryKey: ['vat-planning', 'registry', filters?.year ?? '', filters?.quarter ?? '', filters?.companyId ?? ''],
+    queryFn: async () => {
+      const res = await getVatPlanningRegistry(filters);
+      throwIfApiFailed(res, 'فشل تحميل سجل الإقرارات');
+      const raw = res.data;
+      return Array.isArray(raw) ? raw : [];
+    },
+    enabled: !!enabled,
   });
 }
 

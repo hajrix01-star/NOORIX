@@ -44,6 +44,65 @@ export class VatPlanningService {
     return company.tenantId;
   }
 
+  /**
+   * سجلُّ الإقرارات المحفوظة — اختياري: سنة، ربع، شركة. مرتب: سنة ↓، ربع ↓، اسم الشركة.
+   */
+  async listRegistry(
+    user: JwtUser,
+    filters: { year?: number; quarter?: number; companyId?: string },
+  ) {
+    const role = (user.role || '').toLowerCase();
+    const isSuper = isSuperAdmin(role);
+    const allowedIds = user.companyIds || [];
+
+    const where: Prisma.VatPlanningQuarterWhereInput = {};
+
+    if (filters.companyId) {
+      this.assertCompanyAccess(user, filters.companyId);
+      where.companyId = filters.companyId;
+    } else if (!isSuper) {
+      if (allowedIds.length === 0) return { success: true, data: [] as unknown[] };
+      where.companyId = { in: allowedIds };
+    }
+
+    if (filters.year != null && Number.isFinite(filters.year)) {
+      where.year = filters.year;
+    }
+    if (
+      filters.quarter != null &&
+      Number.isFinite(filters.quarter) &&
+      filters.quarter >= 1 &&
+      filters.quarter <= 4
+    ) {
+      where.quarter = filters.quarter;
+    }
+
+    const rows = await this.prisma.vatPlanningQuarter.findMany({
+      where,
+      include: {
+        company: { select: { id: true, nameAr: true, nameEn: true, taxNumber: true } },
+      },
+      orderBy: [{ year: 'desc' }, { quarter: 'desc' }, { company: { nameAr: 'asc' } }],
+    });
+
+    return {
+      success: true,
+      data: rows.map((r) => ({
+        id: r.id,
+        companyId: r.companyId,
+        year: r.year,
+        quarter: r.quarter,
+        payload: r.payload,
+        sourceSnapshot: r.sourceSnapshot,
+        paymentTarget: r.paymentTarget?.toString() ?? null,
+        notes: r.notes,
+        importedAt: r.importedAt?.toISOString() ?? null,
+        updatedAt: r.updatedAt.toISOString(),
+        company: r.company,
+      })),
+    };
+  }
+
   async list(user: JwtUser, year: number, quarter: number, companyId?: string) {
     if (!Number.isFinite(year) || !Number.isFinite(quarter) || quarter < 1 || quarter > 4) {
       throw new BadRequestException('year أو quarter غير صالح.');

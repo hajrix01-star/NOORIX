@@ -516,4 +516,29 @@ export default {
     ar: 'عطّلها إذا كان الصافي خاضعًا قبل الضريبة؛ يُحسب حينها الضريبة = الأساس × 15%.',
     en: 'Turn off if net amounts are tax-exclusive; VAT will be base × 15%.',
   },
+  hajriTaxRegistryTitle: { ar: 'سجل الإقرارات الضريبية', en: 'Tax declaration registry' },
+  hajriTaxRegistrySubtitle: {
+    ar: 'العمليات المحفوظة مرتبة حسب الفترة. استخدم الفلاتر أو افتح إقراراً جديداً.',
+    en: 'Saved filings by period. Use filters or open a new declaration.',
+  },
+  hajriTaxRegistryFilters: { ar: 'تصفية السجل', en: 'Filter registry' },
+  hajriTaxFilterAllYears: { ar: 'كل السنوات', en: 'All years' },
+  hajriTaxFilterAllQuarters: { ar: 'كل الأرباع', en: 'All quarters' },
+  hajriTaxRegistryEmpty: {
+    ar: 'لا توجد إقرارات محفوظة بعد. ابدأ بـ «إقرار جديد».',
+    en: 'No saved declarations yet. Use «New declaration».',
+  },
+  hajriTaxNewDeclaration: { ar: 'إقرار جديد', en: 'New declaration' },
+  hajriTaxNewDeclarationTitle: { ar: 'إقرار ضريبي جديد', en: 'New tax declaration' },
+  hajriTaxNewDeclarationDesc: {
+    ar: 'اختر الشركة ثم السنة والربع لفتح نموذج الإدخال.',
+    en: 'Pick company, year, and quarter to open the entry form.',
+  },
+  hajriTaxNewDeclarationStart: { ar: 'بدء الإقرار', en: 'Start declaration' },
+  hajriTaxActionView: { ar: 'عرض', en: 'View' },
+  hajriTaxActionEdit: { ar: 'تعديل', en: 'Edit' },
+  hajriTaxViewModeBanner: {
+    ar: 'أنت تعرض الإقرار للقراءة فقط. اضغط «تحرير» للتعديل.',
+    en: 'Read-only view. Choose «Edit» to modify.',
+  },
 };

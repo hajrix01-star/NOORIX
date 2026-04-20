@@ -850,6 +850,15 @@ export async function getVatPlanningList(year, quarter, companyId) {
   return apiGet('/api/v1/vat-planning', params);
 }
 
+/** جميع الإقرارات المحفوظة مع فلاتر اختيارية — REPORTS_READ */
+export async function getVatPlanningRegistry(filters = {}) {
+  const params = {};
+  if (filters.year != null && filters.year !== '') params.year = String(filters.year);
+  if (filters.quarter != null && filters.quarter !== '') params.quarter = String(filters.quarter);
+  if (filters.companyId) params.companyId = filters.companyId;
+  return apiGet('/api/v1/vat-planning/registry', params);
+}
+
 export async function upsertVatPlanning(body) {
   return apiPut('/api/v1/vat-planning', body);
 }

@@ -41,6 +41,8 @@ export default function HajriTaxDetailEditor({
   updateRow,
   salesAmountIncludesVat,
   setSalesAmountIncludesVat,
+  readOnly = false,
+  onSwitchToEdit,
 }) {
   const dueNet = netPayableDraft >= 0;
 
@@ -78,6 +80,11 @@ export default function HajriTaxDetailEditor({
 
   return (
     <div className="space-y-5">
+      {readOnly ? (
+        <div className="rounded-lg border border-noorix-blue/30 bg-[var(--noorix-blue-6)] px-4 py-3 text-[13px] text-noorix-text">
+          {t('hajriTaxViewModeBanner')}
+        </div>
+      ) : null}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="m-0 text-[17px] font-bold text-noorix-text">{companyName}</h2>
@@ -87,34 +94,45 @@ export default function HajriTaxDetailEditor({
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
-          <label className="flex max-w-xl cursor-pointer items-start gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-blue-6)] px-3 py-2 text-[12px] leading-snug text-noorix-text">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
-              checked={salesAmountIncludesVat}
-              onChange={(e) => setSalesAmountIncludesVat(e.target.checked)}
-            />
-            <span>
-              <span className="font-semibold">{t('taxImportSalesInclusiveLabel')}</span>
-              <span className="block text-[11px] text-noorix-muted mt-0.5">{t('taxImportSalesInclusiveHint')}</span>
-            </span>
-          </label>
+          {!readOnly ? (
+            <label className="flex max-w-xl cursor-pointer items-start gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-blue-6)] px-3 py-2 text-[12px] leading-snug text-noorix-text">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
+                checked={salesAmountIncludesVat}
+                onChange={(e) => setSalesAmountIncludesVat(e.target.checked)}
+              />
+              <span>
+                <span className="font-semibold">{t('taxImportSalesInclusiveLabel')}</span>
+                <span className="block text-[11px] text-noorix-muted mt-0.5">{t('taxImportSalesInclusiveHint')}</span>
+              </span>
+            </label>
+          ) : null}
           <div className="flex flex-wrap gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={closeDetail}>
             {t('vatBackToList')}
           </Button>
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            loading={importingReport}
-            onClick={handleImportFromTaxReport}
-          >
-            {t('vatFetchFromAccounting')}
-          </Button>
-          <Button type="button" size="sm" disabled={savePending} onClick={handleSaveDetail}>
-            {t('save')}
-          </Button>
+          {readOnly && onSwitchToEdit ? (
+            <Button type="button" variant="primary" size="sm" onClick={onSwitchToEdit}>
+              {t('hajriTaxActionEdit')}
+            </Button>
+          ) : null}
+          {!readOnly ? (
+            <>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                loading={importingReport}
+                onClick={handleImportFromTaxReport}
+              >
+                {t('vatFetchFromAccounting')}
+              </Button>
+              <Button type="button" size="sm" disabled={savePending} onClick={handleSaveDetail}>
+                {t('save')}
+              </Button>
+            </>
+          ) : null}
           <Button type="button" variant="ghost" size="sm" onClick={printDetail}>
             {t('print')}
           </Button>
@@ -161,6 +179,7 @@ export default function HajriTaxDetailEditor({
               <Input
                 type="text"
                 inputMode="decimal"
+                readOnly={readOnly}
                 label={lang === 'ar' ? 'تصحيحات من فترة سابقة' : 'Prior period adjustments'}
                 value={priorAdj || ''}
                 onChange={(e) => updateRow('prior_adjustments', null, e.target.value)}
@@ -169,6 +188,7 @@ export default function HajriTaxDetailEditor({
               <Input
                 type="text"
                 inputMode="decimal"
+                readOnly={readOnly}
                 label={lang === 'ar' ? 'رصيد مرحّل' : 'Balance carried forward'}
                 value={balanceCarried || ''}
                 onChange={(e) => updateRow('balance_carried', null, e.target.value)}
@@ -220,24 +240,27 @@ export default function HajriTaxDetailEditor({
             </div>
           </div>
 
-          <div className="rounded-xl border-2 border-amber-400/50 bg-[var(--noorix-surface)] p-4 shadow-sm">
+          <div className={`rounded-xl border-2 border-amber-400/50 bg-[var(--noorix-surface)] p-4 shadow-sm ${readOnly ? 'opacity-80' : ''}`}>
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-[14px] font-bold text-noorix-text">{t('vatSimulatorTitle')}</span>
-              <label className="flex cursor-pointer items-center gap-2 text-[12px] text-noorix-muted">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-noorix-border"
-                  checked={showSimulator}
-                  onChange={(e) => setShowSimulator(e.target.checked)}
-                />
-                {t('vatSimulatorToggle')}
-              </label>
+              {!readOnly ? (
+                <label className="flex cursor-pointer items-center gap-2 text-[12px] text-noorix-muted">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-noorix-border"
+                    checked={showSimulator}
+                    onChange={(e) => setShowSimulator(e.target.checked)}
+                  />
+                  {t('vatSimulatorToggle')}
+                </label>
+              ) : null}
             </div>
             {showSimulator ? (
               <div className="space-y-3">
                 <Input
                   type="text"
                   inputMode="decimal"
+                  readOnly={readOnly}
                   label={t('vatSimulatorHint')}
                   value={paymentTargetStr}
                   onChange={(e) => setPaymentTargetStr(e.target.value)}
@@ -262,15 +285,17 @@ export default function HajriTaxDetailEditor({
                 ) : (
                   <p className="m-0 text-[12px] text-noorix-muted">{t('vatSimulatorEnterTarget')}</p>
                 )}
-                <Button
-                  type="button"
-                  variant="warning"
-                  size="sm"
-                  className="w-full"
-                  onClick={handleBalancePayment}
-                >
-                  {t('vatSimulatorAutoFill')}
-                </Button>
+                {!readOnly ? (
+                  <Button
+                    type="button"
+                    variant="warning"
+                    size="sm"
+                    className="w-full"
+                    onClick={handleBalancePayment}
+                  >
+                    {t('vatSimulatorAutoFill')}
+                  </Button>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -279,18 +304,27 @@ export default function HajriTaxDetailEditor({
             {t('vatPlanningDisclaimer')}
           </div>
 
-          <Input multiline rows={3} label={t('vatNotes')} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Input
+            multiline
+            rows={3}
+            readOnly={readOnly}
+            label={t('vatNotes')}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
 
-          <Button
-            type="button"
-            variant="success"
-            size="lg"
-            className="w-full"
-            disabled={savePending}
-            onClick={handleSaveDetail}
-          >
-            {t('vatSaveDeclaration')}
-          </Button>
+          {!readOnly ? (
+            <Button
+              type="button"
+              variant="success"
+              size="lg"
+              className="w-full"
+              disabled={savePending}
+              onClick={handleSaveDetail}
+            >
+              {t('vatSaveDeclaration')}
+            </Button>
+          ) : null}
 
           {sourceSnapshot ? (
             <details className="rounded-lg border border-noorix-border bg-noorix-surface p-3 text-[12px]">

@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { useUpsertVatPlanning, useVatPlanningList } from '../../hooks/useVatPlanning';
+import { useUpsertVatPlanning, useVatPlanningList, useVatPlanningRegistry } from '../../hooks/useVatPlanning';
 import {
   OUTPUT_ROWS,
   INPUT_ROWS,
@@ -22,9 +22,11 @@ import {
 import { fmt } from '../../utils/format';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
-import { getTaxVatReport, throwIfApiFailed, upsertVatPlanning } from '../../services/api';
+import { getTaxVatReport, getVatPlanningList, throwIfApiFailed, upsertVatPlanning } from '../../services/api';
 import { Button, Input } from '../../ui';
 import HajriTaxDetailEditor from './HajriTaxDetailEditor';
+import HajriTaxRegistryList from './HajriTaxRegistryList';
+import HajriTaxNewDeclarationModal from './HajriTaxNewDeclarationModal';
 
 function clonePayload(from) {
   return mergeImportedDisclosure(defaultDisclosureData(), from || {});
@@ -47,8 +49,12 @@ export default function HajriTaxScreen() {
     const q = Number(searchParams.get('quarter'));
     return [1, 2, 3, 4].includes(q) ? q : 1;
   });
-  const [companyFilter, setCompanyFilter] = useState(() => searchParams.get('company') || '');
+  const [regFilterCompany, setRegFilterCompany] = useState(() => searchParams.get('company') || '');
+  const [regFilterYear, setRegFilterYear] = useState('');
+  const [regFilterQuarter, setRegFilterQuarter] = useState('');
   const [detailCompanyId, setDetailCompanyId] = useState(null);
+  const [detailReadOnly, setDetailReadOnly] = useState(false);
+  const [showNewDeclarationModal, setShowNewDeclarationModal] = useState(false);
 
   const [draftData, setDraftData] = useState(() => defaultDisclosureData());
   const [paymentTargetStr, setPaymentTargetStr] = useState('');
@@ -61,9 +67,24 @@ export default function HajriTaxScreen() {
   /** استيراد مبيعات بدون ضريبة مسجّلة: إذا كان صافي الفاتورة إجماليًا شاملاً 15% وليس أساسًا خاضعًا */
   const [salesAmountIncludesVat, setSalesAmountIncludesVat] = useState(false);
 
+  const registryQueryFilters = useMemo(
+    () => ({
+      year: regFilterYear === '' ? undefined : Number(regFilterYear),
+      quarter: regFilterQuarter === '' ? undefined : Number(regFilterQuarter),
+      companyId: regFilterCompany || undefined,
+    }),
+    [regFilterYear, regFilterQuarter, regFilterCompany],
+  );
+
+  const { data: registryRows = [], isLoading: registryLoading, refetch: refetchRegistry } = useVatPlanningRegistry(
+    registryQueryFilters,
+    !detailCompanyId,
+  );
+
   const periodStr = `Q${quarter}`;
   const periodLabel = `${year}-${periodStr}`;
 
+  /** جلب إقرارات الربع المحدد — للربط مع `resolveRecord` وروابط ?edit=1 من دون فتح التفاصيل أولًا */
   const { data: apiRecords = [], isLoading: listLoading, refetch } = useVatPlanningList(
     year,
     quarter,
@@ -79,40 +100,30 @@ export default function HajriTaxScreen() {
     return m;
   }, [apiRecords]);
 
-  const filteredCompanies = useMemo(() => {
-    const base = Array.isArray(companies) ? companies : [];
-    if (!companyFilter) return base;
-    return base.filter((c) => c.id === companyFilter);
-  }, [companies, companyFilter]);
-
   const resolveRecord = useCallback(
     (companyId) => recordByCompany.get(companyId),
     [recordByCompany],
   );
 
-  /** صفوف الجدول: كل الشركات المفلترة — حتى بدون سجل محفوظ (ربع بدون مبيعات) */
-  const overviewRows = useMemo(() => {
-    return filteredCompanies.map((c) => {
-      const rec = resolveRecord(c.id);
-      const payload = rec?.payload && typeof rec.payload === 'object' ? rec.payload : defaultDisclosureData();
-      const net = computeNetPayable(payload);
-      const pt = rec?.paymentTarget != null ? parseFloat(String(rec.paymentTarget)) : null;
-      return {
-        companyId: c.id,
-        nameAr: c.nameAr,
-        nameEn: c.nameEn,
-        taxNumber: c.taxNumber || '',
-        netPayable: net,
-        paymentTarget: Number.isFinite(pt) ? pt : '',
-        notes: rec?.notes || '',
-        updatedAt: rec?.updatedAt || '',
-      };
-    });
-  }, [filteredCompanies, resolveRecord]);
-
   const openCompanyDetail = useCallback(
-    (companyId) => {
-      const rec = resolveRecord(companyId);
+    async (companyId, forcedPeriod) => {
+      let rec = null;
+      if (
+        forcedPeriod &&
+        Number.isFinite(forcedPeriod.year) &&
+        forcedPeriod.year >= 2000 &&
+        Number.isFinite(forcedPeriod.quarter) &&
+        [1, 2, 3, 4].includes(forcedPeriod.quarter)
+      ) {
+        setYear(forcedPeriod.year);
+        setQuarter(forcedPeriod.quarter);
+        const res = await getVatPlanningList(forcedPeriod.year, forcedPeriod.quarter, companyId);
+        throwIfApiFailed(res, 'فشل تحميل السجل');
+        const arr = Array.isArray(res.data) ? res.data : [];
+        rec = arr[0] || null;
+      } else {
+        rec = resolveRecord(companyId);
+      }
       const payload = rec?.payload && typeof rec.payload === 'object' ? rec.payload : {};
       setDraftData(clonePayload(payload));
       setPaymentTargetStr(rec?.paymentTarget != null ? String(rec.paymentTarget) : '');
@@ -120,20 +131,66 @@ export default function HajriTaxScreen() {
       setSourceSnapshot(rec?.sourceSnapshot ?? null);
       setImportIso(rec?.importedAt || null);
       setDetailCompanyId(companyId);
+      setDetailReadOnly(false);
       setSaveHint('');
     },
     [resolveRecord],
   );
 
+  const openFromRegistryRow = useCallback((row, mode) => {
+    setYear(row.year);
+    setQuarter(row.quarter);
+    setRegFilterCompany(row.companyId);
+    setDetailReadOnly(mode === 'view');
+    const payload = row.payload && typeof row.payload === 'object' ? row.payload : {};
+    setDraftData(clonePayload(payload));
+    setPaymentTargetStr(row.paymentTarget != null ? String(row.paymentTarget) : '');
+    setNotes(row.notes || '');
+    setSourceSnapshot(row.sourceSnapshot ?? null);
+    setImportIso(row.importedAt || null);
+    setDetailCompanyId(row.companyId);
+    setSaveHint('');
+  }, []);
+
+  const handleNewDeclarationConfirm = useCallback(
+    async ({ companyId, year: y, quarter: q }) => {
+      setYear(y);
+      setQuarter(q);
+      setRegFilterCompany(companyId);
+      setDetailReadOnly(false);
+      const res = await getVatPlanningList(y, q, companyId);
+      throwIfApiFailed(res, 'فشل تحميل السجل');
+      const rec = Array.isArray(res.data) && res.data[0] ? res.data[0] : null;
+      if (rec) {
+        setDraftData(clonePayload(rec.payload));
+        setPaymentTargetStr(rec.paymentTarget != null ? String(rec.paymentTarget) : '');
+        setNotes(rec.notes || '');
+        setSourceSnapshot(rec.sourceSnapshot ?? null);
+        setImportIso(rec.importedAt || null);
+      } else {
+        setDraftData(defaultDisclosureData());
+        setPaymentTargetStr('');
+        setNotes('');
+        setSourceSnapshot(null);
+        setImportIso(null);
+      }
+      setDetailCompanyId(companyId);
+      setSaveHint('');
+    },
+    [],
+  );
+
   const closeDetail = useCallback(() => {
     setDetailCompanyId(null);
+    setDetailReadOnly(false);
     refetch();
+    refetchRegistry();
     setSearchParams((sp) => {
       const next = new URLSearchParams(sp);
       next.delete('edit');
       return next;
     });
-  }, [refetch, setSearchParams]);
+  }, [refetch, refetchRegistry, setSearchParams]);
 
   useEffect(() => {
     if (listLoading) return;
@@ -146,10 +203,17 @@ export default function HajriTaxScreen() {
     const key = `${c}|${searchParams.get('year')}|${searchParams.get('quarter')}|1`;
     if (urlOpenKeyRef.current === key) return;
     urlOpenKeyRef.current = key;
-    openCompanyDetail(c);
+    const yNum = Number(searchParams.get('year'));
+    const qNum = Number(searchParams.get('quarter'));
+    const forcedPeriod =
+      Number.isFinite(yNum) && yNum >= 2000 && [1, 2, 3, 4].includes(qNum)
+        ? { year: yNum, quarter: qNum }
+        : undefined;
+    void openCompanyDetail(c, forcedPeriod);
   }, [listLoading, searchParams, companies, openCompanyDetail]);
 
   const updateRow = useCallback((key, field, value) => {
+    if (detailReadOnly) return;
     const num = parseFloat(String(value).replace(/,/g, '')) || 0;
     setDraftData((prev) => {
       const next = { ...prev };
@@ -158,19 +222,20 @@ export default function HajriTaxScreen() {
       else next[key] = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), [field]: num };
       return next;
     });
-  }, []);
+  }, [detailReadOnly]);
 
   const renderEditableCell = useCallback(
     (key, field) => (
       <Input
         type="text"
         inputMode="decimal"
+        readOnly={detailReadOnly}
         value={getRowValue(draftData, key, field) || ''}
         onChange={(e) => updateRow(key, field, e.target.value)}
         placeholder="0"
       />
     ),
-    [draftData, updateRow],
+    [draftData, updateRow, detailReadOnly],
   );
 
   const outputTotal = useMemo(() => computeOutputTotal(draftData), [draftData]);
@@ -197,7 +262,7 @@ export default function HajriTaxScreen() {
   }, [simulatorRequiredInputVat]);
 
   const handleImportFromTaxReport = useCallback(async () => {
-    if (!detailCompanyId) return;
+    if (!detailCompanyId || detailReadOnly) return;
     setImportingReport(true);
     try {
       const res = await getTaxVatReport(detailCompanyId, year, periodStr, {
@@ -211,16 +276,17 @@ export default function HajriTaxScreen() {
     } finally {
       setImportingReport(false);
     }
-  }, [detailCompanyId, year, periodStr, salesAmountIncludesVat]);
+  }, [detailCompanyId, detailReadOnly, year, periodStr, salesAmountIncludesVat]);
 
   const handleBalancePayment = useCallback(() => {
+    if (detailReadOnly) return;
     const target = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
     if (!Number.isFinite(target)) return;
     setDraftData((prev) => scaleInputVatForPaymentTarget(prev, target));
-  }, [paymentTargetStr]);
+  }, [paymentTargetStr, detailReadOnly]);
 
   const handleSaveDetail = useCallback(async () => {
-    if (!detailCompanyId) return;
+    if (!detailCompanyId || detailReadOnly) return;
     const pt = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
     const body = {
       companyId: detailCompanyId,
@@ -234,7 +300,7 @@ export default function HajriTaxScreen() {
     };
     await upsertMutation.mutateAsync(body);
     setSaveHint(t('vatSavedOk'));
-  }, [detailCompanyId, year, quarter, draftData, sourceSnapshot, paymentTargetStr, notes, importIso, upsertMutation, t]);
+  }, [detailCompanyId, detailReadOnly, year, quarter, draftData, sourceSnapshot, paymentTargetStr, notes, importIso, upsertMutation, t]);
 
   const companyMeta = useCallback(
     (id) => {
@@ -285,53 +351,63 @@ export default function HajriTaxScreen() {
   }, [draftData, lang, detailCompanyId, netPayableDraft, periodLabel]);
 
   const exportConsolidatedExcel = useCallback(() => {
-    const rows = overviewRows.map((r) => ({
-      [lang === 'ar' ? 'الشركة' : 'Company']: lang === 'en' ? (r.nameEn || r.nameAr) : r.nameAr,
-      [lang === 'ar' ? 'الرقم الضريبي' : 'Tax No.']: r.taxNumber,
-      [t('vatNetPayable')]: r.netPayable,
-      [t('vatPaymentTarget')]: r.paymentTarget === '' ? '' : r.paymentTarget,
-      [t('vatNotes')]: r.notes,
-      [t('vatLastUpdated')]: r.updatedAt ? String(r.updatedAt).slice(0, 19) : '—',
-    }));
-    exportToExcel(rows, `hajri-tax-consolidated-${periodLabel}.xlsx`);
-  }, [overviewRows, lang, t, periodLabel]);
+    const rows = registryRows.map((r) => {
+      const payload = r.payload && typeof r.payload === 'object' ? r.payload : defaultDisclosureData();
+      const net = computeNetPayable(payload);
+      const pt = r.paymentTarget != null ? parseFloat(String(r.paymentTarget)) : null;
+      return {
+        [lang === 'ar' ? 'الشركة' : 'Company']: lang === 'en'
+          ? (r.company?.nameEn || r.company?.nameAr)
+          : (r.company?.nameAr || r.company?.nameEn),
+        Year: r.year,
+        Quarter: `Q${r.quarter}`,
+        [t('vatNetPayable')]: net,
+        [t('vatPaymentTarget')]: Number.isFinite(pt) ? pt : '',
+        [t('vatNotes')]: r.notes || '',
+        [t('vatLastUpdated')]: r.updatedAt ? String(r.updatedAt).slice(0, 19) : '—',
+      };
+    });
+    exportToExcel(rows, `hajri-tax-registry-${currentYear}.xlsx`);
+  }, [registryRows, lang, t, currentYear]);
 
   const printConsolidated = useCallback(() => {
-    const bodyRows = overviewRows
+    const bodyRows = registryRows
       .map((r) => {
-        const nm = lang === 'en' ? (r.nameEn || r.nameAr) : r.nameAr;
-        return `<tr><td>${(nm || '').replace(/</g, '&lt;')}</td><td>${fmt(r.netPayable)}</td><td>${r.paymentTarget === '' ? '—' : fmt(r.paymentTarget)}</td><td>${(r.notes || '').replace(/</g, '&lt;')}</td></tr>`;
+        const nm = lang === 'en' ? (r.company?.nameEn || r.company?.nameAr) : r.company?.nameAr;
+        const payload = r.payload && typeof r.payload === 'object' ? r.payload : defaultDisclosureData();
+        const net = computeNetPayable(payload);
+        const pt = r.paymentTarget != null ? parseFloat(String(r.paymentTarget)) : null;
+        return `<tr><td>${(nm || '').replace(/</g, '&lt;')}</td><td>${r.year}</td><td>Q${r.quarter}</td><td>${fmt(net)}</td><td>${pt != null && Number.isFinite(pt) ? fmt(pt) : '—'}</td><td>${(r.notes || '').replace(/</g, '&lt;')}</td></tr>`;
       })
       .join('');
     openPrintWindow({
-      title: `${t('hajriTax')} — ${lang === 'ar' ? 'تقرير شامل' : 'Consolidated'}`,
+      title: `${t('hajriTax')} — ${lang === 'ar' ? 'السجل' : 'Registry'}`,
       companyName: '',
-      subtitle: periodLabel,
-      body: `<table class="w-full"><thead><tr><th>${lang === 'ar' ? 'الشركة' : 'Company'}</th><th>${t('vatNetPayable')}</th><th>${t('vatPaymentTarget')}</th><th>${t('vatNotes')}</th></tr></thead><tbody>${bodyRows}</tbody></table>`,
+      subtitle: '',
+      body: `<table class="w-full"><thead><tr><th>${lang === 'ar' ? 'الشركة' : 'Company'}</th><th>${lang === 'ar' ? 'السنة' : 'Year'}</th><th>${t('vatQuarter')}</th><th>${t('vatNetPayable')}</th><th>${t('vatPaymentTarget')}</th><th>${t('vatNotes')}</th></tr></thead><tbody>${bodyRows}</tbody></table>`,
     });
-  }, [overviewRows, lang, periodLabel, t]);
+  }, [registryRows, lang, t]);
 
   const exportJsonBundle = useCallback(() => {
-    const records = filteredCompanies.map((c) => {
-      const rec = resolveRecord(c.id);
-      return {
-        companyId: c.id,
-        payload: rec?.payload && typeof rec.payload === 'object' ? rec.payload : defaultDisclosureData(),
-        paymentTarget: rec?.paymentTarget ?? null,
-        notes: rec?.notes ?? null,
-        sourceSnapshot: rec?.sourceSnapshot ?? null,
-      };
-    });
+    const records = registryRows.map((r) => ({
+      companyId: r.companyId,
+      year: r.year,
+      quarter: r.quarter,
+      payload: r.payload && typeof r.payload === 'object' ? r.payload : defaultDisclosureData(),
+      paymentTarget: r.paymentTarget ?? null,
+      notes: r.notes ?? null,
+      sourceSnapshot: r.sourceSnapshot ?? null,
+    }));
     const blob = new Blob(
-      [JSON.stringify({ version: 1, year, quarter, exportedAt: new Date().toISOString(), records }, null, 2)],
+      [JSON.stringify({ version: 2, exportedAt: new Date().toISOString(), records }, null, 2)],
       { type: 'application/json' },
     );
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `hajri-tax-${periodLabel}.json`;
+    a.download = 'hajri-tax-registry-export.json';
     a.click();
     URL.revokeObjectURL(a.href);
-  }, [filteredCompanies, resolveRecord, year, quarter, periodLabel]);
+  }, [registryRows]);
 
   const onJsonImport = useCallback(
     async (e) => {
@@ -345,14 +421,17 @@ export default function HajriTaxScreen() {
         return;
       }
       const list = Array.isArray(parsed?.records) ? parsed.records : Array.isArray(parsed) ? parsed : [];
-      const y = parsed.year ?? year;
-      const q = parsed.quarter ?? quarter;
+      const fallbackYear = parsed.year;
+      const fallbackQuarter = parsed.quarter;
       for (const item of list) {
         if (!item?.companyId) continue;
+        const y = item.year ?? fallbackYear;
+        const q = item.quarter ?? fallbackQuarter;
+        if (!Number.isFinite(Number(y)) || !Number.isFinite(Number(q))) continue;
         const res = await upsertVatPlanning({
           companyId: item.companyId,
-          year: y,
-          quarter: q,
+          year: Number(y),
+          quarter: Number(q),
           payload: item.payload || defaultDisclosureData(),
           paymentTarget: item.paymentTarget ?? null,
           notes: item.notes ?? null,
@@ -361,9 +440,10 @@ export default function HajriTaxScreen() {
         throwIfApiFailed(res, 'فشل استيراد سجل');
       }
       qc.invalidateQueries({ queryKey: ['vat-planning'] });
+      refetchRegistry();
       refetch();
     },
-    [year, quarter, qc, refetch],
+    [qc, refetchRegistry, refetch],
   );
 
   if (!companies?.length) {
@@ -412,75 +492,58 @@ export default function HajriTaxScreen() {
         updateRow={updateRow}
         salesAmountIncludesVat={salesAmountIncludesVat}
         setSalesAmountIncludesVat={setSalesAmountIncludesVat}
+        readOnly={detailReadOnly}
+        onSwitchToEdit={() => setDetailReadOnly(false)}
       />
     );
   }
 
-  return (
-    <div className="grid gap-6">
-      <div className="nx-page-header flex flex-wrap justify-end gap-4">
-        <div className="nx-toolbar flex flex-wrap gap-2 items-end">
-          <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
-            {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </Input>
-          <Input type="select" label={t('vatQuarter')} value={quarter} onChange={(e) => setQuarter(Number(e.target.value))}>
-            {[1, 2, 3, 4].map((q) => (
-              <option key={q} value={q}>{lang === 'ar' ? `الربع ${q}` : `Q${q}`}</option>
-            ))}
-          </Input>
-          <Input type="select" label={t('vatFilterCompany')} value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)}>
-            <option value="">{t('vatAllCompanies')}</option>
-            {(companies || []).map((c) => (
-              <option key={c.id} value={c.id}>{lang === 'en' ? (c.nameEn || c.nameAr) : c.nameAr}</option>
-            ))}
-          </Input>
-          <Button size="sm" onClick={exportConsolidatedExcel}>{t('vatConsolidatedExport')}</Button>
-          <Button size="sm" onClick={printConsolidated}>{t('vatConsolidatedPrint')}</Button>
-          <Button size="sm" onClick={exportJsonBundle}>{t('vatJsonExport')}</Button>
-          <Button size="sm" onClick={() => jsonInputRef.current?.click()}>{t('vatJsonImport')}</Button>
-          <input ref={jsonInputRef} type="file" accept=".json,application/json" className="hidden" onChange={onJsonImport} />
-        </div>
-      </div>
+  const jsonToolbar = (
+    <>
+      <Button size="sm" variant="ghost" onClick={exportConsolidatedExcel}>
+        {t('vatConsolidatedExport')}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={printConsolidated}>
+        {t('vatConsolidatedPrint')}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={exportJsonBundle}>
+        {t('vatJsonExport')}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => jsonInputRef.current?.click()}>
+        {t('vatJsonImport')}
+      </Button>
+      <input ref={jsonInputRef} type="file" accept=".json,application/json" className="hidden" onChange={onJsonImport} />
+    </>
+  );
 
-      {listLoading ? (
-        <div className="text-noorix-muted text-[14px]">{t('loading')}</div>
-      ) : (
-        <div className="noorix-surface-card overflow-hidden p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] table-fixed border-collapse text-[14px]">
-              <thead>
-                <tr>
-                  <th className="text-end border-b border-noorix-border font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">{lang === 'ar' ? 'الشركة' : 'Company'}</th>
-                  <th className="text-end border-b nx-font-numbers font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">{t('vatNetPayable')}</th>
-                  <th className="text-end border-b nx-font-numbers font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">{t('vatPaymentTarget')}</th>
-                  <th className="text-end border-b font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">{t('vatNotes')}</th>
-                  <th className="text-end border-b font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">{t('vatLastUpdated')}</th>
-                  <th className="text-end border-b font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)] sticky right-0 bg-[var(--noorix-table-header-bg)]">{lang === 'ar' ? 'إجراء' : 'Action'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {overviewRows.map((row) => {
-                  const nm = lang === 'en' ? (row.nameEn || row.nameAr) : row.nameAr;
-                  return (
-                    <tr key={row.companyId}>
-                      <td className="border-b border-noorix-border py-[10px] px-3 truncate" title={nm}>{nm}</td>
-                      <td className="border-b nx-font-numbers py-[10px] px-3 text-end">{fmt(row.netPayable)}</td>
-                      <td className="border-b nx-font-numbers py-[10px] px-3 text-end">{row.paymentTarget === '' ? '—' : fmt(row.paymentTarget)}</td>
-                      <td className="border-b py-[10px] px-3 truncate text-end" title={row.notes}>{row.notes || '—'}</td>
-                      <td className="border-b nx-font-numbers py-[10px] px-3 text-end text-[12px]">{row.updatedAt ? String(row.updatedAt).slice(0, 19) : '—'}</td>
-                      <td className="border-b py-[10px] px-3 text-end sticky right-0 bg-noorix-surface">
-                        <Button size="sm" onClick={() => openCompanyDetail(row.companyId)}>{t('vatEditQuarter')}</Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
+  return (
+    <>
+      <HajriTaxRegistryList
+        t={t}
+        lang={lang}
+        companies={companies}
+        currentYear={currentYear}
+        registryRows={registryRows}
+        registryLoading={registryLoading}
+        filterYear={regFilterYear}
+        setFilterYear={setRegFilterYear}
+        filterQuarter={regFilterQuarter}
+        setFilterQuarter={setRegFilterQuarter}
+        filterCompanyId={regFilterCompany}
+        setFilterCompanyId={setRegFilterCompany}
+        onNewDeclaration={() => setShowNewDeclarationModal(true)}
+        onViewRow={(row) => openFromRegistryRow(row, 'view')}
+        onEditRow={(row) => openFromRegistryRow(row, 'edit')}
+        jsonToolbar={jsonToolbar}
+      />
+      <HajriTaxNewDeclarationModal
+        open={showNewDeclarationModal}
+        onClose={() => setShowNewDeclarationModal(false)}
+        onConfirm={handleNewDeclarationConfirm}
+        companies={companies}
+        lang={lang}
+        t={t}
+      />
+    </>
   );
 }
