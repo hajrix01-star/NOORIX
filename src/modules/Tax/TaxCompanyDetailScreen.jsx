@@ -122,9 +122,9 @@ export default function TaxCompanyDetailScreen() {
             {t('taxNumber')}: {company.taxNumber || '—'}
           </p>
         </div>
-        <Link to="/reports/tax">
+        <Link to="/hajri-tax/app">
           <Button type="button" variant="ghost" className="border border-[var(--noorix-border)]">
-            {t('taxHubOpenDisclosureForm')}
+            {t('taxHubOpenHajriApp')}
           </Button>
         </Link>
       </div>

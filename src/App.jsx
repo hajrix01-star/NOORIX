@@ -39,6 +39,7 @@ const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvo
 const TaxHubLayout = React.lazy(() => import('./modules/Tax/TaxHubLayout'));
 const TaxHubHomeScreen = React.lazy(() => import('./modules/Tax/TaxHubHomeScreen'));
 const TaxCompanyDetailScreen = React.lazy(() => import('./modules/Tax/TaxCompanyDetailScreen'));
+const TaxHajriEmbedScreen = React.lazy(() => import('./modules/Tax/TaxHajriEmbedScreen'));
 
 function getInitialLanguage() {
   if (typeof window === 'undefined') return 'ar';
@@ -376,8 +377,9 @@ export default function App() {
                 <Route path="/hajri-tax" element={<TaxHubLayout />}>
                   <Route index element={<TaxHubHomeScreen />} />
                   <Route path="company/:companyId" element={<TaxCompanyDetailScreen />} />
-                  <Route path="form" element={<Navigate to="/reports/tax" replace />} />
-                  <Route path="reports" element={<Navigate to="/reports/tax" replace />} />
+                  <Route path="app" element={<TaxHajriEmbedScreen />} />
+                  <Route path="form" element={<TaxHajriEmbedScreen />} />
+                  <Route path="reports" element={<TaxHajriEmbedScreen />} />
                 </Route>
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />

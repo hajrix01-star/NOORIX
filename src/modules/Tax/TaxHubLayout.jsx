@@ -1,5 +1,5 @@
 /**
- * إطار قسم الضرائب الموحّد — جميع الشركات بنفس المنطق، بدون iframe.
+ * إطار قسم الضرائب الموحّد — هوية نوريكس + تبويب لوحة نوريكس وتبويب تطبيق ‎tax-hajri‎ (iframe).
  */
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { ScreenShell, ScreenTitle, cn } from '../../ui';
 
 const TAX_HUB_LINKS = [
   { to: '/hajri-tax', labelKey: 'taxHubNavCompanies', end: true },
-  { to: '/reports/tax', labelKey: 'taxHubNavDisclosure', end: false },
+  { to: '/hajri-tax/app', labelKey: 'taxHubNavHajriApp', end: true },
 ];
 
 export default function TaxHubLayout() {

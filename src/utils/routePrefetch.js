@@ -25,8 +25,9 @@ const routeLoaders = {
   '/settings': () => import('../modules/Settings/SettingsScreen'),
   '/theme-preview': () => import('../modules/ThemePreviewScreen'),
   '/hajri-tax': () => import('../modules/Tax/TaxHubLayout'),
-  '/hajri-tax/form': () => import('../modules/Tax/TaxHubLayout'),
-  '/hajri-tax/reports': () => import('../modules/Tax/TaxHubLayout'),
+  '/hajri-tax/app': () => import('../modules/Tax/TaxHajriEmbedScreen'),
+  '/hajri-tax/form': () => import('../modules/Tax/TaxHajriEmbedScreen'),
+  '/hajri-tax/reports': () => import('../modules/Tax/TaxHajriEmbedScreen'),
 };
 
 /** يمنع استدعاءات متكررة لنفس المسار أثناء التحميل */

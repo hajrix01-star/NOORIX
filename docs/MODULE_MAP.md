@@ -18,6 +18,6 @@
 | التقارير | `/reports` | `modules/Reports/ReportsScreen.jsx` | [REPORTS.md](modules/REPORTS.md) |
 | الإعدادات | `/settings` | `modules/Settings/SettingsScreen.jsx` | [SETTINGS.md](modules/SETTINGS.md) |
 | معاينة الثيم | `/theme-preview` | `modules/ThemePreviewScreen.jsx` | — |
-| مركز الضرائب (موحّد) | `/hajri-tax` | `modules/Tax/TaxHubLayout.jsx`, `TaxHubHomeScreen.jsx`, `TaxCompanyDetailScreen.jsx` | — |
+| مركز الضرائب (موحّد) | `/hajri-tax` | `modules/Tax/TaxHubLayout.jsx`, `TaxHubHomeScreen.jsx`, `TaxCompanyDetailScreen.jsx`, `TaxHajriEmbedScreen.jsx` (تضمين ‎tax-hajri‎) | — |
 
 **مشتركات**: `src/core/unifiedTransaction.js`, `src/services/api.js`, `src/context/AppContext.jsx`, `src/hooks/useSales.js`, `src/hooks/useInvoices.js`, `src/hooks/useSuppliers.js`, `src/hooks/useVaults.js`, `src/hooks/useCategories.js`, `src/constants/tax.js`, `src/components/*`.
