@@ -112,10 +112,10 @@ export default function TaxReportTab() {
       subtitle: `${vatTitle} — ${periodKey}`,
       body: `<table><thead><tr><th>${t('reportItem')}</th><th>المبلغ (SR)</th><th>${lang === 'ar' ? 'التعديلات' : 'Adjustments'}</th><th>${lang === 'ar' ? 'ضريبة القيمة المضافة' : 'VAT'}</th></tr></thead>
 <tbody><tr><td colspan="4" style="background:#f0fdf4;font-weight:700">${lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)'}</td></tr>${outRows}
-<tr><td colspan="4" style="background:#fef2f2;font-weight:700">${lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)'}</td></tr>${inRows}
+<tr><td colspan="4" style="background:#fef2f2;font-weight:700">${lang === 'ar' ? 'ضريبة المشتريات والمصروفات (ما سُجّلت ضريبته فقط)' : 'Purchases & expenses VAT (tax lines only)'}</td></tr>${inRows}
 <tr><td colspan="4" style="background:#eff6ff;font-weight:700">${lang === 'ar' ? 'الملخص' : 'Summary'}</td></tr>
 <tr><td>${lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td><td colspan="3">${fmt(outputTotal)} SR</td></tr>
-<tr><td>${lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable'}</td><td colspan="3">${fmt(inputTotal)} SR</td></tr>
+<tr><td>${lang === 'ar' ? 'إجمالي ضريبة المشتريات والمصروفات (مسجّلة فقط)' : 'Total VAT on purchases & expenses (recorded only)'}</td><td colspan="3">${fmt(inputTotal)} SR</td></tr>
 <tr><td>${lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td><td colspan="3">${fmt(netVat)} SR</td></tr>
 <tr><td>${lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td><td colspan="3">${fmt(priorAdj)}</td></tr>
 <tr><td>${lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td><td colspan="3">${fmt(balanceCarried)}</td></tr>
@@ -247,7 +247,7 @@ export default function TaxReportTab() {
                 ))}
                 <tr>
                   <td colSpan={4} className="font-bold text-noorix-red py-[10px] px-3 bg-[var(--noorix-red-6)]">
-                    {lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة (المشتريات)' : 'Input VAT (Purchases)'}
+                    {lang === 'ar' ? 'ضريبة المشتريات والمصروفات (ما سُجّلت ضريبته فقط)' : 'Purchases & expenses VAT (tax lines only)'}
                   </td>
                 </tr>
                 {INPUT_ROWS.map((r) => (
@@ -276,7 +276,7 @@ export default function TaxReportTab() {
                   <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3"><FmtNum n={outputTotal} /> <span className="nx-sar">SR</span></td>
                 </tr>
                 <tr>
-                  <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'إجمالي الضريبة المستردة' : 'Total VAT recoverable'}</td>
+                  <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'إجمالي ضريبة المشتريات والمصروفات (مسجّلة فقط)' : 'Total VAT on purchases & expenses (recorded only)'}</td>
                   <td colSpan={3} className="border-b border-noorix-border text-end nx-font-numbers py-[10px] px-3"><FmtNum n={inputTotal} /> <span className="nx-sar">SR</span></td>
                 </tr>
                 <tr>

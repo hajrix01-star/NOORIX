@@ -42,7 +42,7 @@ export default function HajriTaxDetailEditor({
 }) {
   const dueNet = netPayableDraft >= 0;
 
-  const renderSectionRows = (rows, sectionTotal) =>
+  const renderSectionRows = (rows, sectionTotal, totalVatLabelKey = 'vatColumnVat') =>
     rows.map((r) => {
       const label = lang === 'ar' ? r.labelAr : r.labelEn;
       if (r.isTotal) {
@@ -53,7 +53,7 @@ export default function HajriTaxDetailEditor({
           >
             <span className="font-bold text-[13px] text-noorix-text">{label}</span>
             <div className="flex flex-wrap items-baseline gap-2 sm:gap-6">
-              <span className="text-[11px] text-noorix-muted">{t('vatColumnVat')}</span>
+              <span className="text-[11px] text-noorix-muted">{t(totalVatLabelKey)}</span>
               <span className="nx-font-numbers text-[16px] font-bold">
                 {fmt(sectionTotal)} <span className="nx-sar text-[13px]">SR</span>
               </span>
@@ -136,7 +136,7 @@ export default function HajriTaxDetailEditor({
               <div className="text-end">{t('vatColumnRecoverable')}</div>
               <div className="text-center">{t('vatColumnAdjustment')}</div>
             </div>
-            {renderSectionRows(INPUT_ROWS, inputTotal)}
+            {renderSectionRows(INPUT_ROWS, inputTotal, 'vatColumnRecoverable')}
           </section>
 
           <section className="noorix-surface-card p-4">

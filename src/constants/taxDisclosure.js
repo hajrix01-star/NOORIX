@@ -10,13 +10,26 @@ export const OUTPUT_ROWS = [
 ];
 
 export const INPUT_ROWS = [
-  { key: 'standard_purchases', labelAr: 'مشتريات محلية بالمعدل القياسي', labelEn: 'Standard-rated local purchases' },
-  { key: 'input_total', labelAr: 'إجمالي مدخلات ضريبة القيمة المضافة', labelEn: 'Total input VAT', isTotal: true },
+  {
+    key: 'standard_purchases',
+    labelAr: 'مشتريات ومصروفات (ضريبة مسجّلة فقط)',
+    labelEn: 'Purchases & expenses (VAT recorded only)',
+  },
+  {
+    key: 'input_total',
+    labelAr: 'إجمالي ضريبة المشتريات والمصروفات',
+    labelEn: 'Total VAT on purchases & expenses',
+    isTotal: true,
+  },
 ];
 
 export const SUMMARY_ROWS = [
   { key: 'vat_due', labelAr: 'إجمالي ضريبة القيمة المضافة المستحقة', labelEn: 'Total VAT due' },
-  { key: 'vat_recoverable', labelAr: 'إجمالي ضريبة القيمة المضافة المستردة', labelEn: 'Total VAT recoverable' },
+  {
+    key: 'vat_recoverable',
+    labelAr: 'إجمالي ضريبة المشتريات والمصروفات (مسجّلة)',
+    labelEn: 'Total purchase & expense VAT (recorded)',
+  },
   { key: 'net_vat', labelAr: 'صافي ضريبة القيمة المضافة', labelEn: 'Net VAT' },
   { key: 'prior_adjustments', labelAr: 'تصحيحات من الفترة السابقة', labelEn: 'Prior period adjustments' },
   { key: 'balance_carried', labelAr: 'رصيد مرحلة', labelEn: 'Balance carried forward' },

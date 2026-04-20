@@ -261,8 +261,8 @@ export default function HajriTaxScreen() {
       subtitle: `${periodLabel} — ${lang === 'ar' ? 'تخطيط ضريبي (لا يؤثر على المحاسبة)' : 'Planning only (no accounting impact)'}`,
       body: `<p>${lang === 'ar' ? 'مبلغ الدفع المستهدف:' : 'Target payment:'} ${fmt(parseFloat(paymentTargetStr) || 0)} SR</p>
 <table><thead><tr><th>${t('reportItem')}</th><th>SR</th><th>${lang === 'ar' ? 'تعديل' : 'Adj.'}</th><th>VAT</th></tr></thead>
-<tbody><tr><td colspan="4" style="background:#f0fdf4;font-weight:700">${lang === 'ar' ? 'مخرجات' : 'Output'}</td></tr>${outRows}
-<tr><td colspan="4" style="background:#fef2f2;font-weight:700">${lang === 'ar' ? 'مدخلات' : 'Input'}</td></tr>${inRows}</tbody></table>
+<tbody><tr><td colspan="4" style="background:#f0fdf4;font-weight:700">${lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (sales)'}</td></tr>${outRows}
+<tr><td colspan="4" style="background:#fef2f2;font-weight:700">${lang === 'ar' ? 'ضريبة المشتريات والمصروفات (ما سُجّلت ضريبته فقط)' : 'Purchases & expenses VAT (tax lines only)'}</td></tr>${inRows}</tbody></table>
 <p><b>${lang === 'ar' ? 'صافي مستحق' : 'Net payable'}:</b> ${fmt(netPayableDraft)} SR</p>`,
     });
   }, [detailCompanyId, companyMeta, lang, draftData, outputTotal, inputTotal, netPayableDraft, paymentTargetStr, periodLabel, t]);
