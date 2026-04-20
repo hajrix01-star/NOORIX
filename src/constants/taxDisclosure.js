@@ -3,20 +3,14 @@
  * لا تستورد من modules/.
  */
 
+/** صفوف المخرجات/المدخلات المعروضة في الواجهة — مختصرة للاستخدام الذي لا يفرّق هذه الفئات */
 export const OUTPUT_ROWS = [
   { key: 'standard_sales', labelAr: 'مبيعات بالمعدل القياسي 15%', labelEn: 'Standard-rated sales 15%' },
-  { key: 'special_sales', labelAr: 'مبيعات خاصة (صحة/تعليم/أول منزل للمواطنين)', labelEn: 'Private healthcare/education/first house' },
-  { key: 'zero_rated_domestic', labelAr: 'مبيعات صفرية محلية', labelEn: 'Zero-rated domestic sales' },
-  { key: 'exports', labelAr: 'الصادرات', labelEn: 'Exports' },
-  { key: 'exempt_sales', labelAr: 'مبيعات معفاة', labelEn: 'Exempt sales' },
   { key: 'output_total', labelAr: 'إجمالي مخرجات ضريبة القيمة المضافة', labelEn: 'Total output VAT', isTotal: true },
 ];
 
 export const INPUT_ROWS = [
   { key: 'standard_purchases', labelAr: 'مشتريات محلية بالمعدل القياسي', labelEn: 'Standard-rated local purchases' },
-  { key: 'imports_customs', labelAr: 'واردات خاضعة (مدفوعة عند الجمارك)', labelEn: 'Imports at customs' },
-  { key: 'reverse_charge', labelAr: 'واردات خاضعة للتكليف العكسي', labelEn: 'Reverse charge imports' },
-  { key: 'exempt_purchases', labelAr: 'مشتريات معفاة', labelEn: 'Exempt purchases' },
   { key: 'input_total', labelAr: 'إجمالي مدخلات ضريبة القيمة المضافة', labelEn: 'Total input VAT', isTotal: true },
 ];
 
