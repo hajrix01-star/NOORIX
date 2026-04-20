@@ -23,7 +23,8 @@ import { fmt } from '../../utils/format';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { getTaxVatReport, throwIfApiFailed, upsertVatPlanning } from '../../services/api';
-import { Button, Input, FmtNum } from '../../ui';
+import { Button, Input } from '../../ui';
+import HajriTaxDetailEditor from './HajriTaxDetailEditor';
 
 function clonePayload(from) {
   return mergeImportedDisclosure(defaultDisclosureData(), from || {});
@@ -55,6 +56,8 @@ export default function HajriTaxScreen() {
   const [sourceSnapshot, setSourceSnapshot] = useState(null);
   const [importIso, setImportIso] = useState(null);
   const [saveHint, setSaveHint] = useState('');
+  const [showSimulator, setShowSimulator] = useState(true);
+  const [importingReport, setImportingReport] = useState(false);
 
   const periodStr = `Q${quarter}`;
   const periodLabel = `${year}-${periodStr}`;
@@ -175,14 +178,35 @@ export default function HajriTaxScreen() {
   const balanceCarried = getRowValue(draftData, 'balance_carried');
   const netVat = outputTotal - inputTotal;
 
+  const paymentTargetParsed = useMemo(() => {
+    const p = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
+    return Number.isFinite(p) ? p : NaN;
+  }, [paymentTargetStr]);
+
+  /** ضريبة المدخلات النظرية المطلوبة إذا كان صافي السداد = المبلغ المستهدف (بافتراض ثابت التعديلات) */
+  const simulatorRequiredInputVat = useMemo(() => {
+    if (!Number.isFinite(paymentTargetParsed)) return null;
+    return outputTotal + priorAdj + balanceCarried - paymentTargetParsed;
+  }, [outputTotal, priorAdj, balanceCarried, paymentTargetParsed]);
+
+  const simulatorEstimatedBaseAt15 = useMemo(() => {
+    if (simulatorRequiredInputVat == null || simulatorRequiredInputVat <= 0) return null;
+    return +(simulatorRequiredInputVat / 0.15).toFixed(2);
+  }, [simulatorRequiredInputVat]);
+
   const handleImportFromTaxReport = useCallback(async () => {
     if (!detailCompanyId) return;
-    const res = await getTaxVatReport(detailCompanyId, year, periodStr);
-    throwIfApiFailed(res, 'فشل استيراد تقرير الضريبة');
-    const imported = res.data;
-    setDraftData((prev) => mergeImportedDisclosure(prev, imported));
-    setSourceSnapshot(imported && typeof imported === 'object' ? { ...imported } : imported);
-    setImportIso(new Date().toISOString());
+    setImportingReport(true);
+    try {
+      const res = await getTaxVatReport(detailCompanyId, year, periodStr);
+      throwIfApiFailed(res, 'فشل استيراد تقرير الضريبة');
+      const imported = res.data;
+      setDraftData((prev) => mergeImportedDisclosure(prev, imported));
+      setSourceSnapshot(imported && typeof imported === 'object' ? { ...imported } : imported);
+      setImportIso(new Date().toISOString());
+    } finally {
+      setImportingReport(false);
+    }
   }, [detailCompanyId, year, periodStr]);
 
   const handleBalancePayment = useCallback(() => {
@@ -349,135 +373,40 @@ export default function HajriTaxScreen() {
   if (detailCompanyId) {
     const { name, tax } = companyMeta(detailCompanyId);
     return (
-      <>
-        <div className="grid gap-6">
-        <div className="nx-page-header flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[14px] font-bold m-0 text-noorix-blue">{name}{tax ? ` · ${tax}` : ''}</p>
-          </div>
-          <div className="nx-toolbar flex flex-wrap gap-2">
-            <Button size="sm" variant="ghost" onClick={closeDetail}>{t('vatBackToList')}</Button>
-            <Button size="sm" onClick={handleImportFromTaxReport}>{t('vatImportFromTaxReport')}</Button>
-            <Button size="sm" onClick={handleSaveDetail} disabled={upsertMutation.isPending}>{t('save')}</Button>
-            <Button size="sm" onClick={printDetail}>{t('print')}</Button>
-            <Button size="sm" onClick={exportDetailExcel}>{t('exportExcel')}</Button>
-          </div>
-        </div>
-        {saveHint ? <div className="text-[13px] text-noorix-green font-medium">{saveHint}</div> : null}
-
-        <div className="noorix-surface-card p-4 grid gap-4 md:grid-cols-2">
-          <Input
-            type="text"
-            label={t('vatPaymentTarget')}
-            inputMode="decimal"
-            value={paymentTargetStr}
-            onChange={(e) => setPaymentTargetStr(e.target.value)}
-            placeholder="0"
-          />
-          <div className="flex items-end gap-2">
-            <Button size="sm" onClick={handleBalancePayment}>{t('vatBalanceInputs')}</Button>
-          </div>
-          <Input
-            multiline
-            rows={2}
-            label={t('vatNotes')}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </div>
-
-        {sourceSnapshot ? (
-          <details className="noorix-surface-card p-4 text-[13px]">
-            <summary className="cursor-pointer font-bold">{t('vatReferenceSnapshot')}</summary>
-            <pre className="mt-2 overflow-x-auto text-[12px] whitespace-pre-wrap">{JSON.stringify(sourceSnapshot, null, 2)}</pre>
-          </details>
-        ) : null}
-
-        <div className="noorix-surface-card overflow-hidden p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] table-fixed border-collapse text-[14px]">
-              <thead>
-                <tr>
-                  <th className="text-end border-b border-noorix-border font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)] w-[28%]">{t('reportItem')}</th>
-                  <th className="text-end border-b nx-font-numbers font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">SR</th>
-                  <th className="text-center border-b font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">{lang === 'ar' ? 'تعديل' : 'Adj.'}</th>
-                  <th className="text-end border-b nx-font-numbers font-bold py-[10px] px-3 bg-[var(--noorix-table-header-bg)]">VAT</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colSpan={4} className="font-bold text-noorix-green py-[10px] px-3 bg-[var(--noorix-green-6)]">
-                    {lang === 'ar' ? 'مخرجات (مبيعات)' : 'Output (sales)'}
-                  </td>
-                </tr>
-                {OUTPUT_ROWS.map((r) => (
-                  <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
-                    <td className="border-b border-noorix-border py-[10px] px-3 truncate" title={lang === 'ar' ? r.labelAr : r.labelEn}>
-                      {lang === 'ar' ? r.labelAr : r.labelEn}
-                    </td>
-                    <td className="text-end border-b border-noorix-border py-2 px-3 nx-font-numbers">
-                      {r.isTotal ? fmt(outputTotal) : renderEditableCell(r.key, 'amount')}
-                    </td>
-                    <td className="text-center border-b border-noorix-border py-2 px-3">
-                      {r.isTotal ? '—' : renderEditableCell(r.key, 'adjustment')}
-                    </td>
-                    <td className="text-end border-b nx-font-numbers py-2 px-3">
-                      {r.isTotal ? fmt(outputTotal) : renderEditableCell(r.key, 'vat')}
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan={4} className="font-bold text-noorix-red py-[10px] px-3 bg-[var(--noorix-red-6)]">
-                    {lang === 'ar' ? 'مدخلات (مشتريات ومصاريف بضريبة)' : 'Input (taxable purchases/expenses)'}
-                  </td>
-                </tr>
-                {INPUT_ROWS.map((r) => (
-                  <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
-                    <td className="border-b border-noorix-border py-[10px] px-3 truncate" title={lang === 'ar' ? r.labelAr : r.labelEn}>
-                      {lang === 'ar' ? r.labelAr : r.labelEn}
-                    </td>
-                    <td className="text-end border-b nx-font-numbers py-2 px-3">
-                      {r.isTotal ? fmt(inputTotal) : renderEditableCell(r.key, 'amount')}
-                    </td>
-                    <td className="text-center border-b border-noorix-border py-2 px-3">
-                      {r.isTotal ? '—' : renderEditableCell(r.key, 'adjustment')}
-                    </td>
-                    <td className="text-end border-b nx-font-numbers py-2 px-3">
-                      {r.isTotal ? fmt(inputTotal) : renderEditableCell(r.key, 'vat')}
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan={4} className="font-bold py-[10px] px-3 bg-[var(--noorix-blue-6)]">{lang === 'ar' ? 'الملخص' : 'Summary'}</td>
-                </tr>
-                <tr>
-                  <td className="border-b py-[10px] px-3">{lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td>
-                  <td colSpan={3} className="border-b text-end nx-font-numbers font-bold py-[10px] px-3"><FmtNum n={netVat} /></td>
-                </tr>
-                <tr>
-                  <td className="border-b py-[10px] px-3">{lang === 'ar' ? 'تصحيحات سابقة' : 'Prior adjustments'}</td>
-                  <td colSpan={3} className="border-b text-center py-2 px-3">
-                    <Input type="text" inputMode="decimal" value={priorAdj || ''} onChange={(e) => updateRow('prior_adjustments', null, e.target.value)} placeholder="0" />
-                  </td>
-                </tr>
-                <tr>
-                  <td className="border-b py-[10px] px-3">{lang === 'ar' ? 'رصيد مرحّل' : 'Balance carried'}</td>
-                  <td colSpan={3} className="border-b text-center py-2 px-3">
-                    <Input type="text" inputMode="decimal" value={balanceCarried || ''} onChange={(e) => updateRow('balance_carried', null, e.target.value)} placeholder="0" />
-                  </td>
-                </tr>
-                <tr className="bg-[var(--noorix-blue-8)] border-t-2 border-noorix-blue">
-                  <td className="font-extrabold p-3">{lang === 'ar' ? 'صافي مستحق / مسترد' : 'Net payable / refundable'}</td>
-                  <td colSpan={3} className="text-end nx-font-numbers font-extrabold p-3">
-                    <FmtNum n={netPayableDraft} /> <span className="nx-sar">SR</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      </>
+      <HajriTaxDetailEditor
+        t={t}
+        lang={lang}
+        periodLabel={periodLabel}
+        companyName={name}
+        taxNumber={tax}
+        closeDetail={closeDetail}
+        handleImportFromTaxReport={handleImportFromTaxReport}
+        importingReport={importingReport}
+        handleSaveDetail={handleSaveDetail}
+        savePending={upsertMutation.isPending}
+        printDetail={printDetail}
+        exportDetailExcel={exportDetailExcel}
+        saveHint={saveHint}
+        outputTotal={outputTotal}
+        inputTotal={inputTotal}
+        netPayableDraft={netPayableDraft}
+        netVat={netVat}
+        priorAdj={priorAdj}
+        balanceCarried={balanceCarried}
+        paymentTargetStr={paymentTargetStr}
+        setPaymentTargetStr={setPaymentTargetStr}
+        notes={notes}
+        setNotes={setNotes}
+        sourceSnapshot={sourceSnapshot}
+        showSimulator={showSimulator}
+        setShowSimulator={setShowSimulator}
+        handleBalancePayment={handleBalancePayment}
+        simulatorRequiredInputVat={simulatorRequiredInputVat}
+        simulatorEstimatedBaseAt15={simulatorEstimatedBaseAt15}
+        paymentTargetParsed={paymentTargetParsed}
+        renderEditableCell={renderEditableCell}
+        updateRow={updateRow}
+      />
     );
   }
 
