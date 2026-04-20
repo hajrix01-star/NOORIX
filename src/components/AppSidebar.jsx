@@ -23,10 +23,23 @@ import {
   IconOcr,
   IconSettings,
   IconMonitor,
+  IconCalculator,
 } from './SidebarIcons';
+
+const HAJRI_TAX_APP_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_HAJRI_TAX_URL)
+  ? String(import.meta.env.VITE_HAJRI_TAX_URL).replace(/\/$/, '')
+  : 'https://hajrix.com/tax';
 
 const SIDEBAR_LINKS = [
   { to: '/owner', labelKey: 'ownerDashboard', icon: IconCrown, permission: 'VIEW_OWNER' },
+  {
+    external: true,
+    href: `${HAJRI_TAX_APP_URL}/`,
+    labelKey: 'hajriTaxSidebar',
+    icon: IconCalculator,
+    permission: 'VIEW_OWNER',
+    ownerOnly: true,
+  },
   { to: '/', end: true, labelKey: 'dashboard', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
   { to: '/chat', labelKey: 'smartChat', icon: IconChat, permission: 'VIEW_CHAT' },
   { to: '/sales', labelKey: 'sales', icon: IconCart, permission: 'VIEW_SALES' },
@@ -60,7 +73,10 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
   const navigate = useNavigate();
   const navLinkClass = ({ isActive }) =>
     `app-nav-link${isActive ? ' app-nav-link--active' : ''}`;
-  const visibleLinks = SIDEBAR_LINKS.filter((link) => hasPermission(userRole, link.permission, userPermissions));
+  const visibleLinks = SIDEBAR_LINKS.filter((link) => {
+    if (link.ownerOnly && String(userRole || '').toLowerCase() !== 'owner') return false;
+    return hasPermission(userRole, link.permission, userPermissions);
+  });
 
   const isReportsExpanded = visibleLinks.some((l) => l.children?.some((c) => location.pathname.startsWith(c.to)));
   const [reportsOpen, setReportsOpen] = useState(isReportsExpanded);
@@ -131,7 +147,22 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
         <div className="app-sidebar__nav">
           <ul className="app-nav-list">
             {visibleLinks.map((link) =>
-              link.children ? (
+              link.external ? (
+                <li key="hajri-tax-external" className="app-nav-item">
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="app-nav-link"
+                    onClick={onClose}
+                  >
+                    <span className="app-nav-link__label">
+                      <link.icon />
+                      <span>{t(link.labelKey)}</span>
+                    </span>
+                  </a>
+                </li>
+              ) : link.children ? (
                 <li key={link.to} className="app-nav-item app-nav-item--has-children">
                   <Button
                     variant="ghost"
