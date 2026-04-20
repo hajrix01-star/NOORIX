@@ -368,7 +368,10 @@ export default function App() {
                 </Route>
                 <Route path="/settings" element={<SettingsScreen />} />
                 <Route path="/ocr" element={<OcrInvoicesScreen />} />
-                <Route path="/tax/*" element={<TaxEmbeddedScreen />} />
+                <Route path="/tax" element={<Navigate to="/hajri-tax" replace />} />
+                <Route path="/tax/form" element={<Navigate to="/hajri-tax/form" replace />} />
+                <Route path="/tax/reports" element={<Navigate to="/hajri-tax/reports" replace />} />
+                <Route path="/hajri-tax/*" element={<TaxEmbeddedScreen />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />
               </Routes>

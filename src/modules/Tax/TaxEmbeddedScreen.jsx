@@ -14,7 +14,8 @@ const HAJRI_TAX_FALLBACK = (typeof import.meta !== 'undefined' && import.meta.en
   ? String(import.meta.env.VITE_HAJRI_TAX_URL).replace(/\/$/, '')
   : 'https://hajrix.com/tax';
 
-const ALLOWED_TAX_PATHS = new Set(['/tax', '/tax/form', '/tax/reports']);
+/** يجب ألا يكون ‎/tax‎ — يتعارض مع تطبيق الضرائب المستضاف على ‎/tax/‎ */
+const ALLOWED_TAX_PATHS = new Set(['/hajri-tax', '/hajri-tax/form', '/hajri-tax/reports']);
 
 export default function TaxEmbeddedScreen() {
   const { t } = useTranslation();
@@ -41,14 +42,27 @@ export default function TaxEmbeddedScreen() {
     return buildHajriTaxEmbeddedUrl(base, segment);
   }, [data?.url, segment]);
 
+  /** يمنع حلقة التضمين: لا نحمّل واجهة نوركس (/hajri-tax) داخل الـ iframe */
+  const iframeBlockedSameApp = useMemo(() => {
+    if (typeof window === 'undefined' || !iframeSrc) return false;
+    try {
+      const u = new URL(iframeSrc);
+      if (u.origin !== window.location.origin) return false;
+      const p = u.pathname.replace(/\/$/, '') || '/';
+      return p === '/hajri-tax' || p.startsWith('/hajri-tax/');
+    } catch {
+      return false;
+    }
+  }, [iframeSrc]);
+
   const openExternal = () => {
     window.open(iframeSrc, '_blank', 'noopener,noreferrer');
   };
 
-  const normalizedPath = pathname.replace(/\/$/, '') || '/tax';
-  const invalidSubpath = normalizedPath.startsWith('/tax') && !ALLOWED_TAX_PATHS.has(normalizedPath);
+  const normalizedPath = pathname.replace(/\/$/, '') || '/hajri-tax';
+  const invalidSubpath = normalizedPath.startsWith('/hajri-tax') && !ALLOWED_TAX_PATHS.has(normalizedPath);
   if (invalidSubpath) {
-    return <Navigate to="/tax" replace />;
+    return <Navigate to="/hajri-tax" replace />;
   }
 
   return (
@@ -108,7 +122,12 @@ export default function TaxEmbeddedScreen() {
             )}
           </div>
         )}
-        {isSuccess && data && (
+        {isSuccess && data && iframeBlockedSameApp && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 p-6 text-center bg-[var(--noorix-bg-surface)]">
+            <p className="text-sm text-[var(--noorix-text)] m-0 max-w-md">{t('hajriTaxEmbedBlocked')}</p>
+          </div>
+        )}
+        {isSuccess && data && !iframeBlockedSameApp && (
           <iframe
             key={iframeSrc}
             title={t('hajriTaxEmbedTitle')}

@@ -36,6 +36,10 @@ export default {
     en: 'The tax app is embedded here inside Noorix. Open in a new tab or refresh the session if needed.',
   },
   hajriTaxOpenInNewTab: { ar: 'فتح في تبويب جديد', en: 'Open in new tab' },
+  hajriTaxEmbedBlocked: {
+    ar: 'عنوان التضمين يشير إلى نفس تطبيق نووريكس — راجع ضبط HAJRI_TAX_BASE_URL وVITE_HAJRI_TAX_URL ليكونا على مسار تطبيق الضرائب (/tax) وليس مسار نوريكس.',
+    en: 'The embed URL points at Noorix itself — check HAJRI_TAX_BASE_URL / VITE_HAJRI_TAX_URL so they target the tax app (/tax), not Noorix.',
+  },
   taxNavCompanies: { ar: 'الشركات', en: 'Companies' },
   taxNavForms: { ar: 'النماذج والإقرارات', en: 'Forms & filings' },
   taxNavReports: { ar: 'تقارير الضريبة', en: 'Tax reports' },

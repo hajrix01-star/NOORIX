@@ -29,15 +29,15 @@ import {
 const SIDEBAR_LINKS = [
   { to: '/owner', labelKey: 'ownerDashboard', icon: IconCrown, permission: 'VIEW_OWNER' },
   {
-    to: '/tax',
+    to: '/hajri-tax',
     labelKey: 'hajriTaxSidebar',
     icon: IconCalculator,
     permission: 'VIEW_OWNER',
     ownerOnly: true,
     children: [
-      { to: '/tax', labelKey: 'taxNavCompanies', icon: IconDocument, end: true },
-      { to: '/tax/form', labelKey: 'taxNavForms', icon: IconDocument },
-      { to: '/tax/reports', labelKey: 'taxNavReports', icon: IconChartBar },
+      { to: '/hajri-tax', labelKey: 'taxNavCompanies', icon: IconDocument, end: true },
+      { to: '/hajri-tax/form', labelKey: 'taxNavForms', icon: IconDocument },
+      { to: '/hajri-tax/reports', labelKey: 'taxNavReports', icon: IconChartBar },
     ],
   },
   { to: '/', end: true, labelKey: 'dashboard', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
@@ -124,7 +124,7 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
       setTaxOpen(false);
     } else {
       setTaxOpen(true);
-      navigate('/tax');
+      navigate('/hajri-tax');
       onClose();
     }
   };
@@ -198,7 +198,7 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
                     </ul>
                   )}
                 </li>
-              ) : link.children && link.to === '/tax' ? (
+              ) : link.children && link.to === '/hajri-tax' ? (
                 <li key={link.to} className="app-nav-item app-nav-item--has-children">
                   <Button
                     variant="ghost"
