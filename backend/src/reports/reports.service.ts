@@ -1408,9 +1408,8 @@ export class ReportsService {
     const standard_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
     const exempt_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
 
-    /** عند غياب ضريبة مسجّلة في الفاتورة: اعتبار مجموع net_amount للمبيعات إجماليًا شاملاً 15٪ واستخراج الأساس والضريبة */
+    /** عند غياب ضريبة مسجّلة: الأساس = مجموع صافي المبيعات؛ الضريبة = الأساس × 15٪ (تبسيط واضح) */
     const VAT_STANDARD_RATE = new Decimal('0.15');
-    const VAT_INCLUSIVE_DIVISOR = new Decimal('1').plus(VAT_STANDARD_RATE);
 
     for (const row of vatRows) {
       const net = this.dec(row.net_sum);
@@ -1420,9 +1419,8 @@ export class ReportsService {
           standard_sales.amount = standard_sales.amount.plus(net);
           standard_sales.vat = standard_sales.vat.plus(tax);
         } else if (net.gt(0)) {
-          const grossInclusive = net;
-          const baseExcl = grossInclusive.div(VAT_INCLUSIVE_DIVISOR);
-          const vatImputed = grossInclusive.minus(baseExcl);
+          const baseExcl = net;
+          const vatImputed = baseExcl.mul(VAT_STANDARD_RATE);
           standard_sales.amount = standard_sales.amount.plus(baseExcl);
           standard_sales.vat = standard_sales.vat.plus(vatImputed);
         }
