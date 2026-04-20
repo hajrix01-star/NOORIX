@@ -12,6 +12,10 @@ const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
+/** يتوافق مع Vite `base` عند النشر تحت مسار فرعي (/tax/) */
+const routerBasename =
+  import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '');
+
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
@@ -69,7 +73,7 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
+        <Router basename={routerBasename}>
           <NavigationTracker />
           <AuthenticatedApp />
         </Router>
