@@ -9,57 +9,31 @@ import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { fmt } from '../../utils/format';
-import { Button, Input , FmtNum } from '../../ui';
+import { Button, Input, FmtNum } from '../../ui';
 import { TAX_REPORT_STORAGE_PREFIX } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
+import {
+  OUTPUT_ROWS,
+  INPUT_ROWS,
+  SUMMARY_ROWS,
+  defaultDisclosureData,
+  mergeImportedDisclosure,
+  computeOutputTotal,
+  computeInputTotal,
+  computeNetPayable,
+  getRowValue,
+} from '../../constants/taxDisclosure';
 
 function taxReportStorageKey(companyId, period) {
   return `${TAX_REPORT_STORAGE_PREFIX}_${companyId}_${period}`;
 }
 
-// بنود نموذج الإفصاح الضريبي — مخرجات ضريبة القيمة المضافة
-const OUTPUT_ROWS = [
-  { key: 'standard_sales', labelAr: 'مبيعات بالمعدل القياسي 15%', labelEn: 'Standard-rated sales 15%' },
-  { key: 'special_sales', labelAr: 'مبيعات خاصة (صحة/تعليم/أول منزل للمواطنين)', labelEn: 'Private healthcare/education/first house' },
-  { key: 'zero_rated_domestic', labelAr: 'مبيعات صفرية محلية', labelEn: 'Zero-rated domestic sales' },
-  { key: 'exports', labelAr: 'الصادرات', labelEn: 'Exports' },
-  { key: 'exempt_sales', labelAr: 'مبيعات معفاة', labelEn: 'Exempt sales' },
-  { key: 'output_total', labelAr: 'إجمالي مخرجات ضريبة القيمة المضافة', labelEn: 'Total output VAT', isTotal: true },
-];
-
-// بنود مدخلات ضريبة القيمة المضافة
-const INPUT_ROWS = [
-  { key: 'standard_purchases', labelAr: 'مشتريات محلية بالمعدل القياسي', labelEn: 'Standard-rated local purchases' },
-  { key: 'imports_customs', labelAr: 'واردات خاضعة (مدفوعة عند الجمارك)', labelEn: 'Imports at customs' },
-  { key: 'reverse_charge', labelAr: 'واردات خاضعة للتكليف العكسي', labelEn: 'Reverse charge imports' },
-  { key: 'exempt_purchases', labelAr: 'مشتريات معفاة', labelEn: 'Exempt purchases' },
-  { key: 'input_total', labelAr: 'إجمالي مدخلات ضريبة القيمة المضافة', labelEn: 'Total input VAT', isTotal: true },
-];
-
-// بنود الملخص
-const SUMMARY_ROWS = [
-  { key: 'vat_due', labelAr: 'إجمالي ضريبة القيمة المضافة المستحقة', labelEn: 'Total VAT due' },
-  { key: 'vat_recoverable', labelAr: 'إجمالي ضريبة القيمة المضافة المستردة', labelEn: 'Total VAT recoverable' },
-  { key: 'net_vat', labelAr: 'صافي ضريبة القيمة المضافة', labelEn: 'Net VAT' },
-  { key: 'prior_adjustments', labelAr: 'تصحيحات من الفترة السابقة', labelEn: 'Prior period adjustments' },
-  { key: 'balance_carried', labelAr: 'رصيد مرحلة', labelEn: 'Balance carried forward' },
-  { key: 'net_payable_refund', labelAr: 'صافي الضريبة المستحقة أو المطالب بها', labelEn: 'Net VAT payable or refundable', isFinal: true },
-];
-
-const defaultData = () => {
-  const rows = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r) => !r.isTotal);
-  const obj = {};
-  rows.forEach((r) => { obj[r.key] = { amount: 0, adjustment: 0, vat: 0 }; });
-  SUMMARY_ROWS.forEach((r) => { obj[r.key] = 0; });
-  return obj;
-};
-
 function loadStoredData(companyId, period) {
   const parsed = readJsonStorage(taxReportStorageKey(companyId, period), null);
   if (parsed && typeof parsed === 'object') {
-    return { ...defaultData(), ...parsed };
+    return { ...defaultDisclosureData(), ...parsed };
   }
-  return defaultData();
+  return defaultDisclosureData();
 }
 
 function saveStoredData(companyId, period, data) {
@@ -67,18 +41,6 @@ function saveStoredData(companyId, period, data) {
 }
 
 const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function mergeImportedData(stored, imported) {
-  if (!imported || typeof imported !== 'object') return stored;
-  const next = { ...stored };
-  const rowKeys = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r) => !r.isTotal).map((r) => r.key);
-  for (const key of rowKeys) {
-    if (imported[key] && typeof imported[key] === 'object') {
-      next[key] = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), ...imported[key] };
-    }
-  }
-  return next;
-}
 
 export default function TaxReportTab() {
   const { activeCompanyId, companies } = useApp();
@@ -108,7 +70,7 @@ export default function TaxReportTab() {
   useEffect(() => {
     setData((prev) => {
       const stored = loadStoredData(activeCompanyId || '', periodKey);
-      return mergeImportedData(stored, importedData);
+      return mergeImportedDisclosure(stored, importedData);
     });
   }, [activeCompanyId, periodKey, importedData]);
 
@@ -117,24 +79,31 @@ export default function TaxReportTab() {
       const imported = result?.data;
       if (imported) {
         const stored = loadStoredData(activeCompanyId || '', periodKey);
-        const merged = mergeImportedData(stored, imported);
+        const merged = mergeImportedDisclosure(stored, imported);
         setData(merged);
         saveStoredData(activeCompanyId || '', periodKey, merged);
       }
     });
   };
 
+  const outputTotal = useMemo(() => computeOutputTotal(data), [data]);
+  const inputTotal = useMemo(() => computeInputTotal(data), [data]);
+  const netPayable = useMemo(() => computeNetPayable(data), [data]);
+  const priorAdj = getRowValue(data, 'prior_adjustments');
+  const balanceCarried = getRowValue(data, 'balance_carried');
+  const netVat = outputTotal - inputTotal;
+
   const handlePrint = () => {
     const label = (r) => (lang === 'ar' ? r.labelAr : r.labelEn);
     const outRows = OUTPUT_ROWS.map((r) => {
-      const amt = r.isTotal ? outputTotal : getRowValue(r.key, 'amount');
-      const vat = r.isTotal ? outputTotal : getRowValue(r.key, 'vat');
-      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmt(amt)}</td><td>${r.isTotal ? '—' : fmt(getRowValue(r.key, 'adjustment'))}</td><td>${fmt(vat)}</td></tr>`;
+      const amt = r.isTotal ? outputTotal : getRowValue(data, r.key, 'amount');
+      const vat = r.isTotal ? outputTotal : getRowValue(data, r.key, 'vat');
+      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmt(amt)}</td><td>${r.isTotal ? '—' : fmt(getRowValue(data, r.key, 'adjustment'))}</td><td>${fmt(vat)}</td></tr>`;
     }).join('');
     const inRows = INPUT_ROWS.map((r) => {
-      const amt = r.isTotal ? inputTotal : getRowValue(r.key, 'amount');
-      const vat = r.isTotal ? inputTotal : getRowValue(r.key, 'vat');
-      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmt(amt)}</td><td>${r.isTotal ? '—' : fmt(getRowValue(r.key, 'adjustment'))}</td><td>${fmt(vat)}</td></tr>`;
+      const amt = r.isTotal ? inputTotal : getRowValue(data, r.key, 'amount');
+      const vat = r.isTotal ? inputTotal : getRowValue(data, r.key, 'vat');
+      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmt(amt)}</td><td>${r.isTotal ? '—' : fmt(getRowValue(data, r.key, 'adjustment'))}</td><td>${fmt(vat)}</td></tr>`;
     }).join('');
     const vatTitle = lang === 'ar' ? 'نموذج الإفصاح الضريبي — ضريبة القيمة المضافة' : 'VAT Tax Disclosure Form';
     openPrintWindow({
@@ -170,34 +139,11 @@ export default function TaxReportTab() {
     });
   };
 
-  const getRowValue = (key, field) => {
-    const v = data[key];
-    if (v && typeof v === 'object') return v[field] ?? 0;
-    return typeof v === 'number' ? v : 0;
-  };
-
-  const outputTotal = useMemo(() => {
-    let sum = 0;
-    OUTPUT_ROWS.filter((r) => !r.isTotal).forEach((r) => { sum += getRowValue(r.key, 'vat'); });
-    return sum;
-  }, [data]);
-
-  const inputTotal = useMemo(() => {
-    let sum = 0;
-    INPUT_ROWS.filter((r) => !r.isTotal).forEach((r) => { sum += getRowValue(r.key, 'vat'); });
-    return sum;
-  }, [data]);
-
-  const netVat = outputTotal - inputTotal;
-  const priorAdj = getRowValue('prior_adjustments');
-  const balanceCarried = getRowValue('balance_carried');
-  const netPayable = netVat + priorAdj + balanceCarried;
-
   const renderEditableCell = (key, field) => (
     <Input
       type="text"
       inputMode="decimal"
-      value={getRowValue(key, field) || ''}
+      value={getRowValue(data, key, field) || ''}
       onChange={(e) => updateRow(key, field, e.target.value)}
       placeholder="0"
     />
@@ -208,11 +154,11 @@ export default function TaxReportTab() {
     const label = (r) => (lang === 'ar' ? r.labelAr : r.labelEn);
     OUTPUT_ROWS.forEach((r) => {
       if (r.isTotal) rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: outputTotal, [lang === 'ar' ? 'الضريبة' : 'VAT']: outputTotal });
-      else rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: getRowValue(r.key, 'amount'), [lang === 'ar' ? 'الضريبة' : 'VAT']: getRowValue(r.key, 'vat') });
+      else rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: getRowValue(data, r.key, 'amount'), [lang === 'ar' ? 'الضريبة' : 'VAT']: getRowValue(data, r.key, 'vat') });
     });
     INPUT_ROWS.forEach((r) => {
       if (r.isTotal) rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: inputTotal, [lang === 'ar' ? 'الضريبة' : 'VAT']: inputTotal });
-      else rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: getRowValue(r.key, 'amount'), [lang === 'ar' ? 'الضريبة' : 'VAT']: getRowValue(r.key, 'vat') });
+      else rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: getRowValue(data, r.key, 'amount'), [lang === 'ar' ? 'الضريبة' : 'VAT']: getRowValue(data, r.key, 'vat') });
     });
     rows.push({ [t('reportItem')]: label(SUMMARY_ROWS.find((r) => r.key === 'net_payable_refund')), [lang === 'ar' ? 'المبلغ' : 'Amount']: netPayable });
     return rows;

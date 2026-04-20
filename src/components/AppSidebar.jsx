@@ -46,6 +46,7 @@ const SIDEBAR_LINKS = [
     children: [
       { to: '/reports/general', labelKey: 'reportGeneralReport', icon: IconChartBar },
       { to: '/reports/tax', labelKey: 'reportTax', icon: IconDocument },
+      { to: '/reports/vat-registry', labelKey: 'reportVatRegistry', icon: IconDocument },
       { to: '/reports/bank-statement', labelKey: 'reportBankStatementAnalysis', icon: IconChartBar },
     ],
   },

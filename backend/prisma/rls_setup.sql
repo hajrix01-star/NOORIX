@@ -90,6 +90,10 @@ ALTER TABLE employees FORCE ROW LEVEL SECURITY;
 ALTER TABLE fiscal_periods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fiscal_periods FORCE ROW LEVEL SECURITY;
 
+-- VAT planning (tax registry — isolated from ledger)
+ALTER TABLE vat_planning_quarters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vat_planning_quarters FORCE ROW LEVEL SECURITY;
+
 -- Expense Lines
 ALTER TABLE expense_lines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expense_lines FORCE ROW LEVEL SECURITY;
@@ -335,6 +339,17 @@ CREATE POLICY tenant_isolation_select ON fiscal_periods
   FOR SELECT TO PUBLIC
   USING (tenant_id = current_tenant_id());
 CREATE POLICY tenant_isolation_modify ON fiscal_periods
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- VAT planning quarters
+DROP POLICY IF EXISTS tenant_isolation_select ON vat_planning_quarters;
+DROP POLICY IF EXISTS tenant_isolation_modify ON vat_planning_quarters;
+CREATE POLICY tenant_isolation_select ON vat_planning_quarters
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON vat_planning_quarters
   FOR ALL TO PUBLIC
   USING (tenant_id = current_tenant_id())
   WITH CHECK (tenant_id = current_tenant_id());

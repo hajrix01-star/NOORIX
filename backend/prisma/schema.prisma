@@ -134,9 +134,33 @@ model Company {
   backupJobs             BackupJob[]
   companyAssets        CompanyAsset[]
   companyBackupConfig  CompanyBackupConfig?
+  vatPlanningQuarters VatPlanningQuarter[]
 
   @@index([tenantId])
   @@map("companies")
+}
+
+/// سجل ضريبي تخطيطي معزول — لا يؤثر على القيود المحاسبية؛ يحفظ نموذج الإفصاح والتعديلات والدفع
+model VatPlanningQuarter {
+  id               String    @id @default(cuid())
+  tenantId         String    @map("tenant_id")
+  companyId        String    @map("company_id")
+  year             Int
+  quarter          Int       // 1..4
+  payload          Json      @default("{}")
+  sourceSnapshot   Json?     @map("source_snapshot")
+  paymentTarget    Decimal?  @map("payment_target") @db.Decimal(18, 4)
+  notes            String?   @db.Text
+  importedAt       DateTime? @map("imported_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, year, quarter])
+  @@index([tenantId])
+  @@index([companyId, year])
+  @@map("vat_planning_quarters")
 }
 
 // ══════════════════════════════════════════════════

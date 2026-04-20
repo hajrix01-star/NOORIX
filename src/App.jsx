@@ -23,6 +23,7 @@ const OwnerDashboardScreen = React.lazy(() => import('./modules/Owner/OwnerDashb
 const ReportsLayout = React.lazy(() => import('./modules/Reports/ReportsLayout'));
 const ReportsScreen = React.lazy(() => import('./modules/Reports/ReportsScreen'));
 const ReportsTaxScreen = React.lazy(() => import('./modules/Reports/ReportsTaxScreen'));
+const ReportsVatPlanningScreen = React.lazy(() => import('./modules/VatPlanning/ReportsVatPlanningScreen'));
 const BankStatementAnalysisScreen = React.lazy(() => import('./modules/Reports/BankStatementAnalysisScreen'));
 const SettingsScreen = React.lazy(() => import('./modules/Settings/SettingsScreen'));
 const LoginScreen = React.lazy(() => import('./modules/Login/LoginScreen'));
@@ -362,6 +363,7 @@ export default function App() {
                   <Route index element={<Navigate to="/reports/general" replace />} />
                   <Route path="general" element={<ReportsScreen />} />
                   <Route path="tax" element={<ReportsTaxScreen />} />
+                  <Route path="vat-registry" element={<ReportsVatPlanningScreen />} />
                   <Route path="bank-statement" element={<BankStatementAnalysisScreen />} />
                 </Route>
                 <Route path="/settings" element={<SettingsScreen />} />

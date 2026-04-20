@@ -840,6 +840,22 @@ export async function getTaxVatReport(companyId, year, period) {
   return apiGet('/api/v1/reports/tax-vat', { companyId, year: String(year), period });
 }
 
+/** سجل الضريبة التخطيطي (معزول عن المحاسبة) — REPORTS_READ */
+export async function getVatPlanningList(year, quarter, companyId) {
+  const params = { year: String(year), quarter: String(quarter) };
+  if (companyId) params.companyId = companyId;
+  return apiGet('/api/v1/vat-planning', params);
+}
+
+export async function upsertVatPlanning(body) {
+  return apiPut('/api/v1/vat-planning', body);
+}
+
+export async function deleteVatPlanning(companyId, year, quarter) {
+  const qs = `companyId=${encodeURIComponent(companyId)}&year=${encodeURIComponent(String(year))}&quarter=${encodeURIComponent(String(quarter))}`;
+  return apiDelete(`/api/v1/vat-planning?${qs}`);
+}
+
 /** تحليل فترة: إجماليات حسب نوع الفاتورة + أعلى موردين — يتطلب REPORTS_READ */
 export async function getPeriodAnalytics(companyId, startDate, endDate) {
   const params = {
