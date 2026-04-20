@@ -42,11 +42,24 @@ export function getAppParams() {
   if (getAppParamValue('clear_access_token') === 'true') {
     storage.removeItem('hajri_tax_access_token');
     storage.removeItem('token');
+    storage.removeItem('base44_access_token');
+  }
+  const token = getAppParamValue('access_token', { removeFromUrl: true });
+  // يتوقع hajri-sdk (@base44) المفتاح base44_access_token في getAccessToken() الافتراضي
+  if (token && !isNode) {
+    try {
+      storage.setItem('base44_access_token', token);
+      storage.setItem('token', token);
+    } catch {
+      /* ignore quota */
+    }
   }
   return {
     appId: getAppParamValue('app_id', { defaultValue: import.meta.env.VITE_TAX_APP_ID }),
-    token: getAppParamValue('access_token', { removeFromUrl: true }),
-    fromUrl: getAppParamValue('from_url', { defaultValue: window.location.href }),
+    token,
+    fromUrl: getAppParamValue('from_url', {
+      defaultValue: typeof window !== 'undefined' ? window.location.href : '',
+    }),
     functionsVersion: getAppParamValue('functions_version', { defaultValue: import.meta.env.VITE_TAX_FUNCTIONS_VERSION }),
     appBaseUrl: getAppParamValue('app_base_url', { defaultValue: import.meta.env.VITE_TAX_APP_BASE_URL }),
   };

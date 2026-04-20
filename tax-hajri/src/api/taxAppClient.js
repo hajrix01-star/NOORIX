@@ -13,13 +13,22 @@ function getUnderlyingClient() {
   const key = `${appId ?? ''}\0${token ?? ''}\0${appBaseUrl ?? ''}`;
   if (_cachedClient && key === _cacheKey) return _cachedClient;
   _cacheKey = key;
+
+  /**
+   * الـ SDK (@base44/sdk) يضع طلبات entities/auth على `${serverUrl}/api` — وليس على appBaseUrl وحده.
+   * كان serverUrl: '' فيُحوَّل إلى "/api" نسبي على hajrix.com فيفشل الاتصال بخادم Hajri.
+   * عند ضبط appBaseUrl (من VITE_TAX_APP_BASE_URL أو رابط التشغيل) يجب تمريره كـ serverUrl.
+   */
+  const trimmed = typeof appBaseUrl === 'string' ? appBaseUrl.trim() : '';
+  const serverUrl = trimmed ? trimmed.replace(/\/$/, '') : '';
+
   _cachedClient = createClient({
     appId,
     token,
     functionsVersion,
-    serverUrl: '',
+    serverUrl,
     requiresAuth: false,
-    appBaseUrl,
+    appBaseUrl: trimmed,
   });
   return _cachedClient;
 }
