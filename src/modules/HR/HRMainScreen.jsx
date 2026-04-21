@@ -18,6 +18,7 @@ import AdvancesTab from './tabs/AdvancesTab';
 import ResidencyTab from './tabs/ResidencyTab';
 import SalaryCalcTab from './tabs/SalaryCalcTab';
 import EOSCalcTab from './tabs/EOSCalcTab';
+import HrPrintDocumentsTab from './tabs/HrPrintDocumentsTab';
 
 const TABS = [
   { id: 'employees',  labelKey: 'hrTabEmployees'  },
@@ -27,6 +28,7 @@ const TABS = [
   { id: 'residency',  labelKey: 'hrTabResidency'   },
   { id: 'salaryCalc', labelKey: 'hrTabSalaryCalc'  },
   { id: 'eosCalc',    labelKey: 'hrTabEOSCalc'     },
+  { id: 'printDocs',  labelKey: 'hrTabPrintDocs'   },
 ];
 
 const EXPIRY_DAYS = 90;
@@ -161,6 +163,7 @@ export default function HRMainScreen() {
         {activeTab === 'residency' && <ResidencyTab />}
         {activeTab === 'salaryCalc' && <SalaryCalcTab />}
         {activeTab === 'eosCalc'   && <EOSCalcTab />}
+        {activeTab === 'printDocs' && <HrPrintDocumentsTab />}
       </ScreenTabs>
 
     </ScreenShell>
