@@ -169,6 +169,15 @@ const HR_GEN_PRINT_CSS = `
 .hr-sheet.gen-print .doc-declaration p{font-size:11.5px;line-height:1.85;color:#1a2a3a;margin:0 0 10px;text-align:justify}
 .hr-sheet.gen-print .doc-declaration p:last-child{margin-bottom:0}
 .hr-sheet.gen-print .doc-declaration .dec-en{direction:ltr;text-align:justify;color:#334155;font-size:11px}
+.hr-sheet.gen-print .doc-declaration--eos-unified{padding:12px 14px}
+.hr-sheet.gen-print .doc-decl-lang{margin:0 0 12px}
+.hr-sheet.gen-print .doc-decl-lang:last-child{margin-bottom:0}
+.hr-sheet.gen-print .doc-decl-lang--ltr{margin-bottom:0}
+.hr-sheet.gen-print .doc-decl-lang-lbl{font-size:10px;font-weight:800;color:#5a7a9a;margin:0 0 6px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.hr-sheet.gen-print .doc-decl-lang-lbl-en{font-size:9px;font-weight:600;color:#94a3b8}
+.hr-sheet.gen-print .doc-decl-lang-body{margin:0;font-size:11.5px;line-height:1.8;color:#1a2a3a;text-align:justify;white-space:pre-wrap}
+.hr-sheet.gen-print .doc-decl-lang-body--en{color:#334155;font-size:11px}
+.hr-sheet.gen-print .doc-declaration-unified-sep{border:none;height:0;margin:10px 0 12px;padding:0;border-top:1px dashed var(--doc-border);background:transparent}
 .hr-sheet.gen-print .doc-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
 .hr-sheet.gen-print .doc-sig-box{border:1px solid var(--doc-border);border-radius:6px;overflow:hidden;page-break-inside:avoid}
 .hr-sheet.gen-print .doc-sig-header{background:var(--doc-light);padding:8px 12px;text-align:center}
@@ -229,6 +238,13 @@ const HR_GEN_PRINT_CSS = `
   .hr-sheet.gen-print .doc-declaration{padding:8px 10px!important;margin-bottom:8px!important;border-right-width:3px!important}
   .hr-sheet.gen-print .doc-declaration p{font-size:9pt!important;line-height:1.4!important;margin:0 0 6px!important}
   .hr-sheet.gen-print .doc-declaration .dec-en{font-size:8.5pt!important;line-height:1.35!important}
+  .hr-sheet.gen-print .doc-declaration--eos-unified{padding:6px 8px!important}
+  .hr-sheet.gen-print .doc-decl-lang{margin:0 0 8px!important}
+  .hr-sheet.gen-print .doc-decl-lang-lbl{font-size:8pt!important;margin:0 0 3px!important}
+  .hr-sheet.gen-print .doc-decl-lang-lbl-en{font-size:7.5pt!important}
+  .hr-sheet.gen-print .doc-decl-lang-body{font-size:9pt!important;line-height:1.38!important}
+  .hr-sheet.gen-print .doc-decl-lang-body--en{font-size:8.5pt!important}
+  .hr-sheet.gen-print .doc-declaration-unified-sep{margin:6px 0 8px!important}
   .hr-sheet.gen-print .gen-breakdown{gap:6px!important;margin-bottom:6px!important}
   .hr-sheet.gen-print .doc-table{font-size:8.5pt!important}
   .hr-sheet.gen-print .doc-table th,.hr-sheet.gen-print .doc-table td{padding:2px 4px!important}
@@ -339,6 +355,31 @@ function buildGenDeclarationBlock(arText, enText) {
   <div class="doc-declaration">
     ${a ? `<p dir="rtl">${esc(a)}</p>` : ''}
     ${e ? `<p class="dec-en" dir="ltr">${esc(e)}</p>` : ''}
+  </div>`;
+}
+
+/** إقرار المخالصة: العربية والإنجليزية في كتلة واحدة بنفس أسلوب تسميات العقد */
+function buildGenSettlementDeclarationBlock(arText, enText) {
+  const a = String(arText || '').trim();
+  const e = String(enText || '').trim();
+  if (!a && !e) return '';
+  const arBlock = a
+    ? `<div class="doc-decl-lang" dir="rtl">
+      <div class="doc-decl-lang-lbl"><span>العربية</span><span class="doc-decl-lang-lbl-en">Arabic</span></div>
+      <p class="doc-decl-lang-body">${esc(a)}</p>
+    </div>`
+    : '';
+  const sep = a && e ? '<hr class="doc-declaration-unified-sep" />' : '';
+  const enBlock = e
+    ? `<div class="doc-decl-lang doc-decl-lang--ltr" dir="ltr">
+      <div class="doc-decl-lang-lbl" dir="ltr"><span>English</span><span class="doc-decl-lang-lbl-en">الإنجليزية</span></div>
+      <p class="doc-decl-lang-body doc-decl-lang-body--en">${esc(e)}</p>
+    </div>`
+    : '';
+  return `
+  <div class="doc-section-title"><span>نص الإقرار</span><span class="doc-section-title-en">${esc(LABEL_LETTER_EN.declarationSection)}</span></div>
+  <div class="doc-declaration doc-declaration--eos-unified">
+    ${arBlock}${sep}${enBlock}
   </div>`;
 }
 
@@ -478,7 +519,7 @@ function composeHrPrintDocument({
       subtitleEn: formatDateLocale(eos.endDate, 'en-US'),
     });
     const contract = buildGenContractBlock('بيانات العقد والتسوية', `${LABEL_LETTER_EN.contractSection} & settlement`, contractRows);
-    const decl = buildGenDeclarationBlock(eos.settlementNotesAr, eos.settlementNotesEn);
+    const decl = buildGenSettlementDeclarationBlock(eos.settlementNotesAr, eos.settlementNotesEn);
     const sigs = buildGenSignaturesBlock(eos.nameAr || eos.nameEn, coAr);
     const foot = buildGenFooter(issueDate, lang === 'ar');
     const inner = `<div class="document">${head}<div class="doc-body">${contract}${decl}${sigs}</div>${foot}</div>`;
