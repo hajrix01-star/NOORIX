@@ -1,7 +1,7 @@
 /**
  * شكل إدخال الإقرار الضريبي التخطيطي — عمود رئيسي + شريط جانبي (ملخص + محاكي سداد)
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { OUTPUT_ROWS, INPUT_ROWS, roundMoney2 } from '../../constants/taxDisclosure';
 import { fmtTax } from '../../utils/format';
 import { Button, Input, FmtNum } from '../../ui';
@@ -45,6 +45,19 @@ export default function HajriTaxDetailEditor({
   onSwitchToEdit,
 }) {
   const dueNet = netPayableDraft >= 0;
+
+  /** نفس منطق الجدول: كتابة حتى blur ثم تقريب */
+  const [summaryInline, setSummaryInline] = useState(null);
+
+  useEffect(() => {
+    setSummaryInline(null);
+  }, [readOnly]);
+
+  const formatSummaryCommitted = (v) => {
+    if (v === '' || v === null || v === undefined) return '';
+    const x = Number(v);
+    return Number.isFinite(x) ? roundMoney2(x).toFixed(2) : '';
+  };
 
   const renderSectionRows = (rows, sectionTotal, totalVatLabelKey = 'vatColumnVat') =>
     rows.map((r) => {
@@ -182,11 +195,28 @@ export default function HajriTaxDetailEditor({
                 readOnly={readOnly}
                 label={lang === 'ar' ? 'تصحيحات من فترة سابقة' : 'Prior period adjustments'}
                 value={
-                  priorAdj === '' || priorAdj === null || priorAdj === undefined
-                    ? ''
-                    : roundMoney2(Number(priorAdj)).toFixed(2)
+                  summaryInline?.id === 'prior_adjustments'
+                    ? summaryInline.text
+                    : formatSummaryCommitted(priorAdj)
                 }
-                onChange={(e) => updateRow('prior_adjustments', null, e.target.value)}
+                onFocus={() => {
+                  if (readOnly) return;
+                  setSummaryInline({
+                    id: 'prior_adjustments',
+                    text: formatSummaryCommitted(priorAdj),
+                  });
+                }}
+                onBlur={() => {
+                  setSummaryInline((cur) => {
+                    if (cur?.id !== 'prior_adjustments') return cur;
+                    updateRow('prior_adjustments', null, cur.text);
+                    return null;
+                  });
+                }}
+                onChange={(e) => {
+                  if (readOnly) return;
+                  setSummaryInline({ id: 'prior_adjustments', text: e.target.value });
+                }}
                 placeholder="0"
               />
               <Input
@@ -195,11 +225,28 @@ export default function HajriTaxDetailEditor({
                 readOnly={readOnly}
                 label={lang === 'ar' ? 'رصيد مرحّل' : 'Balance carried forward'}
                 value={
-                  balanceCarried === '' || balanceCarried === null || balanceCarried === undefined
-                    ? ''
-                    : roundMoney2(Number(balanceCarried)).toFixed(2)
+                  summaryInline?.id === 'balance_carried'
+                    ? summaryInline.text
+                    : formatSummaryCommitted(balanceCarried)
                 }
-                onChange={(e) => updateRow('balance_carried', null, e.target.value)}
+                onFocus={() => {
+                  if (readOnly) return;
+                  setSummaryInline({
+                    id: 'balance_carried',
+                    text: formatSummaryCommitted(balanceCarried),
+                  });
+                }}
+                onBlur={() => {
+                  setSummaryInline((cur) => {
+                    if (cur?.id !== 'balance_carried') return cur;
+                    updateRow('balance_carried', null, cur.text);
+                    return null;
+                  });
+                }}
+                onChange={(e) => {
+                  if (readOnly) return;
+                  setSummaryInline({ id: 'balance_carried', text: e.target.value });
+                }}
                 placeholder="0"
               />
             </div>

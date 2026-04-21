@@ -59,6 +59,8 @@ export default function HajriTaxScreen() {
   const [detailReadOnly, setDetailReadOnly] = useState(false);
   const [showNewDeclarationModal, setShowNewDeclarationModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+  /** تحرير حر في خلايا الجدول — النص يُطبَّق على المسودة عند blur فقط */
+  const [cellEdit, setCellEdit] = useState(null);
 
   const [draftData, setDraftData] = useState(() => defaultDisclosureData());
   const [paymentTargetStr, setPaymentTargetStr] = useState('');
@@ -216,6 +218,10 @@ export default function HajriTaxScreen() {
     void openCompanyDetail(c, forcedPeriod);
   }, [listLoading, searchParams, companies, openCompanyDetail]);
 
+  useEffect(() => {
+    setCellEdit(null);
+  }, [detailCompanyId, year, quarter, detailReadOnly]);
+
   const updateRow = useCallback((key, field, value) => {
     if (detailReadOnly) return;
     const raw = String(value).replace(/,/g, '').trim();
@@ -232,25 +238,45 @@ export default function HajriTaxScreen() {
 
   const renderEditableCell = useCallback(
     (key, field) => {
+      const cellId = `${key}:${field}`;
       const raw = getRowValue(draftData, key, field);
-      const display =
-        raw === '' || raw === null || raw === undefined
+      const n = Number(raw);
+      const committed =
+        raw === '' || raw === null || raw === undefined || !Number.isFinite(n)
           ? ''
-          : Number.isFinite(Number(raw))
-            ? roundMoney2(Number(raw)).toFixed(2)
-            : '';
+          : roundMoney2(n).toFixed(2);
+      const display = cellEdit?.id === cellId ? cellEdit.text : committed;
+
       return (
         <Input
           type="text"
           inputMode="decimal"
           readOnly={detailReadOnly}
           value={display}
-          onChange={(e) => updateRow(key, field, e.target.value)}
           placeholder="0.00"
+          onFocus={() => {
+            if (detailReadOnly) return;
+            const start =
+              raw === '' || raw === null || raw === undefined || !Number.isFinite(n)
+                ? ''
+                : roundMoney2(n).toFixed(2);
+            setCellEdit({ id: cellId, text: start });
+          }}
+          onBlur={() => {
+            setCellEdit((cur) => {
+              if (cur?.id !== cellId) return cur;
+              updateRow(key, field, cur.text);
+              return null;
+            });
+          }}
+          onChange={(e) => {
+            if (detailReadOnly) return;
+            setCellEdit({ id: cellId, text: e.target.value });
+          }}
         />
       );
     },
-    [draftData, updateRow, detailReadOnly],
+    [draftData, updateRow, detailReadOnly, cellEdit],
   );
 
   const outputTotal = useMemo(() => computeOutputTotal(draftData), [draftData]);
