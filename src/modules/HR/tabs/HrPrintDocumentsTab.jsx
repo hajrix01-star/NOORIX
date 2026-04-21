@@ -33,6 +33,44 @@ function monthNameEn(m1to12) {
   return new Date(2000, m1to12 - 1, 1).toLocaleDateString('en-US', { month: 'long' });
 }
 
+function parseYmd(d) {
+  if (!d || typeof d !== 'string') return null;
+  const x = new Date(`${d.slice(0, 10)}T12:00:00`);
+  return Number.isNaN(x.getTime()) ? null : x;
+}
+
+function formatDateLocale(d, loc) {
+  const p = parseYmd(d);
+  if (!p) return '—';
+  return p.toLocaleDateString(loc, { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
+function serviceDurationArEn(startStr, endStr) {
+  const a = parseYmd(startStr);
+  const b = parseYmd(endStr);
+  if (!a || !b || b < a) return { ar: '—', en: '—' };
+  const days = Math.max(0, Math.round((b - a) / 86400000));
+  const mo = Math.floor(days / 30);
+  const da = days % 30;
+  return { ar: `${mo} شهر و ${da} يوم`, en: `${mo} month(s) and ${da} day(s)` };
+}
+
+function firstLastActiveMonthRange(monthOn, year) {
+  let fi = -1;
+  let li = -1;
+  monthOn.forEach((on, i) => {
+    if (on) {
+      if (fi < 0) fi = i;
+      li = i;
+    }
+  });
+  if (fi < 0) return null;
+  return {
+    ar: `${monthNameAr(fi + 1)}–${monthNameAr(li + 1)} ${year}`,
+    en: `${monthNameEn(fi + 1)}–${monthNameEn(li + 1)} ${year}`,
+  };
+}
+
 const LABEL_PAYROLL_EN = {
   basic: 'Basic salary',
   housing: 'Housing allowance',
@@ -70,28 +108,218 @@ const LABEL_EOS_EN = {
   net: 'Net payable',
 };
 
-const PRINT_DOC_CSS = `
-.doc{max-width:900px;margin:0 auto;border:1px solid #dbe1e8;border-radius:12px;overflow:hidden;background:#fff}
-.doc-h{padding:14px 16px;background:#f8fafc;border-bottom:2px solid #185FA5}
-.doc-h .ttl{margin:0;font-size:17px;font-weight:800;color:#0f172a}
-.doc-h .sub{margin-top:4px;font-size:12px;color:#475569}
-.doc-b{padding:14px 16px}
-.bi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-.bi-col{border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;background:#fff}
-.bi-col h4{margin:0 0 8px;font-size:13px;font-weight:800;color:#185FA5;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
-.doc-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
-.doc-table th,.doc-table td{border:1px solid #e2e8f0;padding:6px 8px;text-align:right}
-.doc-table th{background:#f1f5f9;font-weight:700}
-.doc-table .td-num,.doc-table .td-center{text-align:center;font-weight:600}
-.doc-table .td-en{text-align:left;direction:ltr}
-.doc-note{white-space:pre-wrap;font-size:11px;color:#334155;margin:10px 0;padding:8px;background:#fafafa;border-radius:6px;border:1px dashed #cbd5e1}
-.sign-row{display:flex;justify-content:space-between;gap:16px;margin-top:28px;padding-top:8px}
-.sign-box{flex:1;text-align:center;border-top:2px solid #1e293b;padding-top:8px;font-size:11px;font-weight:600;color:#334155}
-.sig-line{min-height:32px;border-bottom:1px dashed #64748b;margin-top:4px}
-.final-sign{margin-top:20px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc}
-.final-sign .ttl{font-weight:800;font-size:12px;margin-bottom:8px;color:#0f172a}
-@media print{.doc{border:none;border-radius:0}}
+const LABEL_LETTER_EN = {
+  contractSection: 'Contract details',
+  declarationSection: 'Declaration',
+  signaturesSection: 'Signatures',
+  establishment: 'Establishment name',
+  serviceDuration: 'Service duration',
+  monthlySalary: 'Monthly salary (package)',
+  netPayable: 'Net payable',
+  eosGratuity: 'End-of-service gratuity',
+  annualTitle: 'Annual salary statement',
+  salaryLetterTitle: 'Salary Receipt Letter',
+  entitlementsLetterTitle: 'Full Entitlements Receipt Letter',
+  receiptSigCol: 'Receipt signature',
+  grossSalary: 'Gross salary',
+  annualTotal: 'Annual total',
+  stampSignatory: 'Establishment stamp & authorized signatory',
+};
+
+/** تنسيق وثيقة HR — صفحة A4 واحدة، عربي/إنجليزي، ألوان رسمية هادئة (مرجعية نظام عمل) */
+const HR_SHEET_LEGAL_AR =
+  'مرجع نظامي: نظام العمل الصادر بالمرسوم الملكي رقم (م/51) ولائحته التنفيذية — وثيقة توقيع إدارية لا تُحدّث السجلات المحاسبية آلياً.';
+const HR_SHEET_LEGAL_EN =
+  'Legal reference: Saudi Labor Law (Royal Decree M/51) and implementing regulations — administrative signature document; not an automated accounting payroll record.';
+
+const HR_SHEET_CSS = `
+.hr-sheet{--ink:#0f172a;--muted:#475569;--line:#94a3b8;--hdr:#0f3d2f;--hdr-light:#ecfdf5;max-width:100%}
+.hr-sheet .doc{border:1px solid var(--line);border-radius:2px;background:#fff;overflow:hidden;box-shadow:none}
+.hr-sheet .legal-ref{font-size:6.5pt;line-height:1.35;color:#64748b;text-align:center;padding:2px 6px 4px;border-bottom:1px dotted var(--line);margin:0}
+.hr-sheet .legal-ref-en{margin-top:2px;font-size:6pt;color:#64748b}
+.hr-sheet .doc-table .th-sub{display:block;font-weight:500;font-size:6.5pt;line-height:1.2;margin-top:1px;opacity:.95}
+.hr-sheet .doc-table col.col-n{width:5%}
+.hr-sheet .doc-table col.col-mid-ar{width:24%}
+.hr-sheet .doc-table col.col-mid-en{width:24%}
+.hr-sheet .doc-table col.col-amt{width:14%}
+.hr-sheet .doc-table col.col-sig{width:33%}
+.hr-sheet .doc-h{padding:5px 8px 4px;background:linear-gradient(180deg,var(--hdr-light) 0%,#f8fafc 100%);border-bottom:2px solid var(--hdr)}
+.hr-sheet .doc-h .ttl{margin:0;font-weight:800;color:var(--hdr);letter-spacing:-0.02em;line-height:1.2}
+.hr-sheet .doc-h .sub{margin-top:2px;font-weight:600;color:var(--muted);line-height:1.25}
+.hr-sheet .doc-b{padding:5px 8px 4px}
+.hr-sheet .bi-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start}
+.hr-sheet .bi-col{border:1px solid var(--line);border-radius:3px;padding:5px 7px;background:#fff}
+.hr-sheet .bi-col h4{margin:0 0 3px;font-size:7.5pt;font-weight:800;color:var(--hdr);padding-bottom:2px;border-bottom:1px solid var(--line)}
+.hr-sheet .doc-table{width:100%;border-collapse:collapse;margin:0 0 5px;table-layout:fixed;font-size:7.5pt}
+.hr-sheet .doc-table th,.hr-sheet .doc-table td{border:1px solid var(--line);padding:2px 4px;text-align:right;vertical-align:middle;word-wrap:break-word}
+.hr-sheet .doc-table thead th{background:var(--hdr);color:#fff;font-weight:700}
+.hr-sheet .doc-table tbody tr:nth-child(even) td{background:#f8fafc}
+.hr-sheet .doc-table tfoot td{font-weight:700;background:#e2e8f0}
+.hr-sheet .doc-table .td-num,.hr-sheet .doc-table .td-center{text-align:center;font-weight:600}
+.hr-sheet .doc-table .td-en{text-align:left;direction:ltr}
+.hr-sheet .doc-table .td-amt-blue{color:#2c5282;font-weight:800}
+.hr-sheet .doc-note{white-space:pre-wrap;font-size:6.5pt;line-height:1.3;color:#334155;margin:3px 0;padding:3px 4px;background:#fafafa;border:1px dashed var(--line)}
+.hr-sheet .sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px;padding-top:3px}
+.hr-sheet .sign-box{text-align:center;border-top:1.5px solid var(--ink);padding-top:2px;font-size:7pt;font-weight:700;color:var(--muted)}
+.hr-sheet .sig-line{min-height:14px;border-bottom:1px dashed #64748b;margin-top:1px}
+.hr-sheet .final-sign{margin-top:4px;padding:5px;border:1px solid var(--line);border-radius:3px;background:#f1f5f9;page-break-inside:avoid}
+.hr-sheet .final-sign .ttl{font-weight:800;font-size:7.5pt;margin-bottom:3px;color:var(--ink)}
+.hr-sheet .final-sig-line{min-height:18px}
+.hr-sheet .final-sign-name{font-size:6.5pt;color:#64748b;margin-top:2px;line-height:1.2}
+.hr-sheet.hr-sheet--landscape .doc-h .ttl{font-size:11pt}
+.hr-sheet.hr-sheet--landscape .doc-h .sub{font-size:8pt}
+.hr-sheet.hr-sheet--portrait .doc-h .ttl{font-size:10pt}
+.hr-sheet.hr-sheet--portrait .doc-h .sub{font-size:7.5pt}
+.hr-sheet.hr-sheet--portrait .doc-table{font-size:7pt}
+.hr-sheet.hr-sheet--portrait .doc-table th,.hr-sheet.hr-sheet--portrait .doc-table td{padding:1px 3px}
+.hr-sheet .tpl-doc{color:#0a0a0a}
+.hr-sheet .tpl-topbar{position:relative;padding:4px 0 6px;text-align:center}
+.hr-sheet .tpl-logo-ph{position:absolute;top:0;inset-inline-end:0;font-size:7pt;color:#64748b;border:1px dashed #cbd5e1;padding:4px 8px;min-width:52px}
+.hr-sheet .tpl-logo-en{font-size:6.5pt;opacity:.85}
+.hr-sheet .tpl-co-ar{font-size:11pt;font-weight:800;margin:0;padding-inline-end:72px}
+.hr-sheet .tpl-co-en{font-size:8.5pt;font-weight:600;color:#334155;margin-top:2px;padding-inline-end:72px}
+.hr-sheet .tpl-gold-line{height:2px;background:linear-gradient(90deg,transparent,#c9a227,#c9a227,transparent);max-width:220px;margin:4px auto 6px;border-radius:1px}
+.hr-sheet .tpl-title{margin:0;font-size:12pt;font-weight:800;line-height:1.2}
+.hr-sheet .tpl-title-en{margin:2px 0 0;font-size:10pt;font-weight:700;line-height:1.2;color:#0f172a}
+.hr-sheet .tpl-sub-rtl{margin:3px 0 0;font-size:8.5pt;color:#475569;font-weight:600}
+.hr-sheet .tpl-sub-ltr{margin:2px 0 0;font-size:8pt;color:#475569}
+.hr-sheet .tpl-bar-thick{height:3px;background:#111827;margin:6px 0 8px;border-radius:1px}
+.hr-sheet .tpl-sec{border:1px solid #e2e8f0;margin:0 0 6px;background:#fff;page-break-inside:avoid}
+.hr-sheet .tpl-sec-h{background:#f1f5f9;border-bottom:1px solid #e2e8f0;padding:4px 8px;font-size:8.5pt;font-weight:800;color:#0f172a;text-align:right}
+.hr-sheet .tpl-sec-h-en{display:block;font-size:7pt;font-weight:600;color:#475569;margin-top:1px;text-align:left;direction:ltr}
+.hr-sheet .tpl-kvgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:6px 8px}
+.hr-sheet .tpl-cell{display:flex;flex-direction:column;align-items:stretch;text-align:right;gap:2px;border:1px solid #e8ecf1;padding:4px 6px;border-radius:2px;background:#fff}
+.hr-sheet .tpl-lbl{font-size:7pt;font-weight:700;color:#2c5282}
+.hr-sheet .tpl-val{font-size:8.5pt;font-weight:800;color:#0a0a0a;word-break:break-word}
+.hr-sheet .tpl-contract{width:100%;border-collapse:collapse;font-size:7.5pt;margin:0}
+.hr-sheet .tpl-contract td,.hr-sheet .tpl-contract th{border:1px solid #e2e8f0;padding:3px 6px;vertical-align:middle}
+.hr-sheet .tpl-contract .c-lbl{background:#f8fafc;font-weight:700;color:#0f172a;width:34%;text-align:right}
+.hr-sheet .tpl-contract .c-val{text-align:left;direction:ltr;font-weight:600;color:#0f172a}
+.hr-sheet .tpl-contract .c-val-rtl{text-align:right;direction:rtl;font-weight:700;color:#0f172a}
+.hr-sheet .tpl-contract tr:nth-child(even) .c-lbl{background:#eef2f7}
+.hr-sheet .tpl-declare{border:1px solid #cbd5e1;background:#f8fafc;padding:6px 8px;margin:0 0 6px;page-break-inside:avoid}
+.hr-sheet .tpl-declare .d-ar{font-size:7.5pt;line-height:1.45;text-align:right;margin:0 0 5px}
+.hr-sheet .tpl-declare .d-en{font-size:7pt;line-height:1.4;color:#334155;text-align:left;direction:ltr;margin:0}
+.hr-sheet .tpl-sign-sec-h{font-size:8.5pt;font-weight:800;margin:4px 0 4px;text-align:right}
+.hr-sheet .tpl-sig2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px}
+.hr-sheet .tpl-sigbox{border:1px solid #1e293b;min-height:52mm;display:flex;flex-direction:column;padding:5px 6px;background:#fff;page-break-inside:avoid}
+.hr-sheet .tpl-sigbox-h{font-size:8pt;font-weight:800;text-align:center;margin-bottom:4px;line-height:1.25}
+.hr-sheet .tpl-sigbox-h-en{display:block;font-size:6.5pt;font-weight:600;color:#475569;margin-top:2px}
+.hr-sheet .tpl-sigbox-body{flex:1;min-height:22mm;border:1px dashed #cbd5e1;margin:2px 0;border-radius:2px;background:#fff}
+.hr-sheet .tpl-sigbox-foot{font-size:7.5pt;font-weight:700;text-align:center;margin-top:auto;padding-top:4px;color:#0f172a}
+.hr-sheet .tpl-date-line{margin-top:3px;font-size:7pt;color:#475569;font-weight:600}
+.hr-sheet .annual-ar-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;margin:0 0 6px}
+.hr-sheet .annual-ar-table th,.hr-sheet .annual-ar-table td{border:1px solid #e2e8f0;padding:3px 5px;text-align:center;vertical-align:middle}
+.hr-sheet .annual-ar-table thead th{background:#f1f5f9;font-weight:800;color:#0f172a}
+.hr-sheet .annual-ar-table tbody td:first-child{text-align:right;font-weight:600}
+.hr-sheet .annual-ar-table .td-amt-blue{color:#2c5282;font-weight:800}
+.hr-sheet .annual-ar-table .td-sig-dash{color:#64748b;font-family:monospace;letter-spacing:1px}
+.hr-sheet .annual-ar-table tfoot td{font-weight:800;background:#e2e8f0}
+.hr-sheet .annual-ar-table tfoot td:first-child{text-align:right}
+.hr-sheet .tpl-bi-mini{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+@media print{
+  body{padding:2mm 3mm!important;font-size:7.5pt!important;line-height:1.28!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .hr-sheet .doc{border:none!important;box-shadow:none!important}
+  .hr-sheet .doc-table th,.hr-sheet .doc-table td{padding:1px 3px!important;font-size:7pt!important}
+  .hr-sheet .doc-h .ttl{font-size:10pt!important}
+  .hr-sheet .legal-ref{font-size:6pt!important;padding:1px 4px!important}
+  .hr-sheet .sig-line{min-height:11px!important}
+  .hr-sheet .final-sig-line{min-height:13px!important}
+  .hr-sheet .final-sign-name{font-size:6pt!important}
+  .hr-sheet .doc-note{font-size:6pt!important;max-height:none!important;margin:2px 0!important;padding:2px 3px!important}
+  .hr-sheet tr,.hr-sheet .final-sign,.hr-sheet .sign-grid,.hr-sheet .tpl-sigbox{page-break-inside:avoid}
+  .hr-sheet .tpl-sigbox{min-height:38mm!important}
+  .hr-sheet .tpl-sigbox-body{min-height:16mm!important}
+  .hr-sheet .tpl-kvgrid3{grid-template-columns:1fr 1fr 1fr!important;padding:4px 6px!important}
+  .print-footer{margin-top:0!important;padding-top:1px!important;border-top:none!important;font-size:5.5pt!important;color:#94a3b8!important}
+}
 `.trim();
+
+function wrapHrPrintBody(innerHtml, landscape) {
+  const cls = landscape ? 'hr-sheet hr-sheet--landscape' : 'hr-sheet hr-sheet--portrait';
+  return `
+<div class="${cls}">
+  <div class="legal-ref">
+    <div dir="rtl">${esc(HR_SHEET_LEGAL_AR)}</div>
+    <div class="legal-ref-en" dir="ltr">${esc(HR_SHEET_LEGAL_EN)}</div>
+  </div>
+${innerHtml}
+</div>`;
+}
+
+function buildTplHeader({ companyAr, companyEn, titleAr, titleEn, subtitleAr, subtitleEn }) {
+  const enCo = companyEn && String(companyEn).trim() && companyEn !== companyAr
+    ? `<div class="tpl-co-en" dir="ltr">${esc(companyEn)}</div>`
+    : '';
+  const titleEnHtml = titleEn ? `<h2 class="tpl-title-en" dir="ltr">${esc(titleEn)}</h2>` : '';
+  const subEn = subtitleEn ? `<p class="tpl-sub-ltr" dir="ltr">${esc(subtitleEn)}</p>` : '';
+  return `
+  <header class="tpl-topbar">
+    <div class="tpl-logo-ph" dir="rtl">شعار<span class="tpl-logo-en"> / Logo</span></div>
+    <div class="tpl-co-ar" dir="rtl">${esc(companyAr)}</div>
+    ${enCo}
+    <div class="tpl-gold-line" aria-hidden="true"></div>
+    <h1 class="tpl-title" dir="rtl">${esc(titleAr)}</h1>
+    ${titleEnHtml}
+    <p class="tpl-sub-rtl" dir="rtl">${esc(subtitleAr)}</p>
+    ${subEn}
+    <div class="tpl-bar-thick" aria-hidden="true"></div>
+  </header>`;
+}
+
+function buildTplEmployee3({ nameAr, nameEn, iqama, jobTitle, sectionTitleAr, sectionTitleEn }) {
+  const displayName = String(nameAr || nameEn || '').trim() || '—';
+  return `
+  <section class="tpl-sec" dir="rtl">
+    <div class="tpl-sec-h">${esc(sectionTitleAr)}${sectionTitleEn ? `<span class="tpl-sec-h-en">${esc(sectionTitleEn)}</span>` : ''}</div>
+    <div class="tpl-kvgrid3">
+      <div class="tpl-cell"><span class="tpl-lbl">الاسم</span><span class="tpl-val">${esc(displayName)}</span></div>
+      <div class="tpl-cell"><span class="tpl-lbl">الإقامة</span><span class="tpl-val">${esc(iqama || '—')}</span></div>
+      <div class="tpl-cell"><span class="tpl-lbl">المسمى</span><span class="tpl-val">${esc(jobTitle || '—')}</span></div>
+    </div>
+  </section>`;
+}
+
+function buildTplContractTable(rows) {
+  const body = rows
+    .map(
+      (r) =>
+        `<tr><td class="c-lbl" dir="rtl">${esc(r.labelAr)}<div style="font-size:6.5pt;font-weight:600;color:#64748b;margin-top:1px" dir="ltr">${esc(r.labelEn)}</div></td><td class="${r.rtlVal ? 'c-val-rtl' : 'c-val'}" ${r.rtlVal ? 'dir="rtl"' : 'dir="ltr"'}>${esc(r.value)}</td></tr>`,
+    )
+    .join('');
+  return `<table class="tpl-contract" dir="rtl">${body}</table>`;
+}
+
+function buildTplDeclaration(arText, enText) {
+  if (!String(arText || '').trim() && !String(enText || '').trim()) return '';
+  return `
+  <section class="tpl-sec" dir="rtl">
+    <div class="tpl-sec-h">نص الإقرار<span class="tpl-sec-h-en">${esc(LABEL_LETTER_EN.declarationSection)}</span></div>
+    <div class="tpl-declare">
+      ${String(arText || '').trim() ? `<p class="d-ar" dir="rtl">${esc(arText)}</p>` : ''}
+      ${String(enText || '').trim() ? `<p class="d-en" dir="ltr">${esc(enText)}</p>` : ''}
+    </div>
+  </section>`;
+}
+
+function buildTplSignaturePair({ employeeName, companyAr, dateLabelAr, dateLabelEn }) {
+  const emp = String(employeeName || '').trim() || '—';
+  const co = String(companyAr || '').trim() || '—';
+  return `
+  <div class="tpl-sign-sec-h" dir="rtl">التوقيعات<span class="tpl-sec-h-en" style="display:inline;margin-inline-start:6px">${esc(LABEL_LETTER_EN.signaturesSection)}</span></div>
+  <div class="tpl-sig2">
+    <div class="tpl-sigbox" dir="rtl">
+      <div class="tpl-sigbox-h">توقيع الموظف<span class="tpl-sigbox-h-en">Employee signature</span></div>
+      <div class="tpl-sigbox-body"></div>
+      <div class="tpl-sigbox-foot">${esc(emp)}<div class="tpl-date-line">${esc(dateLabelAr)}: ........................</div></div>
+    </div>
+    <div class="tpl-sigbox" dir="rtl">
+      <div class="tpl-sigbox-h">ختم المنشأة وتوقيع المفوّض<span class="tpl-sigbox-h-en">${esc(LABEL_LETTER_EN.stampSignatory)}</span></div>
+      <div class="tpl-sigbox-body"></div>
+      <div class="tpl-sigbox-foot">${esc(co)}<div class="tpl-date-line">${esc(dateLabelAr)} / ${esc(dateLabelEn)}: ........................</div></div>
+    </div>
+  </div>`;
+}
 
 function emptyPayrollDraft() {
   return {
@@ -113,8 +341,17 @@ function emptyPayrollDraft() {
     customRows: [],
     showBreakdown: true,
     notes: '',
+    letterStartDate: '',
+    letterEndDate: '',
+    declarationSalariesAr: '',
+    declarationSalariesEn: '',
   };
 }
+
+const DEFAULT_DECL_SALARY_AR =
+  'أقر أنا الموقع أدناه بأنني استلمت رواتبي الشهرية كاملة دون أي حسم أو تأخير عن الفترة المحددة أعلاه، وأبرئ ذمة المنشأة من أي مطالبة متعلقة بالرواتب.';
+const DEFAULT_DECL_SALARY_EN =
+  'I, the undersigned, acknowledge that I have received all my monthly salaries in full, without any deduction or delay, for the period stated above, and I release the establishment from any claims relating to salaries.';
 
 function emptyAnnual() {
   const y = new Date().getFullYear();
@@ -163,6 +400,8 @@ export default function HrPrintDocumentsTab() {
   const [payroll, setPayroll] = useState(emptyPayrollDraft);
   const [annual, setAnnual] = useState(emptyAnnual);
   const [eos, setEos] = useState(emptyEosDraft);
+  /** اتجاه صفحة الطباعة — يُمرَّر إلى @page في printUtils */
+  const [printLandscape, setPrintLandscape] = useState(false);
 
   const { employees } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: !!companyId });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
@@ -210,6 +449,10 @@ export default function HrPrintDocumentsTab() {
       jobTitle: emp.jobTitle || '',
       iqama: emp.iqamaNumber || '',
       joinDate: emp.joinDate ? emp.joinDate.slice(0, 10) : '',
+      letterStartDate: emp.joinDate ? emp.joinDate.slice(0, 10) : '',
+      letterEndDate: '',
+      declarationSalariesAr: DEFAULT_DECL_SALARY_AR,
+      declarationSalariesEn: DEFAULT_DECL_SALARY_EN,
       basic: String(n(emp.basicSalary)),
       housing: String(n(emp.housingAllowance)),
       transport: String(n(emp.transportAllowance)),
@@ -262,8 +505,8 @@ export default function HrPrintDocumentsTab() {
     const rowsAr = [];
     const rowsEn = [];
     const push = (ar, en, val) => {
-      rowsAr.push(`<tr><td>${esc(ar)}</td><td class="td-num">${esc(hrFmt(val))}</td></tr>`);
-      rowsEn.push(`<tr><td class="td-en">${esc(en)}</td><td class="td-num">${esc(hrFmt(val))}</td></tr>`);
+      rowsAr.push(`<tr><td>${esc(ar)}</td><td class="td-num td-amt-blue">${esc(hrFmt(val))} SR</td></tr>`);
+      rowsEn.push(`<tr><td class="td-en">${esc(en)}</td><td class="td-num td-amt-blue">${esc(hrFmt(val))} SR</td></tr>`);
     };
     push(t('basicSalary'), LABEL_PAYROLL_EN.basic, n(payroll.basic));
     push(t('housingAllowance'), LABEL_PAYROLL_EN.housing, n(payroll.housing));
@@ -278,66 +521,64 @@ export default function HrPrintDocumentsTab() {
     }
     const notesAr = payroll.notes?.trim() ? `<div class="doc-note" dir="rtl">${esc(payroll.notes)}</div>` : '';
     const notesEn = payroll.notes?.trim() ? `<div class="doc-note" dir="ltr">${esc(payroll.notes)}</div>` : '';
-
-    const body = `
-<div class="doc">
-  <div class="doc-h">
-    <div class="bi-grid">
+    const coAr = payroll.companyName || companyNameArDefault;
+    const coEn = payroll.companyNameEn || companyNameEnDefault;
+    const head = buildTplHeader({
+      companyAr: coAr,
+      companyEn: coEn,
+      titleAr: `مسير راتب — ${payroll.nameAr || payroll.nameEn || ''}`.trim(),
+      titleEn: LABEL_PAYROLL_EN.slipTitle,
+      subtitleAr: `${coAr} — ${payroll.periodLabel}`,
+      subtitleEn: `${coEn} — ${payroll.periodLabel}`,
+    });
+    const emp = buildTplEmployee3({
+      nameAr: payroll.nameAr,
+      nameEn: payroll.nameEn,
+      iqama: payroll.iqama,
+      jobTitle: payroll.jobTitle,
+      sectionTitleAr: 'بيانات الموظف',
+      sectionTitleEn: LABEL_PAYROLL_EN.employee,
+    });
+    const detail = `
+  <section class="tpl-sec" dir="rtl">
+    <div class="tpl-sec-h">تفاصيل الراتب للفترة<span class="tpl-sec-h-en">Salary breakdown</span></div>
+    <div class="tpl-bi-mini">
       <div dir="rtl">
-        <h2 class="ttl">مسير راتب — للاطلاع والتوقيع</h2>
-        <div class="sub">${esc(payroll.companyName || companyNameArDefault)} — ${esc(payroll.periodLabel)}</div>
-      </div>
-      <div dir="ltr">
-        <h2 class="ttl">${esc(LABEL_PAYROLL_EN.slipTitle)}</h2>
-        <div class="sub">${esc(payroll.companyNameEn || companyNameEnDefault)} — ${esc(payroll.periodLabel)}</div>
-      </div>
-    </div>
-  </div>
-  <div class="doc-b">
-    <div class="bi-grid">
-      <div class="bi-col" dir="rtl">
-        <h4>بيانات الموظف</h4>
         <table class="doc-table"><tbody>
           <tr><td>${esc(t('employeeSerial'))}</td><td>${esc(payroll.employeeSerial)}</td></tr>
-          <tr><td>${esc(t('employeeName'))}</td><td>${esc(payroll.nameAr || payroll.nameEn)}</td></tr>
-          <tr><td>${esc(t('jobTitle'))}</td><td>${esc(payroll.jobTitle)}</td></tr>
-          <tr><td>${esc(t('iqamaNumber'))}</td><td>${esc(payroll.iqama)}</td></tr>
-          <tr><td>${esc(t('joinDate'))}</td><td>${esc(payroll.joinDate)}</td></tr>
+          <tr><td>${esc(t('joinDate'))}</td><td>${esc(formatDateLocale(payroll.joinDate, 'ar-SA'))}</td></tr>
         </tbody></table>
-        <table class="doc-table"><thead><tr><th>البند</th><th>المبلغ (ر.س)</th></tr></thead><tbody>${rowsAr.join('')}</tbody>
-        <tfoot><tr><td>${esc(t('totalSalary'))}</td><td class="td-num">${esc(hrFmt(payrollTotal))}</td></tr></tfoot></table>
+        <table class="doc-table"><thead><tr><th>البند</th><th>المبلغ</th></tr></thead><tbody>${rowsAr.join('')}</tbody>
+        <tfoot><tr><td>${esc(t('totalSalary'))}</td><td class="td-num td-amt-blue">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
         ${notesAr}
       </div>
-      <div class="bi-col" dir="ltr">
-        <h4>${esc(LABEL_PAYROLL_EN.employee)}</h4>
+      <div dir="ltr">
         <table class="doc-table"><tbody>
           <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.serial)}</td><td class="td-en">${esc(payroll.employeeSerial)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.name)}</td><td class="td-en">${esc(payroll.nameEn || payroll.nameAr)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.job)}</td><td class="td-en">${esc(payroll.jobTitle)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.iqama)}</td><td class="td-en">${esc(payroll.iqama)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.join)}</td><td class="td-en">${esc(payroll.joinDate)}</td></tr>
+          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.join)}</td><td class="td-en">${esc(formatDateLocale(payroll.joinDate, 'en-US'))}</td></tr>
         </tbody></table>
-        <table class="doc-table"><thead><tr><th class="td-en">${esc(LABEL_PAYROLL_EN.item)}</th><th>${esc(LABEL_PAYROLL_EN.amount)}</th></tr></thead><tbody>${rowsEn.join('')}</tbody>
-        <tfoot><tr><td class="td-en">${esc(LABEL_PAYROLL_EN.total)}</td><td class="td-num">${esc(hrFmt(payrollTotal))}</td></tr></tfoot></table>
+        <table class="doc-table"><thead><tr><th class="td-en">${esc(LABEL_PAYROLL_EN.item)}</th><th>Amount</th></tr></thead><tbody>${rowsEn.join('')}</tbody>
+        <tfoot><tr><td class="td-en">${esc(LABEL_PAYROLL_EN.total)}</td><td class="td-num td-amt-blue">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
         ${notesEn}
       </div>
     </div>
-    <div class="bi-grid" style="margin-top:16px">
-      <div class="sign-box" dir="rtl">توقيع الموظف<div class="sig-line"></div></div>
-      <div class="sign-box" dir="ltr">${esc(LABEL_PAYROLL_EN.empSig)}<div class="sig-line"></div></div>
-    </div>
-    <div class="bi-grid">
-      <div class="sign-box" dir="rtl">توقيع صاحب العمل / المفوّض<div class="sig-line"></div></div>
-      <div class="sign-box" dir="ltr">${esc(LABEL_PAYROLL_EN.emprSig)}<div class="sig-line"></div></div>
-    </div>
-  </div>
-</div>`;
+  </section>`;
+    const sigs = buildTplSignaturePair({
+      employeeName: payroll.nameAr || payroll.nameEn,
+      companyAr: coAr,
+      dateLabelAr: 'التاريخ',
+      dateLabelEn: 'Date',
+    });
+    const inner = `<div class="doc tpl-doc">${head}${emp}${detail}${sigs}</div>`;
     openPrintWindow({
       title: 'Payroll slip / مسير راتب',
-      companyName: payroll.companyName || companyNameArDefault,
-      subtitle: `${payroll.nameAr || payroll.nameEn} — ${payroll.periodLabel}`,
-      extraCss: PRINT_DOC_CSS,
-      body,
+      companyName: '',
+      subtitle: '',
+      landscape: printLandscape,
+      extraCss: HR_SHEET_CSS,
+      showPageCounter: false,
+      pageMarginMm: printLandscape ? 7 : 6,
+      body: wrapHrPrintBody(inner, printLandscape),
     });
   };
 
@@ -350,90 +591,137 @@ export default function HrPrintDocumentsTab() {
       const m = i + 1;
       const amt = n(annual.amounts[i]);
       rows.push(`<tr>
-        <td class="td-center">${m}</td>
         <td>${esc(monthNameAr(m))} ${annual.year}</td>
-        <td class="td-en">${esc(monthNameEn(m))} ${annual.year}</td>
-        <td class="td-num">${esc(hrFmt(amt))}</td>
-        <td><div class="sig-line"></div></td>
+        <td class="td-amt-blue">${esc(hrFmt(amt))} SR</td>
+        <td class="td-sig-dash">…………………………</td>
       </tr>`);
     }
     if (!any) {
       window.alert(lang === 'ar' ? 'فعّل شهراً واحداً على الأقل للطباعة.' : 'Enable at least one month to print.');
       return;
     }
-    const body = `
-<div class="doc">
-  <div class="doc-h">
-    <div class="bi-grid">
-      <div dir="rtl">
-        <h2 class="ttl">جدول مسير رواتب — للاطلاع والتوقيع</h2>
-        <div class="sub">${esc(payroll.companyName || companyNameArDefault)} — السنة ${annual.year}</div>
-        <div class="sub" style="font-weight:700;margin-top:6px">الموظف: ${esc(payroll.nameAr || payroll.nameEn)}</div>
-      </div>
-      <div dir="ltr">
-        <h2 class="ttl">Payroll schedule — for review & signature</h2>
-        <div class="sub">${esc(payroll.companyNameEn || companyNameEnDefault)} — Year ${annual.year}</div>
-        <div class="sub" style="font-weight:700;margin-top:6px">Employee: ${esc(payroll.nameEn || payroll.nameAr)}</div>
-      </div>
-    </div>
-  </div>
-  <div class="doc-b" dir="rtl">
-    <table class="doc-table">
+    const range = firstLastActiveMonthRange(annual.monthOn, annual.year);
+    const coAr = payroll.companyName || companyNameArDefault;
+    const coEn = payroll.companyNameEn || companyNameEnDefault;
+    const subAr = range ? `مسير رواتب ${range.ar} — ${coAr}` : `السنة ${annual.year} — ${coAr}`;
+    const subEn = range ? `Payroll ${range.en} — ${coEn}` : `Year ${annual.year} — ${coEn}`;
+    const head = buildTplHeader({
+      companyAr: coAr,
+      companyEn: coEn,
+      titleAr: `كشف راتب سنوي — ${payroll.nameAr || payroll.nameEn || ''}`.trim(),
+      titleEn: `${LABEL_LETTER_EN.annualTitle} — ${payroll.nameEn || payroll.nameAr || ''}`.trim(),
+      subtitleAr: subAr,
+      subtitleEn: subEn,
+    });
+    const emp = buildTplEmployee3({
+      nameAr: payroll.nameAr,
+      nameEn: payroll.nameEn,
+      iqama: payroll.iqama,
+      jobTitle: payroll.jobTitle,
+      sectionTitleAr: 'بيانات الموظف',
+      sectionTitleEn: LABEL_PAYROLL_EN.employee,
+    });
+    const table = `
+  <section class="tpl-sec" dir="rtl">
+    <div class="tpl-sec-h">جدول الرواتب الشهرية<span class="tpl-sec-h-en">Monthly payroll table</span></div>
+    <table class="annual-ar-table">
       <thead>
         <tr>
-          <th class="td-center">#</th>
-          <th>الشهر</th>
-          <th class="td-en">Month</th>
-          <th>المبلغ (ر.س)</th>
-          <th>توقيع الموظف<br/><span style="font-size:10px;font-weight:400">Employee signature</span></th>
+          <th style="width:42%">الشهر</th>
+          <th style="width:28%">${esc(LABEL_LETTER_EN.grossSalary)}</th>
+          <th style="width:30%">${esc(LABEL_LETTER_EN.receiptSigCol)}</th>
         </tr>
       </thead>
       <tbody>${rows.join('')}</tbody>
       <tfoot>
         <tr>
-          <td colspan="3"><strong>الإجمالي / ${esc(LABEL_PAYROLL_EN.totalYear)}</strong></td>
-          <td class="td-num"><strong>${esc(hrFmt(annualSum))}</strong></td>
+          <td>${esc(LABEL_LETTER_EN.annualTotal)} / الإجمالي السنوي</td>
+          <td class="td-amt-blue">${esc(hrFmt(annualSum))} SR</td>
           <td></td>
         </tr>
       </tfoot>
     </table>
-    <div class="final-sign">
-      <div class="bi-grid">
-        <div dir="rtl">
-          <div class="ttl">إقرار نهائي وتوقيع الموظف</div>
-          <div class="sig-line" style="min-height:40px"></div>
-          <div style="font-size:11px;color:#64748b;margin-top:4px">${esc(payroll.nameAr || payroll.nameEn)}</div>
-        </div>
-        <div dir="ltr">
-          <div class="ttl">Final acknowledgement — employee</div>
-          <div class="sig-line" style="min-height:40px"></div>
-          <div style="font-size:11px;color:#64748b;margin-top:4px">${esc(payroll.nameEn || payroll.nameAr)}</div>
-        </div>
-      </div>
-      <div class="bi-grid" style="margin-top:12px">
-        <div dir="rtl">
-          <div class="ttl">توقيع صاحب العمل / المفوّض</div>
-          <div class="sig-line" style="min-height:40px"></div>
-        </div>
-        <div dir="ltr">
-          <div class="ttl">${esc(LABEL_PAYROLL_EN.emprSig)}</div>
-          <div class="sig-line" style="min-height:40px"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>`;
+  </section>`;
+    const sigs = buildTplSignaturePair({
+      employeeName: payroll.nameAr || payroll.nameEn,
+      companyAr: coAr,
+      dateLabelAr: 'التاريخ',
+      dateLabelEn: 'Date',
+    });
+    const inner = `<div class="doc tpl-doc">${head}${emp}${table}${sigs}</div>`;
     openPrintWindow({
-      title: `Payroll schedule ${annual.year} / مسير ${annual.year}`,
-      companyName: payroll.companyName || companyNameArDefault,
-      subtitle: `${payroll.nameAr || payroll.nameEn} — ${annual.year}`,
-      extraCss: PRINT_DOC_CSS,
-      body,
+      title: `Annual salary ${annual.year} / كشف سنوي ${annual.year}`,
+      companyName: '',
+      subtitle: '',
+      landscape: printLandscape,
+      extraCss: HR_SHEET_CSS,
+      showPageCounter: false,
+      pageMarginMm: printLandscape ? 7 : 6,
+      body: wrapHrPrintBody(inner, printLandscape),
+    });
+  };
+
+  const printPayrollSalaryLetter = () => {
+    const dur = serviceDurationArEn(payroll.letterStartDate, payroll.letterEndDate);
+    const coAr = payroll.companyName || companyNameArDefault;
+    const coEn = payroll.companyNameEn || companyNameEnDefault;
+    const nameDisp = [payroll.nameEn, payroll.nameAr].filter(Boolean).join(' / ') || '—';
+    const contractRows = [
+      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, rtlVal: true },
+      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: payroll.iqama || '—', rtlVal: true },
+      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(payroll.letterStartDate, 'ar-SA')} / ${formatDateLocale(payroll.letterStartDate, 'en-US')}`, rtlVal: false },
+      { labelAr: 'تاريخ الإنهاء', labelEn: 'End date', value: `${formatDateLocale(payroll.letterEndDate, 'ar-SA')} / ${formatDateLocale(payroll.letterEndDate, 'en-US')}`, rtlVal: false },
+      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, rtlVal: false },
+      { labelAr: 'الراتب الشهري', labelEn: LABEL_LETTER_EN.monthlySalary, value: `${hrFmt(payrollTotal)} SR`, rtlVal: false },
+      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, rtlVal: true },
+    ];
+    const head = buildTplHeader({
+      companyAr: coAr,
+      companyEn: coEn,
+      titleAr: 'خطاب استلام الرواتب',
+      titleEn: LABEL_LETTER_EN.salaryLetterTitle,
+      subtitleAr: `${coAr} — ${payroll.periodLabel || defaultPeriodLabel(lang)}`,
+      subtitleEn: `${coEn} — ${payroll.periodLabel || defaultPeriodLabel(lang)}`,
+    });
+    const emp = buildTplEmployee3({
+      nameAr: payroll.nameAr,
+      nameEn: payroll.nameEn,
+      iqama: payroll.iqama,
+      jobTitle: payroll.jobTitle,
+      sectionTitleAr: 'بيانات الموظف',
+      sectionTitleEn: LABEL_PAYROLL_EN.employee,
+    });
+    const contract = `
+  <section class="tpl-sec" dir="rtl">
+    <div class="tpl-sec-h">بيانات العقد<span class="tpl-sec-h-en">${esc(LABEL_LETTER_EN.contractSection)}</span></div>
+    ${buildTplContractTable(contractRows)}
+  </section>`;
+    const decl = buildTplDeclaration(
+      payroll.declarationSalariesAr || DEFAULT_DECL_SALARY_AR,
+      payroll.declarationSalariesEn || DEFAULT_DECL_SALARY_EN,
+    );
+    const sigs = buildTplSignaturePair({
+      employeeName: payroll.nameAr || payroll.nameEn,
+      companyAr: coAr,
+      dateLabelAr: 'التاريخ',
+      dateLabelEn: 'Date',
+    });
+    const inner = `<div class="doc tpl-doc">${head}${emp}${contract}${decl}${sigs}</div>`;
+    openPrintWindow({
+      title: 'Salary receipt letter / خطاب استلام الرواتب',
+      companyName: '',
+      subtitle: '',
+      landscape: printLandscape,
+      extraCss: HR_SHEET_CSS,
+      showPageCounter: false,
+      pageMarginMm: printLandscape ? 7 : 6,
+      body: wrapHrPrintBody(inner, printLandscape),
     });
   };
 
   const printPayroll = () => {
     if (payroll.payrollFormat === 'annual') printPayrollAnnual();
+    else if (payroll.payrollFormat === 'salaryLetter') printPayrollSalaryLetter();
     else printPayrollSingle();
   };
 
@@ -442,104 +730,65 @@ export default function HrPrintDocumentsTab() {
     (eos.customRows || []).reduce((s, r) => s + n(r.amount), 0);
 
   const printEos = () => {
-    const allowAr = (eos.customRows || [])
-      .map((r) => `<tr><td>${esc(r.label)}</td><td class="td-num">${esc(hrFmt(n(r.amount)))}</td></tr>`)
-      .join('');
-    const allowEn = (eos.customRows || [])
-      .map((r) => `<tr><td class="td-en">${esc(r.label)}</td><td class="td-num">${esc(hrFmt(n(r.amount)))}</td></tr>`)
-      .join('');
-    const notesAr = eos.settlementNotesAr?.trim() ? `<div class="doc-note" dir="rtl">${esc(eos.settlementNotesAr)}</div>` : '';
-    const notesEn = eos.settlementNotesEn?.trim() ? `<div class="doc-note" dir="ltr">${esc(eos.settlementNotesEn)}</div>` : '';
-
-    const body = `
-<div class="doc">
-  <div class="doc-h">
-    <div class="bi-grid">
-      <div dir="rtl">
-        <h2 class="ttl">مخالصة / نهاية خدمة — للاطلاع والتوقيع</h2>
-        <div class="sub">${esc(eos.companyName || companyNameArDefault)}</div>
-      </div>
-      <div dir="ltr">
-        <h2 class="ttl">${esc(LABEL_EOS_EN.title)}</h2>
-        <div class="sub">${esc(eos.companyNameEn || companyNameEnDefault)}</div>
-      </div>
-    </div>
-  </div>
-  <div class="doc-b">
-    <div class="bi-grid">
-      <div class="bi-col" dir="rtl">
-        <h4>بيانات الموظف</h4>
-        <table class="doc-table"><tbody>
-          <tr><td>${esc(t('employeeSerial'))}</td><td>${esc(eos.employeeSerial)}</td></tr>
-          <tr><td>${esc(t('employeeName'))}</td><td>${esc(eos.nameAr || eos.nameEn)}</td></tr>
-          <tr><td>${esc(t('jobTitle'))}</td><td>${esc(eos.jobTitle)}</td></tr>
-          <tr><td>${esc(t('iqamaNumber'))}</td><td>${esc(eos.iqama)}</td></tr>
-          <tr><td>${esc(t('joinDate'))}</td><td>${esc(eos.joinDate)}</td></tr>
-          <tr><td>تاريخ نهاية الخدمة</td><td>${esc(eos.endDate)}</td></tr>
-        </tbody></table>
-        <h4>أجر آخر شهر (بدون أوفر تايم)</h4>
-        <table class="doc-table"><tbody>
-          <tr><td>${esc(t('basicSalary'))}</td><td class="td-num">${esc(hrFmt(n(eos.basic)))}</td></tr>
-          <tr><td>${esc(t('housingAllowance'))}</td><td class="td-num">${esc(hrFmt(n(eos.housing)))}</td></tr>
-          <tr><td>${esc(t('transportAllowance'))}</td><td class="td-num">${esc(hrFmt(n(eos.transport)))}</td></tr>
-          <tr><td>${esc(t('otherAllowance'))}</td><td class="td-num">${esc(hrFmt(n(eos.other)))}</td></tr>
-          ${allowAr}
-          <tr><td><strong>مجموع الأجر</strong></td><td class="td-num"><strong>${esc(hrFmt(eosWageTotal))}</strong></td></tr>
-        </tbody></table>
-        <h4>التسوية</h4>
-        <table class="doc-table"><tbody>
-          <tr><td>مكافأة نهاية الخدمة</td><td class="td-num">${esc(hrFmt(n(eos.eosAmount)))}</td></tr>
-          <tr><td>مستحقات أخرى</td><td class="td-num">${esc(hrFmt(n(eos.otherAccrued)))}</td></tr>
-          <tr><td>خصومات</td><td class="td-num">${esc(hrFmt(n(eos.deductions)))}</td></tr>
-          <tr><td><strong>صافي المستحق</strong></td><td class="td-num"><strong>${esc(hrFmt(n(eos.netPayable)))}</strong></td></tr>
-        </tbody></table>
-        ${notesAr}
-      </div>
-      <div class="bi-col" dir="ltr">
-        <h4>${esc(LABEL_EOS_EN.employee)}</h4>
-        <table class="doc-table"><tbody>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.serial)}</td><td class="td-en">${esc(eos.employeeSerial)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.name)}</td><td class="td-en">${esc(eos.nameEn || eos.nameAr)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.job)}</td><td class="td-en">${esc(eos.jobTitle)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.iqama)}</td><td class="td-en">${esc(eos.iqama)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.join)}</td><td class="td-en">${esc(eos.joinDate)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_EOS_EN.endDate)}</td><td class="td-en">${esc(eos.endDate)}</td></tr>
-        </tbody></table>
-        <h4>${esc(LABEL_EOS_EN.wageTitle)}</h4>
-        <table class="doc-table"><tbody>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.basic)}</td><td class="td-num">${esc(hrFmt(n(eos.basic)))}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.housing)}</td><td class="td-num">${esc(hrFmt(n(eos.housing)))}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.transport)}</td><td class="td-num">${esc(hrFmt(n(eos.transport)))}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.other)}</td><td class="td-num">${esc(hrFmt(n(eos.other)))}</td></tr>
-          ${allowEn}
-          <tr><td class="td-en"><strong>${esc(LABEL_EOS_EN.wageTotal)}</strong></td><td class="td-num"><strong>${esc(hrFmt(eosWageTotal))}</strong></td></tr>
-        </tbody></table>
-        <h4>${esc(LABEL_EOS_EN.settlement)}</h4>
-        <table class="doc-table"><tbody>
-          <tr><td class="td-en">${esc(LABEL_EOS_EN.eos)}</td><td class="td-num">${esc(hrFmt(n(eos.eosAmount)))}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_EOS_EN.other)}</td><td class="td-num">${esc(hrFmt(n(eos.otherAccrued)))}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_EOS_EN.ded)}</td><td class="td-num">${esc(hrFmt(n(eos.deductions)))}</td></tr>
-          <tr><td class="td-en"><strong>${esc(LABEL_EOS_EN.net)}</strong></td><td class="td-num"><strong>${esc(hrFmt(n(eos.netPayable)))}</strong></td></tr>
-        </tbody></table>
-        ${notesEn}
-      </div>
-    </div>
-    <div class="bi-grid" style="margin-top:16px">
-      <div class="sign-box" dir="rtl">توقيع الموظف<div class="sig-line"></div></div>
-      <div class="sign-box" dir="ltr">${esc(LABEL_PAYROLL_EN.empSig)}<div class="sig-line"></div></div>
-    </div>
-    <div class="bi-grid">
-      <div class="sign-box" dir="rtl">توقيع صاحب العمل / المفوّض<div class="sig-line"></div></div>
-      <div class="sign-box" dir="ltr">${esc(LABEL_PAYROLL_EN.emprSig)}<div class="sig-line"></div></div>
-    </div>
-  </div>
-</div>`;
+    const coAr = eos.companyName || companyNameArDefault;
+    const coEn = eos.companyNameEn || companyNameEnDefault;
+    const nameDisp = [eos.nameEn, eos.nameAr].filter(Boolean).join(' / ') || '—';
+    const dur = serviceDurationArEn(eos.joinDate, eos.endDate);
+    const customLines = (eos.customRows || [])
+      .map((r) => `${r.label || '—'}: ${hrFmt(n(r.amount))} SR`)
+      .join('؛ ');
+    const wageExtra = customLines ? ` (${customLines})` : '';
+    const contractRows = [
+      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, rtlVal: true },
+      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: eos.iqama || '—', rtlVal: true },
+      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(eos.joinDate, 'ar-SA')} / ${formatDateLocale(eos.joinDate, 'en-US')}`, rtlVal: false },
+      { labelAr: 'تاريخ نهاية الخدمة', labelEn: LABEL_EOS_EN.endDate, value: `${formatDateLocale(eos.endDate, 'ar-SA')} / ${formatDateLocale(eos.endDate, 'en-US')}`, rtlVal: false },
+      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, rtlVal: false },
+      { labelAr: 'أجر آخر شهر (مجموع البدلات)', labelEn: LABEL_EOS_EN.wageTitle, value: `${hrFmt(eosWageTotal)} SR${wageExtra}`, rtlVal: true },
+      { labelAr: 'مكافأة نهاية الخدمة', labelEn: LABEL_LETTER_EN.eosGratuity, value: `${hrFmt(n(eos.eosAmount))} SR`, rtlVal: false },
+      { labelAr: 'مستحقات أخرى', labelEn: LABEL_EOS_EN.other, value: `${hrFmt(n(eos.otherAccrued))} SR`, rtlVal: false },
+      { labelAr: 'خصومات', labelEn: LABEL_EOS_EN.ded, value: `${hrFmt(n(eos.deductions))} SR`, rtlVal: false },
+      { labelAr: 'صافي المستحق', labelEn: LABEL_LETTER_EN.netPayable, value: `${hrFmt(n(eos.netPayable))} SR`, rtlVal: false },
+      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, rtlVal: true },
+    ];
+    const head = buildTplHeader({
+      companyAr: coAr,
+      companyEn: coEn,
+      titleAr: 'خطاب استلام جميع المستحقات',
+      titleEn: LABEL_LETTER_EN.entitlementsLetterTitle,
+      subtitleAr: `${coAr} — ${formatDateLocale(eos.endDate, 'ar-SA')}`,
+      subtitleEn: `${coEn} — ${formatDateLocale(eos.endDate, 'en-US')}`,
+    });
+    const emp = buildTplEmployee3({
+      nameAr: eos.nameAr,
+      nameEn: eos.nameEn,
+      iqama: eos.iqama,
+      jobTitle: eos.jobTitle,
+      sectionTitleAr: 'بيانات الموظف',
+      sectionTitleEn: LABEL_PAYROLL_EN.employee,
+    });
+    const contract = `
+  <section class="tpl-sec" dir="rtl">
+    <div class="tpl-sec-h">بيانات العقد والتسوية<span class="tpl-sec-h-en">${esc(LABEL_LETTER_EN.contractSection)} & settlement</span></div>
+    ${buildTplContractTable(contractRows)}
+  </section>`;
+    const decl = buildTplDeclaration(eos.settlementNotesAr, eos.settlementNotesEn);
+    const sigs = buildTplSignaturePair({
+      employeeName: eos.nameAr || eos.nameEn,
+      companyAr: coAr,
+      dateLabelAr: 'التاريخ',
+      dateLabelEn: 'Date',
+    });
+    const inner = `<div class="doc tpl-doc">${head}${emp}${contract}${decl}${sigs}</div>`;
     openPrintWindow({
-      title: 'EOS settlement / مخالصة',
-      companyName: eos.companyName || companyNameArDefault,
-      subtitle: `${eos.nameAr || eos.nameEn}`,
-      extraCss: PRINT_DOC_CSS,
-      body,
+      title: 'Full entitlements letter / خطاب استلام المستحقات',
+      companyName: '',
+      subtitle: '',
+      landscape: printLandscape,
+      extraCss: HR_SHEET_CSS,
+      showPageCounter: false,
+      pageMarginMm: printLandscape ? 7 : 6,
+      body: wrapHrPrintBody(inner, printLandscape),
     });
   };
 
@@ -581,6 +830,19 @@ export default function HrPrintDocumentsTab() {
         </Button>
       </div>
 
+      <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/30 p-3 space-y-2">
+        <p className="m-0 text-[12px] font-semibold text-noorix-text">{t('hrPrintOrientation')}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant={!printLandscape ? 'primary' : 'ghost'} onClick={() => setPrintLandscape(false)}>
+            {t('hrPrintOrientationPortrait')}
+          </Button>
+          <Button type="button" size="sm" variant={printLandscape ? 'primary' : 'ghost'} onClick={() => setPrintLandscape(true)}>
+            {t('hrPrintOrientationLandscape')}
+          </Button>
+        </div>
+        <p className="m-0 text-[11px] text-noorix-muted">{t('hrPrintOrientationHint')}</p>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
         <Input type="select" label={t('selectEmployee')} value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
           <option value="">—</option>
@@ -605,6 +867,9 @@ export default function HrPrintDocumentsTab() {
             <Button type="button" size="sm" variant={payroll.payrollFormat === 'annual' ? 'primary' : 'ghost'} onClick={() => updatePayroll({ payrollFormat: 'annual' })}>
               {t('hrPrintFormatAnnual')}
             </Button>
+            <Button type="button" size="sm" variant={payroll.payrollFormat === 'salaryLetter' ? 'primary' : 'ghost'} onClick={() => updatePayroll({ payrollFormat: 'salaryLetter' })}>
+              {t('hrPrintFormatSalaryLetter')}
+            </Button>
           </div>
 
           <p className="m-0 text-[12px] font-semibold text-noorix-blue">{t('hrPrintPayrollSection')}</p>
@@ -619,7 +884,7 @@ export default function HrPrintDocumentsTab() {
             <Input type="date" label={t('joinDate')} value={payroll.joinDate} onChange={(e) => updatePayroll({ joinDate: e.target.value })} />
           </div>
 
-          {payroll.payrollFormat === 'single' && (
+          {(payroll.payrollFormat === 'single' || payroll.payrollFormat === 'salaryLetter') && (
             <>
               <Input type="text" label={t('hrPrintPeriodLabel')} value={payroll.periodLabel} onChange={(e) => updatePayroll({ periodLabel: e.target.value })} />
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -661,6 +926,17 @@ export default function HrPrintDocumentsTab() {
                 <span className="text-[13px] font-semibold">{t('totalSalary')}</span>
                 <span className="nx-font-numbers text-[16px] font-bold"><FmtNum n={payrollTotal} /> <span className="nx-sar">SR</span></span>
               </div>
+              {payroll.payrollFormat === 'salaryLetter' && (
+                <div className="space-y-3 rounded-lg border border-dashed border-noorix-blue/30 bg-noorix-bg-muted/20 p-4">
+                  <p className="m-0 text-[12px] font-semibold text-noorix-text">{t('hrPrintFormatSalaryLetter')}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input type="date" label={t('hrPrintLetterStart')} value={payroll.letterStartDate} onChange={(e) => updatePayroll({ letterStartDate: e.target.value })} />
+                    <Input type="date" label={t('hrPrintLetterEnd')} value={payroll.letterEndDate} onChange={(e) => updatePayroll({ letterEndDate: e.target.value })} />
+                  </div>
+                  <Input multiline rows={4} label={t('hrPrintSalaryLetterDeclAr')} value={payroll.declarationSalariesAr} onChange={(e) => updatePayroll({ declarationSalariesAr: e.target.value })} />
+                  <Input multiline rows={4} label={t('hrPrintSalaryLetterDeclEn')} value={payroll.declarationSalariesEn} onChange={(e) => updatePayroll({ declarationSalariesEn: e.target.value })} />
+                </div>
+              )}
             </>
           )}
 
@@ -733,6 +1009,7 @@ export default function HrPrintDocumentsTab() {
       {docKind === 'eos' && (
         <div className="space-y-3 border-t border-noorix-border pt-4">
           <p className="m-0 text-[12px] font-semibold text-noorix-blue">{t('hrPrintEosSection')}</p>
+          <p className="m-0 text-[11px] text-noorix-muted">{t('hrPrintEosLetterTitleHint')}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Input type="text" label={t('hrPrintCompanyName')} value={eos.companyName} onChange={(e) => updateEos({ companyName: e.target.value })} />
             <Input type="text" label={t('hrPrintCompanyNameEn')} value={eos.companyNameEn} onChange={(e) => updateEos({ companyNameEn: e.target.value })} />

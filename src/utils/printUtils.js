@@ -19,18 +19,26 @@ function arabicPrintDate() {
 /**
  * CSS الأساسي المشترك — @page، خط Cairo، جدول، ترويسة، تذييل
  * @param {boolean} landscape
+ * @param {{ showPageCounter?: boolean; marginMm?: number }} [opts]
  */
-function buildBaseCss(landscape) {
-  return `
-@page {
-  size: ${landscape ? 'A4 landscape' : 'A4'};
-  margin: 15mm 15mm 20mm;
+function buildBaseCss(landscape, opts = {}) {
+  const showPageCounter = opts.showPageCounter !== false;
+  const marginMm = Number.isFinite(opts.marginMm) ? opts.marginMm : landscape ? 10 : 12;
+  const bottomMarginMm = showPageCounter ? Math.max(marginMm + 6, 18) : marginMm;
+  const pageCounterBlock = showPageCounter
+    ? `
   @bottom-center {
     content: "صفحة " counter(page) " من " counter(pages);
     font-family: 'Cairo', Arial, sans-serif;
     font-size: 10px;
     color: #555;
-  }
+  }`
+    : '';
+  return `
+@page {
+  size: ${landscape ? 'A4 landscape' : 'A4'};
+  margin: ${marginMm}mm ${marginMm}mm ${bottomMarginMm}mm;
+${pageCounterBlock}
 }
 *, *::before, *::after { box-sizing: border-box; }
 body {
@@ -87,6 +95,8 @@ function escHtml(v) {
  * @param {string}  [opts.logoUrl]    - رابط شعار الشركة (اختياري)
  * @param {boolean} [opts.landscape]  - طباعة أفقية (افتراضي: false)
  * @param {string}  [opts.extraCss]   - CSS إضافي للوثائق ذات التخطيط الخاص
+ * @param {boolean} [opts.showPageCounter] - تذييل ترقيم الصفحات (افتراضي: true)
+ * @param {number}  [opts.pageMarginMm] - هامش @page بالمليمتر (اختياري)
  */
 export function openPrintWindow({
   title = '',
@@ -96,6 +106,8 @@ export function openPrintWindow({
   logoUrl = '',
   landscape = false,
   extraCss = '',
+  showPageCounter = true,
+  pageMarginMm,
 } = {}) {
   const headerHtml = companyName
     ? `<div class="print-header">
@@ -112,7 +124,7 @@ export function openPrintWindow({
 <title>${escHtml(title || companyName)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-${buildBaseCss(landscape)}
+${buildBaseCss(landscape, { showPageCounter, marginMm: pageMarginMm })}
 ${extraCss ? `\n/* — CSS خاص بالوثيقة — */\n${extraCss}` : ''}
 </style>
 </head>
