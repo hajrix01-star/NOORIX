@@ -1,5 +1,6 @@
 ﻿import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { ScreenShell, ScreenTabs } from '../../ui';
 import InvoiceUploadTab    from './components/InvoiceUploadTab';
@@ -18,10 +19,11 @@ const TABS = [
   { key: 'items',     labelAr: 'الأصناف',           labelEn: 'Items' },
   { key: 'alerts',    labelAr: 'تنبيهات الأسعار',  labelEn: 'Alerts' },
 ];
+const OCR_TAB_IDS = TABS.map((tab) => tab.key);
 
 export default function OcrInvoicesScreen() {
   const { lang } = useTranslation();
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useTabSearchParam(OCR_TAB_IDS, 'upload');
   const isAr = lang === 'ar';
 
   const { data: invoicesData,  isLoading: invoicesLoading,  refetch: refetchInvoices  } = useQuery({

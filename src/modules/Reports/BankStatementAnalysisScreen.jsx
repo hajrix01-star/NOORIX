@@ -2,6 +2,7 @@
  * BankStatementAnalysisScreen — تحليل كشوف الحساب (واجهة كاملة مكيّفة من المشروع السابق)
  */
 import React, { useState, useCallback, useMemo } from 'react';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { useApp } from '../../context/AppContext';
@@ -28,6 +29,7 @@ const TABS = [
   { id: 'rules', labelKey: 'bankStatementTabRules' },
   { id: 'templates', labelKey: 'bankStatementTabTemplates' },
 ];
+const BANK_STATEMENT_TAB_IDS = TABS.map((tab) => tab.id);
 
 const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
@@ -43,7 +45,7 @@ export default function BankStatementAnalysisScreen() {
   }, [companies, companyId]);
 
   const [selectedStatementId, setSelectedStatementId] = useState(null);
-  const [activeTab, setActiveTab] = useState('statements');
+  const [activeTab, setActiveTab] = useTabSearchParam(BANK_STATEMENT_TAB_IDS, 'statements');
   const [showUpload, setShowUpload] = useState(false);
   const [mappingStatement, setMappingStatement] = useState(null);
   const [filterMonth, setFilterMonth] = useState('');

@@ -29,6 +29,7 @@ import { BatchPrintSheet } from './components/BatchPrintSheet';
 import { BatchSummaryBar } from './components/BatchSummaryBar';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { buildActiveCancelledPartialStatusMap } from '../../constants/badgeMaps';
 import { isWarrantyFollowUpKind } from './utils/batchRowModel';
 
@@ -56,6 +57,8 @@ function getTabs(t) {
   ];
 }
 
+const PURCHASE_TAB_IDS = ['entry', 'history'];
+
 /* ══ الشاشة الرئيسية — تصميم احترافي ═══════════════════════════════ */
 export default function PurchasesBatchScreen() {
   const { activeCompanyId, language } = useApp();
@@ -65,7 +68,7 @@ export default function PurchasesBatchScreen() {
   const dateFilter = useDateFilter();
 
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState('entry');
+  const [activeTab, setActiveTab] = useTabSearchParam(PURCHASE_TAB_IDS, 'entry');
   const [batchDate, setBatchDate] = useState(getSaudiToday());
   /** آخر تاريخ عملية مُطبَّق على الصفوف — لمزامنة رفع/خفض تاريخ الفاتورة مع تاريخ العملية */
   const prevBatchDateRef = useRef(batchDate);

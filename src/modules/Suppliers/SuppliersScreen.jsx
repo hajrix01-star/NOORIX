@@ -2,8 +2,9 @@
  * SuppliersScreen — الموردين والتصنيفات
  * تبويبتان: موردين | تصنيفات
  */
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { ScreenTabs, ScreenShell } from '../../ui';
 import { SuppliersTab } from './components/SuppliersTab';
@@ -13,12 +14,13 @@ const TABS = [
   { id: 'suppliers',  labelKey: 'suppliersTab'  },
   { id: 'categories', labelKey: 'categoriesTab' },
 ];
+const SUPPLIER_TAB_IDS = TABS.map((tab) => tab.id);
 
 export default function SuppliersScreen() {
   const { activeCompanyId } = useApp();
   const { t } = useTranslation();
   const companyId = activeCompanyId ?? '';
-  const [activeTab, setActiveTab] = useState('suppliers');
+  const [activeTab, setActiveTab] = useTabSearchParam(SUPPLIER_TAB_IDS, 'suppliers');
 
   const supplierTabItems = useMemo(
     () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),

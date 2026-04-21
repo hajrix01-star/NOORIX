@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import {
   getCompanyAssets,
@@ -33,6 +34,8 @@ import {
   KebabMenu,
 } from '../../ui';
 import { SupplierSelect } from '../../components/common/SupplierSelect';
+
+const ASSET_SECTION_TAB_IDS = ['register', 'queue'];
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -82,7 +85,7 @@ export default function AssetsRegisterScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [assetSectionTab, setAssetSectionTab] = useState('register');
+  const [assetSectionTab, setAssetSectionTab] = useTabSearchParam(ASSET_SECTION_TAB_IDS, 'register');
   const [pendingInvoiceForComplete, setPendingInvoiceForComplete] = useState(null);
   const [completeSaving, setCompleteSaving] = useState(false);
 

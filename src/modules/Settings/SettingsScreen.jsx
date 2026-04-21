@@ -5,6 +5,7 @@
  */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useIsMobile640 } from '../../hooks/useMediaQuery';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useQuery }        from '@tanstack/react-query';
 import { getCompanies }    from '../../services/api';
 import { useApp }          from '../../context/AppContext';
@@ -28,7 +29,6 @@ export default function SettingsScreen() {
   const setActiveCompany = typeof appContext?.setActiveCompany === 'function'
     ? appContext.setActiveCompany : () => {};
 
-  const [activeTab, setActiveTab] = useState('companies');
   const isMobile = useIsMobile640();
   const tabBarRef = useRef(null);
 
@@ -46,6 +46,9 @@ export default function SettingsScreen() {
     () => TABS_BASE.filter((tab) => !tab.permission || hasPermission(userRole, tab.permission, userPermissions)),
     [userRole, userPermissions, TABS_BASE],
   );
+
+  const allowedTabIds = useMemo(() => TABS.map((tab) => tab.id), [TABS]);
+  const [activeTab, setActiveTab] = useTabSearchParam(allowedTabIds, 'companies');
 
   const tabItems = useMemo(
     () => TABS.map((tab) => ({ id: tab.id, label: tab.label })),

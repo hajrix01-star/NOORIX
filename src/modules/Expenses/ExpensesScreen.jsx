@@ -3,6 +3,7 @@
  * نفس إيقاع الموارد البشرية: nx-page-header، تبويبات متصلة، محتوى تبويب داخل ScreenShell embedded + pt-4
  */
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'batch', labelKey: 'expenseBatchTab' },
   { id: 'payments', labelKey: 'paymentHistoryTab' },
 ];
+const EXPENSE_TAB_IDS = TABS.map((tab) => tab.id);
 
 export default function ExpensesScreen() {
   const { activeCompanyId } = useApp();
@@ -32,7 +34,7 @@ export default function ExpensesScreen() {
   const queryClient = useQueryClient();
   const dateFilter = useDateFilter();
 
-  const [activeTab, setActiveTab] = useState('lines');
+  const [activeTab, setActiveTab] = useTabSearchParam(EXPENSE_TAB_IDS, 'lines');
   const { showToast } = useToast();
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [showFormModal, setShowFormModal] = useState(false);

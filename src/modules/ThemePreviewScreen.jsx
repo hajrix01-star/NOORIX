@@ -1,7 +1,8 @@
 /**
  * ThemePreviewScreen — معاينة الثيم: أشكال الكروت + معرض مكوّنات مرقّم للمرجعية
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
+import { useTabSearchParam } from '../hooks/useTabSearchParam';
 import { useTranslation } from '../i18n/useTranslation';
 import { useApp } from '../context/AppContext';
 import { CARD_STYLES, CARD_STYLE_KEY } from '../constants/cardStyles';
@@ -54,11 +55,13 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
   );
 }
 
+const THEME_PREVIEW_TAB_IDS = ['cards', 'uilab'];
+
 export default function ThemePreviewScreen() {
   const { t, lang } = useTranslation();
   const { cardStyle, setCardStyle } = useApp();
   const currentStyle = cardStyle ?? 1;
-  const [activeTab, setActiveTab] = useState('cards');
+  const [activeTab, setActiveTab] = useTabSearchParam(THEME_PREVIEW_TAB_IDS, 'cards');
 
   const tabItems = useMemo(
     () => [

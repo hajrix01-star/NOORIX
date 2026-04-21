@@ -3,6 +3,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Input, ScreenTabs, ScreenShell } from '../../ui';
 import DashboardOverviewTab from './components/DashboardOverviewTab';
@@ -16,6 +17,7 @@ const DASHBOARD_TABS = [
   { id: 'specialDays', labelKey: 'dashboardSpecialDays'  },
   { id: 'appSales',    labelKey: 'dashboardAppSales'     },
 ];
+const DASHBOARD_TAB_IDS = DASHBOARD_TABS.map((tab) => tab.id);
 
 const MONTH_NAMES_EN = [
   'January','February','March','April','May','June',
@@ -34,7 +36,7 @@ export default function DashboardScreen() {
   const { t } = useTranslation();
   const { activeCompanyId } = useApp();
   const now = getSaudiNow();
-  const [activeTab, setActiveTab]         = useState('overview');
+  const [activeTab, setActiveTab] = useTabSearchParam(DASHBOARD_TAB_IDS, 'overview');
   const [year, setYear]                   = useState(now.year);
   const [selectedMonth, setSelectedMonth] = useState(String(now.month));
   const selectedMonthNumber = selectedMonth ? Number(selectedMonth) : null;

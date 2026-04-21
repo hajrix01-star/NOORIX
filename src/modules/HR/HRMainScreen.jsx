@@ -1,10 +1,11 @@
 ﻿/**
  * HRMainScreen — الشاشة الرئيسية للموارد البشرية
  */
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { ScreenShell, ScreenTabs } from '../../ui';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
@@ -33,12 +34,13 @@ const TABS = [
 
 const EXPIRY_DAYS = 90;
 const CURRENT_YEAR = new Date().getFullYear();
+const HR_TAB_IDS = TABS.map((tab) => tab.id);
 
 export default function HRMainScreen() {
   const { t } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
-  const [activeTab, setActiveTab] = useState('employees');
+  const [activeTab, setActiveTab] = useTabSearchParam(HR_TAB_IDS, 'employees');
 
   const { employees, isLoading: empLoading } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: !!companyId });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId);

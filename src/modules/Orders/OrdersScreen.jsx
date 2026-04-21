@@ -2,8 +2,9 @@
  * OrdersScreen — قسم الطلبات
  * تبويبات: الطلبات | تقارير الأصناف | إدارة الأصناف
  */
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
 import { ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
@@ -20,12 +21,14 @@ function parseYearMonth(dateStr) {
   return Number.isFinite(y) && Number.isFinite(m) ? { year: y, month: m } : null;
 }
 
+const ORDER_TAB_IDS = ['orders', 'items-report', 'items-manage'];
+
 export default function OrdersScreen() {
   const { activeCompanyId } = useApp();
   const { t } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
-  const [activeTab, setActiveTab] = useState('orders');
+  const [activeTab, setActiveTab] = useTabSearchParam(ORDER_TAB_IDS, 'orders');
 
   const { year, month, startDate, endDate } = useMemo(() => {
     const { mode, selYear, selMonth, selDay, rangeStart, rangeEnd } = dateFilter;
