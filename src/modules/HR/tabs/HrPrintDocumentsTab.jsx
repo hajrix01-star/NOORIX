@@ -369,6 +369,8 @@ function emptyAnnual() {
     year: y,
     monthOn: Array.from({ length: 12 }, () => true),
     amounts: Array.from({ length: 12 }, () => ''),
+    /** مبلغ واحد لكل شهر مفعّل؛ إن فارغ يُستخدم amounts[i] */
+    perMonthGross: '',
   };
 }
 
@@ -443,7 +445,8 @@ function composeHrPrintDocument({
       if (!annual.monthOn[i]) continue;
       any = true;
       const m = i + 1;
-      const amt = n(annual.amounts[i]);
+      const uniform = String(annual.perMonthGross ?? '').trim();
+      const amt = uniform !== '' ? n(uniform) : n(annual.amounts[i]);
       rows.push(`<tr>
         <td>${esc(monthNameAr(m))} ${annual.year}</td>
         <td class="cell-amt">${esc(hrFmt(amt))} SR</td>
@@ -694,6 +697,7 @@ export default function HrPrintDocumentsTab() {
       year: a.year,
       monthOn: Array(12).fill(true),
       amounts: Array(12).fill(totStr),
+      perMonthGross: totStr,
     }));
   }, [emp, customAllowances, companyNameArDefault, companyNameEnDefault, lang, t, payroll.payrollFormat]);
 
@@ -727,7 +731,11 @@ export default function HrPrintDocumentsTab() {
 
   const fillAnnualWithMonthlyTotal = () => {
     const s = String(Math.round(payrollTotal * 100) / 100);
-    setAnnual((a) => ({ ...a, amounts: a.amounts.map((v, i) => (a.monthOn[i] ? s : v)) }));
+    setAnnual((a) => ({
+      ...a,
+      perMonthGross: s,
+      amounts: a.amounts.map((_, i) => (a.monthOn[i] ? s : '')),
+    }));
   };
 
   const hrPrintComposed = useMemo(
@@ -816,8 +824,8 @@ export default function HrPrintDocumentsTab() {
         <p className="mt-1.5 mb-0 text-[13px] text-noorix-muted">{t('hrTabPrintDocsDesc')}</p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] xl:items-start">
-        <div className="min-w-0 space-y-4">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,36%)_minmax(0,64%)] xl:items-start 2xl:gap-6">
+        <div className="min-w-0 max-w-lg space-y-4 sm:max-w-xl">
           <div className="flex flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant={docKind === 'payroll' ? 'primary' : 'ghost'} onClick={() => setDocKind('payroll')}>
@@ -870,19 +878,23 @@ export default function HrPrintDocumentsTab() {
           </div>
 
           <p className="m-0 text-[12px] font-semibold text-noorix-blue">{t('hrPrintPayrollSection')}</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input type="text" label={t('hrPrintCompanyName')} value={payroll.companyName} onChange={(e) => updatePayroll({ companyName: e.target.value })} />
-            <Input type="text" label={t('hrPrintCompanyNameEn')} value={payroll.companyNameEn} onChange={(e) => updatePayroll({ companyNameEn: e.target.value })} />
-            <Input type="text" label={t('hrPrintNameAr')} value={payroll.nameAr} onChange={(e) => updatePayroll({ nameAr: e.target.value })} />
-            <Input type="text" label={t('hrPrintNameEn')} value={payroll.nameEn} onChange={(e) => updatePayroll({ nameEn: e.target.value })} />
-            <Input type="text" label={t('employeeSerial')} value={payroll.employeeSerial} onChange={(e) => updatePayroll({ employeeSerial: e.target.value })} />
-            <Input type="text" label={t('jobTitle')} value={payroll.jobTitle} onChange={(e) => updatePayroll({ jobTitle: e.target.value })} />
-            <Input type="text" label={t('iqamaNumber')} value={payroll.iqama} onChange={(e) => updatePayroll({ iqama: e.target.value })} />
-            <Input type="date" label={t('joinDate')} value={payroll.joinDate} onChange={(e) => updatePayroll({ joinDate: e.target.value })} />
+          <div className="space-y-3 rounded-lg border border-noorix-border/80 bg-noorix-bg-muted/15 p-3 sm:p-4">
+            <p className="m-0 text-[11px] font-bold uppercase tracking-wide text-noorix-muted">{t('hrPrintSectionDocParty')}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input type="text" label={t('hrPrintCompanyName')} value={payroll.companyName} onChange={(e) => updatePayroll({ companyName: e.target.value })} />
+              <Input type="text" label={t('hrPrintCompanyNameEn')} value={payroll.companyNameEn} onChange={(e) => updatePayroll({ companyNameEn: e.target.value })} />
+              <Input type="text" label={t('hrPrintNameAr')} value={payroll.nameAr} onChange={(e) => updatePayroll({ nameAr: e.target.value })} />
+              <Input type="text" label={t('hrPrintNameEn')} value={payroll.nameEn} onChange={(e) => updatePayroll({ nameEn: e.target.value })} />
+              <Input type="text" label={t('employeeSerial')} value={payroll.employeeSerial} onChange={(e) => updatePayroll({ employeeSerial: e.target.value })} />
+              <Input type="text" label={t('jobTitle')} value={payroll.jobTitle} onChange={(e) => updatePayroll({ jobTitle: e.target.value })} />
+              <Input type="text" label={t('iqamaNumber')} value={payroll.iqama} onChange={(e) => updatePayroll({ iqama: e.target.value })} />
+              <Input type="date" label={t('joinDate')} value={payroll.joinDate} onChange={(e) => updatePayroll({ joinDate: e.target.value })} />
+            </div>
           </div>
 
           {(payroll.payrollFormat === 'single' || payroll.payrollFormat === 'salaryLetter') && (
-            <>
+            <div className="space-y-3 rounded-lg border border-noorix-border/80 bg-noorix-bg-muted/15 p-3 sm:p-4">
+              <p className="m-0 text-[11px] font-bold uppercase tracking-wide text-noorix-muted">{t('hrPrintSectionPayPackage')}</p>
               <Input type="text" label={t('hrPrintPeriodLabel')} value={payroll.periodLabel} onChange={(e) => updatePayroll({ periodLabel: e.target.value })} />
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <Input type="text" inputMode="decimal" label={t('basicSalary')} value={payroll.basic} onChange={(e) => updatePayroll({ basic: e.target.value })} />
@@ -924,7 +936,7 @@ export default function HrPrintDocumentsTab() {
                 <span className="nx-font-numbers text-[16px] font-bold"><FmtNum n={payrollTotal} /> <span className="nx-sar">SR</span></span>
               </div>
               {payroll.payrollFormat === 'salaryLetter' && (
-                <div className="space-y-3 rounded-lg border border-dashed border-noorix-blue/30 bg-noorix-bg-muted/20 p-4">
+                <div className="space-y-3 rounded-lg border border-dashed border-noorix-blue/30 bg-noorix-bg-muted/20 p-3 sm:p-4">
                   <p className="m-0 text-[12px] font-semibold text-noorix-text">{t('hrPrintFormatSalaryLetter')}</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Input type="date" label={t('hrPrintLetterStart')} value={payroll.letterStartDate} onChange={(e) => updatePayroll({ letterStartDate: e.target.value })} />
@@ -934,67 +946,60 @@ export default function HrPrintDocumentsTab() {
                   <Input multiline rows={4} label={t('hrPrintSalaryLetterDeclEn')} value={payroll.declarationSalariesEn} onChange={(e) => updatePayroll({ declarationSalariesEn: e.target.value })} />
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {payroll.payrollFormat === 'annual' && (
-            <div className="space-y-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-4">
+            <div className="space-y-3 rounded-lg border border-noorix-border/80 bg-noorix-bg-muted/15 p-3 sm:p-4">
               <p className="m-0 text-[13px] font-semibold text-noorix-text">{t('hrPrintAnnualSection')}</p>
               <div className="flex flex-wrap items-end gap-3">
                 <Input type="number" label={t('hrPrintYear')} min={2000} max={2100} step={1} value={annual.year} onChange={(e) => setAnnual((a) => ({ ...a, year: Number(e.target.value) || a.year }))} className="w-[120px]" />
                 <Button type="button" size="sm" variant="ghost" onClick={fillAnnualWithMonthlyTotal}>{t('hrPrintFillAllMonths')}</Button>
               </div>
-              <p className="m-0 text-[11px] text-noorix-muted">{t('hrPrintAnnualHint')}</p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                {monthShortAr.map((label, i) => (
-                  <label key={label} className="flex items-center gap-2 text-[12px] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={annual.monthOn[i]}
-                      onChange={(e) => {
-                        const monthOn = [...annual.monthOn];
-                        monthOn[i] = e.target.checked;
-                        setAnnual((a) => ({ ...a, monthOn }));
-                      }}
-                      className="h-4 w-4 accent-noorix-blue"
-                    />
-                    {label}
-                  </label>
-                ))}
+              <p className="m-0 text-[11px] leading-relaxed text-noorix-muted">{t('hrPrintAnnualHint')}</p>
+              <div>
+                <p className="m-0 mb-2 text-[11px] font-bold uppercase tracking-wide text-noorix-muted">{t('hrPrintAnnualMonthsOnly')}</p>
+                <div className="grid grid-cols-3 gap-x-2 gap-y-2 sm:grid-cols-4 md:grid-cols-6">
+                  {monthShortAr.map((label, i) => (
+                    <label key={label} className="flex cursor-pointer items-center gap-2 rounded-md border border-noorix-border/60 bg-white/80 px-2 py-1.5 text-[12px] shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={annual.monthOn[i]}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setAnnual((a) => {
+                            const monthOn = [...a.monthOn];
+                            monthOn[i] = checked;
+                            const g = String(a.perMonthGross ?? '').trim();
+                            const amounts = a.amounts.map((amt, j) => {
+                              if (!monthOn[j]) return '';
+                              return g !== '' ? g : amt;
+                            });
+                            return { ...a, monthOn, amounts };
+                          });
+                        }}
+                        className="h-4 w-4 shrink-0 accent-noorix-blue"
+                      />
+                      <span className="min-w-0 truncate">{label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[400px] border-collapse text-[13px]">
-                  <thead>
-                    <tr className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)]">
-                      <th className="py-2 px-2 text-start">{t('hrPrintMonthCol')}</th>
-                      <th className="py-2 px-2 text-end">{t('hrPrintAmountCol')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {monthShortAr.map((label, i) => (
-                      <tr key={label} className="border-b border-noorix-border">
-                        <td className="py-2 px-2">{label} {annual.year}</td>
-                        <td className="py-2 px-2 text-end">
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            size="sm"
-                            value={annual.amounts[i]}
-                            onChange={(e) => {
-                              const amounts = [...annual.amounts];
-                              amounts[i] = e.target.value;
-                              setAnnual((a) => ({ ...a, amounts }));
-                            }}
-                            disabled={!annual.monthOn[i]}
-                            className="max-w-[140px] ms-auto"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex justify-between text-[14px] font-bold">
+              <Input
+                type="text"
+                inputMode="decimal"
+                label={t('hrPrintAnnualPerMonthGross')}
+                value={annual.perMonthGross ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setAnnual((a) => ({
+                    ...a,
+                    perMonthGross: v,
+                    amounts: a.monthOn.map((on) => (on ? v : '')),
+                  }));
+                }}
+              />
+              <div className="flex items-center justify-between rounded-md border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2 text-[14px] font-bold">
                 <span>{t('hrPrintAnnualTotal')}</span>
                 <span className="nx-font-numbers"><FmtNum n={annualSum} /> SR</span>
               </div>
