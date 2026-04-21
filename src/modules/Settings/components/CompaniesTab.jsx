@@ -62,6 +62,11 @@ export default function CompaniesTab({ onCompanyCreated }) {
     mutationFn: ({ id, body }) => updateCompany(id, body),
     invalidateQueries: [['companies']],
     showErrorToast: false,
+    successToast: (data, variables) => {
+      if (variables?.body?.isArchived === true) return 'تم أرشفة الشركة.';
+      if (variables?.body?.isArchived === false) return 'تم إعادة تفعيل الشركة — ستظهر في القوائم والقوائم المنسدلة.';
+      return null;
+    },
     onSuccess: () => { setEditModal(null); },
   });
 
@@ -305,8 +310,26 @@ export default function CompaniesTab({ onCompanyCreated }) {
         className="companies-edit-drawer"
         footer={
           <div className="flex items-center justify-end flex flex-wrap gap-2.5">
+            {editModal && editModal.isArchived && (
+              <Button
+                variant="primary"
+                onClick={() => updateMutation.mutate({ id: editModal.id, body: { isArchived: false } })}
+                disabled={updateMutation.isPending}
+              >
+                إعادة التفعيل
+              </Button>
+            )}
             {editModal && !editModal.isArchived && (
-              <Button variant="warning" onClick={() => updateMutation.mutate({ id: editModal.id, body: { isArchived: true } })} disabled={updateMutation.isPending}>أرشفة</Button>
+              <Button
+                variant="warning"
+                onClick={() => {
+                  if (!window.confirm('أرشفة هذه الشركة؟ لن تظهر في القوائم حتى تعيد تفعيلها من «عرض المؤرشفة».')) return;
+                  updateMutation.mutate({ id: editModal.id, body: { isArchived: true } });
+                }}
+                disabled={updateMutation.isPending}
+              >
+                أرشفة
+              </Button>
             )}
             <Button onClick={() => setEditModal(null)}>إلغاء</Button>
             <Button type="submit" form="edit-company-form" variant="primary" disabled={updateMutation.isPending || !editModal?.nameAr?.trim()} className="min-w-[120px]">
@@ -317,6 +340,11 @@ export default function CompaniesTab({ onCompanyCreated }) {
       >
         {editModal && (
           <>
+            {editModal.isArchived ? (
+              <div className="mb-4 rounded-lg border border-amber-300/80 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-950">
+                <strong className="font-semibold">شركة مؤرشفة:</strong> لا تظهر في قائمة الشركات النشطة أو المختارة أعلى النظام. اضغط «إعادة التفعيل» في الأسفل لإرجاعها للعمل.
+              </div>
+            ) : null}
             <form
               id="edit-company-form"
               onSubmit={(e) => {
