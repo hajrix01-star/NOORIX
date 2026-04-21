@@ -197,11 +197,58 @@ const HR_GEN_PRINT_CSS = `
 .hr-sheet.gen-print .doc-note{white-space:pre-wrap;font-size:10px;line-height:1.45;color:#334155;margin-top:8px;padding:8px;background:#fafafa;border:1px dashed var(--doc-border);border-radius:4px}
 .hr-sheet.gen-print.hr-sheet--landscape .document{max-width:297mm}
 .hr-sheet.gen-print.hr-sheet--landscape .doc-body{padding:14px 18px}
+/* طباعة: ضغط ذكي لملاءمة A4 صفحة واحدة (عمودي أو عرضي) — بدون قص المحتوى المعتاد */
 @media print{
-  body{padding:0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .hr-sheet.gen-print ~ .print-footer{display:none!important}
-  .hr-sheet.gen-print .document{border:none!important}
-  .hr-sheet.gen-print .doc-sig-space{height:52px!important}
+  body{padding:0!important;margin:0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .print-footer{display:none!important}
+  .hr-sheet.gen-print{page-break-after:avoid;font-size:9.25pt;line-height:1.25}
+  .hr-sheet.gen-print .legal-ref{padding:2px 6px 4px!important;font-size:5.8pt!important;line-height:1.2!important}
+  .hr-sheet.gen-print .legal-ref-en{font-size:5.5pt!important;margin-top:0!important}
+  .hr-sheet.gen-print .document{border:none!important;border-radius:0!important;max-width:none!important;width:100%!important}
+  .hr-sheet.gen-print .doc-header{padding:8px 12px 8px!important;gap:10px!important;border-bottom-width:3px!important}
+  .hr-sheet.gen-print .doc-header-logo{width:52px!important;height:52px!important;padding:2px!important}
+  .hr-sheet.gen-print .doc-header-space{width:52px!important}
+  .hr-sheet.gen-print .gen-logo-placeholder{font-size:8px!important}
+  .hr-sheet.gen-print .doc-company-ar{font-size:13.5pt!important;line-height:1.15!important}
+  .hr-sheet.gen-print .doc-company-en{font-size:9pt!important;margin-top:2px!important}
+  .hr-sheet.gen-print .doc-divider{margin:4px auto!important;width:78%!important}
+  .hr-sheet.gen-print .doc-title-ar{font-size:12.5pt!important;margin-top:0!important}
+  .hr-sheet.gen-print .doc-title-en{font-size:9pt!important;margin-top:2px!important}
+  .hr-sheet.gen-print .doc-header-sub,.hr-sheet.gen-print .doc-header-sub-en{font-size:8.5pt!important;margin-top:3px!important}
+  .hr-sheet.gen-print .doc-body{padding:8px 10px 4px!important}
+  .hr-sheet.gen-print .doc-section-title{font-size:9.5pt!important;padding:5px 10px!important;margin:0 0 6px!important;border-radius:3px!important}
+  .hr-sheet.gen-print .doc-section-title-en{font-size:8pt!important}
+  .hr-sheet.gen-print .doc-info-grid{margin-bottom:8px!important}
+  .hr-sheet.gen-print .doc-info-cell{padding:4px 8px!important;gap:6px!important}
+  .hr-sheet.gen-print .doc-info-label{font-size:8pt!important;min-width:58px!important}
+  .hr-sheet.gen-print .doc-info-value{font-size:9.5pt!important}
+  .hr-sheet.gen-print .doc-emp-strip{margin-bottom:8px!important}
+  .hr-sheet.gen-print .doc-emp-cell{padding:4px 6px!important}
+  .hr-sheet.gen-print .doc-emp-lbl{font-size:8pt!important}
+  .hr-sheet.gen-print .doc-emp-val{font-size:9.5pt!important}
+  .hr-sheet.gen-print .doc-declaration{padding:8px 10px!important;margin-bottom:8px!important;border-right-width:3px!important}
+  .hr-sheet.gen-print .doc-declaration p{font-size:9pt!important;line-height:1.4!important;margin:0 0 6px!important}
+  .hr-sheet.gen-print .doc-declaration .dec-en{font-size:8.5pt!important;line-height:1.35!important}
+  .hr-sheet.gen-print .gen-breakdown{gap:6px!important;margin-bottom:6px!important}
+  .hr-sheet.gen-print .doc-table{font-size:8.5pt!important}
+  .hr-sheet.gen-print .doc-table th,.hr-sheet.gen-print .doc-table td{padding:2px 4px!important}
+  .hr-sheet.gen-print .doc-note{font-size:8.5pt!important;padding:5px 6px!important;margin-top:4px!important;line-height:1.35!important}
+  .hr-sheet.gen-print .pr-table{font-size:8.5pt!important;margin:0 0 4px!important}
+  .hr-sheet.gen-print .pr-table th,.hr-sheet.gen-print .pr-table td{padding:2px 4px!important}
+  .hr-sheet.gen-print .pr-table .cell-sig{font-size:7.5pt!important}
+  .hr-sheet.gen-print .doc-sig-grid{gap:8px!important;margin-top:2px!important;page-break-inside:avoid}
+  .hr-sheet.gen-print .doc-sig-header{padding:5px 8px!important}
+  .hr-sheet.gen-print .doc-sig-title-ar{font-size:9.5pt!important}
+  .hr-sheet.gen-print .doc-sig-title-en{font-size:8pt!important}
+  .hr-sheet.gen-print .doc-sig-space{height:36px!important}
+  .hr-sheet.gen-print .doc-sig-footer{padding:5px 8px!important;font-size:8.5pt!important}
+  .hr-sheet.gen-print .doc-sig-footer strong{font-size:9pt!important;margin-bottom:2px!important}
+  .hr-sheet.gen-print .doc-footer{padding:6px 12px!important;border-top-width:2px!important;flex-wrap:nowrap!important}
+  .hr-sheet.gen-print .doc-footer-text{font-size:8pt!important;max-width:78%!important;line-height:1.25!important}
+  .hr-sheet.gen-print .doc-footer-date{font-size:8pt!important;white-space:nowrap}
+  .hr-sheet.gen-print.hr-sheet--landscape .doc-body{padding:6px 10px 4px!important}
+  .hr-sheet.gen-print.hr-sheet--landscape .doc-header{padding:6px 10px 6px!important}
+  .hr-sheet.gen-print.hr-sheet--landscape .doc-sig-space{height:32px!important}
 }
 `.trim();
 
@@ -790,7 +837,8 @@ export default function HrPrintDocumentsTab() {
       landscape: printLandscape,
       extraCss: HR_GEN_PRINT_CSS,
       showPageCounter: false,
-      pageMarginMm: printLandscape ? 7 : 6,
+      /** هامش ضيق لاستغلال A4 صفحة واحدة مع CSS الطباعة المضغوط */
+      pageMarginMm: printLandscape ? 5 : 4,
       body: wrapHrPrintBody(hrPrintComposed.inner, printLandscape),
     });
   };
