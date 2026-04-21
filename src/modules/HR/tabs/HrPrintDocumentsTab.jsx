@@ -10,6 +10,7 @@ import { useEmployees } from '../../../hooks/useEmployees';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { openPrintWindow } from '../../../utils/printUtils';
+import { getBrandLogo } from '../../../utils/appBranding';
 import { hrFmt } from '../utils/hrFmt';
 import { overtimePay, sumCustomAllowancesForEmployee } from '../utils/employeeSalaryMath';
 import { Button, Input, FmtNum } from '../../../ui';
@@ -371,6 +372,220 @@ function emptyAnnual() {
   };
 }
 
+/**
+ * يبني HTML الوثيقة للطباعة والمعاينة (مصدر واحد لتفادي الاختلاف).
+ * @returns {{ inner: string | null, err: null | 'annual_empty', title: string }}
+ */
+function composeHrPrintDocument({
+  docKind,
+  payrollFormat,
+  logoUrl,
+  lang,
+  payroll,
+  annual,
+  eos,
+  companyNameArDefault,
+  companyNameEnDefault,
+  payrollTotal,
+  annualSum,
+  eosWageTotal,
+  t,
+}) {
+  const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  if (docKind === 'eos') {
+    const coAr = eos.companyName || companyNameArDefault;
+    const coEn = eos.companyNameEn || companyNameEnDefault;
+    const nameDisp = [eos.nameEn, eos.nameAr].filter(Boolean).join(' / ') || '—';
+    const dur = serviceDurationArEn(eos.joinDate, eos.endDate);
+    const customLines = (eos.customRows || [])
+      .map((r) => `${r.label || '—'}: ${hrFmt(n(r.amount))} SR`)
+      .join('؛ ');
+    const wageExtra = customLines ? ` (${customLines})` : '';
+    const contractRows = [
+      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, ltr: false },
+      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: eos.iqama || '—', ltr: false },
+      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(eos.joinDate, 'ar-SA')} / ${formatDateLocale(eos.joinDate, 'en-US')}`, ltr: true },
+      { labelAr: 'تاريخ نهاية الخدمة', labelEn: LABEL_EOS_EN.endDate, value: `${formatDateLocale(eos.endDate, 'ar-SA')} / ${formatDateLocale(eos.endDate, 'en-US')}`, ltr: true },
+      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, ltr: true },
+      { labelAr: 'أجر آخر شهر (مجموع البدلات)', labelEn: LABEL_EOS_EN.wageTitle, value: `${hrFmt(eosWageTotal)} SR${wageExtra}`, ltr: false },
+      { labelAr: 'مكافأة نهاية الخدمة', labelEn: LABEL_LETTER_EN.eosGratuity, value: `${hrFmt(n(eos.eosAmount))} SR`, ltr: true },
+      { labelAr: 'مستحقات أخرى', labelEn: LABEL_EOS_EN.other, value: `${hrFmt(n(eos.otherAccrued))} SR`, ltr: true },
+      { labelAr: 'خصومات', labelEn: LABEL_EOS_EN.ded, value: `${hrFmt(n(eos.deductions))} SR`, ltr: true },
+      { labelAr: 'صافي المستحق', labelEn: LABEL_LETTER_EN.netPayable, value: `${hrFmt(n(eos.netPayable))} SR`, ltr: true },
+      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, ltr: false },
+    ];
+    const head = buildGenHeader({
+      logoUrl,
+      companyAr: coAr,
+      companyEn: coEn,
+      titleAr: 'خطاب استلام جميع المستحقات',
+      titleEn: LABEL_LETTER_EN.entitlementsLetterTitle,
+      subtitleAr: formatDateLocale(eos.endDate, 'ar-SA'),
+      subtitleEn: formatDateLocale(eos.endDate, 'en-US'),
+    });
+    const contract = buildGenContractBlock('بيانات العقد والتسوية', `${LABEL_LETTER_EN.contractSection} & settlement`, contractRows);
+    const decl = buildGenDeclarationBlock(eos.settlementNotesAr, eos.settlementNotesEn);
+    const sigs = buildGenSignaturesBlock(eos.nameAr || eos.nameEn, coAr);
+    const foot = buildGenFooter(issueDate, lang === 'ar');
+    const inner = `<div class="document">${head}<div class="doc-body">${contract}${decl}${sigs}</div>${foot}</div>`;
+    return { inner, err: null, title: 'Full entitlements letter / خطاب استلام المستحقات' };
+  }
+
+  if (payrollFormat === 'annual') {
+    const rows = [];
+    let any = false;
+    for (let i = 0; i < 12; i += 1) {
+      if (!annual.monthOn[i]) continue;
+      any = true;
+      const m = i + 1;
+      const amt = n(annual.amounts[i]);
+      rows.push(`<tr>
+        <td>${esc(monthNameAr(m))} ${annual.year}</td>
+        <td class="cell-amt">${esc(hrFmt(amt))} SR</td>
+        <td class="cell-sig">____________</td>
+      </tr>`);
+    }
+    if (!any) {
+      return { inner: null, err: 'annual_empty', title: '' };
+    }
+    const range = firstLastActiveMonthRange(annual.monthOn, annual.year);
+    const coAr = payroll.companyName || companyNameArDefault;
+    const coEn = payroll.companyNameEn || companyNameEnDefault;
+    const subAr = range ? `مسير رواتب ${range.ar}` : `السنة ${annual.year}`;
+    const subEn = range ? `Payroll ${range.en}` : `Year ${annual.year}`;
+    const head = buildGenHeader({
+      logoUrl,
+      companyAr: coAr,
+      companyEn: coEn,
+      titleAr: `كشف رواتب سنة ${annual.year}`,
+      titleEn: `Annual Payroll Statement — ${annual.year}`,
+      subtitleAr: subAr,
+      subtitleEn: subEn,
+    });
+    const emp = buildGenEmployeeStrip(payroll.nameAr || payroll.nameEn, payroll.iqama, payroll.jobTitle);
+    const table = `
+    <div class="doc-section-title"><span>تفاصيل الرواتب</span><span class="doc-section-title-en">Salary breakdown</span></div>
+    <table class="pr-table">
+      <thead>
+        <tr>
+          <th>الشهر</th>
+          <th>${esc(LABEL_LETTER_EN.grossSalary)}</th>
+          <th>${esc(LABEL_LETTER_EN.receiptSigCol)}</th>
+        </tr>
+      </thead>
+      <tbody>${rows.join('')}</tbody>
+      <tfoot>
+        <tr>
+          <td>الإجمالي السنوي / ${esc(LABEL_LETTER_EN.annualTotal)}</td>
+          <td class="cell-amt">${esc(hrFmt(annualSum))} SR</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>`;
+    const sigs = buildGenSignaturesBlock(payroll.nameAr || payroll.nameEn, coAr);
+    const foot = buildGenFooter(issueDate, lang === 'ar');
+    const inner = `<div class="document">${head}<div class="doc-body">${emp}${table}${sigs}</div>${foot}</div>`;
+    return { inner, err: null, title: `Annual salary ${annual.year} / كشف سنوي ${annual.year}` };
+  }
+
+  if (payrollFormat === 'salaryLetter') {
+    const dur = serviceDurationArEn(payroll.letterStartDate, payroll.letterEndDate);
+    const coAr = payroll.companyName || companyNameArDefault;
+    const coEn = payroll.companyNameEn || companyNameEnDefault;
+    const nameDisp = [payroll.nameEn, payroll.nameAr].filter(Boolean).join(' / ') || '—';
+    const contractRows = [
+      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, ltr: false },
+      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: payroll.iqama || '—', ltr: false },
+      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(payroll.letterStartDate, 'ar-SA')} / ${formatDateLocale(payroll.letterStartDate, 'en-US')}`, ltr: true },
+      { labelAr: 'تاريخ الإنهاء', labelEn: 'End date', value: `${formatDateLocale(payroll.letterEndDate, 'ar-SA')} / ${formatDateLocale(payroll.letterEndDate, 'en-US')}`, ltr: true },
+      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, ltr: true },
+      { labelAr: 'الراتب الشهري', labelEn: LABEL_LETTER_EN.monthlySalary, value: `${hrFmt(payrollTotal)} SR`, ltr: true },
+      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, ltr: false },
+    ];
+    const head = buildGenHeader({
+      logoUrl,
+      companyAr: coAr,
+      companyEn: coEn,
+      titleAr: 'خطاب استلام الرواتب',
+      titleEn: LABEL_LETTER_EN.salaryLetterTitle,
+      subtitleAr: payroll.periodLabel || defaultPeriodLabel(lang),
+      subtitleEn: payroll.periodLabel || defaultPeriodLabel(lang),
+    });
+    const contract = buildGenContractBlock('بيانات العقد', LABEL_LETTER_EN.contractSection, contractRows);
+    const decl = buildGenDeclarationBlock(
+      payroll.declarationSalariesAr || DEFAULT_DECL_SALARY_AR,
+      payroll.declarationSalariesEn || DEFAULT_DECL_SALARY_EN,
+    );
+    const sigs = buildGenSignaturesBlock(payroll.nameAr || payroll.nameEn, coAr);
+    const foot = buildGenFooter(issueDate, lang === 'ar');
+    const inner = `<div class="document">${head}<div class="doc-body">${contract}${decl}${sigs}</div>${foot}</div>`;
+    return { inner, err: null, title: 'Salary receipt letter / خطاب استلام الرواتب' };
+  }
+
+  const rowsAr = [];
+  const rowsEn = [];
+  const push = (ar, en, val) => {
+    rowsAr.push(`<tr><td>${esc(ar)}</td><td class="td-num">${esc(hrFmt(val))} SR</td></tr>`);
+    rowsEn.push(`<tr><td class="td-en">${esc(en)}</td><td class="td-num">${esc(hrFmt(val))} SR</td></tr>`);
+  };
+  push(t('basicSalary'), LABEL_PAYROLL_EN.basic, n(payroll.basic));
+  push(t('housingAllowance'), LABEL_PAYROLL_EN.housing, n(payroll.housing));
+  push(t('transportAllowance'), LABEL_PAYROLL_EN.transport, n(payroll.transport));
+  push(t('otherAllowance'), LABEL_PAYROLL_EN.other, n(payroll.other));
+  push('تقدير الأوفر تايم (شهري)', LABEL_PAYROLL_EN.overtime, n(payroll.overtime));
+  if (payroll.showBreakdown) {
+    (payroll.customRows || []).forEach((r) => push(r.label || '—', r.label || LABEL_PAYROLL_EN.custom, n(r.amount)));
+  } else {
+    const csum = (payroll.customRows || []).reduce((s, r) => s + n(r.amount), 0);
+    if (csum > 0) push(t('customAllowances'), LABEL_PAYROLL_EN.custom, csum);
+  }
+  const notesAr = payroll.notes?.trim() ? `<div class="doc-note" dir="rtl">${esc(payroll.notes)}</div>` : '';
+  const notesEn = payroll.notes?.trim() ? `<div class="doc-note" dir="ltr">${esc(payroll.notes)}</div>` : '';
+  const coAr = payroll.companyName || companyNameArDefault;
+  const coEn = payroll.companyNameEn || companyNameEnDefault;
+  const head = buildGenHeader({
+    logoUrl,
+    companyAr: coAr,
+    companyEn: coEn,
+    titleAr: `مسير راتب — ${payroll.nameAr || payroll.nameEn || ''}`.trim(),
+    titleEn: LABEL_PAYROLL_EN.slipTitle,
+    subtitleAr: `${payroll.periodLabel} — ${coAr}`,
+    subtitleEn: `${payroll.periodLabel} — ${coEn}`,
+  });
+  const empStrip = buildGenEmployeeStrip(payroll.nameAr || payroll.nameEn, payroll.iqama, payroll.jobTitle);
+  const detail = `
+    <div class="doc-section-title"><span>تفاصيل الراتب للفترة</span><span class="doc-section-title-en">Salary breakdown</span></div>
+    <div class="gen-breakdown">
+      <div dir="rtl">
+        <table class="doc-table"><tbody>
+          <tr><td>${esc(t('employeeSerial'))}</td><td>${esc(payroll.employeeSerial)}</td></tr>
+          <tr><td>${esc(t('joinDate'))}</td><td>${esc(formatDateLocale(payroll.joinDate, 'ar-SA'))}</td></tr>
+        </tbody></table>
+        <table class="doc-table"><thead><tr><th>البند</th><th>المبلغ</th></tr></thead><tbody>${rowsAr.join('')}</tbody>
+        <tfoot><tr><td>${esc(t('totalSalary'))}</td><td class="td-num">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
+        ${notesAr}
+      </div>
+      <div dir="ltr">
+        <table class="doc-table"><tbody>
+          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.serial)}</td><td class="td-en">${esc(payroll.employeeSerial)}</td></tr>
+          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.join)}</td><td class="td-en">${esc(formatDateLocale(payroll.joinDate, 'en-US'))}</td></tr>
+        </tbody></table>
+        <table class="doc-table"><thead><tr><th class="td-en">${esc(LABEL_PAYROLL_EN.item)}</th><th>Amount</th></tr></thead><tbody>${rowsEn.join('')}</tbody>
+        <tfoot><tr><td class="td-en">${esc(LABEL_PAYROLL_EN.total)}</td><td class="td-num">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
+        ${notesEn}
+      </div>
+    </div>`;
+  const sigs = buildGenSignaturesBlock(payroll.nameAr || payroll.nameEn, coAr);
+  const foot = buildGenFooter(issueDate, lang === 'ar');
+  const inner = `<div class="document">${head}<div class="doc-body">${empStrip}${detail}${sigs}</div>${foot}</div>`;
+  return { inner, err: null, title: 'Payroll slip / مسير راتب' };
+}
+
 function emptyEosDraft() {
   return {
     companyName: '',
@@ -403,6 +618,7 @@ export default function HrPrintDocumentsTab() {
   const company = companies?.find((c) => c.id === companyId);
   const companyNameArDefault = company?.nameAr || company?.name || '';
   const companyNameEnDefault = company?.nameEn || company?.nameAr || company?.name || '';
+  const companyLogoUrl = String(company?.logoUrl || getBrandLogo() || '').trim();
 
   const [docKind, setDocKind] = useState('payroll');
   const [employeeId, setEmployeeId] = useState('');
@@ -435,6 +651,10 @@ export default function HrPrintDocumentsTab() {
     });
     return s;
   }, [annual]);
+
+  const eosWageTotal =
+    n(eos.basic) + n(eos.housing) + n(eos.transport) + n(eos.other) +
+    (eos.customRows || []).reduce((s, r) => s + n(r.amount), 0);
 
   const importPayroll = useCallback(() => {
     if (!emp) return;
@@ -510,244 +730,60 @@ export default function HrPrintDocumentsTab() {
     setAnnual((a) => ({ ...a, amounts: a.amounts.map((v, i) => (a.monthOn[i] ? s : v)) }));
   };
 
-  const printPayrollSingle = () => {
-    const rowsAr = [];
-    const rowsEn = [];
-    const push = (ar, en, val) => {
-      rowsAr.push(`<tr><td>${esc(ar)}</td><td class="td-num">${esc(hrFmt(val))} SR</td></tr>`);
-      rowsEn.push(`<tr><td class="td-en">${esc(en)}</td><td class="td-num">${esc(hrFmt(val))} SR</td></tr>`);
-    };
-    push(t('basicSalary'), LABEL_PAYROLL_EN.basic, n(payroll.basic));
-    push(t('housingAllowance'), LABEL_PAYROLL_EN.housing, n(payroll.housing));
-    push(t('transportAllowance'), LABEL_PAYROLL_EN.transport, n(payroll.transport));
-    push(t('otherAllowance'), LABEL_PAYROLL_EN.other, n(payroll.other));
-    push('تقدير الأوفر تايم (شهري)', LABEL_PAYROLL_EN.overtime, n(payroll.overtime));
-    if (payroll.showBreakdown) {
-      (payroll.customRows || []).forEach((r) => push(r.label || '—', r.label || LABEL_PAYROLL_EN.custom, n(r.amount)));
-    } else {
-      const csum = (payroll.customRows || []).reduce((s, r) => s + n(r.amount), 0);
-      if (csum > 0) push(t('customAllowances'), LABEL_PAYROLL_EN.custom, csum);
-    }
-    const notesAr = payroll.notes?.trim() ? `<div class="doc-note" dir="rtl">${esc(payroll.notes)}</div>` : '';
-    const notesEn = payroll.notes?.trim() ? `<div class="doc-note" dir="ltr">${esc(payroll.notes)}</div>` : '';
-    const coAr = payroll.companyName || companyNameArDefault;
-    const coEn = payroll.companyNameEn || companyNameEnDefault;
-    const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
-    const head = buildGenHeader({
-      logoUrl: '',
-      companyAr: coAr,
-      companyEn: coEn,
-      titleAr: `مسير راتب — ${payroll.nameAr || payroll.nameEn || ''}`.trim(),
-      titleEn: LABEL_PAYROLL_EN.slipTitle,
-      subtitleAr: `${payroll.periodLabel} — ${coAr}`,
-      subtitleEn: `${payroll.periodLabel} — ${coEn}`,
-    });
-    const emp = buildGenEmployeeStrip(payroll.nameAr || payroll.nameEn, payroll.iqama, payroll.jobTitle);
-    const detail = `
-    <div class="doc-section-title"><span>تفاصيل الراتب للفترة</span><span class="doc-section-title-en">Salary breakdown</span></div>
-    <div class="gen-breakdown">
-      <div dir="rtl">
-        <table class="doc-table"><tbody>
-          <tr><td>${esc(t('employeeSerial'))}</td><td>${esc(payroll.employeeSerial)}</td></tr>
-          <tr><td>${esc(t('joinDate'))}</td><td>${esc(formatDateLocale(payroll.joinDate, 'ar-SA'))}</td></tr>
-        </tbody></table>
-        <table class="doc-table"><thead><tr><th>البند</th><th>المبلغ</th></tr></thead><tbody>${rowsAr.join('')}</tbody>
-        <tfoot><tr><td>${esc(t('totalSalary'))}</td><td class="td-num">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
-        ${notesAr}
-      </div>
-      <div dir="ltr">
-        <table class="doc-table"><tbody>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.serial)}</td><td class="td-en">${esc(payroll.employeeSerial)}</td></tr>
-          <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.join)}</td><td class="td-en">${esc(formatDateLocale(payroll.joinDate, 'en-US'))}</td></tr>
-        </tbody></table>
-        <table class="doc-table"><thead><tr><th class="td-en">${esc(LABEL_PAYROLL_EN.item)}</th><th>Amount</th></tr></thead><tbody>${rowsEn.join('')}</tbody>
-        <tfoot><tr><td class="td-en">${esc(LABEL_PAYROLL_EN.total)}</td><td class="td-num">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
-        ${notesEn}
-      </div>
-    </div>`;
-    const sigs = buildGenSignaturesBlock(payroll.nameAr || payroll.nameEn, coAr);
-    const foot = buildGenFooter(issueDate, lang === 'ar');
-    const inner = `<div class="document">${head}<div class="doc-body">${emp}${detail}${sigs}</div>${foot}</div>`;
-    openPrintWindow({
-      title: 'Payroll slip / مسير راتب',
-      companyName: '',
-      subtitle: '',
-      landscape: printLandscape,
-      extraCss: HR_GEN_PRINT_CSS,
-      showPageCounter: false,
-      pageMarginMm: printLandscape ? 7 : 6,
-      body: wrapHrPrintBody(inner, printLandscape),
-    });
-  };
+  const hrPrintComposed = useMemo(
+    () =>
+      composeHrPrintDocument({
+        docKind,
+        payrollFormat: payroll.payrollFormat,
+        logoUrl: companyLogoUrl,
+        lang,
+        payroll,
+        annual,
+        eos,
+        companyNameArDefault,
+        companyNameEnDefault,
+        payrollTotal,
+        annualSum,
+        eosWageTotal,
+        t,
+      }),
+    [
+      docKind,
+      payroll,
+      annual,
+      eos,
+      lang,
+      companyLogoUrl,
+      companyNameArDefault,
+      companyNameEnDefault,
+      payrollTotal,
+      annualSum,
+      eosWageTotal,
+      t,
+    ],
+  );
 
-  const printPayrollAnnual = () => {
-    const rows = [];
-    let any = false;
-    for (let i = 0; i < 12; i += 1) {
-      if (!annual.monthOn[i]) continue;
-      any = true;
-      const m = i + 1;
-      const amt = n(annual.amounts[i]);
-      rows.push(`<tr>
-        <td>${esc(monthNameAr(m))} ${annual.year}</td>
-        <td class="cell-amt">${esc(hrFmt(amt))} SR</td>
-        <td class="cell-sig">____________</td>
-      </tr>`);
-    }
-    if (!any) {
+  const hrPrintPreviewSrcDoc = useMemo(() => {
+    if (!hrPrintComposed.inner) return '';
+    const wrapped = wrapHrPrintBody(hrPrintComposed.inner, printLandscape);
+    return `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"/><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet"><style>${HR_GEN_PRINT_CSS}</style></head><body style="margin:0;background:#e8eef5;padding:8px 6px">${wrapped}</body></html>`;
+  }, [hrPrintComposed, printLandscape]);
+
+  const runHrPrint = () => {
+    if (hrPrintComposed.err === 'annual_empty') {
       window.alert(lang === 'ar' ? 'فعّل شهراً واحداً على الأقل للطباعة.' : 'Enable at least one month to print.');
       return;
     }
-    const range = firstLastActiveMonthRange(annual.monthOn, annual.year);
-    const coAr = payroll.companyName || companyNameArDefault;
-    const coEn = payroll.companyNameEn || companyNameEnDefault;
-    const subAr = range ? `مسير رواتب ${range.ar}` : `السنة ${annual.year}`;
-    const subEn = range ? `Payroll ${range.en}` : `Year ${annual.year}`;
-    const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
-    const head = buildGenHeader({
-      logoUrl: '',
-      companyAr: coAr,
-      companyEn: coEn,
-      titleAr: `كشف رواتب سنة ${annual.year}`,
-      titleEn: `Annual Payroll Statement — ${annual.year}`,
-      subtitleAr: subAr,
-      subtitleEn: subEn,
-    });
-    const emp = buildGenEmployeeStrip(payroll.nameAr || payroll.nameEn, payroll.iqama, payroll.jobTitle);
-    const table = `
-    <div class="doc-section-title"><span>تفاصيل الرواتب</span><span class="doc-section-title-en">Salary breakdown</span></div>
-    <table class="pr-table">
-      <thead>
-        <tr>
-          <th>الشهر</th>
-          <th>${esc(LABEL_LETTER_EN.grossSalary)}</th>
-          <th>${esc(LABEL_LETTER_EN.receiptSigCol)}</th>
-        </tr>
-      </thead>
-      <tbody>${rows.join('')}</tbody>
-      <tfoot>
-        <tr>
-          <td>الإجمالي السنوي / ${esc(LABEL_LETTER_EN.annualTotal)}</td>
-          <td class="cell-amt">${esc(hrFmt(annualSum))} SR</td>
-          <td></td>
-        </tr>
-      </tfoot>
-    </table>`;
-    const sigs = buildGenSignaturesBlock(payroll.nameAr || payroll.nameEn, coAr);
-    const foot = buildGenFooter(issueDate, lang === 'ar');
-    const inner = `<div class="document">${head}<div class="doc-body">${emp}${table}${sigs}</div>${foot}</div>`;
+    if (!hrPrintComposed.inner) return;
     openPrintWindow({
-      title: `Annual salary ${annual.year} / كشف سنوي ${annual.year}`,
+      title: hrPrintComposed.title,
       companyName: '',
       subtitle: '',
       landscape: printLandscape,
       extraCss: HR_GEN_PRINT_CSS,
       showPageCounter: false,
       pageMarginMm: printLandscape ? 7 : 6,
-      body: wrapHrPrintBody(inner, printLandscape),
-    });
-  };
-
-  const printPayrollSalaryLetter = () => {
-    const dur = serviceDurationArEn(payroll.letterStartDate, payroll.letterEndDate);
-    const coAr = payroll.companyName || companyNameArDefault;
-    const coEn = payroll.companyNameEn || companyNameEnDefault;
-    const nameDisp = [payroll.nameEn, payroll.nameAr].filter(Boolean).join(' / ') || '—';
-    const contractRows = [
-      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, ltr: false },
-      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: payroll.iqama || '—', ltr: false },
-      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(payroll.letterStartDate, 'ar-SA')} / ${formatDateLocale(payroll.letterStartDate, 'en-US')}`, ltr: true },
-      { labelAr: 'تاريخ الإنهاء', labelEn: 'End date', value: `${formatDateLocale(payroll.letterEndDate, 'ar-SA')} / ${formatDateLocale(payroll.letterEndDate, 'en-US')}`, ltr: true },
-      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, ltr: true },
-      { labelAr: 'الراتب الشهري', labelEn: LABEL_LETTER_EN.monthlySalary, value: `${hrFmt(payrollTotal)} SR`, ltr: true },
-      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, ltr: false },
-    ];
-    const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
-    const head = buildGenHeader({
-      logoUrl: '',
-      companyAr: coAr,
-      companyEn: coEn,
-      titleAr: 'خطاب استلام الرواتب',
-      titleEn: LABEL_LETTER_EN.salaryLetterTitle,
-      subtitleAr: payroll.periodLabel || defaultPeriodLabel(lang),
-      subtitleEn: payroll.periodLabel || defaultPeriodLabel(lang),
-    });
-    const contract = buildGenContractBlock('بيانات العقد', LABEL_LETTER_EN.contractSection, contractRows);
-    const decl = buildGenDeclarationBlock(
-      payroll.declarationSalariesAr || DEFAULT_DECL_SALARY_AR,
-      payroll.declarationSalariesEn || DEFAULT_DECL_SALARY_EN,
-    );
-    const sigs = buildGenSignaturesBlock(payroll.nameAr || payroll.nameEn, coAr);
-    const foot = buildGenFooter(issueDate, lang === 'ar');
-    const inner = `<div class="document">${head}<div class="doc-body">${contract}${decl}${sigs}</div>${foot}</div>`;
-    openPrintWindow({
-      title: 'Salary receipt letter / خطاب استلام الرواتب',
-      companyName: '',
-      subtitle: '',
-      landscape: printLandscape,
-      extraCss: HR_GEN_PRINT_CSS,
-      showPageCounter: false,
-      pageMarginMm: printLandscape ? 7 : 6,
-      body: wrapHrPrintBody(inner, printLandscape),
-    });
-  };
-
-  const printPayroll = () => {
-    if (payroll.payrollFormat === 'annual') printPayrollAnnual();
-    else if (payroll.payrollFormat === 'salaryLetter') printPayrollSalaryLetter();
-    else printPayrollSingle();
-  };
-
-  const eosWageTotal =
-    n(eos.basic) + n(eos.housing) + n(eos.transport) + n(eos.other) +
-    (eos.customRows || []).reduce((s, r) => s + n(r.amount), 0);
-
-  const printEos = () => {
-    const coAr = eos.companyName || companyNameArDefault;
-    const coEn = eos.companyNameEn || companyNameEnDefault;
-    const nameDisp = [eos.nameEn, eos.nameAr].filter(Boolean).join(' / ') || '—';
-    const dur = serviceDurationArEn(eos.joinDate, eos.endDate);
-    const customLines = (eos.customRows || [])
-      .map((r) => `${r.label || '—'}: ${hrFmt(n(r.amount))} SR`)
-      .join('؛ ');
-    const wageExtra = customLines ? ` (${customLines})` : '';
-    const contractRows = [
-      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, ltr: false },
-      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: eos.iqama || '—', ltr: false },
-      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(eos.joinDate, 'ar-SA')} / ${formatDateLocale(eos.joinDate, 'en-US')}`, ltr: true },
-      { labelAr: 'تاريخ نهاية الخدمة', labelEn: LABEL_EOS_EN.endDate, value: `${formatDateLocale(eos.endDate, 'ar-SA')} / ${formatDateLocale(eos.endDate, 'en-US')}`, ltr: true },
-      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, ltr: true },
-      { labelAr: 'أجر آخر شهر (مجموع البدلات)', labelEn: LABEL_EOS_EN.wageTitle, value: `${hrFmt(eosWageTotal)} SR${wageExtra}`, ltr: false },
-      { labelAr: 'مكافأة نهاية الخدمة', labelEn: LABEL_LETTER_EN.eosGratuity, value: `${hrFmt(n(eos.eosAmount))} SR`, ltr: true },
-      { labelAr: 'مستحقات أخرى', labelEn: LABEL_EOS_EN.other, value: `${hrFmt(n(eos.otherAccrued))} SR`, ltr: true },
-      { labelAr: 'خصومات', labelEn: LABEL_EOS_EN.ded, value: `${hrFmt(n(eos.deductions))} SR`, ltr: true },
-      { labelAr: 'صافي المستحق', labelEn: LABEL_LETTER_EN.netPayable, value: `${hrFmt(n(eos.netPayable))} SR`, ltr: true },
-      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, ltr: false },
-    ];
-    const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
-    const head = buildGenHeader({
-      logoUrl: '',
-      companyAr: coAr,
-      companyEn: coEn,
-      titleAr: 'خطاب استلام جميع المستحقات',
-      titleEn: LABEL_LETTER_EN.entitlementsLetterTitle,
-      subtitleAr: formatDateLocale(eos.endDate, 'ar-SA'),
-      subtitleEn: formatDateLocale(eos.endDate, 'en-US'),
-    });
-    const contract = buildGenContractBlock('بيانات العقد والتسوية', `${LABEL_LETTER_EN.contractSection} & settlement`, contractRows);
-    const decl = buildGenDeclarationBlock(eos.settlementNotesAr, eos.settlementNotesEn);
-    const sigs = buildGenSignaturesBlock(eos.nameAr || eos.nameEn, coAr);
-    const foot = buildGenFooter(issueDate, lang === 'ar');
-    const inner = `<div class="document">${head}<div class="doc-body">${contract}${decl}${sigs}</div>${foot}</div>`;
-    openPrintWindow({
-      title: 'Full entitlements letter / خطاب استلام المستحقات',
-      companyName: '',
-      subtitle: '',
-      landscape: printLandscape,
-      extraCss: HR_GEN_PRINT_CSS,
-      showPageCounter: false,
-      pageMarginMm: printLandscape ? 7 : 6,
-      body: wrapHrPrintBody(inner, printLandscape),
+      body: wrapHrPrintBody(hrPrintComposed.inner, printLandscape),
     });
   };
 
@@ -774,48 +810,50 @@ export default function HrPrintDocumentsTab() {
   }
 
   return (
-    <div className="noorix-surface-card p-5 space-y-5">
-      <div>
+    <div className="noorix-surface-card p-4 sm:p-5">
+      <div className="mb-4">
         <h3 className="m-0 text-[17px] font-bold text-noorix-text">{t('hrTabPrintDocs')}</h3>
         <p className="mt-1.5 mb-0 text-[13px] text-noorix-muted">{t('hrTabPrintDocsDesc')}</p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" size="sm" variant={docKind === 'payroll' ? 'primary' : 'ghost'} onClick={() => setDocKind('payroll')}>
-          {t('hrPrintDocPayroll')}
-        </Button>
-        <Button type="button" size="sm" variant={docKind === 'eos' ? 'primary' : 'ghost'} onClick={() => setDocKind('eos')}>
-          {t('hrPrintDocEos')}
-        </Button>
-      </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] xl:items-start">
+        <div className="min-w-0 space-y-4">
+          <div className="flex flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant={docKind === 'payroll' ? 'primary' : 'ghost'} onClick={() => setDocKind('payroll')}>
+                {t('hrPrintDocPayroll')}
+              </Button>
+              <Button type="button" size="sm" variant={docKind === 'eos' ? 'primary' : 'ghost'} onClick={() => setDocKind('eos')}>
+                {t('hrPrintDocEos')}
+              </Button>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:max-w-md sm:items-end">
+              <div className="w-full sm:w-auto">
+                <p className="m-0 mb-1.5 text-[11px] font-semibold text-noorix-text sm:text-end">{t('hrPrintOrientation')}</p>
+                <div className="flex flex-wrap gap-2 sm:justify-end">
+                  <Button type="button" size="sm" variant={!printLandscape ? 'primary' : 'ghost'} onClick={() => setPrintLandscape(false)}>
+                    {t('hrPrintOrientationPortrait')}
+                  </Button>
+                  <Button type="button" size="sm" variant={printLandscape ? 'primary' : 'ghost'} onClick={() => setPrintLandscape(true)}>
+                    {t('hrPrintOrientationLandscape')}
+                  </Button>
+                </div>
+              </div>
+              <p className="m-0 text-[11px] leading-snug text-noorix-muted sm:text-end">{t('hrPrintOrientationHint')}</p>
+            </div>
+          </div>
 
-      <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/30 p-3 space-y-2">
-        <p className="m-0 text-[12px] font-semibold text-noorix-text">{t('hrPrintOrientation')}</p>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant={!printLandscape ? 'primary' : 'ghost'} onClick={() => setPrintLandscape(false)}>
-            {t('hrPrintOrientationPortrait')}
-          </Button>
-          <Button type="button" size="sm" variant={printLandscape ? 'primary' : 'ghost'} onClick={() => setPrintLandscape(true)}>
-            {t('hrPrintOrientationLandscape')}
-          </Button>
-        </div>
-        <p className="m-0 text-[11px] text-noorix-muted">{t('hrPrintOrientationHint')}</p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
-        <Input type="select" label={t('selectEmployee')} value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
-          <option value="">—</option>
-          {employees.map((e) => (
-            <option key={e.id} value={e.id}>{employeeDisplayName(e, lang, e.id)}</option>
-          ))}
-        </Input>
-        <Button type="button" size="sm" variant="primary" disabled={!emp} onClick={docKind === 'payroll' ? importPayroll : importEos}>
-          {t('hrPrintImportFromHr')}
-        </Button>
-        <Button type="button" size="sm" variant="ghost" disabled={!emp} onClick={docKind === 'payroll' ? printPayroll : printEos}>
-          {t('print')}
-        </Button>
-      </div>
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <Input type="select" label={t('selectEmployee')} value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
+              <option value="">—</option>
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>{employeeDisplayName(e, lang, e.id)}</option>
+              ))}
+            </Input>
+            <Button type="button" size="sm" variant="primary" disabled={!emp} onClick={docKind === 'payroll' ? importPayroll : importEos}>
+              {t('hrPrintImportFromHr')}
+            </Button>
+          </div>
 
       {docKind === 'payroll' && (
         <div className="space-y-4 border-t border-noorix-border pt-4">
@@ -1023,6 +1061,26 @@ export default function HrPrintDocumentsTab() {
           </div>
         </div>
       )}
+        </div>
+
+        <aside className="min-w-0 space-y-3 rounded-xl border border-noorix-border bg-noorix-bg-muted/25 p-3 xl:sticky xl:top-4 xl:self-start">
+          <p className="m-0 text-[13px] font-semibold text-noorix-text">{t('hrPrintPreview')}</p>
+          <p className="m-0 text-[11px] leading-relaxed text-noorix-muted">{t('hrPrintPreviewNote')}</p>
+          {hrPrintComposed.err === 'annual_empty' ? (
+            <p className="m-0 rounded-lg border border-dashed border-noorix-border bg-noorix-bg-muted/50 p-4 text-center text-[12px] text-noorix-muted">{t('hrPrintPreviewEmpty')}</p>
+          ) : (
+            <iframe
+              title={t('hrPrintPreview')}
+              className="h-[min(72vh,560px)] w-full rounded-lg border border-noorix-border bg-white shadow-sm"
+              srcDoc={hrPrintPreviewSrcDoc}
+              sandbox="allow-same-origin"
+            />
+          )}
+          <Button type="button" size="sm" variant="primary" className="w-full" disabled={!emp || !hrPrintComposed.inner} onClick={runHrPrint}>
+            {t('print')}
+          </Button>
+        </aside>
+      </div>
     </div>
   );
 }

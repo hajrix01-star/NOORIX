@@ -146,6 +146,15 @@ export default {
     ar: 'التنسيق مضغوط لصفحة واحدة تقريباً؛ الجدول السنوي يتسع غالباً أفضل بالعرضي.',
     en: 'Layout is compact for roughly one sheet; the annual table usually fits better in landscape.',
   },
+  hrPrintPreview: { ar: 'معاينة الوثيقة', en: 'Document preview' },
+  hrPrintPreviewNote: {
+    ar: 'المعاينة مطابقة لما سيُطبَع (بما في ذلك الجداول والإقرار). للكشف السنوي فعّل شهراً واحداً على الأقل.',
+    en: 'Preview matches what will print (including tables and declarations). For the annual sheet, enable at least one month.',
+  },
+  hrPrintPreviewEmpty: {
+    ar: 'فعّل شهراً واحداً على الأقل في الكشف السنوي لعرض المعاينة والطباعة.',
+    en: 'Enable at least one month in the annual statement to preview and print.',
+  },
   hrStatsActive: { ar: 'موظفين نشطين', en: 'Active employees' },
   hrStatsOnLeave: { ar: 'في إجازة', en: 'On leave' },
   hrStatsResidencyExpiring: { ar: 'إقامات قريبة الانتهاء', en: 'Residencies expiring soon' },
