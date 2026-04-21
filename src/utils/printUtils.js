@@ -122,7 +122,7 @@ export function openPrintWindow({
 <head>
 <meta charset="utf-8">
 <title>${escHtml(title || companyName)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 ${buildBaseCss(landscape, { showPageCounter, marginMm: pageMarginMm })}
 ${extraCss ? `\n/* — CSS خاص بالوثيقة — */\n${extraCss}` : ''}

@@ -1,6 +1,7 @@
 /**
  * HrPrintDocumentsTab — طباعة مسير راتب ومخالصة (معزولة عن الحفظ في النظام).
- * يدعم: مسير شهر واحد، جدول شهري (سنة / أشهر مختارة) مع توقيع لكل صف، وطباعة عربي/إنجليزي.
+ * تخطيط الطباعة مبني على نمط «مولّد المخالصة»: ترويسة زرقاء + ذهبي، شعار، شبكة بيانات، إقرار، توقيعات، تذييل.
+ * أنواع: مسير شهر واحد، كشف رواتب سنوي (جدول)، خطاب استلام رواتب، خطاب استلام جميع المستحقات (نهاية خدمة).
  */
 import React, { useMemo, useState, useCallback } from 'react';
 import { useApp } from '../../../context/AppContext';
@@ -132,111 +133,79 @@ const HR_SHEET_LEGAL_AR =
 const HR_SHEET_LEGAL_EN =
   'Legal reference: Saudi Labor Law (Royal Decree M/51) and implementing regulations — administrative signature document; not an automated accounting payroll record.';
 
-const HR_SHEET_CSS = `
-.hr-sheet{--ink:#0f172a;--muted:#475569;--line:#94a3b8;--hdr:#0f3d2f;--hdr-light:#ecfdf5;max-width:100%}
-.hr-sheet .doc{border:1px solid var(--line);border-radius:2px;background:#fff;overflow:hidden;box-shadow:none}
-.hr-sheet .legal-ref{font-size:6.5pt;line-height:1.35;color:#64748b;text-align:center;padding:2px 6px 4px;border-bottom:1px dotted var(--line);margin:0}
+const HR_GEN_PRINT_CSS = `
+.hr-sheet.gen-print{--doc-primary:#1a3c5e;--doc-accent:#c9a227;--doc-light:#dce6f1;--doc-gray:#f5f7fa;--doc-border:#d0d8e4;--gen-amt:#1a3c5e}
+.hr-sheet.gen-print{font-family:'Tajawal','Cairo',Tahoma,sans-serif}
+.hr-sheet .legal-ref{font-size:6.5pt;line-height:1.35;color:#64748b;text-align:center;padding:4px 8px 8px;border-bottom:1px dotted #cbd5e1;margin:0}
 .hr-sheet .legal-ref-en{margin-top:2px;font-size:6pt;color:#64748b}
-.hr-sheet .doc-table .th-sub{display:block;font-weight:500;font-size:6.5pt;line-height:1.2;margin-top:1px;opacity:.95}
-.hr-sheet .doc-table col.col-n{width:5%}
-.hr-sheet .doc-table col.col-mid-ar{width:24%}
-.hr-sheet .doc-table col.col-mid-en{width:24%}
-.hr-sheet .doc-table col.col-amt{width:14%}
-.hr-sheet .doc-table col.col-sig{width:33%}
-.hr-sheet .doc-h{padding:5px 8px 4px;background:linear-gradient(180deg,var(--hdr-light) 0%,#f8fafc 100%);border-bottom:2px solid var(--hdr)}
-.hr-sheet .doc-h .ttl{margin:0;font-weight:800;color:var(--hdr);letter-spacing:-0.02em;line-height:1.2}
-.hr-sheet .doc-h .sub{margin-top:2px;font-weight:600;color:var(--muted);line-height:1.25}
-.hr-sheet .doc-b{padding:5px 8px 4px}
-.hr-sheet .bi-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start}
-.hr-sheet .bi-col{border:1px solid var(--line);border-radius:3px;padding:5px 7px;background:#fff}
-.hr-sheet .bi-col h4{margin:0 0 3px;font-size:7.5pt;font-weight:800;color:var(--hdr);padding-bottom:2px;border-bottom:1px solid var(--line)}
-.hr-sheet .doc-table{width:100%;border-collapse:collapse;margin:0 0 5px;table-layout:fixed;font-size:7.5pt}
-.hr-sheet .doc-table th,.hr-sheet .doc-table td{border:1px solid var(--line);padding:2px 4px;text-align:right;vertical-align:middle;word-wrap:break-word}
-.hr-sheet .doc-table thead th{background:var(--hdr);color:#fff;font-weight:700}
-.hr-sheet .doc-table tbody tr:nth-child(even) td{background:#f8fafc}
-.hr-sheet .doc-table tfoot td{font-weight:700;background:#e2e8f0}
-.hr-sheet .doc-table .td-num,.hr-sheet .doc-table .td-center{text-align:center;font-weight:600}
-.hr-sheet .doc-table .td-en{text-align:left;direction:ltr}
-.hr-sheet .doc-table .td-amt-blue{color:#2c5282;font-weight:800}
-.hr-sheet .doc-note{white-space:pre-wrap;font-size:6.5pt;line-height:1.3;color:#334155;margin:3px 0;padding:3px 4px;background:#fafafa;border:1px dashed var(--line)}
-.hr-sheet .sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px;padding-top:3px}
-.hr-sheet .sign-box{text-align:center;border-top:1.5px solid var(--ink);padding-top:2px;font-size:7pt;font-weight:700;color:var(--muted)}
-.hr-sheet .sig-line{min-height:14px;border-bottom:1px dashed #64748b;margin-top:1px}
-.hr-sheet .final-sign{margin-top:4px;padding:5px;border:1px solid var(--line);border-radius:3px;background:#f1f5f9;page-break-inside:avoid}
-.hr-sheet .final-sign .ttl{font-weight:800;font-size:7.5pt;margin-bottom:3px;color:var(--ink)}
-.hr-sheet .final-sig-line{min-height:18px}
-.hr-sheet .final-sign-name{font-size:6.5pt;color:#64748b;margin-top:2px;line-height:1.2}
-.hr-sheet.hr-sheet--landscape .doc-h .ttl{font-size:11pt}
-.hr-sheet.hr-sheet--landscape .doc-h .sub{font-size:8pt}
-.hr-sheet.hr-sheet--portrait .doc-h .ttl{font-size:10pt}
-.hr-sheet.hr-sheet--portrait .doc-h .sub{font-size:7.5pt}
-.hr-sheet.hr-sheet--portrait .doc-table{font-size:7pt}
-.hr-sheet.hr-sheet--portrait .doc-table th,.hr-sheet.hr-sheet--portrait .doc-table td{padding:1px 3px}
-.hr-sheet .tpl-doc{color:#0a0a0a}
-.hr-sheet .tpl-topbar{position:relative;padding:4px 0 6px;text-align:center}
-.hr-sheet .tpl-logo-ph{position:absolute;top:0;inset-inline-end:0;font-size:7pt;color:#64748b;border:1px dashed #cbd5e1;padding:4px 8px;min-width:52px}
-.hr-sheet .tpl-logo-en{font-size:6.5pt;opacity:.85}
-.hr-sheet .tpl-co-ar{font-size:11pt;font-weight:800;margin:0;padding-inline-end:72px}
-.hr-sheet .tpl-co-en{font-size:8.5pt;font-weight:600;color:#334155;margin-top:2px;padding-inline-end:72px}
-.hr-sheet .tpl-gold-line{height:2px;background:linear-gradient(90deg,transparent,#c9a227,#c9a227,transparent);max-width:220px;margin:4px auto 6px;border-radius:1px}
-.hr-sheet .tpl-title{margin:0;font-size:12pt;font-weight:800;line-height:1.2}
-.hr-sheet .tpl-title-en{margin:2px 0 0;font-size:10pt;font-weight:700;line-height:1.2;color:#0f172a}
-.hr-sheet .tpl-sub-rtl{margin:3px 0 0;font-size:8.5pt;color:#475569;font-weight:600}
-.hr-sheet .tpl-sub-ltr{margin:2px 0 0;font-size:8pt;color:#475569}
-.hr-sheet .tpl-bar-thick{height:3px;background:#111827;margin:6px 0 8px;border-radius:1px}
-.hr-sheet .tpl-sec{border:1px solid #e2e8f0;margin:0 0 6px;background:#fff;page-break-inside:avoid}
-.hr-sheet .tpl-sec-h{background:#f1f5f9;border-bottom:1px solid #e2e8f0;padding:4px 8px;font-size:8.5pt;font-weight:800;color:#0f172a;text-align:right}
-.hr-sheet .tpl-sec-h-en{display:block;font-size:7pt;font-weight:600;color:#475569;margin-top:1px;text-align:left;direction:ltr}
-.hr-sheet .tpl-kvgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:6px 8px}
-.hr-sheet .tpl-cell{display:flex;flex-direction:column;align-items:stretch;text-align:right;gap:2px;border:1px solid #e8ecf1;padding:4px 6px;border-radius:2px;background:#fff}
-.hr-sheet .tpl-lbl{font-size:7pt;font-weight:700;color:#2c5282}
-.hr-sheet .tpl-val{font-size:8.5pt;font-weight:800;color:#0a0a0a;word-break:break-word}
-.hr-sheet .tpl-contract{width:100%;border-collapse:collapse;font-size:7.5pt;margin:0}
-.hr-sheet .tpl-contract td,.hr-sheet .tpl-contract th{border:1px solid #e2e8f0;padding:3px 6px;vertical-align:middle}
-.hr-sheet .tpl-contract .c-lbl{background:#f8fafc;font-weight:700;color:#0f172a;width:34%;text-align:right}
-.hr-sheet .tpl-contract .c-val{text-align:left;direction:ltr;font-weight:600;color:#0f172a}
-.hr-sheet .tpl-contract .c-val-rtl{text-align:right;direction:rtl;font-weight:700;color:#0f172a}
-.hr-sheet .tpl-contract tr:nth-child(even) .c-lbl{background:#eef2f7}
-.hr-sheet .tpl-declare{border:1px solid #cbd5e1;background:#f8fafc;padding:6px 8px;margin:0 0 6px;page-break-inside:avoid}
-.hr-sheet .tpl-declare .d-ar{font-size:7.5pt;line-height:1.45;text-align:right;margin:0 0 5px}
-.hr-sheet .tpl-declare .d-en{font-size:7pt;line-height:1.4;color:#334155;text-align:left;direction:ltr;margin:0}
-.hr-sheet .tpl-sign-sec-h{font-size:8.5pt;font-weight:800;margin:4px 0 4px;text-align:right}
-.hr-sheet .tpl-sig2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px}
-.hr-sheet .tpl-sigbox{border:1px solid #1e293b;min-height:52mm;display:flex;flex-direction:column;padding:5px 6px;background:#fff;page-break-inside:avoid}
-.hr-sheet .tpl-sigbox-h{font-size:8pt;font-weight:800;text-align:center;margin-bottom:4px;line-height:1.25}
-.hr-sheet .tpl-sigbox-h-en{display:block;font-size:6.5pt;font-weight:600;color:#475569;margin-top:2px}
-.hr-sheet .tpl-sigbox-body{flex:1;min-height:22mm;border:1px dashed #cbd5e1;margin:2px 0;border-radius:2px;background:#fff}
-.hr-sheet .tpl-sigbox-foot{font-size:7.5pt;font-weight:700;text-align:center;margin-top:auto;padding-top:4px;color:#0f172a}
-.hr-sheet .tpl-date-line{margin-top:3px;font-size:7pt;color:#475569;font-weight:600}
-.hr-sheet .annual-ar-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;margin:0 0 6px}
-.hr-sheet .annual-ar-table th,.hr-sheet .annual-ar-table td{border:1px solid #e2e8f0;padding:3px 5px;text-align:center;vertical-align:middle}
-.hr-sheet .annual-ar-table thead th{background:#f1f5f9;font-weight:800;color:#0f172a}
-.hr-sheet .annual-ar-table tbody td:first-child{text-align:right;font-weight:600}
-.hr-sheet .annual-ar-table .td-amt-blue{color:#2c5282;font-weight:800}
-.hr-sheet .annual-ar-table .td-sig-dash{color:#64748b;font-family:monospace;letter-spacing:1px}
-.hr-sheet .annual-ar-table tfoot td{font-weight:800;background:#e2e8f0}
-.hr-sheet .annual-ar-table tfoot td:first-child{text-align:right}
-.hr-sheet .tpl-bi-mini{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.hr-sheet.gen-print .document{width:100%;max-width:210mm;margin:0 auto;background:#fff;border-radius:4px;direction:rtl;color:#1a2a3a;display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;border:1px solid #e2e8f0}
+.hr-sheet.gen-print .doc-header{background:var(--doc-primary);padding:18px 22px 16px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:4px solid var(--doc-accent)}
+.hr-sheet.gen-print .doc-header-logo{width:76px;height:76px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;padding:4px}
+.hr-sheet.gen-print .doc-header-logo img{max-width:100%;max-height:100%;object-fit:contain}
+.hr-sheet.gen-print .gen-logo-placeholder{font-size:10px;color:#94a3b8;text-align:center;line-height:1.35}
+.hr-sheet.gen-print .doc-header-center{flex:1;text-align:center;min-width:0}
+.hr-sheet.gen-print .doc-company-ar{font-size:17px;font-weight:800;color:var(--doc-accent);font-family:'Cairo',sans-serif;line-height:1.2}
+.hr-sheet.gen-print .doc-company-en{font-size:12px;color:#c8d8e8;margin-top:4px;font-weight:500}
+.hr-sheet.gen-print .doc-divider{border:none;border-top:1px solid rgba(201,162,39,.45);margin:8px auto;width:82%;max-width:280px}
+.hr-sheet.gen-print .doc-title-ar{font-size:16px;font-weight:700;color:#fff;font-family:'Cairo',sans-serif;line-height:1.25;margin-top:2px}
+.hr-sheet.gen-print .doc-title-en{font-size:11px;color:#aac4de;margin-top:4px;font-weight:500}
+.hr-sheet.gen-print .doc-header-sub{font-size:10px;color:#c8dce8;margin-top:6px;font-weight:600}
+.hr-sheet.gen-print .doc-header-sub-en{font-size:10px;color:#aac4de;margin-top:2px}
+.hr-sheet.gen-print .doc-header-space{width:76px;flex-shrink:0}
+.hr-sheet.gen-print .doc-body{padding:18px 22px 10px;flex:1}
+.hr-sheet.gen-print .doc-section-title{background:var(--doc-primary);color:#fff;font-size:12px;font-weight:700;padding:8px 14px;border-radius:4px;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hr-sheet.gen-print .doc-section-title-en{font-size:10px;font-weight:600;color:#dbeafe;opacity:.95}
+.hr-sheet.gen-print .doc-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--doc-border);border:1px solid var(--doc-border);border-radius:4px;overflow:hidden;margin-bottom:16px}
+.hr-sheet.gen-print .doc-info-cell{background:#fff;padding:8px 12px;display:flex;gap:10px;align-items:center}
+.hr-sheet.gen-print .doc-info-label{font-size:10px;color:#5a7a9a;font-weight:700;white-space:nowrap;min-width:72px}
+.hr-sheet.gen-print .doc-info-value{font-size:12px;color:#1a2a3a;font-weight:700;flex:1;word-break:break-word}
+.hr-sheet.gen-print .doc-info-value.v-ltr{direction:ltr;text-align:left}
+.hr-sheet.gen-print .doc-emp-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--doc-border);border:1px solid var(--doc-border);border-radius:4px;overflow:hidden;margin-bottom:16px}
+.hr-sheet.gen-print .doc-emp-cell{background:#fff;padding:8px 10px;display:flex;flex-direction:column;gap:2px;text-align:right}
+.hr-sheet.gen-print .doc-emp-lbl{font-size:10px;color:#5a7a9a;font-weight:700}
+.hr-sheet.gen-print .doc-emp-val{font-size:12px;color:#1a2a3a;font-weight:800}
+.hr-sheet.gen-print .doc-declaration{background:var(--doc-gray);border:1px solid var(--doc-border);border-right:4px solid var(--doc-primary);border-radius:4px;padding:14px 16px;margin-bottom:16px}
+.hr-sheet.gen-print .doc-declaration p{font-size:11.5px;line-height:1.85;color:#1a2a3a;margin:0 0 10px;text-align:justify}
+.hr-sheet.gen-print .doc-declaration p:last-child{margin-bottom:0}
+.hr-sheet.gen-print .doc-declaration .dec-en{direction:ltr;text-align:justify;color:#334155;font-size:11px}
+.hr-sheet.gen-print .doc-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
+.hr-sheet.gen-print .doc-sig-box{border:1px solid var(--doc-border);border-radius:6px;overflow:hidden;page-break-inside:avoid}
+.hr-sheet.gen-print .doc-sig-header{background:var(--doc-light);padding:8px 12px;text-align:center}
+.hr-sheet.gen-print .doc-sig-title-ar{font-size:12px;font-weight:700;color:var(--doc-primary)}
+.hr-sheet.gen-print .doc-sig-title-en{font-size:10px;color:#6a8aaa;margin-top:2px}
+.hr-sheet.gen-print .doc-sig-space{height:64px}
+.hr-sheet.gen-print .doc-sig-footer{background:#f9fbfd;border-top:1px solid #e0e8f0;padding:8px 12px;font-size:10px;color:#6a8aaa;text-align:center}
+.hr-sheet.gen-print .doc-sig-footer strong{display:block;font-size:11px;color:#1a3c5e;font-weight:800;margin-bottom:4px}
+.hr-sheet.gen-print .doc-footer{background:var(--doc-primary);margin-top:auto;padding:10px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:3px solid var(--doc-accent)}
+.hr-sheet.gen-print .doc-footer-text{font-size:10px;color:#8ab0d0;max-width:72%}
+.hr-sheet.gen-print .doc-footer-date{font-size:10px;color:#6a90b0}
+.hr-sheet.gen-print .pr-table{width:100%;border-collapse:collapse;margin:0 0 8px;border:1px solid var(--doc-border);border-radius:4px;overflow:hidden;font-size:11px}
+.hr-sheet.gen-print .pr-table th,.hr-sheet.gen-print .pr-table td{border:1px solid var(--doc-border);padding:6px 8px;text-align:center;vertical-align:middle}
+.hr-sheet.gen-print .pr-table thead th{background:var(--doc-primary);color:#fff;font-weight:700}
+.hr-sheet.gen-print .pr-table tbody td:first-child{text-align:right;font-weight:600;color:#1a2a3a}
+.hr-sheet.gen-print .pr-table .cell-amt{color:var(--gen-amt);font-weight:800}
+.hr-sheet.gen-print .pr-table .cell-sig{color:#94a3b8;font-family:monospace;font-size:9px;letter-spacing:.5px}
+.hr-sheet.gen-print .pr-table tfoot td{background:#eef2f7;font-weight:800}
+.hr-sheet.gen-print .pr-table tfoot td:first-child{text-align:right}
+.hr-sheet.gen-print .gen-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.hr-sheet.gen-print .doc-table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed}
+.hr-sheet.gen-print .doc-table th,.hr-sheet.gen-print .doc-table td{border:1px solid var(--doc-border);padding:4px 6px;text-align:right;vertical-align:middle}
+.hr-sheet.gen-print .doc-table thead th{background:var(--doc-primary);color:#fff;font-weight:700}
+.hr-sheet.gen-print .doc-table .td-num{text-align:center;font-weight:700;color:var(--gen-amt)}
+.hr-sheet.gen-print .doc-table .td-en{text-align:left;direction:ltr}
+.hr-sheet.gen-print .doc-note{white-space:pre-wrap;font-size:10px;line-height:1.45;color:#334155;margin-top:8px;padding:8px;background:#fafafa;border:1px dashed var(--doc-border);border-radius:4px}
+.hr-sheet.gen-print.hr-sheet--landscape .document{max-width:297mm}
+.hr-sheet.gen-print.hr-sheet--landscape .doc-body{padding:14px 18px}
 @media print{
-  body{padding:2mm 3mm!important;font-size:7.5pt!important;line-height:1.28!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .hr-sheet .doc{border:none!important;box-shadow:none!important}
-  .hr-sheet .doc-table th,.hr-sheet .doc-table td{padding:1px 3px!important;font-size:7pt!important}
-  .hr-sheet .doc-h .ttl{font-size:10pt!important}
-  .hr-sheet .legal-ref{font-size:6pt!important;padding:1px 4px!important}
-  .hr-sheet .sig-line{min-height:11px!important}
-  .hr-sheet .final-sig-line{min-height:13px!important}
-  .hr-sheet .final-sign-name{font-size:6pt!important}
-  .hr-sheet .doc-note{font-size:6pt!important;max-height:none!important;margin:2px 0!important;padding:2px 3px!important}
-  .hr-sheet tr,.hr-sheet .final-sign,.hr-sheet .sign-grid,.hr-sheet .tpl-sigbox{page-break-inside:avoid}
-  .hr-sheet .tpl-sigbox{min-height:38mm!important}
-  .hr-sheet .tpl-sigbox-body{min-height:16mm!important}
-  .hr-sheet .tpl-kvgrid3{grid-template-columns:1fr 1fr 1fr!important;padding:4px 6px!important}
-  .print-footer{margin-top:0!important;padding-top:1px!important;border-top:none!important;font-size:5.5pt!important;color:#94a3b8!important}
+  body{padding:0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .hr-sheet.gen-print ~ .print-footer{display:none!important}
+  .hr-sheet.gen-print .document{border:none!important}
+  .hr-sheet.gen-print .doc-sig-space{height:52px!important}
 }
 `.trim();
 
 function wrapHrPrintBody(innerHtml, landscape) {
-  const cls = landscape ? 'hr-sheet hr-sheet--landscape' : 'hr-sheet hr-sheet--portrait';
+  const cls = landscape ? 'hr-sheet gen-print hr-sheet--landscape' : 'hr-sheet gen-print hr-sheet--portrait';
   return `
 <div class="${cls}">
   <div class="legal-ref">
@@ -247,78 +216,118 @@ ${innerHtml}
 </div>`;
 }
 
-function buildTplHeader({ companyAr, companyEn, titleAr, titleEn, subtitleAr, subtitleEn }) {
-  const enCo = companyEn && String(companyEn).trim() && companyEn !== companyAr
-    ? `<div class="tpl-co-en" dir="ltr">${esc(companyEn)}</div>`
-    : '';
-  const titleEnHtml = titleEn ? `<h2 class="tpl-title-en" dir="ltr">${esc(titleEn)}</h2>` : '';
-  const subEn = subtitleEn ? `<p class="tpl-sub-ltr" dir="ltr">${esc(subtitleEn)}</p>` : '';
-  return `
-  <header class="tpl-topbar">
-    <div class="tpl-logo-ph" dir="rtl">شعار<span class="tpl-logo-en"> / Logo</span></div>
-    <div class="tpl-co-ar" dir="rtl">${esc(companyAr)}</div>
-    ${enCo}
-    <div class="tpl-gold-line" aria-hidden="true"></div>
-    <h1 class="tpl-title" dir="rtl">${esc(titleAr)}</h1>
-    ${titleEnHtml}
-    <p class="tpl-sub-rtl" dir="rtl">${esc(subtitleAr)}</p>
-    ${subEn}
-    <div class="tpl-bar-thick" aria-hidden="true"></div>
+function safeImgSrc(url) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  return u.replace(/"/g, '%22').replace(/'/g, '%27');
+}
+
+function buildGenLogoInner(logoUrl) {
+  const u = safeImgSrc(logoUrl);
+  if (u.startsWith('http') || u.startsWith('data:image'))
+    return `<img src="${u}" alt="" />`;
+  return `<div class="gen-logo-placeholder">شعار<br/><span style="font-size:9px">Logo</span></div>`;
+}
+
+function buildGenHeader({ logoUrl, companyAr, companyEn, titleAr, titleEn, subtitleAr, subtitleEn }) {
+  const enLine =
+    companyEn && String(companyEn).trim()
+      ? `<div class="doc-company-en" dir="ltr">${esc(companyEn)}</div>`
+      : '';
+  const tEn = titleEn ? `<div class="doc-title-en" dir="ltr">${esc(titleEn)}</div>` : '';
+  const sub = subtitleAr ? `<div class="doc-header-sub" dir="rtl">${esc(subtitleAr)}</div>` : '';
+  const subE = subtitleEn ? `<div class="doc-header-sub doc-header-sub-en" dir="ltr">${esc(subtitleEn)}</div>` : '';
+  return `<header class="doc-header">
+    <div class="doc-header-logo">${buildGenLogoInner(logoUrl)}</div>
+    <div class="doc-header-center">
+      <div class="doc-company-ar" dir="rtl">${esc(companyAr)}</div>
+      ${enLine}
+      <hr class="doc-divider" />
+      <div class="doc-title-ar" dir="rtl">${esc(titleAr)}</div>
+      ${tEn}
+      ${sub}${subE}
+    </div>
+    <div class="doc-header-space" aria-hidden="true"></div>
   </header>`;
 }
 
-function buildTplEmployee3({ nameAr, nameEn, iqama, jobTitle, sectionTitleAr, sectionTitleEn }) {
-  const displayName = String(nameAr || nameEn || '').trim() || '—';
+function buildGenEmployeeStrip(displayName, iqama, jobTitle) {
+  const n = esc(String(displayName || '').trim() || '—');
+  const i = esc(String(iqama || '').trim() || '—');
+  const j = esc(String(jobTitle || '').trim() || '—');
   return `
-  <section class="tpl-sec" dir="rtl">
-    <div class="tpl-sec-h">${esc(sectionTitleAr)}${sectionTitleEn ? `<span class="tpl-sec-h-en">${esc(sectionTitleEn)}</span>` : ''}</div>
-    <div class="tpl-kvgrid3">
-      <div class="tpl-cell"><span class="tpl-lbl">الاسم</span><span class="tpl-val">${esc(displayName)}</span></div>
-      <div class="tpl-cell"><span class="tpl-lbl">الإقامة</span><span class="tpl-val">${esc(iqama || '—')}</span></div>
-      <div class="tpl-cell"><span class="tpl-lbl">المسمى</span><span class="tpl-val">${esc(jobTitle || '—')}</span></div>
-    </div>
-  </section>`;
+  <div class="doc-section-title"><span>بيانات الموظف</span><span class="doc-section-title-en">${esc(LABEL_PAYROLL_EN.employee)}</span></div>
+  <div class="doc-emp-strip">
+    <div class="doc-emp-cell"><span class="doc-emp-lbl">الاسم</span><span class="doc-emp-val">${n}</span></div>
+    <div class="doc-emp-cell"><span class="doc-emp-lbl">الإقامة</span><span class="doc-emp-val">${i}</span></div>
+    <div class="doc-emp-cell"><span class="doc-emp-lbl">المسمى</span><span class="doc-emp-val">${j}</span></div>
+  </div>`;
 }
 
-function buildTplContractTable(rows) {
-  const body = rows
+function buildGenContractGrid(rows) {
+  const cells = rows
     .map(
-      (r) =>
-        `<tr><td class="c-lbl" dir="rtl">${esc(r.labelAr)}<div style="font-size:6.5pt;font-weight:600;color:#64748b;margin-top:1px" dir="ltr">${esc(r.labelEn)}</div></td><td class="${r.rtlVal ? 'c-val-rtl' : 'c-val'}" ${r.rtlVal ? 'dir="rtl"' : 'dir="ltr"'}>${esc(r.value)}</td></tr>`,
+      (r) => `<div class="doc-info-cell">
+      <span class="doc-info-label">${esc(r.labelAr)}<br/><span style="font-size:9px;font-weight:600;color:#94a3b8">${esc(r.labelEn)}</span></span>
+      <span class="doc-info-value ${r.ltr ? 'v-ltr' : ''}" ${r.ltr ? 'dir="ltr"' : 'dir="rtl"'}>${esc(r.value)}</span>
+    </div>`,
     )
     .join('');
-  return `<table class="tpl-contract" dir="rtl">${body}</table>`;
+  return `<div class="doc-info-grid">${cells}</div>`;
 }
 
-function buildTplDeclaration(arText, enText) {
-  if (!String(arText || '').trim() && !String(enText || '').trim()) return '';
+function buildGenContractBlock(titleAr, titleEn, rows) {
   return `
-  <section class="tpl-sec" dir="rtl">
-    <div class="tpl-sec-h">نص الإقرار<span class="tpl-sec-h-en">${esc(LABEL_LETTER_EN.declarationSection)}</span></div>
-    <div class="tpl-declare">
-      ${String(arText || '').trim() ? `<p class="d-ar" dir="rtl">${esc(arText)}</p>` : ''}
-      ${String(enText || '').trim() ? `<p class="d-en" dir="ltr">${esc(enText)}</p>` : ''}
-    </div>
-  </section>`;
+  <div class="doc-section-title"><span>${esc(titleAr)}</span><span class="doc-section-title-en">${esc(titleEn)}</span></div>
+  ${buildGenContractGrid(rows)}`;
 }
 
-function buildTplSignaturePair({ employeeName, companyAr, dateLabelAr, dateLabelEn }) {
-  const emp = String(employeeName || '').trim() || '—';
-  const co = String(companyAr || '').trim() || '—';
+function buildGenDeclarationBlock(arText, enText) {
+  const a = String(arText || '').trim();
+  const e = String(enText || '').trim();
+  if (!a && !e) return '';
   return `
-  <div class="tpl-sign-sec-h" dir="rtl">التوقيعات<span class="tpl-sec-h-en" style="display:inline;margin-inline-start:6px">${esc(LABEL_LETTER_EN.signaturesSection)}</span></div>
-  <div class="tpl-sig2">
-    <div class="tpl-sigbox" dir="rtl">
-      <div class="tpl-sigbox-h">توقيع الموظف<span class="tpl-sigbox-h-en">Employee signature</span></div>
-      <div class="tpl-sigbox-body"></div>
-      <div class="tpl-sigbox-foot">${esc(emp)}<div class="tpl-date-line">${esc(dateLabelAr)}: ........................</div></div>
+  <div class="doc-section-title"><span>نص الإقرار</span><span class="doc-section-title-en">${esc(LABEL_LETTER_EN.declarationSection)}</span></div>
+  <div class="doc-declaration">
+    ${a ? `<p dir="rtl">${esc(a)}</p>` : ''}
+    ${e ? `<p class="dec-en" dir="ltr">${esc(e)}</p>` : ''}
+  </div>`;
+}
+
+function buildGenSignaturesBlock(empName, companyAr) {
+  const e = esc(String(empName || '').trim() || '—');
+  const c = esc(String(companyAr || '').trim() || '—');
+  return `
+  <div class="doc-section-title"><span>التوقيعات</span><span class="doc-section-title-en">${esc(LABEL_LETTER_EN.signaturesSection)}</span></div>
+  <div class="doc-sig-grid">
+    <div class="doc-sig-box">
+      <div class="doc-sig-header">
+        <div class="doc-sig-title-ar">توقيع الموظف</div>
+        <div class="doc-sig-title-en">Employee signature</div>
+      </div>
+      <div class="doc-sig-space"></div>
+      <div class="doc-sig-footer"><strong>${e}</strong>التاريخ: ____________________</div>
     </div>
-    <div class="tpl-sigbox" dir="rtl">
-      <div class="tpl-sigbox-h">ختم المنشأة وتوقيع المفوّض<span class="tpl-sigbox-h-en">${esc(LABEL_LETTER_EN.stampSignatory)}</span></div>
-      <div class="tpl-sigbox-body"></div>
-      <div class="tpl-sigbox-foot">${esc(co)}<div class="tpl-date-line">${esc(dateLabelAr)} / ${esc(dateLabelEn)}: ........................</div></div>
+    <div class="doc-sig-box">
+      <div class="doc-sig-header">
+        <div class="doc-sig-title-ar">ختم المنشأة وتوقيع المفوَّض</div>
+        <div class="doc-sig-title-en">${esc(LABEL_LETTER_EN.stampSignatory)}</div>
+      </div>
+      <div class="doc-sig-space"></div>
+      <div class="doc-sig-footer"><strong>${c}</strong>التاريخ: ____________________</div>
     </div>
   </div>`;
+}
+
+function buildGenFooter(issueDateStr, langIsAr) {
+  const left = langIsAr
+    ? 'هذا الخطاب وثيقة للاطلاع والتوقيع وفق نظام العمل السعودي (مرسوم م/51).'
+    : 'Signature document under Saudi Labor Law (Royal Decree M/51).';
+  const dlab = langIsAr ? 'تاريخ الإصدار' : 'Issue date';
+  return `<footer class="doc-footer">
+    <span class="doc-footer-text" dir="${langIsAr ? 'rtl' : 'ltr'}">${esc(left)}</span>
+    <span class="doc-footer-date">${esc(dlab)}: ${esc(issueDateStr)}</span>
+  </footer>`;
 }
 
 function emptyPayrollDraft() {
@@ -505,8 +514,8 @@ export default function HrPrintDocumentsTab() {
     const rowsAr = [];
     const rowsEn = [];
     const push = (ar, en, val) => {
-      rowsAr.push(`<tr><td>${esc(ar)}</td><td class="td-num td-amt-blue">${esc(hrFmt(val))} SR</td></tr>`);
-      rowsEn.push(`<tr><td class="td-en">${esc(en)}</td><td class="td-num td-amt-blue">${esc(hrFmt(val))} SR</td></tr>`);
+      rowsAr.push(`<tr><td>${esc(ar)}</td><td class="td-num">${esc(hrFmt(val))} SR</td></tr>`);
+      rowsEn.push(`<tr><td class="td-en">${esc(en)}</td><td class="td-num">${esc(hrFmt(val))} SR</td></tr>`);
     };
     push(t('basicSalary'), LABEL_PAYROLL_EN.basic, n(payroll.basic));
     push(t('housingAllowance'), LABEL_PAYROLL_EN.housing, n(payroll.housing));
@@ -523,33 +532,27 @@ export default function HrPrintDocumentsTab() {
     const notesEn = payroll.notes?.trim() ? `<div class="doc-note" dir="ltr">${esc(payroll.notes)}</div>` : '';
     const coAr = payroll.companyName || companyNameArDefault;
     const coEn = payroll.companyNameEn || companyNameEnDefault;
-    const head = buildTplHeader({
+    const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+    const head = buildGenHeader({
+      logoUrl: '',
       companyAr: coAr,
       companyEn: coEn,
       titleAr: `مسير راتب — ${payroll.nameAr || payroll.nameEn || ''}`.trim(),
       titleEn: LABEL_PAYROLL_EN.slipTitle,
-      subtitleAr: `${coAr} — ${payroll.periodLabel}`,
-      subtitleEn: `${coEn} — ${payroll.periodLabel}`,
+      subtitleAr: `${payroll.periodLabel} — ${coAr}`,
+      subtitleEn: `${payroll.periodLabel} — ${coEn}`,
     });
-    const emp = buildTplEmployee3({
-      nameAr: payroll.nameAr,
-      nameEn: payroll.nameEn,
-      iqama: payroll.iqama,
-      jobTitle: payroll.jobTitle,
-      sectionTitleAr: 'بيانات الموظف',
-      sectionTitleEn: LABEL_PAYROLL_EN.employee,
-    });
+    const emp = buildGenEmployeeStrip(payroll.nameAr || payroll.nameEn, payroll.iqama, payroll.jobTitle);
     const detail = `
-  <section class="tpl-sec" dir="rtl">
-    <div class="tpl-sec-h">تفاصيل الراتب للفترة<span class="tpl-sec-h-en">Salary breakdown</span></div>
-    <div class="tpl-bi-mini">
+    <div class="doc-section-title"><span>تفاصيل الراتب للفترة</span><span class="doc-section-title-en">Salary breakdown</span></div>
+    <div class="gen-breakdown">
       <div dir="rtl">
         <table class="doc-table"><tbody>
           <tr><td>${esc(t('employeeSerial'))}</td><td>${esc(payroll.employeeSerial)}</td></tr>
           <tr><td>${esc(t('joinDate'))}</td><td>${esc(formatDateLocale(payroll.joinDate, 'ar-SA'))}</td></tr>
         </tbody></table>
         <table class="doc-table"><thead><tr><th>البند</th><th>المبلغ</th></tr></thead><tbody>${rowsAr.join('')}</tbody>
-        <tfoot><tr><td>${esc(t('totalSalary'))}</td><td class="td-num td-amt-blue">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
+        <tfoot><tr><td>${esc(t('totalSalary'))}</td><td class="td-num">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
         ${notesAr}
       </div>
       <div dir="ltr">
@@ -558,24 +561,19 @@ export default function HrPrintDocumentsTab() {
           <tr><td class="td-en">${esc(LABEL_PAYROLL_EN.join)}</td><td class="td-en">${esc(formatDateLocale(payroll.joinDate, 'en-US'))}</td></tr>
         </tbody></table>
         <table class="doc-table"><thead><tr><th class="td-en">${esc(LABEL_PAYROLL_EN.item)}</th><th>Amount</th></tr></thead><tbody>${rowsEn.join('')}</tbody>
-        <tfoot><tr><td class="td-en">${esc(LABEL_PAYROLL_EN.total)}</td><td class="td-num td-amt-blue">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
+        <tfoot><tr><td class="td-en">${esc(LABEL_PAYROLL_EN.total)}</td><td class="td-num">${esc(hrFmt(payrollTotal))} SR</td></tr></tfoot></table>
         ${notesEn}
       </div>
-    </div>
-  </section>`;
-    const sigs = buildTplSignaturePair({
-      employeeName: payroll.nameAr || payroll.nameEn,
-      companyAr: coAr,
-      dateLabelAr: 'التاريخ',
-      dateLabelEn: 'Date',
-    });
-    const inner = `<div class="doc tpl-doc">${head}${emp}${detail}${sigs}</div>`;
+    </div>`;
+    const sigs = buildGenSignaturesBlock(payroll.nameAr || payroll.nameEn, coAr);
+    const foot = buildGenFooter(issueDate, lang === 'ar');
+    const inner = `<div class="document">${head}<div class="doc-body">${emp}${detail}${sigs}</div>${foot}</div>`;
     openPrintWindow({
       title: 'Payroll slip / مسير راتب',
       companyName: '',
       subtitle: '',
       landscape: printLandscape,
-      extraCss: HR_SHEET_CSS,
+      extraCss: HR_GEN_PRINT_CSS,
       showPageCounter: false,
       pageMarginMm: printLandscape ? 7 : 6,
       body: wrapHrPrintBody(inner, printLandscape),
@@ -592,8 +590,8 @@ export default function HrPrintDocumentsTab() {
       const amt = n(annual.amounts[i]);
       rows.push(`<tr>
         <td>${esc(monthNameAr(m))} ${annual.year}</td>
-        <td class="td-amt-blue">${esc(hrFmt(amt))} SR</td>
-        <td class="td-sig-dash">…………………………</td>
+        <td class="cell-amt">${esc(hrFmt(amt))} SR</td>
+        <td class="cell-sig">____________</td>
       </tr>`);
     }
     if (!any) {
@@ -603,58 +601,47 @@ export default function HrPrintDocumentsTab() {
     const range = firstLastActiveMonthRange(annual.monthOn, annual.year);
     const coAr = payroll.companyName || companyNameArDefault;
     const coEn = payroll.companyNameEn || companyNameEnDefault;
-    const subAr = range ? `مسير رواتب ${range.ar} — ${coAr}` : `السنة ${annual.year} — ${coAr}`;
-    const subEn = range ? `Payroll ${range.en} — ${coEn}` : `Year ${annual.year} — ${coEn}`;
-    const head = buildTplHeader({
+    const subAr = range ? `مسير رواتب ${range.ar}` : `السنة ${annual.year}`;
+    const subEn = range ? `Payroll ${range.en}` : `Year ${annual.year}`;
+    const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+    const head = buildGenHeader({
+      logoUrl: '',
       companyAr: coAr,
       companyEn: coEn,
-      titleAr: `كشف راتب سنوي — ${payroll.nameAr || payroll.nameEn || ''}`.trim(),
-      titleEn: `${LABEL_LETTER_EN.annualTitle} — ${payroll.nameEn || payroll.nameAr || ''}`.trim(),
+      titleAr: `كشف رواتب سنة ${annual.year}`,
+      titleEn: `Annual Payroll Statement — ${annual.year}`,
       subtitleAr: subAr,
       subtitleEn: subEn,
     });
-    const emp = buildTplEmployee3({
-      nameAr: payroll.nameAr,
-      nameEn: payroll.nameEn,
-      iqama: payroll.iqama,
-      jobTitle: payroll.jobTitle,
-      sectionTitleAr: 'بيانات الموظف',
-      sectionTitleEn: LABEL_PAYROLL_EN.employee,
-    });
+    const emp = buildGenEmployeeStrip(payroll.nameAr || payroll.nameEn, payroll.iqama, payroll.jobTitle);
     const table = `
-  <section class="tpl-sec" dir="rtl">
-    <div class="tpl-sec-h">جدول الرواتب الشهرية<span class="tpl-sec-h-en">Monthly payroll table</span></div>
-    <table class="annual-ar-table">
+    <div class="doc-section-title"><span>تفاصيل الرواتب</span><span class="doc-section-title-en">Salary breakdown</span></div>
+    <table class="pr-table">
       <thead>
         <tr>
-          <th style="width:42%">الشهر</th>
-          <th style="width:28%">${esc(LABEL_LETTER_EN.grossSalary)}</th>
-          <th style="width:30%">${esc(LABEL_LETTER_EN.receiptSigCol)}</th>
+          <th>الشهر</th>
+          <th>${esc(LABEL_LETTER_EN.grossSalary)}</th>
+          <th>${esc(LABEL_LETTER_EN.receiptSigCol)}</th>
         </tr>
       </thead>
       <tbody>${rows.join('')}</tbody>
       <tfoot>
         <tr>
-          <td>${esc(LABEL_LETTER_EN.annualTotal)} / الإجمالي السنوي</td>
-          <td class="td-amt-blue">${esc(hrFmt(annualSum))} SR</td>
+          <td>الإجمالي السنوي / ${esc(LABEL_LETTER_EN.annualTotal)}</td>
+          <td class="cell-amt">${esc(hrFmt(annualSum))} SR</td>
           <td></td>
         </tr>
       </tfoot>
-    </table>
-  </section>`;
-    const sigs = buildTplSignaturePair({
-      employeeName: payroll.nameAr || payroll.nameEn,
-      companyAr: coAr,
-      dateLabelAr: 'التاريخ',
-      dateLabelEn: 'Date',
-    });
-    const inner = `<div class="doc tpl-doc">${head}${emp}${table}${sigs}</div>`;
+    </table>`;
+    const sigs = buildGenSignaturesBlock(payroll.nameAr || payroll.nameEn, coAr);
+    const foot = buildGenFooter(issueDate, lang === 'ar');
+    const inner = `<div class="document">${head}<div class="doc-body">${emp}${table}${sigs}</div>${foot}</div>`;
     openPrintWindow({
       title: `Annual salary ${annual.year} / كشف سنوي ${annual.year}`,
       companyName: '',
       subtitle: '',
       landscape: printLandscape,
-      extraCss: HR_SHEET_CSS,
+      extraCss: HR_GEN_PRINT_CSS,
       showPageCounter: false,
       pageMarginMm: printLandscape ? 7 : 6,
       body: wrapHrPrintBody(inner, printLandscape),
@@ -667,52 +654,38 @@ export default function HrPrintDocumentsTab() {
     const coEn = payroll.companyNameEn || companyNameEnDefault;
     const nameDisp = [payroll.nameEn, payroll.nameAr].filter(Boolean).join(' / ') || '—';
     const contractRows = [
-      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, rtlVal: true },
-      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: payroll.iqama || '—', rtlVal: true },
-      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(payroll.letterStartDate, 'ar-SA')} / ${formatDateLocale(payroll.letterStartDate, 'en-US')}`, rtlVal: false },
-      { labelAr: 'تاريخ الإنهاء', labelEn: 'End date', value: `${formatDateLocale(payroll.letterEndDate, 'ar-SA')} / ${formatDateLocale(payroll.letterEndDate, 'en-US')}`, rtlVal: false },
-      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, rtlVal: false },
-      { labelAr: 'الراتب الشهري', labelEn: LABEL_LETTER_EN.monthlySalary, value: `${hrFmt(payrollTotal)} SR`, rtlVal: false },
-      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, rtlVal: true },
+      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, ltr: false },
+      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: payroll.iqama || '—', ltr: false },
+      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(payroll.letterStartDate, 'ar-SA')} / ${formatDateLocale(payroll.letterStartDate, 'en-US')}`, ltr: true },
+      { labelAr: 'تاريخ الإنهاء', labelEn: 'End date', value: `${formatDateLocale(payroll.letterEndDate, 'ar-SA')} / ${formatDateLocale(payroll.letterEndDate, 'en-US')}`, ltr: true },
+      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, ltr: true },
+      { labelAr: 'الراتب الشهري', labelEn: LABEL_LETTER_EN.monthlySalary, value: `${hrFmt(payrollTotal)} SR`, ltr: true },
+      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, ltr: false },
     ];
-    const head = buildTplHeader({
+    const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+    const head = buildGenHeader({
+      logoUrl: '',
       companyAr: coAr,
       companyEn: coEn,
       titleAr: 'خطاب استلام الرواتب',
       titleEn: LABEL_LETTER_EN.salaryLetterTitle,
-      subtitleAr: `${coAr} — ${payroll.periodLabel || defaultPeriodLabel(lang)}`,
-      subtitleEn: `${coEn} — ${payroll.periodLabel || defaultPeriodLabel(lang)}`,
+      subtitleAr: payroll.periodLabel || defaultPeriodLabel(lang),
+      subtitleEn: payroll.periodLabel || defaultPeriodLabel(lang),
     });
-    const emp = buildTplEmployee3({
-      nameAr: payroll.nameAr,
-      nameEn: payroll.nameEn,
-      iqama: payroll.iqama,
-      jobTitle: payroll.jobTitle,
-      sectionTitleAr: 'بيانات الموظف',
-      sectionTitleEn: LABEL_PAYROLL_EN.employee,
-    });
-    const contract = `
-  <section class="tpl-sec" dir="rtl">
-    <div class="tpl-sec-h">بيانات العقد<span class="tpl-sec-h-en">${esc(LABEL_LETTER_EN.contractSection)}</span></div>
-    ${buildTplContractTable(contractRows)}
-  </section>`;
-    const decl = buildTplDeclaration(
+    const contract = buildGenContractBlock('بيانات العقد', LABEL_LETTER_EN.contractSection, contractRows);
+    const decl = buildGenDeclarationBlock(
       payroll.declarationSalariesAr || DEFAULT_DECL_SALARY_AR,
       payroll.declarationSalariesEn || DEFAULT_DECL_SALARY_EN,
     );
-    const sigs = buildTplSignaturePair({
-      employeeName: payroll.nameAr || payroll.nameEn,
-      companyAr: coAr,
-      dateLabelAr: 'التاريخ',
-      dateLabelEn: 'Date',
-    });
-    const inner = `<div class="doc tpl-doc">${head}${emp}${contract}${decl}${sigs}</div>`;
+    const sigs = buildGenSignaturesBlock(payroll.nameAr || payroll.nameEn, coAr);
+    const foot = buildGenFooter(issueDate, lang === 'ar');
+    const inner = `<div class="document">${head}<div class="doc-body">${contract}${decl}${sigs}</div>${foot}</div>`;
     openPrintWindow({
       title: 'Salary receipt letter / خطاب استلام الرواتب',
       companyName: '',
       subtitle: '',
       landscape: printLandscape,
-      extraCss: HR_SHEET_CSS,
+      extraCss: HR_GEN_PRINT_CSS,
       showPageCounter: false,
       pageMarginMm: printLandscape ? 7 : 6,
       body: wrapHrPrintBody(inner, printLandscape),
@@ -739,53 +712,39 @@ export default function HrPrintDocumentsTab() {
       .join('؛ ');
     const wageExtra = customLines ? ` (${customLines})` : '';
     const contractRows = [
-      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, rtlVal: true },
-      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: eos.iqama || '—', rtlVal: true },
-      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(eos.joinDate, 'ar-SA')} / ${formatDateLocale(eos.joinDate, 'en-US')}`, rtlVal: false },
-      { labelAr: 'تاريخ نهاية الخدمة', labelEn: LABEL_EOS_EN.endDate, value: `${formatDateLocale(eos.endDate, 'ar-SA')} / ${formatDateLocale(eos.endDate, 'en-US')}`, rtlVal: false },
-      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, rtlVal: false },
-      { labelAr: 'أجر آخر شهر (مجموع البدلات)', labelEn: LABEL_EOS_EN.wageTitle, value: `${hrFmt(eosWageTotal)} SR${wageExtra}`, rtlVal: true },
-      { labelAr: 'مكافأة نهاية الخدمة', labelEn: LABEL_LETTER_EN.eosGratuity, value: `${hrFmt(n(eos.eosAmount))} SR`, rtlVal: false },
-      { labelAr: 'مستحقات أخرى', labelEn: LABEL_EOS_EN.other, value: `${hrFmt(n(eos.otherAccrued))} SR`, rtlVal: false },
-      { labelAr: 'خصومات', labelEn: LABEL_EOS_EN.ded, value: `${hrFmt(n(eos.deductions))} SR`, rtlVal: false },
-      { labelAr: 'صافي المستحق', labelEn: LABEL_LETTER_EN.netPayable, value: `${hrFmt(n(eos.netPayable))} SR`, rtlVal: false },
-      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, rtlVal: true },
+      { labelAr: 'اسم الموظف', labelEn: LABEL_PAYROLL_EN.name, value: nameDisp, ltr: false },
+      { labelAr: 'رقم الإقامة', labelEn: LABEL_PAYROLL_EN.iqama, value: eos.iqama || '—', ltr: false },
+      { labelAr: 'تاريخ البدء', labelEn: LABEL_PAYROLL_EN.join, value: `${formatDateLocale(eos.joinDate, 'ar-SA')} / ${formatDateLocale(eos.joinDate, 'en-US')}`, ltr: true },
+      { labelAr: 'تاريخ نهاية الخدمة', labelEn: LABEL_EOS_EN.endDate, value: `${formatDateLocale(eos.endDate, 'ar-SA')} / ${formatDateLocale(eos.endDate, 'en-US')}`, ltr: true },
+      { labelAr: 'مدة الخدمة', labelEn: LABEL_LETTER_EN.serviceDuration, value: `${dur.ar} / ${dur.en}`, ltr: true },
+      { labelAr: 'أجر آخر شهر (مجموع البدلات)', labelEn: LABEL_EOS_EN.wageTitle, value: `${hrFmt(eosWageTotal)} SR${wageExtra}`, ltr: false },
+      { labelAr: 'مكافأة نهاية الخدمة', labelEn: LABEL_LETTER_EN.eosGratuity, value: `${hrFmt(n(eos.eosAmount))} SR`, ltr: true },
+      { labelAr: 'مستحقات أخرى', labelEn: LABEL_EOS_EN.other, value: `${hrFmt(n(eos.otherAccrued))} SR`, ltr: true },
+      { labelAr: 'خصومات', labelEn: LABEL_EOS_EN.ded, value: `${hrFmt(n(eos.deductions))} SR`, ltr: true },
+      { labelAr: 'صافي المستحق', labelEn: LABEL_LETTER_EN.netPayable, value: `${hrFmt(n(eos.netPayable))} SR`, ltr: true },
+      { labelAr: 'اسم المنشأة', labelEn: LABEL_LETTER_EN.establishment, value: `${coAr} / ${coEn}`, ltr: false },
     ];
-    const head = buildTplHeader({
+    const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+    const head = buildGenHeader({
+      logoUrl: '',
       companyAr: coAr,
       companyEn: coEn,
       titleAr: 'خطاب استلام جميع المستحقات',
       titleEn: LABEL_LETTER_EN.entitlementsLetterTitle,
-      subtitleAr: `${coAr} — ${formatDateLocale(eos.endDate, 'ar-SA')}`,
-      subtitleEn: `${coEn} — ${formatDateLocale(eos.endDate, 'en-US')}`,
+      subtitleAr: formatDateLocale(eos.endDate, 'ar-SA'),
+      subtitleEn: formatDateLocale(eos.endDate, 'en-US'),
     });
-    const emp = buildTplEmployee3({
-      nameAr: eos.nameAr,
-      nameEn: eos.nameEn,
-      iqama: eos.iqama,
-      jobTitle: eos.jobTitle,
-      sectionTitleAr: 'بيانات الموظف',
-      sectionTitleEn: LABEL_PAYROLL_EN.employee,
-    });
-    const contract = `
-  <section class="tpl-sec" dir="rtl">
-    <div class="tpl-sec-h">بيانات العقد والتسوية<span class="tpl-sec-h-en">${esc(LABEL_LETTER_EN.contractSection)} & settlement</span></div>
-    ${buildTplContractTable(contractRows)}
-  </section>`;
-    const decl = buildTplDeclaration(eos.settlementNotesAr, eos.settlementNotesEn);
-    const sigs = buildTplSignaturePair({
-      employeeName: eos.nameAr || eos.nameEn,
-      companyAr: coAr,
-      dateLabelAr: 'التاريخ',
-      dateLabelEn: 'Date',
-    });
-    const inner = `<div class="doc tpl-doc">${head}${emp}${contract}${decl}${sigs}</div>`;
+    const contract = buildGenContractBlock('بيانات العقد والتسوية', `${LABEL_LETTER_EN.contractSection} & settlement`, contractRows);
+    const decl = buildGenDeclarationBlock(eos.settlementNotesAr, eos.settlementNotesEn);
+    const sigs = buildGenSignaturesBlock(eos.nameAr || eos.nameEn, coAr);
+    const foot = buildGenFooter(issueDate, lang === 'ar');
+    const inner = `<div class="document">${head}<div class="doc-body">${contract}${decl}${sigs}</div>${foot}</div>`;
     openPrintWindow({
       title: 'Full entitlements letter / خطاب استلام المستحقات',
       companyName: '',
       subtitle: '',
       landscape: printLandscape,
-      extraCss: HR_SHEET_CSS,
+      extraCss: HR_GEN_PRINT_CSS,
       showPageCounter: false,
       pageMarginMm: printLandscape ? 7 : 6,
       body: wrapHrPrintBody(inner, printLandscape),
