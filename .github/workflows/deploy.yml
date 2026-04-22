@@ -12,12 +12,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          # LTS للبناء؛ إجراءات checkout/setup-node v5 تعمل على Node 24 داخلياً وتزيل تحذير إهلاك Node 20
+          node-version: '22'
+          package-manager-cache: false
 
       - name: Install dependencies
         run: npm install
