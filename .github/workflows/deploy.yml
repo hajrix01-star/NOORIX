@@ -58,18 +58,33 @@ jobs:
           command_timeout: 25m
           script: |
             set -e
+            echo "==> Deploy host: $(hostname) user: $(whoami)"
+            if ! sudo -n true 2>/dev/null; then
+              echo "ERROR: مستخدم النشر يحتاج sudo بدون كلمة مرور (Defaults !requiretty + NOPASSWD لأوامر النشر)، أو شغّل الـ deploy بمستخدم لديه ذلك."
+              exit 1
+            fi
             if [ ! -f /tmp/noorix-frontend.tar.gz ]; then
               echo "ERROR: /tmp/noorix-frontend.tar.gz missing — SCP step did not upload the frontend archive."
               exit 1
             fi
+            file /tmp/noorix-frontend.tar.gz || true
+            tar tzf /tmp/noorix-frontend.tar.gz >/dev/null
             # بدون هذا المسار لن يُحدَّث الباكند — الفشل هنا يوضح في GitHub Actions أن السيرفر غير مربوط
             if [ ! -d /var/www/noorix ]; then
               echo "ERROR: /var/www/noorix not found. Clone the repo there and set up .env, or set NOORIX_ROOT on the server."
               exit 1
             fi
             cd /var/www/noorix
-            git pull origin main
+            # يطابق السيرفر مع origin/main (الملفات غير المتتبعة مثل .env لا تُحذف)
+            git fetch origin main
+            if git rev-parse --verify main >/dev/null 2>&1; then
+              git checkout -f main
+            else
+              git checkout -b main origin/main
+            fi
+            git reset --hard origin/main
             echo "Deployed commit: $(git log -1 --oneline)"
+            # الواجهة أولاً (قبل npm ci الطويل) لتقليل نافذة الخطر وتحديث الموقع حتى لو فشل الباكند لاحقاً
             sudo bash deploy/install-frontend.sh /tmp/noorix-frontend.tar.gz ${{ github.sha }}
             rm -f /tmp/noorix-frontend.tar.gz
             (cd backend && rm -rf node_modules && npm ci && npx prisma generate && npx prisma migrate deploy && npm run build)

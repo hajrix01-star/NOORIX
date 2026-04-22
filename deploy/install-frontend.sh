@@ -1,35 +1,46 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Noorix — نشر الواجهة الثابتة (dist) إلى مسار واحد معرّف صراحة على السيرفر
+# Noorix — نشر الواجهة الثابتة (dist) إلى مسار واحد معرّف على السيرفر
 # =============================================================================
-# لا يمس قواعد البيانات ولا مجلد الباكند؛ يحدّث فقط ملفات HTML/JS/CSS في مجلد الويب.
+# يُفضّل تشغيله كـ root:  sudo bash deploy/install-frontend.sh <tarball> <git_sha>
+# (يتجنب مشاكل sudo/requiretty في جلسات SSH غير التفاعلية من GitHub Actions.)
 #
-# الاستخدام (من السيرفر):
-#   sudo bash deploy/install-frontend.sh /tmp/noorix-frontend.tar.gz <git_sha>
-#
-# مصدر واحد لمسار الواجهة (بالترتيب):
-#   1) متغير البيئة NOORIX_FRONTEND_ROOT (اختياري؛ مفيد في سكربتات systemd فقط)
-#   2) ملف /etc/noorix/frontend-root — سطر واحد: المسار المطلق لمجلد الواجهة (بدون شرطة نهائية)
-#   3) الافتراضي: /var/www/hajrix.com
-#
-# إعداد لمرة واحدة إذا كان Nginx يشير لمجلد آخر (استبدل المسار بما في إعداد root):
-#   sudo mkdir -p /etc/noorix
-#   printf '%s\n' /var/www/html | sudo tee /etc/noorix/frontend-root
-#   sudo chmod 644 /etc/noorix/frontend-root
-#
-# يجب أن يطابق هذا المسار قيمة root في Nginx لنفس الموقع.
+# مصدر واحد لمسار الواجهة: NOORIX_FRONTEND_ROOT → /etc/noorix/frontend-root → /var/www/hajrix.com
+# إعداد لمرة واحدة إذا كان root في Nginx مختلفاً:
+#   sudo mkdir -p /etc/noorix && printf '%s\n' /المسار/الفعلي | sudo tee /etc/noorix/frontend-root
 # =============================================================================
 set -euo pipefail
 
 TARBALL="${1:-}"
 EXPECTED_SHA="${2:-}"
 
+log() { printf '%s\n' "$*"; }
+
+is_root() { [[ ${EUID:-$(id -u)} -eq 0 ]]; }
+
+# أوامر تحتاج صلاحيات الكتابة على مجلد الويب: كـ root مباشرة، أو sudo -n (للجلسات غير التفاعلية)
+srun() {
+  if is_root; then
+    "$@"
+  elif /usr/bin/sudo -n "$@"; then
+    :
+  else
+    log "ERROR: فشل تنفيذ (تحتاج sudo بدون TTY/كلمة مرور أو تشغيل السكربت كـ root): $*" >&2
+    exit 1
+  fi
+}
+
 if [[ -z "$TARBALL" || ! -f "$TARBALL" ]]; then
-  echo "ERROR: tarball غير موجود: ${TARBALL:-<empty>}" >&2
+  log "ERROR: tarball غير موجود: ${TARBALL:-<empty>}" >&2
   exit 1
 fi
 if [[ -z "$EXPECTED_SHA" ]]; then
-  echo "ERROR: مطلوب SHA الـ commit الثاني للتحقق من index.html" >&2
+  log "ERROR: مطلوب SHA الـ commit كوسيط ثانٍ" >&2
+  exit 1
+fi
+
+if ! tar tzf "$TARBALL" >/dev/null 2>&1; then
+  log "ERROR: الملف ليس أرشيف gzip صالحاً: $TARBALL" >&2
   exit 1
 fi
 
@@ -54,30 +65,43 @@ TMP="$(mktemp -d)"
 cleanup() { rm -rf "$TMP"; }
 trap cleanup EXIT
 
-echo "==> مسار الواجهة (مصدر واحد): $ROOT"
+log "==> مسار الواجهة: $ROOT"
+log "==> حجم الأرشيف: $(wc -c <"$TARBALL") بايت"
 
 tar xzf "$TARBALL" -C "$TMP"
 
 if [[ ! -d "$ROOT" ]]; then
-  echo "==> إنشاء المجلد: $ROOT"
-  sudo mkdir -p "$ROOT"
+  log "==> إنشاء المجلد: $ROOT"
+  srun mkdir -p "$ROOT"
 fi
 
-# دائماً عبر sudo: صلاحيات صحيحة لـ Nginx (www-data) بغضّ النظر عن مستخدم الـ deploy
 if id www-data &>/dev/null; then
-  sudo rsync -a --delete --chown=www-data:www-data "${TMP}/" "${ROOT}/"
+  srun rsync -a --delete --chown=www-data:www-data "${TMP}/" "${ROOT}/"
 else
-  sudo rsync -a --delete "${TMP}/" "${ROOT}/"
+  srun rsync -a --delete "${TMP}/" "${ROOT}/"
 fi
 
 INDEX="${ROOT}/index.html"
 if [[ ! -f "$INDEX" ]]; then
-  echo "ERROR: بعد النشر لا يوجد $INDEX" >&2
-  exit 1
-fi
-if ! grep -qF "$EXPECTED_SHA" "$INDEX"; then
-  echo "ERROR: $INDEX لا يحتوي على معرّف البناء $EXPECTED_SHA (تحقق من تطابق المسار مع root في Nginx)" >&2
+  log "ERROR: لا يوجد $INDEX بعد rsync" >&2
   exit 1
 fi
 
-echo "==> تم التحقق: الواجهة في $ROOT تطابق commit $EXPECTED_SHA"
+if ! grep -qF "$EXPECTED_SHA" "$INDEX"; then
+  log "ERROR: $INDEX لا يحتوي SHA المتوقع ($EXPECTED_SHA)." >&2
+  log "--- تشخيص (لا يغيّر أي إعداد) ---" >&2
+  if grep -q 'noorix-build' "$INDEX" 2>/dev/null; then
+    log "وسم noorix-build الموجود:" >&2
+    grep 'noorix-build' "$INDEX" | head -3 >&2 || true
+  else
+    log "لا يوجد وسم noorix-build في index — قد يكون المسار خطأ أو الأرشيف قديماً." >&2
+  fi
+  log "stat index.html:" >&2
+  stat "$INDEX" >&2 || true
+  log "أمثلة أسطر root في Nginx (راجع يدوياً أيها يخص الموقع):" >&2
+  grep -hE '^\s*root\s+' /etc/nginx/sites-enabled/* 2>/dev/null | head -8 >&2 || log "(لا يمكن قراءة sites-enabled)" >&2
+  log "إذا كان root مختلفاً: echo /المسار | sudo tee /etc/noorix/frontend-root" >&2
+  exit 1
+fi
+
+log "==> تم التحقق: الواجهة في $ROOT تطابق commit $EXPECTED_SHA"
