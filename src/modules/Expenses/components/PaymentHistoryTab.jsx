@@ -4,7 +4,8 @@
  */
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getInvoices, throwIfApiFailed } from '../../../services/api';
+import { getInvoices, throwIfApiFailed, downloadInvoiceAttachment } from '../../../services/api';
+import { useToast } from '../../../context/ToastContext';
 import DateFilterBar, { useDateFilter } from '../../../shared/components/DateFilterBar';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
@@ -17,7 +18,9 @@ import { useApp } from '../../../context/AppContext';
 
 export default function PaymentHistoryTab({ companyId, dateFilter: externalDateFilter }) {
   const { lang, t } = useTranslation();
+  const { showToast } = useToast();
   const { activeCompanyId, companies = [] } = useApp();
+  const effectiveCompanyId = companyId || activeCompanyId || '';
   const activeCompany = companies.find((c) => c.id === (companyId || activeCompanyId));
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
@@ -73,22 +76,27 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       'المورد': (lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—',
       'بند المصروف': inv.expenseLine?.nameAr || inv.expenseLine?.nameEn || '—',
       'النوع': kindBadgeMap[inv.kind]?.label || inv.kind,
+      [t('invoiceReceiptCol')]: inv.hasInvoiceAttachment ? (inv.attachmentOriginalName || '—') : '—',
       'التاريخ': formatSaudiDate(inv.transactionDate),
       'الصافي': Number(inv.netAmount || 0),
       'الضريبة': Number(inv.taxAmount || 0),
       'الإجمالي': Number(inv.totalAmount || 0),
     })),
-  [activeItems, kindBadgeMap, lang]);
+  [activeItems, kindBadgeMap, lang, t]);
 
   function handlePrint() {
-    const rows = activeItems.map((inv) =>
-      `<tr><td>${(inv.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplier?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(inv.expenseLine?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${String(kindBadgeMap[inv.kind]?.label || inv.kind).replace(/</g, '&lt;')}</td><td>${formatSaudiDate(inv.transactionDate).replace(/</g, '&lt;')}</td><td>${fmt(inv.netAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.taxAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.totalAmount).replace(/</g, '&lt;')}</td></tr>`,
-    ).join('');
+    const attachLabel = String(t('invoiceReceiptCol')).replace(/</g, '&lt;');
+    const rows = activeItems.map((inv) => {
+      const attachCell = inv.hasInvoiceAttachment
+        ? String(inv.attachmentOriginalName || '—').replace(/</g, '&lt;')
+        : '—';
+      return `<tr><td>${(inv.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplier?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(inv.expenseLine?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${String(kindBadgeMap[inv.kind]?.label || inv.kind).replace(/</g, '&lt;')}</td><td>${attachCell}</td><td>${formatSaudiDate(inv.transactionDate).replace(/</g, '&lt;')}</td><td>${fmt(inv.netAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.taxAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.totalAmount).replace(/</g, '&lt;')}</td></tr>`;
+    }).join('');
     openPrintWindow({
       title: 'سجل المدفوعات',
       companyName,
       subtitle: `سجل المدفوعات (ثابت + متغير) | الإجمالي: ${fmt(totalAmount)} SR`,
-      body: `<table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>المورد</th><th>بند المصروف</th><th>النوع</th><th>التاريخ</th><th>الصافي</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${rows || '<tr><td colspan="9">لا توجد مدفوعات</td></tr>'}</tbody></table>`,
+      body: `<table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>المورد</th><th>بند المصروف</th><th>النوع</th><th>${attachLabel}</th><th>التاريخ</th><th>الصافي</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${rows || '<tr><td colspan="10">لا توجد مدفوعات</td></tr>'}</tbody></table>`,
     });
   }
 
@@ -103,6 +111,36 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       render: (_, row) => <span className="text-[13px]">{row.expenseLine?.nameAr || row.expenseLine?.nameEn || '—'}</span> },
     { key: 'kind', label: 'النوع', width: 110, minWidth: 100,
       render: (v) => <Badge {...Badge.fromStatus(v, kindBadgeMap)} size="sm" /> },
+    {
+      key: 'attachment',
+      label: t('invoiceReceiptCol'),
+      minWidth: 140,
+      render: (_, row) =>
+        row.hasInvoiceAttachment && effectiveCompanyId ? (
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className="max-w-[10rem] truncate text-[12px] text-noorix-text" title={row.attachmentOriginalName || ''}>
+              {row.attachmentOriginalName || '—'}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 shrink-0 px-2 text-[11px]"
+              onClick={async () => {
+                try {
+                  await downloadInvoiceAttachment(row.id, effectiveCompanyId);
+                } catch (e) {
+                  showToast?.(e?.message || t('saveFailed'), 'error');
+                }
+              }}
+            >
+              {t('invoiceReceiptDownload')}
+            </Button>
+          </div>
+        ) : (
+          <span className="nx-cell-muted-sm text-[13px]">—</span>
+        ),
+    },
     { key: 'transactionDate', label: 'التاريخ', minWidth: 110,
       render: (v) => <span className="nx-cell-muted-sm text-[13px]">{formatSaudiDate(v)}</span> },
     { key: 'netAmount', label: 'الصافي', numeric: true, minWidth: 100,
@@ -111,7 +149,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       render: (v) => <FmtNum n={v} className="nx-cell-num text-noorix-amber text-[13px]" /> },
     { key: 'totalAmount', label: 'الإجمالي', numeric: true, minWidth: 100,
       render: (v) => <FmtNum n={v} className="nx-cell-num font-bold text-[13px]" /> },
-  ], [lang, kindBadgeMap]);
+  ], [lang, kindBadgeMap, t, effectiveCompanyId, showToast]);
 
   if (isError) {
     return (
