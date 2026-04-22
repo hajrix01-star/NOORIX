@@ -82,6 +82,17 @@ export default {
   backupSystemRunNow: { ar: 'تشغيل نسخة الآن', en: 'Run backup now' },
   backupSystemJobs: { ar: 'سجل نسخ النظام', en: 'System backup history' },
   backupSystemNoJobs: { ar: 'لا توجد نسخ نظام بعد.', en: 'No system backups yet.' },
+  backupSystemDownload: { ar: 'تنزيل إلى الجهاز', en: 'Download to computer' },
+  backupSystemImportFromPc: { ar: 'استيراد من ملف', en: 'Import from file' },
+  backupSystemLocalHint: {
+    ar: 'تنزيل النسخة المكتملة كملف مضغوط (.dump.gz) للاحتفاظ به محلياً، أو اختيار ملف نسخة سابقة (من تنزيل أو من خادم آخر) لإضافته إلى السجل بعد التحقق من سلامته.',
+    en: 'Download a completed backup as a compressed .dump.gz file, or pick a dump file (from a previous download or another server) to register it after integrity checks.',
+  },
+  backupSystemUploadOk: { ar: 'تم تسجيل النسخة في السجل.', en: 'Backup registered in the list.' },
+  backupSystemUploadDup: {
+    ar: 'الملف مطابق لنسخة مسجلة مسبقاً — لم يُخزَّن نسخة جديدة.',
+    en: 'This file matches an existing backup — no new copy was stored.',
+  },
   backupVerify: { ar: 'اختبار النسخة', en: 'Verify backup' },
   backupVerifyOk: { ar: 'سليمة ✓', en: 'OK ✓' },
   backupVerifyBad: { ar: 'فشل التحقق', en: 'Verify failed' },

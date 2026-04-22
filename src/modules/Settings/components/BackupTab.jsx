@@ -22,6 +22,8 @@ import {
   backupGetCompanyConfig,
   backupPatchCompanyConfig,
   backupRestoreSystemFull,
+  backupDownloadSystemJobFile,
+  backupUploadSystemFullDump,
 } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
@@ -174,6 +176,7 @@ export default function BackupTab({ activeCompanies = [] }) {
   });
   const [restoreModal, setRestoreModal] = useState(null);
   const [restorePhrase, setRestorePhrase] = useState('');
+  const systemDumpFileRef = React.useRef(null);
 
   const { data: jobsRes, isLoading } = useQuery({
     queryKey: ['backup-jobs'],
@@ -309,6 +312,20 @@ export default function BackupTab({ activeCompanies = [] }) {
     invalidateQueries: [['backup-system-jobs']],
     successToast: () => t('backupVerifyOk'),
     errorToast: (e) => e?.message || t('backupVerifyBad'),
+  });
+
+  const downloadSysMut = useApiMutation({
+    mutationFn: ({ jobId, suggestedName }) => backupDownloadSystemJobFile(jobId, suggestedName),
+    successToast: () => t('backupDownloadOk'),
+    errorToast: (e) => e?.message || t('backupError'),
+  });
+
+  const uploadSysDumpMut = useApiMutation({
+    mutationFn: (file) => backupUploadSystemFullDump(file),
+    invalidateQueries: [['backup-system-jobs']],
+    successToast: (res) =>
+      res?.data?.status === 'skipped_duplicate' ? t('backupSystemUploadDup') : t('backupSystemUploadOk'),
+    errorToast: (e) => e?.message || t('backupError'),
   });
 
   const verifyCoMut = useApiMutation({
@@ -616,6 +633,31 @@ export default function BackupTab({ activeCompanies = [] }) {
 
               <Divider />
 
+              <p className="text-[11px] text-noorix-muted m-0 leading-relaxed">{t('backupSystemLocalHint')}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={systemDumpFileRef}
+                  type="file"
+                  accept=".gz,.dump.gz,application/gzip"
+                  className="sr-only"
+                  aria-label={t('backupSystemImportFromPc')}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = '';
+                    if (f) uploadSysDumpMut.mutate(f);
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="default"
+                  disabled={uploadSysDumpMut.isPending}
+                  onClick={() => systemDumpFileRef.current?.click()}
+                >
+                  {uploadSysDumpMut.isPending ? t('loading') : t('backupSystemImportFromPc')}
+                </Button>
+              </div>
+
               <div className="flex flex-col gap-2">
                 <h4 className="text-[12px] font-bold text-noorix-muted m-0 uppercase tracking-wide">
                   {t('backupSystemJobs')}
@@ -647,7 +689,21 @@ export default function BackupTab({ activeCompanies = [] }) {
                         )}
                       </div>
                       {sj.status === 'completed' && sj.localRelativePath && (
-                        <div className="flex shrink-0 items-center gap-1 sm:justify-end">
+                        <div className="flex shrink-0 flex-wrap items-center gap-1 sm:justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="default"
+                            disabled={downloadSysMut.isPending}
+                            onClick={() =>
+                              downloadSysMut.mutate({
+                                jobId: sj.id,
+                                suggestedName: `noorix-full-db-${sj.ordinal ?? 'na'}-${sj.id}.dump.gz`,
+                              })
+                            }
+                          >
+                            {t('backupSystemDownload')}
+                          </Button>
                           <Button
                             type="button"
                             size="sm"

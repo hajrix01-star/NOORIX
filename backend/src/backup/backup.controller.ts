@@ -11,11 +11,18 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
   StreamableFile,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { createReadStream } from 'fs';
+import { createReadStream, mkdirSync } from 'fs';
+import { randomBytes } from 'crypto';
+import * as os from 'os';
+import * as path from 'path';
+import { diskStorage } from 'multer';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -29,6 +36,13 @@ import { UpdateSystemBackupConfigDto } from './dto/update-system-backup-config.d
 import { UpdateCompanyBackupConfigDto } from './dto/update-company-backup-config.dto';
 import { RestoreFullBackupDto } from './dto/restore-full-backup.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
+
+function fullDumpUploadMaxBytes(): number {
+  const mb = parseInt(process.env.BACKUP_FULL_UPLOAD_MAX_MB || '3072', 10);
+  const clamped = Math.min(Math.max(Number.isFinite(mb) ? mb : 3072, 32), 8192);
+  return clamped * 1024 * 1024;
+}
 
 type ReqUser = {
   userId?: string;
@@ -115,6 +129,47 @@ export class BackupController {
     return this.backupService.runFullDatabaseBackup({
       manual: true,
       retentionCount: cfg.retentionCount,
+    });
+  }
+
+  /** رفع نسخة قاعدة كاملة (.dump.gz) من جهاز المستخدم — يتحقق منها ثم يضيفها للسجل */
+  @Post('system/upload-full-dump')
+  @Roles('owner', 'super_admin')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          const dest = path.join(os.tmpdir(), 'noorix-full-dump-upload');
+          mkdirSync(dest, { recursive: true });
+          cb(null, dest);
+        },
+        filename: (_req, _file, cb) => {
+          cb(null, `${Date.now()}-${randomBytes(8).toString('hex')}.part`);
+        },
+      }),
+      limits: { fileSize: fullDumpUploadMaxBytes() },
+    }),
+  )
+  async uploadSystemFullDump(@UploadedFile() file: Express.Multer.File, @CurrentUser() user: JwtUser) {
+    if (!file?.path) throw new BadRequestException('لم يُرفع ملف');
+    const uid = user?.sub || user?.userId;
+    const result = await this.backupService.ingestUploadedFullDatabaseDump({
+      tempPath: file.path,
+      originalFilename: file.originalname,
+      userId: uid,
+    });
+    return { success: true, data: result };
+  }
+
+  @Get('system/jobs/:id/download')
+  @Roles('owner', 'super_admin')
+  async downloadSystemFullJob(@Param('id') id: string, @Req() req: { user?: ReqUser }): Promise<StreamableFile> {
+    if (!req.user?.tenantId) throw new UnauthorizedException();
+    const { absolutePath, filename } = await this.backupService.resolveSystemFullJobDownloadPath(id);
+    const stream = createReadStream(absolutePath);
+    return new StreamableFile(stream, {
+      type: 'application/gzip',
+      disposition: `attachment; filename="${encodeURIComponent(filename)}"`,
     });
   }
 

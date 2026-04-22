@@ -1481,3 +1481,49 @@ export async function backupRestoreSystemFull(jobId, confirmPhrase) {
     { timeout: 600000 },
   );
 }
+
+/** تنزيل ملف نسخة القاعدة الكاملة (.dump.gz) — مالك/مدير نظام */
+export async function backupDownloadSystemJobFile(jobId, suggestedName) {
+  try {
+    const url = new URL(`/api/v1/backup/system/jobs/${encodeURIComponent(jobId)}/download`, getBase());
+    const res = await fetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
+    if (res.status === 401) {
+      handleUnauthorized();
+      return { success: false, error: 'غير مصرح' };
+    }
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || res.statusText };
+    }
+    const blob = await res.blob();
+    const name = suggestedName || `noorix-full-db-${jobId}.dump.gz`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err?.message || 'فشل التنزيل' };
+  }
+}
+
+/** رفع نسخة قاعدة كاملة من الجهاز — يتحقق الخادم ثم يضيفها لسجل نسخ النظام */
+export async function backupUploadSystemFullDump(file) {
+  if (!file) return { success: false, error: 'لم يُختر ملف' };
+  const url = new URL('/api/v1/backup/system/upload-full-dump', getBase());
+  const formData = new FormData();
+  formData.append('file', file);
+  const token = getAuthToken();
+  const h = {};
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  try {
+    const res = await safeFetch(url.toString(), { method: 'POST', headers: h, body: formData }, 600000);
+    return parseResponse(res);
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}

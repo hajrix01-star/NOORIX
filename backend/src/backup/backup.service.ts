@@ -985,4 +985,160 @@ export class BackupService {
       throw new BadRequestException(`ملف لقطة تالف أو غير صالح: ${msg}`);
     }
   }
+
+  /**
+   * تنزيل ملف نسخة قاعدة كاملة (pg_dump مضغوط gzip) — لمالك النظام فقط من الـ controller.
+   */
+  async resolveSystemFullJobDownloadPath(jobId: string): Promise<{ absolutePath: string; filename: string }> {
+    const job = await this.prisma.backupJob.findFirst({
+      where: { id: jobId, scope: 'database_full' },
+    });
+    if (!job) throw new NotFoundException('النسخة غير موجودة');
+    if (job.status !== 'completed' || !job.localRelativePath) {
+      throw new BadRequestException('التنزيل متاح للنسخ المكتملة التي يوجد لها ملف');
+    }
+    const abs = path.join(this.getBackupRoot(), job.localRelativePath);
+    try {
+      await fs.access(abs);
+    } catch {
+      throw new NotFoundException('الملف غير موجود على الخادم');
+    }
+    const ord = job.ordinal != null ? String(job.ordinal) : 'na';
+    const filename = `noorix-full-db-${ord}-${job.id}.dump.gz`;
+    return { absolutePath: abs, filename };
+  }
+
+  /**
+   * استقبال ملف .dump.gz مرفوعاً من الواجهة — التحقق بـ pg_restore -l ثم تسجيله كنسخة نظام.
+   */
+  async ingestUploadedFullDatabaseDump(opts: {
+    tempPath: string;
+    originalFilename?: string;
+    userId?: string;
+  }): Promise<{ jobId: string; status: string; duplicateOfJobId?: string }> {
+    const { tempPath, originalFilename, userId } = opts;
+    try {
+      await fs.access(tempPath);
+    } catch {
+      throw new BadRequestException('ملف الرفع غير موجود');
+    }
+
+    await this.ensureBackupRoot();
+    const cfg = await this.ensureSystemBackupConfigRow();
+    const retention = cfg.retentionCount ?? 10;
+
+    const job = await this.prisma.backupJob.create({
+      data: {
+        tenantId: null,
+        companyId: null,
+        scope: 'database_full',
+        status: 'running',
+        createdByUserId: userId ?? null,
+      },
+    });
+
+    const t0 = Date.now();
+    const root = this.getBackupRoot();
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const finalRel = path.join('system', `imported_${ts}_${job.id}.dump.gz`);
+    const finalAbs = path.join(root, finalRel);
+
+    const cleanupTemp = async () => {
+      await fs.unlink(tempPath).catch(() => undefined);
+    };
+
+    try {
+      await fs.mkdir(path.dirname(finalAbs), { recursive: true });
+      await fs.copyFile(tempPath, finalAbs);
+      await cleanupTemp();
+
+      const v = await this.verifyPgCustomDumpGz(finalAbs);
+      if (!v.ok) {
+        await fs.unlink(finalAbs).catch(() => undefined);
+        await this.prisma.backupJob.update({
+          where: { id: job.id },
+          data: {
+            status: 'failed',
+            errorMessage: v.error || 'فشل التحقق من تنسيق النسخة',
+            durationMs: Date.now() - t0,
+            completedAt: new Date(),
+          },
+        });
+        throw new BadRequestException(v.error || 'الملف ليس نسخة pg_dump مخصّصة مضغوطة بصيغة gzip صالحة');
+      }
+
+      const hash = await this.sha256File(finalAbs);
+      const dup = await this.findDuplicateJob(null, null, 'database_full', hash);
+      if (dup && dup.id !== job.id) {
+        await fs.unlink(finalAbs).catch(() => undefined);
+        await this.prisma.backupJob.update({
+          where: { id: job.id },
+          data: {
+            status: 'skipped_duplicate',
+            contentHash: hash,
+            duplicateOfJobId: dup.id,
+            durationMs: Date.now() - t0,
+            completedAt: new Date(),
+            report: {
+              messageAr: 'تكرار — نفس hash نسخة سابقة',
+              source: 'local_upload',
+              originalFilename: originalFilename ?? null,
+            },
+          },
+        });
+        return { jobId: job.id, status: 'skipped_duplicate', duplicateOfJobId: dup.id };
+      }
+
+      const st = await fs.stat(finalAbs);
+      let externalUploaded = false;
+      let externalError: string | null = null;
+      const up = await this.uploadToExternalIfConfigured(finalAbs, path.basename(finalRel), {
+        scope: 'database_full',
+        company: 'full_database',
+      });
+      if (up.ok) externalUploaded = true;
+      else externalError = up.error || null;
+
+      const ordinal = await this.nextOrdinalFullDb();
+      await this.prisma.backupJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'completed',
+          contentHash: hash,
+          localRelativePath: finalRel,
+          sizeBytes: st.size,
+          durationMs: Date.now() - t0,
+          completedAt: new Date(),
+          externalUploaded,
+          externalError,
+          ordinal,
+          verifyOk: true,
+          verifyError: null,
+          verifiedAt: new Date(),
+          report: { source: 'local_upload', originalFilename: originalFilename ?? null },
+        },
+      });
+      await this.pruneSystemFullBackups(retention);
+      this.logger.log(`Full DB uploaded from PC: ${finalRel} (${st.size} bytes) #${ordinal}`);
+      return { jobId: job.id, status: 'completed' };
+    } catch (e) {
+      await cleanupTemp();
+      if (e instanceof BadRequestException) throw e;
+      const msg = (e as Error).message;
+      this.logger.error(`Full DB upload ingest failed: ${msg}`);
+      await this.prisma.backupJob
+        .update({
+          where: { id: job.id },
+          data: {
+            status: 'failed',
+            errorMessage: msg,
+            durationMs: Date.now() - t0,
+            completedAt: new Date(),
+          },
+        })
+        .catch(() => undefined);
+      await fs.unlink(finalAbs).catch(() => undefined);
+      throw new BadRequestException(msg);
+    }
+  }
 }
