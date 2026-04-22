@@ -1,0 +1,25 @@
+# انسخ المقتطفات المناسبة داخل كتلة server { ... } لموقع الواجهة (root يشير إلى /var/www/hajrix.com أو ما يعادله).
+# الهدف: منع بقاء index.html أو service worker في كاش المتصفح/الـCDN بينما السيرفر يخدم حزماً جديدة.
+
+# SPA — غالباً موجود لديك مسبقاً
+# location / {
+#   try_files $uri $uri/ /index.html;
+# }
+
+location = /index.html {
+    add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;
+}
+
+# Vite PWA — أسماء قد تختلف قليلاً؛ راقب مجلد dist بعد build
+location = /sw.js {
+    add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;
+}
+
+location = /manifest.webmanifest {
+    add_header Cache-Control "no-cache, must-revalidate" always;
+}
+
+# الأصول ذات الهاش في /assets/ يمكن تخزينها طويلاً (اختياري — يحسّن الأداء)
+# location ^~ /assets/ {
+#     add_header Cache-Control "public, max-age=31536000, immutable" always;
+# }

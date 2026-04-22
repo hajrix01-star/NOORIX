@@ -26,10 +26,17 @@ jobs:
         run: npm run build
         env:
           CI: false
+          # يظهر في حزمة الواجهة (__BUILD_ID__) لتسهيل التحقق من أن السيرفر يخدم إصدار الـ commit الحالي
+          VITE_BUILD_ID: ${{ github.sha }}
+
+      # أرشفة مجلد dist بالكامل ثم رفع أرشيف واحد يضمن نقل assets/ المتداخلة بلا أخطاء glob.
+      # على السيرفر: فك + rsync --delete يحذف ملفات الـ hash القديمة التي يبقى المتصفح يحمّلها إن بقي index.html قديماً في الكاش.
+      - name: Pack frontend (dist → tarball)
+        run: tar czf frontend-dist.tar.gz -C dist .
 
       # فرض IPv4 يقلّل أعطال "i/o timeout" عندما يحاول الـ runner الاتصال عبر IPv6 وفشل المسار.
       # إذا كان SSH على منفذ غير 22: أضف Secret باسم VPS_SSH_PORT بقيمة المنفذ (مثلاً 2222).
-      - name: Deploy to VPS (SCP)
+      - name: Upload frontend tarball to VPS
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -39,11 +46,10 @@ jobs:
           protocol: tcp4
           timeout: 3m
           command_timeout: 15m
-          source: 'dist/*'
-          target: '/var/www/hajrix.com/'
-          strip_components: 1
+          source: frontend-dist.tar.gz
+          target: /tmp/
 
-      - name: Backend pull, migrate, build, PM2 + reload Nginx
+      - name: Extract frontend on VPS, backend pull, migrate, build, PM2 + reload Nginx
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -55,6 +61,20 @@ jobs:
           command_timeout: 25m
           script: |
             set -e
+            if [ ! -f /tmp/frontend-dist.tar.gz ]; then
+              echo "ERROR: /tmp/frontend-dist.tar.gz missing — SCP step did not upload the frontend archive."
+              exit 1
+            fi
+            if ! command -v rsync >/dev/null 2>&1; then
+              echo "ERROR: rsync is required on the VPS for atomic frontend deploy (install: apt install rsync)."
+              exit 1
+            fi
+            FRONT_TMP=$(mktemp -d)
+            tar xzf /tmp/frontend-dist.tar.gz -C "$FRONT_TMP"
+            mkdir -p /var/www/hajrix.com
+            rsync -a --delete "$FRONT_TMP"/ /var/www/hajrix.com/
+            rm -rf "$FRONT_TMP" /tmp/frontend-dist.tar.gz
+            echo "Frontend deployed to /var/www/hajrix.com (rsync --delete, commit ${{ github.sha }})"
             # بدون هذا المسار لن يُحدَّث الباكند — الفشل هنا يوضح في GitHub Actions أن السيرفر غير مربوط
             if [ ! -d /var/www/noorix ]; then
               echo "ERROR: /var/www/noorix not found. Clone the repo there and set up .env, or set NOORIX_ROOT on the server."
