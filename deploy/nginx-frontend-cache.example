@@ -1,7 +1,8 @@
 # انسخ المقتطفات المناسبة داخل كتلة server { ... } لموقع الواجهة.
-# يجب أن يطابق `root` هنا المسار الذي يُرفع إليه dist في GitHub Actions (الافتراضي في الـ workflow: /var/www/hajrix.com/).
-# إذا كان root مختلفاً، عيّن Secret في المستودع: VPS_FRONTEND_PATH بنفس المسار مع / في النهاية.
-# للتحقق من السيرفر بعد النشر: curl -s https://نطاقك/ | يجب أن يظهر <meta name="noorix-build" content="(نفس SHA في GitHub)"/>
+# يجب أن يطابق `root` هنا المسار نفسه المعرّف لنشر الواجهة على السيرفر (مصدر واحد):
+#   - الافتراضي في deploy/install-frontend.sh هو /var/www/hajrix.com
+#   - أو سطر واحد في الملف: /etc/noorix/frontend-root (يُنشأ مرة واحدة على الـ VPS إذا كان root مختلفاً)
+# للتحقق بعد النشر: curl -s https://نطاقك/ | يجب أن يظهر <meta name="noorix-build" content="(نفس SHA في GitHub)"/>
 # الهدف: منع بقاء index.html أو service worker في كاش المتصفح/الـCDN بينما السيرفر يخدم حزماً جديدة.
 
 # SPA — غالباً موجود لديك مسبقاً

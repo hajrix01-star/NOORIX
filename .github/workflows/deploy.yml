@@ -28,43 +28,25 @@ jobs:
           CI: false
           VITE_BUILD_ID: ${{ github.sha }}
 
-      # rsync من الـ runner مباشرة: يضمن dist/ كاملاً + --delete يزيل الـ chunks القديمة.
-      # إذا كان root الواجهة ليس /var/www/hajrix.com/ أضف Secret: VPS_FRONTEND_PATH (مثال: /var/www/html/)
-      - name: Rsync frontend (dist/) to VPS and verify index.html
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USERNAME }}
-          VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
-          VPS_FRONTEND_PATH: ${{ secrets.VPS_FRONTEND_PATH }}
-          EXPECT_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          if [ -z "${VPS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_KEY:-}" ]; then
-            echo "ERROR: Missing VPS_HOST, VPS_USERNAME, or VPS_SSH_KEY repository secrets."
-            exit 1
-          fi
-          PORT="${VPS_PORT:-22}"
-          if [ -z "${VPS_FRONTEND_PATH:-}" ]; then FP="/var/www/hajrix.com/"; else FP="$VPS_FRONTEND_PATH"; fi
-          FP="${FP%/}/"
-          if ! command -v rsync >/dev/null 2>&1; then
-            sudo apt-get update -y && sudo apt-get install -y rsync
-          fi
-          mkdir -p ~/.ssh
-          printf '%s\n' "$VPS_KEY" > ~/.ssh/noorix_deploy_key
-          chmod 600 ~/.ssh/noorix_deploy_key
-          ssh-keyscan -4 -p "$PORT" "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-          RSYNC_RSH="ssh -4 -i $HOME/.ssh/noorix_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -p $PORT"
-          echo "Rsync dist/ -> ${VPS_USER}@${VPS_HOST}:${FP}"
-          rsync -avz --delete --omit-dir-times -e "$RSYNC_RSH" "./dist/" "${VPS_USER}@${VPS_HOST}:${FP}"
-          echo "Verifying remote index.html contains build id ${EXPECT_SHA}..."
-          ssh -4 -i "$HOME/.ssh/noorix_deploy_key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -p "$PORT" \
-            "${VPS_USER}@${VPS_HOST}" \
-            "test -f '${FP}index.html' && grep -qF '${EXPECT_SHA}' '${FP}index.html' && echo OK: index.html matches commit ${EXPECT_SHA}" \
-            || { echo "ERROR: ${FP}index.html missing or does not contain commit SHA. Wrong VPS_FRONTEND_PATH or nginx root?"; exit 1; }
+      # أرشيف كامل لـ dist؛ النشر الفعلي يتم على السيرفر عبر deploy/install-frontend.sh (مسار واحد: /etc/noorix/frontend-root أو الافتراضي).
+      - name: Pack frontend tarball
+        run: tar czf noorix-frontend.tar.gz -C dist .
+
+      - name: Upload frontend tarball to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || '22' }}
+          protocol: tcp4
+          timeout: 3m
+          command_timeout: 15m
+          source: noorix-frontend.tar.gz
+          target: /tmp/
 
       # فرض IPv4 يقلّل أعطال الاتصال عبر IPv6. المنفذ: Secret VPS_SSH_PORT (اختياري، الافتراضي 22).
-      - name: Backend pull, migrate, build, PM2 + reload Nginx
+      - name: Install frontend on VPS, backend pull, migrate, build, PM2 + reload Nginx
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -76,6 +58,10 @@ jobs:
           command_timeout: 25m
           script: |
             set -e
+            if [ ! -f /tmp/noorix-frontend.tar.gz ]; then
+              echo "ERROR: /tmp/noorix-frontend.tar.gz missing — SCP step did not upload the frontend archive."
+              exit 1
+            fi
             # بدون هذا المسار لن يُحدَّث الباكند — الفشل هنا يوضح في GitHub Actions أن السيرفر غير مربوط
             if [ ! -d /var/www/noorix ]; then
               echo "ERROR: /var/www/noorix not found. Clone the repo there and set up .env, or set NOORIX_ROOT on the server."
@@ -84,6 +70,8 @@ jobs:
             cd /var/www/noorix
             git pull origin main
             echo "Deployed commit: $(git log -1 --oneline)"
+            sudo bash deploy/install-frontend.sh /tmp/noorix-frontend.tar.gz ${{ github.sha }}
+            rm -f /tmp/noorix-frontend.tar.gz
             (cd backend && rm -rf node_modules && npm ci && npx prisma generate && npx prisma migrate deploy && npm run build)
             (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
             pm2 restart hajri-menu --update-env 2>/dev/null || true
