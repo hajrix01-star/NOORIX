@@ -1,3 +1,5 @@
+# نشر الواجهة: أرشيف من الـ runner → SCP → install-frontend.sh (مسار واحد على السيرفر).
+# لا يُبنى SPA على السيرفر في هذا الـ workflow؛ تجنّب ازدواجية مع dist داخل /var/www/noorix فقط.
 name: Deploy React Frontend
 
 on:

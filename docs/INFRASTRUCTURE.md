@@ -38,29 +38,24 @@ GEMINI_API_KEY=...
 
 ---
 
-## 3. النشر — خطوات آمنة
+## 3. النشر — مصدران يجب فهمهما
+
+| المسار | الدور |
+|--------|--------|
+| `/var/www/noorix/` | كود المستودع + بناء الـ backend؛ قد يحتوي `dist/` بعد بناء محلي **لكن هذا لا يعني أن الزائر يراه** |
+| `/var/www/hajrix.com/` (أو ما في `/etc/noorix/frontend-root`) | **مجلد Nginx `root`** — هنا يجب أن تُنسخ حزمة الواجهة بعد كل بناء إنتاجي |
+
+**احتمال «واجهتين»:** نسخة حديثة داخل `/var/www/noorix/dist` ونسخة قديمة تُخدم من `/var/www/hajrix.com` إذا لم يُنفَّذ `deploy/install-frontend.sh` (أو لم يطابق الملف `/etc/noorix/frontend-root` إعداد Nginx).
+
+- **GitHub Actions:** يبني على الـ runner ثم يشغّل `deploy/install-frontend.sh` على السيرفر (انظر `.github/workflows/deploy.yml`).
+- **يدوياً:** استخدم `bash scripts/vps-update-noorix.sh` — يبني الواجهة ثم يستدعي نفس `install-frontend.sh`.
+
+### خطوات آمنة (مرجع قديم — يُفضّل السكربت أعلاه)
 
 ```bash
 cd /var/www/noorix
-
-# 1. سحب الكود الجديد
 git pull origin main
-
-# 2. تثبيت الحزم (تشمل devDeps للبناء)
-cd backend && npm install
-
-# 3. بناء الكود
-./node_modules/.bin/nest build
-
-# 4. تطبيق تغييرات Schema (إن وجدت) — آمن فقط
-npx prisma db push
-# ⛔ ممنوع تماماً: prisma db push --force-reset
-# ⛔ ممنوع تماماً: prisma db push --accept-data-loss
-
-# 5. إعادة تشغيل الباكند
-pm2 restart noorix-backend
-
-# 6. التحقق
+bash scripts/vps-update-noorix.sh
 curl http://localhost:8080/api/v1/health
 ```
 
