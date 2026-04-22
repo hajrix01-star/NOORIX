@@ -3,11 +3,26 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
 
+/** يُستخدم في الواجهة وفي index.html للتحقق من أن النشر يطابق الـ commit */
+const noorixBuildId =
+  process.env.VITE_BUILD_ID ||
+  process.env.GITHUB_SHA ||
+  process.env.RENDER_GIT_COMMIT ||
+  String(Date.now());
+
 export default defineConfig({
   define: {
-    __BUILD_ID__: JSON.stringify(process.env.RENDER_GIT_COMMIT || process.env.VITE_BUILD_ID || Date.now().toString()),
+    __BUILD_ID__: JSON.stringify(noorixBuildId),
   },
   plugins: [
+    {
+      name: 'noorix-inject-build-meta',
+      transformIndexHtml(html) {
+        if (html.includes('name="noorix-build"')) return html;
+        const safe = String(noorixBuildId).replace(/"/g, '');
+        return html.replace('<head>', `<head>\n    <meta name="noorix-build" content="${safe}" />`);
+      },
+    },
     react(),
     tailwindcss(),
     VitePWA({
