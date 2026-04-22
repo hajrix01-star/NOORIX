@@ -55,12 +55,16 @@ jobs:
           command_timeout: 25m
           script: |
             set -e
-            if [ -d /var/www/noorix ]; then
-              cd /var/www/noorix
-              git pull origin main
-              (cd backend && rm -rf node_modules && npm ci && npx prisma generate && npx prisma migrate deploy && npm run build)
-              (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
-              pm2 restart hajri-menu --update-env 2>/dev/null || true
+            # بدون هذا المسار لن يُحدَّث الباكند — الفشل هنا يوضح في GitHub Actions أن السيرفر غير مربوط
+            if [ ! -d /var/www/noorix ]; then
+              echo "ERROR: /var/www/noorix not found. Clone the repo there and set up .env, or set NOORIX_ROOT on the server."
+              exit 1
             fi
+            cd /var/www/noorix
+            git pull origin main
+            echo "Deployed commit: $(git log -1 --oneline)"
+            (cd backend && rm -rf node_modules && npm ci && npx prisma generate && npx prisma migrate deploy && npm run build)
+            (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
+            pm2 restart hajri-menu --update-env 2>/dev/null || true
             sudo systemctl reload nginx
             echo "Deployment completed successfully!"
