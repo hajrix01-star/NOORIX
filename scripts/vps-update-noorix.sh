@@ -2,7 +2,7 @@
 # تشغيله على السيرفر (مثلاً من /var/www/noorix): bash scripts/vps-update-noorix.sh
 # يحدّث الكود، يطبّق migrations، يبني الـ backend والواجهة، ويعيد تشغيل PM2.
 #
-# الواجهة للزوار تُخدم من مجلد واحد (انظر deploy/install-frontend.sh): /etc/noorix/frontend-root أو /var/www/hajrix.com
+# الواجهة للزوار تُخدم من مجلد واحد (انظر deploy/install-frontend.sh): /etc/noorix/frontend-root أو الافتراضي /var/www/noorix/dist
 # لا يكفي بناء dist/ داخل المستودع — يجب نسخه لنفس مجلد Nginx كما في GitHub Actions.
 set -euo pipefail
 ROOT="${NOORIX_ROOT:-/var/www/noorix}"
@@ -31,5 +31,5 @@ fi
 rm -f "$MANUAL_TAR"
 # Noorix API: من مجلد backend الحقيقي (ليس /root/backend). احذف noorix-api القديمة من PM2 مرة واحدة إن وُجدت.
 (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
-# تطبيق منفصل (قائمة طعام/خدمة جانبية) — ليس نفس حزمة SPA الرئيسية في /var/www/hajrix.com
+# تطبيق منفصل (قائمة طعام/خدمة جانبية) — ليس نفس حزمة SPA الرئيسية
 pm2 restart hajri-menu --update-env 2>/dev/null || true

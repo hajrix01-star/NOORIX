@@ -1,6 +1,6 @@
 # انسخ المقتطفات المناسبة داخل كتلة server { ... } لموقع الواجهة.
 # يجب أن يطابق `root` هنا المسار نفسه المعرّف لنشر الواجهة على السيرفر (مصدر واحد):
-#   - الافتراضي في deploy/install-frontend.sh هو /var/www/hajrix.com
+#   - الافتراضي في deploy/install-frontend.sh هو /var/www/noorix/dist (مطابق لـ root في Nginx لـ hajrix.com على الإنتاج الحالي)
 #   - أو سطر واحد في الملف: /etc/noorix/frontend-root (يُنشأ مرة واحدة على الـ VPS إذا كان root مختلفاً)
 # للتحقق بعد النشر: curl -s https://نطاقك/ | يجب أن يظهر <meta name="noorix-build" content="(نفس SHA في GitHub)"/>
 # الهدف: منع بقاء index.html أو service worker في كاش المتصفح/الـCDN بينما السيرفر يخدم حزماً جديدة.

@@ -1,5 +1,5 @@
 # نشر الواجهة: أرشيف من الـ runner → SCP → install-frontend.sh (مسار واحد على السيرفر).
-# لا يُبنى SPA على السيرفر في هذا الـ workflow؛ تجنّب ازدواجية مع dist داخل /var/www/noorix فقط.
+# النشر الافتراضي على السيرفر: /var/www/noorix/dist (يجب أن يطابق root في Nginx لـ hajrix.com) أو /etc/noorix/frontend-root.
 name: Deploy React Frontend
 
 on:
@@ -32,7 +32,7 @@ jobs:
           CI: false
           VITE_BUILD_ID: ${{ github.sha }}
 
-      # أرشيف كامل لـ dist؛ النشر الفعلي يتم على السيرفر عبر deploy/install-frontend.sh (مسار واحد: /etc/noorix/frontend-root أو الافتراضي).
+      # أرشيف كامل لـ dist؛ النشر على السيرفر عبر deploy/install-frontend.sh → /etc/noorix/frontend-root أو الافتراضي /var/www/noorix/dist.
       - name: Pack frontend tarball
         run: tar czf noorix-frontend.tar.gz -C dist .
 

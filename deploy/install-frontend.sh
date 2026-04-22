@@ -5,7 +5,8 @@
 # يُفضّل تشغيله كـ root:  sudo bash deploy/install-frontend.sh <tarball> <git_sha>
 # (يتجنب مشاكل sudo/requiretty في جلسات SSH غير التفاعلية من GitHub Actions.)
 #
-# مصدر واحد لمسار الواجهة: NOORIX_FRONTEND_ROOT → /etc/noorix/frontend-root → /var/www/hajrix.com
+# مصدر واحد لمسار الواجهة: NOORIX_FRONTEND_ROOT → /etc/noorix/frontend-root → الافتراضي /var/www/noorix/dist
+# (على الإنتاج الحالي: Nginx يضع root /var/www/noorix/dist لـ hajrix.com — يجب أن يطابق هذا الملف.)
 # إعداد لمرة واحدة إذا كان root في Nginx مختلفاً:
 #   sudo mkdir -p /etc/noorix && printf '%s\n' /المسار/الفعلي | sudo tee /etc/noorix/frontend-root
 # =============================================================================
@@ -57,7 +58,7 @@ resolve_frontend_root() {
       return
     fi
   fi
-  printf '%s' '/var/www/hajrix.com'
+  printf '%s' '/var/www/noorix/dist'
 }
 
 ROOT="$(resolve_frontend_root)"

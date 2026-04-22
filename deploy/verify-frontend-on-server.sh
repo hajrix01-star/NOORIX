@@ -24,7 +24,7 @@ resolve_frontend_root() {
       return
     fi
   fi
-  printf '%s' '/var/www/hajrix.com'
+  printf '%s' '/var/www/noorix/dist'
 }
 
 section() { printf '\n=== %s ===\n' "$*"; }
@@ -105,3 +105,4 @@ fi
 
 printf '\n--- انتهى التشخيص ---\n'
 printf 'الواجهة «الحديثة» = index في %s يحتوي noorix-build ويفضّل أن يطابق git HEAD بعد آخر نشر.\n' "$ROOT"
+printf 'تذكير: إن كان Nginx يعرّف root /var/www/noorix/dist لـ hajrix.com فهذا هو المسار الفعلي للزائر (وليس مجلداً آخر).\n'

@@ -43,9 +43,9 @@ GEMINI_API_KEY=...
 | المسار | الدور |
 |--------|--------|
 | `/var/www/noorix/` | كود المستودع + بناء الـ backend؛ قد يحتوي `dist/` بعد بناء محلي **لكن هذا لا يعني أن الزائر يراه** |
-| `/var/www/hajrix.com/` (أو ما في `/etc/noorix/frontend-root`) | **مجلد Nginx `root`** — هنا يجب أن تُنسخ حزمة الواجهة بعد كل بناء إنتاجي |
+| `/var/www/noorix/dist` (أو ما في `/etc/noorix/frontend-root`) | **مجلد Nginx `root` لـ hajrix.com** — هنا يجب أن تُنسخ حزمة الواجهة بعد كل بناء إنتاجي |
 
-**احتمال «واجهتين»:** نسخة حديثة داخل `/var/www/noorix/dist` ونسخة قديمة تُخدم من `/var/www/hajrix.com` إذا لم يُنفَّذ `deploy/install-frontend.sh` (أو لم يطابق الملف `/etc/noorix/frontend-root` إعداد Nginx).
+**احتمال «واجهتين»:** النشر إلى مجلد (مثل `/var/www/hajrix.com`) بينما Nginx يقرأ من **`/var/www/noorix/dist`** — الزائر يرى دائماً ما في `root` في إعداد الموقع فقط.
 
 - **GitHub Actions:** يبني على الـ runner ثم يشغّل `deploy/install-frontend.sh` على السيرفر (انظر `.github/workflows/deploy.yml`).
 - **يدوياً:** استخدم `bash scripts/vps-update-noorix.sh` — يبني الواجهة ثم يستدعي نفس `install-frontend.sh`.
