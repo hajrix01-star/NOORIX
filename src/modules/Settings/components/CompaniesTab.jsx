@@ -4,7 +4,7 @@
 import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { getCompanies, createCompany, updateCompany, deleteCompany, resetCompanyCategories, resetAllCompaniesCategories, patchCompanyCategories, patchAllCompaniesCategories } from '../../../services/api';
+import { getCompanies, createCompany, updateCompany, deleteCompany, resetCompanyCategories } from '../../../services/api';
 import {
   labelStyle,
   getDeleteCode, setDeleteCode, DEFAULT_DELETE_CODE,
@@ -38,10 +38,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
     retry:           false,
   });
 
-  const activeCompanies = companiesList.filter((c) => !c.isArchived);
   const archivedCompanies = companiesList.filter((c) => c.isArchived);
-  /** لا شركات نشطة في الاستجابة الحالية (إما لا يوجد شيء، أو الكل مؤرشف ولم يُفعّل عرض المؤرشفة). */
-  const isEmpty = activeCompanies.length === 0 && !includeArchived;
   const showTrulyEmptyState =
     !isLoading && !showAddForm && companiesList.length === 0 && includeArchived;
   const showNoActiveCompaniesHint =
@@ -100,53 +97,6 @@ export default function CompaniesTab({ onCompanyCreated }) {
       }
     } catch (e) {
       setResetState({ loading: false, msg: null, error: e?.message || 'خطأ غير متوقع' });
-    }
-  };
-
-  const handleResetAllCompanies = async () => {
-    if (!window.confirm('سيتم إعادة تهيئة الفئات لجميع الشركات.\n\nهذا الإجراء لا يمكن التراجع عنه.\n\nمتأكد؟')) return;
-    setResetState({ loading: true, msg: null, error: null });
-    try {
-      const res = await resetAllCompaniesCategories();
-      if (res?.success) {
-        setResetState({ loading: false, msg: `✅ تم إعادة تهيئة ${res.data.companies} شركة بنجاح`, error: null });
-      } else {
-        setResetState({ loading: false, msg: null, error: res?.error || 'فشل' });
-      }
-    } catch (e) {
-      setResetState({ loading: false, msg: null, error: e?.message || 'خطأ غير متوقع' });
-    }
-  };
-
-  const [patchState, setPatchState] = useState({ loading: false, msg: null, error: null });
-
-  const handlePatchOneCompany = async (companyId) => {
-    setPatchState({ loading: true, msg: null, error: null });
-    try {
-      const res = await patchCompanyCategories(companyId);
-      if (res?.success) {
-        const d = res.data;
-        setPatchState({ loading: false, msg: `✅ أُضيفت ${d.added} فئة، حُدِّثت ترجمة ${d.updated} فئة`, error: null });
-      } else {
-        setPatchState({ loading: false, msg: null, error: res?.error || 'فشل' });
-      }
-    } catch (e) {
-      setPatchState({ loading: false, msg: null, error: e?.message || 'خطأ غير متوقع' });
-    }
-  };
-
-  const handlePatchAllCompanies = async () => {
-    if (!window.confirm('سيتم إضافة الفئات الناقصة لجميع الشركات دون حذف أي فئة موجودة.\n\nمتأكد؟')) return;
-    setPatchState({ loading: true, msg: null, error: null });
-    try {
-      const res = await patchAllCompaniesCategories();
-      if (res?.success) {
-        setPatchState({ loading: false, msg: `✅ أُضيفت ${res.data.totalAdded} فئة، حُدِّثت ترجمة ${res.data.totalUpdated} لـ ${res.data.companies} شركة`, error: null });
-      } else {
-        setPatchState({ loading: false, msg: null, error: res?.error || 'فشل' });
-      }
-    } catch (e) {
-      setPatchState({ loading: false, msg: null, error: e?.message || 'خطأ غير متوقع' });
     }
   };
 
@@ -212,33 +162,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
             </span>
           )}
         </label>
-        {!isEmpty && (
-          <>
-            <Button
-              size="sm"
-              variant="success"
-              disabled={patchState.loading}
-              onClick={handlePatchAllCompanies}
-            >
-              {patchState.loading ? 'جاري...' : '➕ إضافة الفئات الناقصة (الكل)'}
-            </Button>
-            <Button
-              size="sm"
-              variant="warning"
-              disabled={resetState.loading}
-              onClick={handleResetAllCompanies}
-            >
-              {resetState.loading ? 'جاري...' : '🔄 إعادة تهيئة فئات الكل'}
-            </Button>
-          </>
-        )}
       </div>
-      {patchState.msg && (
-        <div className="rounded-lg p-3 text-[13px] bg-green-50 border border-green-200 text-green-800">{patchState.msg}</div>
-      )}
-      {patchState.error && (
-        <div className="rounded-lg p-3 text-[13px] bg-noorix-red/10 border border-noorix-red/30 text-noorix-red">{patchState.error}</div>
-      )}
       {resetState.msg && (
         <div className="rounded-lg p-3 text-[13px] bg-green-50 border border-green-200 text-green-800">{resetState.msg}</div>
       )}
@@ -429,24 +353,6 @@ export default function CompaniesTab({ onCompanyCreated }) {
 
               {updateMutation.isError && <p className="m-0 text-[13px] rounded-lg py-2 px-3 text-noorix-red bg-noorix-red/10">{updateMutation.error?.message}</p>}
             </form>
-
-            {/* إضافة الفئات الناقصة — آمنة */}
-            <div className="rounded-xl mt-4 p-[14px] bg-green-50 border border-green-200">
-              <div className="text-[13px] font-bold mb-1.5 text-green-800">➕ إضافة الفئات الناقصة</div>
-              <div className="text-[12px] text-green-700 mb-2">
-                تُضيف فقط الفئات الجديدة من القائمة الافتراضية — لا تحذف أي فئة موجودة ولا تمس البيانات.
-              </div>
-              <Button
-                size="sm"
-                variant="success"
-                disabled={patchState.loading}
-                onClick={() => handlePatchOneCompany(editModal?.id)}
-              >
-                {patchState.loading ? 'جاري...' : '➕ إضافة الناقص لهذه الشركة'}
-              </Button>
-              {patchState.msg && <p className="mt-1.5 text-[12px] text-green-700">{patchState.msg}</p>}
-              {patchState.error && <p className="mt-1.5 text-[12px] text-noorix-red">{patchState.error}</p>}
-            </div>
 
             {/* قسم الخطر */}
             <div className="rounded-xl mt-3 p-[14px] bg-noorix-red/5 border border-noorix-red/20">
