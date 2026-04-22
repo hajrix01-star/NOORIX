@@ -178,6 +178,23 @@ function BatchRowTable({
         />
       </td>
 
+      <td className="text-center align-middle p-1" style={cp} title={t('invoiceReceiptAttachment')}>
+        <div className="flex flex-col items-center gap-0.5 min-h-[36px] justify-center">
+          {row.attachmentFile ? (
+            <span className="text-[10px] font-bold leading-none" style={{ color: 'var(--noorix-accent-green)' }}>✓</span>
+          ) : (
+            <span className="text-[10px] text-noorix-muted leading-none">·</span>
+          )}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
+            className="w-full max-w-[96px] text-[9px] file:mr-1"
+            aria-label={`${t('invoiceReceiptAttachment')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+            onChange={(e) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+          />
+        </div>
+      </td>
+
       <td className="text-center" style={cp}>
         <Button
           type="button"
@@ -369,6 +386,21 @@ function BatchRowStack({
           className="w-full"
           title={!row.supplierId ? (t('notesRequiredForNoSupplier') || '') : ''}
         />
+
+        <div className="rounded-lg border border-noorix-border border-dashed px-2 py-2 bg-noorix-bg-muted/30">
+          <div className="text-[11px] font-semibold text-noorix-muted mb-1">{t('invoiceReceiptAttachment')}</div>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
+            className="text-[12px] max-w-full"
+            onChange={(e) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+          />
+          {row.attachmentFile ? (
+            <span className="text-[10px] text-noorix-muted truncate block mt-1" title={row.attachmentFile.name}>
+              {row.attachmentFile.name}
+            </span>
+          ) : null}
+        </div>
       </div>
     </Card>
   );

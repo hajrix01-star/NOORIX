@@ -49,6 +49,11 @@ async function bootstrap() {
     bodyParser: false,
   });
 
+  // خلف Nginx: حتى يقرأ Throttle (وreq.ip) عنوان الزائر من X-Forwarded-For بدل 127.0.0.1 لكل الطلبات
+  if (process.env.TRUST_PROXY === '1' || process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   // ── Body parser بحد 50MB (رفع كشوف Excel/CSV كبيرة) ──
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ limit: '50mb', extended: true }));

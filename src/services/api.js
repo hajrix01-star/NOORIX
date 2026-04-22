@@ -1268,7 +1268,71 @@ export async function updateInvoice(id, body, companyId) {
 export async function deleteInvoice(id, companyId) {
   return apiDelete(`/api/v1/invoices/${id}?companyId=${companyId}`);
 }
-export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled = true, hasNotes, vaultId, createdByUserId) {
+
+/** رفع صورة إيصال أو ملف PDF وربطه بالفاتورة (بعد الإنشاء أو من شاشة التعديل). */
+export async function uploadInvoiceAttachment(invoiceId, companyId, file) {
+  if (!file) return { success: false, error: 'لم يُختر ملف' };
+  const url = new URL(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment`, getBase());
+  url.searchParams.set('companyId', companyId);
+  const formData = new FormData();
+  formData.append('file', file);
+  const token = getAuthToken();
+  const cid = companyId || getActiveCompanyId();
+  const h = {};
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  if (cid) h['x-company-id'] = String(cid);
+  try {
+    const res = await safeFetch(url.toString(), { method: 'POST', headers: h, body: formData });
+    return parseResponse(res);
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
+export async function deleteInvoiceAttachment(invoiceId, companyId) {
+  const q = encodeURIComponent(companyId);
+  return apiDelete(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment?companyId=${q}`);
+}
+
+/** تنزيل مرفق الفاتورة المحفوظ على الخادم */
+export async function downloadInvoiceAttachment(invoiceId, companyId) {
+  const url = new URL(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment/download`, getBase());
+  url.searchParams.set('companyId', companyId);
+  const token = getAuthToken();
+  const cid = companyId || getActiveCompanyId();
+  const h = {};
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  if (cid) h['x-company-id'] = String(cid);
+  try {
+    const res = await safeFetch(url.toString(), { method: 'GET', headers: h });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.message || res.statusText || 'فشل التحميل');
+    }
+    const blob = await res.blob();
+    const disp = res.headers.get('content-disposition');
+    let fileName = 'attachment';
+    if (disp) {
+      const m = disp.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"|filename=([^;\s]+)/);
+      const raw = m ? (m[1] || m[2] || m[3] || '').trim() : '';
+      if (raw) {
+        try {
+          fileName = decodeURIComponent(raw.replace(/^"|"$/g, ''));
+        } catch {
+          fileName = raw.replace(/^"|"$/g, '');
+        }
+      }
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (err) {
+    throw err instanceof Error ? err : new Error(String(err));
+  }
+}
+export async function getInvoices(companyId, startDate, endDate, page = 1, pageSize = 50, batchId, employeeId, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled = true, hasNotes, vaultId, createdByUserId, requireExpenseLine) {
   const params = { companyId, page: String(page), pageSize: String(pageSize) };
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
   if (startDate) params.startDate = String(startDate).slice(0, 10);
@@ -1283,6 +1347,7 @@ export async function getInvoices(companyId, startDate, endDate, page = 1, pageS
   if (expenseLineId) params.expenseLineId = expenseLineId;
   if (vaultId) params.vaultId = vaultId;
   if (createdByUserId) params.createdByUserId = createdByUserId;
+  if (requireExpenseLine) params.requireExpenseLine = 'true';
   params.includeCancelled = includeCancelled ? 'true' : 'false';
   if (q && String(q).trim()) params.q = String(q).trim();
   if (hasNotes === true) params.hasNotes = 'true';

@@ -8,6 +8,9 @@
  *   - createWithLedger يُفوَّض → FinancialCoreService.processOutflow
  */
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { existsSync }           from 'fs';
+import { unlink }               from 'fs/promises';
+import type { Response }        from 'express';
 import { Prisma }               from '@prisma/client';
 import Decimal                  from 'decimal.js';
 import { TenantPrismaService }   from '../prisma/tenant-prisma.service';
@@ -21,6 +24,14 @@ import { CreateInvoiceDto }      from './dto/create-invoice.dto';
 import { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { UpdateInvoiceDto }      from './dto/update-invoice.dto';
 
+const INVOICE_ATTACHMENT_MIMES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+]);
+
 @Injectable()
 export class InvoiceService {
   constructor(
@@ -29,6 +40,20 @@ export class InvoiceService {
     private readonly financialCore:  FinancialCoreService,
     private readonly vaultsService:  VaultsService,
   ) {}
+
+  /**
+   * إخفاء مسار الملف عن استجابات JSON — إبقاء الاسم الأصلي وعلامة وجود مرفق.
+   */
+  private toPublicInvoice<I extends { attachmentPath?: string | null; attachmentOriginalName?: string | null }>(
+    inv: I,
+  ): Omit<I, 'attachmentPath'> & { hasInvoiceAttachment: boolean } {
+    const { attachmentPath, ...rest } = inv;
+    const hasInvoiceAttachment = !!(attachmentPath && String(attachmentPath).trim());
+    return {
+      ...(rest as Omit<I, 'attachmentPath'>),
+      hasInvoiceAttachment,
+    };
+  }
 
   /**
    * إنشاء فاتورة — يُفوَّض بالكامل للمحرك المالي المركزي.
@@ -102,7 +127,7 @@ export class InvoiceService {
         dto.vaultSplits.map((s) => ({ vaultId: s.vaultId, amount: String(s.amount) }))
       : undefined;
 
-    return this.financialCore.processOutflow(
+    const raw = await this.financialCore.processOutflow(
       {
         companyId:       dto.companyId,
         supplierId:      dto.supplierId ?? undefined,
@@ -136,6 +161,10 @@ export class InvoiceService {
       },
       userId ?? undefined,
     );
+    return {
+      ...raw,
+      invoice: this.toPublicInvoice(raw.invoice),
+    };
   }
 
   /**
@@ -223,7 +252,7 @@ export class InvoiceService {
       return {
         batchId,
         count:   results.length,
-        invoices: results.map((r) => r.invoice),
+        invoices: results.map((r) => this.toPublicInvoice(r.invoice)),
       };
     } catch (err) {
       if (err instanceof BadRequestException || err instanceof NotFoundException) throw err;
@@ -256,12 +285,13 @@ export class InvoiceService {
         { companyId, referenceType: refType, referenceId, reason: 'إلغاء من واجهة الفواتير' },
         userId ?? undefined,
       );
-      return this.prisma.invoice.findFirstOrThrow({ where: { id, companyId } });
+      const cancelled = await this.prisma.invoice.findFirstOrThrow({ where: { id, companyId } });
+      return this.toPublicInvoice(cancelled);
     }
 
     const tenantId = TenantContext.getTenantId();
 
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const oldInvoice = await tx.invoice.findFirstOrThrow({ where: { id, companyId } });
 
       const updateData: Prisma.InvoiceUncheckedUpdateInput = {};
@@ -376,10 +406,11 @@ export class InvoiceService {
 
       return newInvoice;
     });
+    return this.toPublicInvoice(updated);
   }
 
   async findOne(id: string, companyId: string) {
-    return this.prisma.invoice.findFirstOrThrow({
+    const inv = await this.prisma.invoice.findFirstOrThrow({
       where:   { id, companyId },
       include: {
         supplier: true,
@@ -387,6 +418,7 @@ export class InvoiceService {
         vaultAllocations: { include: { vault: { select: { id: true, nameAr: true, nameEn: true, type: true } } } },
       },
     });
+    return this.toPublicInvoice(inv);
   }
 
   /**
@@ -432,6 +464,8 @@ export class InvoiceService {
     q?: string,
     includeCancelled = true,
     hasNotes?: string | boolean,
+    /** فقط فواتير مرتبطة ببند مصروف (إصدار من قسم المصاريف وليس مشتريات/مسارات بلا بند) */
+    requireExpenseLine?: boolean,
   ) {
     // معالجة التواريخ: YYYY-MM-DD → بداية اليوم ونهاية اليوم (UTC) — مطابق لـ SalesService
     const dateFilter =
@@ -453,6 +487,8 @@ export class InvoiceService {
     const supplierFilter = supplierId ? { supplierId } : {};
     const categoryFilter = categoryId ? { categoryId } : {};
     const expenseLineFilter = expenseLineId ? { expenseLineId } : {};
+    const expenseLinePresenceFilter: Prisma.InvoiceWhereInput =
+      requireExpenseLine === true ? { expenseLineId: { not: null } } : {};
     const vaultFilter: Prisma.InvoiceWhereInput = vaultId
       ? {
           OR: [{ vaultId }, { vaultAllocations: { some: { vaultId } } }],
@@ -527,6 +563,7 @@ export class InvoiceService {
       ...supplierFilter,
       ...categoryFilter,
       ...expenseLineFilter,
+      ...expenseLinePresenceFilter,
       ...vaultFilter,
       ...createdByFilter,
       ...searchFilter,
@@ -713,7 +750,7 @@ export class InvoiceService {
     };
 
     return {
-      items,
+      items: items.map((row) => this.toPublicInvoice(row)),
       total,
       page: p,
       pageSize: size,
@@ -910,6 +947,8 @@ export class InvoiceService {
         taxAmount:        inv.taxAmount.toString(),
         transactionDate:  inv.transactionDate,
         notes:            inv.notes,
+        hasInvoiceAttachment: !!(inv.attachmentPath && String(inv.attachmentPath).trim()),
+        attachmentOriginalName: inv.attachmentOriginalName ?? null,
         supplierNameAr:   inv.supplier?.nameAr ?? null,
         supplierNameEn:   inv.supplier?.nameEn ?? null,
         employeeName:     inv.employee?.name || null,
@@ -1075,5 +1114,110 @@ export class InvoiceService {
     });
 
     return { batches: filteredBatches, rowCount: filteredBatches.length };
+  }
+
+  /**
+   * حفظ مرفق (صورة إيصال أو PDF) بعد رفعه عبر Multer — يستبدل المرفق السابق إن وُجد.
+   */
+  async saveAttachment(
+    invoiceId: string,
+    companyId: string,
+    file: Express.Multer.File | undefined,
+    userId?: string | null,
+  ) {
+    if (!file?.path) {
+      throw new BadRequestException('لم يتم رفع أي ملف.');
+    }
+    const mime = file.mimetype || '';
+    if (!INVOICE_ATTACHMENT_MIMES.has(mime)) {
+      await unlink(file.path).catch(() => {});
+      throw new BadRequestException('نوع الملف غير مسموح. استخدم صورة (JPG أو PNG…) أو PDF.');
+    }
+
+    const existing = await this.prisma.invoice.findFirst({
+      where: { id: invoiceId, companyId },
+    });
+    if (!existing) {
+      await unlink(file.path).catch(() => {});
+      throw new NotFoundException('الفاتورة غير موجودة.');
+    }
+
+    const originalName = (file.originalname || 'attachment').trim().slice(0, 240);
+    const prevPath = existing.attachmentPath?.trim();
+
+    const updated = await this.prisma.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        attachmentPath:         file.path,
+        attachmentOriginalName: originalName || null,
+      },
+    });
+
+    if (prevPath && prevPath !== file.path && existsSync(prevPath)) {
+      await unlink(prevPath).catch(() => {});
+    }
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'update',
+      entity: 'invoice',
+      entityId: invoiceId,
+      oldValue: { attachmentOriginalName: existing.attachmentOriginalName },
+      newValue: { attachmentOriginalName: updated.attachmentOriginalName },
+    });
+
+    return this.toPublicInvoice(updated);
+  }
+
+  async removeAttachment(invoiceId: string, companyId: string, userId?: string | null) {
+    const existing = await this.prisma.invoice.findFirst({
+      where: { id: invoiceId, companyId },
+    });
+    if (!existing) {
+      throw new NotFoundException('الفاتورة غير موجودة.');
+    }
+    const prevPath = existing.attachmentPath?.trim();
+    const prevName = existing.attachmentOriginalName;
+
+    const updated = await this.prisma.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        attachmentPath:         null,
+        attachmentOriginalName: null,
+      },
+    });
+
+    if (prevPath && existsSync(prevPath)) {
+      await unlink(prevPath).catch(() => {});
+    }
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'update',
+      entity: 'invoice',
+      entityId: invoiceId,
+      oldValue: { attachmentOriginalName: prevName },
+      newValue: { attachmentOriginalName: null },
+    });
+
+    return this.toPublicInvoice(updated);
+  }
+
+  async downloadAttachment(invoiceId: string, companyId: string, res: Response): Promise<void> {
+    const inv = await this.prisma.invoice.findFirst({
+      where: { id: invoiceId, companyId },
+      select: { attachmentPath: true, attachmentOriginalName: true },
+    });
+    const p = inv?.attachmentPath?.trim();
+    if (!inv || !p) {
+      throw new NotFoundException('لا يوجد مرفق لهذه الفاتورة.');
+    }
+    if (!existsSync(p)) {
+      throw new NotFoundException('الملف غير موجود على الخادم.');
+    }
+    const name = inv.attachmentOriginalName?.trim() || 'attachment';
+    res.download(p, name);
   }
 }

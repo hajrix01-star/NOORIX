@@ -16,7 +16,14 @@ import { useSuppliers }   from '../../hooks/useSuppliers';
 import { useVaults }      from '../../hooks/useVaults';
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDate, formatSaudiDateISO } from '../../utils/saudiDate';
-import { updateInvoice, getInvoices, deleteInvoice, fetchAllInvoicesForExport, getInvoiceCreatorFilterOptions } from '../../services/api';
+import {
+  updateInvoice,
+  getInvoices,
+  deleteInvoice,
+  fetchAllInvoicesForExport,
+  getInvoiceCreatorFilterOptions,
+  downloadInvoiceAttachment,
+} from '../../services/api';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { Badge, Button, Modal, Input, ScreenShell, FmtNum, cn, SmartTable } from '../../ui';
@@ -63,7 +70,7 @@ function getAllocationsForExport(inv, lang, t) {
 }
 
 /* ══ نافذة عرض الفاتورة (قراءة فقط) ══════════════════════════════════════════ */
-function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
+function InvoiceViewModal({ invoice, companyId, showToast, onClose, t, lang, fmt }) {
   if (!invoice) return null;
   const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
   const supplierName = (lang === 'en' ? invoice.supplier?.nameEn || invoice.supplier?.nameAr : invoice.supplier?.nameAr || invoice.supplier?.nameEn) || '—';
@@ -130,6 +137,31 @@ function InvoiceViewModal({ invoice, onClose, t, lang, fmt }) {
             <div className="text-[13px] text-noorix-text">{invoice.notes}</div>
           </div>
         )}
+        {invoice.hasInvoiceAttachment && companyId ? (
+          <div className="bg-noorix-bg-muted col-span-full py-[10px] px-3 rounded-[10px] border border-noorix-border flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="text-noorix-muted mb-1 text-[10px] uppercase tracking-[0.05em]">{t('invoiceReceiptAttachment')}</div>
+              <div className="text-[13px] text-noorix-text truncate" title={invoice.attachmentOriginalName || ''}>
+                {invoice.attachmentOriginalName || '—'}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              className="shrink-0"
+              onClick={async () => {
+                try {
+                  await downloadInvoiceAttachment(invoice.id, companyId);
+                } catch (e) {
+                  showToast?.(e?.message || t('saveFailed'), 'error');
+                }
+              }}
+            >
+              {t('invoiceReceiptDownload')}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </Modal>
   );
@@ -1025,7 +1057,15 @@ export default function InvoicesListScreen() {
           </div>
           {/* ── عرض الفاتورة (قراءة فقط) ── */}
         {viewingInvoice && (
-          <InvoiceViewModal invoice={viewingInvoice} onClose={() => setViewingInvoice(null)} t={t} lang={lang} fmt={fmt} />
+          <InvoiceViewModal
+            invoice={viewingInvoice}
+            companyId={companyId}
+            showToast={showToast}
+            onClose={() => setViewingInvoice(null)}
+            t={t}
+            lang={lang}
+            fmt={fmt}
+          />
         )}
         <SmartTable
           compact

@@ -110,4 +110,13 @@ export default {
   amountPlaceholderZero: { ar: '0', en: '0' },
   showCancelledBatches: { ar: 'إظهار الدفعات الملغاة', en: 'Show cancelled batches' },
   hideCancelledBatches: { ar: 'إخفاء الدفعات الملغاة', en: 'Hide cancelled batches' },
+  invoiceReceiptAttachment: { ar: 'مرفق الإيصال أو الفاتورة', en: 'Receipt or invoice attachment' },
+  invoiceReceiptAttachmentHint: { ar: 'صورة أو PDF — يُرفَع بعد حفظ الفاتورة.', en: 'Image or PDF — uploaded after the invoice is saved.' },
+  invoiceReceiptUploadFailed: { ar: 'تم إنشاء الفاتورة لكن فشل رفع المرفق.', en: 'Invoice created but attachment upload failed.' },
+  invoiceReceiptChooseFile: { ar: 'اختيار ملف', en: 'Choose file' },
+  invoiceReceiptDownload: { ar: 'تنزيل المرفق', en: 'Download attachment' },
+  invoiceReceiptRemove: { ar: 'حذف المرفق', en: 'Remove attachment' },
+  invoiceReceiptCol: { ar: 'مرفق', en: 'File' },
+  invoiceReceiptUploading: { ar: 'جاري الرفع…', en: 'Uploading…' },
+  invoiceReceiptRemoved: { ar: 'تم حذف المرفق', en: 'Attachment removed' },
 };

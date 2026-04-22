@@ -3,10 +3,12 @@
  * افتراضياً: خزنة واحدة للمبلغ كاملاً. اختياري: إضافة خزنة ثانية بمبلغ محدد (الباقي من الأولى).
  */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useToast } from '../../../context/ToastContext';
+import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { createInvoice, getExpenseLines } from '../../../services/api';
+import { createInvoice, getExpenseLines, uploadInvoiceAttachment } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
@@ -20,6 +22,7 @@ import {
 
 export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   const { t, lang } = useTranslation();
+  const { showToast } = useToast();
   const defaultYear = useMemo(() => parseInt(getSaudiToday().slice(0, 4), 10), []);
   const [form, setForm] = useState({
     expenseLineId: '',
@@ -41,6 +44,8 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   const [error, setError] = useState('');
   /** إعفاء ضريبي استثنائي لهذه الدفعة فقط */
   const [exemptThisPayment, setExemptThisPayment] = useState(false);
+  const [receiptFile, setReceiptFile] = useState(null);
+  const receiptInputRef = useRef(null);
 
   const { data: expenseLines = [] } = useQuery({
     queryKey: ['expense-lines', companyId],
@@ -120,7 +125,24 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   const createMutation = useApiMutation({
     mutationFn: (body) => createInvoice(body),
     showErrorToast: false,
-    onSuccess: () => onSaved?.(),
+    onSuccess: async (result) => {
+      let uploadErr = null;
+      const payload = result?.data;
+      const inv = payload?.invoice ?? payload;
+      const invId = inv?.id;
+      if (receiptFile && invId && companyId) {
+        try {
+          const up = await uploadInvoiceAttachment(invId, companyId, receiptFile);
+          rejectIfApiFailed(up);
+        } catch (e) {
+          uploadErr = e?.message || t('invoiceReceiptUploadFailed');
+        }
+      }
+      if (receiptInputRef.current) receiptInputRef.current.value = '';
+      setReceiptFile(null);
+      if (uploadErr) showToast(uploadErr, 'error');
+      onSaved?.();
+    },
     onError: (err) => setError(err?.message || 'حدث خطأ'),
   });
 
@@ -498,6 +520,21 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           placeholder="مثال: كهرباء - عداد 12345 - 1,200 SR"
           rows={3}
         />
+
+        <div className="rounded-xl border border-noorix-border bg-noorix-surface px-3 py-2.5 flex flex-col gap-2">
+          <div className="text-[12px] font-semibold text-noorix-text">{t('invoiceReceiptAttachment')}</div>
+          <p className="text-[11px] text-noorix-muted m-0">{t('invoiceReceiptAttachmentHint')}</p>
+          <input
+            ref={receiptInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
+            className="text-[13px] max-w-full"
+            onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+          />
+          {receiptFile ? (
+            <span className="text-[11px] text-noorix-muted truncate" title={receiptFile.name}>{receiptFile.name}</span>
+          ) : null}
+        </div>
 
         <label className="flex items-start gap-2.5 min-h-[44px] cursor-pointer rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2.5">
           <input

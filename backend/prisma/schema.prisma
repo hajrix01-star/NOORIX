@@ -917,6 +917,10 @@ model Invoice {
   paymentMethodId String?   @map("payment_method_id")
   batchId         String?   @map("batch_id")
   notes           String?  // ملاحظة / تفاصيل — اسم الموظف، الشهر، تفاصيل فواتير حكومية
+  /// مسار ملف الإيصال/المسح الضوئي على الخادم — لا يُعرَض للعميل في JSON (يُزال عند الإرجاع)
+  attachmentPath         String? @map("attachment_path")
+  /// الاسم الأصلي للعرض والتحميل
+  attachmentOriginalName String? @map("attachment_original_name")
   settledAt         DateTime? @map("settled_at")        // للسلف: تاريخ التسديد (خصم من راتب أو سداد)
   settledAmount     Decimal?  @map("settled_amount")    @db.Decimal(18, 4) // للسلف: المبلغ المسدد
   installmentCount  Int?      @map("installment_count") // للسلف بالأقساط: عدد الدفعات

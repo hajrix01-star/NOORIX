@@ -12,7 +12,15 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { rejectIfApiFailed } from '../../utils/apiResponse';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
-import { createInvoiceBatch, updateInvoice, getPurchaseBatchSummaries, fetchAllInvoicesForBatch, throwIfApiFailed, setSupplierBookmark } from '../../services/api';
+import {
+  createInvoiceBatch,
+  updateInvoice,
+  getPurchaseBatchSummaries,
+  fetchAllInvoicesForBatch,
+  throwIfApiFailed,
+  setSupplierBookmark,
+  uploadInvoiceAttachment,
+} from '../../services/api';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useCategories } from '../../hooks/useCategories';
 import { useVaults } from '../../hooks/useVaults';
@@ -47,6 +55,7 @@ const EMPTY_ROW = () => ({
   notes: '',
   /** يُرسل للخادم عند مشتريات/مصروف/مصروف ثابت */
   warrantyFollowUp: false,
+  attachmentFile: null,
 });
 
 /* ── تبويبات الشاشة ─────────────────────────────────────────────── */
@@ -376,11 +385,27 @@ export default function PurchasesBatchScreen() {
         }),
       });
       rejectIfApiFailed(res, t('saveFailed'));
-      return res.data ?? { batchId: 'B-' + Date.now(), count: valid.length };
+      const payload = res.data ?? { batchId: 'B-' + Date.now(), count: valid.length };
+      return { payload, uploadRows: valid };
     },
-    successToast: (data) => t('savedInvoicesCount', data.count, data.batchId),
+    successToast: (data) => t('savedInvoicesCount', data.payload.count, data.payload.batchId),
     errorToast: (e) => e?.message || t('saveFailed'),
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const invoices = data.payload?.invoices || [];
+      const rowsWithFiles = data.uploadRows || [];
+      for (let i = 0; i < rowsWithFiles.length; i++) {
+        const f = rowsWithFiles[i]?.attachmentFile;
+        const invId = invoices[i]?.id;
+        if (f && invId && companyId) {
+          try {
+            const up = await uploadInvoiceAttachment(invId, companyId, f);
+            rejectIfApiFailed(up);
+          } catch {
+            showToast(t('invoiceReceiptUploadFailed'), 'error');
+            break;
+          }
+        }
+      }
       invalidateOnFinancialMutation(queryClient);
       setRows([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
       setBatchNotes('');
@@ -538,8 +563,8 @@ export default function PurchasesBatchScreen() {
               </div>
             ) : (
               <div className="noorix-table-frame batch-purchases-table w-full overflow-x-auto">
-                <table className="noorix-table w-full table-fixed min-w-[980px]">
-                  <colgroup><col style={{ width: '3%' }} /><col style={{ width: '18%' }} /><col style={{ width: '10%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '7%' }} /><col style={{ width: '7%' }} /><col style={{ width: '7%' }} /><col style={{ width: '10%' }} /><col style={{ width: '5%' }} /><col style={{ width: '12%' }} /><col style={{ width: '3%' }} /></colgroup>
+                <table className="noorix-table w-full table-fixed min-w-[1040px]">
+                  <colgroup><col style={{ width: '3%' }} /><col style={{ width: '17%' }} /><col style={{ width: '10%' }} /><col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '7%' }} /><col style={{ width: '7%' }} /><col style={{ width: '7%' }} /><col style={{ width: '9%' }} /><col style={{ width: '5%' }} /><col style={{ width: '11%' }} /><col style={{ width: '5%' }} /><col style={{ width: '3%' }} /></colgroup>
                   <thead>
                     <tr>
                       {[
@@ -554,6 +579,7 @@ export default function PurchasesBatchScreen() {
                         { label: t('category'), align: 'center' },
                         { label: t('taxPct'), align: 'center', title: t('taxPctTitle') },
                         { label: t('notes'), align: 'right' },
+                        { label: t('invoiceReceiptCol'), align: 'center', title: t('invoiceReceiptAttachment') },
                         { label: '', align: 'center' },
                       ].map(({ label, align, title }, i) => (
                         <th key={i} title={title} className="text-[11px] font-bold text-noorix-muted overflow-hidden whitespace-nowrap py-2 px-1.5" style={{ textAlign: align }}>{label}</th>

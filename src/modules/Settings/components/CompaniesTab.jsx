@@ -39,7 +39,13 @@ export default function CompaniesTab({ onCompanyCreated }) {
   });
 
   const activeCompanies = companiesList.filter((c) => !c.isArchived);
+  const archivedCompanies = companiesList.filter((c) => c.isArchived);
+  /** لا شركات نشطة في الاستجابة الحالية (إما لا يوجد شيء، أو الكل مؤرشف ولم يُفعّل عرض المؤرشفة). */
   const isEmpty = activeCompanies.length === 0 && !includeArchived;
+  const showTrulyEmptyState =
+    !isLoading && !showAddForm && companiesList.length === 0 && includeArchived;
+  const showNoActiveCompaniesHint =
+    !isLoading && !showAddForm && companiesList.length === 0 && !includeArchived;
 
   const resetAddForm = useCallback(() => {
     setNameAr(''); setNameEn(''); setTaxNumber('');
@@ -62,9 +68,11 @@ export default function CompaniesTab({ onCompanyCreated }) {
     mutationFn: ({ id, body }) => updateCompany(id, body),
     invalidateQueries: [['companies']],
     showErrorToast: false,
-    successToast: (data, variables) => {
+      successToast: (data, variables) => {
       if (variables?.body?.isArchived === true) return 'تم أرشفة الشركة.';
-      if (variables?.body?.isArchived === false) return 'تم إعادة تفعيل الشركة — ستظهر في القوائم والقوائم المنسدلة.';
+      if (variables?.body?.isArchived === false) {
+        return 'تم إعادة تفعيل الشركة. ستظهر في قائمة الشركات النشطة والقائمة أعلى النظام.';
+      }
       return null;
     },
     onSuccess: () => { setEditModal(null); },
@@ -173,24 +181,39 @@ export default function CompaniesTab({ onCompanyCreated }) {
         </div>
       )}
 
-      {isEmpty && !isLoading && !showAddForm && (
+      {showNoActiveCompaniesHint && (
         <div className="noorix-surface-card text-center p-8 border-2 border-dashed border-noorix-border">
           <div className="text-[40px] mb-3">—</div>
-          <h3 className="m-0 mb-2 text-[18px]">لا توجد شركات</h3>
-          <p className="m-0 text-[14px] text-noorix-muted">اضغط "إضافة شركة" لإنشاء شركتك الأولى.</p>
+          <h3 className="m-0 mb-2 text-[18px]">لا توجد شركات نشطة</h3>
+          <p className="m-0 text-[14px] text-noorix-muted max-w-md mx-auto leading-relaxed">
+            إن كانت لديك شركات مؤرشفة، فعّل «عرض المؤرشفة» في الشريط أعلاه ثم اضغط «إعادة التفعيل» على البطاقة أو من نافذة التعديل.
+          </p>
+          <p className="m-0 mt-3 text-[14px] text-noorix-muted">أو اضغط «إضافة شركة» لإنشاء شركة جديدة.</p>
+        </div>
+      )}
+      {showTrulyEmptyState && (
+        <div className="noorix-surface-card text-center p-8 border-2 border-dashed border-noorix-border">
+          <div className="text-[40px] mb-3">—</div>
+          <h3 className="m-0 mb-2 text-[18px]">لا توجد شركات في النظام</h3>
+          <p className="m-0 text-[14px] text-noorix-muted">لم يُسجّل أي شركة لهذا الحساب. استخدم «إضافة شركة» للبدء.</p>
         </div>
       )}
 
-      <div className="nx-toolbar">
+      <div className="nx-toolbar flex-wrap">
         <Button size="sm" variant={showAddForm ? undefined : 'primary'} onClick={() => setShowAddForm((v) => !v)}>
           {showAddForm ? 'إلغاء الإضافة' : 'إضافة شركة'}
         </Button>
+        <label className="nx-checkbox text-noorix-muted items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
+          <span>عرض المؤرشفة</span>
+          {includeArchived && archivedCompanies.length > 0 && (
+            <span className="text-[11px] font-medium text-amber-800 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-200">
+              {archivedCompanies.length} مؤرشفة
+            </span>
+          )}
+        </label>
         {!isEmpty && (
           <>
-            <label className="nx-checkbox text-noorix-muted">
-              <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
-              عرض المؤرشفة
-            </label>
             <Button
               size="sm"
               variant="success"
@@ -295,7 +318,25 @@ export default function CompaniesTab({ onCompanyCreated }) {
                   <span className="noorix-exec-card__stat-value">{c.isArchived ? 'مؤرشفة' : 'نشطة'}</span>
                 </div>
               </div>
-              <div className="text-[12px] text-noorix-muted pt-2 px-[18px] pb-[14px]">اضغط للتعديل</div>
+              <div className="flex items-center justify-between gap-2 pt-2 px-[18px] pb-[14px]">
+                <span className="text-[12px] text-noorix-muted">اضغط للتعديل</span>
+                {c.isArchived ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="primary"
+                    className="text-[12px] shrink-0"
+                    disabled={updateMutation.isPending}
+                    aria-label={`إعادة تفعيل الشركة ${c.nameAr || ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateMutation.mutate({ id: c.id, body: { isArchived: false } });
+                    }}
+                  >
+                    إعادة التفعيل
+                  </Button>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>
@@ -315,6 +356,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
                 variant="primary"
                 onClick={() => updateMutation.mutate({ id: editModal.id, body: { isArchived: false } })}
                 disabled={updateMutation.isPending}
+                aria-label={`إعادة تفعيل الشركة ${editModal.nameAr || ''}`}
               >
                 إعادة التفعيل
               </Button>
@@ -341,8 +383,8 @@ export default function CompaniesTab({ onCompanyCreated }) {
         {editModal && (
           <>
             {editModal.isArchived ? (
-              <div className="mb-4 rounded-lg border border-amber-300/80 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-950">
-                <strong className="font-semibold">شركة مؤرشفة:</strong> لا تظهر في قائمة الشركات النشطة أو المختارة أعلى النظام. اضغط «إعادة التفعيل» في الأسفل لإرجاعها للعمل.
+              <div className="mb-4 rounded-lg border border-amber-300/80 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-950 leading-relaxed">
+                <strong className="font-semibold">شركة مؤرشفة:</strong> لا تظهر في قائمة الشركات النشطة ولا في القائمة المنسدلة أعلى النظام. اضغط «إعادة التفعيل» أدناه (أو من زر البطاقة عند تفعيل «عرض المؤرشفة») لإرجاعها إلى العمل.
               </div>
             ) : null}
             <form

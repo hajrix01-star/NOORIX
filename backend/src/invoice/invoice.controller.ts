@@ -7,7 +7,23 @@
  *   GET → INVOICES_READ أو PURCHASES_READ
  *         (الفلترة بالـ kind تتم تلقائياً حسب ما يملكه المستخدم)
  */
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor }       from '@nestjs/platform-express';
+import type { Response }         from 'express';
 import { AuthGuard }             from '@nestjs/passport';
 import { CompanyAccessGuard }    from '../auth/guards/company-access.guard';
 import { RolesGuard }            from '../auth/guards/roles.guard';
@@ -96,6 +112,7 @@ export class InvoiceController {
     @Query('includeCancelled') includeCancelled?: string,
     @Query('hasNotes')   hasNotes?:   string,
     @Query('createdByUserId') createdByUserId?: string,
+    @Query('requireExpenseLine') requireExpenseLine?: string,
   ) {
     const role  = (user?.role  || '').toLowerCase();
     const perms = user?.permissions || [];
@@ -130,7 +147,43 @@ export class InvoiceController {
       q,
       includeCancelled === '1' || includeCancelled === 'true',
       hasNotes,
+      requireExpenseLine === '1' || requireExpenseLine === 'true',
     );
+  }
+
+  @Get(':id/attachment/download')
+  @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
+  async downloadAttachment(
+    @Param('id')        id:        string,
+    @Query('companyId') companyId: string,
+    @Res()              res:       Response,
+  ) {
+    if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
+    return this.invoiceService.downloadAttachment(id, companyId, res);
+  }
+
+  @Post(':id/attachment')
+  @RequireAnyPermission('INVOICES_WRITE', 'PURCHASES_WRITE')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAttachment(
+    @Param('id')        id:        string,
+    @Query('companyId') companyId: string,
+    @UploadedFile()    file:       Express.Multer.File,
+    @CurrentUser()      user:      JwtUser,
+  ) {
+    if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
+    return this.invoiceService.saveAttachment(id, companyId, file, user.sub);
+  }
+
+  @Delete(':id/attachment')
+  @RequireAnyPermission('INVOICES_WRITE', 'PURCHASES_WRITE')
+  async deleteAttachment(
+    @Param('id')        id:        string,
+    @Query('companyId') companyId: string,
+    @CurrentUser()      user:      JwtUser,
+  ) {
+    if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
+    return this.invoiceService.removeAttachment(id, companyId, user.sub);
   }
 
   @Get(':id')

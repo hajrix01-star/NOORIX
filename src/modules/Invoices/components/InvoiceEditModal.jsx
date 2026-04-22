@@ -2,11 +2,18 @@
  * InvoiceEditModal — نافذة تعديل الفاتورة
  */
 import React, { useState, useEffect, useMemo } from 'react';
+import { useToast } from '../../../context/ToastContext';
+import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
-import { updateInvoice } from '../../../services/api';
+import {
+  updateInvoice,
+  uploadInvoiceAttachment,
+  deleteInvoiceAttachment,
+  downloadInvoiceAttachment,
+} from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
@@ -17,6 +24,7 @@ const OPTIONAL_SUPPLIER_KINDS = new Set(['fixed_expense', 'hr_expense']);
 
 export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }) {
   const { t, lang } = useTranslation();
+  const { showToast } = useToast();
   const [form, setForm] = useState({
     supplierId: '',
     supplierInvoiceNumber: '',
@@ -29,6 +37,8 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     vaultId: '',
   });
   const [error, setError] = useState('');
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
+  const [attachMeta, setAttachMeta] = useState({ has: false, name: null });
 
   const kind = invoice?.kind;
   const hasSupplier = !NO_SUPPLIER_KINDS.has(kind);           // purchase, expense, fixed_expense, hr_expense
@@ -74,6 +84,61 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
       vaultId: resolvedVaultId || '',
     });
   }, [invoice]);
+
+  useEffect(() => {
+    if (!invoice) return;
+    setAttachMeta({
+      has: !!invoice.hasInvoiceAttachment,
+      name: invoice.attachmentOriginalName || null,
+    });
+  }, [invoice]);
+
+  async function handleAttachmentFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file || !invoice?.id || !companyId) return;
+    setAttachmentBusy(true);
+    try {
+      const res = await uploadInvoiceAttachment(invoice.id, companyId, file);
+      rejectIfApiFailed(res, t('saveFailed'));
+      const inv = res?.data;
+      setAttachMeta({
+        has: !!inv?.hasInvoiceAttachment,
+        name: inv?.attachmentOriginalName || file.name,
+      });
+      showToast(t('documentUploaded'), 'success');
+      onSaved?.();
+    } catch (err) {
+      showToast(err?.message || t('saveFailed'), 'error');
+    } finally {
+      setAttachmentBusy(false);
+      e.target.value = '';
+    }
+  }
+
+  async function handleRemoveAttachment() {
+    if (!invoice?.id || !companyId) return;
+    setAttachmentBusy(true);
+    try {
+      const res = await deleteInvoiceAttachment(invoice.id, companyId);
+      rejectIfApiFailed(res, t('saveFailed'));
+      setAttachMeta({ has: false, name: null });
+      showToast(t('invoiceReceiptRemoved'), 'success');
+      onSaved?.();
+    } catch (err) {
+      showToast(err?.message || t('saveFailed'), 'error');
+    } finally {
+      setAttachmentBusy(false);
+    }
+  }
+
+  async function handleDownloadAttachment() {
+    if (!invoice?.id || !companyId) return;
+    try {
+      await downloadInvoiceAttachment(invoice.id, companyId);
+    } catch (err) {
+      showToast(err?.message || t('saveFailed'), 'error');
+    }
+  }
 
   function updateField(field, value) {
     setForm((p) => ({ ...p, [field]: value }));
@@ -156,6 +221,35 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             {error}
           </div>
         )}
+
+        <div className="rounded-xl border border-noorix-border bg-noorix-surface px-3 py-2.5 flex flex-col gap-2">
+          <div className="text-[12px] font-semibold text-noorix-text">{t('invoiceReceiptAttachment')}</div>
+          <p className="text-[11px] text-noorix-muted m-0">{t('invoiceReceiptAttachmentHint')}</p>
+          {attachMeta.has && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[12px] text-noorix-text truncate max-w-[200px]" title={attachMeta.name || ''}>
+                {attachMeta.name || '—'}
+              </span>
+              <Button type="button" size="sm" variant="ghost" disabled={attachmentBusy} onClick={handleDownloadAttachment}>
+                {t('invoiceReceiptDownload')}
+              </Button>
+              <Button type="button" size="sm" variant="danger" disabled={attachmentBusy} onClick={handleRemoveAttachment}>
+                {t('invoiceReceiptRemove')}
+              </Button>
+            </div>
+          )}
+          <div>
+            <div className="text-[11px] font-semibold text-noorix-muted mb-1">{t('invoiceReceiptChooseFile')}</div>
+            <input
+              type="file"
+              disabled={attachmentBusy}
+              accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
+              className="text-[13px] max-w-full disabled:opacity-50"
+              onChange={handleAttachmentFileChange}
+            />
+          </div>
+          {attachmentBusy && <span className="text-[11px] text-noorix-muted">{t('invoiceReceiptUploading')}</span>}
+        </div>
 
         {hasSupplier && (
           <>

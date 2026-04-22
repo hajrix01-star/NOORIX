@@ -31,9 +31,29 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   const kindParam = filterKind ? filterKind : 'expense,fixed_expense';
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['invoices', companyId, startDate, endDate, kindParam],
+    queryKey: ['invoices', companyId, startDate, endDate, kindParam, 'requireExpenseLine'],
     queryFn: async () => {
-      const res = await getInvoices(companyId, startDate, endDate, 1, 500, undefined, undefined, kindParam);
+      const res = await getInvoices(
+        companyId,
+        startDate,
+        endDate,
+        1,
+        500,
+        undefined,
+        undefined,
+        kindParam,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        true,
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
       throwIfApiFailed(res, 'فشل تحميل المدفوعات');
       return res.data;
     },
@@ -154,7 +174,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
         title={t('paymentHistoryTab')}
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{activeItems.length}</span>}
         showSearchInHeader={false}
-        emptyMessage="لا توجد مدفوعات في الفترة المحددة."
+        emptyMessage={t('paymentHistoryEmptyExpenseModule')}
         keyExtractor={(row) => row.id}
         footer={
           activeItems.length > 0 ? (
