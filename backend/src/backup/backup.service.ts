@@ -22,6 +22,19 @@ const gzipAsync = promisify(zlib.gzip);
 
 const MAX_EXTERNAL_UPLOAD_BYTES = 18 * 1024 * 1024; // تجنّب تعطّل الذاكرة مع Apps Script الحالي
 
+/** استخراج معرّف مجلد Google Drive من رابط أو نص معرّف */
+function parseDriveFolderId(raw: string | null | undefined): string | null {
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  const m1 = s.match(/drive\.google\.com\/drive\/folders\/([a-zA-Z0-9_-]+)/);
+  if (m1) return m1[1];
+  const m2 = s.match(/drive\.google\.com\/open\?[^#]*\bid=([a-zA-Z0-9_-]+)/);
+  if (m2) return m2[1];
+  if (/^[a-zA-Z0-9_-]{8,128}$/.test(s)) return s;
+  return null;
+}
+
 @Injectable()
 export class BackupService {
   private readonly logger = new Logger(BackupService.name);
@@ -224,13 +237,47 @@ export class BackupService {
     });
   }
 
+  /** إعدادات الرفع الخارجي من قاعدة البيانات (يُكمّل متغيرات البيئة) */
+  private async resolveExternalUploadOpts(
+    scope: string,
+    companyId: string | null,
+  ): Promise<{ scriptUrl: string | null; folderId: string | null }> {
+    if (scope === 'database_full') {
+      const c = await this.ensureSystemBackupConfigRow();
+      return {
+        scriptUrl: c.gdriveScriptUrl?.trim() || null,
+        folderId: parseDriveFolderId(c.gdriveFolderId),
+      };
+    }
+    if (scope === 'company_logical' && companyId) {
+      const c = await this.prisma.companyBackupConfig.findUnique({
+        where: { companyId },
+        select: { gdriveScriptUrl: true, gdriveFolderId: true },
+      });
+      return {
+        scriptUrl: c?.gdriveScriptUrl?.trim() || null,
+        folderId: parseDriveFolderId(c?.gdriveFolderId),
+      };
+    }
+    return { scriptUrl: null, folderId: null };
+  }
+
   async uploadToExternalIfConfigured(
     absPath: string,
     filename: string,
     meta: { company?: string; scope: string },
+    preloaded?: { scriptUrl: string | null; folderId: string | null },
   ): Promise<{ ok: boolean; error?: string }> {
-    const scriptUrl = process.env.BACKUP_GDRIVE_SCRIPT_URL || process.env.GDRIVE_SCRIPT_URL;
-    if (!scriptUrl) return { ok: false, error: 'لا يوجد رابط تخزين خارجي (BACKUP_GDRIVE_SCRIPT_URL)' };
+    const envUrl = (process.env.BACKUP_GDRIVE_SCRIPT_URL || process.env.GDRIVE_SCRIPT_URL || '').trim();
+    const dbUrl = (preloaded?.scriptUrl && preloaded.scriptUrl.length > 0 ? preloaded.scriptUrl : '').trim();
+    const scriptUrl = dbUrl || envUrl;
+    if (!scriptUrl) {
+      return {
+        ok: false,
+        error:
+          'لا يوجد رابط تخزين خارجي — أضف رابط Google Apps من إعدادات النسخ أو عيّن BACKUP_GDRIVE_SCRIPT_URL على الخادم',
+      };
+    }
 
     const st = await fs.stat(absPath);
     if (st.size > MAX_EXTERNAL_UPLOAD_BYTES) {
@@ -241,11 +288,16 @@ export class BackupService {
     }
 
     const content_b64 = (await fs.readFile(absPath)).toString('base64');
+    const folderId =
+      preloaded?.folderId && String(preloaded.folderId).trim().length > 0
+        ? String(preloaded.folderId).trim()
+        : undefined;
     const payload = JSON.stringify({
       filename,
       content: content_b64,
       company: meta.company || 'noorix',
       scope: meta.scope,
+      ...(folderId ? { folderId } : {}),
     });
 
     try {
@@ -363,10 +415,11 @@ export class BackupService {
       const st = await fs.stat(abs);
       let externalUploaded = false;
       let externalError: string | null = null;
+      const extOpts = await this.resolveExternalUploadOpts('company_logical', companyId);
       const up = await this.uploadToExternalIfConfigured(abs, path.basename(rel), {
         scope: 'company_logical',
         company: co.nameAr || companyId,
-      });
+      }, extOpts);
       if (up.ok) externalUploaded = true;
       else externalError = up.error || null;
 
@@ -544,10 +597,11 @@ export class BackupService {
       const st = await fs.stat(finalAbs);
       let externalUploaded = false;
       let externalError: string | null = null;
+      const extOptsFullRun = await this.resolveExternalUploadOpts('database_full', null);
       const up = await this.uploadToExternalIfConfigured(finalAbs, path.basename(finalRel), {
         scope: 'database_full',
         company: 'full_database',
-      });
+      }, extOptsFullRun);
       if (up.ok) externalUploaded = true;
       else externalError = up.error || null;
 
@@ -662,10 +716,11 @@ export class BackupService {
 
     const abs = path.join(this.getBackupRoot(), job.localRelativePath);
     const coName = job.company?.nameAr || job.companyId || 'backup';
+    const extRetry = await this.resolveExternalUploadOpts(job.scope, job.companyId);
     const up = await this.uploadToExternalIfConfigured(abs, path.basename(job.localRelativePath), {
       scope: job.scope,
       company: coName,
-    });
+    }, extRetry);
 
     await this.prisma.backupJob.update({
       where: { id: job.id },
@@ -725,6 +780,8 @@ export class BackupService {
       retentionCount: c.retentionCount,
       timezone: c.timezone,
       lastRunDayRiyadh: c.lastRunDayRiyadh,
+      gdriveScriptUrl: c.gdriveScriptUrl ?? null,
+      gdriveFolderId: c.gdriveFolderId ?? null,
     };
   }
 
@@ -733,8 +790,20 @@ export class BackupService {
     scheduleHour?: number;
     scheduleMinute?: number;
     retentionCount?: number;
+    gdriveScriptUrl?: string;
+    gdriveFolderId?: string;
   }) {
     await this.ensureSystemBackupConfigRow();
+    const normUrl = (v: string | undefined) => {
+      if (v === undefined) return undefined;
+      const t = v.trim();
+      return t.length ? t : null;
+    };
+    const normFolder = (v: string | undefined) => {
+      if (v === undefined) return undefined;
+      const t = v.trim();
+      return t.length ? t : null;
+    };
     return this.prisma.systemBackupConfig.update({
       where: { id: 'singleton' },
       data: {
@@ -742,6 +811,8 @@ export class BackupService {
         ...(dto.scheduleHour !== undefined ? { scheduleHour: dto.scheduleHour } : {}),
         ...(dto.scheduleMinute !== undefined ? { scheduleMinute: dto.scheduleMinute } : {}),
         ...(dto.retentionCount !== undefined ? { retentionCount: dto.retentionCount } : {}),
+        ...(dto.gdriveScriptUrl !== undefined ? { gdriveScriptUrl: normUrl(dto.gdriveScriptUrl) } : {}),
+        ...(dto.gdriveFolderId !== undefined ? { gdriveFolderId: normFolder(dto.gdriveFolderId) } : {}),
       },
     });
   }
@@ -762,6 +833,8 @@ export class BackupService {
         retentionCount: 5,
         timezone: 'Asia/Riyadh',
         lastRunDayRiyadh: null as string | null,
+        gdriveScriptUrl: null as string | null,
+        gdriveFolderId: null as string | null,
       };
     }
     return {
@@ -772,6 +845,8 @@ export class BackupService {
       retentionCount: row.retentionCount,
       timezone: row.timezone,
       lastRunDayRiyadh: row.lastRunDayRiyadh,
+      gdriveScriptUrl: row.gdriveScriptUrl ?? null,
+      gdriveFolderId: row.gdriveFolderId ?? null,
     };
   }
 
@@ -784,6 +859,8 @@ export class BackupService {
       scheduleMinute?: number;
       retentionCount?: number;
       timezone?: string;
+      gdriveScriptUrl?: string;
+      gdriveFolderId?: string;
     },
   ) {
     const co = await this.prisma.company.findFirst({
@@ -792,6 +869,16 @@ export class BackupService {
     });
     if (!co) throw new NotFoundException('الشركة غير موجودة');
     const existing = await this.prisma.companyBackupConfig.findUnique({ where: { companyId: dto.companyId } });
+    const normUrl = (v: string | undefined) => {
+      if (v === undefined) return undefined;
+      const t = v.trim();
+      return t.length ? t : null;
+    };
+    const normFolder = (v: string | undefined) => {
+      if (v === undefined) return undefined;
+      const t = v.trim();
+      return t.length ? t : null;
+    };
     const patch = {
       ...(dto.enabled !== undefined ? { enabled: dto.enabled } : {}),
       ...(dto.scheduleHour !== undefined ? { scheduleHour: Math.min(23, Math.max(0, dto.scheduleHour)) } : {}),
@@ -800,6 +887,8 @@ export class BackupService {
         ? { retentionCount: Math.min(50, Math.max(1, dto.retentionCount)) }
         : {}),
       ...(dto.timezone !== undefined ? { timezone: dto.timezone } : {}),
+      ...(dto.gdriveScriptUrl !== undefined ? { gdriveScriptUrl: normUrl(dto.gdriveScriptUrl) } : {}),
+      ...(dto.gdriveFolderId !== undefined ? { gdriveFolderId: normFolder(dto.gdriveFolderId) } : {}),
     };
     const row = existing
       ? await this.prisma.companyBackupConfig.update({ where: { companyId: dto.companyId }, data: patch })
@@ -812,6 +901,8 @@ export class BackupService {
             scheduleMinute: dto.scheduleMinute ?? 0,
             retentionCount: dto.retentionCount ?? 5,
             timezone: dto.timezone ?? 'Asia/Riyadh',
+            gdriveScriptUrl: normUrl(dto.gdriveScriptUrl) ?? null,
+            gdriveFolderId: normFolder(dto.gdriveFolderId) ?? null,
           },
         });
     return {
@@ -822,6 +913,8 @@ export class BackupService {
       retentionCount: row.retentionCount,
       timezone: row.timezone,
       lastRunDayRiyadh: row.lastRunDayRiyadh,
+      gdriveScriptUrl: row.gdriveScriptUrl ?? null,
+      gdriveFolderId: row.gdriveFolderId ?? null,
     };
   }
 
@@ -1092,10 +1185,11 @@ export class BackupService {
       const st = await fs.stat(finalAbs);
       let externalUploaded = false;
       let externalError: string | null = null;
+      const extOptsImport = await this.resolveExternalUploadOpts('database_full', null);
       const up = await this.uploadToExternalIfConfigured(finalAbs, path.basename(finalRel), {
         scope: 'database_full',
         company: 'full_database',
-      });
+      }, extOptsImport);
       if (up.ok) externalUploaded = true;
       else externalError = up.error || null;
 

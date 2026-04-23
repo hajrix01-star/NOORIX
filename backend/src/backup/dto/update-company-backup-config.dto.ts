@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class UpdateCompanyBackupConfigDto {
   @IsString()
@@ -29,4 +29,14 @@ export class UpdateCompanyBackupConfigDto {
   @IsOptional()
   @IsString()
   timezone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  gdriveScriptUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  gdriveFolderId?: string;
 }

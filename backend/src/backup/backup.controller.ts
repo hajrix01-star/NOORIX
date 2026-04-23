@@ -107,6 +107,8 @@ export class BackupController {
       retentionCount: row.retentionCount,
       timezone: row.timezone,
       lastRunDayRiyadh: row.lastRunDayRiyadh,
+      gdriveScriptUrl: row.gdriveScriptUrl ?? null,
+      gdriveFolderId: row.gdriveFolderId ?? null,
     };
   }
 

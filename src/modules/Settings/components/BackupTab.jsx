@@ -167,12 +167,16 @@ export default function BackupTab({ activeCompanies = [] }) {
     scheduleHour: 6,
     scheduleMinute: 0,
     retentionCount: 10,
+    gdriveScriptUrl: '',
+    gdriveFolderId: '',
   });
   const [coForm, setCoForm] = useState({
     enabled: false,
     scheduleHour: 6,
     scheduleMinute: 0,
     retentionCount: 5,
+    gdriveScriptUrl: '',
+    gdriveFolderId: '',
   });
   const [restoreModal, setRestoreModal] = useState(null);
   const [restorePhrase, setRestorePhrase] = useState('');
@@ -215,6 +219,8 @@ export default function BackupTab({ activeCompanies = [] }) {
       scheduleHour: Number.isFinite(h) ? h : 6,
       scheduleMinute: Number.isFinite(m) ? m : 0,
       retentionCount: Math.min(50, Math.max(1, Number.isFinite(r) ? r : 10)),
+      gdriveScriptUrl: typeof d.gdriveScriptUrl === 'string' ? d.gdriveScriptUrl : '',
+      gdriveFolderId: typeof d.gdriveFolderId === 'string' ? d.gdriveFolderId : '',
     });
   }, [sysCfgRes]);
 
@@ -230,6 +236,8 @@ export default function BackupTab({ activeCompanies = [] }) {
       scheduleHour: Number.isFinite(h) ? h : 6,
       scheduleMinute: Number.isFinite(m) ? m : 0,
       retentionCount: Math.min(50, Math.max(1, Number.isFinite(r) ? r : 5)),
+      gdriveScriptUrl: typeof d.gdriveScriptUrl === 'string' ? d.gdriveScriptUrl : '',
+      gdriveFolderId: typeof d.gdriveFolderId === 'string' ? d.gdriveFolderId : '',
     });
   }, [coCfgRes]);
 
@@ -482,6 +490,35 @@ export default function BackupTab({ activeCompanies = [] }) {
                   />
                 </div>
               </div>
+
+              <Divider />
+
+              <div className="flex flex-col gap-2 min-w-0">
+                <p className="text-[12px] font-semibold text-noorix-text m-0">{t('backupGdriveSectionTitle')}</p>
+                <Input
+                  type="text"
+                  label={t('backupGdriveScriptUrlLabel')}
+                  value={coForm.gdriveScriptUrl}
+                  onChange={(e) => setCoForm((p) => ({ ...p, gdriveScriptUrl: e.target.value }))}
+                  disabled={!companyId}
+                  placeholder="https://script.google.com/macros/s/…/exec"
+                  className="nx-ltr text-left"
+                  dir="ltr"
+                />
+                <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveScriptUrlHint')}</p>
+                <Input
+                  type="text"
+                  label={t('backupGdriveFolderLabel')}
+                  value={coForm.gdriveFolderId}
+                  onChange={(e) => setCoForm((p) => ({ ...p, gdriveFolderId: e.target.value }))}
+                  disabled={!companyId}
+                  placeholder="folderId أو رابط المجلد"
+                  className="nx-ltr text-left"
+                  dir="ltr"
+                />
+                <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveFolderHint')}</p>
+              </div>
+
               {coCfgRes?.success && coCfgRes.data?.lastRunDayRiyadh != null && (
                 <p className="text-[11px] text-noorix-muted m-0">
                   {t('backupCompanyLastRun')}: <strong dir="ltr">{coCfgRes.data.lastRunDayRiyadh}</strong>
@@ -500,6 +537,8 @@ export default function BackupTab({ activeCompanies = [] }) {
                       scheduleHour: coForm.scheduleHour,
                       scheduleMinute: coForm.scheduleMinute,
                       retentionCount: coForm.retentionCount,
+                      gdriveScriptUrl: coForm.gdriveScriptUrl,
+                      gdriveFolderId: coForm.gdriveFolderId,
                     })
                   }
                 >
@@ -605,6 +644,33 @@ export default function BackupTab({ activeCompanies = [] }) {
                   {t('backupSystemLastRun')}: <strong dir="ltr">{sysCfgRes.data.lastRunDayRiyadh}</strong>
                 </p>
               )}
+
+              <Divider />
+
+              <div className="flex flex-col gap-2 min-w-0">
+                <p className="text-[12px] font-semibold text-noorix-text m-0">{t('backupGdriveSectionTitle')}</p>
+                <Input
+                  type="text"
+                  label={t('backupGdriveScriptUrlLabel')}
+                  value={sysForm.gdriveScriptUrl}
+                  onChange={(e) => setSysForm((p) => ({ ...p, gdriveScriptUrl: e.target.value }))}
+                  placeholder="https://script.google.com/macros/s/…/exec"
+                  className="nx-ltr text-left"
+                  dir="ltr"
+                />
+                <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveScriptUrlHint')}</p>
+                <Input
+                  type="text"
+                  label={t('backupGdriveFolderLabel')}
+                  value={sysForm.gdriveFolderId}
+                  onChange={(e) => setSysForm((p) => ({ ...p, gdriveFolderId: e.target.value }))}
+                  placeholder="folderId أو رابط المجلد"
+                  className="nx-ltr text-left"
+                  dir="ltr"
+                />
+                <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveFolderHint')}</p>
+              </div>
+
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                 <Button
                   type="button"
@@ -617,6 +683,8 @@ export default function BackupTab({ activeCompanies = [] }) {
                       scheduleHour: sysForm.scheduleHour,
                       scheduleMinute: sysForm.scheduleMinute,
                       retentionCount: sysForm.retentionCount,
+                      gdriveScriptUrl: sysForm.gdriveScriptUrl,
+                      gdriveFolderId: sysForm.gdriveFolderId,
                     })
                   }
                 >

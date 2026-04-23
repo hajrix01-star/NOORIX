@@ -208,6 +208,10 @@ model SystemBackupConfig {
   retentionCount   Int      @default(10) @map("retention_count")
   timezone         String   @default("Asia/Riyadh")
   lastRunDayRiyadh String?  @map("last_run_day_riyadh")
+  /// رابط تطبيق ويب Google Apps Script للرفع (يغلب BACKUP_GDRIVE_SCRIPT_URL إن وُجد)
+  gdriveScriptUrl  String?  @map("gdrive_script_url") @db.Text
+  /// معرّف مجلد Drive أو رابط المجلد — يُمرَّر للسكربت كـ folderId
+  gdriveFolderId   String?  @map("gdrive_folder_id") @db.Text
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -225,6 +229,8 @@ model CompanyBackupConfig {
   retentionCount   Int      @default(5) @map("retention_count")
   timezone         String   @default("Asia/Riyadh")
   lastRunDayRiyadh String?  @map("last_run_day_riyadh")
+  gdriveScriptUrl  String?  @map("gdrive_script_url") @db.Text
+  gdriveFolderId   String?  @map("gdrive_folder_id") @db.Text
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 

@@ -33,8 +33,22 @@ export default {
   backupError: { ar: 'فشل طلب النسخ', en: 'Backup request failed' },
   backupBulletDedup: { ar: 'منع التكرار: إذا كان الملف مطابقاً لنسخة سابقة لا يُستهلك مساحة إضافية.', en: 'Deduplication: identical content reuses the previous snapshot.' },
   backupBulletExternal: {
-    ar: 'تخزين خارجي: عند تعريف BACKUP_GDRIVE_SCRIPT_URL على الخادم يُرفع تلقائياً (حد حجم معقول).',
-    en: 'External: set BACKUP_GDRIVE_SCRIPT_URL on the server for auto upload (size limit applies).',
+    ar: 'تخزين خارجي: يمكن لصق رابط Google Apps من الإعدادات أدناه، أو تعريف BACKUP_GDRIVE_SCRIPT_URL على الخادم (حد حجم ~18 ميجابايت للرفع عبر السكربت).',
+    en: 'External: paste your Google Apps Script URL in settings below, or set BACKUP_GDRIVE_SCRIPT_URL on the server (Apps Script upload limit ~18 MB).',
+  },
+  backupGdriveSectionTitle: { ar: 'رفع تلقائي إلى Google Drive', en: 'Auto upload to Google Drive' },
+  backupGdriveScriptUrlLabel: {
+    ar: 'رابط تطبيق الويب (Apps Script)',
+    en: 'Web app URL (Apps Script)',
+  },
+  backupGdriveScriptUrlHint: {
+    ar: 'الصق رابط النشر «تطبيق ويب» من script.google.com. إن تركت الحقل فارغاً يُستخدم رابط الخادم إن وُجد. لا تشارك الرابط علناً.',
+    en: 'Paste your deployed Web App URL from script.google.com. Leave empty to fall back to the server env URL only. Treat the URL as sensitive.',
+  },
+  backupGdriveFolderLabel: { ar: 'مجلد Drive (اختياري)', en: 'Drive folder (optional)' },
+  backupGdriveFolderHint: {
+    ar: 'معرّف المجلد أو رابط drive.google.com/.../folders/... — يُرسَم للسكربت كـ folderId. حدّث سكربتك ليقرأ body.folderId ويحفظ الملف هناك.',
+    en: 'Folder ID or full Drive folder URL — sent as folderId in the JSON body. Your Apps Script must read body.folderId and save the file there.',
   },
   backupBulletResume: { ar: 'استكمال: زر «إعادة رفع خارجي» إذا فشل الرفع بسبب الشبكة.', en: 'Resume: use “Retry external upload” after network failures.' },
   backupBulletReport: { ar: 'تقرير استرجاع: يعرض أعداد السجلات ووصف اللقطة قبل أي استيراد.', en: 'Restore report: record counts and manifest before import.' },
