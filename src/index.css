@@ -2257,7 +2257,11 @@ input:focus, select:focus, textarea:focus {
    - ديسكتوب: ScreenTabs connected (نظام عام) + .noorix-settings-card على الكرت
    - جوال: قائمة منسدلة select محلية (100% موثوقة)
 ══════════════════════════════════════════════════════════════════════════ */
-.noorix-settings-card { overflow: hidden; }
+.noorix-settings-card {
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+}
 
 /* ── القائمة المنسدلة (جوال < 640px) ────────────────────────────────── */
 .noorix-settings-mobile-nav {
@@ -2299,7 +2303,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ── محتوى التبويب ───────────────────────────────────────────────────── */
-.noorix-settings-tab-body { padding: 20px; }
+/* min-width:0 يمنع تمدد شبكات/فليكس عن عرض البطاقة على الجوال */
+.noorix-settings-tab-body {
+  padding: 20px;
+  min-width: 0;
+  box-sizing: border-box;
+}
 
 @media (max-width: 767px) {
   .noorix-settings-tab-body { padding: 16px; }

@@ -279,9 +279,9 @@ export default function RolesTab({ userRole, language }) {
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between gap-2 flex flex-wrap">
-        <div>
+    <div className="grid gap-4 w-full min-w-0">
+      <div className="flex flex-col gap-3 min-[520px]:flex-row min-[520px]:items-start min-[520px]:justify-between min-[520px]:gap-4">
+        <div className="min-w-0">
           <h3 className="m-0 text-[16px] font-bold">
             {isAr ? 'الأدوار والصلاحيات' : 'Roles & Permissions'}
           </h3>
@@ -289,10 +289,14 @@ export default function RolesTab({ userRole, language }) {
             {isAr ? 'أنشئ أدوار مخصصة وتحكم بالصلاحيات لكل صفحة وعملية' : 'Create custom roles and control permissions per page and operation'}
           </p>
         </div>
-        <Button variant="primary" onClick={() => {
-          setForm({ name: '', nameAr: '', description: '', permissions: [] });
-          setShowForm(true);
-        }}>
+        <Button
+          variant="primary"
+          className="w-full min-h-[44px] shrink-0 min-[520px]:w-auto min-[520px]:min-h-0"
+          onClick={() => {
+            setForm({ name: '', nameAr: '', description: '', permissions: [] });
+            setShowForm(true);
+          }}
+        >
           {isAr ? '+ إنشاء دور جديد' : '+ Create New Role'}
         </Button>
       </div>
@@ -306,13 +310,13 @@ export default function RolesTab({ userRole, language }) {
           {roles.map((role) => (
             <div
               key={role.id}
-              className="noorix-surface-card cursor-pointer p-4 transition-[box-shadow] duration-150 hover:[box-shadow:var(--noorix-card-shadow-hover)]"
+              className="noorix-surface-card cursor-pointer p-4 min-w-0 transition-[box-shadow] duration-150 hover:[box-shadow:var(--noorix-card-shadow-hover)]"
               onClick={() => openEdit(role)}
             >
-              <div className="flex gap-3 flex-wrap justify-between items-start">
-                <div className="flex-1 min-w-0 min-w-[200px]">
-                  <div className="flex items-center gap-8 mb-1">
-                    <span className="text-[15px] font-bold">{role.nameAr || role.name}</span>
+              <div className="flex flex-col gap-3 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:justify-between min-[480px]:items-start">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-1">
+                    <span className="text-[15px] font-bold break-words min-w-0">{role.nameAr || role.name}</span>
                     {role.isSystem && (
                       <span className="rounded-lg font-bold py-px px-2 text-[9px] text-white" style={{
                         background: 'var(--noorix-text-muted)',
@@ -328,8 +332,8 @@ export default function RolesTab({ userRole, language }) {
                   )}
                   {renderPermissionBadges(role.permissions)}
                 </div>
-                <div className="flex items-center gap-12 shrink-0">
-                  <div className="text-center">
+                <div className="flex items-stretch justify-start gap-6 sm:gap-10 shrink-0 min-[480px]:justify-end">
+                  <div className="text-center min-w-[3.5rem]">
                     <div className="text-[18px] font-bold" style={{ color: 'var(--noorix-accent)' }}>
                       {role._count?.users ?? 0}
                     </div>
@@ -337,7 +341,7 @@ export default function RolesTab({ userRole, language }) {
                       {isAr ? 'مستخدم' : 'users'}
                     </div>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center min-w-[3.5rem]">
                     <div className="text-[18px] font-bold">
                       {renderPermissionSummary(role.permissions)}
                     </div>

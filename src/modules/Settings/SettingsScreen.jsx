@@ -89,9 +89,9 @@ export default function SettingsScreen() {
     <ScreenShell>
 
       {/* ── عنوان الصفحة ── */}
-      <div>
+      <div className="min-w-0">
         <ScreenTitle>الإعدادات</ScreenTitle>
-        <p className="text-[13px] text-noorix-muted m-0">
+        <p className="text-[13px] text-noorix-muted m-0 leading-relaxed">
           إدارة الشركات، المستخدمين، الأدوار والصلاحيات، وربط الذكاء الاصطناعي.
         </p>
       </div>

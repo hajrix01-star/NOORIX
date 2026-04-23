@@ -90,9 +90,13 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   ];
 
   return (
-    <ScreenShell>
-      <div className="flex items-center justify-end">
-        <Button variant="primary" onClick={() => { setForm({ password: '', nameAr: '', roleName: roles[0]?.name || '', preferredLang: 'ar', companyIds: [] }); setShowForm(true); }}>
+    <ScreenShell embedded>
+      <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-end">
+        <Button
+          variant="primary"
+          className="w-full min-h-[44px] min-[420px]:w-auto min-[420px]:min-h-0"
+          onClick={() => { setForm({ password: '', nameAr: '', roleName: roles[0]?.name || '', preferredLang: 'ar', companyIds: [] }); setShowForm(true); }}
+        >
           {t('addUser')}
         </Button>
       </div>
@@ -101,7 +105,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
         <div className="noorix-surface-card p-5">
           <h4 className="text-[14px] m-0 mb-4">{t('newUser')}</h4>
           <form onSubmit={(e) => { e.preventDefault(); if (!form.nameAr?.trim() || !form.password?.trim()) return; createMutation.mutate({ password: form.password, nameAr: form.nameAr.trim(), preferredLang: form.preferredLang, roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c) => c.id) }); }}>
-            <div className="grid gap-3 mb-[14px] max-w-[400px]">
+            <div className="grid w-full min-w-0 max-w-[400px] gap-3 mb-[14px]">
               <Input type="text" label={t('userCreateNameLabel')} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} required />
               <p className="text-[11px] text-noorix-muted m-0 -mt-2">{t('userEmailAutoHint')}</p>
               <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} required />
@@ -123,9 +127,9 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button type="submit" variant="primary" disabled={createMutation.isPending}>{createMutation.isPending ? t('saving') : t('save')}</Button>
-              <Button type="button" onClick={() => setShowForm(false)}>{t('cancel')}</Button>
+            <div className="flex flex-col-reverse gap-2 min-[400px]:flex-row min-[400px]:flex-wrap">
+              <Button type="button" className="w-full min-h-[44px] min-[400px]:w-auto min-[400px]:min-h-0" onClick={() => setShowForm(false)}>{t('cancel')}</Button>
+              <Button type="submit" variant="primary" className="w-full min-h-[44px] min-[400px]:w-auto min-[400px]:min-h-0" disabled={createMutation.isPending}>{createMutation.isPending ? t('saving') : t('save')}</Button>
             </div>
           </form>
         </div>
@@ -160,46 +164,48 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
                 ))}
               </div>
             </div>
-            <div className="flex gap-2 flex flex-wrap">
-              <Button type="submit" variant="primary" disabled={updateMutation.isPending}>{updateMutation.isPending ? t('saving') : t('save')}</Button>
-              <Button type="button" onClick={() => setEditing(null)}>{t('close')}</Button>
+            <div className="flex flex-col gap-2 min-[440px]:flex-row min-[440px]:flex-wrap">
+              <Button type="submit" variant="primary" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" disabled={updateMutation.isPending}>{updateMutation.isPending ? t('saving') : t('save')}</Button>
+              <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => setEditing(null)}>{t('close')}</Button>
               {editing.isActive ? (
-                <Button type="button" onClick={() => archiveMutation.mutate(editing.id)} disabled={archiveMutation.isPending}>أرشفة</Button>
+                <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => archiveMutation.mutate(editing.id)} disabled={archiveMutation.isPending}>أرشفة</Button>
               ) : (
-                <Button type="button" onClick={() => restoreMutation.mutate(editing.id)} disabled={restoreMutation.isPending}>استعادة</Button>
+                <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => restoreMutation.mutate(editing.id)} disabled={restoreMutation.isPending}>استعادة</Button>
               )}
             </div>
           </form>
         )}
       </AdaptiveSheet>
 
-      <SmartTable
-        columns={columns}
-        data={users}
-        total={users.length}
-        page={1}
-        pageSize={50}
-        showRowNumbers
-        rowNumberWidth="1%"
-        isLoading={isLoading}
-        title={t('usersTab')}
-        emptyMessage={t('noUsers')}
-        renderMobileCard={(row) => (
-          <div className="grid gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold text-[14px] text-noorix-text">{row.nameAr || row.nameEn || row.email || '—'}</span>
-              <Badge color={row.isActive ? 'green' : 'red'} size="sm">
-                {row.isActive ? t('active') : t('archived')}
-              </Badge>
+      <div className="min-w-0 w-full overflow-x-auto">
+        <SmartTable
+          columns={columns}
+          data={users}
+          total={users.length}
+          page={1}
+          pageSize={50}
+          showRowNumbers
+          rowNumberWidth="1%"
+          isLoading={isLoading}
+          title={t('usersTab')}
+          emptyMessage={t('noUsers')}
+          renderMobileCard={(row) => (
+            <div className="grid gap-2 min-w-0">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="font-bold text-[14px] text-noorix-text min-w-0 break-words">{row.nameAr || row.nameEn || row.email || '—'}</span>
+                <Badge color={row.isActive ? 'green' : 'red'} size="sm" className="shrink-0">
+                  {row.isActive ? t('active') : t('archived')}
+                </Badge>
+              </div>
+              <div className="nx-cell-muted nx-ltr text-right break-all">{row.email || '—'}</div>
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="nx-cell-muted min-w-0 break-words">{row.role?.nameAr || row.role?.name || '—'}</span>
+                <Button size="sm" className="shrink-0" onClick={() => openEdit(row)}>{t('edit')}</Button>
+              </div>
             </div>
-            <div className="nx-cell-muted nx-ltr text-right">{row.email || '—'}</div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="nx-cell-muted">{row.role?.nameAr || row.role?.name || '—'}</span>
-              <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button>
-            </div>
-          </div>
-        )}
-      />
+          )}
+        />
+      </div>
     </ScreenShell>
   );
 }

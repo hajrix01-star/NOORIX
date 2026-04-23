@@ -56,7 +56,7 @@ export default function AISettingsTab() {
   };
 
   return (
-    <div className="grid gap-6 max-w-[560px]">
+    <div className="grid w-full min-w-0 max-w-[560px] gap-6">
       {/* ─── العنوان والوصف ─── */}
       <div>
         <h2 className="text-[18px] font-bold m-0">
@@ -75,8 +75,8 @@ export default function AISettingsTab() {
         style={{ background: 'var(--noorix-bg)' }}
       >
         {/* شريط الحالة: أونلاين / أوفلاين */}
-        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-noorix-border mb-5 pb-4">
-          <div className="flex gap-2.5">
+        <div className="flex flex-col gap-3 min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between border-b border-noorix-border mb-5 pb-4 min-w-0">
+          <div className="flex gap-2.5 min-w-0 items-center">
             <span
               style={{
                 width: 10,
@@ -100,9 +100,10 @@ export default function AISettingsTab() {
                 : (lang === 'ar' ? 'أوفلاين' : 'Offline')}
             </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 min-[360px]:flex-row min-[360px]:flex-wrap w-full min-[440px]:w-auto">
             <Button
               type="button"
+              className="w-full min-h-[44px] min-[360px]:flex-1 min-[440px]:w-auto min-[440px]:min-h-0 min-[440px]:flex-none"
               onClick={handleRefresh}
               disabled={healthLoading}
             >
@@ -111,6 +112,7 @@ export default function AISettingsTab() {
             <Button
               type="button"
               variant="success"
+              className="w-full min-h-[44px] min-[360px]:flex-1 min-[440px]:w-auto min-[440px]:min-h-0 min-[440px]:flex-none"
               onClick={handleTest}
               disabled={testMutation.isPending || !isOnline}
             >
@@ -163,11 +165,11 @@ export default function AISettingsTab() {
 
 function DiagnosticRow({ label, value, ok, pending }) {
   return (
-    <div className="flex items-center justify-between gap-3 border border-noorix-border rounded-lg py-[10px] px-3" style={{ background: 'var(--noorix-surface)' }}>
-      <span className="text-[13px] font-medium text-noorix-muted">{label}</span>
-      <div className="flex gap-2">
+    <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between border border-noorix-border rounded-lg py-[10px] px-3 min-w-0" style={{ background: 'var(--noorix-surface)' }}>
+      <span className="text-[13px] font-medium text-noorix-muted shrink-0">{label}</span>
+      <div className="flex gap-2 min-w-0 justify-end items-center">
         <span
-          className="text-[13px] font-medium"
+          className="text-[13px] font-medium text-end break-words min-w-0"
           style={{
             color: pending ? 'var(--noorix-text-muted)' : ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
           }}

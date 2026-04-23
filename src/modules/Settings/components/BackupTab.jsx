@@ -108,10 +108,10 @@ function BackupCountsGrid({ counts, t, lang }) {
       {rows.map(([key, val]) => (
         <div
           key={key}
-          className="grid gap-2 text-[13px] py-1.5 border-b border-noorix-border items-baseline [grid-template-columns:1fr_auto]"
+          className="flex flex-col gap-1 min-[380px]:flex-row min-[380px]:items-baseline min-[380px]:justify-between min-[380px]:gap-3 text-[13px] py-2 border-b border-noorix-border min-w-0"
         >
-          <span className="text-noorix-text">{statLabel(t, key)}</span>
-          <span dir="ltr" className="font-semibold tabular-nums">
+          <span className="text-noorix-text min-w-0 break-words">{statLabel(t, key)}</span>
+          <span dir="ltr" className="font-semibold tabular-nums shrink-0 min-[380px]:text-end">
             {Number(val).toLocaleString('en-GB')}
           </span>
         </div>
@@ -359,21 +359,21 @@ export default function BackupTab({ activeCompanies = [] }) {
   }, [activeCompanies, companyId]);
 
   return (
-    <div className="flex flex-col gap-5 w-full min-w-0 max-w-5xl mx-auto">
-      <header className="flex flex-col gap-1">
+    <div className="flex flex-col gap-4 md:gap-5 w-full min-w-0 max-w-full lg:max-w-5xl mx-auto">
+      <header className="flex flex-col gap-1 min-w-0">
         <ScreenTitle>{t('backupHeading')}</ScreenTitle>
         <p className="text-[12px] text-noorix-muted m-0 leading-relaxed max-w-2xl">{t('backupIntro')}</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 lg:items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 lg:items-stretch min-w-0">
         <section className="min-w-0 flex flex-col gap-0" aria-labelledby="backup-company-title">
-          <Card padding="sm" className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3">
+          <Card padding="sm" className="flex flex-col gap-4 min-w-0">
+            <div className="flex flex-col gap-3 min-w-0">
               <h3 id="backup-company-title" className="text-[14px] font-bold text-noorix-text m-0">
                 {t('backupCompanyCardTitle')}
               </h3>
-              <div className="flex flex-col sm:flex-row gap-2 sm:items-end sm:gap-3">
-                <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:gap-3 min-w-0">
+                <div className="flex-1 min-w-0 w-full">
                   <Input
                     type="select"
                     label={t('backupCompanyPick')}
@@ -393,7 +393,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   type="button"
                   size="sm"
                   variant="primary"
-                  className="sm:shrink-0 sm:min-h-[44px]"
+                  className="w-full min-h-[44px] shrink-0 sm:w-auto sm:min-h-[44px]"
                   disabled={!companyId || !activeCompanies.length || triggerMut.isPending}
                   onClick={() => triggerMut.mutate()}
                 >
@@ -405,9 +405,9 @@ export default function BackupTab({ activeCompanies = [] }) {
             <Divider />
 
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-3">
-                <p className="text-[12px] font-semibold text-noorix-text m-0">{t('backupCompanyScheduleTitle')}</p>
-                <p className="text-[11px] text-noorix-muted m-0 sm:max-w-[14rem] sm:text-end leading-snug">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 min-w-0">
+                <p className="text-[12px] font-semibold text-noorix-text m-0 min-w-0">{t('backupCompanyScheduleTitle')}</p>
+                <p className="text-[11px] text-noorix-muted m-0 leading-snug min-w-0 sm:max-w-[min(100%,18rem)] sm:text-end">
                   {t('backupCompanyScheduleHint')}
                 </p>
               </div>
@@ -420,7 +420,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                 />
                 <span>{t('backupCompanyDailyEnabled')}</span>
               </label>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3 min-w-0">
                 <div className="flex flex-col gap-1 min-w-0">
                   <label htmlFor="co-backup-h" className="text-[11px] font-bold text-noorix-muted">
                     {t('backupSystemHour')}
@@ -487,10 +487,11 @@ export default function BackupTab({ activeCompanies = [] }) {
                   {t('backupCompanyLastRun')}: <strong dir="ltr">{coCfgRes.data.lastRunDayRiyadh}</strong>
                 </p>
               )}
-              <div className="flex justify-end">
+              <div className="flex justify-stretch sm:justify-end pt-1 sm:pt-0">
                 <Button
                   type="button"
                   size="sm"
+                  className="w-full min-h-[44px] sm:w-auto"
                   disabled={!companyId || saveCoMut.isPending}
                   onClick={() =>
                     saveCoMut.mutate({
@@ -525,8 +526,8 @@ export default function BackupTab({ activeCompanies = [] }) {
 
         {canSystemBackup && (
           <section className="min-w-0 flex flex-col gap-0" aria-labelledby="backup-system-title">
-            <Card padding="sm" className="flex flex-col gap-4 border-l-[3px] border-l-nx-profit">
-              <div className="flex flex-col gap-1">
+            <Card padding="sm" className="flex flex-col gap-4 min-w-0 border-l-[3px] border-l-nx-profit">
+              <div className="flex flex-col gap-1 min-w-0">
                 <h3 id="backup-system-title" className="text-[14px] font-bold text-noorix-text m-0">
                   {t('backupSystemHeading')}
                 </h3>
@@ -540,7 +541,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                 />
                 <span>{t('backupSystemEnabled')}</span>
               </label>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3 min-w-0">
                 <div className="flex flex-col gap-1 min-w-0">
                   <label htmlFor="backup-h" className="text-[11px] font-bold text-noorix-muted">
                     {t('backupSystemHour')}
@@ -604,10 +605,11 @@ export default function BackupTab({ activeCompanies = [] }) {
                   {t('backupSystemLastRun')}: <strong dir="ltr">{sysCfgRes.data.lastRunDayRiyadh}</strong>
                 </p>
               )}
-              <div className="flex flex-wrap gap-2 justify-end">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                 <Button
                   type="button"
                   size="sm"
+                  className="w-full min-h-[44px] sm:w-auto"
                   disabled={saveSysMut.isPending}
                   onClick={() =>
                     saveSysMut.mutate({
@@ -624,6 +626,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   type="button"
                   size="sm"
                   variant="primary"
+                  className="w-full min-h-[44px] sm:w-auto"
                   disabled={runSysMut.isPending}
                   onClick={() => runSysMut.mutate()}
                 >
@@ -633,8 +636,8 @@ export default function BackupTab({ activeCompanies = [] }) {
 
               <Divider />
 
-              <p className="text-[11px] text-noorix-muted m-0 leading-relaxed">{t('backupSystemLocalHint')}</p>
-              <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[11px] text-noorix-muted m-0 leading-relaxed min-w-0">{t('backupSystemLocalHint')}</p>
+              <div className="flex flex-col gap-2 min-[380px]:flex-row min-[380px]:flex-wrap min-[380px]:items-center">
                 <input
                   ref={systemDumpFileRef}
                   type="file"
@@ -651,6 +654,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   type="button"
                   size="sm"
                   variant="default"
+                  className="w-full min-h-[44px] min-[380px]:w-auto"
                   disabled={uploadSysDumpMut.isPending}
                   onClick={() => systemDumpFileRef.current?.click()}
                 >
@@ -667,33 +671,36 @@ export default function BackupTab({ activeCompanies = [] }) {
                   (!sysJobsRes?.success || !(Array.isArray(sysJobsRes.data) ? sysJobsRes.data : []).length) && (
                     <p className="text-[12px] text-noorix-muted m-0">{t('backupSystemNoJobs')}</p>
                   )}
-                <div className="flex flex-col gap-2 max-h-[min(40vh,320px)] overflow-y-auto overflow-x-hidden pr-0.5">
+                <div className="flex flex-col gap-2 max-h-[min(50vh,360px)] overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y pr-0.5 -mr-0.5 min-w-0">
                   {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
                     <div
                       key={sj.id}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2.5"
+                      className="flex flex-col gap-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-3 min-[520px]:flex-row min-[520px]:items-stretch min-[520px]:justify-between"
                     >
-                      <div className="flex flex-wrap items-center gap-2 min-w-0">
-                        <span dir="ltr" className="text-[13px] font-semibold text-noorix-text tabular-nums">
-                          {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
-                          {formatBackupDate(sj.createdAt, lang)}
-                        </span>
-                        <Badge color={statusBadgeColor(sj.status)} size="sm">
-                          {statusLabel(sj.status, t)}
-                        </Badge>
-                        {sj.verifyOk === true && (
-                          <span className="text-[11px] text-noorix-green font-medium">{t('backupVerifyOk')}</span>
-                        )}
+                      <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 min-w-0">
+                          <span dir="ltr" className="text-[13px] font-semibold text-noorix-text tabular-nums break-all">
+                            {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
+                            {formatBackupDate(sj.createdAt, lang)}
+                          </span>
+                          <Badge color={statusBadgeColor(sj.status)} size="sm" className="shrink-0">
+                            {statusLabel(sj.status, t)}
+                          </Badge>
+                          {sj.verifyOk === true && (
+                            <span className="text-[11px] text-noorix-green font-medium shrink-0">{t('backupVerifyOk')}</span>
+                          )}
+                        </div>
                         {sj.verifyOk === false && sj.verifyError && (
-                          <span className="text-[11px] text-noorix-red break-words max-w-[12rem]">{sj.verifyError}</span>
+                          <span className="text-[11px] text-noorix-red break-words min-w-0">{sj.verifyError}</span>
                         )}
                       </div>
                       {sj.status === 'completed' && sj.localRelativePath && (
-                        <div className="flex shrink-0 flex-wrap items-center gap-1 sm:justify-end">
+                        <div className="flex flex-col gap-2 min-[520px]:shrink-0 min-[520px]:flex-row min-[520px]:flex-wrap min-[520px]:items-center min-[520px]:justify-end min-[520px]:gap-1.5">
                           <Button
                             type="button"
                             size="sm"
                             variant="default"
+                            className="w-full min-h-[44px] justify-center min-[520px]:w-auto min-[520px]:min-h-0"
                             disabled={downloadSysMut.isPending}
                             onClick={() =>
                               downloadSysMut.mutate({
@@ -708,6 +715,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                             type="button"
                             size="sm"
                             variant="ghost"
+                            className="w-full min-h-[44px] justify-center min-[520px]:w-auto min-[520px]:min-h-0"
                             disabled={verifySysMut.isPending}
                             onClick={() => verifySysMut.mutate(sj.id)}
                           >
@@ -717,6 +725,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                             type="button"
                             size="sm"
                             variant="danger"
+                            className="w-full min-h-[44px] justify-center min-[520px]:w-auto min-[520px]:min-h-0"
                             disabled={restoreMut.isPending}
                             onClick={() => {
                               setRestorePhrase('');
@@ -736,10 +745,10 @@ export default function BackupTab({ activeCompanies = [] }) {
         )}
       </div>
 
-      <section className="flex flex-col gap-3 min-w-0" aria-labelledby="backup-log-title">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 id="backup-log-title" className="text-[14px] font-bold text-noorix-text m-0">
+      <section className="flex flex-col gap-3 min-w-0 w-full" aria-labelledby="backup-log-title">
+        <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <h3 id="backup-log-title" className="text-[14px] font-bold text-noorix-text m-0 min-w-0">
               {t('backupJobHistory')}
             </h3>
             {!isLoading && jobs.length > 0 && (
@@ -751,7 +760,7 @@ export default function BackupTab({ activeCompanies = [] }) {
         </div>
         {isLoading && <p className="text-[12px] text-noorix-muted m-0">{t('loading')}</p>}
         {!isLoading && jobs.length === 0 && <p className="text-[12px] text-noorix-muted m-0">{t('backupNoJobs')}</p>}
-        <div className="flex flex-col gap-2 overflow-x-auto">
+        <div className="flex flex-col gap-2 overflow-x-auto min-w-0 -mx-0.5 px-0.5">
           {jobs.map((j) => {
             const metaParts = [
               formatSaudiDateTime(j.createdAt),
@@ -764,29 +773,19 @@ export default function BackupTab({ activeCompanies = [] }) {
                 j.ordinal != null ? ` · ${t('backupOrdinalLabel')} ${j.ordinal}` : ''
               }`;
             return (
-              <Card key={j.id} padding="sm" className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[13px] font-semibold text-noorix-text break-words">{title}</span>
-                    <Badge color={statusBadgeColor(j.status)} size="sm">
+              <Card key={j.id} padding="sm" className="flex flex-col gap-2.5 min-w-0">
+                <div className="flex items-start gap-2 min-w-0">
+                  <div className="min-w-0 flex-1 flex flex-wrap items-center gap-2">
+                    <span className="text-[13px] font-semibold text-noorix-text break-words min-w-0">{title}</span>
+                    <Badge color={statusBadgeColor(j.status)} size="sm" className="shrink-0">
                       {statusLabel(j.status, t)}
                     </Badge>
                   </div>
-                  <p className="text-[11px] text-noorix-muted m-0 mt-1 leading-snug">{metaParts.join(' · ')}</p>
-                  {j.errorMessage && (
-                    <p className="text-[11px] text-noorix-red m-0 mt-1">{j.errorMessage}</p>
-                  )}
-                  {j.verifyOk === true && (
-                    <p className="text-[11px] text-noorix-green m-0 mt-1 font-medium">{t('backupVerifyOk')}</p>
-                  )}
-                  {j.verifyOk === false && j.verifyError && (
-                    <p className="text-[11px] text-noorix-red m-0 mt-1 break-words">{j.verifyError}</p>
-                  )}
-                </div>
-                <KebabMenu
-                  ariaLabel={t('backupActionsMenu')}
-                  menuWidth={200}
-                  items={[
+                  <div className="shrink-0 pt-0.5 min-h-[44px] min-w-[44px] flex items-start justify-center">
+                    <KebabMenu
+                      ariaLabel={t('backupActionsMenu')}
+                      menuWidth={200}
+                      items={[
                     {
                       key: 'report',
                       label: t('backupRestoreReport'),
@@ -821,7 +820,19 @@ export default function BackupTab({ activeCompanies = [] }) {
                       onClick: () => retryMut.mutate(j.id),
                     },
                   ]}
-                />
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-noorix-muted m-0 leading-snug break-words">{metaParts.join(' · ')}</p>
+                {j.errorMessage && (
+                  <p className="text-[11px] text-noorix-red m-0 break-words">{j.errorMessage}</p>
+                )}
+                {j.verifyOk === true && (
+                  <p className="text-[11px] text-noorix-green m-0 font-medium">{t('backupVerifyOk')}</p>
+                )}
+                {j.verifyOk === false && j.verifyError && (
+                  <p className="text-[11px] text-noorix-red m-0 break-words">{j.verifyError}</p>
+                )}
               </Card>
             );
           })}
@@ -869,11 +880,12 @@ export default function BackupTab({ activeCompanies = [] }) {
           </span>
         </label>
 
-        <div className="flex items-center justify-end flex-wrap gap-2">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           <Button
             type="button"
             size="sm"
             variant="ghost"
+            className="w-full min-h-[44px] sm:w-auto"
             disabled={importMut.isPending}
             onClick={() => { setImportModal(null); setImportConfirmed(false); }}
           >
@@ -882,6 +894,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           <Button
             type="button"
             variant="primary"
+            className="w-full min-h-[44px] sm:w-auto"
             disabled={importMut.isPending || !importNameAr.trim() || !importConfirmed}
             onClick={() => importMut.mutate({ jobId: importModal.jobId, nameAr: importNameAr.trim() })}
           >
@@ -977,8 +990,14 @@ export default function BackupTab({ activeCompanies = [] }) {
               </details>
             </div>
 
-            <div className="flex items-center justify-end mt-[18px]">
-              <Button type="button" size="sm" variant="primary" onClick={() => setReportModal(null)}>
+            <div className="flex justify-stretch sm:justify-end mt-[18px]">
+              <Button
+                type="button"
+                size="sm"
+                variant="primary"
+                className="w-full min-h-[44px] sm:w-auto"
+                onClick={() => setReportModal(null)}
+              >
                 {t('close')}
               </Button>
             </div>
@@ -1068,8 +1087,14 @@ export default function BackupTab({ activeCompanies = [] }) {
               </details>
             </div>
 
-            <div className="flex items-center justify-end mt-[18px]">
-              <Button type="button" size="sm" variant="primary" onClick={() => setImportReportModal(null)}>
+            <div className="flex justify-stretch sm:justify-end mt-[18px]">
+              <Button
+                type="button"
+                size="sm"
+                variant="primary"
+                className="w-full min-h-[44px] sm:w-auto"
+                onClick={() => setImportReportModal(null)}
+              >
                 {t('close')}
               </Button>
             </div>
@@ -1101,11 +1126,12 @@ export default function BackupTab({ activeCompanies = [] }) {
           autoComplete="off"
         />
         <p className="text-[11px] text-noorix-muted mt-2 m-0">{t('backupRestoreExitHint')}</p>
-        <div className="flex items-center justify-end flex-wrap gap-2 mt-4">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end mt-4">
           <Button
             type="button"
             size="sm"
             variant="ghost"
+            className="w-full min-h-[44px] sm:w-auto"
             disabled={restoreMut.isPending}
             onClick={() => (setRestoreModal(null), setRestorePhrase(''))}
           >
@@ -1115,6 +1141,7 @@ export default function BackupTab({ activeCompanies = [] }) {
             type="button"
             size="sm"
             variant="danger"
+            className="w-full min-h-[44px] sm:w-auto"
             disabled={restoreMut.isPending || !restorePhrase.trim()}
             onClick={() =>
               restoreModal &&

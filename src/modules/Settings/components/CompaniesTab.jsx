@@ -123,7 +123,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
   };
 
   return (
-    <div className="grid gap-6">
+    <div className="grid w-full min-w-0 gap-6">
       {isError && (
         <div className="p-3 rounded-lg text-[13px] bg-noorix-red/10 border border-noorix-red">
           لا يمكن الاتصال بالسيرفر.
@@ -174,7 +174,7 @@ export default function CompaniesTab({ onCompanyCreated }) {
         <div className="noorix-surface-card p-5">
           <h3 className="m-0 mb-4 text-[16px]">إضافة شركة جديدة</h3>
           <form onSubmit={(e) => { e.preventDefault(); if (!nameAr.trim()) return; addMutation.mutate({ nameAr: nameAr.trim(), nameEn: nameEn.trim() || undefined, taxNumber: taxNumber.trim() || undefined, phone: phone.trim() || undefined, address: address.trim() || undefined, email: email.trim() || undefined, logoUrl: logoUrl.trim() || undefined }); }}
-            className="grid gap-3 max-w-[480px]">
+            className="grid w-full min-w-0 max-w-[480px] gap-3">
             <Input type="text" label="الاسم بالعربي *" value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder="مطعم المعلم الشامي" required />
             <Input type="text" label="الاسم بالإنجليزي" value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="Al-Moalem Al-Shami" />
             <Input type="text" label="الرقم الضريبي" value={taxNumber} onChange={(e) => setTaxNumber(e.target.value)} placeholder="300000000000003" />

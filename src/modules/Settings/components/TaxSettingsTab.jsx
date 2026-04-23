@@ -71,7 +71,7 @@ export default function TaxSettingsTab() {
   }
 
   return (
-    <div className="grid gap-6 max-w-[480px]">
+    <div className="grid w-full min-w-0 max-w-[480px] gap-6">
       <div>
         <h3 className="text-[18px] m-0 mb-2">إعدادات الضريبة</h3>
         <p className="text-[13px] text-noorix-muted m-0">
@@ -80,10 +80,10 @@ export default function TaxSettingsTab() {
       </div>
 
       <div className="noorix-surface-card p-5">
-        <div className="flex flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           {/* مفتاح التفعيل */}
-          <div className="flex items-center justify-between rounded-xl border border-noorix-border bg-noorix-bg-muted py-3 px-[14px]">
-            <label className="block text-[14px] font-semibold m-0">تفعيل ضريبة القيمة المضافة للمبيعات</label>
+          <div className="flex flex-col gap-3 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between rounded-xl border border-noorix-border bg-noorix-bg-muted py-3 px-[14px]">
+            <label className="block text-[14px] font-semibold m-0 min-w-0">تفعيل ضريبة القيمة المضافة للمبيعات</label>
             <label className="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green">
               <input
                 type="checkbox"
@@ -122,7 +122,7 @@ export default function TaxSettingsTab() {
               variant="primary"
               onClick={handleSave}
               disabled={updateMutation.isPending}
-              className="self-start"
+              className="w-full min-h-[44px] sm:w-auto sm:self-start"
             >
               {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
             </Button>

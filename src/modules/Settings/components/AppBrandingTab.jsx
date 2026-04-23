@@ -57,7 +57,7 @@ export default function AppBrandingTab() {
   };
 
   return (
-    <div className="grid gap-7 max-w-[620px]">
+    <div className="grid w-full min-w-0 max-w-[620px] gap-7">
 
       {/* ── توضيح المستويات الثلاثة ──────────────────────────────────────── */}
       <div className="rounded-xl text-[12px] text-noorix-muted grid gap-1.5 p-[14px] bg-[var(--noorix-blue-6)] border border-[var(--noorix-blue-15)]">
@@ -184,7 +184,7 @@ export default function AppBrandingTab() {
       {/* ── دومين تسجيل الدخول ────────────────────────────────────────────── */}
       <div>
         <div className={SECTION_TITLE_CLS}>دومين النظام (يظهر كتلميح في صفحة الدخول)</div>
-        <div className="flex items-center gap-0 max-w-[320px]">
+        <div className="flex w-full max-w-full min-w-0 items-center gap-0 sm:max-w-[320px]">
           <span className="bg-noorix-bg-muted text-[13px] text-noorix-muted nx-ltr py-[10px] px-3 border border-noorix-border rounded-s-[10px] shrink-0">@</span>
           <Input
             type="text"
@@ -203,7 +203,7 @@ export default function AppBrandingTab() {
       {/* ── لون الهوية ────────────────────────────────────────────────────── */}
       <div>
         <div className={SECTION_TITLE_CLS}>لون هوية التطبيق</div>
-        <div className="flex items-center flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5 min-w-0">
           <Input
             type="color"
             value={color}
@@ -214,11 +214,13 @@ export default function AppBrandingTab() {
             type="text"
             value={color}
             onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
-            className="text-[13px] w-[100px] min-w-0 font-mono"
+            className="text-[13px] w-full min-w-0 max-w-[7.5rem] font-mono"
             placeholder="#0a1f44"
             maxLength={7}
           />
-          <span className="text-[12px] text-noorix-muted shrink">يظهر في شريط العنوان على Android والـ PWA</span>
+          <span className="text-[12px] text-noorix-muted min-w-0 basis-full sm:basis-auto sm:shrink">
+            يظهر في شريط العنوان على Android والـ PWA
+          </span>
         </div>
       </div>
 
