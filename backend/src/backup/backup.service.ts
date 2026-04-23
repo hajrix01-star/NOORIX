@@ -307,9 +307,24 @@ export class BackupService {
         body: payload,
         signal: AbortSignal.timeout(120_000),
       });
-      const json = (await res.json()) as { ok?: boolean; error?: string; saved?: string };
+      const raw = await res.text();
+      let json: { ok?: boolean; error?: string; saved?: string } = {};
+      try {
+        json = raw ? (JSON.parse(raw) as { ok?: boolean; error?: string; saved?: string }) : {};
+      } catch {
+        const snippet = raw.replace(/\s+/g, ' ').slice(0, 200);
+        return {
+          ok: false,
+          error: res.ok
+            ? `استجابة غير JSON من السكربت: ${snippet}`
+            : `HTTP ${res.status}: ${snippet || res.statusText}`,
+        };
+      }
       if (json?.ok) return { ok: true };
-      return { ok: false, error: json?.error || res.statusText };
+      return {
+        ok: false,
+        error: json?.error || (res.ok ? 'السكربت لم يُرجع ok: true' : `HTTP ${res.status}: ${raw.slice(0, 120)}`),
+      };
     } catch (e) {
       return { ok: false, error: (e as Error).message };
     }
