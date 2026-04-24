@@ -104,11 +104,26 @@ jobs:
               npx prisma migrate deploy && \
               npm run build)
             (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
+            # Nest يحتاج ثوانٍ لربط المنفذ — curl فوري يعطي connection refused
+            API_PORT=3000
+            echo "==> انتظار liveness على 127.0.0.1:${API_PORT} (حتى 90s)"
+            ready=0
+            for i in $(seq 1 90); do
+              if curl -sS -f -o /dev/null --connect-timeout 2 --max-time 3 "http://127.0.0.1:${API_PORT}/api/v1/health/live" 2>/dev/null; then
+                echo "==> الـ API ردّ بعد ${i} ث"
+                ready=1
+                break
+              fi
+              sleep 1
+            done
+            if [ "$ready" != 1 ]; then
+              echo "ERROR: انتهت مهلة 90s — pm2 noorix-backend (آخر 80 سطر)" >&2
+              pm2 logs noorix-backend --lines 80 --nostream 2>&1 | tail -80
+              exit 1
+            fi
             pm2 restart hajri-menu --update-env 2>/dev/null || true
-            echo "==> liveness (على المنفذ — يجب 200)"
-            curl -sS -f -o /dev/null --max-time 15 "http://127.0.0.1:3000/api/v1/health/live"
             echo "==> readiness (200 + status=ok | 503 إذا DB غير جاهز)"
-            curl -sS -f -o /tmp/noorix-h.txt --max-time 25 "http://127.0.0.1:3000/api/v1/health"
+            curl -sS -f -o /tmp/noorix-h.txt --max-time 25 "http://127.0.0.1:${API_PORT}/api/v1/health"
             head -c 500 /tmp/noorix-h.txt
             echo ""
             rm -f /tmp/noorix-h.txt
