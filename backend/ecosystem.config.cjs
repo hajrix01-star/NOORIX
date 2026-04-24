@@ -8,8 +8,10 @@
  *   pm2 save
  */
 const path = require('path');
+const dotenv = require('dotenv');
 
 const cwd = path.resolve(__dirname);
+dotenv.config({ path: path.join(cwd, '.env') });
 
 module.exports = {
   apps: [
@@ -28,6 +30,8 @@ module.exports = {
         NODE_ENV: 'production',
         /** نُعيّن عبر النشر (GitHub Actions) ليعود في ‎/api/v1/health ‎version */
         DEPLOY_SHA: process.env.DEPLOY_SHA || '',
+        /** .env + افتراضي: بدون CORS الـ app كان ينهار قبل listen */
+        CORS_ORIGIN: (String(process.env.CORS_ORIGIN || '').trim() || 'https://hajrix.com'),
       },
     },
   ],

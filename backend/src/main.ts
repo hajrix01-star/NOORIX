@@ -41,9 +41,12 @@ async function bootstrap() {
     process.exit(1);
   }
 
+  // إنتاج نووريكس/حاجريكس: افتراضي hajrix.com — بدونها كان PM2 يلفّ (exit) ولن تُفتح 3000 أبداً
   if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN?.trim()) {
-    logger.error('❌ CORS_ORIGIN غير مُعرّف في الإنتاج — عيّن نطاق الواجهة (مثال: https://app.example.com)');
-    process.exit(1);
+    process.env.CORS_ORIGIN = 'https://hajrix.com';
+    logger.warn(
+      'CORS_ORIGIN غير مضبوط في .env — يُستخدم الافتراضي https://hajrix.com (راجع backend/.env للتعديل أو نطاقات إضافية)',
+    );
   }
 
   const port = parseInt(process.env.PORT ?? '3000', 10);
