@@ -98,7 +98,7 @@ sudo -u postgres psql -d noorix < /var/backups/noorix/noorix_backup_YYYY-MM-DD_H
 | التفصيل | القيمة |
 |---------|--------|
 | مكان الحفظ | `/var/www/noorix/backend/data/backups/` |
-| النوع الكامل | `database_full` — pg_dump custom format |
+| النوع الكامل | `system_full` — أرشيف `tar.gz` (pg_dump custom كـ `db.dump` + مجلد `uploads` إن وُجد) |
 | نوع الشركة | `company_logical` — JSON لكل شركة |
 | الجدول التلقائي | من الإعدادات (حالياً **معطّل**) |
 | يظهر في | الإعدادات ← النسخ الاحتياطي |

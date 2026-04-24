@@ -53,8 +53,8 @@ export default {
   backupBulletResume: { ar: 'استكمال: زر «إعادة رفع خارجي» إذا فشل الرفع بسبب الشبكة.', en: 'Resume: use “Retry external upload” after network failures.' },
   backupBulletReport: { ar: 'تقرير استرجاع: يعرض أعداد السجلات ووصف اللقطة قبل أي استيراد.', en: 'Restore report: record counts and manifest before import.' },
   backupBulletDaily: {
-    ar: 'جدولة يومية: لكل شركة من القسم أدناه، ولنسخ القاعدة الكاملة من «نسخ النظام» — مع اختبار سلامة الملف.',
-    en: 'Daily schedule: per company below, and full DB under “System backup” — with integrity verification.',
+    ar: 'جدولة يومية: لكل شركة من القسم أدناه، ولأرشيف النظام الكامل (قاعدة + رفع) من «نسخ النظام» — مع اختبار سلامة الملف.',
+    en: 'Daily schedule: per company below, and full system archive (DB + uploads) under “System backup” — with integrity verification.',
   },
   backupCompanyScheduleTitle: { ar: 'جدولة يومية', en: 'Daily schedule' },
   backupCompanyScheduleHint: {
@@ -65,10 +65,15 @@ export default {
   backupCompanyRetention: { ar: 'عدد نسخ الشركة المحفوظة', en: 'Company copies to keep' },
   backupCompanyLastRun: { ar: 'آخر تشغيل مجدول (يوم)', en: 'Last scheduled run (day)' },
   backupCompanySave: { ar: 'حفظ جدولة الشركة', en: 'Save company schedule' },
-  backupSystemRestore: { ar: 'استرداد القاعدة من هذه النسخة', en: 'Restore database from this backup' },
+  backupSystemRestore: { ar: 'استرداد من هذه النسخة', en: 'Restore from this backup' },
   backupSystemRestoreWarn: {
-    ar: 'سيتم استبدال محتوى قاعدة البيانات الحالية بالكامل. قد ينقطع الاتصال حتى يُعاد تشغيل الخادم. لا تستخدم على بيئة إنتاج دون توقف مخطط.',
-    en: 'This replaces the entire current database. The app may stop responding until the backend is restarted. Do not use on production without a maintenance window.',
+    ar: 'سيتم استبدال قاعدة البيانات الحالية ودمج مجلد الرفع (uploads) من الأرشيف إن وُجد. قد ينقطع الاتصال حتى يُعاد تشغيل الخادم. لا تستخدم على إنتاج دون توقف مخطط.',
+    en: 'This replaces the current database and merges the uploads folder from the archive if present. The app may stop until the backend restarts. Do not use on production without a maintenance window.',
+  },
+  backupSystemRestoreFromPc: { ar: 'استرجاع من أرشيف على الجهاز', en: 'Restore from archive on this computer' },
+  backupSystemRestoreFromPcWarn: {
+    ar: 'سيتُم استبدال قاعدة البيانات ودمج uploads من الملف الذي اخترته مباشرة — دون إضافته إلى السجل أولاً.',
+    en: 'The selected file will restore the database and merge uploads immediately — it is not added to the backup list first.',
   },
   backupSystemRestorePhraseHint: {
     ar: 'اكتب عبارة التأكيد بالحروف الإنجليزية كما هي (الافتراضي: RESTORE_NOORIX_FULL_DB). يمكن تغييرها على الخادم بـ BACKUP_RESTORE_CONFIRM_PHRASE.',
@@ -81,10 +86,10 @@ export default {
     ar: 'لإعادة تشغيل الباكند تلقائياً بعد النجاح، عيّن على الخادم: BACKUP_RESTORE_EXIT_AFTER=true',
     en: 'To auto-restart the backend after success, set BACKUP_RESTORE_EXIT_AFTER=true on the server.',
   },
-  backupSystemHeading: { ar: 'نسخ النظام (قاعدة كاملة)', en: 'System backup (full database)' },
+  backupSystemHeading: { ar: 'نسخ النظام (أرشيف كامل)', en: 'System backup (full archive)' },
   backupSystemIntro: {
-    ar: 'مالك/مدير نظام — آخر N نسخة، pg_dump/pg_restore على الخادم.',
-    en: 'Owner/super admin — keeps last N copies; requires pg_dump and pg_restore.',
+    ar: 'مالك/مدير نظام — أرشيف واحد: قاعدة + ملفات الرفع؛ آخر N نسخة؛ يتطلب pg_dump و tar على الخادم.',
+    en: 'Owner/super admin — one archive: database + uploads; keeps last N copies; requires pg_dump and tar on the server.',
   },
   backupSystemEnabled: { ar: 'تفعيل النسخ التلقائي اليومي', en: 'Enable daily automatic backup' },
   backupSystemHour: { ar: 'الساعة (توقيت الرياض)', en: 'Hour (Riyadh time)' },
@@ -93,22 +98,21 @@ export default {
   backupSystemLastRun: { ar: 'آخر تشغيل مجدول (يوم)', en: 'Last scheduled run (day)' },
   backupSystemSave: { ar: 'حفظ الإعدادات', en: 'Save settings' },
   backupSettingsSaved: { ar: 'تم حفظ إعدادات النسخ', en: 'Backup settings saved' },
-  backupSystemRunNow: { ar: 'تشغيل نسخة الآن', en: 'Run backup now' },
   backupSystemRunFullArchive: {
-    ar: 'أرشيف نظام كامل (قاعدة + رفع)',
-    en: 'Full system archive (DB + uploads)',
+    ar: 'تشغيل نسخة نظام الآن (قاعدة + رفع)',
+    en: 'Run full system backup now (DB + uploads)',
   },
   backupSystemFullArchiveHint: {
-    ar: 'ملف واحد مضغوط: نسخة قاعدة بصيغة pg_dump + مجلد الملفات المرفوعة إن وُجد. منفصل عن نسخة القاعدة اليومية أعلاه.',
-    en: 'One archive: pg_dump custom format plus uploads folder if present. Separate from the daily database-only backup above.',
+    ar: 'ملف tar.gz واحد: نسخة قاعدة بصيغة pg_dump custom + مجلد uploads إن وُجد. هذا هو النسخ الافتراضي للنظام والجدول اليومي.',
+    en: 'Single tar.gz: pg_dump custom db.dump plus uploads if present. This is the default system backup and daily schedule.',
   },
   backupSystemJobs: { ar: 'سجل نسخ النظام', en: 'System backup history' },
   backupSystemNoJobs: { ar: 'لا توجد نسخ نظام بعد.', en: 'No system backups yet.' },
   backupSystemDownload: { ar: 'تنزيل إلى الجهاز', en: 'Download to computer' },
-  backupSystemImportFromPc: { ar: 'استيراد من ملف', en: 'Import from file' },
+  backupSystemImportFromPc: { ar: 'إضافة أرشيف للسجل', en: 'Register archive in list' },
   backupSystemLocalHint: {
-    ar: 'تنزيل النسخة المكتملة كملف مضغوط (.dump.gz) للاحتفاظ به محلياً، أو اختيار ملف نسخة سابقة (من تنزيل أو من خادم آخر) لإضافته إلى السجل بعد التحقق من سلامته.',
-    en: 'Download a completed backup as a compressed .dump.gz file, or pick a dump file (from a previous download or another server) to register it after integrity checks.',
+    ar: 'تنزيل النسخة كملف .tar.gz، أو اختيار أرشيف سابق لإضافته للسجل بعد التحقق. «استرجاع من الجهاز» يسترد مباشرة من ملف دون تسجيله.',
+    en: 'Download backups as .tar.gz, or pick an archive to register after verification. “Restore from this computer” applies a file immediately without registering it.',
   },
   backupSystemUploadOk: { ar: 'تم تسجيل النسخة في السجل.', en: 'Backup registered in the list.' },
   backupSystemUploadDup: {

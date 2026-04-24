@@ -4,7 +4,7 @@ import { BackupService } from './backup.service';
 
 /**
  * يتحقق كل دقيقة من إعدادات النسخ التلقائي (جدول system_backup_config):
- * التوقيت بتوقيت الرياض (أو timezone المخزّن)، الاحتفاظ بآخر N نسخة، إلخ.
+ * أرشيف نظام كامل (قاعدة + uploads) عند التفعيل — التوقيت بتوقيت الرياض (أو timezone المخزّن).
  */
 @Injectable()
 export class BackupSchedulerService {
@@ -15,7 +15,7 @@ export class BackupSchedulerService {
   @Cron(CronExpression.EVERY_MINUTE)
   async handleScheduledBackupTick(): Promise<void> {
     try {
-      await this.backupService.runScheduledFullDatabaseBackup();
+      await this.backupService.maybeRunScheduledSystemFullBackup();
     } catch (e) {
       this.logger.error(`Backup scheduler tick error: ${(e as Error).message}`);
     }

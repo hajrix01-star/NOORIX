@@ -1475,8 +1475,9 @@ export async function backupListSystemJobs(limit = 20) {
   return apiGet('/api/v1/backup/system/jobs', { limit: String(limit) });
 }
 
+/** نسخ نظام كامل (أرشيف tar.gz) — يُفضّل استخدام run-full-archive مباشرة */
 export async function backupRunSystemNow() {
-  return apiPost('/api/v1/backup/system/run-now', {}, { timeout: 600000 });
+  return apiPost('/api/v1/backup/system/run-full-archive', {}, { timeout: 600000 });
 }
 
 /** أرشيف نظام: قاعدة (pg_dump custom) + مجلد uploads — قد يستغرق وقتاً */
@@ -1538,12 +1539,30 @@ export async function backupDownloadSystemJobFile(jobId, suggestedName) {
   }
 }
 
-/** رفع نسخة قاعدة كاملة من الجهاز — يتحقق الخادم ثم يضيفها لسجل نسخ النظام */
-export async function backupUploadSystemFullDump(file) {
+/** رفع أرشيف نظام (.tar.gz) من الجهاز — يتحقق الخادم ثم يضيفه لسجل نسخ النظام */
+export async function backupUploadSystemFullArchive(file) {
   if (!file) return { success: false, error: 'لم يُختر ملف' };
-  const url = new URL('/api/v1/backup/system/upload-full-dump', getBase());
+  const url = new URL('/api/v1/backup/system/upload-full-archive', getBase());
   const formData = new FormData();
   formData.append('file', file);
+  const token = getAuthToken();
+  const h = {};
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  try {
+    const res = await safeFetch(url.toString(), { method: 'POST', headers: h, body: formData }, 600000);
+    return parseResponse(res);
+  } catch (err) {
+    return { success: false, error: err?.message || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
+/** استرداد مباشر من أرشيف .tar.gz على الجهاز — خطير؛ يتطلب عبارة التأكيد */
+export async function backupRestoreSystemFromUpload(file, confirmPhrase) {
+  if (!file) return { success: false, error: 'لم يُختر ملف' };
+  const url = new URL('/api/v1/backup/system/restore-upload', getBase());
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('confirmPhrase', confirmPhrase || '');
   const token = getAuthToken();
   const h = {};
   if (token) h['Authorization'] = `Bearer ${token}`;

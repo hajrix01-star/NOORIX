@@ -76,34 +76,6 @@ export class BackupService {
     return (a._max.ordinal ?? 0) + 1;
   }
 
-  private async nextOrdinalFullDb(): Promise<number> {
-    const a = await this.prisma.backupJob.aggregate({
-      where: { scope: 'database_full', ordinal: { not: null } },
-      _max: { ordinal: true },
-    });
-    return (a._max.ordinal ?? 0) + 1;
-  }
-
-  private async pruneSystemFullBackups(retentionCount: number): Promise<void> {
-    const keep = Math.min(Math.max(retentionCount, 1), 50);
-    const root = this.getBackupRoot();
-    const victims = await this.prisma.backupJob.findMany({
-      where: {
-        scope: 'database_full',
-        status: 'completed',
-        localRelativePath: { not: null },
-      },
-      orderBy: [{ completedAt: 'desc' }, { createdAt: 'desc' }],
-      skip: keep,
-    });
-    for (const j of victims) {
-      if (j.localRelativePath) {
-        await fs.unlink(path.join(root, j.localRelativePath)).catch(() => undefined);
-      }
-      await this.prisma.backupJob.delete({ where: { id: j.id } }).catch(() => undefined);
-    }
-  }
-
   private async pruneCompanyLogicalBackups(tenantId: string, companyId: string, retentionCount: number): Promise<void> {
     const keep = Math.min(Math.max(retentionCount, 1), 50);
     const root = this.getBackupRoot();
@@ -549,9 +521,9 @@ export class BackupService {
   }
 
   /**
-   * جدولة يومية: يُستدعى كل دقيقة — يتحقق من التوقيت بتوقيت الرياض (أو timezone في الإعدادات).
+   * جدولة يومية: يُستدعى كل دقيقة — أرشيف نظام كامل (قاعدة + uploads) عند التفعيل.
    */
-  async maybeRunScheduledFullDatabaseBackup(): Promise<void> {
+  async maybeRunScheduledSystemFullBackup(): Promise<void> {
     const cfg = await this.ensureSystemBackupConfigRow();
     if (!cfg.enabled) return;
 
@@ -569,102 +541,7 @@ export class BackupService {
       data: { lastRunDayRiyadh: ymd },
     });
 
-    await this.runFullDatabaseBackup({ manual: false, retentionCount: cfg.retentionCount });
-  }
-
-  /**
-   * نسخة كاملة للقاعدة — tenantId = null.
-   * manual=true يتجاوز التحقق من enabled ويُشغَّل من الواجهة (مالك/مدير).
-   */
-  async runFullDatabaseBackup(opts: { manual?: boolean; retentionCount?: number } = {}): Promise<{ jobId: string }> {
-    const cfg = await this.ensureSystemBackupConfigRow();
-    const retention = opts.retentionCount ?? cfg.retentionCount ?? 10;
-    if (!opts.manual && !cfg.enabled) {
-      return { jobId: '' };
-    }
-
-    await this.ensureBackupRoot();
-    const job = await this.prisma.backupJob.create({
-      data: {
-        tenantId: null,
-        companyId: null,
-        scope: 'database_full',
-        status: 'running',
-      },
-    });
-
-    const t0 = Date.now();
-    const root = this.getBackupRoot();
-    const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    const baseName = `full_${ts}_${job.id}`;
-    const dumpPath = path.join(root, 'system', `${baseName}.dump`);
-    const finalRel = path.join('system', `${baseName}.dump.gz`);
-    const finalAbs = path.join(root, 'system', `${baseName}.dump.gz`);
-
-    try {
-      await fs.mkdir(path.dirname(dumpPath), { recursive: true });
-      await this.runPgDumpToFile(dumpPath);
-      await this.gzipFile(dumpPath, finalAbs);
-      const hash = await this.sha256File(finalAbs);
-      const dup = await this.findDuplicateJob(null, null, 'database_full', hash);
-      if (dup && dup.id !== job.id) {
-        await fs.unlink(finalAbs).catch(() => undefined);
-        await this.prisma.backupJob.update({
-          where: { id: job.id },
-          data: {
-            status: 'skipped_duplicate',
-            contentHash: hash,
-            duplicateOfJobId: dup.id,
-            durationMs: Date.now() - t0,
-            completedAt: new Date(),
-            report: { messageAr: 'تكرار — نفس hash نسخة سابقة' },
-          },
-        });
-        return { jobId: job.id };
-      }
-
-      const st = await fs.stat(finalAbs);
-      let externalUploaded = false;
-      let externalError: string | null = null;
-      const extOptsFullRun = await this.resolveExternalUploadOpts('database_full', null);
-      const up = await this.uploadToExternalIfConfigured(finalAbs, path.basename(finalRel), {
-        scope: 'database_full',
-        company: 'full_database',
-      }, extOptsFullRun);
-      if (up.ok) externalUploaded = true;
-      else externalError = up.error || null;
-
-      const ordinal = await this.nextOrdinalFullDb();
-      await this.prisma.backupJob.update({
-        where: { id: job.id },
-        data: {
-          status: 'completed',
-          contentHash: hash,
-          localRelativePath: finalRel,
-          sizeBytes: st.size,
-          durationMs: Date.now() - t0,
-          completedAt: new Date(),
-          externalUploaded,
-          externalError,
-          ordinal,
-        },
-      });
-      await this.pruneSystemFullBackups(retention);
-      this.logger.log(`Full DB backup completed: ${finalRel} (${st.size} bytes) #${ordinal}`);
-    } catch (e) {
-      const msg = (e as Error).message;
-      this.logger.error(`Full DB backup failed: ${msg}`);
-      await this.prisma.backupJob.update({
-        where: { id: job.id },
-        data: {
-          status: 'failed',
-          errorMessage: msg,
-          durationMs: Date.now() - t0,
-          completedAt: new Date(),
-        },
-      });
-    }
-    return { jobId: job.id };
+    await this.runSystemFullArchive({ manual: false, retentionCount: cfg.retentionCount });
   }
 
   /**
@@ -877,9 +754,9 @@ export class BackupService {
     await this.runSystemFullArchive({ manual: false, retentionCount: cfg.retentionCount });
   }
 
-  /** يُستدعى من المجدول — يتحقق من الساعة بتوقيت الإعدادات */
+  /** @deprecated استخدم maybeRunScheduledSystemFullBackup — مُبقى للتوافق مع استدعاءات قديمة */
   async runScheduledFullDatabaseBackup(): Promise<void> {
-    await this.maybeRunScheduledFullDatabaseBackup();
+    await this.maybeRunScheduledSystemFullBackup();
   }
 
   async listJobs(tenantId: string, allowedCompanyIds: string[] | undefined, limit = 40) {
@@ -921,10 +798,10 @@ export class BackupService {
         messageAr:
           job.scope === 'database_full' || job.scope === 'system_full'
             ? job.scope === 'system_full'
-              ? 'أرشيف النظام (قاعدة + uploads) — الاسترجاع يدوي: فك tar ثم pg_restore لـ db.dump — راجع مسؤول النظام.'
-              : 'استرجاع النسخة الكاملة يتم عبر pg_restore على الخادم — راجع مسؤول النظام.'
+              ? 'أرشيف النظام (قاعدة + uploads) — الاسترجاع من الإعدادات ← النسخ الاحتياطي، أو رفع أرشيف من الجهاز، مع عبارة التأكيد.'
+              : 'نسخة قاعدة قديمة (.dump.gz) — الاسترجاع من الإعدادات إن وُجدت في السجل، أو يدوياً بـ pg_restore.'
             : 'لا يوجد ملف لقطة لهذه المهمة.',
-        messageEn: 'See system administrator for full DB restore.',
+        messageEn: 'Full restore: Settings → Backup (owner), or ask your system administrator.',
         tables: job.report as Record<string, unknown> | null,
       };
     }
@@ -1162,7 +1039,7 @@ export class BackupService {
   async listSystemFullJobs(limit = 20) {
     const take = Math.min(Math.max(limit, 1), 50);
     return this.prisma.backupJob.findMany({
-      where: { scope: { in: ['database_full', 'system_full'] } },
+      where: { scope: 'system_full' },
       orderBy: { createdAt: 'desc' },
       take,
     });
@@ -1228,43 +1105,27 @@ export class BackupService {
     });
   }
 
-  /**
-   * استرداد قاعدة كاملة من نسخة database_full — خطير؛ يتطلب عبارة تأكيد.
-   * بعد النجاح يُفضّل إعادة تشغيل الباكند (انظر BACKUP_RESTORE_EXIT_AFTER).
-   */
-  async restoreDatabaseFullJob(
-    jobId: string,
-    confirmPhrase: string,
-  ): Promise<{ ok: boolean; messageAr: string; messageEn: string; exitAfter: boolean }> {
-    const expected = process.env.BACKUP_RESTORE_CONFIRM_PHRASE || 'RESTORE_NOORIX_FULL_DB';
-    if (confirmPhrase !== expected) {
-      throw new ForbiddenException('عبارة التأكيد غير صحيحة.');
-    }
-    const job = await this.prisma.backupJob.findFirst({
-      where: { id: jobId, scope: 'database_full' },
+  private async extractTarGzArchiveToDir(archiveAbs: string, destDir: string): Promise<void> {
+    await fs.mkdir(destDir, { recursive: true });
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn('tar', ['-xzf', archiveAbs, '-C', destDir], { stdio: ['ignore', 'pipe', 'pipe'] });
+      let err = '';
+      child.stderr?.on('data', (c) => {
+        err += String(c);
+      });
+      child.on('error', (e) => reject(new BadRequestException(`تعذّر فك الأرشيف: ${(e as Error).message}`)));
+      child.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new BadRequestException(`فشل فك الأرشيف: ${err || 'رمز ' + code}`));
+      });
     });
-    if (!job) throw new NotFoundException('النسخة غير موجودة');
-    if (job.status !== 'completed' || !job.localRelativePath) {
-      throw new BadRequestException('الاسترداد متاح للنسخ المكتملة التي يوجد لها ملف');
-    }
-    const absGz = path.join(this.getBackupRoot(), job.localRelativePath);
-    try {
-      await fs.access(absGz);
-    } catch {
-      throw new NotFoundException('الملف غير موجود على الخادم');
-    }
+  }
+
+  /** pg_restore لملف dump بصيغة custom (ملف db.dump دون gzip) */
+  private async pgRestoreCustomFormatFile(dumpPath: string): Promise<void> {
     const dbUrl = process.env.DATABASE_URL;
     if (!dbUrl) throw new BadRequestException('DATABASE_URL غير مُعرّف');
     const { host, port, user, password, database } = this.parseDatabaseUrl(dbUrl.split('?')[0]);
-    const tmp = path.join(os.tmpdir(), `noorix-restore-${Date.now()}-${Math.random().toString(36).slice(2)}.dump`);
-    try {
-      const buf = await fs.readFile(absGz);
-      const unz = zlib.gunzipSync(buf);
-      await fs.writeFile(tmp, unz);
-    } catch (e) {
-      throw new BadRequestException(`تعذّر فك ملف النسخة: ${(e as Error).message}`);
-    }
-
     const adminUrl = dbUrl.replace(/\/([^/?]+)(\?|$)/, '/postgres$2');
     const adminClient = new Client({ connectionString: adminUrl });
     await adminClient.connect();
@@ -1280,7 +1141,7 @@ export class BackupService {
     await new Promise<void>((resolve, reject) => {
       const child = spawn(
         'pg_restore',
-        ['--clean', '--if-exists', '--no-owner', '--no-acl', '-h', host, '-p', port, '-U', user, '-d', database, tmp],
+        ['--clean', '--if-exists', '--no-owner', '--no-acl', '-h', host, '-p', port, '-U', user, '-d', database, dumpPath],
         {
           env: {
             ...process.env,
@@ -1300,13 +1161,137 @@ export class BackupService {
         else reject(new BadRequestException(`فشل pg_restore: ${err || 'رمز ' + code}`));
       });
     });
-    await fs.unlink(tmp).catch(() => undefined);
+  }
+
+  /**
+   * فك أرشيف نظام كامل وتشغيل pg_restore ودمج مجلد uploads تحت cwd للباكند.
+   */
+  private async applySystemFullTarRestore(archiveAbs: string): Promise<void> {
+    const v = await this.verifySystemFullTarGz(archiveAbs);
+    if (!v.ok) throw new BadRequestException(v.error || 'ملف الأرشيف غير صالح');
+
+    const tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), 'noorix-restore-sysfull-'));
+    try {
+      await this.extractTarGzArchiveToDir(archiveAbs, tmpBase);
+      const dumpPath = path.join(tmpBase, 'db.dump');
+      try {
+        await fs.access(dumpPath);
+      } catch {
+        throw new BadRequestException('بعد فك الأرشيف لم يُعثر على db.dump');
+      }
+      await this.pgRestoreCustomFormatFile(dumpPath);
+
+      const uploadsSrc = path.join(tmpBase, 'uploads');
+      let hasUploads = false;
+      try {
+        const st = await fs.stat(uploadsSrc);
+        hasUploads = st.isDirectory();
+      } catch {
+        hasUploads = false;
+      }
+      if (hasUploads) {
+        const cwd = process.cwd();
+        const destUploads = path.join(cwd, 'uploads');
+        await fs.mkdir(destUploads, { recursive: true });
+        await fs.cp(uploadsSrc, destUploads, { recursive: true });
+      }
+    } finally {
+      await fs.rm(tmpBase, { recursive: true, force: true }).catch(() => undefined);
+    }
+  }
+
+  /**
+   * استرداد أرشيف نظام مرفوع من الجهاز — خطير؛ يتطلب عبارة تأكيد ثم يحذف الملف المؤقت.
+   */
+  async restoreSystemFullFromUploadedTar(opts: {
+    tempPath: string;
+    confirmPhrase: string;
+  }): Promise<{ ok: boolean; messageAr: string; messageEn: string; exitAfter: boolean }> {
+    const expected = process.env.BACKUP_RESTORE_CONFIRM_PHRASE || 'RESTORE_NOORIX_FULL_DB';
+    if (opts.confirmPhrase !== expected) {
+      throw new ForbiddenException('عبارة التأكيد غير صحيحة.');
+    }
+    try {
+      await fs.access(opts.tempPath);
+    } catch {
+      throw new BadRequestException('ملف الرفع غير موجود');
+    }
+    try {
+      await this.applySystemFullTarRestore(opts.tempPath);
+    } finally {
+      await fs.unlink(opts.tempPath).catch(() => undefined);
+    }
     const exitAfter = process.env.BACKUP_RESTORE_EXIT_AFTER === 'true';
     return {
       ok: true,
       messageAr:
-        'تم استرداد القاعدة. أعد تشغيل خدمة الباكند إن لم يُعِد التشغيل تلقائياً.',
-      messageEn: 'Database restored. Restart the backend if it did not restart automatically.',
+        'تم استرداد القاعدة ودمج مجلد الرفع (uploads) إن وُجد في الأرشيف. أعد تشغيل خدمة الباكند إن لم يُعِد التشغيل تلقائياً.',
+      messageEn:
+        'Database and uploads (if present) restored. Restart the backend if it did not restart automatically.',
+      exitAfter,
+    };
+  }
+
+  /**
+   * استرداد من نسخة نظام: system_full (أرشيف tar.gz) أو database_full قديمة (.dump.gz) — خطير؛ يتطلب عبارة تأكيد.
+   * بعد النجاح يُفضّل إعادة تشغيل الباكند (انظر BACKUP_RESTORE_EXIT_AFTER).
+   */
+  async restoreDatabaseFullJob(
+    jobId: string,
+    confirmPhrase: string,
+  ): Promise<{ ok: boolean; messageAr: string; messageEn: string; exitAfter: boolean }> {
+    const expected = process.env.BACKUP_RESTORE_CONFIRM_PHRASE || 'RESTORE_NOORIX_FULL_DB';
+    if (confirmPhrase !== expected) {
+      throw new ForbiddenException('عبارة التأكيد غير صحيحة.');
+    }
+    const job = await this.prisma.backupJob.findFirst({
+      where: { id: jobId, scope: { in: ['database_full', 'system_full'] } },
+    });
+    if (!job) throw new NotFoundException('النسخة غير موجودة');
+    if (job.status !== 'completed' || !job.localRelativePath) {
+      throw new BadRequestException('الاسترداد متاح للنسخ المكتملة التي يوجد لها ملف');
+    }
+    const absPath = path.join(this.getBackupRoot(), job.localRelativePath);
+    try {
+      await fs.access(absPath);
+    } catch {
+      throw new NotFoundException('الملف غير موجود على الخادم');
+    }
+
+    if (job.scope === 'system_full') {
+      await this.applySystemFullTarRestore(absPath);
+      const exitAfter = process.env.BACKUP_RESTORE_EXIT_AFTER === 'true';
+      return {
+        ok: true,
+        messageAr:
+          'تم استرداد القاعدة ودمج مجلد الرفع (uploads) إن وُجد في الأرشيف. أعد تشغيل خدمة الباكند إن لم يُعِد التشغيل تلقائياً.',
+        messageEn:
+          'Database and uploads (if present) restored. Restart the backend if it did not restart automatically.',
+        exitAfter,
+      };
+    }
+
+    const absGz = absPath;
+    const tmp = path.join(os.tmpdir(), `noorix-restore-${Date.now()}-${Math.random().toString(36).slice(2)}.dump`);
+    try {
+      const buf = await fs.readFile(absGz);
+      const unz = zlib.gunzipSync(buf);
+      await fs.writeFile(tmp, unz);
+    } catch (e) {
+      throw new BadRequestException(`تعذّر فك ملف النسخة: ${(e as Error).message}`);
+    }
+
+    try {
+      await this.pgRestoreCustomFormatFile(tmp);
+    } finally {
+      await fs.unlink(tmp).catch(() => undefined);
+    }
+    const exitAfter = process.env.BACKUP_RESTORE_EXIT_AFTER === 'true';
+    return {
+      ok: true,
+      messageAr:
+        'تم استرداد القاعدة (نسخة قاعدة فقط — بدون مجلد الرفع). أعد تشغيل خدمة الباكند إن لم يُعِد التشغيل تلقائياً.',
+      messageEn: 'Database-only backup restored (no uploads folder). Restart the backend if needed.',
       exitAfter,
     };
   }
@@ -1378,9 +1363,9 @@ export class BackupService {
   }
 
   /**
-   * استقبال ملف .dump.gz مرفوعاً من الواجهة — التحقق بـ pg_restore -l ثم تسجيله كنسخة نظام.
+   * استقبال أرشيف نظام .tar.gz من الواجهة (db.dump + uploads) — التحقق ثم تسجيله كنسخة system_full.
    */
-  async ingestUploadedFullDatabaseDump(opts: {
+  async ingestUploadedSystemFullArchive(opts: {
     tempPath: string;
     originalFilename?: string;
     userId?: string;
@@ -1400,7 +1385,7 @@ export class BackupService {
       data: {
         tenantId: null,
         companyId: null,
-        scope: 'database_full',
+        scope: 'system_full',
         status: 'running',
         createdByUserId: userId ?? null,
       },
@@ -1409,7 +1394,7 @@ export class BackupService {
     const t0 = Date.now();
     const root = this.getBackupRoot();
     const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    const finalRel = path.join('system', `imported_${ts}_${job.id}.dump.gz`);
+    const finalRel = path.join('system', `imported_${ts}_${job.id}.tar.gz`);
     const finalAbs = path.join(root, finalRel);
 
     const cleanupTemp = async () => {
@@ -1421,23 +1406,23 @@ export class BackupService {
       await fs.copyFile(tempPath, finalAbs);
       await cleanupTemp();
 
-      const v = await this.verifyPgCustomDumpGz(finalAbs);
+      const v = await this.verifySystemFullTarGz(finalAbs);
       if (!v.ok) {
         await fs.unlink(finalAbs).catch(() => undefined);
         await this.prisma.backupJob.update({
           where: { id: job.id },
           data: {
             status: 'failed',
-            errorMessage: v.error || 'فشل التحقق من تنسيق النسخة',
+            errorMessage: v.error || 'فشل التحقق من تنسيق الأرشيف',
             durationMs: Date.now() - t0,
             completedAt: new Date(),
           },
         });
-        throw new BadRequestException(v.error || 'الملف ليس نسخة pg_dump مخصّصة مضغوطة بصيغة gzip صالحة');
+        throw new BadRequestException(v.error || 'الملف ليس أرشيف نظام صالحاً (tar.gz يحتوي db.dump)');
       }
 
       const hash = await this.sha256File(finalAbs);
-      const dup = await this.findDuplicateJob(null, null, 'database_full', hash);
+      const dup = await this.findDuplicateJob(null, null, 'system_full', hash);
       if (dup && dup.id !== job.id) {
         await fs.unlink(finalAbs).catch(() => undefined);
         await this.prisma.backupJob.update({
@@ -1449,7 +1434,7 @@ export class BackupService {
             durationMs: Date.now() - t0,
             completedAt: new Date(),
             report: {
-              messageAr: 'تكرار — نفس hash نسخة سابقة',
+              messageAr: 'تكرار — نفس hash أرشيف سابق',
               source: 'local_upload',
               originalFilename: originalFilename ?? null,
             },
@@ -1461,15 +1446,15 @@ export class BackupService {
       const st = await fs.stat(finalAbs);
       let externalUploaded = false;
       let externalError: string | null = null;
-      const extOptsImport = await this.resolveExternalUploadOpts('database_full', null);
+      const extOptsImport = await this.resolveExternalUploadOpts('system_full', null);
       const up = await this.uploadToExternalIfConfigured(finalAbs, path.basename(finalRel), {
-        scope: 'database_full',
-        company: 'full_database',
+        scope: 'system_full',
+        company: 'system_archive',
       }, extOptsImport);
       if (up.ok) externalUploaded = true;
       else externalError = up.error || null;
 
-      const ordinal = await this.nextOrdinalFullDb();
+      const ordinal = await this.nextOrdinalSystemFull();
       await this.prisma.backupJob.update({
         where: { id: job.id },
         data: {
@@ -1485,17 +1470,21 @@ export class BackupService {
           verifyOk: true,
           verifyError: null,
           verifiedAt: new Date(),
-          report: { source: 'local_upload', originalFilename: originalFilename ?? null },
+          report: {
+            source: 'local_upload',
+            originalFilename: originalFilename ?? null,
+            messageAr: 'أرشيف مرفوع: قاعدة + uploads إن وُجد',
+          },
         },
       });
-      await this.pruneSystemFullBackups(retention);
-      this.logger.log(`Full DB uploaded from PC: ${finalRel} (${st.size} bytes) #${ordinal}`);
+      await this.pruneSystemFullArchiveJobs(retention);
+      this.logger.log(`System full archive uploaded from PC: ${finalRel} (${st.size} bytes) #${ordinal}`);
       return { jobId: job.id, status: 'completed' };
     } catch (e) {
       await cleanupTemp();
       if (e instanceof BadRequestException) throw e;
       const msg = (e as Error).message;
-      this.logger.error(`Full DB upload ingest failed: ${msg}`);
+      this.logger.error(`System archive upload ingest failed: ${msg}`);
       await this.prisma.backupJob
         .update({
           where: { id: job.id },

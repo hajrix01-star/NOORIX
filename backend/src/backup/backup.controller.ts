@@ -123,18 +123,19 @@ export class BackupController {
     }));
   }
 
+  /** @deprecated استخدم POST backup/system/run-full-archive — يُعيد توجيهاً لأرشيف النظام الكامل */
   @Post('system/run-now')
   @Roles('owner', 'super_admin')
   async runSystemBackupNow(@Req() req: { user?: ReqUser }) {
     if (!req.user?.tenantId) throw new UnauthorizedException();
     const cfg = await this.backupService.getSystemBackupConfig();
-    return this.backupService.runFullDatabaseBackup({
+    return this.backupService.runSystemFullArchive({
       manual: true,
       retentionCount: cfg.retentionCount,
     });
   }
 
-  /** أرشيف نظام: pg_dump (custom) + uploads في tar.gz — منفصل عن نسخة القاعدة المضغوطة اليومية */
+  /** أرشيف نظام: pg_dump (custom) + uploads في tar.gz */
   @Post('system/run-full-archive')
   @Roles('owner', 'super_admin')
   async runSystemFullArchiveNow(@Req() req: { user?: ReqUser }) {
@@ -146,14 +147,14 @@ export class BackupController {
     });
   }
 
-  /** رفع نسخة قاعدة كاملة (.dump.gz) من جهاز المستخدم — يتحقق منها ثم يضيفها للسجل */
-  @Post('system/upload-full-dump')
+  /** رفع أرشيف نظام (.tar.gz: db.dump + uploads) — يتحقق ثم يضيفه للسجل */
+  @Post('system/upload-full-archive')
   @Roles('owner', 'super_admin')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
         destination: (_req, _file, cb) => {
-          const dest = path.join(os.tmpdir(), 'noorix-full-dump-upload');
+          const dest = path.join(os.tmpdir(), 'noorix-full-archive-upload');
           mkdirSync(dest, { recursive: true });
           cb(null, dest);
         },
@@ -164,15 +165,51 @@ export class BackupController {
       limits: { fileSize: fullDumpUploadMaxBytes() },
     }),
   )
-  async uploadSystemFullDump(@UploadedFile() file: Express.Multer.File, @CurrentUser() user: JwtUser) {
+  async uploadSystemFullArchive(@UploadedFile() file: Express.Multer.File, @CurrentUser() user: JwtUser) {
     if (!file?.path) throw new BadRequestException('لم يُرفع ملف');
     const uid = user?.sub || user?.userId;
-    const result = await this.backupService.ingestUploadedFullDatabaseDump({
+    const result = await this.backupService.ingestUploadedSystemFullArchive({
       tempPath: file.path,
       originalFilename: file.originalname,
       userId: uid,
     });
     return { success: true, data: result };
+  }
+
+  /** استرداد مباشر من أرشيف .tar.gz على الجهاز — خطير؛ يتطلب عبارة التأكيد (لا يُسجّل في السجل) */
+  @Post('system/restore-upload')
+  @Roles('owner', 'super_admin')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          const dest = path.join(os.tmpdir(), 'noorix-restore-upload');
+          mkdirSync(dest, { recursive: true });
+          cb(null, dest);
+        },
+        filename: (_req, _file, cb) => {
+          cb(null, `${Date.now()}-${randomBytes(8).toString('hex')}.part`);
+        },
+      }),
+      limits: { fileSize: fullDumpUploadMaxBytes() },
+    }),
+  )
+  async restoreSystemFromUpload(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('confirmPhrase') confirmPhrase: string,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    if (!file?.path) throw new BadRequestException('لم يُرفع ملف');
+    const result = await this.backupService.restoreSystemFullFromUploadedTar({
+      tempPath: file.path,
+      confirmPhrase: confirmPhrase ?? '',
+    });
+    res.json(result);
+    if (result.exitAfter) {
+      res.once('finish', () => {
+        setTimeout(() => process.exit(0), 500);
+      });
+    }
   }
 
   @Get('system/jobs/:id/download')

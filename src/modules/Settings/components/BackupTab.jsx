@@ -16,7 +16,6 @@ import {
   backupGetSystemConfig,
   backupPatchSystemConfig,
   backupListSystemJobs,
-  backupRunSystemNow,
   backupRunSystemFullArchive,
   backupVerifySystemJob,
   backupVerifyCompanyJob,
@@ -24,7 +23,8 @@ import {
   backupPatchCompanyConfig,
   backupRestoreSystemFull,
   backupDownloadSystemJobFile,
-  backupUploadSystemFullDump,
+  backupUploadSystemFullArchive,
+  backupRestoreSystemFromUpload,
 } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
@@ -183,7 +183,10 @@ export default function BackupTab({ activeCompanies = [] }) {
   });
   const [restoreModal, setRestoreModal] = useState(null);
   const [restorePhrase, setRestorePhrase] = useState('');
-  const systemDumpFileRef = React.useRef(null);
+  const [restorePcModal, setRestorePcModal] = useState(null);
+  const [restorePcPhrase, setRestorePcPhrase] = useState('');
+  const systemArchiveFileRef = React.useRef(null);
+  const restoreFromPcFileRef = React.useRef(null);
 
   const { data: jobsRes, isLoading } = useQuery({
     queryKey: ['backup-jobs'],
@@ -313,13 +316,6 @@ export default function BackupTab({ activeCompanies = [] }) {
     errorToast: (e) => e?.message || t('backupError'),
   });
 
-  const runSysMut = useApiMutation({
-    mutationFn: () => backupRunSystemNow(),
-    invalidateQueries: [['backup-system-jobs'], ['backup-jobs']],
-    successToast: () => t('backupStarted'),
-    errorToast: (e) => e?.message || t('backupError'),
-  });
-
   const runFullArchiveMut = useApiMutation({
     mutationFn: () => backupRunSystemFullArchive(),
     invalidateQueries: [['backup-system-jobs'], ['backup-jobs']],
@@ -340,12 +336,25 @@ export default function BackupTab({ activeCompanies = [] }) {
     errorToast: (e) => e?.message || t('backupError'),
   });
 
-  const uploadSysDumpMut = useApiMutation({
-    mutationFn: (file) => backupUploadSystemFullDump(file),
+  const uploadSysArchiveMut = useApiMutation({
+    mutationFn: (file) => backupUploadSystemFullArchive(file),
     invalidateQueries: [['backup-system-jobs']],
     successToast: (res) =>
       res?.data?.status === 'skipped_duplicate' ? t('backupSystemUploadDup') : t('backupSystemUploadOk'),
     errorToast: (e) => e?.message || t('backupError'),
+  });
+
+  const restorePcMut = useApiMutation({
+    mutationFn: ({ file, confirmPhrase }) => backupRestoreSystemFromUpload(file, confirmPhrase),
+    invalidateQueries: [['backup-system-jobs'], ['backup-jobs']],
+    successToast: false,
+    errorToast: (e) => e?.message || t('backupError'),
+    onSuccess: (res) => {
+      setRestorePcModal(null);
+      setRestorePcPhrase('');
+      const msg = res?.data?.messageAr || res?.data?.messageEn || t('backupSystemRestoreOk');
+      showToast(msg, 'success');
+    },
   });
 
   const verifyCoMut = useApiMutation({
@@ -707,17 +716,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                   size="sm"
                   variant="primary"
                   className="w-full min-h-[44px] sm:w-auto"
-                  disabled={runSysMut.isPending || runFullArchiveMut.isPending}
-                  onClick={() => runSysMut.mutate()}
-                >
-                  {runSysMut.isPending ? t('loading') : t('backupSystemRunNow')}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="default"
-                  className="w-full min-h-[44px] sm:w-auto"
-                  disabled={runFullArchiveMut.isPending || runSysMut.isPending}
+                  disabled={runFullArchiveMut.isPending}
                   onClick={() => runFullArchiveMut.mutate()}
                 >
                   {runFullArchiveMut.isPending ? t('loading') : t('backupSystemRunFullArchive')}
@@ -730,15 +729,30 @@ export default function BackupTab({ activeCompanies = [] }) {
               <p className="text-[11px] text-noorix-muted m-0 leading-relaxed min-w-0">{t('backupSystemLocalHint')}</p>
               <div className="flex flex-col gap-2 min-[380px]:flex-row min-[380px]:flex-wrap min-[380px]:items-center">
                 <input
-                  ref={systemDumpFileRef}
+                  ref={systemArchiveFileRef}
                   type="file"
-                  accept=".gz,.dump.gz,application/gzip"
+                  accept=".tar.gz,.tgz,application/gzip"
                   className="sr-only"
                   aria-label={t('backupSystemImportFromPc')}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     e.target.value = '';
-                    if (f) uploadSysDumpMut.mutate(f);
+                    if (f) uploadSysArchiveMut.mutate(f);
+                  }}
+                />
+                <input
+                  ref={restoreFromPcFileRef}
+                  type="file"
+                  accept=".tar.gz,.tgz,application/gzip"
+                  className="sr-only"
+                  aria-label={t('backupSystemRestoreFromPc')}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = '';
+                    if (f) {
+                      setRestorePcPhrase('');
+                      setRestorePcModal({ file: f });
+                    }
                   }}
                 />
                 <Button
@@ -746,10 +760,20 @@ export default function BackupTab({ activeCompanies = [] }) {
                   size="sm"
                   variant="default"
                   className="w-full min-h-[44px] min-[380px]:w-auto"
-                  disabled={uploadSysDumpMut.isPending}
-                  onClick={() => systemDumpFileRef.current?.click()}
+                  disabled={uploadSysArchiveMut.isPending}
+                  onClick={() => systemArchiveFileRef.current?.click()}
                 >
-                  {uploadSysDumpMut.isPending ? t('loading') : t('backupSystemImportFromPc')}
+                  {uploadSysArchiveMut.isPending ? t('loading') : t('backupSystemImportFromPc')}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="danger"
+                  className="w-full min-h-[44px] min-[380px]:w-auto"
+                  disabled={restorePcMut.isPending}
+                  onClick={() => restoreFromPcFileRef.current?.click()}
+                >
+                  {t('backupSystemRestoreFromPc')}
                 </Button>
               </div>
 
@@ -797,10 +821,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                             onClick={() =>
                               downloadSysMut.mutate({
                                 jobId: sj.id,
-                                suggestedName:
-                                  sj.scope === 'system_full'
-                                    ? `noorix-system-archive-${sj.ordinal ?? 'na'}-${sj.id}.tar.gz`
-                                    : `noorix-full-db-${sj.ordinal ?? 'na'}-${sj.id}.dump.gz`,
+                                suggestedName: `noorix-system-archive-${sj.ordinal ?? 'na'}-${sj.id}.tar.gz`,
                               })
                             }
                           >
@@ -816,13 +837,12 @@ export default function BackupTab({ activeCompanies = [] }) {
                           >
                             {t('backupVerify')}
                           </Button>
-                          {sj.scope === 'database_full' && (
                           <Button
                             type="button"
                             size="sm"
                             variant="danger"
                             className="w-full min-h-[44px] justify-center min-[520px]:w-auto min-[520px]:min-h-0"
-                            disabled={restoreMut.isPending}
+                            disabled={restoreMut.isPending || restorePcMut.isPending}
                             onClick={() => {
                               setRestorePhrase('');
                               setRestoreModal({ jobId: sj.id });
@@ -830,7 +850,6 @@ export default function BackupTab({ activeCompanies = [] }) {
                           >
                             {t('backupSystemRestore')}
                           </Button>
-                          )}
                         </div>
                       )}
                     </div>
@@ -1237,6 +1256,69 @@ export default function BackupTab({ activeCompanies = [] }) {
           </>
         )}
       </AdaptiveSheet>
+
+      <Modal
+        open={!!restorePcModal}
+        onClose={() =>
+          !restorePcMut.isPending && (setRestorePcModal(null), setRestorePcPhrase(''))
+        }
+        title={t('backupSystemRestoreFromPc')}
+        size="md"
+        variant="danger"
+      >
+        <div
+          className="text-[13px] font-medium py-[10px] px-[14px] mb-3 rounded-md leading-[1.65] bg-noorix-red/10 border border-noorix-red/45 text-noorix-red"
+          role="alert"
+        >
+          {t('backupSystemRestoreFromPcWarn')}
+        </div>
+        <p className="text-[12px] text-noorix-muted m-0 mb-2 leading-[1.6]">
+          {restorePcModal?.file?.name ? (
+            <span dir="ltr" className="font-mono break-all">
+              {restorePcModal.file.name}
+            </span>
+          ) : null}
+        </p>
+        <p className="text-[12px] text-noorix-muted m-0 mb-3 leading-[1.6]">{t('backupSystemRestorePhraseHint')}</p>
+        <Input
+          type="text"
+          label={t('backupSystemRestorePhraseLabel')}
+          value={restorePcPhrase}
+          onChange={(e) => setRestorePcPhrase(e.target.value)}
+          className="nx-ltr"
+          dir="ltr"
+          autoComplete="off"
+        />
+        <p className="text-[11px] text-noorix-muted mt-2 m-0">{t('backupRestoreExitHint')}</p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end mt-4">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="w-full min-h-[44px] sm:w-auto"
+            disabled={restorePcMut.isPending}
+            onClick={() => (setRestorePcModal(null), setRestorePcPhrase(''))}
+          >
+            {t('cancel')}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="danger"
+            className="w-full min-h-[44px] sm:w-auto"
+            disabled={restorePcMut.isPending || !restorePcPhrase.trim() || !restorePcModal?.file}
+            onClick={() =>
+              restorePcModal?.file &&
+              restorePcMut.mutate({
+                file: restorePcModal.file,
+                confirmPhrase: restorePcPhrase.trim(),
+              })
+            }
+          >
+            {restorePcMut.isPending ? t('loading') : t('backupSystemRestoreConfirm')}
+          </Button>
+        </div>
+      </Modal>
 
       <Modal
         open={!!restoreModal}
