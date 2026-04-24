@@ -549,12 +549,6 @@ export class BackupService {
    * يدوياً: POST backup/system/run-full-archive | أسبوعياً: عيّن BACKUP_SYSTEM_FULL_WEEKLY=1 و BACKUP_SYSTEM_FULL_WEEKDAY/HOUR/MINUTE
    */
   async runSystemFullArchive(opts: { manual?: boolean; retentionCount?: number } = {}): Promise<{ jobId: string }> {
-    if (!opts.manual) {
-      if (process.env.BACKUP_SYSTEM_FULL_WEEKLY !== '1' && process.env.BACKUP_SYSTEM_FULL_ENABLED !== 'true') {
-        return { jobId: '' };
-      }
-    }
-
     const cfg = await this.ensureSystemBackupConfigRow();
     const retention = opts.retentionCount ?? cfg.retentionCount ?? 10;
 
