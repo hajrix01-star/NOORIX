@@ -94,5 +94,11 @@ jobs:
             (cd backend && rm -rf node_modules && npm ci && npx prisma generate && npx prisma migrate deploy && npm run build)
             (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
             pm2 restart hajri-menu --update-env 2>/dev/null || true
+            # فشل واضح في الـ Action إن كان الـ API لا يرد (502 على النطاق = غالباً nginx أو process)
+            echo "==> فحص health محلياً (يجب 200 — وإلا راجع سجلات pm2: noorix-backend)"
+            curl -sS -f -o /tmp/noorix-h.txt --max-time 25 "http://127.0.0.1:3000/api/v1/health"
+            head -c 500 /tmp/noorix-h.txt
+            echo ""
+            rm -f /tmp/noorix-h.txt
             sudo systemctl reload nginx
             echo "Deployment completed successfully!"
