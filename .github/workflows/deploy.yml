@@ -92,7 +92,17 @@ jobs:
             sudo bash deploy/install-frontend.sh /tmp/noorix-frontend.tar.gz ${{ github.sha }}
             rm -f /tmp/noorix-frontend.tar.gz
             export DEPLOY_SHA="${{ github.sha }}"
-            (cd backend && rm -rf node_modules && npm ci && npx prisma generate && npx prisma migrate deploy && npm run build)
+            # Prisma: إيقاف العملية قبل حذف node_modules — الـ .so مُحمّل في الذاكرة؛ بدون stop يفشل generate (ENOENT copyfile)
+            echo "==> المساحة (اختياري للتشخيص):" && df -h / /var/www 2>/dev/null | head -5 || true
+            echo "==> إيقاف noorix-backend مؤقتاً قبل npm ci"
+            pm2 stop noorix-backend 2>/dev/null || true
+            sleep 4
+            (cd backend && \
+              rm -rf node_modules && \
+              npm ci && \
+              (npx prisma generate || (echo "==> إعادة prisma generate" >&2; sleep 5; npx prisma generate) || (echo "==> آخر محاولة prisma generate" >&2; sleep 5; npx prisma generate)) && \
+              npx prisma migrate deploy && \
+              npm run build)
             (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
             pm2 restart hajri-menu --update-env 2>/dev/null || true
             echo "==> liveness (على المنفذ — يجب 200)"

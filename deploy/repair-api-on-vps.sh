@@ -21,9 +21,15 @@ if [[ ! -f "$REPO/backend/package.json" ]]; then
 fi
 
 cd "$REPO/backend"
+echo "==> إيقاف noorix-backend (تحرير engines Prisma) ثم بيئة نظيفة"
+if command -v pm2 >/dev/null 2>&1; then
+  pm2 stop noorix-backend 2>/dev/null || true
+  sleep 4
+fi
+rm -rf node_modules
 echo "==> npm ci + build"
 npm ci
-npx prisma generate
+( npx prisma generate || ( sleep 5; npx prisma generate ) || ( sleep 5; npx prisma generate ) )
 npx prisma migrate deploy
 npm run build
 
