@@ -77,7 +77,7 @@ async function bootstrap() {
     "default-src 'self'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'; object-src 'none'; " +
     "script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; " +
-    "connect-src 'self'; worker-src 'self'; manifest-src 'self'";
+    "connect-src 'self'; worker-src 'self'; manifest-src 'self' data:";
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Content-Security-Policy-Report-Only', cspReportOnly);
     next();

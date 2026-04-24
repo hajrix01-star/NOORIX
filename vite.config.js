@@ -47,7 +47,7 @@ export default defineConfig({
           "img-src 'self' data: blob: https:",
           `connect-src ${connectSrc}`,
           "worker-src 'self'",
-          "manifest-src 'self'",
+          "manifest-src 'self' data:",
         ].join('; ');
         return out.replace('<head>', `<head>\n    <meta http-equiv="${header}" content="${csp}" />`);
       },

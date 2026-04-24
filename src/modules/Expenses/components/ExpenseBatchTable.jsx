@@ -141,6 +141,105 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     };
   });
 
+  const renderMobileCard = (row) => {
+    const i = row.index - 1;
+    const line = expenseLines.find((l) => l.id === row.expenseLineId);
+    const taxable = isExpensePaymentTaxable(line, row.exemptThisPayment);
+    const needInv = taxable;
+    const showExempt = canExemptThisExpensePayment(line);
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-bold text-noorix-text">#{row.index}</span>
+          <Button variant="danger" size="sm" className="min-h-[44px] sm:min-h-0" onClick={() => removeRow(i)}>
+            {t('delete')}
+          </Button>
+        </div>
+        <Input
+          label={lang === 'en' ? 'Expense line' : 'بند المصروف'}
+          type="select"
+          size="sm"
+          value={row.expenseLineId}
+          onChange={(e) => updateRow(i, { expenseLineId: e.target.value })}
+        >
+          <option value="">— {lang === 'en' ? 'Select' : 'اختر'} —</option>
+          {expenseLines.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? (lang === 'en' ? 'Fixed' : 'ثابت') : (lang === 'en' ? 'Variable' : 'متغير')})
+            </option>
+          ))}
+        </Input>
+        <div className="nx-mc__grid nx-mc__grid--2">
+          <div>
+            <div className="nx-mc__stat-label">{lang === 'en' ? 'Category' : 'الفئة'}</div>
+            <div className="text-[12px] text-noorix-text break-words">{row.categoryName}</div>
+          </div>
+          <div>
+            <div className="nx-mc__stat-label">{lang === 'en' ? 'Supplier' : 'المورد'}</div>
+            <div className="text-[12px] text-noorix-text break-words">{row.supplierName}</div>
+          </div>
+        </div>
+        {showExempt ? (
+          <label className="flex cursor-pointer items-center gap-2 text-[13px] font-medium text-noorix-text">
+            <input
+              type="checkbox"
+              checked={!!row.exemptThisPayment}
+              onChange={(e) => updateRow(i, { exemptThisPayment: e.target.checked })}
+              className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
+              aria-label={t('expenseBatchTaxExemptHint')}
+            />
+            {t('expenseBatchTaxExemptShort')}
+          </label>
+        ) : null}
+        <Input
+          label={lang === 'en' ? 'Supplier invoice #' : 'رقم فاتورة المورد'}
+          type="text"
+          size="sm"
+          value={row.supplierInvoiceNumber}
+          onChange={(e) => updateRow(i, { supplierInvoiceNumber: e.target.value })}
+          placeholder={needInv ? (lang === 'en' ? 'Required if taxable' : 'مطلوب إن خاضع') : lang === 'en' ? 'Optional' : 'اختياري'}
+        />
+        <Input
+          label={lang === 'en' ? 'Total' : 'الإجمالي'}
+          type="number"
+          step="0.01"
+          min="0"
+          value={row.totalInclusive}
+          onChange={(e) => updateRow(i, { totalInclusive: e.target.value })}
+          placeholder="0.00"
+        />
+        <div className="nx-mc__grid nx-mc__grid--2">
+          <div>
+            <div className="nx-mc__stat-label">{lang === 'en' ? 'Net' : 'الصافي'}</div>
+            <FmtNum n={row.net} className="text-[14px] font-bold text-noorix-green ltr" />
+          </div>
+          <div>
+            <div className="nx-mc__stat-label">{lang === 'en' ? 'Tax' : 'الضريبة'}</div>
+            <FmtNum n={row.tax} className="text-[14px] font-bold text-noorix-amber ltr" />
+          </div>
+        </div>
+        <Input
+          label={lang === 'en' ? 'Notes' : 'ملاحظات'}
+          type="text"
+          size="sm"
+          value={row.notes}
+          onChange={(e) => updateRow(i, { notes: e.target.value })}
+          placeholder={lang === 'en' ? 'Optional' : 'اختياري'}
+        />
+        <label className="flex cursor-pointer items-center gap-2 text-[13px] font-medium text-noorix-text">
+          <input
+            type="checkbox"
+            checked={!!row.warrantyFollowUp}
+            onChange={(e) => updateRow(i, { warrantyFollowUp: e.target.checked })}
+            className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
+            aria-label={t('warrantyFollowUpColHint')}
+          />
+          {t('warrantyFollowUpCol')}
+        </label>
+      </div>
+    );
+  };
+
   const columns = [
     { key: 'index', label: '#', shrink: true, width: '3%', align: 'center', render: (v) => <span className="nx-cell-muted">{v}</span> },
     {
@@ -321,8 +420,10 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         showSearchInHeader={false}
         tableId="expense-batch"
         tableLayout="fixed"
-        tableMinWidth={1440}
+        tableMinWidth={1040}
         stickyActionColumn={false}
+        renderMobileCard={renderMobileCard}
+        stripeMobileCards
       />
 
       <div className="noorix-summary-bar noorix-summary-bar--4 mt-6">

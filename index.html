@@ -2,22 +2,8 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <!-- تحديد الاتجاه فوراً قبل تحميل React لتجنب وميض القائمة عند pull-to-refresh -->
-    <script>
-      (function(){
-        try {
-          var lang = localStorage.getItem('noorix-lang') || 'ar';
-          var d = document.documentElement;
-          if (lang === 'en') {
-            d.setAttribute('dir', 'ltr');
-            d.setAttribute('lang', 'en');
-          } else {
-            d.setAttribute('dir', 'rtl');
-            d.setAttribute('lang', 'ar');
-          }
-        } catch(e) {}
-      })();
-    </script>
+    <!-- تحديد الاتجاه فوراً قبل تحميل React (ملف منفصل ليتوافق مع CSP: script-src self فقط) -->
+    <script src="/lang-boot.js"></script>
     <title>نووريكس — Noorix</title>
 
     <!-- Viewport & PWA -->

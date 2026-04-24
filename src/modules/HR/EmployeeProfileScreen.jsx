@@ -26,7 +26,7 @@ import {
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { assertApiOk } from '../../utils/apiResponse';
 import { hrFmt } from './utils/hrFmt';
-import { Badge, Button, ScreenShell, Spinner, SmartTable, cn , FmtNum } from '../../ui';
+import { Badge, Button, ScreenShell, SmartTable, cn, FmtNum } from '../../ui';
 import {
   parseWorkHours,
   overtimePay,
@@ -355,8 +355,16 @@ export default function EmployeeProfileScreen() {
   if (isLoading) {
     return (
       <ScreenShell>
-        <div className="flex items-center justify-center py-20">
-          <Spinner size="lg" />
+        <div className="mx-auto w-full max-w-[1160px] space-y-4 py-6">
+          <div className="h-11 rounded-lg bg-noorix-bg-muted animate-pulse" />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="h-40 rounded-xl bg-noorix-bg-muted animate-pulse" />
+            <div className="h-40 rounded-xl bg-noorix-bg-muted animate-pulse" />
+          </div>
+          {[1, 2, 3].map((k) => (
+            <div key={k} className="h-36 rounded-xl bg-noorix-bg-muted animate-pulse" />
+          ))}
+          <p className="m-0 text-center text-[13px] font-medium text-noorix-muted">{t('loading')}</p>
         </div>
       </ScreenShell>
     );
@@ -436,7 +444,7 @@ export default function EmployeeProfileScreen() {
 
       <div className="employee-profile-layout">
       {/* معلومات أساسية */}
-      <div className="noorix-surface-card p-6">
+      <div className="noorix-surface-card p-4 md:p-6">
         <div className="flex items-start gap-4 mb-5">
           <div className="w-14 h-14 rounded-full bg-noorix-blue flex items-center justify-center text-white text-[20px] font-bold shrink-0 select-none">
             {getInitials(employeeDisplayName(employee, lang))}
@@ -464,8 +472,8 @@ export default function EmployeeProfileScreen() {
       </div>
 
       {/* تفاصيل الراتب */}
-      <div className="noorix-surface-card p-6">
-        <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="noorix-surface-card p-4 md:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 mb-4">
           <h2 className="text-[16px] font-bold text-noorix-text m-0">{t('salaryBreakdown')}</h2>
           <div className="text-end shrink-0">
             <div className="text-[11px] text-noorix-muted mb-0.5">{t('totalSalary')}</div>
@@ -543,6 +551,22 @@ export default function EmployeeProfileScreen() {
           page={1}
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}
+          renderMobileCard={(row) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.effectiveDate)}</span>
+                <span className="text-[13px] font-semibold text-noorix-text">{row.typeLabel}</span>
+              </div>
+              <div>
+                <div className="nx-mc__stat-label">{t('careerChangeSummary')}</div>
+                <div className="text-[13px] text-noorix-text break-words">{row.changeSummary || '—'}</div>
+              </div>
+              <div>
+                <div className="nx-mc__stat-label">{t('invoiceNotesColumn')}</div>
+                <div className="text-[12px] text-noorix-muted break-words">{row.notes || '—'}</div>
+              </div>
+            </div>
+          )}
         />
       </div>
 
@@ -571,6 +595,24 @@ export default function EmployeeProfileScreen() {
           page={1}
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}
+          renderMobileCard={(row) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.date)}</span>
+                <span className="text-[13px] font-semibold text-noorix-text">{row.typeLabel}</span>
+              </div>
+              <div className="nx-mc__grid nx-mc__grid--2">
+                <div>
+                  <div className="nx-mc__stat-label">{t('advanceAmount')}</div>
+                  <div className={cn('text-[15px] font-bold ltr', row.amount < 0 && 'text-noorix-red')}>{hrFmt(row.amount)}</div>
+                </div>
+              </div>
+              <div>
+                <div className="nx-mc__stat-label">{t('invoiceNotesColumn')}</div>
+                <div className="text-[12px] text-noorix-text break-words">{row.notes || '—'}</div>
+              </div>
+            </div>
+          )}
         />
       </div>
 
@@ -607,6 +649,40 @@ export default function EmployeeProfileScreen() {
           page={1}
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}
+          renderMobileCard={(row) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Badge {...Badge.fromStatus(row.payrollRun?.status, payrollRunStatusMap)} size="sm" />
+                <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.payrollRun?.payrollMonth)}</span>
+              </div>
+              <div className="nx-mc__grid nx-mc__grid--3">
+                <div>
+                  <div className="nx-mc__stat-label">{t('payrollRunNumber')}</div>
+                  <div className="nx-cell-num text-[13px] font-bold ltr">{row.payrollRun?.runNumber ?? '—'}</div>
+                </div>
+                <div>
+                  <div className="nx-mc__stat-label">{t('grossSalary')}</div>
+                  <div className="text-[13px] font-semibold ltr"><FmtNum n={row.grossSalary} /></div>
+                </div>
+                <div>
+                  <div className="nx-mc__stat-label">{t('netSalary')}</div>
+                  <div className="text-[14px] font-bold text-noorix-green ltr"><FmtNum n={row.netSalary} /></div>
+                </div>
+                <div>
+                  <div className="nx-mc__stat-label">{t('payrollDeductions')}</div>
+                  <div className="text-[12px] font-semibold ltr" style={{ color: Number(row.deductions) > 0 ? 'var(--noorix-accent-red)' : undefined }}>{hrFmt(row.deductions)}</div>
+                </div>
+                <div>
+                  <div className="nx-mc__stat-label">{t('payrollAdvances')}</div>
+                  <div className="text-[12px] font-semibold ltr" style={{ color: Number(row.advancesDeduct) > 0 ? 'var(--color-noorix-amber)' : undefined }}>{hrFmt(row.advancesDeduct)}</div>
+                </div>
+              </div>
+              <div>
+                <div className="nx-mc__stat-label">{t('invoiceNotesColumn')}</div>
+                <div className="text-[12px] text-noorix-muted break-words">{row.notes || '—'}</div>
+              </div>
+            </div>
+          )}
         />
       </div>
 
@@ -647,6 +723,33 @@ export default function EmployeeProfileScreen() {
           page={1}
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}
+          renderMobileCard={(row) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[14px] font-bold text-noorix-text">{t(TYPE_MAP[row.leaveType] || 'leaveOther')}</span>
+                <Badge {...Badge.fromStatus(row.status, leaveProfileStatusMap)} size="sm" />
+              </div>
+              <div className="nx-mc__grid nx-mc__grid--3">
+                <div>
+                  <div className="nx-mc__stat-label">{t('startDate')}</div>
+                  <div className="text-[12px] text-noorix-text">{formatSaudiDate(row.startDate)}</div>
+                </div>
+                <div>
+                  <div className="nx-mc__stat-label">{t('endDate')}</div>
+                  <div className="text-[12px] text-noorix-text">{formatSaudiDate(row.endDate)}</div>
+                </div>
+                <div>
+                  <div className="nx-mc__stat-label">{t('daysCount')}</div>
+                  <div className="text-[13px] font-semibold ltr">{row.daysCount ?? '—'}</div>
+                </div>
+              </div>
+              {canEditHrLeave ? (
+                <div className="nx-mc__actions border-t border-noorix-border pt-2">
+                  <HRActionsCell row={row} type="leave" onEdit={() => setEditProfileLeave(row)} />
+                </div>
+              ) : null}
+            </div>
+          )}
         />
       </div>
 
@@ -679,6 +782,24 @@ export default function EmployeeProfileScreen() {
           page={1}
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}
+          renderMobileCard={(row) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[15px] font-bold text-noorix-green ltr"><FmtNum n={row.totalAmount} /></span>
+                <Badge {...Badge.fromStatus(row.status, ADVANCE_STATUS_MAP)} size="sm" />
+              </div>
+              <div className="text-[11px] text-noorix-muted text-end">{formatSaudiDate(row.transactionDate)}</div>
+              {row.installmentCount > 1 ? (
+                <div className="text-[12px] font-semibold text-noorix-blue ltr">
+                  {row.installmentCount} × {hrFmt(row.installmentAmount ?? 0)}
+                </div>
+              ) : null}
+              <div>
+                <div className="nx-mc__stat-label">{t('invoiceNotesColumn')}</div>
+                <div className="text-[12px] text-noorix-text break-words">{row.notes || '—'}</div>
+              </div>
+            </div>
+          )}
         />
       </div>
 
@@ -703,6 +824,24 @@ export default function EmployeeProfileScreen() {
           page={1}
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}
+          renderMobileCard={(row) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="nx-cell-num text-[14px] font-bold ltr">{row.iqamaNumber || '—'}</span>
+                <Badge {...Badge.fromStatus(row.status, residencyProfileStatusMap)} size="sm" />
+              </div>
+              <div className="nx-mc__grid nx-mc__grid--2">
+                <div>
+                  <div className="nx-mc__stat-label">{t('startDate')}</div>
+                  <div className="text-[12px] text-noorix-text">{formatSaudiDate(row.issueDate)}</div>
+                </div>
+                <div>
+                  <div className="nx-mc__stat-label">{t('expiryDate')}</div>
+                  <div className="text-[12px] text-noorix-text">{formatSaudiDate(row.expiryDate)}</div>
+                </div>
+              </div>
+            </div>
+          )}
         />
       </div>
 
@@ -737,6 +876,19 @@ export default function EmployeeProfileScreen() {
           page={1}
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}
+          renderMobileCard={(row) => (
+            <div className="flex flex-col gap-2">
+              <div>
+                <div className="nx-mc__stat-label">{t('documentType')}</div>
+                <div className="text-[13px] font-medium text-noorix-text break-words">
+                  {row.fileName || row.documentType || 'مستند'}
+                </div>
+              </div>
+              <div className="nx-mc__actions">
+                <Button size="sm" className="min-h-[44px] sm:min-h-0" onClick={() => handleDownloadDoc(row.id)}>{t('download')}</Button>
+              </div>
+            </div>
+          )}
         />
       </div>
       </div>
