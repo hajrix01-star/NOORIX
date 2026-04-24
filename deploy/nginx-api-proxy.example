@@ -3,8 +3,9 @@
 # ---------------------------------------------------------------------------
 # ضع الـ upstream عادة في http { } أو في ملف include داخل http { }:
 #
+#   يجب أن يطابق backend/.env (PORT) — مثال 3000 أو 8080
 #   upstream noorix_api {
-#       server 127.0.0.1:3000;
+#       server 127.0.0.1:8080;
 #       keepalive 32;
 #   }
 #
@@ -25,8 +26,8 @@ location /api/ {
 }
 
 # ملاحظات:
-# 502: غالباً الـ Node غير شغّال أو منفذ upstream خاطئ.
-# اختبر من السيرفر:  curl -sS http://127.0.0.1:3000/api/v1/health/live
+# 502: غالباً الـ Node غير شغّال أو منفذ upstream ≠ PORT في ‎.env
+# اختبر من السيرفر:  curl -sS http://127.0.0.1:PORT/api/v1/health/live
 # اختبر عبر النطاق:     curl -sS -f https://hajrix.com/api/v1/health
 #
 #   sudo nginx -t && sudo systemctl reload nginx

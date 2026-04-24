@@ -43,11 +43,20 @@ else
   exit 1
 fi
 
-echo "==> liveness ثم readiness محلياً (بدون Nginx)"
+API_PORT=3000
+if [[ -f .env ]]; then
+  p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' .env | head -1 | tr -d '\r')
+  p=$(echo "$p" | sed "s/^[\"']//;s/[\"']$//" | tr -d '[:space:]')
+  case "$p" in
+    ''|*[!0-9]*) ;;
+    *) API_PORT=$p ;;
+  esac
+fi
+echo "==> liveness ثم readiness على 127.0.0.1:${API_PORT} (نفس Nginx ‎proxy_pass)"
 if command -v curl >/dev/null 2>&1; then
-  curl -sS -f -o /dev/null --max-time 12 "http://127.0.0.1:3000/api/v1/health/live" || { echo "FAIL liveness" >&2; exit 1; }
-  if curl -sS -f -o /tmp/noorix-health.txt --max-time 20 "http://127.0.0.1:3000/api/v1/health"; then
-    echo "OK readiness — http://127.0.0.1:3000/api/v1/health"
+  curl -sS -f -o /dev/null --max-time 12 "http://127.0.0.1:${API_PORT}/api/v1/health/live" || { echo "FAIL liveness" >&2; exit 1; }
+  if curl -sS -f -o /tmp/noorix-health.txt --max-time 20 "http://127.0.0.1:${API_PORT}/api/v1/health"; then
+    echo "OK readiness — http://127.0.0.1:${API_PORT}/api/v1/health"
     head -c 500 /tmp/noorix-health.txt
     echo ""
   else

@@ -104,8 +104,21 @@ jobs:
               npx prisma migrate deploy && \
               npm run build)
             (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
-            # Nest يحتاج ثوانٍ لربط المنفذ — curl فوري يعطي connection refused
+            # المنفذ من backend/.env (مثال 8080) — الافتراضي 3000. يجب أن يطابق Nginx.
             API_PORT=3000
+            if [ -f backend/.env ]; then
+              p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' backend/.env | head -1 | tr -d '\r')
+              p=$(echo "$p" | sed "s/^[\"']//;s/[\"']$//" | tr -d '[:space:]')
+              case "$p" in
+                ''|*[!0-9]*) ;;
+                *) API_PORT=$p ;;
+              esac
+            fi
+            echo "==> فحوص liveness تستخدم منفذ API_PORT=${API_PORT} (نفس Nginx ‎proxy_pass)"
+            if [ "$API_PORT" != "3000" ]; then
+              echo "   تنبيه: Nginx يجب أن يوجّه لـ 127.0.0.1:${API_PORT} وليس 3000 إن كان .env 8080"
+            fi
+            # Nest يحتاج ثوانٍ لربط المنفذ — curl فوري يعطي connection refused
             echo "==> انتظار liveness على 127.0.0.1:${API_PORT} (حتى 90s)"
             ready=0
             for i in $(seq 1 90); do

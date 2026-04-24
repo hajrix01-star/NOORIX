@@ -28,6 +28,8 @@ module.exports = {
       min_uptime: '10s',
       env: {
         NODE_ENV: 'production',
+        /** مهم: يجب أن يطابق Nginx ‎proxy_pass (غالباً 3000 أو 8080 من ‎.env) */
+        PORT: String(process.env.PORT || '3000'),
         /** نُعيّن عبر النشر (GitHub Actions) ليعود في ‎/api/v1/health ‎version */
         DEPLOY_SHA: process.env.DEPLOY_SHA || '',
         /** .env + افتراضي: بدون CORS الـ app كان ينهار قبل listen */
