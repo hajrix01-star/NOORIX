@@ -1,26 +1,32 @@
 # ---------------------------------------------------------------------------
-# Noorix — Nginx: توجيه /api/ إلى الـ API (NestJS عادة على 127.0.0.1:3000)
+# Noorix — Nginx: توجيه /api/ إلى الـ API (نمط احترافي: upstream + keepalive)
 # ---------------------------------------------------------------------------
-# انسخ الـ location أدناه داخل الـ server { } الذي يعرف server_name hajrix.com
-# (أو النطاق الذي تستخدمه)، *قبل* أو *بدلاً من* catch-all يرمي كل شيء إلى SPA.
+# ضع الـ upstream عادة في http { } أو في ملف include داخل http { }:
 #
-# 502 Bad Gateway: غالباً إما
-#   - تطبيق Node غير شغّال (pm2 / الخدمة متوقفة)
-#   - proxy_pass لمنفذ خاطئ
-#   - ترتيب: يجب أن يسبق location /api/ الـ try_files الافتراضي لـ / إن لزم
+#   upstream noorix_api {
+#       server 127.0.0.1:3000;
+#       keepalive 32;
+#   }
+#
+# ثم داخل server { } لموقع hajrix.com (قبل try_files الـ SPA إن وُجد):
 # ---------------------------------------------------------------------------
 
 location /api/ {
-    proxy_pass http://127.0.0.1:3000;
+    proxy_pass http://noorix_api;
     proxy_http_version 1.1;
+    proxy_set_header Connection "";
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    # وقت انتظار التطبيق الطويل (رفع/تقارير) — اضبط حسب الحاجة
     proxy_read_timeout 120s;
     proxy_connect_timeout 10s;
+    proxy_send_timeout 120s;
 }
 
-# بعد التعديل (تحقق من المسار الفعلي لملف الـ vhost):
+# ملاحظات:
+# 502: غالباً الـ Node غير شغّال أو منفذ upstream خاطئ.
+# اختبر من السيرفر:  curl -sS http://127.0.0.1:3000/api/v1/health/live
+# اختبر عبر النطاق:     curl -sS -f https://hajrix.com/api/v1/health
+#
 #   sudo nginx -t && sudo systemctl reload nginx

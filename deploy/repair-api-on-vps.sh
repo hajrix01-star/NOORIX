@@ -37,19 +37,28 @@ else
   exit 1
 fi
 
-echo "==> اختبار health محلياً (لا يمر عبر Nginx)"
+echo "==> liveness ثم readiness محلياً (بدون Nginx)"
 if command -v curl >/dev/null 2>&1; then
-  if curl -sS -f -o /tmp/noorix-health.txt --max-time 15 "http://127.0.0.1:3000/api/v1/health"; then
-    echo "OK — http://127.0.0.1:3000/api/v1/health"
-    head -c 400 /tmp/noorix-health.txt
+  curl -sS -f -o /dev/null --max-time 12 "http://127.0.0.1:3000/api/v1/health/live" || { echo "FAIL liveness" >&2; exit 1; }
+  if curl -sS -f -o /tmp/noorix-health.txt --max-time 20 "http://127.0.0.1:3000/api/v1/health"; then
+    echo "OK readiness — http://127.0.0.1:3000/api/v1/health"
+    head -c 500 /tmp/noorix-health.txt
     echo ""
   else
-    echo "FAIL — الـ API لا يرد على 3000. راجع: pm2 logs noorix-backend" >&2
+    echo "FAIL readiness (503=DB/تبعية). راجع: pm2 logs noorix-backend" >&2
     exit 1
   fi
   rm -f /tmp/noorix-health.txt
+  if curl -sS -f -o /tmp/noorix-pub.txt --max-time 30 "https://hajrix.com/api/v1/health" 2>/dev/null; then
+    echo "OK — عبر النطاق العام (Nginx+TLS):"
+    head -c 400 /tmp/noorix-pub.txt
+    echo ""
+  else
+    echo "تنبيه: النطاق العام لم يرد — إن كان المحلي ناجحاً راجع Nginx (انظر deploy/nginx-api-proxy.example)"
+  fi
+  rm -f /tmp/noorix-pub.txt
 else
-  echo "تحذير: curl غير متوفر — اختبر يدوياً: curl -s http://127.0.0.1:3000/api/v1/health"
+  echo "تحذير: curl غير متوفر"
 fi
 
 if command -v nginx >/dev/null 2>&1; then

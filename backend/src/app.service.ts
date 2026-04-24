@@ -63,11 +63,17 @@ export class AppService {
     } catch {
       // db error
     }
+    const version =
+      (process.env.DEPLOY_SHA || process.env.RENDER_GIT_COMMIT || process.env.COMMIT_SHA || '')
+        .trim() || null;
     return {
       status: dbConnected ? 'ok' : 'degraded',
       service: 'noorix-backend',
       dbConnected,
       dbLatencyMs,
+      adminExists,
+      version,
+      uptimeSec: Math.floor(process.uptime()),
     };
   }
 
