@@ -18,10 +18,28 @@ import { GeminiService } from './gemini.service';
 /** Rate limit: 30 طلب/دقيقة لكل مستخدم */
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 30;
+/** تنظيف دوري لتفادي نمو الـ Map إلى ما لا نهاية (كل عملية cluster لها نسختها) */
+const RATE_MAP_MAX_ENTRIES = 10_000;
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
+
+function pruneExpiredRateEntries(now: number): void {
+  if (requestCounts.size <= RATE_MAP_MAX_ENTRIES) return;
+  for (const [uid, e] of requestCounts) {
+    if (now > e.resetAt) requestCounts.delete(uid);
+  }
+  if (requestCounts.size > RATE_MAP_MAX_ENTRIES) {
+    const drop = requestCounts.size - Math.floor(RATE_MAP_MAX_ENTRIES * 0.8);
+    let i = 0;
+    for (const uid of requestCounts.keys()) {
+      requestCounts.delete(uid);
+      if (++i >= drop) break;
+    }
+  }
+}
 
 function checkRateLimit(userId: string): void {
   const now = Date.now();
+  pruneExpiredRateEntries(now);
   let entry = requestCounts.get(userId);
   if (!entry || now > entry.resetAt) {
     entry = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };

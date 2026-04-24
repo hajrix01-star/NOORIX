@@ -32,14 +32,33 @@ const INVOICE_ATTACHMENT_MIMES = new Set([
   'application/pdf',
 ]);
 
+type InvoiceKindAggRow = {
+  kind: string;
+  _sum: { netAmount: Prisma.Decimal | null; taxAmount: Prisma.Decimal | null; totalAmount: Prisma.Decimal | null };
+  _count: { _all: number };
+};
+
 @Injectable()
 export class InvoiceService {
+  /** كاش 60 ثانية لـ count + groupBy بنفس فلاتر القائمة (باستثناء رقم الصفحة) لتخفيف الاستعلامات الثقيلة. */
+  private readonly invoiceListAggCache = new Map<
+    string,
+    { exp: number; total: number; kindAggRows: InvoiceKindAggRow[] }
+  >();
+
   constructor(
     private readonly prisma:         TenantPrismaService,
     private readonly audit:          AuditLogService,
     private readonly financialCore:  FinancialCoreService,
     private readonly vaultsService:  VaultsService,
   ) {}
+
+  private clearInvoiceListAggCacheForCompany(companyId: string): void {
+    const prefix = `v1|${companyId}|`;
+    for (const key of this.invoiceListAggCache.keys()) {
+      if (key.startsWith(prefix)) this.invoiceListAggCache.delete(key);
+    }
+  }
 
   /**
    * إخفاء مسار الملف عن استجابات JSON — إبقاء الاسم الأصلي وعلامة وجود مرفق.
@@ -161,6 +180,7 @@ export class InvoiceService {
       },
       userId ?? undefined,
     );
+    this.clearInvoiceListAggCacheForCompany(dto.companyId);
     return {
       ...raw,
       invoice: this.toPublicInvoice(raw.invoice),
@@ -249,6 +269,7 @@ export class InvoiceService {
         userId ?? undefined,
         dto.idempotencyKey,
       );
+      this.clearInvoiceListAggCacheForCompany(dto.companyId);
       return {
         batchId,
         count:   results.length,
@@ -285,6 +306,7 @@ export class InvoiceService {
         { companyId, referenceType: refType, referenceId, reason: 'إلغاء من واجهة الفواتير' },
         userId ?? undefined,
       );
+      this.clearInvoiceListAggCacheForCompany(companyId);
       const cancelled = await this.prisma.invoice.findFirstOrThrow({ where: { id, companyId } });
       return this.toPublicInvoice(cancelled);
     }
@@ -406,6 +428,7 @@ export class InvoiceService {
 
       return newInvoice;
     });
+    this.clearInvoiceListAggCacheForCompany(companyId);
     return this.toPublicInvoice(updated);
   }
 
@@ -586,31 +609,71 @@ export class InvoiceService {
 
     const activeWhere = { ...where, status: 'active' };
 
-    const [items, total, kindAggRows] = await Promise.all([
-      this.prisma.invoice.findMany({
-        where,
-        orderBy,
-        skip:    (p - 1) * size,
-        take:    size,
-        include: {
-          supplier: true,
-          employee: { select: { id: true, name: true } },
-          createdByUser: { select: { id: true, nameAr: true, nameEn: true, email: true } },
-          expenseLine: { select: { id: true, nameAr: true, kind: true } },
-          vault: { select: { id: true, nameAr: true, nameEn: true, type: true } },
-          vaultAllocations: {
-            include: { vault: { select: { id: true, nameAr: true, nameEn: true, type: true } } },
-          },
+    const aggKey = [
+      'v1',
+      companyId,
+      includeCancelled ? '1' : '0',
+      String(startDate ?? ''),
+      String(endDate ?? ''),
+      String(batchId ?? ''),
+      String(employeeId ?? ''),
+      String(kind ?? ''),
+      String(supplierId ?? ''),
+      String(categoryId ?? ''),
+      String(expenseLineId ?? ''),
+      String(vaultId ?? ''),
+      String(createdByUserId ?? ''),
+      requireExpenseLine === true ? '1' : '0',
+      wantHasNotesOnly ? '1' : '0',
+      needle,
+      String(sortBy),
+      String(sortDir),
+    ].join('|');
+    const aggTtlMs = 60_000;
+    const aggNow = Date.now();
+    const hitAgg = this.invoiceListAggCache.get(aggKey);
+
+    const itemsPromise = this.prisma.invoice.findMany({
+      where,
+      orderBy,
+      skip:    (p - 1) * size,
+      take:    size,
+      include: {
+        supplier: true,
+        employee: { select: { id: true, name: true } },
+        createdByUser: { select: { id: true, nameAr: true, nameEn: true, email: true } },
+        expenseLine: { select: { id: true, nameAr: true, kind: true } },
+        vault: { select: { id: true, nameAr: true, nameEn: true, type: true } },
+        vaultAllocations: {
+          include: { vault: { select: { id: true, nameAr: true, nameEn: true, type: true } } },
         },
-      }),
-      this.prisma.invoice.count({ where }),
-      this.prisma.invoice.groupBy({
-        by: ['kind'],
-        where: activeWhere,
-        _sum: { netAmount: true, taxAmount: true, totalAmount: true },
-        _count: { _all: true },
-      }),
-    ]);
+      },
+    });
+
+    let items: Awaited<typeof itemsPromise>;
+    let total: number;
+    let kindAggRows: InvoiceKindAggRow[];
+
+    if (hitAgg && hitAgg.exp > aggNow) {
+      items = await itemsPromise;
+      total = hitAgg.total;
+      kindAggRows = hitAgg.kindAggRows;
+    } else {
+      const [loadedItems, counted, grouped] = await Promise.all([
+        itemsPromise,
+        this.prisma.invoice.count({ where }),
+        this.prisma.invoice.groupBy({
+          by: ['kind'],
+          where: activeWhere,
+          _sum: { netAmount: true, taxAmount: true, totalAmount: true },
+          _count: { _all: true },
+        }),
+      ]);
+      items = loadedItems;
+      total = counted;
+      kindAggRows = grouped as InvoiceKindAggRow[];
+      this.invoiceListAggCache.set(aggKey, { exp: aggNow + aggTtlMs, total, kindAggRows });
+    }
 
     const zero = () => ({ net: '0', tax: '0', total: '0', count: 0 });
     const sums = { all: zero(), inflow: zero(), outflow: zero() };

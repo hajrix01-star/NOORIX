@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, Min } from 'class-validator';
+import { IsString, IsOptional, IsNumber, Min, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class WarrantyLineDto {
@@ -21,5 +21,6 @@ export class WarrantyLineDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 }

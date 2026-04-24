@@ -1,4 +1,5 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, MinLength, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class ImportBackupDto {
   @IsString()
@@ -12,4 +13,10 @@ export class ImportBackupDto {
   @IsOptional()
   @IsString()
   nameEn?: string;
+
+  /** إن true: فشل الاستيراد وتراجع كامل عند أي تعارض بين مجموع توزيعات الخزائن وإجمالي الفاتورة */
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === true || value === 'true' || value === 1 || value === '1')
+  failOnAllocationWarnings?: boolean;
 }

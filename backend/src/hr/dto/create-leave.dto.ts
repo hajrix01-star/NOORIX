@@ -6,6 +6,7 @@ import {
   IsIn,
   Min,
   IsBoolean,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -41,6 +42,7 @@ export class CreateLeaveDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 }
 
@@ -83,6 +85,7 @@ export class UpdateLeaveDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
   @IsOptional()

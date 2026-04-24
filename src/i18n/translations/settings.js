@@ -94,6 +94,14 @@ export default {
   backupSystemSave: { ar: 'حفظ الإعدادات', en: 'Save settings' },
   backupSettingsSaved: { ar: 'تم حفظ إعدادات النسخ', en: 'Backup settings saved' },
   backupSystemRunNow: { ar: 'تشغيل نسخة الآن', en: 'Run backup now' },
+  backupSystemRunFullArchive: {
+    ar: 'أرشيف نظام كامل (قاعدة + رفع)',
+    en: 'Full system archive (DB + uploads)',
+  },
+  backupSystemFullArchiveHint: {
+    ar: 'ملف واحد مضغوط: نسخة قاعدة بصيغة pg_dump + مجلد الملفات المرفوعة إن وُجد. منفصل عن نسخة القاعدة اليومية أعلاه.',
+    en: 'One archive: pg_dump custom format plus uploads folder if present. Separate from the daily database-only backup above.',
+  },
   backupSystemJobs: { ar: 'سجل نسخ النظام', en: 'System backup history' },
   backupSystemNoJobs: { ar: 'لا توجد نسخ نظام بعد.', en: 'No system backups yet.' },
   backupSystemDownload: { ar: 'تنزيل إلى الجهاز', en: 'Download to computer' },
@@ -115,6 +123,7 @@ export default {
   backupNoJobs: { ar: 'لا توجد عمليات بعد.', en: 'No backups yet.' },
   backupScopeCompany: { ar: 'شركة (لقطة منطقية)', en: 'Company (logical)' },
   backupScopeFullDb: { ar: 'قاعدة كاملة', en: 'Full database' },
+  backupScopeSystemFull: { ar: 'أرشيف نظام (قاعدة + رفع)', en: 'System archive (DB + uploads)' },
   backupStatusPending: { ar: 'قيد الانتظار', en: 'Pending' },
   backupStatusRunning: { ar: 'جاري…', en: 'Running' },
   backupStatusCompleted: { ar: 'مكتمل', en: 'Completed' },
@@ -133,6 +142,14 @@ export default {
     en: 'Creates a new company from the snapshot and links your current user. Does not delete existing companies. Large datasets may take several minutes.',
   },
   backupImportNameLabel: { ar: 'اسم الشركة الجديدة (عربي)', en: 'New company name (Arabic)' },
+  backupImportStrictAllocations: {
+    ar: 'إيقاف الاستيراد إن وُجد تعارض في توزيع الخزائن',
+    en: 'Abort import if vault split totals mismatch invoices',
+  },
+  backupImportStrictAllocationsHint: {
+    ar: 'يُلغى الاستيراد بالكامل إذا لم يطابق مجموع أجزاء الخزائن إجمالي أي فاتورة صرف متعددة الخزائن. يمكن أيضاً تفعيله دائماً على الخادم بـ BACKUP_LOGICAL_IMPORT_FAIL_ON_ALLOCATION_WARNINGS=1',
+    en: 'Rolls back the import if any multi-vault outflow invoice has splits that do not sum to its total. Or set BACKUP_LOGICAL_IMPORT_FAIL_ON_ALLOCATION_WARNINGS=1 on the server.',
+  },
   backupImportRun: { ar: 'تشغيل الاستيراد', en: 'Run import' },
   backupImportOk: {
     ar: 'تم الاستيراد. اختر الشركة الجديدة من القائمة إن لم تظهر تلقائياً.',
@@ -149,6 +166,7 @@ export default {
   backupReportMeta: { ar: 'بيانات اللقطة', en: 'Snapshot' },
   backupReportCounts: { ar: 'أعداد السجلات في النسخة', en: 'Record counts in backup' },
   backupReportTotalRows: { ar: 'إجمالي السجلات (مجموع الأنواع)', en: 'Total rows (sum of types)' },
+  backupReportImportWarnings: { ar: 'تنبيهات التحقق المحاسبي', en: 'Accounting verification warnings' },
   backupReportIntegrity: { ar: 'سلامة الملف', en: 'File integrity' },
   backupReportSizeBytes: { ar: 'حجم الملف (بايت)', en: 'File size (bytes)' },
   backupReportHashLabel: { ar: 'بصمة المحتوى', en: 'Content hash' },

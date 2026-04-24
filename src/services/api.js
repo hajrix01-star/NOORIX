@@ -647,6 +647,28 @@ export async function cancelDailySalesSummary(id, companyId) {
 export async function deleteDailySalesSummary(id, companyId) {
   return apiDelete(`/api/v1/sales/summaries/${id}?companyId=${companyId}`);
 }
+/** حزمة ملخصات مبيعات للوحة التحكم — سنة + نطاق يومي + نطاق شهري في استجابة واحدة */
+export async function getDashboardSalesPack({
+  companyId,
+  yearStart,
+  yearEnd,
+  dailyStart,
+  dailyEnd,
+  monthStart,
+  monthEnd,
+}) {
+  const params = {
+    companyId,
+    yearStart: String(yearStart).slice(0, 10),
+    yearEnd: String(yearEnd).slice(0, 10),
+  };
+  if (dailyStart) params.dailyStart = String(dailyStart).slice(0, 10);
+  if (dailyEnd) params.dailyEnd = String(dailyEnd).slice(0, 10);
+  if (monthStart) params.monthStart = String(monthStart).slice(0, 10);
+  if (monthEnd) params.monthEnd = String(monthEnd).slice(0, 10);
+  return apiGet('/api/v1/sales/summaries/dashboard-pack', params);
+}
+
 export async function getDailySalesSummaries(
   companyId,
   startDate,
@@ -695,7 +717,7 @@ export async function fetchAllSalesSummariesForExport(
   const pageSize = 150;
   let page = 1;
   const acc = [];
-  for (let guard = 0; guard < 500; guard++) {
+  for (let guard = 0; guard < 80; guard++) {
     const res = await getDailySalesSummaries(
       companyId,
       startDate,
@@ -1455,6 +1477,11 @@ export async function backupListSystemJobs(limit = 20) {
 
 export async function backupRunSystemNow() {
   return apiPost('/api/v1/backup/system/run-now', {}, { timeout: 600000 });
+}
+
+/** أرشيف نظام: قاعدة (pg_dump custom) + مجلد uploads — قد يستغرق وقتاً */
+export async function backupRunSystemFullArchive() {
+  return apiPost('/api/v1/backup/system/run-full-archive', {}, { timeout: 600000 });
 }
 
 export async function backupVerifySystemJob(jobId) {

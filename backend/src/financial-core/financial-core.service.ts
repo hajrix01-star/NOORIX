@@ -48,6 +48,14 @@ type TxClient = Parameters<Parameters<TenantPrismaService['$transaction']>[0]>[0
 
 const RETRY_MAX = 3;
 const RETRY_BASE_MS = 100;
+const OPERATION_NOTES_MAX_LEN = 2000;
+
+function assertOperationNotesLength(notes: string | undefined | null): void {
+  if (notes == null || notes === '') return;
+  if (notes.length > OPERATION_NOTES_MAX_LEN) {
+    throw new BadRequestException(`الملاحظة تتجاوز ${OPERATION_NOTES_MAX_LEN} حرفًا`);
+  }
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -149,6 +157,7 @@ export class FinancialCoreService {
   }
 
   private async _processOutflowInner(dto: OutflowDto, callerUserId?: string) {
+    assertOperationNotesLength(dto.notes);
     const userId   = this._resolveUserId(callerUserId);
     const tenantId = this._resolveTenantId();
     const { entryDate, txDate } = this._buildDates(dto.transactionDate);
@@ -203,9 +212,12 @@ export class FinancialCoreService {
 
       // ── [C] قيود + تخصيصات خزنة (قيد لكل جزء) ───────────
       const ledgerEntries: Awaited<ReturnType<typeof tx.ledgerEntry.create>>[] = [];
+      validateJournalBalance(
+        [{ amount: new Prisma.Decimal(String(dto.totalAmount)) }],
+        splits.map((s) => ({ amount: s.amount })),
+      );
       for (const split of splits) {
         const creditAccountId = await this._getVaultAccount(tx, dto.companyId, split.vaultId);
-        validateJournalBalance([{ amount: split.amount }], [{ amount: split.amount }]);
         const ledgerEntry = await tx.ledgerEntry.create({
           data: {
             tenantId,
@@ -283,6 +295,7 @@ export class FinancialCoreService {
     return this.db.withTenant(async (tx) => {
       const results = [];
       for (const dto of dtos) {
+        assertOperationNotesLength(dto.notes);
         const { entryDate, txDate } = this._buildDates(dto.transactionDate);
         const serial = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
         await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
@@ -327,9 +340,12 @@ export class FinancialCoreService {
           },
         });
 
+        validateJournalBalance(
+          [{ amount: new Prisma.Decimal(String(dto.totalAmount)) }],
+          splits.map((s) => ({ amount: s.amount })),
+        );
         for (const split of splits) {
           const creditAccountId = await this._getVaultAccount(tx, dto.companyId, split.vaultId);
-          validateJournalBalance([{ amount: split.amount }], [{ amount: split.amount }]);
           await tx.ledgerEntry.create({
             data: {
               tenantId,
@@ -622,6 +638,7 @@ export class FinancialCoreService {
       id: string;
       transactionDate: Date;
       employeeId: string | null;
+      totalAmount: Prisma.Decimal;
     },
     invoiceId: string,
     splits: Array<{ vaultId: string; amount: Prisma.Decimal }>,
@@ -640,9 +657,12 @@ export class FinancialCoreService {
       },
     });
 
+    validateJournalBalance(
+      [{ amount: inv.totalAmount }],
+      splits.map((s) => ({ amount: s.amount })),
+    );
     for (const split of splits) {
       const creditAccountId = await this._getVaultAccount(tx, companyId, split.vaultId);
-      validateJournalBalance([{ amount: split.amount }], [{ amount: split.amount }]);
       await tx.ledgerEntry.create({
         data: {
           tenantId: inv.tenantId,
@@ -709,6 +729,7 @@ export class FinancialCoreService {
   }
 
   private async _processInflowInner(dto: InflowDto, callerUserId?: string) {
+    assertOperationNotesLength(dto.notes);
     const userId   = this._resolveUserId(callerUserId);
     const tenantId = this._resolveTenantId();
     const { entryDate, txDate } = this._buildDates(dto.transactionDate);
@@ -934,6 +955,7 @@ export class FinancialCoreService {
     },
     callerUserId?: string,
   ) {
+    assertOperationNotesLength(dto.notes);
     const userId   = this._resolveUserId(callerUserId);
     const tenantId = this._resolveTenantId();
     const { entryDate, txDate } = this._buildDates(dto.transactionDate);
@@ -1177,6 +1199,7 @@ export class FinancialCoreService {
   }
 
   private async _processTransferInner(dto: TransferDto, callerUserId?: string) {
+    assertOperationNotesLength(dto.notes);
     const userId   = this._resolveUserId(callerUserId);
     const tenantId = this._resolveTenantId();
     const { entryDate, txDate } = this._buildDates(dto.transactionDate);

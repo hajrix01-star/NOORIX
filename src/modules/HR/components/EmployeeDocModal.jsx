@@ -16,6 +16,7 @@ import {
 } from '../utils/employeeSalaryMath';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
+import { useToast } from '../../../context/ToastContext';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ALLOWANCE_NAME_EN_MAP = {
@@ -473,6 +474,7 @@ function getTerminationSummary(employee) {
 
 export function SalaryCertificateModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }) {
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const printRef = useRef(null);
   const [saving, setSaving] = useState(false);
   const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
@@ -480,7 +482,7 @@ export function SalaryCertificateModal({ employee, customAllowances = [], compan
   const handlePrint = () => {
     const win = buildPrintWindow(t('salaryCertificate') || 'Salary Certificate', printRef.current?.innerHTML || '');
     if (!win) {
-      alert(t('allowPopupsForPrint') || 'يرجى السماح بالنوافذ المنبثقة للموقع ثم المحاولة مرة أخرى');
+      showToast(t('allowPopupsForPrint') || 'يرجى السماح بالنوافذ المنبثقة للموقع ثم المحاولة مرة أخرى', 'error');
       return;
     }
     win.onload = () => {
@@ -505,7 +507,7 @@ export function SalaryCertificateModal({ employee, customAllowances = [], compan
       onSaved?.();
       onClose?.();
     } catch (err) {
-      alert(err?.message || 'فشل حفظ المستند');
+      showToast(err?.message || 'فشل حفظ المستند', 'error');
     } finally {
       setSaving(false);
     }
@@ -557,6 +559,7 @@ export function SalaryCertificateModal({ employee, customAllowances = [], compan
 
 export function ContractModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }) {
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const printRef = useRef(null);
   const [saving, setSaving] = useState(false);
   const [contractEnd, setContractEnd] = useState(employee?.contractEndDate?.slice(0, 10) || '');
@@ -565,7 +568,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
   const handlePrint = () => {
     const win = buildPrintWindow(t('documentContract') || 'Employment Contract', printRef.current?.innerHTML || '');
     if (!win) {
-      alert(t('allowPopupsForPrint') || 'يرجى السماح بالنوافذ المنبثقة للموقع ثم المحاولة مرة أخرى');
+      showToast(t('allowPopupsForPrint') || 'يرجى السماح بالنوافذ المنبثقة للموقع ثم المحاولة مرة أخرى', 'error');
       return;
     }
     win.onload = () => {
@@ -590,7 +593,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
       onSaved?.();
       onClose?.();
     } catch (err) {
-      alert(err?.message || 'فشل حفظ المستند');
+      showToast(err?.message || 'فشل حفظ المستند', 'error');
     } finally {
       setSaving(false);
     }
@@ -658,6 +661,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
 
 export function FinalSettlementModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }) {
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const printRef = useRef(null);
   const [saving, setSaving] = useState(false);
   const [includeEos, setIncludeEos] = useState(true);
@@ -700,7 +704,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
   const handlePrint = () => {
     const win = buildPrintWindow(t('finalSettlement') || 'Final Settlement', printRef.current?.innerHTML || '');
     if (!win) {
-      alert(t('allowPopupsForPrint') || 'يرجى السماح بالنوافذ المنبثقة للموقع ثم المحاولة مرة أخرى');
+      showToast(t('allowPopupsForPrint') || 'يرجى السماح بالنوافذ المنبثقة للموقع ثم المحاولة مرة أخرى', 'error');
       return;
     }
     win.onload = () => {
@@ -725,7 +729,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
       onSaved?.();
       onClose?.();
     } catch (err) {
-      alert(err?.message || 'فشل حفظ المستند');
+      showToast(err?.message || 'فشل حفظ المستند', 'error');
     } finally {
       setSaving(false);
     }

@@ -18,9 +18,38 @@ export default defineConfig({
     {
       name: 'noorix-inject-build-meta',
       transformIndexHtml(html) {
-        if (html.includes('name="noorix-build"')) return html;
-        const safe = String(noorixBuildId).replace(/"/g, '');
-        return html.replace('<head>', `<head>\n    <meta name="noorix-build" content="${safe}" />`);
+        let out = html;
+        if (!out.includes('name="noorix-build"')) {
+          const safe = String(noorixBuildId).replace(/"/g, '');
+          out = out.replace('<head>', `<head>\n    <meta name="noorix-build" content="${safe}" />`);
+        }
+        if (process.env.VITE_CSP === '0' || /http-equiv="Content-Security-Policy/i.test(out)) {
+          return out;
+        }
+        const isDev = process.env.NODE_ENV !== 'production';
+        const header = isDev ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
+        let apiOrigin = '';
+        const raw = process.env.VITE_API_URL;
+        if (raw) {
+          try {
+            apiOrigin = ` ${new URL(raw).origin}`;
+          } catch {
+            /* تجاهل عنوان API غير صالح */
+          }
+        }
+        const connectSrc = `'self'${apiOrigin} https://fonts.googleapis.com https://fonts.gstatic.com ws: wss:`;
+        const csp = [
+          "default-src 'self'",
+          "base-uri 'self'",
+          "script-src 'self'",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "font-src 'self' https://fonts.gstatic.com data:",
+          "img-src 'self' data: blob: https:",
+          `connect-src ${connectSrc}`,
+          "worker-src 'self'",
+          "manifest-src 'self'",
+        ].join('; ');
+        return out.replace('<head>', `<head>\n    <meta http-equiv="${header}" content="${csp}" />`);
       },
     },
     react(),

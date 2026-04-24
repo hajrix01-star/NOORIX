@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, IsNumber, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsNumber, ValidateNested, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SaveInvoiceLineDto {
@@ -85,6 +85,7 @@ export class SaveInvoiceDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
   @IsArray()

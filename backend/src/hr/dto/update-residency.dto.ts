@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsDateString,
   IsIn,
+  MaxLength,
 } from 'class-validator';
 
 const RESIDENCY_STATUSES = ['active', 'expired', 'renewed'] as const;
@@ -27,5 +28,6 @@ export class UpdateResidencyDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 }

@@ -12,6 +12,7 @@ const FINANCIAL_QUERY_PREFIXES = [
   ['vaults'],
   ['vault-transactions'],
   ['sales-summaries'],
+  ['sales-dashboard-pack'],
   ['sales-summaries-paged'],
   ['purchase-batch-summaries'],
   ['ledger'],

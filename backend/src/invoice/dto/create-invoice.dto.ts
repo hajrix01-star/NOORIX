@@ -12,6 +12,7 @@ import {
   IsArray,
   ValidateNested,
   ArrayMinSize,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsAmountConsistent } from '../../common/validators/amount-consistency.validator';
@@ -129,6 +130,7 @@ export class CreateInvoiceDto {
   @Allow()
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
   /** متابعة ضمان (مشتريات فقط) — بدون مدة؛ تُكمَّل في قسم الضمان */

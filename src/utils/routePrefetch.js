@@ -37,9 +37,13 @@ export function prefetchRouteChunk(to) {
   const loader = routeLoaders[to];
   if (!loader || typeof window === 'undefined') return;
   if (inflight.has(to)) return inflight.get(to);
-  const promise = loader().catch(() => {
-    /* فشل الشبكة — يُعاد المحاولة عند التنقل الفعلي */
-  });
+  const promise = loader()
+    .catch(() => {
+      /* فشل الشبكة — يُعاد المحاولة عند التنقل الفعلي */
+    })
+    .finally(() => {
+      inflight.delete(to);
+    });
   inflight.set(to, promise);
   return promise;
 }

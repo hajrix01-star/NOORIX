@@ -6,6 +6,7 @@ import {
   IsArray,
   ValidateNested,
   Min,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -54,6 +55,7 @@ export class PayrollRunItemDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 }
 
@@ -71,6 +73,7 @@ export class CreatePayrollRunDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
   /** يجب أن يعادل مجموعها صافي المسيرة (مجموع صافي الموظفين) */

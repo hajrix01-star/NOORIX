@@ -18,8 +18,9 @@ module.exports = {
       cwd,
       script: 'dist/main.js',
       interpreter: 'node',
-      instances: 1,
-      exec_mode: 'fork',
+      /** Cluster: استغلال أكثر من نواة — كل طلب له سياق مستقل (AsyncLocalStorage). */
+      instances: 2,
+      exec_mode: 'cluster',
       autorestart: true,
       max_restarts: 20,
       min_uptime: '10s',

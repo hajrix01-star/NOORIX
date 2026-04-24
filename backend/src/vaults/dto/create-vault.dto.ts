@@ -10,7 +10,7 @@ export const createVaultSchema = z.object({
   isSalesChannel: z.boolean().optional().default(false),
   showAsPaymentMethod: z.boolean().optional().default(true),
   paymentMethod:  z.string().optional().nullable(),
-  notes:          z.string().optional().nullable(),
+  notes:          z.string().max(2000).optional().nullable(),
 });
 
 export const updateVaultSchema = z.object({
@@ -20,7 +20,7 @@ export const updateVaultSchema = z.object({
   isSalesChannel: z.boolean().optional(),
   showAsPaymentMethod: z.boolean().optional(),
   paymentMethod:  z.string().optional().nullable(),
-  notes:          z.string().optional().nullable(),
+  notes:          z.string().max(2000).optional().nullable(),
   sortOrder:      z.number().int().min(0).optional(),
 });
 

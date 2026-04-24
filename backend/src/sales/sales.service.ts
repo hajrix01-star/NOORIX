@@ -44,6 +44,109 @@ export class SalesService {
     );
   }
 
+  /** تضمين موحّد لقنوات الملخص — يُستخدم في القائمة وحزمة الداشبورد. */
+  private dailySalesSummaryListInclude(): Prisma.DailySalesSummaryInclude {
+    return {
+      channels: {
+        orderBy: [
+          { vault: { sortOrder: 'asc' } },
+          { vault: { nameAr: 'asc' } },
+        ],
+        include: {
+          vault: { select: { nameAr: true, type: true, paymentMethod: true, sortOrder: true } },
+        },
+      },
+      createdBy: { select: { nameAr: true } },
+    };
+  }
+
+  /**
+   * حزمة واحدة للوحة التحكم: سنة كاملة + نطاق يومي + نطاق شهري — استعلامات متوازية بدل حلقات HTTP.
+   */
+  async findDashboardPack(
+    companyId: string,
+    ranges: {
+      yearStart: string;
+      yearEnd: string;
+      dailyStart?: string | null;
+      dailyEnd?: string | null;
+      monthStart?: string | null;
+      monthEnd?: string | null;
+    },
+    includeCancelled = false,
+  ) {
+    const statusFilter: Prisma.DailySalesSummaryWhereInput = includeCancelled
+      ? { status: { in: ['active', 'cancelled'] } }
+      : { status: 'active' };
+    const inc = this.dailySalesSummaryListInclude();
+    const orderBy: Prisma.DailySalesSummaryOrderByWithRelationInput[] = [
+      { transactionDate: 'asc' },
+      { summaryNumber: 'asc' },
+    ];
+
+    const y0 = String(ranges.yearStart).slice(0, 10);
+    const y1 = String(ranges.yearEnd).slice(0, 10);
+    const yearWhere: Prisma.DailySalesSummaryWhereInput = {
+      companyId,
+      ...statusFilter,
+      transactionDate: {
+        gte: new Date(`${y0}T00:00:00.000Z`),
+        lte: new Date(`${y1}T23:59:59.999Z`),
+      },
+    };
+
+    const dailyWhere: Prisma.DailySalesSummaryWhereInput | null =
+      ranges.dailyStart && ranges.dailyEnd
+        ? {
+            companyId,
+            ...statusFilter,
+            transactionDate: {
+              gte: new Date(`${String(ranges.dailyStart).slice(0, 10)}T00:00:00.000Z`),
+              lte: new Date(`${String(ranges.dailyEnd).slice(0, 10)}T23:59:59.999Z`),
+            },
+          }
+        : null;
+
+    const monthWhere: Prisma.DailySalesSummaryWhereInput | null =
+      ranges.monthStart && ranges.monthEnd
+        ? {
+            companyId,
+            ...statusFilter,
+            transactionDate: {
+              gte: new Date(`${String(ranges.monthStart).slice(0, 10)}T00:00:00.000Z`),
+              lte: new Date(`${String(ranges.monthEnd).slice(0, 10)}T23:59:59.999Z`),
+            },
+          }
+        : null;
+
+    const [yearSummaries, dailySummaries, monthSummaries] = await Promise.all([
+      this.prisma.dailySalesSummary.findMany({
+        where: yearWhere,
+        orderBy,
+        take: 4000,
+        include: inc,
+      }),
+      dailyWhere
+        ? this.prisma.dailySalesSummary.findMany({
+            where: dailyWhere,
+            orderBy,
+            take: 500,
+            include: inc,
+          })
+        : Promise.resolve([]),
+      monthWhere
+        ? this.prisma.dailySalesSummary.findMany({
+            where: monthWhere,
+            orderBy,
+            take: 500,
+            include: inc,
+          })
+        : Promise.resolve([]),
+    ]);
+
+    return { yearSummaries, dailySummaries, monthSummaries };
+  }
+
   /**
    * جلب ملخصات المبيعات مع فلترة التاريخ والتصفح.
    */
@@ -108,18 +211,7 @@ export class SalesService {
         orderBy,
         skip:    (p - 1) * size,
         take:    size,
-        include: {
-          channels: {
-            orderBy: [
-              { vault: { sortOrder: 'asc' } },
-              { vault: { nameAr: 'asc' } },
-            ],
-            include: {
-              vault: { select: { nameAr: true, type: true, paymentMethod: true, sortOrder: true } },
-            },
-          },
-          createdBy: { select: { nameAr: true } },
-        },
+        include: this.dailySalesSummaryListInclude(),
       }),
       this.prisma.dailySalesSummary.count({ where }),
     ]);

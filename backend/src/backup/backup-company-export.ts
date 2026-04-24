@@ -2,6 +2,8 @@
  * لقطة منطقية لشركة واحدة — JSON قابل للأرشفة والاسترجاع (تقرير + بيانات).
  * لا يستبدل pg_dump الكامل للقاعدة؛ مكمّل للعزل حسب الشركة.
  */
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import type { PrismaService } from '../prisma/prisma.service';
 
 export type CompanySnapshot = {
@@ -11,7 +13,10 @@ export type CompanySnapshot = {
     exportedAt: string;
     companyId: string;
     tenantId: string;
+    attachmentManifestCount?: number;
   };
+  /** مسارات مرفقات الفواتير النسبية من جذر التطبيق — يُكمّلها ملف .attachments.tar.gz عند النسخ الاحتياطي */
+  attachmentManifest?: { relativePath: string; sizeBytes: number }[];
   counts: Record<string, number>;
   data: Record<string, unknown>;
 };
@@ -127,6 +132,20 @@ export async function buildCompanyLogicalSnapshot(
         })
       : [];
 
+  const [invoiceVaultAllocations, companyAssets] = await Promise.all([
+    prisma.invoiceVaultAllocation.findMany({
+      where: { invoice: { companyId } },
+    }),
+    prisma.companyAsset.findMany({ where }),
+  ]);
+  const companyAssetIds = companyAssets.map((a) => a.id);
+  const companyAssetWarrantyLines =
+    companyAssetIds.length > 0
+      ? await prisma.companyAssetWarrantyLine.findMany({
+          where: { companyAssetId: { in: companyAssetIds } },
+        })
+      : [];
+
   const counts: Record<string, number> = {
     suppliers: suppliers.length,
     vaults: vaults.length,
@@ -162,6 +181,9 @@ export async function buildCompanyLogicalSnapshot(
     payrollRunItems: payrollRunItems.length,
     payrollRunItemVaults: payrollRunItemVaults.length,
     payrollRunVaults: payrollRunVaults.length,
+    invoiceVaultAllocations: invoiceVaultAllocations.length,
+    companyAssets: companyAssets.length,
+    companyAssetWarrantyLines: companyAssetWarrantyLines.length,
   };
 
   const data: Record<string, unknown> = {
@@ -200,17 +222,42 @@ export async function buildCompanyLogicalSnapshot(
     payrollRunItems,
     payrollRunItemVaults,
     payrollRunVaults,
+    invoiceVaultAllocations,
+    companyAssets,
+    companyAssetWarrantyLines,
   };
+
+  const cwd = process.cwd();
+  const attachmentManifest: { relativePath: string; sizeBytes: number }[] = [];
+  for (const inv of invoices as Array<{ attachmentPath?: string | null }>) {
+    const ap = inv.attachmentPath;
+    if (!ap || typeof ap !== 'string') continue;
+    let rel = path.normalize(ap).split(path.sep).join('/');
+    if (rel.startsWith('/') || /^[a-z]:/i.test(rel)) continue;
+    if (rel.includes('..')) continue;
+    const abs = path.join(cwd, rel);
+    try {
+      const st = await fs.stat(abs);
+      if (st.isFile()) attachmentManifest.push({ relativePath: rel, sizeBytes: st.size });
+    } catch {
+      /* الملف غير موجود على القرص */
+    }
+  }
 
   return {
     meta: {
       format: 'noorix-company-logical',
-      version: 2,
+      version: 4,
       exportedAt: new Date().toISOString(),
       companyId,
       tenantId: company.tenantId,
+      attachmentManifestCount: attachmentManifest.length,
     },
-    counts,
+    counts: {
+      ...counts,
+      attachmentFiles: attachmentManifest.length,
+    },
+    ...(attachmentManifest.length > 0 ? { attachmentManifest } : {}),
     data,
   };
 }

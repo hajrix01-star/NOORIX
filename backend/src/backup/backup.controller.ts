@@ -134,6 +134,18 @@ export class BackupController {
     });
   }
 
+  /** أرشيف نظام: pg_dump (custom) + uploads في tar.gz — منفصل عن نسخة القاعدة المضغوطة اليومية */
+  @Post('system/run-full-archive')
+  @Roles('owner', 'super_admin')
+  async runSystemFullArchiveNow(@Req() req: { user?: ReqUser }) {
+    if (!req.user?.tenantId) throw new UnauthorizedException();
+    const cfg = await this.backupService.getSystemBackupConfig();
+    return this.backupService.runSystemFullArchive({
+      manual: true,
+      retentionCount: cfg.retentionCount,
+    });
+  }
+
   /** رفع نسخة قاعدة كاملة (.dump.gz) من جهاز المستخدم — يتحقق منها ثم يضيفها للسجل */
   @Post('system/upload-full-dump')
   @Roles('owner', 'super_admin')
@@ -278,6 +290,7 @@ export class BackupController {
       nameAr: dto.nameAr,
       nameEn: dto.nameEn,
       importingUserId: u.userId,
+      failOnAllocationWarnings: dto.failOnAllocationWarnings === true,
     });
   }
 }

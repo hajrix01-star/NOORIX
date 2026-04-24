@@ -30,30 +30,31 @@ export class VaultBalanceService {
     });
     if (!vault) return new Prisma.Decimal(0);
 
-    const where: Prisma.LedgerEntryWhereInput = {
+    const datePart: Prisma.DateTimeFilter | undefined = asOfDate
+      ? { lte: asOfDate }
+      : undefined;
+
+    const debitWhere: Prisma.LedgerEntryWhereInput = {
       companyId: vault.companyId,
       status: 'active',
-      OR: [{ debitAccountId: vault.accountId }, { creditAccountId: vault.accountId }],
+      debitAccountId: vault.accountId,
+      ...(datePart ? { transactionDate: datePart } : {}),
+    };
+    const creditWhere: Prisma.LedgerEntryWhereInput = {
+      companyId: vault.companyId,
+      status: 'active',
+      creditAccountId: vault.accountId,
+      ...(datePart ? { transactionDate: datePart } : {}),
     };
 
-    if (asOfDate) {
-      where.transactionDate = { lte: asOfDate };
-    }
+    const [debitSum, creditSum] = await Promise.all([
+      tx.ledgerEntry.aggregate({ where: debitWhere, _sum: { amount: true } }),
+      tx.ledgerEntry.aggregate({ where: creditWhere, _sum: { amount: true } }),
+    ]);
 
-    const entries = await tx.ledgerEntry.findMany({
-      where,
-      select: { debitAccountId: true, creditAccountId: true, amount: true },
-    });
-
-    let balance = new Prisma.Decimal(0);
-    for (const e of entries) {
-      if (e.debitAccountId === vault.accountId) {
-        balance = balance.plus(e.amount);
-      } else {
-        balance = balance.minus(e.amount);
-      }
-    }
-    return balance;
+    const debit = new Prisma.Decimal(debitSum._sum.amount ?? 0);
+    const credit = new Prisma.Decimal(creditSum._sum.amount ?? 0);
+    return debit.minus(credit);
   }
 
   /**
@@ -69,30 +70,32 @@ export class VaultBalanceService {
       select: { id: true, accountId: true },
     });
 
+    const datePart: Prisma.DateTimeFilter | undefined = asOfDate
+      ? { lte: asOfDate }
+      : undefined;
+
     const result: Record<string, Prisma.Decimal> = {};
 
     for (const v of vaults) {
-      const where: Prisma.LedgerEntryWhereInput = {
+      const debitWhere: Prisma.LedgerEntryWhereInput = {
         companyId,
         status: 'active',
-        OR: [{ debitAccountId: v.accountId }, { creditAccountId: v.accountId }],
+        debitAccountId: v.accountId,
+        ...(datePart ? { transactionDate: datePart } : {}),
       };
-      if (asOfDate) where.transactionDate = { lte: asOfDate };
-
-      const entries = await tx.ledgerEntry.findMany({
-        where,
-        select: { debitAccountId: true, amount: true },
-      });
-
-      let balance = new Prisma.Decimal(0);
-      for (const e of entries) {
-        if (e.debitAccountId === v.accountId) {
-          balance = balance.plus(e.amount);
-        } else {
-          balance = balance.minus(e.amount);
-        }
-      }
-      result[v.id] = balance;
+      const creditWhere: Prisma.LedgerEntryWhereInput = {
+        companyId,
+        status: 'active',
+        creditAccountId: v.accountId,
+        ...(datePart ? { transactionDate: datePart } : {}),
+      };
+      const [debitSum, creditSum] = await Promise.all([
+        tx.ledgerEntry.aggregate({ where: debitWhere, _sum: { amount: true } }),
+        tx.ledgerEntry.aggregate({ where: creditWhere, _sum: { amount: true } }),
+      ]);
+      const debit = new Prisma.Decimal(debitSum._sum.amount ?? 0);
+      const credit = new Prisma.Decimal(creditSum._sum.amount ?? 0);
+      result[v.id] = debit.minus(credit);
     }
     return result;
   }

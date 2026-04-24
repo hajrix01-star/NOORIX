@@ -24,5 +24,10 @@ export class BackupSchedulerService {
     } catch (e) {
       this.logger.error(`Company backup scheduler tick error: ${(e as Error).message}`);
     }
+    try {
+      await this.backupService.maybeRunScheduledSystemFullArchive();
+    } catch (e) {
+      this.logger.error(`System full archive scheduler error: ${(e as Error).message}`);
+    }
   }
 }

@@ -16,5 +16,5 @@ export class UpdateEmployeeDto {
   @IsOptional() @IsString() @MaxLength(120) workSchedule?:       string;
   @IsOptional() @IsDateString()             joinDate?:           string;
   @IsOptional() @IsIn(['active','terminated','on_leave','archived']) status?: string;
-  @IsOptional() @IsString()                 notes?:              string;
+  @IsOptional() @IsString() @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' }) notes?: string;
 }

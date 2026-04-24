@@ -17,6 +17,7 @@ import {
   backupPatchSystemConfig,
   backupListSystemJobs,
   backupRunSystemNow,
+  backupRunSystemFullArchive,
   backupVerifySystemJob,
   backupVerifyCompanyJob,
   backupGetCompanyConfig,
@@ -123,6 +124,7 @@ function BackupCountsGrid({ counts, t, lang }) {
 function scopeLabel(scope, t) {
   if (scope === 'company_logical') return t('backupScopeCompany');
   if (scope === 'database_full') return t('backupScopeFullDb');
+  if (scope === 'system_full') return t('backupScopeSystemFull');
   return scope;
 }
 
@@ -162,6 +164,7 @@ export default function BackupTab({ activeCompanies = [] }) {
   const [importReportModal, setImportReportModal] = useState(null);
   const [importNameAr, setImportNameAr] = useState('');
   const [importConfirmed, setImportConfirmed] = useState(false);
+  const [importStrictAlloc, setImportStrictAlloc] = useState(false);
   const [sysForm, setSysForm] = useState({
     enabled: false,
     scheduleHour: 6,
@@ -267,13 +270,15 @@ export default function BackupTab({ activeCompanies = [] }) {
   });
 
   const importMut = useApiMutation({
-    mutationFn: ({ jobId, nameAr }) => backupImportFromJob({ jobId, nameAr }),
+    mutationFn: ({ jobId, nameAr, failOnAllocationWarnings }) =>
+      backupImportFromJob({ jobId, nameAr, failOnAllocationWarnings }),
     successToast: false,
     showErrorToast: true,
     errorToast: (e) => e?.message || t('backupError'),
     onSuccess: async (res) => {
       setImportModal(null);
       setImportNameAr('');
+      setImportStrictAlloc(false);
       const ref = await refreshAuthSession();
       if (ref.success && ref.data?.access_token) {
         setToken(ref.data.access_token);
@@ -310,6 +315,13 @@ export default function BackupTab({ activeCompanies = [] }) {
 
   const runSysMut = useApiMutation({
     mutationFn: () => backupRunSystemNow(),
+    invalidateQueries: [['backup-system-jobs'], ['backup-jobs']],
+    successToast: () => t('backupStarted'),
+    errorToast: (e) => e?.message || t('backupError'),
+  });
+
+  const runFullArchiveMut = useApiMutation({
+    mutationFn: () => backupRunSystemFullArchive(),
     invalidateQueries: [['backup-system-jobs'], ['backup-jobs']],
     successToast: () => t('backupStarted'),
     errorToast: (e) => e?.message || t('backupError'),
@@ -671,7 +683,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                 <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveFolderHint')}</p>
               </div>
 
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:items-center">
                 <Button
                   type="button"
                   size="sm"
@@ -695,12 +707,23 @@ export default function BackupTab({ activeCompanies = [] }) {
                   size="sm"
                   variant="primary"
                   className="w-full min-h-[44px] sm:w-auto"
-                  disabled={runSysMut.isPending}
+                  disabled={runSysMut.isPending || runFullArchiveMut.isPending}
                   onClick={() => runSysMut.mutate()}
                 >
                   {runSysMut.isPending ? t('loading') : t('backupSystemRunNow')}
                 </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="default"
+                  className="w-full min-h-[44px] sm:w-auto"
+                  disabled={runFullArchiveMut.isPending || runSysMut.isPending}
+                  onClick={() => runFullArchiveMut.mutate()}
+                >
+                  {runFullArchiveMut.isPending ? t('loading') : t('backupSystemRunFullArchive')}
+                </Button>
               </div>
+              <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupSystemFullArchiveHint')}</p>
 
               <Divider />
 
@@ -761,6 +784,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                         {sj.verifyOk === false && sj.verifyError && (
                           <span className="text-[11px] text-noorix-red break-words min-w-0">{sj.verifyError}</span>
                         )}
+                        <span className="text-[10px] text-noorix-muted">{scopeLabel(sj.scope, t)}</span>
                       </div>
                       {sj.status === 'completed' && sj.localRelativePath && (
                         <div className="flex flex-col gap-2 min-[520px]:shrink-0 min-[520px]:flex-row min-[520px]:flex-wrap min-[520px]:items-center min-[520px]:justify-end min-[520px]:gap-1.5">
@@ -773,7 +797,10 @@ export default function BackupTab({ activeCompanies = [] }) {
                             onClick={() =>
                               downloadSysMut.mutate({
                                 jobId: sj.id,
-                                suggestedName: `noorix-full-db-${sj.ordinal ?? 'na'}-${sj.id}.dump.gz`,
+                                suggestedName:
+                                  sj.scope === 'system_full'
+                                    ? `noorix-system-archive-${sj.ordinal ?? 'na'}-${sj.id}.tar.gz`
+                                    : `noorix-full-db-${sj.ordinal ?? 'na'}-${sj.id}.dump.gz`,
                               })
                             }
                           >
@@ -789,6 +816,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                           >
                             {t('backupVerify')}
                           </Button>
+                          {sj.scope === 'database_full' && (
                           <Button
                             type="button"
                             size="sm"
@@ -802,6 +830,7 @@ export default function BackupTab({ activeCompanies = [] }) {
                           >
                             {t('backupSystemRestore')}
                           </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -909,7 +938,10 @@ export default function BackupTab({ activeCompanies = [] }) {
 
       <AdaptiveSheet
         open={!!importModal}
-        onClose={() => !importMut.isPending && (setImportModal(null), setImportConfirmed(false))}
+        onClose={() =>
+          !importMut.isPending &&
+          (setImportModal(null), setImportConfirmed(false), setImportStrictAlloc(false))
+        }
         title={t('backupImportNewCompany')}
         size="md"
         side="start"
@@ -935,7 +967,7 @@ export default function BackupTab({ activeCompanies = [] }) {
           onChange={(e) => setImportNameAr(e.target.value)}
         />
 
-        <label className="nx-checkbox text-[13px] text-noorix-text mt-3 mb-4 leading-[1.5]">
+        <label className="nx-checkbox text-[13px] text-noorix-text mt-3 mb-2 leading-[1.5]">
           <input
             type="checkbox"
             checked={importConfirmed}
@@ -948,6 +980,16 @@ export default function BackupTab({ activeCompanies = [] }) {
           </span>
         </label>
 
+        <label className="nx-checkbox text-[13px] text-noorix-text mb-1 leading-[1.5]">
+          <input
+            type="checkbox"
+            checked={importStrictAlloc}
+            onChange={(e) => setImportStrictAlloc(e.target.checked)}
+          />
+          <span>{t('backupImportStrictAllocations')}</span>
+        </label>
+        <p className="text-[10px] text-noorix-muted m-0 mb-4 leading-snug">{t('backupImportStrictAllocationsHint')}</p>
+
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           <Button
             type="button"
@@ -955,7 +997,11 @@ export default function BackupTab({ activeCompanies = [] }) {
             variant="ghost"
             className="w-full min-h-[44px] sm:w-auto"
             disabled={importMut.isPending}
-            onClick={() => { setImportModal(null); setImportConfirmed(false); }}
+            onClick={() => {
+              setImportModal(null);
+              setImportConfirmed(false);
+              setImportStrictAlloc(false);
+            }}
           >
             {t('cancel')}
           </Button>
@@ -964,7 +1010,13 @@ export default function BackupTab({ activeCompanies = [] }) {
             variant="primary"
             className="w-full min-h-[44px] sm:w-auto"
             disabled={importMut.isPending || !importNameAr.trim() || !importConfirmed}
-            onClick={() => importMut.mutate({ jobId: importModal.jobId, nameAr: importNameAr.trim() })}
+            onClick={() =>
+              importMut.mutate({
+                jobId: importModal.jobId,
+                nameAr: importNameAr.trim(),
+                failOnAllocationWarnings: importStrictAlloc,
+              })
+            }
           >
             {importMut.isPending ? t('loading') : t('backupImportRun')}
           </Button>
@@ -1146,6 +1198,22 @@ export default function BackupTab({ activeCompanies = [] }) {
               {importReportModal.summary?.counts && (
                 <BackupCountsGrid counts={importReportModal.summary.counts} t={t} lang={lang} />
               )}
+
+              {Array.isArray(importReportModal.summary?.importWarnings) &&
+                importReportModal.summary.importWarnings.length > 0 && (
+                  <div>
+                    <div className="text-[12px] font-extrabold mb-2 text-noorix-muted">
+                      {t('backupReportImportWarnings')}
+                    </div>
+                    <ul className="text-[12px] text-noorix-text m-0 pl-4 list-disc space-y-1 leading-relaxed">
+                      {importReportModal.summary.importWarnings.map((w, i) => (
+                        <li key={i} className="break-words">
+                          {w}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
               <details className="text-[12px]">
                 <summary className="cursor-pointer font-bold">{t('backupReportRawJson')}</summary>

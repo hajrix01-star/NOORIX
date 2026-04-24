@@ -13,7 +13,7 @@ export const vaultTransferSchema = z.object({
     return Number.isFinite(n) && n > 0;
   }, 'المبلغ يجب أن يكون أكبر من صفر'),
   transactionDate:  z.string().min(1, 'تاريخ العملية مطلوب'),
-  notes:            z.string().optional().nullable(),
+  notes:            z.string().max(2000).optional().nullable(),
   idempotencyKey:   z.string().optional().nullable(),
 });
 

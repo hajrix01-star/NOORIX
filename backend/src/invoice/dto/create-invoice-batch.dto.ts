@@ -76,6 +76,7 @@ export class BatchInvoiceItemDto {
   @Allow()
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
   /** متابعة ضمان (مشتريات فقط) — بدون مدة؛ تُكمَّل في قسم الضمان */

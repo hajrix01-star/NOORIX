@@ -1,6 +1,6 @@
 import {
   IsString, IsNumber, IsInt, IsArray, IsOptional,
-  ValidateNested, Min, Max, IsDateString, ArrayMinSize, Matches,
+  ValidateNested, Min, Max, IsDateString, ArrayMinSize, Matches, MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -39,6 +39,7 @@ export class CreateSalesSummaryDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
   /** مفتاح عدم التكرار — يمنع تنفيذ نفس العملية مرتين (مثلاً عند النقر المزدوج) */

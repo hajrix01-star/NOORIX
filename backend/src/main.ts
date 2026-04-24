@@ -4,7 +4,7 @@ dotenv.config();
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { json, urlencoded } from 'express';
+import { json, urlencoded, type Request, type Response, type NextFunction } from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
@@ -41,6 +41,11 @@ async function bootstrap() {
     process.exit(1);
   }
 
+  if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN?.trim()) {
+    logger.error('❌ CORS_ORIGIN غير مُعرّف في الإنتاج — عيّن نطاق الواجهة (مثال: https://app.example.com)');
+    process.exit(1);
+  }
+
   const port = parseInt(process.env.PORT ?? '3000', 10);
 
   logger.log(`بدء التطبيق — PORT=${port} DATABASE_URL=${process.env.DATABASE_URL ? '✓' : '✗'} JWT_SECRET=${process.env.JWT_SECRET ? '✓' : '⚠ dev-fallback'}`);
@@ -63,6 +68,20 @@ async function bootstrap() {
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   }));
+
+  /**
+   * CSP بصيغة Report-Only فقط — لا يُعطّل الواجهة؛ يُرسِل انتهاكات إلى وحدة التحكم للمراجعة
+   * قبل تفعيل سياسة فعلية. يُطبَّق على استجابات الـ API (مستندات/أخطاء HTML إن وُجدت).
+   */
+  const cspReportOnly =
+    "default-src 'self'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'; object-src 'none'; " +
+    "script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; " +
+    "connect-src 'self'; worker-src 'self'; manifest-src 'self'";
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Content-Security-Policy-Report-Only', cspReportOnly);
+    next();
+  });
 
   // ── Compression: ضغط gzip للاستجابات ──
   app.use(compression());

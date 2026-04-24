@@ -7,6 +7,7 @@ import {
   IsInt,
   IsArray,
   ValidateNested,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { WarrantyLineDto } from './warranty-line.dto';
@@ -74,6 +75,7 @@ export class CreateCompanyAssetDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
   /** بنود تفصيل ضمان (من قسم الضمان) */

@@ -70,6 +70,65 @@ export class SalesController {
     return this.salesService.cancelSummary(id, companyId, user.sub);
   }
 
+  /** حزمة واحدة للوحة التحكم — سنة + يومي + شهري في طلب واحد (بدل حلقات pagination). */
+  @Get('summaries/dashboard-pack')
+  @RequirePermission('SALES_READ')
+  async dashboardSalesPack(
+    @CurrentUser() user: JwtUser,
+    @Query('companyId') companyId: string,
+    @Query('yearStart') yearStart: string,
+    @Query('yearEnd') yearEnd: string,
+    @Query('dailyStart') dailyStart?: string,
+    @Query('dailyEnd') dailyEnd?: string,
+    @Query('monthStart') monthStart?: string,
+    @Query('monthEnd') monthEnd?: string,
+    @Query('includeCancelled') includeCancelled?: string,
+  ) {
+    if (!companyId) {
+      return { yearSummaries: [], dailySummaries: [], monthSummaries: [] };
+    }
+    if (!hasPermission(user.role, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, user.permissions)) {
+      return { yearSummaries: [], dailySummaries: [], monthSummaries: [] };
+    }
+
+    const fullHist = hasPermission(user.role, PERMISSIONS.SALES_FULL_HISTORY, user.permissions);
+    let ys = String(yearStart ?? '').slice(0, 10);
+    let ye = String(yearEnd ?? '').slice(0, 10);
+    let ds = dailyStart ? String(dailyStart).slice(0, 10) : undefined;
+    let de = dailyEnd ? String(dailyEnd).slice(0, 10) : undefined;
+    let ms = monthStart ? String(monthStart).slice(0, 10) : undefined;
+    let me = monthEnd ? String(monthEnd).slice(0, 10) : undefined;
+
+    if (!fullHist) {
+      const cy = clampSalesSummaryDateQuery(ys, ye, 7);
+      ys = cy.startDate;
+      ye = cy.endDate;
+      if (ds && de) {
+        const cd = clampSalesSummaryDateQuery(ds, de, 7);
+        ds = cd.startDate;
+        de = cd.endDate;
+      }
+      if (ms && me) {
+        const cm = clampSalesSummaryDateQuery(ms, me, 7);
+        ms = cm.startDate;
+        me = cm.endDate;
+      }
+    }
+
+    return this.salesService.findDashboardPack(
+      companyId,
+      {
+        yearStart: ys,
+        yearEnd: ye,
+        dailyStart: ds ?? null,
+        dailyEnd: de ?? null,
+        monthStart: ms ?? null,
+        monthEnd: me ?? null,
+      },
+      includeCancelled === '1' || includeCancelled === 'true',
+    );
+  }
+
   @Get('summaries')
   @RequirePermission('SALES_READ')
   async findAll(

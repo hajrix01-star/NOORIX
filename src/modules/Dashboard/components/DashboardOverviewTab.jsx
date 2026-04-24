@@ -12,7 +12,7 @@ import {
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useReportsGeneralProfitLoss, usePeriodAnalytics } from '../../../hooks/useReports';
 import { monthDateBounds } from '../../../utils/reportDrillLinks';
-import { useSales } from '../../../hooks/useSales';
+import { useDashboardSalesPack } from '../../../hooks/useDashboardSalesPack';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
 import { Button, cn, FmtNum, MetricCard } from '../../../ui';
@@ -100,15 +100,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const dailyStart = timelineGrain === 'daily' ? ymd(year, chartMonthForDaily, 1) : null;
   const dailyEnd   = timelineGrain === 'daily' ? ymd(year, chartMonthForDaily, lastDayChart) : null;
 
-  /* ── بيانات المبيعات اليومية (للمخطط اليومي وقسم القنوات عند العرض اليومي) ── */
-  const { summaries: dailySummaries } = useSales({
-    companyId, startDate: dailyStart, endDate: dailyEnd, enabled: timelineGrain === 'daily',
-  });
-
-  /* ── بيانات السنة الكاملة لتوزيع القنوات ── */
   const yearStart = `${year}-01-01`;
   const yearEnd   = `${year}-12-31`;
-  const { summaries: yearSummaries } = useSales({ companyId, startDate: yearStart, endDate: yearEnd });
 
   const monthSalesAvgBounds = useMemo(() => {
     if (selectedMonth == null) return { start: null, end: null };
@@ -116,11 +109,21 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     return { start: ymd(year, selectedMonth, 1), end: ymd(year, selectedMonth, ld) };
   }, [year, selectedMonth]);
 
-  const { summaries: monthSalesForDailyAvg } = useSales({
+  /* ── ملخصات المبيعات: طلب واحد للسنة + اليومي + الشهر (بدل ثلاث حلقات pagination) ── */
+  const {
+    dailySummaries,
+    yearSummaries,
+    monthSummaries: monthSalesForDailyAvg,
+    isLoading: salesPackLoading,
+  } = useDashboardSalesPack({
     companyId,
-    startDate: monthSalesAvgBounds.start,
-    endDate: monthSalesAvgBounds.end,
-    enabled: !!companyId && selectedMonth != null,
+    yearStart,
+    yearEnd,
+    dailyStart: timelineGrain === 'daily' ? dailyStart : null,
+    dailyEnd: timelineGrain === 'daily' ? dailyEnd : null,
+    monthStart: monthSalesAvgBounds.start,
+    monthEnd: monthSalesAvgBounds.end,
+    enabled: !!companyId,
   });
 
   /** متوسط يومي للإيراد: المجموع ÷ عدد الأيام التي فيها إيراد &gt; 0 (شهر مُختار فقط) */
@@ -324,7 +327,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   }
 
   /* ── حالة: تحميل ── */
-  if (isLoading) {
+  if (isLoading || salesPackLoading) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <div className="nx-kpi-container">

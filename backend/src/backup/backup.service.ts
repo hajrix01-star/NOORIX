@@ -121,6 +121,10 @@ export class BackupService {
     for (const j of victims) {
       if (j.localRelativePath) {
         await fs.unlink(path.join(root, j.localRelativePath)).catch(() => undefined);
+        const dir = path.dirname(j.localRelativePath);
+        const base = path.basename(j.localRelativePath, '.json.gz');
+        const attRel = path.join(dir, `${base}.attachments.tar.gz`);
+        await fs.unlink(path.join(root, attRel)).catch(() => undefined);
       }
       await this.prisma.backupJob.delete({ where: { id: j.id } }).catch(() => undefined);
     }
@@ -242,7 +246,7 @@ export class BackupService {
     scope: string,
     companyId: string | null,
   ): Promise<{ scriptUrl: string | null; folderId: string | null }> {
-    if (scope === 'database_full') {
+    if (scope === 'database_full' || scope === 'system_full') {
       const c = await this.ensureSystemBackupConfigRow();
       return {
         scriptUrl: c.gdriveScriptUrl?.trim() || null,
@@ -427,6 +431,15 @@ export class BackupService {
         return { jobId: job.id };
       }
 
+      let attachmentsRel: string | null = null;
+      const manifest = snapshot.attachmentManifest;
+      if (manifest && manifest.length > 0) {
+        const relTar = path.join('tenant', tenantId, 'company', `${companyId}_${job.id}.attachments.tar.gz`);
+        const absTar = path.join(root, relTar);
+        await this.createAttachmentsTarball(manifest, absTar);
+        attachmentsRel = relTar;
+      }
+
       const st = await fs.stat(abs);
       let externalUploaded = false;
       let externalError: string | null = null;
@@ -453,6 +466,7 @@ export class BackupService {
           ordinal,
           report: {
             counts: snapshot.counts,
+            attachmentsArchiveRelativePath: attachmentsRel,
             resumeHintAr: externalError
               ? 'يمكنك لاحقاً استخدام «إعادة رفع خارجي» لاستكمال التخزين السحابي'
               : undefined,
@@ -653,6 +667,216 @@ export class BackupService {
     return { jobId: job.id };
   }
 
+  /**
+   * أرشيف نظام كامل: pg_dump (custom) + مجلد uploads في ملف tar.gz واحد.
+   * يدوياً: POST backup/system/run-full-archive | أسبوعياً: عيّن BACKUP_SYSTEM_FULL_WEEKLY=1 و BACKUP_SYSTEM_FULL_WEEKDAY/HOUR/MINUTE
+   */
+  async runSystemFullArchive(opts: { manual?: boolean; retentionCount?: number } = {}): Promise<{ jobId: string }> {
+    if (!opts.manual) {
+      if (process.env.BACKUP_SYSTEM_FULL_WEEKLY !== '1' && process.env.BACKUP_SYSTEM_FULL_ENABLED !== 'true') {
+        return { jobId: '' };
+      }
+    }
+
+    const cfg = await this.ensureSystemBackupConfigRow();
+    const retention = opts.retentionCount ?? cfg.retentionCount ?? 10;
+
+    await this.ensureBackupRoot();
+    const job = await this.prisma.backupJob.create({
+      data: {
+        tenantId: null,
+        companyId: null,
+        scope: 'system_full',
+        status: 'running',
+      },
+    });
+
+    const t0 = Date.now();
+    const root = this.getBackupRoot();
+    const cwd = process.cwd();
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const baseName = `fullsys_${ts}_${job.id}`;
+    const tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), 'noorix-sysfull-'));
+    const dumpPath = path.join(tmpBase, 'db.dump');
+    const finalRel = path.join('system', `${baseName}.tar.gz`);
+    const finalAbs = path.join(root, finalRel);
+
+    try {
+      await fs.mkdir(path.dirname(finalAbs), { recursive: true });
+      await this.runPgDumpToFile(dumpPath);
+
+      const uploadsPath = path.join(cwd, 'uploads');
+      let hasUploads = false;
+      try {
+        const st = await fs.stat(uploadsPath);
+        hasUploads = st.isDirectory();
+      } catch {
+        hasUploads = false;
+      }
+
+      const tarArgs = ['-czf', finalAbs, '-C', tmpBase, 'db.dump'];
+      if (hasUploads) {
+        tarArgs.push('-C', cwd, 'uploads');
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        const child = spawn('tar', tarArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+        let err = '';
+        child.stderr?.on('data', (c) => {
+          err += String(c);
+        });
+        child.on('error', (e) => reject(new BadRequestException(`تعذّر تشغيل tar: ${(e as Error).message}`)));
+        child.on('close', (code) => {
+          if (code === 0) resolve();
+          else reject(new BadRequestException(`فشل ضغط أرشيف النظام: ${err || 'رمز ' + code}`));
+        });
+      });
+
+      await fs.rm(tmpBase, { recursive: true, force: true }).catch(() => undefined);
+
+      const hash = await this.sha256File(finalAbs);
+      const dup = await this.findDuplicateJob(null, null, 'system_full', hash);
+      if (dup && dup.id !== job.id) {
+        await fs.unlink(finalAbs).catch(() => undefined);
+        await this.prisma.backupJob.update({
+          where: { id: job.id },
+          data: {
+            status: 'skipped_duplicate',
+            contentHash: hash,
+            duplicateOfJobId: dup.id,
+            durationMs: Date.now() - t0,
+            completedAt: new Date(),
+            report: { messageAr: 'تكرار — نفس hash أرشيف سابق' },
+          },
+        });
+        return { jobId: job.id };
+      }
+
+      const st = await fs.stat(finalAbs);
+      let externalUploaded = false;
+      let externalError: string | null = null;
+      const extOpts = await this.resolveExternalUploadOpts('system_full', null);
+      const up = await this.uploadToExternalIfConfigured(finalAbs, path.basename(finalRel), {
+        scope: 'system_full',
+        company: 'system_archive',
+      }, extOpts);
+      if (up.ok) externalUploaded = true;
+      else externalError = up.error || null;
+
+      const ordinal = await this.nextOrdinalSystemFull();
+      await this.prisma.backupJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'completed',
+          contentHash: hash,
+          localRelativePath: finalRel,
+          sizeBytes: st.size,
+          durationMs: Date.now() - t0,
+          completedAt: new Date(),
+          externalUploaded,
+          externalError,
+          ordinal,
+          report: {
+            messageAr: 'أرشيف: قاعدة (pg_dump custom) + uploads إن وُجد',
+            includesUploads: hasUploads,
+          },
+        },
+      });
+      await this.pruneSystemFullArchiveJobs(retention);
+      this.logger.log(`System full archive completed: ${finalRel} (${st.size} bytes) #${ordinal}`);
+    } catch (e) {
+      const msg = (e as Error).message;
+      this.logger.error(`System full archive failed: ${msg}`);
+      await fs.rm(tmpBase, { recursive: true, force: true }).catch(() => undefined);
+      await fs.unlink(finalAbs).catch(() => undefined);
+      await this.prisma.backupJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'failed',
+          errorMessage: msg,
+          durationMs: Date.now() - t0,
+          completedAt: new Date(),
+        },
+      });
+    }
+    return { jobId: job.id };
+  }
+
+  private async nextOrdinalSystemFull(): Promise<number> {
+    const a = await this.prisma.backupJob.aggregate({
+      where: { scope: 'system_full', ordinal: { not: null } },
+      _max: { ordinal: true },
+    });
+    return (a._max.ordinal ?? 0) + 1;
+  }
+
+  private async pruneSystemFullArchiveJobs(retentionCount: number): Promise<void> {
+    const keep = Math.min(Math.max(retentionCount, 1), 50);
+    const root = this.getBackupRoot();
+    const victims = await this.prisma.backupJob.findMany({
+      where: {
+        scope: 'system_full',
+        status: 'completed',
+        localRelativePath: { not: null },
+      },
+      orderBy: [{ completedAt: 'desc' }, { createdAt: 'desc' }],
+      skip: keep,
+    });
+    for (const j of victims) {
+      if (j.localRelativePath) {
+        await fs.unlink(path.join(root, j.localRelativePath)).catch(() => undefined);
+      }
+      await this.prisma.backupJob.delete({ where: { id: j.id } }).catch(() => undefined);
+    }
+  }
+
+  private async createAttachmentsTarball(
+    manifest: { relativePath: string; sizeBytes: number }[],
+    outputAbs: string,
+  ): Promise<void> {
+    const cwd = process.cwd();
+    const files = manifest
+      .map((m) => String(m.relativePath || '').replace(/\\/g, '/'))
+      .filter((f) => f.length > 0 && !f.includes('..'));
+    if (files.length === 0) return;
+    await fs.mkdir(path.dirname(outputAbs), { recursive: true });
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn('tar', ['-czf', outputAbs, '-C', cwd, ...files], { stdio: ['ignore', 'pipe', 'pipe'] });
+      let err = '';
+      child.stderr?.on('data', (c) => {
+        err += String(c);
+      });
+      child.on('error', (e) => reject(new BadRequestException(`tar: ${(e as Error).message}`)));
+      child.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new BadRequestException(`فشل أرشفة مرفقات الفواتير: ${err || 'رمز ' + code}`));
+      });
+    });
+  }
+
+  async maybeRunScheduledSystemFullArchive(): Promise<void> {
+    if (process.env.BACKUP_SYSTEM_FULL_WEEKLY !== '1' && process.env.BACKUP_SYSTEM_FULL_ENABLED !== 'true') {
+      return;
+    }
+    const cfg = await this.ensureSystemBackupConfigRow();
+    const tz = cfg.timezone || 'Asia/Riyadh';
+    const m = moment.tz(tz);
+    const wantDay = Math.min(6, Math.max(0, parseInt(process.env.BACKUP_SYSTEM_FULL_WEEKDAY ?? '0', 10)));
+    const wantHour = Math.min(23, Math.max(0, parseInt(process.env.BACKUP_SYSTEM_FULL_HOUR ?? '3', 10)));
+    const wantMin = Math.min(59, Math.max(0, parseInt(process.env.BACKUP_SYSTEM_FULL_MINUTE ?? '0', 10)));
+    if (m.day() !== wantDay || m.hour() !== wantHour || m.minute() !== wantMin) return;
+
+    const ymd = m.format('YYYY-MM-DD');
+    const last = await this.prisma.backupJob.findFirst({
+      where: { scope: 'system_full', status: 'completed', completedAt: { not: null } },
+      orderBy: { completedAt: 'desc' },
+      select: { completedAt: true },
+    });
+    if (last?.completedAt && moment(last.completedAt).tz(tz).format('YYYY-MM-DD') === ymd) return;
+
+    await this.runSystemFullArchive({ manual: false, retentionCount: cfg.retentionCount });
+  }
+
   /** يُستدعى من المجدول — يتحقق من الساعة بتوقيت الإعدادات */
   async runScheduledFullDatabaseBackup(): Promise<void> {
     await this.maybeRunScheduledFullDatabaseBackup();
@@ -695,8 +919,10 @@ export class BackupService {
         jobId: job.id,
         scope: job.scope,
         messageAr:
-          job.scope === 'database_full'
-            ? 'استرجاع النسخة الكاملة يتم عبر pg_restore على الخادم — راجع مسؤول النظام.'
+          job.scope === 'database_full' || job.scope === 'system_full'
+            ? job.scope === 'system_full'
+              ? 'أرشيف النظام (قاعدة + uploads) — الاسترجاع يدوي: فك tar ثم pg_restore لـ db.dump — راجع مسؤول النظام.'
+              : 'استرجاع النسخة الكاملة يتم عبر pg_restore على الخادم — راجع مسؤول النظام.'
             : 'لا يوجد ملف لقطة لهذه المهمة.',
         messageEn: 'See system administrator for full DB restore.',
         tables: job.report as Record<string, unknown> | null,
@@ -936,7 +1162,7 @@ export class BackupService {
   async listSystemFullJobs(limit = 20) {
     const take = Math.min(Math.max(limit, 1), 50);
     return this.prisma.backupJob.findMany({
-      where: { scope: 'database_full' },
+      where: { scope: { in: ['database_full', 'system_full'] } },
       orderBy: { createdAt: 'desc' },
       take,
     });
@@ -944,7 +1170,7 @@ export class BackupService {
 
   async verifyDatabaseFullJob(jobId: string) {
     const job = await this.prisma.backupJob.findFirst({
-      where: { id: jobId, scope: 'database_full' },
+      where: { id: jobId, scope: { in: ['database_full', 'system_full'] } },
     });
     if (!job) throw new NotFoundException('النسخة غير موجودة');
     if (job.status !== 'completed' || !job.localRelativePath) {
@@ -956,7 +1182,10 @@ export class BackupService {
     } catch {
       throw new NotFoundException('الملف غير موجود على الخادم');
     }
-    const v = await this.verifyPgCustomDumpGz(abs);
+    const v =
+      job.scope === 'system_full'
+        ? await this.verifySystemFullTarGz(abs)
+        : await this.verifyPgCustomDumpGz(abs);
     const now = new Date();
     await this.prisma.backupJob.update({
       where: { id: job.id },
@@ -968,6 +1197,35 @@ export class BackupService {
     });
     if (!v.ok) throw new BadRequestException(v.error || 'فشل التحقق من النسخة');
     return { ok: true, jobId: job.id };
+  }
+
+  /** تحقق سريع من أرشيف tar.gz (قائمة أولية) */
+  private async verifySystemFullTarGz(abs: string): Promise<{ ok: boolean; error?: string }> {
+    return new Promise((resolve) => {
+      const child = spawn('tar', ['-tzf', abs], { stdio: ['ignore', 'pipe', 'pipe'] });
+      let out = '';
+      let err = '';
+      child.stdout?.on('data', (c) => {
+        out += String(c);
+      });
+      child.stderr?.on('data', (c) => {
+        err += String(c);
+      });
+      child.on('error', (e) => resolve({ ok: false, error: (e as Error).message }));
+      child.on('close', (code) => {
+        if (code !== 0) {
+          resolve({ ok: false, error: err || `رمز ${code}` });
+          return;
+        }
+        const lines = out.split('\n').filter(Boolean);
+        const hasDump = lines.some((l) => l === 'db.dump' || l.endsWith('/db.dump'));
+        if (!hasDump) {
+          resolve({ ok: false, error: 'الأرشيف لا يحتوي db.dump' });
+          return;
+        }
+        resolve({ ok: true });
+      });
+    });
   }
 
   /**
@@ -1099,7 +1357,7 @@ export class BackupService {
    */
   async resolveSystemFullJobDownloadPath(jobId: string): Promise<{ absolutePath: string; filename: string }> {
     const job = await this.prisma.backupJob.findFirst({
-      where: { id: jobId, scope: 'database_full' },
+      where: { id: jobId, scope: { in: ['database_full', 'system_full'] } },
     });
     if (!job) throw new NotFoundException('النسخة غير موجودة');
     if (job.status !== 'completed' || !job.localRelativePath) {
@@ -1112,7 +1370,10 @@ export class BackupService {
       throw new NotFoundException('الملف غير موجود على الخادم');
     }
     const ord = job.ordinal != null ? String(job.ordinal) : 'na';
-    const filename = `noorix-full-db-${ord}-${job.id}.dump.gz`;
+    const filename =
+      job.scope === 'system_full'
+        ? `noorix-system-archive-${ord}-${job.id}.tar.gz`
+        : `noorix-full-db-${ord}-${job.id}.dump.gz`;
     return { absolutePath: abs, filename };
   }
 

@@ -161,6 +161,9 @@
   --noorix-table-row-even: #fafbfd;
   /* ألوان تمييز */
   --noorix-accent-green:  #16a34a;
+  /* أسماء قصيرة مستخدمة في مكوّنات قديمة — تُشير لنفس التوكنات المعيارية */
+  --noorix-bg:          var(--noorix-bg-page);
+  --noorix-green:       var(--noorix-accent-green);
   --noorix-accent-blue:   #2563eb;
   --noorix-accent-sky:    #0284c7;
   --noorix-accent-violet: #6366f1;

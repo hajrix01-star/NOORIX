@@ -2,8 +2,8 @@
  * استيراد لقطة منطقية إلى شركة جديدة داخل نفس المستأجر — إعادة تعيين كل المعرفات.
  * لا يستورد سجل التدقيق ولا روابط user_companies القديمة (يُضاف المستخدم الحالي فقط).
  */
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -23,6 +23,8 @@ function ddate(v: unknown): Date {
 
 @Injectable()
 export class BackupLogicalImportService {
+  private readonly logger = new Logger(BackupLogicalImportService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   private nid() {
@@ -35,6 +37,8 @@ export class BackupLogicalImportService {
     nameAr: string;
     nameEn?: string | null;
     importingUserId: string;
+    /** أو عبر البيئة BACKUP_LOGICAL_IMPORT_FAIL_ON_ALLOCATION_WARNINGS=1 */
+    failOnAllocationWarnings?: boolean;
   }): Promise<{
     newCompanyId: string;
     nameAr: string;
@@ -44,6 +48,7 @@ export class BackupLogicalImportService {
       sourceMeta: Record<string, unknown>;
       counts: Record<string, number>;
       totalRecords: number;
+      importWarnings?: string[];
     };
   }> {
     const { snapshot, tenantId, nameAr, nameEn, importingUserId } = params;
@@ -77,6 +82,12 @@ export class BackupLogicalImportService {
           format: meta.format,
         }
       : {};
+
+    const strictAlloc =
+      params.failOnAllocationWarnings === true ||
+      process.env.BACKUP_LOGICAL_IMPORT_FAIL_ON_ALLOCATION_WARNINGS === '1';
+
+    let allocationWarnings: string[] = [];
 
     await this.prisma.$transaction(
       async (tx) => {
@@ -583,6 +594,73 @@ export class BackupLogicalImportService {
           });
         }
 
+        for (const row of arr<Record<string, unknown>>(data.invoiceVaultAllocations ?? [])) {
+          const invId = invoiceMap.get(String(row.invoiceId));
+          const vid = vaultMap.get(String(row.vaultId));
+          if (!invId || !vid) continue;
+          await tx.invoiceVaultAllocation.create({
+            data: {
+              id: this.nid(),
+              tenantId,
+              invoiceId: invId,
+              vaultId: vid,
+              amount: dec(row.amount),
+              createdAt: row.createdAt ? ddate(row.createdAt) : new Date(),
+            },
+          });
+        }
+
+        const companyAssetMap = new Map<string, string>();
+        for (const row of arr<Record<string, unknown>>(data.companyAssets ?? [])) {
+          const nid = this.nid();
+          companyAssetMap.set(String(row.id), nid);
+          const supId = row.supplierId ? supplierMap.get(String(row.supplierId)) : null;
+          const invId = row.invoiceId ? invoiceMap.get(String(row.invoiceId)) : null;
+          await tx.companyAsset.create({
+            data: {
+              id: nid,
+              tenantId,
+              companyId: newCompanyId,
+              nameAr: String(row.nameAr),
+              nameEn: (row.nameEn as string | null) ?? null,
+              serialNumber: (row.serialNumber as string | null) ?? null,
+              location: (row.location as string | null) ?? null,
+              purchaseDate: row.purchaseDate ? ddate(row.purchaseDate) : null,
+              acquisitionCost: row.acquisitionCost != null ? dec(row.acquisitionCost) : null,
+              supplierId: supId,
+              invoiceId: invId,
+              warrantyDescription: (row.warrantyDescription as string | null) ?? null,
+              warrantyMonths: row.warrantyMonths != null ? Number(row.warrantyMonths) : null,
+              warrantyStartDate: row.warrantyStartDate ? ddate(row.warrantyStartDate) : null,
+              warrantyEndDate: row.warrantyEndDate ? ddate(row.warrantyEndDate) : null,
+              notes: (row.notes as string | null) ?? null,
+              createdAt: ddate(row.createdAt),
+              updatedAt: ddate(row.updatedAt),
+            },
+          });
+        }
+
+        for (const row of arr<Record<string, unknown>>(data.companyAssetWarrantyLines ?? [])) {
+          const caId = companyAssetMap.get(String(row.companyAssetId));
+          if (!caId) continue;
+          await tx.companyAssetWarrantyLine.create({
+            data: {
+              id: this.nid(),
+              tenantId,
+              companyId: newCompanyId,
+              companyAssetId: caId,
+              sortOrder: Number(row.sortOrder ?? 0),
+              nameAr: String(row.nameAr),
+              nameEn: (row.nameEn as string | null) ?? null,
+              serialNumber: (row.serialNumber as string | null) ?? null,
+              quantity: row.quantity != null ? dec(row.quantity) : null,
+              notes: (row.notes as string | null) ?? null,
+              createdAt: ddate(row.createdAt),
+              updatedAt: ddate(row.updatedAt),
+            },
+          });
+        }
+
         const mapLedgerRef = (type: string, refId: string): string => {
           if (['invoice', 'salary', 'advance'].includes(type)) {
             return invoiceMap.get(refId) ?? refId;
@@ -821,6 +899,16 @@ export class BackupLogicalImportService {
             companyId: newCompanyId,
           },
         });
+
+        allocationWarnings = await this.verifyImportedCompanyAllocations(newCompanyId, tx);
+        if (allocationWarnings.length > 0) {
+          for (const w of allocationWarnings) this.logger.warn(`استيراد لقطة: ${w}`);
+          if (strictAlloc) {
+            throw new BadRequestException(
+              `فشل الاستيراد — وضع التحقق الصارم من توزيعات الخزائن: ${allocationWarnings.join(' | ')}`,
+            );
+          }
+        }
       },
       { maxWait: 120000, timeout: 600000 },
     );
@@ -834,7 +922,38 @@ export class BackupLogicalImportService {
         sourceMeta,
         counts,
         totalRecords,
+        importWarnings: allocationWarnings.length > 0 ? allocationWarnings : undefined,
       },
     };
+  }
+
+  /** فواتير صرف متعددة الخزن: مجموع التوزيعات يجب أن يطابق totalAmount */
+  private async verifyImportedCompanyAllocations(
+    companyId: string,
+    db?: Pick<PrismaClient, 'invoice'>,
+  ): Promise<string[]> {
+    const client = db ?? this.prisma;
+    const kinds = ['purchase', 'expense', 'salary', 'advance', 'hr_expense', 'fixed_expense'];
+    const eps = new Prisma.Decimal('0.0001');
+    const invoices = await client.invoice.findMany({
+      where: { companyId, status: 'active', kind: { in: kinds } },
+      select: {
+        invoiceNumber: true,
+        kind: true,
+        totalAmount: true,
+        vaultAllocations: { select: { amount: true } },
+      },
+    });
+    const warnings: string[] = [];
+    for (const inv of invoices) {
+      if (inv.vaultAllocations.length === 0) continue;
+      const sum = inv.vaultAllocations.reduce((s, a) => s.plus(a.amount), new Prisma.Decimal(0));
+      if (!sum.minus(inv.totalAmount).abs().lte(eps)) {
+        warnings.push(
+          `فاتورة ${inv.invoiceNumber} (${inv.kind}): مجموع التوزيعات ${sum.toFixed(4)} ≠ الإجمالي ${inv.totalAmount.toFixed(4)}`,
+        );
+      }
+    }
+    return warnings;
   }
 }

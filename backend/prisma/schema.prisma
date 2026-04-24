@@ -170,7 +170,7 @@ model BackupJob {
   id                String    @id @default(cuid())
   tenantId          String?   @map("tenant_id")
   companyId         String?   @map("company_id")
-  scope             String    // database_full | company_logical
+  scope             String    // database_full | system_full | company_logical
   status            String    // pending | running | completed | failed | skipped_duplicate
   contentHash       String?   @map("content_hash")
   localRelativePath String?   @map("local_relative_path")
@@ -1101,6 +1101,7 @@ model LedgerEntry {
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, transactionDate])
+  @@index([companyId, status, transactionDate])
   @@index([companyId, entryDate])
   @@index([referenceType, referenceId])
   @@index([vaultId])

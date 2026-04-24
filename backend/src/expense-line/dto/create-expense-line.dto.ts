@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsBoolean, IsNumber, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsBoolean, IsNumber, Min, Max, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateExpenseLineDto {
@@ -27,6 +27,7 @@ export class CreateExpenseLineDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
   /** مبلغ مرجعي (مثلاً لكل دفعة دورية) */

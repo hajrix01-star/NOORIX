@@ -11,6 +11,7 @@ import {
   ValidateNested,
   ArrayMinSize,
   IsBoolean,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { InvoiceVaultSplitDto } from './invoice-vault-split.dto';
@@ -88,6 +89,7 @@ export class UpdateInvoiceDto {
   @Allow()
   @IsOptional()
   @IsString()
+  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
   @IsOptional()

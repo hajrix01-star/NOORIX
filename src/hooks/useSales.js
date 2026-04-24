@@ -26,7 +26,8 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
       let page = 1;
       const acc = [];
       let reportedTotal = 0;
-      for (let guard = 0; guard < 500; guard++) {
+      /** سقف صفحات — يمنع آلاف الطلبات عند بيانات ضخمة؛ التصدير يستخدم دالة منفصلة. */
+      for (let guard = 0; guard < 25; guard++) {
         const res = await getDailySalesSummaries(companyId, startDate, endDate, page, pageSize);
         throwIfApiFailed(res, 'فشل تحميل ملخصات المبيعات');
         const { items = [], total = 0 } = res.data || {};
