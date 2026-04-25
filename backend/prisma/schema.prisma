@@ -787,6 +787,7 @@ model Supplier {
   invoices         Invoice[]
   expenseLines     ExpenseLine[]
   companyAssets    CompanyAsset[]
+  ocrSupplierLinks OcrSupplier[] @relation("OcrSupplierAccountingLink")
 
   @@index([tenantId])
   @@index([companyId])
@@ -1246,19 +1247,23 @@ model OcrSupplier {
   taxNumber   String?  @map("tax_number")
   phone       String?
   notes       String?
+  /// ربط اختياري بمورد المحاسبة (مورد المشتريات في Noorix) لتسريع الاقتراحات والتقارير
+  accountingSupplierId String?  @map("accounting_supplier_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt      @map("updated_at")
 
-  company         Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  aliases         OcrSupplierAlias[]
-  invoices        OcrInvoice[]
-  correctionRules OcrCorrectionRule[]
-  priceHistory    OcrPriceHistory[]
-  extractionLogs  OcrExtractionLog[]
+  company              Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  accountingSupplier   Supplier?            @relation("OcrSupplierAccountingLink", fields: [accountingSupplierId], references: [id], onDelete: SetNull)
+  aliases              OcrSupplierAlias[]
+  invoices             OcrInvoice[]
+  correctionRules      OcrCorrectionRule[]
+  priceHistory         OcrPriceHistory[]
+  extractionLogs       OcrExtractionLog[]
 
   @@index([tenantId])
   @@index([tenantId, companyId])
   @@index([companyId])
+  @@index([accountingSupplierId])
   @@map("ocr_suppliers")
 }
 

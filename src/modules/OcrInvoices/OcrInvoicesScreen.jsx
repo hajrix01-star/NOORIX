@@ -10,6 +10,7 @@ import SuppliersCatalogTab from './components/SuppliersCatalogTab';
 import ItemsCatalogTab     from './components/ItemsCatalogTab';
 import PriceAlertsTab      from './components/PriceAlertsTab';
 import OcrReviewQueueTab   from './components/OcrReviewQueueTab';
+import OcrPurchasesReportTab from './components/OcrPurchasesReportTab';
 import {
   getOcrInvoices,
   getOcrReviewQueue,
@@ -26,6 +27,7 @@ const TABS = [
   { key: 'suppliers', labelAr: 'الموردون',          labelEn: 'Suppliers' },
   { key: 'items',     labelAr: 'الأصناف',           labelEn: 'Items' },
   { key: 'alerts',    labelAr: 'تنبيهات الأسعار',  labelEn: 'Alerts' },
+  { key: 'purchases', labelAr: 'تقرير مشتريات',    labelEn: 'Purchases report' },
 ];
 const OCR_TAB_IDS = TABS.map((tab) => tab.key);
 
@@ -106,7 +108,11 @@ export default function OcrInvoicesScreen() {
     id: tab.key,
     label: (
       <span className="inline-flex items-center gap-1.5">
-        {tab.key === 'review' ? t('ocrReviewQueueTab') : (isAr ? tab.labelAr : tab.labelEn)}
+        {tab.key === 'review'
+          ? t('ocrReviewQueueTab')
+          : tab.key === 'purchases'
+            ? t('ocrPurchasesReportTab')
+            : (isAr ? tab.labelAr : tab.labelEn)}
         {tab.key === 'review' && reviewPendingCount > 0 && (
           <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-noorix-blue text-white text-[10px] font-bold leading-none">
             {reviewPendingCount}
@@ -210,6 +216,7 @@ export default function OcrInvoicesScreen() {
         {activeTab === 'alerts' && (
           <PriceAlertsTab alerts={alertsData || []} loading={alertsLoading} invoices={invoicesData || []} onRefresh={refetchAlerts} />
         )}
+        {activeTab === 'purchases' && <OcrPurchasesReportTab />}
       </ScreenTabs>
 
     </ScreenShell>

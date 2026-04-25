@@ -30,6 +30,13 @@ export async function getOcrInvoice(id) {
 }
 
 /** اقتراح موردي المحاسبة لمطابقة مورد OCR */
+export async function getOcrPurchasesByMonth(month) {
+  const params = new URLSearchParams();
+  if (month) params.set('month', month);
+  const q = params.toString();
+  return apiGet(`/api/v1/ocr/reports/purchases-by-month${q ? `?${q}` : ''}`);
+}
+
 export async function getOcrAccountingSupplierSuggestions({ ocrSupplierId, q, limit } = {}) {
   const params = new URLSearchParams();
   if (ocrSupplierId) params.set('ocrSupplierId', ocrSupplierId);

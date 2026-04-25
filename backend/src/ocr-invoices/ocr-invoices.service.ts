@@ -1035,24 +1035,57 @@ export class OcrInvoicesService {
     if (!tenantId || !companyId) return [];
     return this.prisma.ocrSupplier.findMany({
       where: { tenantId, companyId },
-      include: { aliases: true, _count: { select: { invoices: true } } },
+      include: {
+        aliases: true,
+        _count: { select: { invoices: true } },
+        accountingSupplier: { select: { id: true, nameAr: true, taxNumber: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async createSupplier(tenantId: string, companyId: string, dto: CreateOcrSupplierDto) {
+    const { accountingSupplierId, ...rest } = dto as CreateOcrSupplierDto & { accountingSupplierId?: string | null };
+    let accId: string | null = null;
+    if (accountingSupplierId?.trim()) {
+      const acc = await this.prisma.supplier.findFirst({
+        where: { id: accountingSupplierId.trim(), tenantId, companyId, isDeleted: false },
+      });
+      if (!acc) throw new BadRequestException('مورد المحاسبة غير موجود أو لا يخص هذه الشركة.');
+      accId = acc.id;
+    }
     return this.prisma.ocrSupplier.create({
-      data: { tenantId, companyId, ...dto },
+      data: {
+        tenantId,
+        companyId,
+        ...rest,
+        accountingSupplierId: accId,
+      },
     });
   }
 
   async updateSupplier(tenantId: string, companyId: string, id: string, dto: Partial<CreateOcrSupplierDto>) {
     const row = await this.prisma.ocrSupplier.findFirst({ where: { id, tenantId, companyId } });
     if (!row) throw new NotFoundException('المورد غير موجود.');
-    return this.prisma.ocrSupplier.update({
-      where: { id },
-      data: dto,
-    });
+    const data: Prisma.OcrSupplierUpdateInput = {};
+    if (dto.nameAr !== undefined) data.nameAr = dto.nameAr;
+    if (dto.nameEn !== undefined) data.nameEn = dto.nameEn;
+    if (dto.taxNumber !== undefined) data.taxNumber = dto.taxNumber;
+    if (dto.phone !== undefined) data.phone = dto.phone;
+    if (dto.notes !== undefined) data.notes = dto.notes;
+    if (dto.accountingSupplierId !== undefined) {
+      const v = dto.accountingSupplierId;
+      if (v == null || v === '') {
+        data.accountingSupplier = { disconnect: true };
+      } else {
+        const acc = await this.prisma.supplier.findFirst({
+          where: { id: v, tenantId, companyId, isDeleted: false },
+        });
+        if (!acc) throw new BadRequestException('مورد المحاسبة غير موجود أو لا يخص هذه الشركة.');
+        data.accountingSupplier = { connect: { id: acc.id } };
+      }
+    }
+    return this.prisma.ocrSupplier.update({ where: { id }, data });
   }
 
   async deleteSupplier(tenantId: string, companyId: string, id: string) {
@@ -1219,37 +1252,63 @@ export class OcrInvoicesService {
 
   /**
    * اقتراح موردي المحاسبة لمطابقة مورد OCR (اسم / الرقم الضريبي).
+   * يدعم `q` مع `ocrSupplierId` معاً (اسم من الفاتورة + سجل كتالوج OCR).
+   * إن وُجد `accountingSupplierId` على مورد OCR يُعاد ذلك المورد أولاً.
    */
   async getAccountingSupplierSuggestions(
     tenantId: string,
     companyId: string,
     opts: { ocrSupplierId?: string; q?: string; limit?: number },
   ) {
-    const limit = Math.min(Math.max(opts.limit ?? 12, 1), 40);
-    let needleAr = (opts.q || '').trim();
+    const limit = Math.min(Math.max(opts.limit ?? 16, 1), 50);
+    const qTrim = (opts.q || '').trim();
+    let needleAr = qTrim;
     let needleEn = '';
     let taxDigits: string | null = null;
+    let linkedAccountingId: string | null = null;
+    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
     if (opts.ocrSupplierId) {
       const o = await this.prisma.ocrSupplier.findFirst({
         where: { id: opts.ocrSupplierId, tenantId, companyId },
-        select: { nameAr: true, nameEn: true, taxNumber: true },
+        select: {
+          nameAr: true,
+          nameEn: true,
+          taxNumber: true,
+          accountingSupplierId: true,
+        },
       });
       if (o) {
-        if (!needleAr) needleAr = o.nameAr || '';
-        needleEn = (o.nameEn || '').trim();
+        linkedAccountingId = o.accountingSupplierId || null;
+        const catAr = (o.nameAr || '').trim();
+        const catEn = (o.nameEn || '').trim();
+        if (!needleAr) needleAr = catAr;
+        else if (catAr) needleAr = `${needleAr} ${catAr}`.trim();
+        needleEn = catEn;
         const raw = o.taxNumber?.replace(/\D/g, '') || '';
         taxDigits = raw.length >= 9 ? raw : null;
       }
     }
-    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
     const na = norm(needleAr);
     const ne = norm(needleEn);
-    if (!na && !ne && !taxDigits) return [];
+    const tokens = na.split(' ').filter((t) => t.length >= 2);
+
+    if (!na && !ne && !taxDigits) {
+      if (linkedAccountingId) {
+        const lone = await this.prisma.supplier.findFirst({
+          where: { id: linkedAccountingId, tenantId, companyId, isDeleted: false },
+          select: { id: true, nameAr: true, nameEn: true, taxNumber: true },
+        });
+        return lone
+          ? [{ ...lone, matchScore: 10000, linkedFromOcr: true as const }]
+          : [];
+      }
+      return [];
+    }
 
     const suppliers = await this.prisma.supplier.findMany({
       where: { tenantId, companyId, isDeleted: false },
       select: { id: true, nameAr: true, nameEn: true, taxNumber: true },
-      take: 400,
+      take: 600,
     });
 
     const scored = suppliers.map((s) => {
@@ -1260,16 +1319,179 @@ export class OcrInvoicesService {
       if (taxDigits && stax && stax === taxDigits) score += 120;
       if (na && ar === na) score += 80;
       else if (na.length >= 2 && ar.includes(na)) score += 50;
-      else if (na.length >= 2 && na.slice(0, 12).length && ar.includes(na.slice(0, 12))) score += 28;
+      else if (na.length >= 2 && na.includes(ar) && ar.length >= 3) score += 42;
+      else if (na.length >= 2 && ar.includes(na.slice(0, Math.min(12, na.length)))) score += 28;
       if (ne.length >= 2 && en.includes(ne)) score += 35;
+      else if (ne.length >= 2 && ne.includes(en) && en.length >= 3) score += 22;
+      for (const tok of tokens) {
+        if (tok.length >= 2 && ar.includes(tok)) score += 12;
+        if (tok.length >= 2 && en.includes(tok)) score += 10;
+      }
       return { id: s.id, nameAr: s.nameAr, nameEn: s.nameEn, taxNumber: s.taxNumber, score };
     });
 
-    return scored
+    let list = scored
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
       .map(({ score, ...rest }) => ({ ...rest, matchScore: score }));
+
+    if (list.length < limit && na.length >= 2) {
+      const prefix = na.slice(0, Math.min(8, na.length));
+      const extra = await this.prisma.supplier.findMany({
+        where: {
+          tenantId,
+          companyId,
+          isDeleted: false,
+          OR: [
+            { nameAr: { contains: prefix, mode: 'insensitive' } },
+            { nameEn: { contains: prefix, mode: 'insensitive' } },
+          ],
+          NOT: { id: { in: list.map((x) => x.id) } },
+        },
+        select: { id: true, nameAr: true, nameEn: true, taxNumber: true },
+        take: limit - list.length,
+      });
+      list = [
+        ...list,
+        ...extra.map((s) => ({
+          id: s.id,
+          nameAr: s.nameAr,
+          nameEn: s.nameEn,
+          taxNumber: s.taxNumber,
+          matchScore: 5,
+        })),
+      ];
+    }
+
+    if (linkedAccountingId) {
+      const linked = suppliers.find((s) => s.id === linkedAccountingId);
+      if (linked) {
+        const rest = list.filter((x) => x.id !== linked.id);
+        list = [
+          {
+            id: linked.id,
+            nameAr: linked.nameAr,
+            nameEn: linked.nameEn,
+            taxNumber: linked.taxNumber,
+            matchScore: 10000,
+            linkedFromOcr: true as boolean,
+          } as (typeof list)[number],
+          ...rest,
+        ];
+      }
+    }
+
+    return list.slice(0, limit);
+  }
+
+  /**
+   * تقرير فواتير OCR في شهر (حسب تاريخ الفاتورة أو تاريخ الإنشاء) مع أصناف وفئات.
+   */
+  async getPurchasesMonthlyReport(tenantId: string, companyId: string, month: string) {
+    const m = /^(\d{4})-(\d{2})$/.exec((month || '').trim());
+    if (!m) throw new BadRequestException('month مطلوب بصيغة YYYY-MM');
+    const y = parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10);
+    if (mo < 1 || mo > 12) throw new BadRequestException('شهر غير صالح');
+    const start = new Date(Date.UTC(y, mo - 1, 1, 0, 0, 0, 0));
+    const endEx = new Date(Date.UTC(y, mo, 1, 0, 0, 0, 0));
+
+    const invoices = await this.prisma.ocrInvoice.findMany({
+      where: {
+        tenantId,
+        companyId,
+        OR: [
+          { AND: [{ invoiceDate: { not: null } }, { invoiceDate: { gte: start, lt: endEx } }] },
+          { AND: [{ invoiceDate: null }, { createdAt: { gte: start, lt: endEx } }] },
+        ],
+      },
+      include: {
+        supplier: { select: { id: true, nameAr: true, accountingSupplierId: true } },
+        lines: {
+          include: {
+            item: { select: { id: true, nameAr: true, category: true } },
+          },
+        },
+        linkedPurchaseInvoice: { select: { id: true, invoiceNumber: true } },
+      },
+      orderBy: [{ invoiceDate: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    type CatAgg = { category: string; lineCount: number; total: Prisma.Decimal };
+    const byCategory = new Map<string, CatAgg>();
+    type ItemAgg = {
+      itemId: string | null;
+      nameAr: string;
+      category: string | null;
+      lineCount: number;
+      quantity: Prisma.Decimal;
+      total: Prisma.Decimal;
+    };
+    const byItem = new Map<string, ItemAgg>();
+
+    let lineTotalAll = new Prisma.Decimal(0);
+    let lineCountAll = 0;
+
+    for (const inv of invoices) {
+      for (const line of inv.lines) {
+        lineCountAll += 1;
+        const tp = line.totalPrice ?? new Prisma.Decimal(0);
+        lineTotalAll = lineTotalAll.add(tp);
+        const cat = line.item?.category?.trim() || '—';
+        const prevC = byCategory.get(cat) || { category: cat, lineCount: 0, total: new Prisma.Decimal(0) };
+        prevC.lineCount += 1;
+        prevC.total = prevC.total.add(tp);
+        byCategory.set(cat, prevC);
+
+        const itemKey = line.itemId || `raw:${line.rawName}`;
+        const nameAr = line.item?.nameAr || line.nameAr || line.rawName || '—';
+        const itemCat = line.item?.category ?? null;
+        const prevI = byItem.get(itemKey) || {
+          itemId: line.itemId,
+          nameAr,
+          category: itemCat,
+          lineCount: 0,
+          quantity: new Prisma.Decimal(0),
+          total: new Prisma.Decimal(0),
+        };
+        prevI.lineCount += 1;
+        if (line.quantity) prevI.quantity = prevI.quantity.add(line.quantity);
+        prevI.total = prevI.total.add(tp);
+        byItem.set(itemKey, prevI);
+      }
+    }
+
+    return {
+      month: `${y}-${String(mo).padStart(2, '0')}`,
+      invoiceCount: invoices.length,
+      lineCount: lineCountAll,
+      grandTotal: lineTotalAll.toNumber(),
+      byCategory: [...byCategory.values()]
+        .map((c) => ({ category: c.category, lineCount: c.lineCount, total: c.total.toNumber() }))
+        .sort((a, b) => b.total - a.total),
+      byItem: [...byItem.values()]
+        .map((it) => ({
+          itemId: it.itemId,
+          nameAr: it.nameAr,
+          category: it.category,
+          lineCount: it.lineCount,
+          quantity: it.quantity.toNumber(),
+          total: it.total.toNumber(),
+        }))
+        .sort((a, b) => b.total - a.total),
+      invoices: invoices.map((i) => ({
+        id: i.id,
+        status: i.status,
+        invoiceNumber: i.invoiceNumber,
+        invoiceDate: i.invoiceDate,
+        createdAt: i.createdAt,
+        totalAmount: i.totalAmount?.toNumber() ?? null,
+        supplier: i.supplier,
+        lineCount: i.lines.length,
+        linkedPurchaseId: i.linkedPurchaseInvoiceId,
+        linkedPurchase: i.linkedPurchaseInvoice,
+      })),
+    };
   }
 
   async saveInvoice(tenantId: string, companyId: string, dto: SaveInvoiceDto, caller?: OcrSaveInvoiceCaller) {

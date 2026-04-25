@@ -72,6 +72,16 @@ export class OcrInvoicesController {
     return this.svc.getReviewQueueInvoices(user.tenantId!, this.companyIdOrThrow(req));
   }
 
+  @Get('reports/purchases-by-month')
+  @RequirePermission('OCR_READ')
+  async purchasesByMonth(
+    @CurrentUser() user: JwtUser,
+    @Req() req: Request,
+    @Query('month') month?: string,
+  ) {
+    return this.svc.getPurchasesMonthlyReport(user.tenantId!, this.companyIdOrThrow(req), month || '');
+  }
+
   @Get('accounting-supplier-suggestions')
   @RequirePermission('OCR_READ')
   async accountingSupplierSuggestions(

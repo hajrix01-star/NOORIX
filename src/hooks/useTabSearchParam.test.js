@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { pickTabFromSearchParams } from './useTabSearchParam';
 
-const OCR = ['upload', 'review', 'invoices', 'suppliers', 'items', 'alerts'];
+const OCR = ['upload', 'review', 'invoices', 'suppliers', 'items', 'alerts', 'purchases'];
 
 describe('pickTabFromSearchParams (OCR + legacy tab)', () => {
   it('prefers ocrTab when set', () => {

@@ -1,10 +1,13 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { useApp } from '../../../context/AppContext';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import {
   createOcrSupplier, updateOcrSupplier, deleteOcrSupplier, addSupplierAlias,
   bulkDeleteOcrSuppliers,
 } from '../services/ocrApi';
+import { getSuppliers } from '../../../services/api';
 import { assertApiOk } from '../../../utils/apiResponse';
 
 function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
@@ -29,6 +32,7 @@ function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
 
 export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh }) {
   const { t, lang: language } = useTranslation();
+  const { activeCompanyId } = useApp();
   const [search, setSearch]     = useState('');
   const [adding, setAdding]     = useState(false);
   const [editing, setEditing]   = useState(null);
@@ -38,7 +42,20 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   const [aliasLang, setAliasLang]   = useState('ar');
   const [selected, setSelected] = useState(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [linkAccId, setLinkAccId] = useState('');
+  const [linkSaving, setLinkSaving] = useState(false);
   const dir = language === 'ar' ? 'rtl' : 'ltr';
+
+  const { data: accountingSuppliers = [] } = useQuery({
+    queryKey: ['accounting-suppliers-ocr-catalog', activeCompanyId],
+    enabled: !!activeCompanyId && !!viewing,
+    queryFn: async () => {
+      const r = await getSuppliers(activeCompanyId, 1, 500);
+      if (!r.success) return [];
+      if (Array.isArray(r.data)) return r.data;
+      return r.data?.items || r.data?.data || [];
+    },
+  });
 
   const toggleSelect = (id) => setSelected((prev) => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
@@ -101,8 +118,35 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     if (updated) setViewing(updated);
   };
 
+  const openViewing = (s) => {
+    setViewing(s);
+    setLinkAccId(s.accountingSupplier?.id || '');
+  };
+
+  const handleSaveAccountingLink = async () => {
+    if (!viewing) return;
+    setLinkSaving(true);
+    try {
+      const res = await updateOcrSupplier(viewing.id, {
+        accountingSupplierId: linkAccId || null,
+      });
+      assertApiOk(res, t('saveFailed'));
+      await onRefresh();
+      setViewing(null);
+    } catch (e) {
+      alert(e?.message || t('saveFailed'));
+    } finally {
+      setLinkSaving(false);
+    }
+  };
+
   const isAr = language === 'ar';
   const allChecked = filtered.length > 0 && filtered.every((s) => selected.has(s.id));
+
+  const accOptions = useMemo(
+    () => [...accountingSuppliers].sort((a, b) => (a.nameAr || '').localeCompare(b.nameAr || '', 'ar')),
+    [accountingSuppliers],
+  );
 
   if (loading) return (
     <div className="ocr-loading">
@@ -163,12 +207,17 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
                     <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggleSelect(s.id)} className="ocr-catalog-checkbox" onClick={e => e.stopPropagation()} />
                   </label>
                   <div className="ocr-catalog-avatar">{(s.nameAr || s.nameEn || '?')[0]}</div>
-                  <div className="ocr-catalog-name cursor-pointer" onClick={() => setViewing(s)}>
+                  <div className="ocr-catalog-name cursor-pointer flex-1 min-w-0" onClick={() => openViewing(s)}>
                     <div className="ocr-catalog-name-primary">{isAr ? s.nameAr : (s.nameEn || s.nameAr)}</div>
                     {s.nameEn && s.nameAr && <div className="ocr-catalog-name-secondary">{isAr ? s.nameEn : s.nameAr}</div>}
+                    {s.accountingSupplier?.nameAr && (
+                      <div className="text-[11px] text-noorix-blue font-medium mt-0.5 truncate">
+                        {t('ocrNoorixLinked')} {s.accountingSupplier.nameAr}
+                      </div>
+                    )}
                   </div>
                   <span className="ocr-catalog-badge">{s._count?.invoices || 0} {isAr ? 'فاتورة' : 'inv.'}</span>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 shrink-0">
                     <Button onClick={() => setEditing(s)} size="sm">{t('ocrEdit')}</Button>
                     <Button onClick={() => handleDelete(s.id)} size="sm" variant="danger">{t('ocrDelete')}</Button>
                   </div>
@@ -179,7 +228,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         </div>
       )}
 
-      {/* Alias drawer */}
+      {/* Alias drawer + accounting link */}
       <AdaptiveSheet
         open={!!viewing}
         onClose={() => setViewing(null)}
@@ -189,6 +238,26 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         className="ocr-supplier-aliases-drawer"
       >
         <div dir={dir}>
+          <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 p-3 mb-4">
+            <div className="font-semibold text-[13px] mb-1">{t('ocrLinkNoorixSupplier')}</div>
+            <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('ocrLinkedNoorixHint')}</p>
+            <select
+              className="w-full rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text mb-2"
+              value={linkAccId}
+              onChange={(e) => setLinkAccId(e.target.value)}
+            >
+              <option value="">{isAr ? '— بدون ربط —' : '— No link —'}</option>
+              {accOptions.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {(a.nameAr || '') + (a.taxNumber ? ` — ${a.taxNumber}` : '')}
+                </option>
+              ))}
+            </select>
+            <Button variant="primary" size="sm" onClick={handleSaveAccountingLink} disabled={linkSaving}>
+              {linkSaving ? '…' : t('ocrSaveSupplierLink')}
+            </Button>
+          </div>
+
           <p className="text-[12px] text-noorix-muted mt-0 mb-3">{t('ocrAliases')}</p>
           <div className="modal-body">
             {(viewing?.aliases || []).length === 0 && (
@@ -201,7 +270,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
                 </div>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-3">
               <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="flex-1 min-w-0" />
               <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
                 <option value="ar">AR</option>

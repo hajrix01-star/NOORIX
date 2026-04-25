@@ -99,16 +99,28 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     enabled:
       !!activeCompanyId &&
       !!finalizeOcrId &&
-      createLinkedPurchase &&
       canCreatePurchase &&
       (!!prefillOcrSupplierId || supplierNameForSuggest.length >= 2),
     queryFn: async () => {
-      const r = prefillOcrSupplierId
-        ? await getOcrAccountingSupplierSuggestions({ ocrSupplierId: prefillOcrSupplierId })
-        : await getOcrAccountingSupplierSuggestions({ q: supplierNameForSuggest });
+      const q =
+        supplierNameForSuggest.length >= 2 ? supplierNameForSuggest : undefined;
+      const r = await getOcrAccountingSupplierSuggestions({
+        ...(prefillOcrSupplierId ? { ocrSupplierId: prefillOcrSupplierId } : {}),
+        ...(q ? { q } : {}),
+        limit: 24,
+      });
       return r.success && Array.isArray(r.data) ? r.data : [];
     },
   });
+
+  /** اقتراح مورد محاسبة مُسبَق من ربط كتالوج OCR */
+  useEffect(() => {
+    if (!createLinkedPurchase || accountingSupplierId) return;
+    const top = accSuggestions[0];
+    if (top?.linkedFromOcr || (top?.matchScore != null && top.matchScore >= 5000)) {
+      setAccountingSupplierId(top.id);
+    }
+  }, [createLinkedPurchase, accountingSupplierId, accSuggestions]);
 
   useEffect(() => {
     if (!prefillInvoiceId) return;

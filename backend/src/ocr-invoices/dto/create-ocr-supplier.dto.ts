@@ -21,4 +21,9 @@ export class CreateOcrSupplierDto {
   @IsOptional()
   @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
+
+  /** مورد محاسبة Noorix — يُستخدم في اقتراحات فاتورة المشتريات */
+  @IsOptional()
+  @IsString()
+  accountingSupplierId?: string | null;
 }
