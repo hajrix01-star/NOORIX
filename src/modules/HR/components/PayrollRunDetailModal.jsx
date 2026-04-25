@@ -236,7 +236,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
           <p className="m-0 mt-2 text-[12px] text-noorix-muted nx-font-numbers" dir="ltr">
             {t('payrollIssuedInvoiceNumber')}:{' '}
             <Link
-              to={payrollSalaryInvoiceListHref(run.id)}
+              to={payrollSalaryInvoiceListHref(run.id, run.payrollMonth)}
               className="font-semibold text-noorix-blue hover:underline"
               title={t('payrollOpenIssuedInvoice')}
             >

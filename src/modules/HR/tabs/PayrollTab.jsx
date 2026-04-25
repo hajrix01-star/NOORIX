@@ -208,7 +208,7 @@ export default function PayrollTab() {
       render: (v, row) => (
         v ? (
           <Link
-            to={payrollSalaryInvoiceListHref(row.id)}
+            to={payrollSalaryInvoiceListHref(row.id, row.monthRaw)}
             className="nx-cell-num text-[12px] font-semibold text-noorix-blue hover:underline whitespace-nowrap"
             dir="ltr"
             title={t('payrollOpenIssuedInvoice')}
@@ -278,7 +278,7 @@ export default function PayrollTab() {
           <div className="nx-cell-muted mb-2 text-end text-[12px]" dir="ltr">
             {t('payrollIssuedInvoiceNumber')}:{' '}
             <Link
-              to={payrollSalaryInvoiceListHref(row.id)}
+              to={payrollSalaryInvoiceListHref(row.id, row.monthRaw)}
               className="font-semibold text-noorix-blue hover:underline"
               title={t('payrollOpenIssuedInvoice')}
             >
