@@ -78,12 +78,6 @@ body { font-family: 'Cairo', 'Tajawal', Tahoma, sans-serif; }
 .ps-table thead th { background: #1a3c5e; color: #fff; font-weight: 700; }
 .ps-table tfoot td { background: #eef2f7; font-weight: 800; }
 .ps-table .td-num { text-align: center; font-weight: 800; color: #1a3c5e; }
-.ps-net-big {
-  text-align: center; padding: 22px 12px; margin-bottom: 12px;
-  border: 2px solid #c9a227; border-radius: 8px; background: #faf8f0;
-}
-.ps-net-big .lbl { font-size: 12px; color: #475569; font-weight: 700; margin-bottom: 8px; }
-.ps-net-big .amt { font-size: 26px; font-weight: 900; color: #1a3c5e; direction: ltr; }
 .ps-note { font-size: 10px; color: #64748b; line-height: 1.5; margin-bottom: 12px; text-align: justify; }
 .ps-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
 .ps-sig-box { border: 1px solid #d0d8e4; border-radius: 6px; overflow: hidden; page-break-inside: avoid; }
@@ -156,10 +150,16 @@ export function openPayrollRunEmployeeSlipsPrint({
       let breakdownHtml = '';
       if (netOnly) {
         breakdownHtml = `
-        <div class="ps-net-big">
-          <div class="lbl">${esc(labels.netPayableTitle)}</div>
-          <div class="amt">${esc(hrFmt(net))} SR</div>
+        <div class="ps-sec-title">
+          <span>${esc(labels.sectionBreakdownAr)}</span>
+          <span class="ps-sec-title-en">${esc(labels.sectionBreakdownEn)}</span>
         </div>
+        <table class="ps-table">
+          <thead><tr><th>${esc(labels.colItem)}</th><th>${esc(labels.colAmount)}</th></tr></thead>
+          <tbody>
+            <tr><td>${esc(labels.netPayableTitle)}</td><td class="td-num">${esc(hrFmt(net))} SR</td></tr>
+          </tbody>
+        </table>
         <p class="ps-note" dir="rtl">${esc(labels.netOnlyNoteAr)}</p>
         <p class="ps-note" dir="ltr">${esc(labels.netOnlyNoteEn)}</p>`;
       } else {
