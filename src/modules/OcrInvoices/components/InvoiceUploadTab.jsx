@@ -181,7 +181,8 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     return () => {
       cancelled = true;
     };
-  }, [prefillInvoiceId, onPrefillConsumed, t, language]);
+    // لا تضف `t` هنا: كان غير مُثبّت ويسبب إعادة الجلب المفرط لـ getOcrInvoice (429). اللغة عبر `language` كافية.
+  }, [prefillInvoiceId, onPrefillConsumed, language]);
 
   // الأصناف الفعلية = التعديل إن وجد أو الأصل
   const activeItems = editItems ?? extracted?.items ?? [];

@@ -1,6 +1,7 @@
 /**
  * useTranslation — Hook للترجمة يعتمد على لغة التطبيق من AppContext
  */
+import { useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { getText } from './translations';
 
@@ -18,8 +19,7 @@ import { getText } from './translations';
  */
 export function useTranslation() {
   const { language } = useApp();
-  return {
-    t: (key, ...replacements) => getText(key, language, ...replacements),
-    lang: language,
-  };
+  /** مرجع ثابت بين الرندرات — وضع `t` في deps لـ useEffect كان يعيد تشغيل التأثيرات بلا حد (مثلاً prefill OCR) */
+  const t = useCallback((key, ...replacements) => getText(key, language, ...replacements), [language]);
+  return { t, lang: language };
 }
