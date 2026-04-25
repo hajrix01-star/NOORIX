@@ -33,7 +33,8 @@ export default function OcrInvoicesScreen() {
   const { lang, t } = useTranslation();
   const { activeCompanyId } = useApp();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useTabSearchParam(OCR_TAB_IDS, 'upload');
+  /** `ocrTab` + legacy `tab` (فقط إن كانت القيمة ضمن تبويبات OCR) — يمنى تعارض ?tab= من مشتريات/إعدادات */
+  const [activeTab, setActiveTab] = useTabSearchParam(OCR_TAB_IDS, 'upload', 'ocrTab', 'tab');
   const [uploadPrefillId, setUploadPrefillId] = useState(null);
   const isAr = lang === 'ar';
 
