@@ -34,6 +34,7 @@ import { Badge, Button, Modal, Input, ScreenShell, cn , FmtNum, SmartTable } fro
 import { HRActionsCell } from './components/HRActionsCell';
 import { StaffFormModal } from './components/StaffFormModal';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
+import TerminationSettlementModal from './components/TerminationSettlementModal';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
 import { totalSalary } from './utils/employeeSalaryMath';
@@ -45,6 +46,8 @@ const PAGE_SIZE = 50;
 export default function StaffListScreen({ embedded }) {
   const navigate = useNavigate();
   const { activeCompanyId, companies, userPermissions } = useApp();
+  const activeCompany = companies?.find((c) => c.id === activeCompanyId);
+  const companyNameAr = activeCompany?.nameAr || activeCompany?.name || '';
   const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const { showToast } = useToast();
@@ -59,6 +62,8 @@ export default function StaffListScreen({ embedded }) {
     date: getSaudiToday(),
   });
   const [showImportExport, setShowImportExport] = useState(false);
+  /** بعد نجاح الفصل — عرض ملخص صرف/طباعة/رفع مستند */
+  const [terminationSettlementEmp, setTerminationSettlementEmp] = useState(null);
   const terminationReasonOptions = [
     t('terminationReasonOptionArt80'),
     t('terminationReasonOptionArt77'),
@@ -537,6 +542,16 @@ export default function StaffListScreen({ embedded }) {
           onClose={() => setAdvanceEmployee(null)}
         />
       )}
+      {terminationSettlementEmp && (
+        <TerminationSettlementModal
+          open
+          employee={terminationSettlementEmp}
+          companyId={companyId}
+          companyName={companyNameAr}
+          onClose={() => setTerminationSettlementEmp(null)}
+        />
+      )}
+
       <Modal
         open={!!terminatingEmployee}
         onClose={() => setTerminatingEmployee(null)}
@@ -560,10 +575,19 @@ export default function StaffListScreen({ embedded }) {
                   terminationClause: terminationForm.clause?.trim() || '',
                   terminationDate: terminationForm.date || getSaudiToday(),
                 };
+                const composedNotes = composeEmployeeNotes(parsed.notesText, meta);
                 update.mutate(
-                  { id: terminatingEmployee.id, body: { status: 'terminated', notes: composeEmployeeNotes(parsed.notesText, meta) } },
+                  { id: terminatingEmployee.id, body: { status: 'terminated', notes: composedNotes } },
                   {
-                    onSuccess: () => { showToast(t('employeeTerminated'), 'success'); setTerminatingEmployee(null); },
+                    onSuccess: () => {
+                      showToast(t('employeeTerminated'), 'success');
+                      setTerminationSettlementEmp({
+                        ...terminatingEmployee,
+                        status: 'terminated',
+                        notes: composedNotes,
+                      });
+                      setTerminatingEmployee(null);
+                    },
                     onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
                   },
                 );
