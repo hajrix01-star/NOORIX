@@ -89,12 +89,14 @@ export class OcrInvoicesController {
     @Req() req: Request,
     @Query('ocrSupplierId') ocrSupplierId?: string,
     @Query('q') q?: string,
+    @Query('invoiceVat') invoiceVat?: string,
     @Query('limit') limitRaw?: string,
   ) {
     const limit = limitRaw ? parseInt(limitRaw, 10) : undefined;
     return this.svc.getAccountingSupplierSuggestions(user.tenantId!, this.companyIdOrThrow(req), {
       ocrSupplierId: ocrSupplierId?.trim() || undefined,
       q: q?.trim() || undefined,
+      invoiceVat: invoiceVat?.trim() || undefined,
       limit: Number.isFinite(limit) ? limit : undefined,
     });
   }

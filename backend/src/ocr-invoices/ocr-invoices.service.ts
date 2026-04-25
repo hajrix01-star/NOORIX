@@ -1258,13 +1258,15 @@ export class OcrInvoicesService {
   async getAccountingSupplierSuggestions(
     tenantId: string,
     companyId: string,
-    opts: { ocrSupplierId?: string; q?: string; limit?: number },
+    opts: { ocrSupplierId?: string; q?: string; invoiceVat?: string; limit?: number },
   ) {
     const limit = Math.min(Math.max(opts.limit ?? 16, 1), 50);
     const qTrim = (opts.q || '').trim();
     let needleAr = qTrim;
     let needleEn = '';
-    let taxDigits: string | null = null;
+    /** الرقم الضريبي من الفاتورة يُفضَّل على رقم كتالوج OCR للمطابقة */
+    const invVatDigits = (opts.invoiceVat || '').replace(/\D/g, '');
+    let taxDigits: string | null = invVatDigits.length >= 9 ? invVatDigits : null;
     let linkedAccountingId: string | null = null;
     const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
     if (opts.ocrSupplierId) {
@@ -1285,7 +1287,8 @@ export class OcrInvoicesService {
         else if (catAr) needleAr = `${needleAr} ${catAr}`.trim();
         needleEn = catEn;
         const raw = o.taxNumber?.replace(/\D/g, '') || '';
-        taxDigits = raw.length >= 9 ? raw : null;
+        const ocrTax = raw.length >= 9 ? raw : null;
+        if (!taxDigits && ocrTax) taxDigits = ocrTax;
       }
     }
     const na = norm(needleAr);

@@ -71,6 +71,36 @@ export default {
   ocrVaultSelect:        { ar: 'الخزنة', en: 'Vault' },
   ocrSelectVault:        { ar: 'اختر الخزنة', en: 'Select vault' },
   ocrSelectAccountingSupplier: { ar: 'اختر مورد المحاسبة', en: 'Select accounting supplier' },
+  ocrAccountingSupplierSmartTitle: {
+    ar: 'مورد المحاسبة (اقتراح من الاسم والرقم الضريبي)',
+    en: 'Accounting supplier (suggested from name and VAT)',
+  },
+  ocrAccountingSupplierSmartHint: {
+    ar: 'يُقترح تلقائياً ويمكنك تغييره في أي وقت. يُستخدم عند تفعيل «إنشاء فاتورة مشتريات وربطها».',
+    en: 'Auto-suggested; you can change anytime. Used when you enable «Create and link purchase invoice».',
+  },
+  ocrAccountingSupplierSuggestLoading: { ar: 'جاري جلب الاقتراحات…', en: 'Loading suggestions…' },
+  ocrAccountingSupplierLinkedCatalog: {
+    ar: 'أول خيار: مورد المحاسبة المربوط بمورد OCR في الكتالوج.',
+    en: 'Top option: accounting supplier linked to this OCR catalog supplier.',
+  },
+  ocrAccountingSupplierTopScore: {
+    ar: 'أعلى تطابق تقريبي: درجة {0} (كلما زادت زاد التشابه).',
+    en: 'Best match score: {0} (higher means closer match).',
+  },
+  ocrAccountingSupplierNeedNameOrVat: {
+    ar: 'أضف اسم مورداً في الاستخراج أو رقماً ضريبياً كاملاً (٩ أرقام فأكثر) لعرض الاقتراحات.',
+    en: 'Add a supplier name in the extraction or a full VAT (9+ digits) to load suggestions.',
+  },
+  ocrAccountingSupplierAddOcrCatalog: {
+    ar: 'إضافة مورد جديد في قسم الموردين (OCR)',
+    en: 'Add new supplier in OCR Suppliers',
+  },
+  ocrNewOcrSupplierModalTitle: { ar: 'مورد OCR جديد', en: 'New OCR supplier' },
+  ocrNewOcrSupplierModalHint: {
+    ar: 'يُضاف إلى تبويب «الموردون» ويُربط بهذه الفاتورة.',
+    en: 'Adds to the Suppliers tab and links to this invoice.',
+  },
   ocrSupplierInvoiceNo:  { ar: 'رقم فاتورة المورد', en: 'Supplier invoice number' },
   ocrPurchaseTaxable:    { ar: 'خاضعة للضريبة (15%)', en: 'Taxable (15%)' },
   ocrPurchaseSuggestEmpty: {

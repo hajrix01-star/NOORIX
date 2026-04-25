@@ -10,6 +10,7 @@ import { Button, Input } from '../../../ui';
 import { getAuthToken, getActiveCompanyId } from '../../../services/authStore';
 import { getApiBaseUrl, getVaults } from '../../../services/api';
 import {
+  createOcrSupplier,
   extractInvoice,
   getOcrAccountingSupplierSuggestions,
   getOcrInvoice,
@@ -68,6 +69,12 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
   const [postSaveLinkedPurchase, setPostSaveLinkedPurchase] = useState(null);
   const [prefillLoading, setPrefillLoading] = useState(false);
   const fileRef = useRef();
+  const userTouchedAccountingRef = useRef(false);
+  const [newOcrSupplierOpen, setNewOcrSupplierOpen] = useState(false);
+  const [newOcrNameAr, setNewOcrNameAr] = useState('');
+  const [newOcrTax, setNewOcrTax] = useState('');
+  const [newOcrSaving, setNewOcrSaving] = useState(false);
+  const [newOcrError, setNewOcrError] = useState(null);
 
   const canCreatePurchase = useMemo(() => {
     const role = user?.role;
@@ -79,6 +86,15 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
   }, [user?.role, user?.permissions]);
 
   const supplierNameForSuggest = (extracted?.supplier?.name || '').trim().slice(0, 120);
+  const invoiceVatDigits = useMemo(
+    () => String(extracted?.vatNumber?.value ?? '').replace(/\D/g, ''),
+    [extracted?.vatNumber?.value],
+  );
+  const invoiceVatRaw = useMemo(
+    () => String(extracted?.vatNumber?.value ?? '').trim(),
+    [extracted?.vatNumber?.value],
+  );
+  const accSuggestKey = `${finalizeOcrId || ''}|${prefillOcrSupplierId || ''}|${supplierNameForSuggest}|${invoiceVatDigits}`;
 
   const { data: vaultRows = [] } = useQuery({
     queryKey: ['vaults', activeCompanyId, 'ocr-finalize'],
@@ -89,38 +105,58 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     },
   });
 
-  const { data: accSuggestions = [] } = useQuery({
+  const { data: accSuggestions = [], isFetching: accSuggestionsFetching } = useQuery({
     queryKey: [
       'ocr-accounting-supplier-suggestions',
       activeCompanyId,
       prefillOcrSupplierId || '',
       supplierNameForSuggest,
+      invoiceVatDigits,
     ],
     enabled:
       !!activeCompanyId &&
       !!finalizeOcrId &&
+      !!extracted &&
       canCreatePurchase &&
-      (!!prefillOcrSupplierId || supplierNameForSuggest.length >= 2),
+      (!!prefillOcrSupplierId ||
+        supplierNameForSuggest.length >= 1 ||
+        invoiceVatDigits.length >= 9),
     queryFn: async () => {
-      const q =
-        supplierNameForSuggest.length >= 2 ? supplierNameForSuggest : undefined;
+      const q = supplierNameForSuggest.length >= 1 ? supplierNameForSuggest : undefined;
       const r = await getOcrAccountingSupplierSuggestions({
         ...(prefillOcrSupplierId ? { ocrSupplierId: prefillOcrSupplierId } : {}),
         ...(q ? { q } : {}),
+        ...(invoiceVatDigits.length >= 9
+          ? { invoiceVat: invoiceVatRaw || invoiceVatDigits }
+          : {}),
         limit: 24,
       });
       return r.success && Array.isArray(r.data) ? r.data : [];
     },
   });
 
-  /** اقتراح مورد محاسبة مُسبَق من ربط كتالوج OCR */
   useEffect(() => {
-    if (!createLinkedPurchase || accountingSupplierId) return;
+    userTouchedAccountingRef.current = false;
+  }, [accSuggestKey]);
+
+  /** تعبئة مورد المحاسبة تلقائياً (قابلة للتعديل) من الاسم والرقم الضريبي وربط كتالوج OCR */
+  useEffect(() => {
+    if (userTouchedAccountingRef.current) return;
+    if (!finalizeOcrId || !canCreatePurchase) return;
     const top = accSuggestions[0];
-    if (top?.linkedFromOcr || (top?.matchScore != null && top.matchScore >= 5000)) {
-      setAccountingSupplierId(top.id);
-    }
-  }, [createLinkedPurchase, accountingSupplierId, accSuggestions]);
+    if (!top?.id) return;
+    const topTax = String(top.taxNumber || '').replace(/\D/g, '');
+    const vatMatch = invoiceVatDigits.length >= 9 && topTax === invoiceVatDigits;
+    const ms = top.matchScore ?? 0;
+    const secondMs = accSuggestions[1]?.matchScore ?? 0;
+    const pick =
+      !!top.linkedFromOcr ||
+      vatMatch ||
+      ms >= 100 ||
+      (ms >= 72 && accSuggestions.length === 1) ||
+      (ms >= 80 && ms >= secondMs + 20);
+    if (pick) setAccountingSupplierId(top.id);
+  }, [accSuggestions, accSuggestKey, finalizeOcrId, canCreatePurchase, invoiceVatDigits]);
 
   useEffect(() => {
     if (!prefillInvoiceId) return;
@@ -429,6 +465,54 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     }
   };
 
+  const openNewOcrSupplierModal = () => {
+    setNewOcrNameAr(String(extracted?.supplier?.name || '').trim());
+    setNewOcrTax(invoiceVatRaw || '');
+    setNewOcrError(null);
+    setNewOcrSupplierOpen(true);
+  };
+
+  const handleSubmitNewOcrSupplier = async () => {
+    const name = newOcrNameAr.trim();
+    if (!name) {
+      setNewOcrError(language === 'ar' ? 'أدخل الاسم بالعربية.' : 'Enter Arabic name.');
+      return;
+    }
+    setNewOcrSaving(true);
+    setNewOcrError(null);
+    try {
+      const taxDigits = newOcrTax.replace(/\D/g, '');
+      const tax = taxDigits.length >= 9 ? newOcrTax.trim() : undefined;
+      const r = await createOcrSupplier({
+        nameAr: name,
+        ...(tax ? { taxNumber: tax } : {}),
+        ...(accountingSupplierId ? { accountingSupplierId } : {}),
+      });
+      if (!r.success || !r.data?.id) {
+        setNewOcrError(r.error || t('ocrExtractFailed'));
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ['ocr-suppliers', activeCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ['ocr-accounting-supplier-suggestions', activeCompanyId] });
+      const row = r.data;
+      setExtracted((ex) =>
+        ex
+          ? {
+              ...ex,
+              supplierMatch: { id: row.id, nameAr: row.nameAr, score: 1, status: 'new' },
+            }
+          : null,
+      );
+      setPrefillOcrSupplierId(row.id);
+      userTouchedAccountingRef.current = false;
+      setNewOcrSupplierOpen(false);
+    } catch {
+      setNewOcrError(t('ocrExtractFailed'));
+    } finally {
+      setNewOcrSaving(false);
+    }
+  };
+
   const isAr = language === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
 
@@ -573,6 +657,52 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
                     <div className="text-[12px] text-noorix-muted">{t('ocrPurchaseNoPermission')}</div>
                   ) : (
                     <>
+                      <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-3 mb-3 flex flex-col gap-2">
+                        <div className="text-[12px] font-semibold text-noorix-text">{t('ocrAccountingSupplierSmartTitle')}</div>
+                        <p className="text-[11px] text-noorix-muted m-0">{t('ocrAccountingSupplierSmartHint')}</p>
+                        {accSuggestionsFetching && (
+                          <span className="text-[11px] text-noorix-muted">{t('ocrAccountingSupplierSuggestLoading')}</span>
+                        )}
+                        <label className="flex flex-col gap-1 text-[12px]">
+                          <span className="text-noorix-muted">{t('ocrSelectAccountingSupplier')}</span>
+                          <select
+                            className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
+                            value={accountingSupplierId}
+                            onChange={(e) => {
+                              userTouchedAccountingRef.current = true;
+                              setAccountingSupplierId(e.target.value);
+                            }}
+                          >
+                            <option value="">{t('ocrSelectAccountingSupplier')}</option>
+                            {accSuggestions.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {(s.nameAr || s.nameEn || '') + (s.taxNumber ? ` — ${s.taxNumber}` : '')}
+                              </option>
+                            ))}
+                          </select>
+                          {accSuggestions[0] && (
+                            <span className="text-[11px] text-noorix-muted">
+                              {accSuggestions[0].linkedFromOcr
+                                ? t('ocrAccountingSupplierLinkedCatalog')
+                                : t('ocrAccountingSupplierTopScore', {
+                                    0: String(accSuggestions[0].matchScore ?? '—'),
+                                  })}
+                            </span>
+                          )}
+                          {prefillOcrSupplierId && accSuggestions.length === 0 && !prefillLoading && !accSuggestionsFetching && (
+                            <span className="text-[11px] text-noorix-muted">{t('ocrPurchaseSuggestEmpty')}</span>
+                          )}
+                          {!prefillOcrSupplierId &&
+                            supplierNameForSuggest.length < 1 &&
+                            invoiceVatDigits.length < 9 &&
+                            !accSuggestionsFetching && (
+                              <span className="text-[11px] text-noorix-muted">{t('ocrAccountingSupplierNeedNameOrVat')}</span>
+                            )}
+                        </label>
+                        <Button type="button" variant="secondary" className="self-start text-[12px]" onClick={openNewOcrSupplierModal}>
+                          {t('ocrAccountingSupplierAddOcrCatalog')}
+                        </Button>
+                      </div>
                       <label className="flex items-center gap-2 text-[13px] mb-3 cursor-pointer">
                         <input
                           type="checkbox"
@@ -603,31 +733,6 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
                                 <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
                               ))}
                             </select>
-                          </label>
-                          <label className="flex flex-col gap-1 text-[12px]">
-                            <span className="text-noorix-muted">
-                              {isAr ? 'مورد المحاسبة' : 'Accounting supplier'}
-                            </span>
-                            <select
-                              className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
-                              value={accountingSupplierId}
-                              onChange={(e) => setAccountingSupplierId(e.target.value)}
-                            >
-                              <option value="">{t('ocrSelectAccountingSupplier')}</option>
-                              {accSuggestions.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                  {(s.nameAr || '') + (s.taxNumber ? ` — ${s.taxNumber}` : '')}
-                                </option>
-                              ))}
-                            </select>
-                            {prefillOcrSupplierId && accSuggestions.length === 0 && !prefillLoading && (
-                              <span className="text-[11px] text-noorix-muted">{t('ocrPurchaseSuggestEmpty')}</span>
-                            )}
-                            {!prefillOcrSupplierId && supplierNameForSuggest.length < 2 && (
-                              <span className="text-[11px] text-noorix-muted">
-                                {isAr ? 'أضف اسم مورد أوصِل OCR بمورد لعرض الاقتراحات.' : 'Link OCR supplier or add a name for suggestions.'}
-                              </span>
-                            )}
                           </label>
                           <label className="flex flex-col gap-1 text-[12px]">
                             <span className="text-noorix-muted">{t('ocrSupplierInvoiceNo')}</span>
@@ -696,6 +801,49 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
       {error && (
         <div className="text-[13px] rounded-lg py-3 px-4" style={{ background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-15)', color: 'var(--noorix-accent-red)' }}>
           {error}
+        </div>
+      )}
+
+      {newOcrSupplierOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ocr-new-supplier-title"
+          onClick={() => !newOcrSaving && setNewOcrSupplierOpen(false)}
+        >
+          <div
+            className="noorix-surface-card max-w-md w-full p-4 shadow-xl border border-noorix-border"
+            dir={dir}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div id="ocr-new-supplier-title" className="font-semibold text-[15px] mb-1">
+              {t('ocrNewOcrSupplierModalTitle')}
+            </div>
+            <p className="text-[12px] text-noorix-muted m-0 mb-3">{t('ocrNewOcrSupplierModalHint')}</p>
+            <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1 text-[12px]">
+                <span className="text-noorix-muted">{t('ocrSupplierNameAr')}</span>
+                <Input value={newOcrNameAr} onChange={(e) => setNewOcrNameAr(e.target.value)} disabled={newOcrSaving} />
+              </label>
+              <label className="flex flex-col gap-1 text-[12px]">
+                <span className="text-noorix-muted">{t('ocrSupplierTax')}</span>
+                <Input value={newOcrTax} onChange={(e) => setNewOcrTax(e.target.value)} disabled={newOcrSaving} />
+              </label>
+              {newOcrError && (
+                <div className="text-[12px] text-noorix-accent-red">{newOcrError}</div>
+              )}
+              <div className="flex gap-2 justify-end mt-1">
+                <Button type="button" variant="secondary" disabled={newOcrSaving} onClick={() => setNewOcrSupplierOpen(false)}>
+                  {t('ocrCancel')}
+                </Button>
+                <Button type="button" variant="primary" disabled={newOcrSaving} onClick={handleSubmitNewOcrSupplier}>
+                  {newOcrSaving ? t('ocrSaving') : t('ocrSave')}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -37,10 +37,11 @@ export async function getOcrPurchasesByMonth(month) {
   return apiGet(`/api/v1/ocr/reports/purchases-by-month${q ? `?${q}` : ''}`);
 }
 
-export async function getOcrAccountingSupplierSuggestions({ ocrSupplierId, q, limit } = {}) {
+export async function getOcrAccountingSupplierSuggestions({ ocrSupplierId, q, invoiceVat, limit } = {}) {
   const params = new URLSearchParams();
   if (ocrSupplierId) params.set('ocrSupplierId', ocrSupplierId);
   if (q) params.set('q', q);
+  if (invoiceVat) params.set('invoiceVat', invoiceVat);
   if (limit != null) params.set('limit', String(limit));
   const suffix = params.toString() ? `?${params.toString()}` : '';
   return apiGet(`/api/v1/ocr/accounting-supplier-suggestions${suffix}`);
