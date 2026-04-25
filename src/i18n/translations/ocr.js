@@ -46,6 +46,26 @@ export default {
   },
   ocrSaveSupplierLink: { ar: 'حفظ الربط', en: 'Save link' },
   ocrNoorixLinked:     { ar: 'مربوط:', en: 'Linked:' },
+  ocrLinkedAccountingBanner: {
+    ar: 'مربوط بمورد المحاسبة',
+    en: 'Linked to accounting supplier',
+  },
+  ocrLinkedAccountingId: {
+    ar: 'معرّف مورد النظام (محاسبة)',
+    en: 'Accounting supplier ID',
+  },
+  ocrLinkedAccountingUnsaved: {
+    ar: 'تغيير غير محفوظ — اضغط «حفظ الربط» لتثبيت الربط.',
+    en: 'Unsaved change — click «Save link» to confirm.',
+  },
+  ocrLinkedAccountingSavedOk: {
+    ar: 'تم حفظ الربط.',
+    en: 'Link saved.',
+  },
+  ocrAutoLinkSuggestionHint: {
+    ar: 'تم اقتراح مورد مطابق تلقائياً — راجع القائمة ثم احفظ إن كان صحيحاً.',
+    en: 'A matching supplier was suggested — review the list, then save if correct.',
+  },
 
   // Upload
   ocrDragDrop:         { ar: 'اسحب صورة الفاتورة هنا أو اضغط للاختيار', en: 'Drag invoice image here or click to select' },

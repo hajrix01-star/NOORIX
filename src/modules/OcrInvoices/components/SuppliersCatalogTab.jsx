@@ -1,11 +1,15 @@
-﻿import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import {
-  createOcrSupplier, updateOcrSupplier, deleteOcrSupplier, addSupplierAlias,
+  createOcrSupplier,
+  updateOcrSupplier,
+  deleteOcrSupplier,
+  addSupplierAlias,
   bulkDeleteOcrSuppliers,
+  getOcrAccountingSupplierSuggestions,
 } from '../services/ocrApi';
 import { getSuppliers } from '../../../services/api';
 import { assertApiOk } from '../../../utils/apiResponse';
@@ -33,17 +37,21 @@ function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
 export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh }) {
   const { t, lang: language } = useTranslation();
   const { activeCompanyId } = useApp();
-  const [search, setSearch]     = useState('');
-  const [adding, setAdding]     = useState(false);
-  const [editing, setEditing]   = useState(null);
-  const [saving, setSaving]     = useState(false);
-  const [viewing, setViewing]   = useState(null);
+  const [search, setSearch] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [viewing, setViewing] = useState(null);
   const [aliasInput, setAliasInput] = useState('');
-  const [aliasLang, setAliasLang]   = useState('ar');
+  const [aliasLang, setAliasLang] = useState('ar');
   const [selected, setSelected] = useState(new Set());
   const [deleting, setDeleting] = useState(false);
   const [linkAccId, setLinkAccId] = useState('');
   const [linkSaving, setLinkSaving] = useState(false);
+  const [linkSaveFlash, setLinkSaveFlash] = useState(false);
+  const [autoSuggestHint, setAutoSuggestHint] = useState(false);
+  const prevDrawerSupplierIdRef = useRef(null);
+  const autoSuggestDoneRef = useRef(false);
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   const { data: accountingSuppliers = [] } = useQuery({
@@ -56,6 +64,67 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       return r.data?.items || r.data?.data || [];
     },
   });
+
+  const ocrNameSuggest = useMemo(
+    () => String(viewing?.nameAr || viewing?.nameEn || '').trim().slice(0, 120),
+    [viewing?.nameAr, viewing?.nameEn],
+  );
+  const ocrTaxDigits = useMemo(
+    () => String(viewing?.taxNumber || '').replace(/\D/g, ''),
+    [viewing?.taxNumber],
+  );
+
+  const { data: accLinkSuggestions = [], isFetching: accSuggestionsFetching } = useQuery({
+    queryKey: [
+      'ocr-catalog-accounting-suggestions',
+      activeCompanyId,
+      viewing?.id || '',
+      ocrNameSuggest,
+      ocrTaxDigits,
+    ],
+    enabled: !!activeCompanyId && !!viewing?.id,
+    queryFn: async () => {
+      const r = await getOcrAccountingSupplierSuggestions({
+        ocrSupplierId: viewing.id,
+        ...(ocrNameSuggest.length >= 1 ? { q: ocrNameSuggest } : {}),
+        ...(ocrTaxDigits.length >= 9
+          ? { invoiceVat: String(viewing.taxNumber || '').trim() || ocrTaxDigits }
+          : {}),
+        limit: 24,
+      });
+      return r.success && Array.isArray(r.data) ? r.data : [];
+    },
+  });
+
+  useEffect(() => {
+    if (!viewing) {
+      prevDrawerSupplierIdRef.current = null;
+      return;
+    }
+    if (prevDrawerSupplierIdRef.current !== viewing.id) {
+      prevDrawerSupplierIdRef.current = viewing.id;
+      autoSuggestDoneRef.current = false;
+    }
+  }, [viewing]);
+
+  useEffect(() => {
+    if (!viewing?.id) return;
+    if (viewing.accountingSupplier?.id) return;
+    if (linkAccId) return;
+    if (autoSuggestDoneRef.current) return;
+    const top = accLinkSuggestions[0];
+    if (!top?.id) return;
+    const ms = top.matchScore ?? 0;
+    const pick =
+      !!top.linkedFromOcr ||
+      ms >= 100 ||
+      (ms >= 80 && accLinkSuggestions.length === 1) ||
+      (ms >= 72 && (accLinkSuggestions[1]?.matchScore ?? 0) < ms - 15);
+    if (!pick) return;
+    setLinkAccId(top.id);
+    autoSuggestDoneRef.current = true;
+    setAutoSuggestHint(true);
+  }, [viewing, linkAccId, accLinkSuggestions]);
 
   const toggleSelect = (id) => setSelected((prev) => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
@@ -121,6 +190,8 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   const openViewing = (s) => {
     setViewing(s);
     setLinkAccId(s.accountingSupplier?.id || '');
+    setLinkSaveFlash(false);
+    setAutoSuggestHint(false);
   };
 
   const handleSaveAccountingLink = async () => {
@@ -131,8 +202,15 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         accountingSupplierId: linkAccId || null,
       });
       assertApiOk(res, t('saveFailed'));
+      const next = res.data;
+      if (next && typeof next === 'object' && next.id) {
+        setViewing(next);
+        setLinkAccId(next.accountingSupplier?.id || '');
+      }
       await onRefresh();
-      setViewing(null);
+      setAutoSuggestHint(false);
+      setLinkSaveFlash(true);
+      window.setTimeout(() => setLinkSaveFlash(false), 5000);
     } catch (e) {
       alert(e?.message || t('saveFailed'));
     } finally {
@@ -147,6 +225,36 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     () => [...accountingSuppliers].sort((a, b) => (a.nameAr || '').localeCompare(b.nameAr || '', 'ar')),
     [accountingSuppliers],
   );
+
+  const selectedAccRow = useMemo(
+    () => accOptions.find((a) => a.id === linkAccId) || null,
+    [accOptions, linkAccId],
+  );
+
+  const displayAcc = useMemo(() => {
+    if (selectedAccRow) return selectedAccRow;
+    const a = viewing?.accountingSupplier;
+    if (a?.id && a.id === linkAccId) return a;
+    return null;
+  }, [selectedAccRow, viewing?.accountingSupplier, linkAccId]);
+
+  const pendingDisplay = useMemo(
+    () =>
+      selectedAccRow ||
+      accLinkSuggestions.find((x) => x.id === linkAccId) ||
+      null,
+    [selectedAccRow, accLinkSuggestions, linkAccId],
+  );
+
+  const savedAccId = viewing?.accountingSupplier?.id || '';
+  const linkDirty = !!viewing && (linkAccId || '') !== (savedAccId || '');
+  const showLinkedBanner = !!viewing && !!linkAccId && !!displayAcc && !linkDirty;
+  const showPendingBanner = !!viewing && !!linkAccId && linkDirty && !!pendingDisplay;
+
+  const copyId = (id) => {
+    if (!id || !navigator.clipboard?.writeText) return;
+    navigator.clipboard.writeText(id).catch(() => {});
+  };
 
   if (loading) return (
     <div className="ocr-loading">
@@ -208,11 +316,31 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
                   </label>
                   <div className="ocr-catalog-avatar">{(s.nameAr || s.nameEn || '?')[0]}</div>
                   <div className="ocr-catalog-name cursor-pointer flex-1 min-w-0" onClick={() => openViewing(s)}>
-                    <div className="ocr-catalog-name-primary">{isAr ? s.nameAr : (s.nameEn || s.nameAr)}</div>
+                    <div className="ocr-catalog-name-primary flex items-center gap-2 flex-wrap">
+                      <span>{isAr ? s.nameAr : (s.nameEn || s.nameAr)}</span>
+                      {s.accountingSupplier?.id && (
+                        <span
+                          className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0"
+                          style={{ background: '#dcfce7', color: 'var(--noorix-accent-green)' }}
+                          title={s.accountingSupplier.id}
+                        >
+                          {isAr ? 'محاسبة ✓' : 'Ledger ✓'}
+                        </span>
+                      )}
+                    </div>
                     {s.nameEn && s.nameAr && <div className="ocr-catalog-name-secondary">{isAr ? s.nameEn : s.nameAr}</div>}
-                    {s.accountingSupplier?.nameAr && (
-                      <div className="text-[11px] text-noorix-blue font-medium mt-0.5 truncate">
-                        {t('ocrNoorixLinked')} {s.accountingSupplier.nameAr}
+                    {s.accountingSupplier?.id && (
+                      <div className="text-[11px] text-noorix-blue font-medium mt-0.5 truncate space-y-0.5">
+                        <div>
+                          {t('ocrNoorixLinked')}{' '}
+                          <span className="text-noorix-text">{isAr ? (s.accountingSupplier.nameAr || s.accountingSupplier.nameEn) : (s.accountingSupplier.nameEn || s.accountingSupplier.nameAr)}</span>
+                          {s.accountingSupplier.taxNumber && (
+                            <span className="text-noorix-muted font-normal"> — {s.accountingSupplier.taxNumber}</span>
+                          )}
+                        </div>
+                        <div className="font-mono text-[10px] text-noorix-muted break-all" title={s.accountingSupplier.id}>
+                          ID: {s.accountingSupplier.id}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -241,6 +369,68 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
           <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 p-3 mb-4">
             <div className="font-semibold text-[13px] mb-1">{t('ocrLinkNoorixSupplier')}</div>
             <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('ocrLinkedNoorixHint')}</p>
+
+            {accSuggestionsFetching && (
+              <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('ocrAccountingSupplierSuggestLoading')}</p>
+            )}
+
+            {linkSaveFlash && (
+              <div
+                className="text-[12px] font-medium rounded-md px-2 py-1.5 mb-2"
+                style={{ background: '#dcfce7', color: 'var(--noorix-accent-green)' }}
+              >
+                {t('ocrLinkedAccountingSavedOk')}
+              </div>
+            )}
+
+            {showLinkedBanner && (
+              <div
+                className="rounded-md border px-2 py-2 mb-2 space-y-1"
+                style={{ borderColor: 'var(--noorix-accent-green)', background: 'rgba(34, 197, 94, 0.08)' }}
+              >
+                <div className="text-[12px] font-semibold text-noorix-text flex items-center gap-1">
+                  <span aria-hidden>✓</span>
+                  {t('ocrLinkedAccountingBanner')}
+                </div>
+                <div className="text-[13px] text-noorix-text">
+                  {isAr
+                    ? (displayAcc.nameAr || displayAcc.nameEn)
+                    : (displayAcc.nameEn || displayAcc.nameAr)}
+                  {displayAcc.taxNumber && (
+                    <span className="text-noorix-muted font-normal"> — {displayAcc.taxNumber}</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] text-noorix-muted shrink-0">{t('ocrLinkedAccountingId')}</span>
+                  <code className="text-[11px] font-mono bg-noorix-bg-surface px-1.5 py-0.5 rounded border border-noorix-border break-all">
+                    {linkAccId}
+                  </code>
+                  <Button type="button" size="sm" variant="secondary" className="text-[11px] py-0.5 h-7" onClick={() => copyId(linkAccId)}>
+                    {isAr ? 'نسخ' : 'Copy'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {showPendingBanner && (
+              <div
+                className="rounded-md border px-2 py-2 mb-2 space-y-1"
+                style={{ borderColor: 'var(--noorix-accent-amber)', background: 'var(--noorix-yellow-8)' }}
+              >
+                <div className="text-[12px] font-semibold" style={{ color: 'var(--noorix-accent-amber)' }}>
+                  {t('ocrLinkedAccountingUnsaved')}
+                </div>
+                <div className="text-[12px] text-noorix-text">
+                  → {isAr ? (pendingDisplay.nameAr || pendingDisplay.nameEn) : (pendingDisplay.nameEn || pendingDisplay.nameAr)}
+                </div>
+                <code className="text-[10px] font-mono text-noorix-muted break-all">{linkAccId}</code>
+              </div>
+            )}
+
+            {autoSuggestHint && !savedAccId && linkAccId && (
+              <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('ocrAutoLinkSuggestionHint')}</p>
+            )}
+
             <select
               className="w-full rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text mb-2"
               value={linkAccId}

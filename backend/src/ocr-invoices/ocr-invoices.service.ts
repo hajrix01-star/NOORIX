@@ -1038,7 +1038,7 @@ export class OcrInvoicesService {
       include: {
         aliases: true,
         _count: { select: { invoices: true } },
-        accountingSupplier: { select: { id: true, nameAr: true, taxNumber: true } },
+        accountingSupplier: { select: { id: true, nameAr: true, nameEn: true, taxNumber: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -1085,7 +1085,15 @@ export class OcrInvoicesService {
         data.accountingSupplier = { connect: { id: acc.id } };
       }
     }
-    return this.prisma.ocrSupplier.update({ where: { id }, data });
+    return this.prisma.ocrSupplier.update({
+      where: { id },
+      data,
+      include: {
+        aliases: true,
+        _count: { select: { invoices: true } },
+        accountingSupplier: { select: { id: true, nameAr: true, nameEn: true, taxNumber: true } },
+      },
+    });
   }
 
   async deleteSupplier(tenantId: string, companyId: string, id: string) {
