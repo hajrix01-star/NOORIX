@@ -36,7 +36,7 @@ import { StaffFormModal } from './components/StaffFormModal';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
-import { overtimePay, totalSalary } from './utils/employeeSalaryMath';
+import { totalSalary } from './utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 
@@ -263,15 +263,9 @@ export default function StaffListScreen({ embedded }) {
       const rows = (res.data || []).map((e) => {
         const parsed = parseEmployeeNotesMeta(e.notes);
         const meta = parsed.meta || {};
-        const extra = allowanceTotals.get(e.id) || 0;
-        const ts = totalSalary(e, extra);
-        const totalRounded = Number.isFinite(ts) ? roundMoney2(ts) : 0;
         return {
-          'رقم الموظف': e.employeeSerial ?? '',
-          'الاسم': employeeDisplayName(e, lang),
-          'المسمى الوظيفي': e.jobTitle ?? '',
+          ...formatEmployeeForExport(e, allowanceTotals),
           'تاريخ الالتحاق': formatSaudiDate(e.joinDate),
-          'الراتب الإجمالي': totalRounded,
           'الحالة': STATUS_MAP[e.status]?.label || e.status,
           'سبب إنهاء الخدمة': meta.terminationReason || '',
           'البند': meta.terminationClause || '',

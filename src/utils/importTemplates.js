@@ -8,7 +8,11 @@
  * Payloads are then sent to existing backend endpoints in parallel batches.
  */
 import { exportToExcel } from './exportUtils';
-import { totalSalary, basicSalaryFromTargetTotalInclusiveOvertime } from '../modules/HR/utils/employeeSalaryMath';
+import {
+  totalSalary,
+  overtimePay,
+  basicSalaryFromTargetTotalInclusiveOvertime,
+} from '../modules/HR/utils/employeeSalaryMath';
 import { roundMoney2 } from './moneyInput';
 
 // ─── Low-level helpers ───────────────────────────────────────────────────────
@@ -119,6 +123,8 @@ export const EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS = [
   'بدل السكن',
   'بدل النقل',
   'بدلات أخرى',
+  'مجموع البدلات المخصصة',
+  'مقابل الأوفر تايم (مُقدّر)',
   'الراتب الإجمالي',
 ];
 
@@ -455,6 +461,8 @@ export function formatEmployeeForExport(emp, allowanceTotalsByEmployeeId) {
       : 0;
   const ts = totalSalary(emp, customExtra);
   const totalRounded = Number.isFinite(ts) ? roundMoney2(ts) : 0;
+  const ot = roundMoney2(overtimePay(emp, customExtra));
+  const customRounded = roundMoney2(customExtra);
   return {
     'الاسم بالعربية': emp.name ?? '',
     'الاسم بالإنجليزية': emp.nameEn ?? '',
@@ -465,6 +473,9 @@ export function formatEmployeeForExport(emp, allowanceTotalsByEmployeeId) {
     'بدل السكن': emp.housingAllowance ?? '',
     'بدل النقل': emp.transportAllowance ?? '',
     'بدلات أخرى': emp.otherAllowance ?? '',
+    // يفسّر الفارق مع «الراتب الإجمالي» (ليست مذكورة في أعمدة أجور السجل فقط)
+    'مجموع البدلات المخصصة': customRounded,
+    'مقابل الأوفر تايم (مُقدّر)': ot,
     'الراتب الإجمالي': totalRounded,
     'تاريخ الالتحاق': emp.joinDate?.slice(0, 10) ?? '',
     'ساعات العمل': emp.workHours ?? '',
