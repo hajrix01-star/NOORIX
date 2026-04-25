@@ -11,6 +11,7 @@ import {
   downloadInvoiceTemplate,
   downloadEmployeeTemplate,
   downloadSalesTemplate,
+  EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS,
   validateInvoiceRows,
   validateEmployeeRows,
   validateSalesRows,
@@ -384,7 +385,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       }
       const stamp = new Date().toISOString().slice(0, 10);
       const base = String(cfg.exportFilename || 'export.xlsx').replace(/\.xlsx$/i, '');
-      await exportToExcel(rows, `${base}-${stamp}.xlsx`);
+      const excelOpts =
+        entityType === 'employees' ? { money2ColumnKeys: EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS } : undefined;
+      await exportToExcel(rows, `${base}-${stamp}.xlsx`, excelOpts);
     } catch (err) {
       alert(t('importAlertExportFailed', { msg: err?.message ?? '' }));
     } finally {

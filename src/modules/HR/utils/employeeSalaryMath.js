@@ -133,8 +133,8 @@ export function totalSalaryDecimal(emp, customTotal = 0) {
 }
 
 export function totalSalary(emp, customTotal = 0) {
-  // roundMoney2: يمنع عشريات زائفة من toNumber() والجمع بـ floating-point
-  return roundMoney2(totalSalaryDecimal(emp, customTotal).toNumber());
+  const d = totalSalaryDecimal(emp, customTotal).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+  return roundMoney2(d.toString());
 }
 
 /**

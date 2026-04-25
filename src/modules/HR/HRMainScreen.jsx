@@ -10,6 +10,7 @@ import { ScreenShell, ScreenTabs } from '../../ui';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { getResidencies, getLeaves, getInvoices } from '../../services/api';
+import { roundMoney2 } from '../../utils/moneyInput';
 import { totalSalary } from './utils/employeeSalaryMath';
 import HRSummaryCard from './components/HRSummaryCard';
 import StaffListScreen from './StaffListScreen';
@@ -50,7 +51,8 @@ export default function HRMainScreen() {
     for (const row of customAllowances) {
       const employeeId = row.employeeId;
       if (!employeeId) continue;
-      map.set(employeeId, (map.get(employeeId) || 0) + (Number(row.amount) || 0));
+      const next = (map.get(employeeId) || 0) + (Number(row.amount) || 0);
+      map.set(employeeId, roundMoney2(next));
     }
     return map;
   }, [customAllowances]);
@@ -105,9 +107,11 @@ export default function HRMainScreen() {
 
   /** مطابق لعمود «إجمالي الراتب» في قائمة الموظفين: أساسي + بدلات + مخصصة + تقدير الأوفر تايم */
   const monthlyPayrollTotal = useMemo(
-    () => activeEmployees.reduce(
-      (sum, emp) => sum + totalSalary(emp, allowanceTotals.get(emp.id) || 0),
-      0,
+    () => roundMoney2(
+      activeEmployees.reduce(
+        (sum, emp) => sum + totalSalary(emp, allowanceTotals.get(emp.id) || 0),
+        0,
+      ),
     ),
     [activeEmployees, allowanceTotals],
   );

@@ -16,7 +16,11 @@ import { rejectIfApiFailed } from '../../utils/apiResponse';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ImportExportModal from '../../components/ImportExportModal';
-import { buildEmployeeAllowanceTotalsMap, formatEmployeeForExport } from '../../utils/importTemplates';
+import {
+  buildEmployeeAllowanceTotalsMap,
+  EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS,
+  formatEmployeeForExport,
+} from '../../utils/importTemplates';
 import {
   createCustomAllowance,
   deleteCustomAllowance,
@@ -274,7 +278,7 @@ export default function StaffListScreen({ embedded }) {
           'تاريخ إنهاء الخدمة': meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
         };
       });
-      exportToExcel(rows, 'employees.xlsx');
+      exportToExcel(rows, 'employees.xlsx', { money2ColumnKeys: EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS });
     } catch (e) {
       showToast(e?.message || t('saveFailed'), 'error');
     } finally {

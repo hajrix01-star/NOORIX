@@ -2,6 +2,7 @@
  * exportUtils — تصدير Excel و PDF (Dynamic Imports)
  */
 import { openPrintWindow } from './printUtils';
+import { roundMoney2 } from './moneyInput';
 import {
   ORDER_PRODUCTS_TEMPLATE_MARKER_AR,
   ORDER_CATEGORIES_TEMPLATE_MARKER_AR,
@@ -359,13 +360,15 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
   if (!Array.isArray(data) && data && typeof data === 'object' && 'data' in data) {
     const {
       data: innerData, filename: cfgFile, title: cfgTitle,
-      companyName: cfgCo, sheetName: cfgSheet, columns: cfgColumns, ...rest
+      companyName: cfgCo, sheetName: cfgSheet, columns: cfgColumns,
+      money2ColumnKeys: cfgMoney2,
     } = data;
     if (cfgFile) filename = cfgFile;
     if (cfgCo && !configOpts.companyName) configOpts = { companyName: cfgCo, ...configOpts };
     if (cfgTitle && !configOpts.title) configOpts = { title: cfgTitle, ...configOpts };
     if (cfgSheet && !configOpts.sheetName) configOpts = { sheetName: cfgSheet, ...configOpts };
     if (cfgColumns?.length) columnDefs = cfgColumns;
+    if (cfgMoney2) configOpts = { ...configOpts, money2ColumnKeys: cfgMoney2 };
     data = Array.isArray(innerData) ? innerData : [];
   }
 
@@ -375,7 +378,12 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
     sheetName = 'بيانات',
     rtl = true,
     headerColor = '185FA5',
+    money2ColumnKeys: money2ColumnKeysOpt,
   } = configOpts;
+
+  const money2KeySet = new Set(
+    Array.isArray(money2ColumnKeysOpt) ? money2ColumnKeysOpt.filter(Boolean) : [],
+  );
 
   const rows = Array.isArray(data) ? data : [];
 
@@ -395,11 +403,17 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
   const titleRow   = title       ? 1 : 0;
   const headerRowR = companyRow + titleRow; // مؤشر صف رأس الأعمدة (0-indexed)
 
-  // حوّل القيم الرقمية من نص إلى number (استخدم dataKeys للوصول للبيانات)
+  // أعمدة مالية (هللتان) كسلسلة نصية — يمنع إعادة تحويل xlsx/Excel لكسور عائمة طويلة
+  // حوّل القيم الرقمية من نص إلى number عند عدم تفعيل money2ColumnKeys لهذا العمود
   const dataAoA = rows.map((row) =>
     dataKeys.map((k) => {
       const v = row[k];
       if (v == null || v === '') return '';
+      if (money2KeySet.has(k)) {
+        const raw = typeof v === 'number' ? v : Number(String(v).replace(/,/g, '').trim());
+        if (!Number.isFinite(raw)) return '';
+        return roundMoney2(raw).toFixed(2);
+      }
       if (typeof v === 'number') return v;
       const s = String(v).replace(/,/g, '').trim();
       const n = Number(s);

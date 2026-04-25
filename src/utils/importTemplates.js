@@ -113,6 +113,15 @@ export async function downloadInvoiceTemplate() {
 
 // ─── Employee Template ───────────────────────────────────────────────────────
 
+/** أعمدة مبالغ — تُمرَّر لـ exportToExcel({ money2ColumnKeys }) لعرض بهللتين كنص */
+export const EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS = [
+  'الراتب الأساسي',
+  'بدل السكن',
+  'بدل النقل',
+  'بدلات أخرى',
+  'الراتب الإجمالي',
+];
+
 export async function downloadEmployeeTemplate() {
   const rows = [
     {
@@ -130,7 +139,7 @@ export async function downloadEmployeeTemplate() {
       'ملاحظات': 'مثال: «الراتب الإجمالي» اختياري — إن حدّدته يُحسب الراتب الأساسي تلقائياً (بدل تركه فارغاً وملء «الراتب الأساسي» فقط).',
     },
   ];
-  await exportToExcel(rows, 'template-employees.xlsx');
+  await exportToExcel(rows, 'template-employees.xlsx', { money2ColumnKeys: EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS });
 }
 
 // ─── Sales Template ──────────────────────────────────────────────────────────
