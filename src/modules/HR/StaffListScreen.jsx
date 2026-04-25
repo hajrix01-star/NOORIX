@@ -13,11 +13,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { rejectIfApiFailed } from '../../utils/apiResponse';
-import { hrFmt } from './utils/hrFmt';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ImportExportModal from '../../components/ImportExportModal';
-import { formatEmployeeForExport } from '../../utils/importTemplates';
+import { buildEmployeeAllowanceTotalsMap, formatEmployeeForExport } from '../../utils/importTemplates';
 import {
   createCustomAllowance,
   deleteCustomAllowance,
@@ -261,16 +260,17 @@ export default function StaffListScreen({ embedded }) {
         const meta = parsed.meta || {};
         const extra = allowanceTotals.get(e.id) || 0;
         const ts = totalSalary(e, extra);
+        const totalRounded = Number.isFinite(ts) ? Math.round(ts * 100) / 100 : 0;
         return {
-          employeeSerial: e.employeeSerial,
-          name: employeeDisplayName(e, lang),
-          jobTitle: e.jobTitle,
-          joinDate: formatSaudiDate(e.joinDate),
-          totalSalary: hrFmt(ts),
-          status: STATUS_MAP[e.status]?.label || e.status,
-          terminationReason: meta.terminationReason || '',
-          terminationClause: meta.terminationClause || '',
-          terminationDate: meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
+          'رقم الموظف': e.employeeSerial ?? '',
+          'الاسم': employeeDisplayName(e, lang),
+          'المسمى الوظيفي': e.jobTitle ?? '',
+          'تاريخ الالتحاق': formatSaudiDate(e.joinDate),
+          'الراتب الإجمالي': totalRounded,
+          'الحالة': STATUS_MAP[e.status]?.label || e.status,
+          'سبب إنهاء الخدمة': meta.terminationReason || '',
+          'البند': meta.terminationClause || '',
+          'تاريخ إنهاء الخدمة': meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
         };
       });
       exportToExcel(rows, 'employees.xlsx');
@@ -432,8 +432,15 @@ export default function StaffListScreen({ embedded }) {
             companyId={companyId}
             exportFetcher={async () => {
               const res = await getEmployeesBulk(companyId, 'active');
-              const list = Array.isArray(res) ? res : (res?.data ?? []);
-              return list.map(formatEmployeeForExport);
+              if (!res?.success) {
+                throw new Error(res?.error || t('saveFailed'));
+              }
+              const list = res.data || [];
+              const allAllow = await getCustomAllowances(companyId);
+              throwIfApiFailed(allAllow, t('loadingError'));
+              const allowanceRows = Array.isArray(allAllow.data) ? allAllow.data : (allAllow.data?.items ?? []);
+              const totalsMap = buildEmployeeAllowanceTotalsMap(allowanceRows);
+              return list.map((e) => formatEmployeeForExport(e, totalsMap));
             }}
             onImportSuccess={(count) => {
               queryClient.invalidateQueries({ queryKey: ['employees'] });

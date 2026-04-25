@@ -8,6 +8,7 @@
  * Payloads are then sent to existing backend endpoints in parallel batches.
  */
 import { exportToExcel } from './exportUtils';
+import { totalSalary, basicSalaryFromTargetTotalInclusiveOvertime } from '../modules/HR/utils/employeeSalaryMath';
 
 // ─── Low-level helpers ───────────────────────────────────────────────────────
 
@@ -122,9 +123,10 @@ export async function downloadEmployeeTemplate() {
       'بدل السكن': 1000,
       'بدل النقل': 500,
       'بدلات أخرى': 0,
+      'الراتب الإجمالي': '',
       'تاريخ الالتحاق': '2024-01-01',
       'ساعات العمل': '8 ساعات',
-      'ملاحظات': 'مثال: يكفي الاسم عربي أو إنجليزي؛ باقي الحقول اختيارية.',
+      'ملاحظات': 'مثال: «الراتب الإجمالي» اختياري — إن حدّدته يُحسب الراتب الأساسي تلقائياً (بدل تركه فارغاً وملء «الراتب الأساسي» فقط).',
     },
   ];
   await exportToExcel(rows, 'template-employees.xlsx');
@@ -267,7 +269,9 @@ export function validateEmployeeRows(rows) {
     }
 
     const basicRaw = parseNumber(row['الراتب الأساسي'] ?? row['basicSalary']);
-    const basicSalary = basicRaw === null || basicRaw < 0 ? 0 : basicRaw;
+    const totalTargetRaw = parseNumber(
+      row['الراتب الإجمالي'] ?? row['totalSalary'] ?? row['الراتب الأجمالي'] ?? row['Gross salary'],
+    );
 
     const joinDateRaw = row['تاريخ الالتحاق'] ?? row['joinDate'];
     let joinDate = parseDate(joinDateRaw);
@@ -280,6 +284,31 @@ export function validateEmployeeRows(rows) {
     const otherAllowance = Math.max(0, parseNumber(row['بدلات أخرى'] ?? row['otherAllowance'] ?? 0) ?? 0);
     const workHours = String(row['ساعات العمل'] ?? row['workHours'] ?? '').trim() || undefined;
     const notes = String(row['ملاحظات'] ?? row['notes'] ?? '').trim() || undefined;
+
+    const useTotalTarget = totalTargetRaw != null && totalTargetRaw > 0;
+    let basicSalary = basicRaw === null || basicRaw < 0 ? 0 : basicRaw;
+    if (useTotalTarget) {
+      const empForInverse = {
+        basicSalary: 0,
+        housingAllowance,
+        transportAllowance,
+        otherAllowance,
+        workHours,
+        workSchedule: '',
+      };
+      const { basic, inverseWarning } = basicSalaryFromTargetTotalInclusiveOvertime(
+        empForInverse,
+        0,
+        totalTargetRaw,
+      );
+      basicSalary = basic;
+      if (inverseWarning) {
+        warnings.push('تعذّر مواءمة «الراتب الإجمالي» مع البدلات والأوفر تايم — راجع المبالغ.');
+      }
+      if (basicRaw != null && basicRaw > 0) {
+        warnings.push('يُستمد الراتب الأساسي من «الراتب الإجمالي» (يُتجاهل «الراتب الأساسي» في الملف).');
+      }
+    }
 
     if (iqamaNumber && !/^\d{10}$/.test(iqamaNumber)) {
       warnings.push(`رقم الإقامة "${iqamaNumber}" ليس 10 أرقام — يُفضّل تصحيحه أو تركه فارغاً.`);
@@ -370,6 +399,20 @@ export function validateSalesRows(rows, { vaults = [] } = {}) {
   });
 }
 
+/**
+ * @param {Array<{ employeeId?: string, amount?: unknown }>} allowanceRows
+ * @returns {Map<string, number>}
+ */
+export function buildEmployeeAllowanceTotalsMap(allowanceRows) {
+  const map = new Map();
+  for (const row of allowanceRows || []) {
+    const id = row.employeeId;
+    if (!id) continue;
+    map.set(id, (map.get(id) || 0) + (Number(row.amount) || 0));
+  }
+  return map;
+}
+
 // ─── Export formatters (convert API response rows to Excel-friendly objects) ──
 
 export function formatInvoiceForExport(inv) {
@@ -390,7 +433,17 @@ export function formatInvoiceForExport(inv) {
   };
 }
 
-export function formatEmployeeForExport(emp) {
+/**
+ * @param {object} emp
+ * @param {Map<string, number>|null|undefined} allowanceTotalsByEmployeeId — مجموع البدلات المخصصة لكل موظف
+ */
+export function formatEmployeeForExport(emp, allowanceTotalsByEmployeeId) {
+  const customExtra =
+    allowanceTotalsByEmployeeId instanceof Map
+      ? (allowanceTotalsByEmployeeId.get(emp.id) || 0)
+      : 0;
+  const ts = totalSalary(emp, customExtra);
+  const totalRounded = Number.isFinite(ts) ? Math.round(ts * 100) / 100 : 0;
   return {
     'الاسم بالعربية': emp.name ?? '',
     'الاسم بالإنجليزية': emp.nameEn ?? '',
@@ -401,6 +454,7 @@ export function formatEmployeeForExport(emp) {
     'بدل السكن': emp.housingAllowance ?? '',
     'بدل النقل': emp.transportAllowance ?? '',
     'بدلات أخرى': emp.otherAllowance ?? '',
+    'الراتب الإجمالي': totalRounded,
     'تاريخ الالتحاق': emp.joinDate?.slice(0, 10) ?? '',
     'ساعات العمل': emp.workHours ?? '',
     'الحالة': emp.status === 'active' ? 'نشط' : (emp.status === 'terminated' ? 'منتهي' : emp.status),

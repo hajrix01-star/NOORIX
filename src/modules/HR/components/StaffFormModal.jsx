@@ -2,7 +2,7 @@
  * StaffFormModal — نافذة إضافة/تعديل موظف.
  * Props: employee (null للإضافة), companyId, onSave(body), onClose, isSaving
  */
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
@@ -13,8 +13,9 @@ import {
   parseOvertimeWorkDaysPerMonth,
   mergeOvertimeWorkDaysIntoSchedule,
   DEFAULT_OVERTIME_WORK_DAYS,
+  totalSalary,
 } from '../utils/employeeSalaryMath';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 
 const EMPTY = {
   name: '', nameEn: '', jobTitle: '', iqamaNumber: '',
@@ -107,6 +108,36 @@ export const StaffFormModal = memo(function StaffFormModal({
   const removeAllowanceRow = (rowId) => {
     setCustomAllowances((prev) => prev.filter((row) => row.rowId !== rowId));
   };
+
+  const computedCustomAllowanceTotal = useMemo(
+    () => customAllowances.reduce((sum, row) => sum + (roundMoney2(row.amount) || 0), 0),
+    [customAllowances],
+  );
+
+  const salaryPreviewEmployee = useMemo(() => {
+    const wd = parseInt(String(overtimeWorkDays), 10) || DEFAULT_OVERTIME_WORK_DAYS;
+    return {
+      basicSalary: roundMoney2(form.basicSalary),
+      housingAllowance: roundMoney2(form.housingAllowance),
+      transportAllowance: roundMoney2(form.transportAllowance),
+      otherAllowance: roundMoney2(form.otherAllowance),
+      workHours: form.workHours,
+      workSchedule: mergeOvertimeWorkDaysIntoSchedule(
+        form.workSchedule?.trim() || '',
+        wd,
+      ),
+    };
+  }, [
+    form.basicSalary,
+    form.housingAllowance,
+    form.transportAllowance,
+    form.otherAllowance,
+    form.workHours,
+    form.workSchedule,
+    overtimeWorkDays,
+  ]);
+
+  const computedTotalSalary = totalSalary(salaryPreviewEmployee, computedCustomAllowanceTotal);
 
   function handleSubmit(e) {
     e?.preventDefault?.();
@@ -269,6 +300,12 @@ export const StaffFormModal = memo(function StaffFormModal({
             />
             <div className="text-[11px] text-noorix-muted mt-1 leading-[1.45]">
               {t('overtimeWorkDaysHelp')}
+            </div>
+          </div>
+          <div className="col-span-2 rounded-xl border border-noorix-border bg-noorix-bg-muted/40 px-3.5 py-3">
+            <div className="text-[11px] text-noorix-muted mb-1">{t('totalSalary')}</div>
+            <div className="text-[18px] font-bold ltr text-noorix-text" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+              <FmtNum n={computedTotalSalary} />
             </div>
           </div>
           {isEdit && (
