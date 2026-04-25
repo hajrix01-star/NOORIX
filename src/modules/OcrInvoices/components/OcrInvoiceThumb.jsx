@@ -1,36 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { getAuthToken, getActiveCompanyId } from '../../../services/authStore';
-import { getApiBaseUrl } from '../../../services/api';
+import { useOcrInvoiceImageBlob } from '../hooks/useOcrInvoiceImageBlob';
 
-/** صورة مصغّرة مع مصادقة (img src لا يرسل Bearer) */
+/** صورة مصغّرة مع مصادقة — جلب عبر React Query (كاش مشترك مع تبويب الرفع) */
 export default function OcrInvoiceThumb({ invoiceId, className = '' }) {
+  const { data: blob, isSuccess } = useOcrInvoiceImageBlob(invoiceId, true);
   const [src, setSrc] = useState(null);
+
   useEffect(() => {
-    let revoked = false;
     let objectUrl = null;
-    (async () => {
-      try {
-        const url = new URL(`/api/v1/ocr/invoices/${encodeURIComponent(invoiceId)}/image`, getApiBaseUrl());
-        const res = await fetch(url.toString(), {
-          headers: {
-            Authorization: `Bearer ${getAuthToken() || ''}`,
-            'x-company-id': String(getActiveCompanyId() || ''),
-          },
-        });
-        if (!res.ok) return;
-        const blob = await res.blob();
-        if (revoked) return;
-        objectUrl = URL.createObjectURL(blob);
-        setSrc(objectUrl);
-      } catch {
-        /* ignore */
-      }
-    })();
+    if (isSuccess && blob) {
+      objectUrl = URL.createObjectURL(blob);
+      setSrc(objectUrl);
+    } else {
+      setSrc(null);
+    }
     return () => {
-      revoked = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (objectUrl) {
+        try {
+          URL.revokeObjectURL(objectUrl);
+        } catch {
+          /* ignore */
+        }
+      }
     };
-  }, [invoiceId]);
+  }, [blob, isSuccess]);
 
   if (!src) {
     return <div className={`bg-noorix-bg-muted rounded ${className}`} style={{ minHeight: 48 }} />;

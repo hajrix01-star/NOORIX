@@ -31,7 +31,7 @@ const queryClient = new QueryClient({
       refetchOnReconnect: true,
       retry(failureCount, error) {
         const code = error?.code ?? error?.response?.status;
-        if ([401, 403, 404, 422].includes(code)) return false;
+        if ([401, 403, 404, 422, 429].includes(code)) return false;
         // بوابة / سيرفر نائم — محاولتان إضافيتان بعد فشل إعادة المحاولة داخل apiGet
         if ([502, 503, 504].includes(code)) return failureCount < 2;
         if (error?.isNetworkError || error?.isTransientServerError) return failureCount < 2;

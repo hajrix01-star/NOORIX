@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -16,6 +16,7 @@ import {
   saveOcrInvoice,
 } from '../services/ocrApi';
 import { invoicesHrefForLinkedPurchase } from '../utils/ledgerInvoiceLink';
+import { fetchOcrInvoiceImageBlob, ocrInvoiceImageQueryKey } from '../ocrInvoiceImageQuery';
 
 const CONFIDENCE_COLOR = (c) => {
   if (c >= 0.9) return 'var(--noorix-accent-green)';
@@ -42,6 +43,7 @@ function revokePreviewUrl(url) {
 export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInvoiceId, onPrefillConsumed }) {
   const { t, lang: language } = useTranslation();
   const { activeCompanyId } = useApp();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dragging, setDragging]   = useState(false);
   const [preview, setPreview]     = useState(null);
@@ -148,25 +150,21 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
         setCreateLinkedPurchase(false);
         setAccountingSupplierId('');
         setVaultId('');
-        const imgUrl = new URL(
-          `/api/v1/ocr/invoices/${encodeURIComponent(prefillInvoiceId)}/image`,
-          getApiBaseUrl(),
-        );
-        const res = await fetch(imgUrl.toString(), {
-          headers: {
-            Authorization: `Bearer ${getAuthToken() || ''}`,
-            'x-company-id': String(getActiveCompanyId() || ''),
-          },
-        });
         if (cancelled) return;
-        if (res.ok) {
-          const blob = await res.blob();
+        try {
+          const blob = await queryClient.ensureQueryData({
+            queryKey: ocrInvoiceImageQueryKey(activeCompanyId, prefillInvoiceId),
+            queryFn: ({ signal }) => fetchOcrInvoiceImageBlob(prefillInvoiceId, signal),
+            staleTime: 5 * 60 * 1000,
+          });
           if (cancelled) return;
           setPreview((prev) => {
             revokePreviewUrl(prev);
             return URL.createObjectURL(blob);
           });
           setMimeType(blob.type || 'image/jpeg');
+        } catch {
+          /* صورة اختيارية — الكاش/الـ throttle لا يمنعان عرض بيانات الاستخراج */
         }
         setBase64(null);
       } catch {
@@ -182,7 +180,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
       cancelled = true;
     };
     // لا تضف `t` هنا: كان غير مُثبّت ويسبب إعادة الجلب المفرط لـ getOcrInvoice (429). اللغة عبر `language` كافية.
-  }, [prefillInvoiceId, onPrefillConsumed, language]);
+  }, [prefillInvoiceId, onPrefillConsumed, language, activeCompanyId, queryClient]);
 
   // الأصناف الفعلية = التعديل إن وجد أو الأصل
   const activeItems = editItems ?? extracted?.items ?? [];

@@ -19,6 +19,7 @@ import { RolesGuard }       from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
+import { SkipThrottle } from '@nestjs/throttler';
 import { getCompanyIdFromHttpRequest } from '../common/utils/company-request';
 import { OcrInvoicesService } from './ocr-invoices.service';
 import { ExtractInvoiceDto }    from './dto/extract-invoice.dto';
@@ -88,7 +89,9 @@ export class OcrInvoicesController {
     });
   }
 
+  /** قراءة ثابتة + JWT — لا تُحسب ضمن Throttle العام لتفادي 429 عند كاش الواجهة والمصغّرات */
   @Get('invoices/:id/image')
+  @SkipThrottle()
   @RequirePermission('OCR_READ')
   async invoiceImage(
     @Param('id') id: string,
@@ -105,6 +108,7 @@ export class OcrInvoicesController {
   }
 
   @Get('invoices/:id')
+  @SkipThrottle()
   @RequirePermission('OCR_READ')
   async getInvoiceById(
     @Param('id') id: string,
