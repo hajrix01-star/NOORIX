@@ -11,7 +11,7 @@ import {
   updateEmployee,
   throwIfApiFailed,
 } from '../services/api';
-import { createAdvance } from '../services/financialApi';
+import { createAdvance } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
 
 /**

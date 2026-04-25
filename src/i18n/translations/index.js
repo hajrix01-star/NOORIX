@@ -10,7 +10,6 @@ import invoices from './invoices';
 import treasury from './treasury';
 import settings from './settings';
 import reports from './reports';
-import shared from './shared';
 import orders from './orders';
 import dashboard from './dashboard';
 import ocr from './ocr';
@@ -25,7 +24,6 @@ const t = Object.assign(
   treasury,
   settings,
   reports,
-  shared,
   orders,
   dashboard,
   ocr

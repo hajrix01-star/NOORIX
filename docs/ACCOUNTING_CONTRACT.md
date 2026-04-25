@@ -8,8 +8,8 @@
 
 | النوع | الوصف | الفرونت | البَكند |
 |-------|-------|----------|---------|
-| **outflow** | فاتورة / مصروف / مشتريات | `financialApi.createInvoice` / `createInvoiceBatch` | `FinancialCoreService.processOutflow` |
-| **inflow** | ملخص مبيعات يومي | `financialApi.createSalesSummary` | `FinancialCoreService.processInflow` |
+| **outflow** | فاتورة / مصروف / مشتريات | `createInvoice` / `createInvoiceBatch` (من `services/api`) | `FinancialCoreService.processOutflow` |
+| **inflow** | ملخص مبيعات يومي | `createDailySalesSummary` وواجهات المبيعات (من `services/api`) | `FinancialCoreService.processInflow` |
 | **transfer** | تحويل بين خزائن | (مستقبلاً) | `FinancialCoreService.processTransfer` |
 | **cancel** | إلغاء عملية | عبر `updateInvoice` أو `cancelDailySalesSummary` | `FinancialCoreService.cancelOperation` |
 
@@ -24,13 +24,10 @@
         DailySalesScreen، إلخ)
         │
         ▼
-financialApi.js
-  - validateTransactionPayload
-  - splitTaxFromTotalAsNumbers (إن لزم)
+src/services/api.js (طبقة HTTP + دوال المجال)
+  - createInvoice / createInvoiceBatch / createAdvance
+  - validateTransactionPayload (الشاشة)
   - invalidateRelated بعد النجاح
-        │
-        ▼
-api.js (HTTP)
         │
         ▼
 InvoiceController / SalesController

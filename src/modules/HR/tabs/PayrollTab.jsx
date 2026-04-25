@@ -344,6 +344,7 @@ export default function PayrollTab() {
           runId={detailRunId}
           companyId={companyId}
           companyName={companyName}
+          companyNameEn={activeCompany?.nameEn || activeCompany?.nameAr || ''}
           companyLogo={companyLogo}
           onClose={() => setDetailRunId(null)}
         />

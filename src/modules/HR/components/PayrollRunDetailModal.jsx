@@ -1,25 +1,29 @@
 ﻿/**
  * PayrollRunDetailModal — عرض تفاصيل مسيرة الراتب (جدول احترافي)
  */
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { getText } from '../../../i18n/translations';
 import { getPayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Badge, Button, AdaptiveSheet, SmartTable } from '../../../ui';
+import { Badge, Button, AdaptiveSheet, SmartTable, Modal } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { openPrintWindow } from '../../../utils/printUtils';
+import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSlipsPrint';
 
 const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
   completed: { labelKey: 'payrollPaid', badgeColor: 'green' },
 };
 
-export function PayrollRunDetailModal({ runId, companyId, companyName, companyLogo, onClose }) {
+export function PayrollRunDetailModal({ runId, companyId, companyName, companyNameEn, companyLogo, onClose }) {
   const { t, lang } = useTranslation();
+  const [slipModalOpen, setSlipModalOpen] = useState(false);
+  const [slipNetOnly, setSlipNetOnly] = useState(false);
 
   const { data: run, isLoading } = useQuery({
     queryKey: ['payroll-run', runId, companyId],
@@ -44,6 +48,50 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
   const totalNet = new Decimal(run.totalAmount ?? 0);
   const totalBeforeDeduction = items.reduce((s, row) => s.plus(row.grossSalary ?? 0).plus(row.allowancesAdd ?? 0), new Decimal(0));
   const totalDeductions      = items.reduce((s, row) => s.plus(row.deductions   ?? 0).plus(row.advancesDeduct ?? 0), new Decimal(0));
+
+  const buildSlipLabels = useCallback(
+    (runForPrint) => ({
+      windowTitle: `${t('payrollSlipBatchPrint')} — ${runForPrint.runNumber || ''}`,
+      legalRefAr: getText('payrollSlipLegalRefAr', 'ar'),
+      legalRefEn: getText('payrollSlipLegalRefEn', 'en'),
+      docTitleAr: getText('payrollSlipDocTitle', 'ar'),
+      docTitleEn: getText('payrollSlipDocTitle', 'en'),
+      runLabel: t('payrollSlipRunLabel'),
+      lblPayrollMonth: t('payrollSlipLblPayrollMonth'),
+      sectionEmpAr: getText('payrollSlipSectionEmpAr', 'ar'),
+      sectionEmpEn: getText('payrollSlipSectionEmpEn', 'en'),
+      lblName: t('payrollSlipLblName'),
+      lblIqama: t('payrollSlipLblIqama'),
+      lblJob: t('payrollSlipLblJob'),
+      lblSerial: t('payrollSlipLblSerial'),
+      lblJoin: t('payrollSlipLblJoin'),
+      sectionBreakdownAr: getText('payrollSlipSectionBreakdownAr', 'ar'),
+      sectionBreakdownEn: getText('payrollSlipSectionBreakdownEn', 'en'),
+      colItem: t('payrollSlipColItem'),
+      colAmount: t('payrollSlipColAmount'),
+      rowGross: t('payrollSlipRowGross'),
+      rowAllowances: t('payrollSlipRowAllowances'),
+      rowBeforeDed: t('payrollTotalBeforeDeductions'),
+      rowDeductions: t('deductions'),
+      rowAdvances: t('advancesDeduct'),
+      rowNet: t('netSalary'),
+      netPayableTitle: t('payrollSlipNetPayableTitle'),
+      netOnlyNoteAr: getText('payrollSlipNetOnlyNoteAr', 'ar'),
+      netOnlyNoteEn: getText('payrollSlipNetOnlyNoteEn', 'en'),
+      declarationAr: getText('payrollSlipAckAr', 'ar'),
+      declarationEn: getText('payrollSlipAckEn', 'en'),
+      sectionSigAr: getText('payrollSlipSectionSigAr', 'ar'),
+      sectionSigEn: getText('payrollSlipSectionSigEn', 'en'),
+      sigEmployeeAr: getText('payrollSlipSigEmployeeAr', 'ar'),
+      sigEmployeeEn: getText('payrollSlipSigEmployeeEn', 'en'),
+      sigEmployerAr: getText('payrollSlipSigEmployerAr', 'ar'),
+      sigEmployerEn: getText('payrollSlipSigEmployerEn', 'en'),
+      sigDateLine: t('payrollSlipSigDateLine'),
+      footerLeft: t('payrollSlipFooterIssued'),
+      issueLabel: t('payrollSlipIssueDate'),
+    }),
+    [t],
+  );
 
   const handlePrint = () => {
     const monthLabel = formatSaudiDate(run.payrollMonth);
@@ -104,6 +152,24 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
     });
   };
 
+  const handlePrintEmployeeSlips = () => {
+    setSlipNetOnly(false);
+    setSlipModalOpen(true);
+  };
+
+  const confirmPrintEmployeeSlips = () => {
+    setSlipModalOpen(false);
+    openPayrollRunEmployeeSlipsPrint({
+      run,
+      companyName,
+      companyNameEn,
+      companyLogo,
+      lang,
+      labels: buildSlipLabels(run),
+      netOnly: slipNetOnly,
+    });
+  };
+
   const columns = [
     { key: 'employeeName', label: t('employeeName'), width: '18%', minWidth: 150, render: (_, row) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
     { key: 'advanceDates', label: t('payrollAdvanceDates'), width: '16%', minWidth: 120, render: (_, row) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
@@ -148,6 +214,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
       footer={
         <>
           <Button onClick={handlePrint}>{t('printPayroll')}</Button>
+          <Button variant="default" onClick={handlePrintEmployeeSlips}>{t('payrollSlipBatchPrint')}</Button>
           <Button variant="ghost" onClick={onClose}>{t('close') || 'إغلاق'}</Button>
         </>
       }
@@ -176,6 +243,31 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyLo
       {run.notes && (
         <p className="mt-4 mb-0 text-[13px] text-noorix-muted">{run.notes}</p>
       )}
+
+      <Modal
+        open={slipModalOpen}
+        onClose={() => setSlipModalOpen(false)}
+        title={t('payrollSlipBatchModalTitle')}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setSlipModalOpen(false)}>{t('close')}</Button>
+            <Button onClick={confirmPrintEmployeeSlips}>{t('payrollSlipConfirmPrint')}</Button>
+          </>
+        }
+      >
+        <label className="flex cursor-pointer items-start gap-3 text-[13px] leading-snug text-noorix-text">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 shrink-0 rounded border-noorix-border"
+            checked={slipNetOnly}
+            onChange={(e) => setSlipNetOnly(e.target.checked)}
+          />
+          <span>
+            <span className="font-semibold block">{t('payrollSlipNetOnlyOption')}</span>
+            <span className="mt-1 block text-[12px] text-noorix-muted">{t('payrollSlipNetOnlyHelp')}</span>
+          </span>
+        </label>
+      </Modal>
     </AdaptiveSheet>
   );
 }

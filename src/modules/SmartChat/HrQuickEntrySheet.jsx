@@ -8,7 +8,7 @@ import { useApiMutation } from '../../hooks/useApiMutation';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Button, AdaptiveSheet, Input } from '../../ui';
 import { getEmployees, createLeave, createDeduction, createMovement, createCustomAllowance } from '../../services/api';
-import { createAdvance } from '../../services/financialApi';
+import { createAdvance } from '../../services/api';
 import { useVaults } from '../../hooks/useVaults';
 import { getSaudiToday } from '../../utils/saudiDate';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
