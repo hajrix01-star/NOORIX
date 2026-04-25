@@ -4,6 +4,7 @@
  * - بعد تسجيل الدخول: App.jsx يستدعي prefetch لأهم المسارات أثناء requestIdleCallback.
  *
  * ⚠️ عند إضافة Route جديد في App.jsx: أضف هنا نفس () => import(...) مع مفتاح `to` كما في AppSidebar.
+ *    للفواتير: استورد المجلد `../modules/Invoices` (index.js) مثل React.lazy في App.jsx.
  */
 const routeLoaders = {
   '/owner': () => import('../modules/Owner/OwnerDashboardScreen'),
@@ -11,7 +12,7 @@ const routeLoaders = {
   '/chat': () => import('../modules/SmartChat/SmartChatScreen'),
   '/sales': () => import('../modules/Sales/DailySalesScreen'),
   '/purchases': () => import('../modules/Purchases/PurchasesBatchScreen'),
-  '/invoices': () => import('../modules/Invoices/InvoicesListScreen'),
+  '/invoices': () => import('../modules/Invoices'),
   '/suppliers': () => import('../modules/Suppliers/SuppliersScreen'),
   '/treasury': () => import('../modules/Treasury/TreasuryScreen'),
   '/expenses': () => import('../modules/Expenses/ExpensesScreen'),

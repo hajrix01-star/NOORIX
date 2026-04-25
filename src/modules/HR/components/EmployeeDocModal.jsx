@@ -783,32 +783,42 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
               <div style={{ ...DOC_BOX, direction: 'ltr', textAlign: 'left' }}>
                 <h3 style={DOC_H3}>Final Entitlements Calculation</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '2px 10px', fontSize: 10.5, lineHeight: 1.3 }}>
-                  <span>Service period (days)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{eos.serviceDays}</span>
-                  <span>Service period (years)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.serviceYears)}</span>
-                  <span>Work hours/day</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(parseWorkHours(employee?.workHours))}</span>
-                  <span>Overtime hours/day</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(overtimeHoursPerDay)}</span>
-                  <span>Wage used for EOS</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.wageForEos)}</span>
-                  <span>Full EOS award</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.fullAward)}</span>
-                  <span>Eligibility factor</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.factorPct)}%</span>
-                  <span>EOS amount by law</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.eosAmount)}</span>
-                  <span>Amount in settlement</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.appliedEosAmount)}</span>
-                  <span style={{ fontWeight: 800 }}>Total (salary + EOS)</span><span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.finalTotal)}</span>
+                  {includeEos ? (
+                    <>
+                      <span>Service period (days)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{eos.serviceDays}</span>
+                      <span>Service period (years)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.serviceYears)}</span>
+                      <span>Work hours/day</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(parseWorkHours(employee?.workHours))}</span>
+                      <span>Overtime hours/day</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(overtimeHoursPerDay)}</span>
+                      <span>Wage used for EOS</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.wageForEos)}</span>
+                      <span>Full EOS award</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.fullAward)}</span>
+                      <span>Eligibility factor</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.factorPct)}%</span>
+                      <span>EOS amount by law</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.eosAmount)}</span>
+                      <span>Amount in settlement</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.appliedEosAmount)}</span>
+                    </>
+                  ) : null}
+                  <span style={{ fontWeight: 800 }}>{includeEos ? t('finalSettlementTotalWithEos') : t('finalSettlementTotalSalaryOnly')}</span>
+                  <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{hrFmt(eos.finalTotal)}</span>
                 </div>
               </div>
               <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
               <div style={{ ...DOC_BOX, direction: 'rtl', textAlign: 'right' }}>
                 <h3 style={DOC_H3}>حسبة المستحقات النهائية</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '2px 10px', fontSize: 10.5, lineHeight: 1.3 }}>
-                  <span>مدة الخدمة (يوم)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{eos.serviceDays}</span>
-                  <span>مدة الخدمة (سنة)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.serviceYears)}</span>
-                  <span>ساعات العمل اليومية</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(parseWorkHours(employee?.workHours))}</span>
-                  <span>ساعات الأوفرتايم اليومية</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(overtimeHoursPerDay)}</span>
-                  <span>الأجر المعتمد للحسبة</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.wageForEos)}</span>
-                  <span>مكافأة نهاية الخدمة الكاملة</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.fullAward)}</span>
-                  <span>نسبة الاستحقاق</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.factorPct)}%</span>
-                  <span>قيمة نهاية الخدمة حسب النظام</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.eosAmount)}</span>
-                  <span>القيمة المضافة في المخالصة</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.appliedEosAmount)}</span>
-                  <span style={{ fontWeight: 800 }}>إجمالي التسوية (راتب + نهاية خدمة)</span><span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.finalTotal)}</span>
+                  {includeEos ? (
+                    <>
+                      <span>مدة الخدمة (يوم)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{eos.serviceDays}</span>
+                      <span>مدة الخدمة (سنة)</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.serviceYears)}</span>
+                      <span>ساعات العمل اليومية</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(parseWorkHours(employee?.workHours))}</span>
+                      <span>ساعات الأوفرتايم اليومية</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(overtimeHoursPerDay)}</span>
+                      <span>الأجر المعتمد للحسبة</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.wageForEos)}</span>
+                      <span>مكافأة نهاية الخدمة الكاملة</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.fullAward)}</span>
+                      <span>نسبة الاستحقاق</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.factorPct)}%</span>
+                      <span>قيمة نهاية الخدمة حسب النظام</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.eosAmount)}</span>
+                      <span>القيمة المضافة في المخالصة</span><span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.appliedEosAmount)}</span>
+                    </>
+                  ) : null}
+                  <span style={{ fontWeight: 800 }}>{includeEos ? t('finalSettlementTotalWithEos') : t('finalSettlementTotalSalaryOnly')}</span>
+                  <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', direction: 'ltr', unicodeBidi: 'embed' }}>{hrFmt(eos.finalTotal)}</span>
                 </div>
               </div>
             </div>

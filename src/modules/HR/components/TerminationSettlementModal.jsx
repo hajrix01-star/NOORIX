@@ -9,7 +9,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useApp } from '../../../context/AppContext';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { useVaults } from '../../../hooks/useVaults';
-import { getInvoices, uploadDocumentFile, createInvoice, createMovement } from '../../../services/api';
+import { getInvoices, getMovements, uploadDocumentFile, createInvoice, createMovement } from '../../../services/api';
 import { assertApiOk } from '../../../utils/apiResponse';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { openPrintWindow } from '../../../utils/printUtils';
@@ -37,6 +37,46 @@ function effectiveEndYmd(pr, fallbackYmd) {
   return String(fallbackYmd || '').slice(0, 10);
 }
 
+function lastDayOfMonthYmd(monthFirstYmd) {
+  const s = String(monthFirstYmd || '').slice(0, 10);
+  const parts = s.split('-');
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) return s;
+  return toLocalDayKey(new Date(y, m, 0));
+}
+
+/** وسم في ملاحظة الفاتورة لمنع أكثر من تسوية إنهاء لنفس الموظف ونفس شهر المسيرة */
+function terminationSalaryInvoiceTag(employeeId, monthFirstYmd) {
+  const ym = String(monthFirstYmd || '').slice(0, 7);
+  return `[NOORIX_TERM_SALARY:${employeeId}:${ym}]`;
+}
+
+async function findTerminationSalaryInvoiceThisMonth(companyId, employeeId, monthFirstYmd, tag) {
+  const from = String(monthFirstYmd).slice(0, 10);
+  const to = lastDayOfMonthYmd(from);
+  const res = await getInvoices(companyId, from, to, 1, 100, null, employeeId, 'salary');
+  if (!res?.success) return null;
+  const items = res.data?.items ?? [];
+  return (
+    items.find(
+      (inv) =>
+        inv.kind === 'salary' &&
+        inv.status !== 'cancelled' &&
+        String(inv.notes || '').includes(tag),
+    ) || null
+  );
+}
+
+async function hasTerminationMovementForInvoiceNumber(companyId, employeeId, invoiceNumber) {
+  if (!invoiceNumber) return false;
+  const res = await getMovements(companyId, employeeId);
+  if (!res?.success) return false;
+  const list = Array.isArray(res.data) ? res.data : [];
+  const marker = `صرف راتب إنهاء خدمة — ${invoiceNumber}`;
+  return list.some((m) => String(m.notes || '').includes(marker));
+}
+
 export default function TerminationSettlementModal({
   open,
   onClose,
@@ -50,6 +90,7 @@ export default function TerminationSettlementModal({
   const { userPermissions = [] } = useApp();
   const queryClient = useQueryClient();
   const fileRef = useRef(null);
+  const issuingLockRef = useRef(false);
   const [uploading, setUploading] = useState(false);
   const [vaultId, setVaultId] = useState('');
   const [payoutAmountStr, setPayoutAmountStr] = useState('');
@@ -100,6 +141,22 @@ export default function TerminationSettlementModal({
   }, [advanceInvoices]);
 
   const monthFirst = payrollMonthFirstDay(terminationYmd);
+
+  const termSalaryTag = useMemo(
+    () => (empId && monthFirst ? terminationSalaryInvoiceTag(empId, monthFirst) : ''),
+    [empId, monthFirst],
+  );
+
+  const { data: hasTerminationSalaryThisMonth = false, isFetching: checkingTerminationSalaryInvoice } = useQuery({
+    queryKey: ['termination-settlement-salary-exists', companyId, empId, monthFirst, termSalaryTag],
+    queryFn: async () => {
+      if (!companyId || !empId || !monthFirst || !termSalaryTag) return false;
+      const hit = await findTerminationSalaryInvoiceThisMonth(companyId, empId, monthFirst, termSalaryTag);
+      return !!hit;
+    },
+    enabled: open && !!companyId && !!empId && !!monthFirst && !!termSalaryTag,
+    staleTime: 15_000,
+  });
 
   const preview = useMemo(() => {
     if (!employee || !monthFirst) return null;
@@ -196,7 +253,7 @@ export default function TerminationSettlementModal({
       showToast(t('terminationSettlementNeedInvoicePermission'), 'error');
       return;
     }
-    if (!preview || !monthFirst || !companyId || !empId) return;
+    if (!preview || !monthFirst || !companyId || !empId || !termSalaryTag) return;
     const amt = roundMoney2(parseFloat(String(payoutAmountStr).replace(',', '.')));
     if (!Number.isFinite(amt) || amt < 0.01) {
       showToast(t('terminationSettlementZeroPayout'), 'error');
@@ -211,15 +268,35 @@ export default function TerminationSettlementModal({
       showToast(t('saveFailed'), 'error');
       return;
     }
-    const nameAr = employeeDisplayName(employee, 'ar', '');
-    const lw = lastWorkYmd || terminationYmd;
-    const notes =
-      `راتب إنهاء خدمة — ${nameAr} — آخر يوم دوام ${lw} — شهر ${String(monthFirst).slice(0, 7)} ` +
-      `(متناسب تقديري ${hrFmt(preview.grossProrated)}، سلف معلقة ${hrFmt(advancesRemaining)})`;
-    const idempotencyKey = `termination-final-salary:${empId}:${monthFirst}`;
 
+    if (issuingLockRef.current) return;
+    issuingLockRef.current = true;
     setIssuing(true);
     try {
+      const dup = await findTerminationSalaryInvoiceThisMonth(companyId, empId, monthFirst, termSalaryTag);
+      if (dup) {
+        showToast(t('terminationSettlementDuplicateMonth'), 'error');
+        setIssuedInvoice({
+          invoiceNumber: dup.invoiceNumber || dup.id || '',
+          invoiceId: dup.id || '',
+        });
+        queryClient.invalidateQueries({ queryKey: ['termination-settlement-salary-exists', companyId, empId] });
+        return;
+      }
+
+      const nameAr = employeeDisplayName(employee, 'ar', '');
+      const lw = lastWorkYmd || terminationYmd;
+      const baseNotes =
+        `راتب إنهاء خدمة — ${nameAr} — آخر يوم دوام ${lw} — شهر ${String(monthFirst).slice(0, 7)} ` +
+        `(متناسب تقديري ${hrFmt(preview.grossProrated)}، سلف معلقة ${hrFmt(advancesRemaining)})`;
+      const tag = termSalaryTag;
+      let bodyNotes = baseNotes.trim();
+      if (bodyNotes.length + 1 + tag.length > 2000) {
+        bodyNotes = bodyNotes.slice(0, Math.max(0, 2000 - tag.length - 1)).trimEnd();
+      }
+      const notes = `${bodyNotes} ${tag}`.slice(0, 2000);
+      const idempotencyKey = `termination-final-salary:${empId}:${monthFirst}`;
+
       const invRes = await createInvoice({
         companyId,
         employeeId: empId,
@@ -228,7 +305,7 @@ export default function TerminationSettlementModal({
         transactionDate: txDay,
         vaultId,
         isTaxable: false,
-        notes: notes.slice(0, 2000),
+        notes,
         idempotencyKey,
       });
       assertApiOk(invRes, t('saveFailed'));
@@ -238,20 +315,25 @@ export default function TerminationSettlementModal({
 
       let movementOk = false;
       let movementErrMsg = '';
-      if (canCreateMovement) {
-        try {
-          const movRes = await createMovement({
-            companyId,
-            employeeId: empId,
-            movementType: 'other',
-            amount: amt,
-            effectiveDate: `${txDay}T12:00:00.000Z`,
-            notes: `صرف راتب إنهاء خدمة — ${invoiceNumber} — آخر يوم دوام ${lw}`.slice(0, 2000),
-          });
-          assertApiOk(movRes, t('saveFailed'));
-          movementOk = true;
-        } catch (me) {
-          movementErrMsg = me?.message || t('saveFailed');
+      let movementSkippedDuplicate = false;
+      if (canCreateMovement && invoiceNumber) {
+        if (await hasTerminationMovementForInvoiceNumber(companyId, empId, invoiceNumber)) {
+          movementSkippedDuplicate = true;
+        } else {
+          try {
+            const movRes = await createMovement({
+              companyId,
+              employeeId: empId,
+              movementType: 'other',
+              amount: amt,
+              effectiveDate: `${txDay}T12:00:00.000Z`,
+              notes: `صرف راتب إنهاء خدمة — ${invoiceNumber} — آخر يوم دوام ${lw}`.slice(0, 2000),
+            });
+            assertApiOk(movRes, t('saveFailed'));
+            movementOk = true;
+          } catch (me) {
+            movementErrMsg = me?.message || t('saveFailed');
+          }
         }
       }
 
@@ -260,11 +342,14 @@ export default function TerminationSettlementModal({
       queryClient.invalidateQueries({ queryKey: ['invoices', companyId, 'advance', empId] });
       queryClient.invalidateQueries({ queryKey: ['invoices', companyId, 'hr-all', empId] });
       queryClient.invalidateQueries({ queryKey: ['movements', companyId, empId] });
+      queryClient.invalidateQueries({ queryKey: ['termination-settlement-salary-exists', companyId, empId] });
 
       setIssuedInvoice({ invoiceNumber, invoiceId });
       const baseMsg = `${t('terminationSettlementInvoiceCreated')}: ${invoiceNumber}`;
       if (movementErrMsg) {
         showToast(`${baseMsg} — ${movementErrMsg}`, 'error');
+      } else if (movementSkippedDuplicate) {
+        showToast(`${baseMsg} — ${t('terminationSettlementReplayNoNewMovement')}`, 'success');
       } else if (movementOk) {
         showToast(`${baseMsg} — ${t('terminationSettlementMovementRecorded')}`, 'success');
       } else {
@@ -276,6 +361,7 @@ export default function TerminationSettlementModal({
     } catch (err) {
       showToast(err?.message || t('saveFailed'), 'error');
     } finally {
+      issuingLockRef.current = false;
       setIssuing(false);
     }
   };
@@ -351,6 +437,9 @@ export default function TerminationSettlementModal({
           {canIssueInvoice && preview.netSuggested >= 0.01 ? (
             <div className="rounded-lg border border-noorix-border p-3 space-y-3">
               <p className="m-0 font-semibold text-[13px]">{t('terminationSettlementIssueSection')}</p>
+              {hasTerminationSalaryThisMonth ? (
+                <p className="m-0 text-[12px] text-noorix-red leading-snug">{t('terminationSettlementDuplicateMonth')}</p>
+              ) : null}
               <Input
                 type="select"
                 label={t('terminationSettlementSelectVault')}
@@ -380,7 +469,12 @@ export default function TerminationSettlementModal({
                 type="button"
                 size="sm"
                 variant="primary"
-                disabled={issuing || !vaultId}
+                disabled={
+                  issuing ||
+                  !vaultId ||
+                  hasTerminationSalaryThisMonth ||
+                  checkingTerminationSalaryInvoice
+                }
                 onClick={handleIssueInvoice}
               >
                 {issuing ? '…' : t('terminationSettlementIssueInvoice')}

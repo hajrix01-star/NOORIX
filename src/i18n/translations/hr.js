@@ -73,6 +73,14 @@ export default {
     en: 'Invoice create permission (INVOICES_WRITE or PURCHASES_WRITE) is required to issue the payout.',
   },
   terminationSettlementZeroPayout: { ar: 'المبلغ الصافي صفر — لا يمكن إصدار فاتورة.', en: 'Net payout is zero — cannot issue an invoice.' },
+  terminationSettlementDuplicateMonth: {
+    ar: 'يوجد بالفعل فاتورة تسوية إنهاء خدمة لهذا الموظف في شهر المسيرة (نفس تاريخ الإنهاء). لا يمكن إصدار أخرى.',
+    en: 'A termination settlement salary invoice already exists for this employee in the payroll month. Another cannot be issued.',
+  },
+  terminationSettlementReplayNoNewMovement: {
+    ar: 'لم تُضف حركة جديدة لأنها مسجّلة مسبقاً لنفس رقم الفاتورة.',
+    en: 'No new file movement was added because one already exists for this invoice number.',
+  },
   terminationSettlementProratedGross: { ar: 'الراتب المتناسب (إجمالي تقديري)', en: 'Prorated gross (estimate)' },
   terminationSettlementAdvancesOutstanding: { ar: 'سلف معلقة (متبقي)', en: 'Outstanding advances (remaining)' },
   terminationSettlementSuggestedNet: { ar: 'صافي تقديري (بعد السلف)', en: 'Estimated net (after advances)' },
@@ -116,6 +124,8 @@ export default {
   terminationClauseArt81: { ar: 'مادة 81', en: 'Article 81' },
   includeEosInSettlement: { ar: 'إضافة نهاية الخدمة في المخالصة', en: 'Include EOS in settlement' },
   excludeEosInSettlement: { ar: 'عدم إضافة نهاية الخدمة (عرض الراتب فقط)', en: 'Exclude EOS (salary only)' },
+  finalSettlementTotalWithEos: { ar: 'إجمالي التسوية (راتب + نهاية خدمة)', en: 'Total (salary + EOS)' },
+  finalSettlementTotalSalaryOnly: { ar: 'إجمالي التسوية (راتب وبدلات — دون نهاية خدمة)', en: 'Total settlement (salary & allowances — EOS excluded)' },
   printCalc: { ar: 'طباعة الحاسبة', en: 'Print calculator' },
   quickAdvance: { ar: 'صرف سلفة', en: 'Quick advance' },
   advanceForEmployee: { ar: 'سلفة لـ {0}', en: 'Advance for {0}' },

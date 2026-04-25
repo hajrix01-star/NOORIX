@@ -11,6 +11,10 @@ const noorixBuildId =
   String(Date.now());
 
 export default defineConfig({
+  test: {
+    environment: 'happy-dom',
+    globals: false,
+  },
   define: {
     __BUILD_ID__: JSON.stringify(noorixBuildId),
   },

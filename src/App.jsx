@@ -29,7 +29,7 @@ const HajriTaxQuarterOverview = React.lazy(() => import('./modules/HajriTax/Hajr
 const BankStatementAnalysisScreen = React.lazy(() => import('./modules/Reports/BankStatementAnalysisScreen'));
 const SettingsScreen = React.lazy(() => import('./modules/Settings/SettingsScreen'));
 const LoginScreen = React.lazy(() => import('./modules/Login/LoginScreen'));
-const InvoicesListScreen = React.lazy(() => import('./modules/Invoices/InvoicesListScreen'));
+const InvoicesListScreen = React.lazy(() => import('./modules/Invoices'));
 const SuppliersScreen = React.lazy(() => import('./modules/Suppliers/SuppliersScreen'));
 const TreasuryScreen = React.lazy(() => import('./modules/Treasury/TreasuryScreen'));
 const HRMainScreen = React.lazy(() => import('./modules/HR/HRMainScreen'));
