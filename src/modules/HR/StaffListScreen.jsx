@@ -123,7 +123,8 @@ export default function StaffListScreen({ embedded }) {
     for (const row of customAllowances) {
       const employeeId = row.employeeId;
       if (!employeeId) continue;
-      map.set(employeeId, (map.get(employeeId) || 0) + (Number(row.amount) || 0));
+      const next = (map.get(employeeId) || 0) + (Number(row.amount) || 0);
+      map.set(employeeId, roundMoney2(next));
     }
     return map;
   }, [customAllowances]);
@@ -260,7 +261,7 @@ export default function StaffListScreen({ embedded }) {
         const meta = parsed.meta || {};
         const extra = allowanceTotals.get(e.id) || 0;
         const ts = totalSalary(e, extra);
-        const totalRounded = Number.isFinite(ts) ? Math.round(ts * 100) / 100 : 0;
+        const totalRounded = Number.isFinite(ts) ? roundMoney2(ts) : 0;
         return {
           'رقم الموظف': e.employeeSerial ?? '',
           'الاسم': employeeDisplayName(e, lang),

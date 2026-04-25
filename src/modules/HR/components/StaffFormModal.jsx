@@ -110,7 +110,9 @@ export const StaffFormModal = memo(function StaffFormModal({
   };
 
   const computedCustomAllowanceTotal = useMemo(
-    () => customAllowances.reduce((sum, row) => sum + (roundMoney2(row.amount) || 0), 0),
+    () => roundMoney2(
+      customAllowances.reduce((sum, row) => sum + (roundMoney2(row.amount) || 0), 0),
+    ),
     [customAllowances],
   );
 

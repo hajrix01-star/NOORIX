@@ -9,6 +9,7 @@
  */
 import { exportToExcel } from './exportUtils';
 import { totalSalary, basicSalaryFromTargetTotalInclusiveOvertime } from '../modules/HR/utils/employeeSalaryMath';
+import { roundMoney2 } from './moneyInput';
 
 // ─── Low-level helpers ───────────────────────────────────────────────────────
 
@@ -408,7 +409,8 @@ export function buildEmployeeAllowanceTotalsMap(allowanceRows) {
   for (const row of allowanceRows || []) {
     const id = row.employeeId;
     if (!id) continue;
-    map.set(id, (map.get(id) || 0) + (Number(row.amount) || 0));
+    const next = (map.get(id) || 0) + (Number(row.amount) || 0);
+    map.set(id, roundMoney2(next));
   }
   return map;
 }
@@ -443,7 +445,7 @@ export function formatEmployeeForExport(emp, allowanceTotalsByEmployeeId) {
       ? (allowanceTotalsByEmployeeId.get(emp.id) || 0)
       : 0;
   const ts = totalSalary(emp, customExtra);
-  const totalRounded = Number.isFinite(ts) ? Math.round(ts * 100) / 100 : 0;
+  const totalRounded = Number.isFinite(ts) ? roundMoney2(ts) : 0;
   return {
     'الاسم بالعربية': emp.name ?? '',
     'الاسم بالإنجليزية': emp.nameEn ?? '',

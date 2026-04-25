@@ -18,6 +18,7 @@
  * أيام > 26 تُعدّ «أيام راحة» — كامل ساعاتها تُحسب أوفر تايم.
  */
 import Decimal from 'decimal.js';
+import { roundMoney2 } from '../../../utils/moneyInput';
 
 export const SAUDI_STANDARD_HOURS = 8;
 export const SAUDI_DAYS_PER_MONTH = 30;           // للحسابات اليومية العامة (نهاية خدمة، خصم إجازة)
@@ -70,9 +71,10 @@ export function parseWorkHours(str) {
 /** مجموع بدلات مخصصة لموظف من قائمة الـ API. */
 export function sumCustomAllowancesForEmployee(allowanceRows, employeeId) {
   if (!employeeId || !Array.isArray(allowanceRows)) return 0;
-  return allowanceRows
+  const raw = allowanceRows
     .filter((row) => row.employeeId === employeeId)
     .reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+  return roundMoney2(raw);
 }
 
 /** أساسي + سكن + نقل + بدلات أخرى */
@@ -120,7 +122,7 @@ export function overtimePayDecimal(emp, customTotal = 0) {
 }
 
 export function overtimePay(emp, customTotal = 0) {
-  return overtimePayDecimal(emp, customTotal).toNumber();
+  return roundMoney2(overtimePayDecimal(emp, customTotal).toNumber());
 }
 
 /** إجمالي شهري كما في ملف الموظف (يشمل تقدير الأوفر تايم). */
@@ -131,7 +133,8 @@ export function totalSalaryDecimal(emp, customTotal = 0) {
 }
 
 export function totalSalary(emp, customTotal = 0) {
-  return totalSalaryDecimal(emp, customTotal).toNumber();
+  // roundMoney2: يمنع عشريات زائفة من toNumber() والجمع بـ floating-point
+  return roundMoney2(totalSalaryDecimal(emp, customTotal).toNumber());
 }
 
 /**
@@ -142,7 +145,7 @@ export function fixedMonthlyPayPackageDecimal(emp, customTotal = 0) {
 }
 
 export function fixedMonthlyPayPackage(emp, customTotal = 0) {
-  return fixedMonthlyPayPackageDecimal(emp, customTotal).toNumber();
+  return roundMoney2(fixedMonthlyPayPackageDecimal(emp, customTotal).toNumber());
 }
 
 /**
@@ -236,7 +239,7 @@ export function basicSalaryFromTargetTotalInclusiveOvertime(emp, customTotal, ta
   if (totalOT === 0) {
     const basic = Decimal.max(totalTarget.minus(totalAllowances), 0);
     return {
-      basic: basic.toDecimalPlaces(2).toNumber(),
+      basic: roundMoney2(basic.toDecimalPlaces(2).toNumber()),
       inverseWarning: totalTarget.gt(0) && totalTarget.lte(totalAllowances) && totalAllowances.gt(0),
     };
   }
@@ -251,7 +254,7 @@ export function basicSalaryFromTargetTotalInclusiveOvertime(emp, customTotal, ta
   const inverseWarning = totalTarget.gt(0) && numerator.lt(0);
 
   return {
-    basic: basic.toDecimalPlaces(2).toNumber(),
+    basic: roundMoney2(basic.toDecimalPlaces(2).toNumber()),
     inverseWarning,
   };
 }
