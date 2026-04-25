@@ -1,4 +1,8 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { existsSync, mkdirSync } from 'fs';
+import { readFile, writeFile } from 'fs/promises';
+import { join } from 'path';
+import { Injectable, Logger, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { getGeminiApiKey, getGeminiModel } from '../config/gemini.config';
 import { normalize } from './ocr-normalize.util';
@@ -7,6 +11,11 @@ import { ExtractInvoiceDto } from './dto/extract-invoice.dto';
 import { CreateOcrSupplierDto } from './dto/create-ocr-supplier.dto';
 import { CreateOcrItemDto } from './dto/create-ocr-item.dto';
 import { SaveInvoiceDto } from './dto/save-invoice.dto';
+import { CreateInvoiceDto } from '../invoice/dto/create-invoice.dto';
+import { InvoiceService } from '../invoice/invoice.service';
+import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
+import { SubmitOcrInvoiceDto } from './dto/submit-ocr.dto';
+import { OcrInvoiceStatus, OCR_REVIEW_QUEUE_STATUSES } from './ocr-invoice-status';
 
 // ─── Math Validation ─────────────────────────────────────────────────────────
 
@@ -373,15 +382,24 @@ GENERAL RULES:
 
 
 
+export type OcrSaveInvoiceCaller = {
+  userId: string;
+  role?: string;
+  permissions?: string[];
+};
+
 @Injectable()
 export class OcrInvoicesService {
   private readonly logger = new Logger(OcrInvoicesService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly invoiceService: InvoiceService,
+  ) {}
 
   // ─── Gemini Vision OCR ────────────────────────────────────────────────────
 
-  async extractInvoice(tenantId: string, dto: ExtractInvoiceDto) {
+  async extractInvoice(tenantId: string, companyId: string, dto: ExtractInvoiceDto) {
     const apiKey = getGeminiApiKey();
     if (!apiKey) throw new BadRequestException('Gemini API key not configured');
 
@@ -485,7 +503,7 @@ export class OcrInvoicesService {
 
         // enrichExtraction محمي بـ try/catch — لا يُفسد النتيجة
         try {
-          return await this.enrichExtraction(tenantId, extracted);
+          return await this.enrichExtraction(tenantId, companyId, extracted);
         } catch (enrichErr) {
           this.logger.error(`enrichExtraction failed: ${(enrichErr as Error).message}. Returning raw extraction.`);
           return {
@@ -511,14 +529,14 @@ export class OcrInvoicesService {
     throw new BadRequestException('لا يوجد نموذج Gemini متاح. تحقق من GEMINI_API_KEY.');
   }
 
-  private async enrichExtraction(tenantId: string, extracted: GeminiExtractedInvoice) {
+  private async enrichExtraction(tenantId: string, companyId: string, extracted: GeminiExtractedInvoice) {
     const suppliers = await this.prisma.ocrSupplier.findMany({
-      where: { tenantId },
+      where: { tenantId, companyId },
       include: { aliases: true },
     });
 
     const items = await this.prisma.ocrItem.findMany({
-      where: { tenantId },
+      where: { tenantId, companyId },
       include: { aliases: true },
     });
 
@@ -558,7 +576,7 @@ export class OcrInvoicesService {
       }
 
       // سجّل في extraction log
-      await this.logExtraction(tenantId, 'supplier', supplierName, supplierMatch);
+      await this.logExtraction(tenantId, companyId, 'supplier', supplierName, supplierMatch);
     }
 
     // مطابقة الأصناف — المطابقة على الاسم الأساسي بدون الحجم
@@ -597,7 +615,7 @@ export class OcrInvoicesService {
         }
 
         // تسجيل بالاسم الأساسي (بدون الحجم)
-        await this.logExtraction(tenantId, 'item', matchName, itemMatch, supplierMatch?.id);
+        await this.logExtraction(tenantId, companyId, 'item', matchName, itemMatch, supplierMatch?.id);
 
         // إذا كان الصنف له حجم — حدّث has_sizes في الكتالوج
         if (itemMatch && size) {
@@ -628,6 +646,7 @@ export class OcrInvoicesService {
           const history = await this.prisma.ocrPriceHistory.findMany({
             where: {
               tenantId,
+              companyId,
               itemId: item.itemMatch.id,
               invoiceDate: { gte: ninetyDaysAgo },
             },
@@ -686,6 +705,7 @@ export class OcrInvoicesService {
 
   private async logExtraction(
     tenantId: string,
+    companyId: string,
     entityType: string,
     extractedText: string,
     resolved: { id: string; nameAr: string; score: number } | null,
@@ -693,7 +713,7 @@ export class OcrInvoicesService {
   ) {
     const normText = normalize(extractedText);
     const existing = await this.prisma.ocrExtractionLog.findFirst({
-      where: { tenantId, entityType, extractedText: normText, supplierId: supplierId || null },
+      where: { tenantId, companyId, entityType, extractedText: normText, supplierId: supplierId || null },
     });
 
     if (existing) {
@@ -714,12 +734,13 @@ export class OcrInvoicesService {
         resolved.score >= 0.8 &&
         resolved.score < 0.98
       ) {
-        await this.upsertCorrectionRule(tenantId, entityType, normText, resolved.nameAr, supplierId);
+        await this.upsertCorrectionRule(tenantId, companyId, entityType, normText, resolved.nameAr, supplierId);
       }
     } else {
       await this.prisma.ocrExtractionLog.create({
         data: {
           tenantId,
+          companyId,
           entityType,
           extractedText: normText,
           normalizedText: normText,
@@ -734,13 +755,14 @@ export class OcrInvoicesService {
 
   private async upsertCorrectionRule(
     tenantId: string,
+    companyId: string,
     entityType: string,
     wrongText: string,
     correctText: string,
     supplierId?: string,
   ) {
     const existing = await this.prisma.ocrCorrectionRule.findFirst({
-      where: { tenantId, entityType, wrongText, supplierId: supplierId || null },
+      where: { tenantId, companyId, entityType, wrongText, supplierId: supplierId || null },
     });
 
     if (existing) {
@@ -754,6 +776,7 @@ export class OcrInvoicesService {
       await this.prisma.ocrCorrectionRule.create({
         data: {
           tenantId,
+          companyId,
           entityType,
           wrongText,
           correctText,
@@ -764,70 +787,320 @@ export class OcrInvoicesService {
     }
   }
 
+  // ─── Cashier submission + background extraction ───────────────────────────
+
+  private validateSubmissionImageBuffer(buf: Buffer, mimeType: string): void {
+    const max = 12 * 1024 * 1024;
+    if (!buf?.length || buf.length > max) {
+      throw new BadRequestException('حجم الصورة غير مقبول (الحد الأقصى 12 ميجابايت).');
+    }
+    const m = (mimeType || '').toLowerCase();
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(m)) {
+      throw new BadRequestException('نوع الملف غير مدعوم. استخدم JPG أو PNG أو WEBP.');
+    }
+    const b0 = buf[0];
+    const b1 = buf[1];
+    const isJpeg = b0 === 0xff && b1 === 0xd8;
+    const isPng = b0 === 0x89 && buf[1] === 0x50;
+    const isWebp = buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP';
+    if (!isJpeg && !isPng && !isWebp) {
+      throw new BadRequestException('الملف ليس صورة صالحة أو تالف.');
+    }
+    if (buf.length < 800) {
+      throw new BadRequestException('الصورة صغيرة جداً وقد لا تكون قابلة للقراءة.');
+    }
+  }
+
+  private relativeOcrImagePath(companyId: string, invoiceId: string, ext: string): string {
+    return join('ocr-invoices', companyId, `${invoiceId}.${ext}`);
+  }
+
+  private absoluteUploadPath(relativePath: string): string {
+    return join(process.cwd(), 'uploads', relativePath);
+  }
+
+  /** كاشير: رفع صورة — يُنشئ سجلاً ثم يشغّل الاستخراج في الخلفية */
+  async submitForExtraction(
+    tenantId: string,
+    companyId: string,
+    submittedByUserId: string,
+    dto: SubmitOcrInvoiceDto,
+  ) {
+    const mime = (dto.mimeType || 'image/jpeg').toLowerCase();
+    let buf: Buffer;
+    try {
+      buf = Buffer.from(dto.imageBase64, 'base64');
+    } catch {
+      throw new BadRequestException('صورة غير صالحة (تشفير base64).');
+    }
+    this.validateSubmissionImageBuffer(buf, mime);
+
+    const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg';
+
+    const inv = await this.prisma.ocrInvoice.create({
+      data: {
+        tenantId,
+        companyId,
+        status: OcrInvoiceStatus.QUEUED,
+        submittedByUserId,
+        extractionError: null,
+      },
+    });
+
+    const rel = this.relativeOcrImagePath(companyId, inv.id, ext);
+    const abs = this.absoluteUploadPath(rel);
+    mkdirSync(join(process.cwd(), 'uploads', 'ocr-invoices', companyId), { recursive: true });
+    await writeFile(abs, buf);
+
+    await this.prisma.ocrInvoice.update({
+      where: { id: inv.id },
+      data: { imageUrl: rel.replace(/\\/g, '/') },
+    });
+
+    this.scheduleExtractionAfterSubmit(inv.id);
+
+    return { id: inv.id, status: OcrInvoiceStatus.QUEUED };
+  }
+
+  private scheduleExtractionAfterSubmit(invoiceId: string): void {
+    setImmediate(() => {
+      this.processExtractionForInvoice(invoiceId).catch((err) => {
+        this.logger.error(`OCR background extraction failed for ${invoiceId}: ${(err as Error).message}`);
+      });
+    });
+  }
+
+  private async processExtractionForInvoice(invoiceId: string): Promise<void> {
+    const inv = await this.prisma.ocrInvoice.findUnique({
+      where: { id: invoiceId },
+      select: { id: true, tenantId: true, companyId: true, imageUrl: true, status: true },
+    });
+    if (!inv?.imageUrl) return;
+
+    await this.prisma.ocrInvoice.update({
+      where: { id: inv.id },
+      data: { status: OcrInvoiceStatus.EXTRACTING, extractionError: null },
+    });
+
+    const abs = this.absoluteUploadPath(inv.imageUrl);
+    if (!existsSync(abs)) {
+      await this.prisma.ocrInvoice.update({
+        where: { id: inv.id },
+        data: {
+          status: OcrInvoiceStatus.EXTRACTION_FAILED,
+          extractionError: 'ملف الصورة غير موجود على الخادم.',
+        },
+      });
+      return;
+    }
+
+    let buf: Buffer;
+    try {
+      buf = await readFile(abs);
+    } catch (e) {
+      await this.prisma.ocrInvoice.update({
+        where: { id: inv.id },
+        data: {
+          status: OcrInvoiceStatus.EXTRACTION_FAILED,
+          extractionError: `تعذّر قراءة الملف: ${(e as Error).message}`,
+        },
+      });
+      return;
+    }
+
+    const mime = inv.imageUrl.endsWith('.png')
+      ? 'image/png'
+      : inv.imageUrl.endsWith('.webp')
+        ? 'image/webp'
+        : 'image/jpeg';
+
+    let enriched: Record<string, unknown>;
+    try {
+      enriched = (await this.extractInvoice(inv.tenantId, inv.companyId, {
+        imageBase64: buf.toString('base64'),
+        mimeType: mime,
+      })) as Record<string, unknown>;
+    } catch (e) {
+      await this.prisma.ocrInvoice.update({
+        where: { id: inv.id },
+        data: {
+          status: OcrInvoiceStatus.EXTRACTION_FAILED,
+          extractionError: (e as Error).message?.slice(0, 2000) || 'فشل الاستخراج',
+        },
+      });
+      return;
+    }
+
+    if (enriched.parseError === true) {
+      await this.prisma.ocrInvoice.update({
+        where: { id: inv.id },
+        data: {
+          status: OcrInvoiceStatus.EXTRACTION_FAILED,
+          extractionError: String(enriched.errorDetail || 'parse_error').slice(0, 2000),
+          rawExtraction: enriched as object,
+        },
+      });
+      return;
+    }
+
+    await this.applyEnrichedResultToInvoiceRecord(inv.tenantId, inv.companyId, inv.id, enriched);
+  }
+
+  /** يحوّل ناتج enrichExtraction إلى سجل فاتورة + سطور بحالة انتظار المراجعة */
+  private async applyEnrichedResultToInvoiceRecord(
+    tenantId: string,
+    companyId: string,
+    invoiceId: string,
+    enriched: Record<string, unknown>,
+  ): Promise<void> {
+    const supplierMatch = enriched.supplierMatch as { id?: string } | null | undefined;
+    const invNum = enriched.invoiceNumber as { value?: string } | undefined;
+    const invDate = enriched.invoiceDate as { value?: string } | undefined;
+    const subtotal = enriched.subtotalAmount as { value?: number } | undefined;
+    const total = enriched.totalAmount as { value?: number } | undefined;
+    const vat = enriched.vatAmount as { value?: number } | undefined;
+    const items = (enriched.items || []) as Array<Record<string, unknown>>;
+
+    const lineCreates = items.map((item) => {
+      const im = item.itemMatch as { id?: string; status?: string } | null | undefined;
+      return {
+        rawName: String(item.name || ''),
+        nameAr: (item.nameAr as string) || null,
+        nameEn: (item.nameEn as string) || null,
+        size: (item.size as string) || null,
+        sizeUnit: (item.sizeUnit as string) || null,
+        itemId: im?.id || null,
+        quantity: item.quantity != null ? new Prisma.Decimal(Number(item.quantity)) : null,
+        unitPrice: item.unitPrice != null ? new Prisma.Decimal(Number(item.unitPrice)) : null,
+        totalPrice: item.totalPrice != null ? new Prisma.Decimal(Number(item.totalPrice)) : null,
+        confidence: typeof item.confidence === 'number' ? item.confidence : 0,
+        matchStatus: im?.status || 'pending',
+      };
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.ocrInvoiceLine.deleteMany({ where: { invoiceId } });
+      await tx.ocrInvoice.update({
+        where: { id: invoiceId },
+        data: {
+          supplierId: supplierMatch?.id || null,
+          invoiceNumber: invNum?.value || null,
+          invoiceDate: invDate?.value ? new Date(invDate.value) : null,
+          subtotalAmount: subtotal?.value != null ? new Prisma.Decimal(subtotal.value) : null,
+          totalAmount: total?.value != null ? new Prisma.Decimal(total.value) : null,
+          vatAmount: vat?.value != null ? new Prisma.Decimal(vat.value) : null,
+          rawExtraction: enriched as object,
+          status: OcrInvoiceStatus.PENDING_REVIEW,
+          extractionError: null,
+          lines: { create: lineCreates },
+        },
+      });
+    });
+  }
+
+  async getReviewQueueInvoices(tenantId: string, companyId: string) {
+    return this.prisma.ocrInvoice.findMany({
+      where: {
+        tenantId,
+        companyId,
+        status: { in: [...OCR_REVIEW_QUEUE_STATUSES] },
+      },
+      include: {
+        supplier: { select: { id: true, nameAr: true } },
+        submittedBy: { select: { id: true, nameAr: true, email: true } },
+        lines: { include: { item: { select: { id: true, nameAr: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async assertInvoiceImagePath(tenantId: string, companyId: string, invoiceId: string): Promise<string> {
+    const inv = await this.prisma.ocrInvoice.findFirst({
+      where: { id: invoiceId, tenantId, companyId },
+      select: { imageUrl: true },
+    });
+    if (!inv?.imageUrl) throw new NotFoundException('لا توجد صورة لهذه الفاتورة.');
+    const rel = inv.imageUrl.replace(/\\/g, '/');
+    if (rel.includes('..') || !rel.startsWith(`ocr-invoices/${companyId}/`)) {
+      throw new BadRequestException('مسار الملف غير صالح.');
+    }
+    const abs = this.absoluteUploadPath(rel);
+    if (!existsSync(abs)) throw new NotFoundException('ملف الصورة غير موجود.');
+    return abs;
+  }
+
   // ─── Suppliers CRUD ───────────────────────────────────────────────────────
 
-  async getSuppliers(tenantId: string) {
-    if (!tenantId) return [];
+  async getSuppliers(tenantId: string, companyId: string) {
+    if (!tenantId || !companyId) return [];
     return this.prisma.ocrSupplier.findMany({
-      where: { tenantId },
+      where: { tenantId, companyId },
       include: { aliases: true, _count: { select: { invoices: true } } },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async createSupplier(tenantId: string, dto: CreateOcrSupplierDto) {
+  async createSupplier(tenantId: string, companyId: string, dto: CreateOcrSupplierDto) {
     return this.prisma.ocrSupplier.create({
-      data: { tenantId, ...dto },
+      data: { tenantId, companyId, ...dto },
     });
   }
 
-  async updateSupplier(tenantId: string, id: string, dto: Partial<CreateOcrSupplierDto>) {
+  async updateSupplier(tenantId: string, companyId: string, id: string, dto: Partial<CreateOcrSupplierDto>) {
+    const row = await this.prisma.ocrSupplier.findFirst({ where: { id, tenantId, companyId } });
+    if (!row) throw new NotFoundException('المورد غير موجود.');
     return this.prisma.ocrSupplier.update({
-      where: { id, tenantId },
+      where: { id },
       data: dto,
     });
   }
 
-  async deleteSupplier(tenantId: string, id: string) {
-    return this.prisma.ocrSupplier.delete({ where: { id, tenantId } });
+  async deleteSupplier(tenantId: string, companyId: string, id: string) {
+    const row = await this.prisma.ocrSupplier.findFirst({ where: { id, tenantId, companyId } });
+    if (!row) throw new NotFoundException('المورد غير موجود.');
+    return this.prisma.ocrSupplier.delete({ where: { id } });
   }
 
   // ─── Items CRUD ───────────────────────────────────────────────────────────
 
-  async getItems(tenantId: string) {
-    if (!tenantId) return [];
+  async getItems(tenantId: string, companyId: string) {
+    if (!tenantId || !companyId) return [];
     return this.prisma.ocrItem.findMany({
-      where: { tenantId },
+      where: { tenantId, companyId },
       include: { aliases: true, _count: { select: { priceHistory: true } } },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async createItem(tenantId: string, dto: CreateOcrItemDto) {
+  async createItem(tenantId: string, companyId: string, dto: CreateOcrItemDto) {
     return this.prisma.ocrItem.create({
-      data: { tenantId, ...dto },
+      data: { tenantId, companyId, ...dto },
     });
   }
 
-  async updateItem(tenantId: string, id: string, dto: Partial<CreateOcrItemDto>) {
+  async updateItem(tenantId: string, companyId: string, id: string, dto: Partial<CreateOcrItemDto>) {
+    const row = await this.prisma.ocrItem.findFirst({ where: { id, tenantId, companyId } });
+    if (!row) throw new NotFoundException('الصنف غير موجود.');
     return this.prisma.ocrItem.update({
-      where: { id, tenantId },
+      where: { id },
       data: dto,
     });
   }
 
-  async deleteItem(tenantId: string, id: string) {
-    return this.prisma.ocrItem.delete({ where: { id, tenantId } });
+  async deleteItem(tenantId: string, companyId: string, id: string) {
+    const row = await this.prisma.ocrItem.findFirst({ where: { id, tenantId, companyId } });
+    if (!row) throw new NotFoundException('الصنف غير موجود.');
+    return this.prisma.ocrItem.delete({ where: { id } });
   }
 
   /**
    * يبحث عن أصناف مكررة (تشابه ≥ 0.78 بعد التطبيع الذكي).
    * يُرجع مجموعات الأصناف المتشابهة مع درجة التشابه.
    */
-  async findDuplicateItems(tenantId: string) {
-    if (!tenantId) return [];
+  async findDuplicateItems(tenantId: string, companyId: string) {
+    if (!tenantId || !companyId) return [];
     const items = await this.prisma.ocrItem.findMany({
-      where: { tenantId },
+      where: { tenantId, companyId },
       include: { aliases: true, _count: { select: { priceHistory: true, lines: true } } },
     });
 
@@ -867,12 +1140,12 @@ export class OcrInvoicesService {
   /**
    * يدمج صنفَين — يُبقي على الـ canonical (الأساسي) وينقل كل البيانات من المكرر إليه ثم يحذف المكرر.
    */
-  async mergeItems(tenantId: string, keepId: string, mergeId: string) {
+  async mergeItems(tenantId: string, companyId: string, keepId: string, mergeId: string) {
     if (keepId === mergeId) throw new Error('Cannot merge item with itself');
 
     const [keep, dup] = await Promise.all([
-      this.prisma.ocrItem.findUnique({ where: { id: keepId, tenantId } }),
-      this.prisma.ocrItem.findUnique({ where: { id: mergeId, tenantId } }),
+      this.prisma.ocrItem.findFirst({ where: { id: keepId, tenantId, companyId } }),
+      this.prisma.ocrItem.findFirst({ where: { id: mergeId, tenantId, companyId } }),
     ]);
     if (!keep || !dup) throw new Error('Item not found');
 
@@ -898,9 +1171,11 @@ export class OcrInvoicesService {
     return { merged: mergeId, into: keepId };
   }
 
-  async getItemPriceHistory(tenantId: string, itemId: string) {
+  async getItemPriceHistory(tenantId: string, companyId: string, itemId: string) {
+    const item = await this.prisma.ocrItem.findFirst({ where: { id: itemId, tenantId, companyId } });
+    if (!item) throw new NotFoundException('الصنف غير موجود.');
     return this.prisma.ocrPriceHistory.findMany({
-      where: { tenantId, itemId },
+      where: { tenantId, companyId, itemId },
       include: { supplier: { select: { id: true, nameAr: true } } },
       orderBy: { invoiceDate: 'desc' },
     });
@@ -908,10 +1183,10 @@ export class OcrInvoicesService {
 
   // ─── Invoices CRUD ────────────────────────────────────────────────────────
 
-  async getInvoices(tenantId: string) {
-    if (!tenantId) return [];
+  async getInvoices(tenantId: string, companyId: string) {
+    if (!tenantId || !companyId) return [];
     return this.prisma.ocrInvoice.findMany({
-      where: { tenantId },
+      where: { tenantId, companyId },
       include: {
         supplier: { select: { id: true, nameAr: true } },
         lines: { include: { item: { select: { id: true, nameAr: true } } } },
@@ -920,21 +1195,106 @@ export class OcrInvoicesService {
     });
   }
 
-  async saveInvoice(tenantId: string, dto: SaveInvoiceDto) {
-    const { lines, invoiceDate, totalAmount, vatAmount, supplierName, ...invoiceData } = dto;
+  async getInvoiceById(tenantId: string, companyId: string, id: string) {
+    const inv = await this.prisma.ocrInvoice.findFirst({
+      where: { id, tenantId, companyId },
+      include: {
+        supplier: { select: { id: true, nameAr: true, taxNumber: true } },
+        lines: { include: { item: { select: { id: true, nameAr: true } } } },
+        submittedBy: { select: { id: true, nameAr: true, email: true } },
+        linkedPurchaseInvoice: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            totalAmount: true,
+            transactionDate: true,
+            kind: true,
+          },
+        },
+      },
+    });
+    if (!inv) throw new NotFoundException('الفاتورة غير موجودة.');
+    return inv;
+  }
+
+  /**
+   * اقتراح موردي المحاسبة لمطابقة مورد OCR (اسم / الرقم الضريبي).
+   */
+  async getAccountingSupplierSuggestions(
+    tenantId: string,
+    companyId: string,
+    opts: { ocrSupplierId?: string; q?: string; limit?: number },
+  ) {
+    const limit = Math.min(Math.max(opts.limit ?? 12, 1), 40);
+    let needleAr = (opts.q || '').trim();
+    let needleEn = '';
+    let taxDigits: string | null = null;
+    if (opts.ocrSupplierId) {
+      const o = await this.prisma.ocrSupplier.findFirst({
+        where: { id: opts.ocrSupplierId, tenantId, companyId },
+        select: { nameAr: true, nameEn: true, taxNumber: true },
+      });
+      if (o) {
+        if (!needleAr) needleAr = o.nameAr || '';
+        needleEn = (o.nameEn || '').trim();
+        const raw = o.taxNumber?.replace(/\D/g, '') || '';
+        taxDigits = raw.length >= 9 ? raw : null;
+      }
+    }
+    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+    const na = norm(needleAr);
+    const ne = norm(needleEn);
+    if (!na && !ne && !taxDigits) return [];
+
+    const suppliers = await this.prisma.supplier.findMany({
+      where: { tenantId, companyId, isDeleted: false },
+      select: { id: true, nameAr: true, nameEn: true, taxNumber: true },
+      take: 400,
+    });
+
+    const scored = suppliers.map((s) => {
+      let score = 0;
+      const ar = norm(s.nameAr);
+      const en = s.nameEn ? norm(s.nameEn) : '';
+      const stax = s.taxNumber?.replace(/\D/g, '') || '';
+      if (taxDigits && stax && stax === taxDigits) score += 120;
+      if (na && ar === na) score += 80;
+      else if (na.length >= 2 && ar.includes(na)) score += 50;
+      else if (na.length >= 2 && na.slice(0, 12).length && ar.includes(na.slice(0, 12))) score += 28;
+      if (ne.length >= 2 && en.includes(ne)) score += 35;
+      return { id: s.id, nameAr: s.nameAr, nameEn: s.nameEn, taxNumber: s.taxNumber, score };
+    });
+
+    return scored
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(({ score, ...rest }) => ({ ...rest, matchScore: score }));
+  }
+
+  async saveInvoice(tenantId: string, companyId: string, dto: SaveInvoiceDto, caller?: OcrSaveInvoiceCaller) {
+    if (dto.purchase && !dto.id) {
+      throw new BadRequestException('ربط فاتورة مشتريات متاح فقط عند اعتماد فاتورة من المراجعة (معرّف السجل).');
+    }
+    if (dto.id) {
+      return this.finalizePendingReviewInvoice(tenantId, companyId, dto, caller);
+    }
+
+    const { lines, invoiceDate, totalAmount, vatAmount, supplierName, purchase: _purchase, ...invoiceData } = dto;
+    void _purchase;
 
     // ── 1. إنشاء المورد تلقائياً إذا لم يكن موجوداً ───────────────────────
     let supplierId = invoiceData.supplierId || null;
     if (!supplierId && supplierName?.trim()) {
       // تحقق أولاً إذا كان المورد موجوداً بنفس الاسم لتجنب التكرار
       const existing = await this.prisma.ocrSupplier.findFirst({
-        where: { tenantId, nameAr: supplierName.trim() },
+        where: { tenantId, companyId, nameAr: supplierName.trim() },
       });
       if (existing) {
         supplierId = existing.id;
       } else {
         const newSupplier = await this.prisma.ocrSupplier.create({
-          data: { tenantId, nameAr: supplierName.trim() },
+          data: { tenantId, companyId, nameAr: supplierName.trim() },
         });
         supplierId = newSupplier.id;
         this.logger.log(`Auto-created OCR supplier: ${supplierName} (${newSupplier.id})`);
@@ -944,7 +1304,7 @@ export class OcrInvoicesService {
     // ── 2. إنشاء الأصناف تلقائياً لكل سطر ليس له itemId ─────────────────
     // جلب جميع الأصناف مرة واحدة للمطابقة الذكية (بدلاً من استعلام لكل سطر)
     const allCatalogItems = await this.prisma.ocrItem.findMany({
-      where: { tenantId },
+      where: { tenantId, companyId },
       include: { aliases: true },
     });
 
@@ -993,6 +1353,7 @@ export class OcrInvoicesService {
             const newItem = await this.prisma.ocrItem.create({
               data: {
                 tenantId,
+                companyId,
                 nameAr:   cleanAr,
                 nameEn:   cleanEn,
                 hasSizes: !!lineSize,
@@ -1024,6 +1385,7 @@ export class OcrInvoicesService {
     const invoice = await this.prisma.ocrInvoice.create({
       data: {
         tenantId,
+        companyId,
         supplierId,
         invoiceNumber:  invoiceData.invoiceNumber  || null,
         imageUrl:       invoiceData.imageUrl        || null,
@@ -1033,7 +1395,7 @@ export class OcrInvoicesService {
         totalAmount:    totalAmount ? totalAmount   : null,
         vatAmount:      vatAmount   ? vatAmount     : null,
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
-        status: 'confirmed',
+        status: OcrInvoiceStatus.CONFIRMED,
         lines: {
           create: processedLines.map((l) => ({
             rawName:     l.rawName,
@@ -1101,6 +1463,7 @@ export class OcrInvoicesService {
           await this.prisma.ocrPriceHistory.create({
             data: {
               tenantId,
+              companyId,
               itemId:      line.itemId,
               supplierId,
               price:       normalizedPrice,
@@ -1117,51 +1480,325 @@ export class OcrInvoicesService {
     return invoice;
   }
 
-  async confirmInvoice(tenantId: string, id: string, status: string) {
+  /** اعتماد فاتورة كانت بانتظار المراجعة بعد تعديل المحاسب — نفس منطق saveInvoice على نفس السجل */
+  private async finalizePendingReviewInvoice(
+    tenantId: string,
+    companyId: string,
+    dto: SaveInvoiceDto,
+    caller?: OcrSaveInvoiceCaller,
+  ) {
+    const { id, lines, invoiceDate, totalAmount, vatAmount, supplierName, purchase, ...invoiceData } = dto;
+    if (!id) throw new BadRequestException('معرف الفاتورة مطلوب للاعتماد.');
+
+    const existing = await this.prisma.ocrInvoice.findFirst({
+      where: { id, tenantId, companyId },
+    });
+    if (!existing) throw new NotFoundException('الفاتورة غير موجودة.');
+    if (existing.status !== OcrInvoiceStatus.PENDING_REVIEW) {
+      throw new BadRequestException('يمكن اعتماد الفواتير في حالة «بانتظار المراجعة» فقط.');
+    }
+    if (purchase && existing.linkedPurchaseInvoiceId) {
+      throw new BadRequestException('هذه الفاتورة مرتبطة بفاتورة مشتريات محاسبية مسبقاً.');
+    }
+    if (purchase) {
+      if (!caller?.userId) {
+        throw new BadRequestException('تعذّر تحديد المستخدم لإنشاء فاتورة المشتريات.');
+      }
+      const canPurchase =
+        hasPermission(caller.role || '', PERMISSIONS.PURCHASES_WRITE, caller.permissions) ||
+        hasPermission(caller.role || '', PERMISSIONS.INVOICES_WRITE, caller.permissions);
+      if (!canPurchase) {
+        throw new ForbiddenException('لا تملك صلاحية تسجيل مشتريات محاسبية من اعتماد OCR.');
+      }
+      const totalNum =
+        totalAmount != null ? Number(totalAmount) : Number(existing.totalAmount ?? 0);
+      if (!totalNum || totalNum <= 0) {
+        throw new BadRequestException('المبلغ الإجمالي مطلوب ويجب أن يكون أكبر من صفر لتسجيل فاتورة المشتريات.');
+      }
+      const isTaxable = purchase.isTaxable !== false;
+      const supplierInvNo =
+        purchase.supplierInvoiceNumber?.trim() ||
+        (invoiceData.invoiceNumber as string | undefined)?.trim() ||
+        existing.invoiceNumber?.trim() ||
+        undefined;
+      if (isTaxable && !supplierInvNo) {
+        throw new BadRequestException('رقم فاتورة المورد مطلوب عند تسجيل مشترٍ خاضع للضريبة.');
+      }
+      const accSup = await this.prisma.supplier.findFirst({
+        where: { id: purchase.accountingSupplierId, tenantId, companyId, isDeleted: false },
+      });
+      if (!accSup) throw new BadRequestException('مورد المحاسبة غير موجود أو غير نشط.');
+      const vaulted = await this.prisma.vault.findFirst({
+        where: { id: purchase.vaultId, tenantId, companyId },
+      });
+      if (!vaulted) throw new BadRequestException('الخزنة غير موجودة لهذه الشركة.');
+    }
+
+    let supplierId = invoiceData.supplierId || null;
+    if (!supplierId && supplierName?.trim()) {
+      const sup = await this.prisma.ocrSupplier.findFirst({
+        where: { tenantId, companyId, nameAr: supplierName.trim() },
+      });
+      if (sup) supplierId = sup.id;
+      else {
+        const newSupplier = await this.prisma.ocrSupplier.create({
+          data: { tenantId, companyId, nameAr: supplierName.trim() },
+        });
+        supplierId = newSupplier.id;
+      }
+    }
+
+    const allCatalogItems = await this.prisma.ocrItem.findMany({
+      where: { tenantId, companyId },
+      include: { aliases: true },
+    });
+
+    const processedLines = await Promise.all(
+      lines.map(async (line) => {
+        let itemId = line.itemId || null;
+        if (!itemId && line.rawName?.trim()) {
+          const lineExt = line as {
+            nameAr?: string; nameEn?: string;
+            size?: string;   sizeUnit?: string;
+          };
+          const nameAr   = lineExt.nameAr?.trim()   || null;
+          const nameEn   = lineExt.nameEn?.trim()   || null;
+          const lineSize = lineExt.size              || null;
+          let searchName: string;
+          if (nameAr || nameEn) {
+            searchName = nameAr || nameEn!;
+          } else {
+            const extracted = normalizeItemForSearch(line.rawName.trim());
+            searchName = extracted.ar || extracted.en || line.rawName.trim();
+          }
+          const matchResult = findBestItemMatch(searchName, allCatalogItems);
+          if (matchResult && matchResult.score >= 0.78) {
+            itemId = matchResult.item.id;
+            if (lineSize) {
+              await this.prisma.ocrItem.update({
+                where: { id: itemId },
+                data: { hasSizes: true },
+              }).catch(() => {});
+            }
+          } else {
+            const cleanAr = nameAr || (normalizeItemForSearch(line.rawName.trim()).ar) || line.rawName.trim();
+            const cleanEn = nameEn || (normalizeItemForSearch(line.rawName.trim()).en) || null;
+            const newItem = await this.prisma.ocrItem.create({
+              data: {
+                tenantId,
+                companyId,
+                nameAr:   cleanAr,
+                nameEn:   cleanEn,
+                hasSizes: !!lineSize,
+              },
+            });
+            itemId = newItem.id;
+            const rawTrimmed = line.rawName.trim();
+            if (rawTrimmed !== cleanAr) {
+              await this.prisma.ocrItemAlias.create({
+                data: { itemId, alias: rawTrimmed, language: 'ar', addedBy: 'ocr-auto' },
+              }).catch(() => {});
+            }
+            allCatalogItems.push({ ...newItem, nameEn: cleanEn, hasSizes: !!lineSize, aliases: [] });
+          }
+        }
+        return {
+          ...line,
+          itemId,
+          matchStatus: itemId && line.itemId ? (line.matchStatus || 'matched') : itemId ? 'new' : 'pending',
+        };
+      }),
+    );
+
+    const invoice = await this.prisma.ocrInvoice.update({
+      where: { id },
+      data: {
+        supplierId,
+        invoiceNumber:  invoiceData.invoiceNumber  || null,
+        imageUrl:       invoiceData.imageUrl        ?? existing.imageUrl,
+        rawExtraction:  invoiceData.rawExtraction ? (invoiceData.rawExtraction as object) : undefined,
+        notes:          invoiceData.notes           ?? null,
+        subtotalAmount: (invoiceData as { subtotalAmount?: number }).subtotalAmount || null,
+        totalAmount:    totalAmount ? totalAmount   : null,
+        vatAmount:      vatAmount   ? vatAmount     : null,
+        invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
+        status: OcrInvoiceStatus.CONFIRMED,
+        lines: {
+          deleteMany: {},
+          create: processedLines.map((l) => ({
+            rawName:     l.rawName,
+            nameAr:      (l as { nameAr?: string }).nameAr || null,
+            nameEn:      (l as { nameEn?: string }).nameEn || null,
+            size:        (l as { size?: string }).size || null,
+            sizeUnit:    (l as { sizeUnit?: string }).sizeUnit || null,
+            itemId:      l.itemId || null,
+            quantity:    l.quantity ? l.quantity : null,
+            unitPrice:   l.unitPrice ? l.unitPrice : null,
+            totalPrice:  l.totalPrice ? l.totalPrice : null,
+            confidence:  l.confidence ?? 0,
+            matchStatus: l.matchStatus,
+          })),
+        },
+      },
+      include: { lines: true },
+    });
+
+    if (supplierId && invoiceDate) {
+      const lineSum = processedLines.reduce((s, l) => {
+        const up = Number(l.unitPrice) || 0;
+        const qty = Number(l.quantity)  || 1;
+        return s + up * qty;
+      }, 0);
+      const invoiceExt = invoiceData as { subtotalAmount?: number };
+      const subTotal   = invoiceExt.subtotalAmount ? Number(invoiceExt.subtotalAmount) : null;
+      const grandTotal = totalAmount ? Number(totalAmount) : null;
+      const vatAmt     = vatAmount   ? Number(vatAmount)   : null;
+      const impliedVatRate: number = (() => {
+        if (vatAmt && subTotal && subTotal > 0) return vatAmt / subTotal;
+        if (vatAmt && grandTotal && grandTotal > vatAmt) return vatAmt / (grandTotal - vatAmt);
+        return 0.15;
+      })();
+      let normFactor = 1.0;
+      if (vatAmt && vatAmt > 0 && lineSum > 0) {
+        if (subTotal && grandTotal) {
+          const diffFromSubtotal = Math.abs(lineSum - subTotal) / subTotal;
+          const diffFromTotal    = Math.abs(lineSum - grandTotal) / grandTotal;
+          if (diffFromTotal < diffFromSubtotal && diffFromTotal < 0.06) {
+            normFactor = 1 / (1 + impliedVatRate);
+          }
+        } else if (grandTotal) {
+          const diffFromTotal = Math.abs(lineSum - grandTotal) / grandTotal;
+          if (diffFromTotal < 0.06) normFactor = 1 / (1 + impliedVatRate);
+        }
+      }
+      for (const line of processedLines) {
+        if (line.itemId && line.unitPrice) {
+          const normalizedPrice = Math.round(Number(line.unitPrice) * normFactor * 1000) / 1000;
+          await this.prisma.ocrPriceHistory.create({
+            data: {
+              tenantId,
+              companyId,
+              itemId:      line.itemId,
+              supplierId,
+              price:       normalizedPrice,
+              size:        (line as { size?: string }).size     || null,
+              sizeUnit:    (line as { sizeUnit?: string }).sizeUnit || null,
+              invoiceDate: new Date(invoiceDate),
+              invoiceId:   invoice.id,
+            },
+          });
+        }
+      }
+    }
+
+    if (purchase && caller?.userId) {
+      const totalNum =
+        totalAmount != null ? Number(totalAmount) : Number(existing.totalAmount ?? 0);
+      const isTaxable = purchase.isTaxable !== false;
+      const supplierInvNo =
+        purchase.supplierInvoiceNumber?.trim() ||
+        (invoiceData.invoiceNumber as string | undefined)?.trim() ||
+        existing.invoiceNumber?.trim() ||
+        undefined;
+      let invDateStr: string | undefined;
+      if (invoiceDate) {
+        invDateStr =
+          typeof invoiceDate === 'string'
+            ? invoiceDate.slice(0, 10)
+            : new Date(invoiceDate as unknown as string).toISOString().slice(0, 10);
+      } else if (existing.invoiceDate) {
+        invDateStr = existing.invoiceDate.toISOString().slice(0, 10);
+      }
+      const noteParts = [`OCR:${id}`, invoiceData.notes as string | undefined].filter(Boolean) as string[];
+      const notesJoined = noteParts.join(' — ').slice(0, 2000);
+
+      const createDto: CreateInvoiceDto = {
+        companyId,
+        supplierId: purchase.accountingSupplierId,
+        kind: 'purchase',
+        totalAmount: totalNum,
+        transactionDate: purchase.transactionDate.slice(0, 10),
+        invoiceDate: invDateStr,
+        vaultId: purchase.vaultId,
+        supplierInvoiceNumber: supplierInvNo,
+        isTaxable,
+        notes: notesJoined,
+        idempotencyKey: `ocr-purchase-${id}`,
+      };
+
+      const raw = await this.invoiceService.createWithLedger(createDto, caller.userId);
+      await this.prisma.ocrInvoice.update({
+        where: { id: invoice.id },
+        data: { linkedPurchaseInvoiceId: raw.invoice.id },
+      });
+    }
+
+    return this.prisma.ocrInvoice.findFirst({
+      where: { id: invoice.id, tenantId, companyId },
+      include: {
+        supplier: { select: { id: true, nameAr: true, taxNumber: true } },
+        lines: { include: { item: { select: { id: true, nameAr: true } } } },
+        submittedBy: { select: { id: true, nameAr: true, email: true } },
+        linkedPurchaseInvoice: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            totalAmount: true,
+            transactionDate: true,
+            kind: true,
+          },
+        },
+      },
+    });
+  }
+
+  async confirmInvoice(tenantId: string, companyId: string, id: string, status: string) {
+    const row = await this.prisma.ocrInvoice.findFirst({ where: { id, tenantId, companyId } });
+    if (!row) throw new NotFoundException('الفاتورة غير موجودة.');
     return this.prisma.ocrInvoice.update({
-      where: { id, tenantId },
+      where: { id },
       data: { status },
     });
   }
 
-  async bulkDeleteInvoices(tenantId: string, ids: string[]) {
+  async bulkDeleteInvoices(tenantId: string, companyId: string, ids: string[]) {
     if (!ids?.length) return { count: 0 };
     const result = await this.prisma.ocrInvoice.deleteMany({
-      where: { id: { in: ids }, tenantId },
+      where: { id: { in: ids }, tenantId, companyId },
     });
     return { count: result.count };
   }
 
-  async bulkDeleteSuppliers(tenantId: string, ids: string[]) {
+  async bulkDeleteSuppliers(tenantId: string, companyId: string, ids: string[]) {
     if (!ids?.length) return { count: 0 };
     const result = await this.prisma.ocrSupplier.deleteMany({
-      where: { id: { in: ids }, tenantId },
+      where: { id: { in: ids }, tenantId, companyId },
     });
     return { count: result.count };
   }
 
-  async bulkDeleteItems(tenantId: string, ids: string[]) {
+  async bulkDeleteItems(tenantId: string, companyId: string, ids: string[]) {
     if (!ids?.length) return { count: 0 };
     const result = await this.prisma.ocrItem.deleteMany({
-      where: { id: { in: ids }, tenantId },
+      where: { id: { in: ids }, tenantId, companyId },
     });
     return { count: result.count };
   }
 
-  async bulkDeletePriceHistory(tenantId: string, itemIds: string[]) {
+  async bulkDeletePriceHistory(tenantId: string, companyId: string, itemIds: string[]) {
     if (!itemIds?.length) return { count: 0 };
     const result = await this.prisma.ocrPriceHistory.deleteMany({
-      where: { itemId: { in: itemIds }, tenantId },
+      where: { itemId: { in: itemIds }, tenantId, companyId },
     });
     return { count: result.count };
   }
 
   // ─── Price Alerts ─────────────────────────────────────────────────────────
 
-  async getPriceAlerts(tenantId: string) {
-    if (!tenantId) return [];
+  async getPriceAlerts(tenantId: string, companyId: string) {
+    if (!tenantId || !companyId) return [];
     const history = await this.prisma.ocrPriceHistory.findMany({
-      where: { tenantId },
+      where: { tenantId, companyId },
       include: {
         item: { select: { id: true, nameAr: true, category: true } },
         supplier: { select: { id: true, nameAr: true } },
@@ -1232,30 +1869,36 @@ export class OcrInvoicesService {
 
   // ─── Correction Rules ─────────────────────────────────────────────────────
 
-  async getCorrectionRules(tenantId: string) {
+  async getCorrectionRules(tenantId: string, companyId: string) {
     return this.prisma.ocrCorrectionRule.findMany({
-      where: { tenantId },
+      where: { tenantId, companyId },
       include: { supplier: { select: { id: true, nameAr: true } } },
       orderBy: { occurrences: 'desc' },
     });
   }
 
-  async updateCorrectionRule(tenantId: string, id: string, status: string) {
+  async updateCorrectionRule(tenantId: string, companyId: string, id: string, status: string) {
+    const row = await this.prisma.ocrCorrectionRule.findFirst({ where: { id, tenantId, companyId } });
+    if (!row) throw new NotFoundException('القاعدة غير موجودة.');
     return this.prisma.ocrCorrectionRule.update({
-      where: { id, tenantId },
+      where: { id },
       data: { status },
     });
   }
 
   // ─── Aliases ──────────────────────────────────────────────────────────────
 
-  async addSupplierAlias(tenantId: string, supplierId: string, alias: string, language = 'ar') {
+  async addSupplierAlias(tenantId: string, companyId: string, supplierId: string, alias: string, language = 'ar') {
+    const sup = await this.prisma.ocrSupplier.findFirst({ where: { id: supplierId, tenantId, companyId } });
+    if (!sup) throw new NotFoundException('المورد غير موجود.');
     return this.prisma.ocrSupplierAlias.create({
       data: { supplierId, alias, language, addedBy: 'support' },
     });
   }
 
-  async addItemAlias(tenantId: string, itemId: string, alias: string, language = 'ar') {
+  async addItemAlias(tenantId: string, companyId: string, itemId: string, alias: string, language = 'ar') {
+    const it = await this.prisma.ocrItem.findFirst({ where: { id: itemId, tenantId, companyId } });
+    if (!it) throw new NotFoundException('الصنف غير موجود.');
     return this.prisma.ocrItemAlias.create({
       data: { itemId, alias, language, addedBy: 'support' },
     });

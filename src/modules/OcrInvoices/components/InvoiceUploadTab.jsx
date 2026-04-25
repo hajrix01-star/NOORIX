@@ -1,7 +1,21 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { useApp } from '../../../context/AppContext';
+import { useAuth } from '../../../context/AuthContext';
+import { hasPermission, PERMISSIONS } from '../../../constants/permissions';
+import { getSaudiToday } from '../../../utils/saudiDate';
 import { Button, Input } from '../../../ui';
-import { extractInvoice, saveOcrInvoice } from '../services/ocrApi';
+import { getAuthToken, getActiveCompanyId } from '../../../services/authStore';
+import { getApiBaseUrl, getVaults } from '../../../services/api';
+import {
+  extractInvoice,
+  getOcrAccountingSupplierSuggestions,
+  getOcrInvoice,
+  saveOcrInvoice,
+} from '../services/ocrApi';
+import { invoicesHrefForLinkedPurchase } from '../utils/ledgerInvoiceLink';
 
 const CONFIDENCE_COLOR = (c) => {
   if (c >= 0.9) return 'var(--noorix-accent-green)';
@@ -15,8 +29,20 @@ const STATUS_BADGE = {
   new:     { bg: '#fee2e2', color: 'var(--noorix-accent-red)', label: { ar: 'جديد', en: 'New' } },
 };
 
-export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
+function revokePreviewUrl(url) {
+  if (url && String(url).startsWith('blob:')) {
+    try {
+      URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInvoiceId, onPrefillConsumed }) {
   const { t, lang: language } = useTranslation();
+  const { activeCompanyId } = useApp();
+  const { user } = useAuth();
   const [dragging, setDragging]   = useState(false);
   const [preview, setPreview]     = useState(null);
   const [imageBase64, setBase64]  = useState(null);
@@ -27,7 +53,135 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState(null);
   const [success, setSuccess]       = useState(false);
+  /** عند فتح فاتورة من طابور المراجعة — يُمرَّر إلى saveOcrInvoice كـ id للاعتماد */
+  const [finalizeOcrId, setFinalizeOcrId] = useState(null);
+  const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState(null);
+  const [createLinkedPurchase, setCreateLinkedPurchase] = useState(false);
+  const [transactionDate, setTransactionDate] = useState(() => getSaudiToday());
+  const [accountingSupplierId, setAccountingSupplierId] = useState('');
+  const [vaultId, setVaultId] = useState('');
+  const [purchaseSupplierInvoiceNumber, setPurchaseSupplierInvoiceNumber] = useState('');
+  const [isPurchaseTaxable, setIsPurchaseTaxable] = useState(true);
+  const [prefillLinkedPurchase, setPrefillLinkedPurchase] = useState(null);
+  const [postSaveLinkedPurchase, setPostSaveLinkedPurchase] = useState(null);
+  const [prefillLoading, setPrefillLoading] = useState(false);
   const fileRef = useRef();
+
+  const canCreatePurchase = useMemo(() => {
+    const role = user?.role;
+    const perms = user?.permissions;
+    return (
+      hasPermission(role, PERMISSIONS.PURCHASES_WRITE, perms) ||
+      hasPermission(role, PERMISSIONS.INVOICES_WRITE, perms)
+    );
+  }, [user?.role, user?.permissions]);
+
+  const supplierNameForSuggest = (extracted?.supplier?.name || '').trim().slice(0, 120);
+
+  const { data: vaultRows = [] } = useQuery({
+    queryKey: ['vaults', activeCompanyId, 'ocr-finalize'],
+    enabled: !!activeCompanyId && !!finalizeOcrId && createLinkedPurchase && canCreatePurchase,
+    queryFn: async () => {
+      const r = await getVaults(activeCompanyId, false);
+      return r.success && Array.isArray(r.data) ? r.data : [];
+    },
+  });
+
+  const { data: accSuggestions = [] } = useQuery({
+    queryKey: [
+      'ocr-accounting-supplier-suggestions',
+      activeCompanyId,
+      prefillOcrSupplierId || '',
+      supplierNameForSuggest,
+    ],
+    enabled:
+      !!activeCompanyId &&
+      !!finalizeOcrId &&
+      createLinkedPurchase &&
+      canCreatePurchase &&
+      (!!prefillOcrSupplierId || supplierNameForSuggest.length >= 2),
+    queryFn: async () => {
+      const r = prefillOcrSupplierId
+        ? await getOcrAccountingSupplierSuggestions({ ocrSupplierId: prefillOcrSupplierId })
+        : await getOcrAccountingSupplierSuggestions({ q: supplierNameForSuggest });
+      return r.success && Array.isArray(r.data) ? r.data : [];
+    },
+  });
+
+  useEffect(() => {
+    if (!prefillInvoiceId) return;
+    let cancelled = false;
+    setPrefillLoading(true);
+    setError(null);
+    (async () => {
+      try {
+        const r = await getOcrInvoice(prefillInvoiceId);
+        if (cancelled) return;
+        if (!r.success || !r.data) {
+          setError(r.error || t('ocrExtractFailed'));
+          onPrefillConsumed?.();
+          return;
+        }
+        const inv = r.data;
+        const raw = inv.rawExtraction;
+        if (raw && typeof raw === 'object') {
+          setExtracted(raw);
+          setEditItems(null);
+        } else {
+          setError(
+            language === 'ar'
+              ? 'لا توجد بيانات استخراج محفوظة لهذه الفاتورة.'
+              : 'No saved extraction for this invoice.',
+          );
+          onPrefillConsumed?.();
+          return;
+        }
+        setFinalizeOcrId(prefillInvoiceId);
+        setPrefillLinkedPurchase(
+          inv.linkedPurchaseInvoice?.id ? inv.linkedPurchaseInvoice : null,
+        );
+        setPrefillOcrSupplierId(inv.supplierId || null);
+        setPurchaseSupplierInvoiceNumber(
+          String(inv.invoiceNumber || raw?.invoiceNumber?.value || '').trim(),
+        );
+        setTransactionDate(getSaudiToday());
+        setCreateLinkedPurchase(false);
+        setAccountingSupplierId('');
+        setVaultId('');
+        const imgUrl = new URL(
+          `/api/v1/ocr/invoices/${encodeURIComponent(prefillInvoiceId)}/image`,
+          getApiBaseUrl(),
+        );
+        const res = await fetch(imgUrl.toString(), {
+          headers: {
+            Authorization: `Bearer ${getAuthToken() || ''}`,
+            'x-company-id': String(getActiveCompanyId() || ''),
+          },
+        });
+        if (cancelled) return;
+        if (res.ok) {
+          const blob = await res.blob();
+          if (cancelled) return;
+          setPreview((prev) => {
+            revokePreviewUrl(prev);
+            return URL.createObjectURL(blob);
+          });
+          setMimeType(blob.type || 'image/jpeg');
+        }
+        setBase64(null);
+      } catch {
+        if (!cancelled) setError(t('ocrExtractFailed'));
+      } finally {
+        if (!cancelled) {
+          setPrefillLoading(false);
+          onPrefillConsumed?.();
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [prefillInvoiceId, onPrefillConsumed, t, language]);
 
   // الأصناف الفعلية = التعديل إن وجد أو الأصل
   const activeItems = editItems ?? extracted?.items ?? [];
@@ -94,10 +248,22 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
         canvas.height = height;
         canvas.getContext('2d').drawImage(img, 0, 0, width, height);
         const compressed = canvas.toDataURL('image/jpeg', 0.82);
-        setPreview(compressed);
+        setPreview((prev) => {
+          revokePreviewUrl(prev);
+          return compressed;
+        });
         setBase64(compressed.split(',')[1]);
         setMimeType('image/jpeg');
         setExtracted(null);
+        setFinalizeOcrId(null);
+        setPrefillLinkedPurchase(null);
+        setPostSaveLinkedPurchase(null);
+        setPrefillOcrSupplierId(null);
+        setCreateLinkedPurchase(false);
+        setAccountingSupplierId('');
+        setVaultId('');
+        setPurchaseSupplierInvoiceNumber('');
+        setTransactionDate(getSaudiToday());
         setError(null);
         setSuccess(false);
       };
@@ -144,6 +310,33 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
   const handleSave = async () => {
     if (!extracted) return;
+    if (createLinkedPurchase && finalizeOcrId && canCreatePurchase) {
+      if (!accountingSupplierId) {
+        setError(language === 'ar' ? 'اختر مورد المحاسبة.' : 'Select an accounting supplier.');
+        return;
+      }
+      if (!vaultId) {
+        setError(language === 'ar' ? 'اختر الخزنة.' : 'Select a vault.');
+        return;
+      }
+      if (!transactionDate?.trim()) {
+        setError(language === 'ar' ? 'أدخل تاريخ العملية.' : 'Enter transaction date.');
+        return;
+      }
+      if (
+        isPurchaseTaxable &&
+        !purchaseSupplierInvoiceNumber?.trim() &&
+        !extracted.invoiceNumber?.value &&
+        !extracted.invoiceNumber
+      ) {
+        setError(
+          language === 'ar'
+            ? 'رقم فاتورة المورد مطلوب للمشتريات الخاضعة للضريبة.'
+            : 'Supplier invoice number is required for taxable purchases.',
+        );
+        return;
+      }
+    }
     setSaving(true);
     setError(null);
     try {
@@ -162,6 +355,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
       }));
 
       const payload = {
+        ...(finalizeOcrId ? { id: finalizeOcrId } : {}),
         supplierId:     extracted.supplierMatch?.id || null,
         supplierName:   !extracted.supplierMatch?.id ? (extracted.supplier?.name || null) : null,
         invoiceNumber:  extracted.invoiceNumber?.value || null,
@@ -169,22 +363,51 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
         subtotalAmount: extracted.subtotalAmount?.value || null,
         totalAmount:    extracted.totalAmount?.value || null,
         vatAmount:      extracted.vatAmount?.value || null,
-        imageUrl:       preview || null,
+        imageUrl:       preview && !String(preview).startsWith('blob:') ? preview : null,
         rawExtraction:  extracted,
         lines,
+        ...(createLinkedPurchase && finalizeOcrId && canCreatePurchase
+          ? {
+              purchase: {
+                accountingSupplierId,
+                transactionDate: transactionDate.slice(0, 10),
+                vaultId,
+                isTaxable: isPurchaseTaxable,
+                ...(purchaseSupplierInvoiceNumber.trim()
+                  ? { supplierInvoiceNumber: purchaseSupplierInvoiceNumber.trim() }
+                  : {}),
+              },
+            }
+          : {}),
       };
 
       const res = await saveOcrInvoice(payload);
       if (res.success) {
+        const lp = res.data?.linkedPurchaseInvoice;
+        const hasLedgerLink = !!(lp?.id || res.data?.linkedPurchaseInvoiceId);
         setSuccess(true);
-        onSaved?.();
+        onSaved?.({ invalidateFinancial: hasLedgerLink });
+        setPostSaveLinkedPurchase(lp?.id ? lp : null);
+        const delayMs = hasLedgerLink ? 7000 : 2000;
         setTimeout(() => {
-          setPreview(null);
+          setPreview((prev) => {
+            revokePreviewUrl(prev);
+            return null;
+          });
           setBase64(null);
           setExtracted(null);
           setEditItems(null);
+          setFinalizeOcrId(null);
+          setPrefillOcrSupplierId(null);
+          setPrefillLinkedPurchase(null);
+          setPostSaveLinkedPurchase(null);
+          setCreateLinkedPurchase(false);
+          setAccountingSupplierId('');
+          setVaultId('');
+          setPurchaseSupplierInvoiceNumber('');
+          setTransactionDate(getSaudiToday());
           setSuccess(false);
-        }, 2000);
+        }, delayMs);
       } else {
         setError(res.error || t('ocrExtractFailed'));
       }
@@ -200,6 +423,36 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
 
   return (
     <div className="flex flex-col gap-5" dir={dir}>
+
+      {prefillLoading && (
+        <div className="text-[13px] text-noorix-muted rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2">
+          {t('ocrPrefillLoading')}
+        </div>
+      )}
+
+      {prefillLinkedPurchase?.id && (
+        <div className="text-[13px] rounded-lg border border-noorix-blue/30 bg-noorix-blue/5 px-3 py-2 flex flex-wrap items-center gap-2">
+          <span className="text-noorix-text">{t('ocrLinkedPurchaseAlready')}</span>
+          <Link
+            to={invoicesHrefForLinkedPurchase(prefillLinkedPurchase)}
+            className="font-semibold text-noorix-blue underline"
+          >
+            {t('ocrLinkedPurchaseOpenList')}
+          </Link>
+        </div>
+      )}
+
+      {success && postSaveLinkedPurchase?.id && (
+        <div className="text-[13px] rounded-lg border border-noorix-accent-green/40 bg-green-50 dark:bg-green-950/25 px-3 py-2 flex flex-wrap items-center gap-2">
+          <span className="text-noorix-text">{t('ocrPurchaseRecordedLinked')}</span>
+          <Link
+            to={invoicesHrefForLinkedPurchase(postSaveLinkedPurchase)}
+            className="font-semibold text-noorix-blue underline"
+          >
+            {t('ocrLinkedPurchaseOpenList')}
+          </Link>
+        </div>
+      )}
 
       {/* Upload zone */}
       {!preview && (
@@ -223,7 +476,25 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
             <div className="flex items-center justify-between mb-3">
               <span className="font-semibold text-[14px]">{isAr ? 'صورة الفاتورة' : 'Invoice Image'}</span>
               <Button className="modal-close-btn w-7 h-7"
-                onClick={() => { setPreview(null); setBase64(null); setExtracted(null); setError(null); setEditItems(null); }}>✕</Button>
+                onClick={() => {
+                  setPreview((prev) => {
+                    revokePreviewUrl(prev);
+                    return null;
+                  });
+                  setBase64(null);
+                  setExtracted(null);
+                  setError(null);
+                  setEditItems(null);
+                  setFinalizeOcrId(null);
+                  setPrefillLinkedPurchase(null);
+                  setPostSaveLinkedPurchase(null);
+                  setPrefillOcrSupplierId(null);
+                  setCreateLinkedPurchase(false);
+                  setAccountingSupplierId('');
+                  setVaultId('');
+                  setPurchaseSupplierInvoiceNumber('');
+                  setTransactionDate(getSaudiToday());
+                }}>✕</Button>
             </div>
             <img src={preview} alt="invoice" className="w-full rounded-lg max-h-[500px] object-contain" />
             <div className="mt-3 flex gap-2 flex flex-wrap">
@@ -237,9 +508,11 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                   <Button onClick={handleSave} disabled={saving || success} variant="primary" className="flex-1 min-w-0">
                     {saving ? t('ocrSaving') : success ? t('ocrSaved') : t('ocrSaveInvoice')}
                   </Button>
-                  <Button onClick={handleExtract} disabled={loading} className="flex-1 min-w-0">
-                    {loading ? t('ocrExtracting') : (isAr ? 'إعادة استخراج' : 'Re-extract')}
-                  </Button>
+                  {!!imageBase64 && (
+                    <Button onClick={handleExtract} disabled={loading} className="flex-1 min-w-0">
+                      {loading ? t('ocrExtracting') : (isAr ? 'إعادة استخراج' : 'Re-extract')}
+                    </Button>
+                  )}
                 </>
               )}
             </div>
@@ -280,6 +553,93 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved }) {
                   </div>
                 )}
               </div>
+
+              {finalizeOcrId && (
+                <div className="noorix-surface-card p-4 border border-noorix-blue/20">
+                  <div className="font-semibold text-[14px] mb-1">{t('ocrLinkedPurchaseTitle')}</div>
+                  <p className="text-[12px] text-noorix-muted m-0 mb-3">{t('ocrLinkedPurchaseHint')}</p>
+                  {!canCreatePurchase ? (
+                    <div className="text-[12px] text-noorix-muted">{t('ocrPurchaseNoPermission')}</div>
+                  ) : (
+                    <>
+                      <label className="flex items-center gap-2 text-[13px] mb-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={createLinkedPurchase}
+                          onChange={(e) => setCreateLinkedPurchase(e.target.checked)}
+                        />
+                        <span>{t('ocrCreateLinkedPurchase')}</span>
+                      </label>
+                      {createLinkedPurchase && (
+                        <div className="flex flex-col gap-3">
+                          <label className="flex flex-col gap-1 text-[12px]">
+                            <span className="text-noorix-muted">{t('ocrTransactionDate')}</span>
+                            <Input
+                              type="date"
+                              value={transactionDate?.slice(0, 10) || ''}
+                              onChange={(e) => setTransactionDate(e.target.value)}
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1 text-[12px]">
+                            <span className="text-noorix-muted">{t('ocrVaultSelect')}</span>
+                            <select
+                              className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
+                              value={vaultId}
+                              onChange={(e) => setVaultId(e.target.value)}
+                            >
+                              <option value="">{t('ocrSelectVault')}</option>
+                              {vaultRows.map((v) => (
+                                <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="flex flex-col gap-1 text-[12px]">
+                            <span className="text-noorix-muted">
+                              {isAr ? 'مورد المحاسبة' : 'Accounting supplier'}
+                            </span>
+                            <select
+                              className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
+                              value={accountingSupplierId}
+                              onChange={(e) => setAccountingSupplierId(e.target.value)}
+                            >
+                              <option value="">{t('ocrSelectAccountingSupplier')}</option>
+                              {accSuggestions.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {(s.nameAr || '') + (s.taxNumber ? ` — ${s.taxNumber}` : '')}
+                                </option>
+                              ))}
+                            </select>
+                            {prefillOcrSupplierId && accSuggestions.length === 0 && !prefillLoading && (
+                              <span className="text-[11px] text-noorix-muted">{t('ocrPurchaseSuggestEmpty')}</span>
+                            )}
+                            {!prefillOcrSupplierId && supplierNameForSuggest.length < 2 && (
+                              <span className="text-[11px] text-noorix-muted">
+                                {isAr ? 'أضف اسم مورد أوصِل OCR بمورد لعرض الاقتراحات.' : 'Link OCR supplier or add a name for suggestions.'}
+                              </span>
+                            )}
+                          </label>
+                          <label className="flex flex-col gap-1 text-[12px]">
+                            <span className="text-noorix-muted">{t('ocrSupplierInvoiceNo')}</span>
+                            <Input
+                              value={purchaseSupplierInvoiceNumber}
+                              onChange={(e) => setPurchaseSupplierInvoiceNumber(e.target.value)}
+                              placeholder={String(extracted.invoiceNumber?.value || '')}
+                            />
+                          </label>
+                          <label className="flex items-center gap-2 text-[12px] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isPurchaseTaxable}
+                              onChange={(e) => setIsPurchaseTaxable(e.target.checked)}
+                            />
+                            <span>{t('ocrPurchaseTaxable')}</span>
+                          </label>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
 
               {warningCount > 0 && (
                 <div className="flex items-center gap-8 text-[13px] rounded-lg py-[10px] px-[14px]" style={{

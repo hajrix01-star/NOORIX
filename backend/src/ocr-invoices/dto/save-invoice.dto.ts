@@ -1,5 +1,6 @@
 import { IsString, IsOptional, IsArray, IsNumber, ValidateNested, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
+import { OcrFinalizePurchaseDto } from './ocr-finalize-purchase.dto';
 
 export class SaveInvoiceLineDto {
   @IsString()
@@ -47,6 +48,11 @@ export class SaveInvoiceLineDto {
 }
 
 export class SaveInvoiceDto {
+  /** عند التأكيد من شاشة المراجعة — تحديث نفس السجل بدل إنشاء جديد */
+  @IsOptional()
+  @IsString()
+  id?: string;
+
   @IsOptional()
   @IsString()
   supplierId?: string;
@@ -92,4 +98,10 @@ export class SaveInvoiceDto {
   @ValidateNested({ each: true })
   @Type(() => SaveInvoiceLineDto)
   lines: SaveInvoiceLineDto[];
+
+  /** فقط مع `id` (اعتماد من المراجعة) — إنشاء فاتورة مشتريات وربطها */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OcrFinalizePurchaseDto)
+  purchase?: OcrFinalizePurchaseDto;
 }

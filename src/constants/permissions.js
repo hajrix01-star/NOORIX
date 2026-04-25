@@ -84,6 +84,7 @@ export const PERMISSIONS = {
   VIEW_OCR:   'VIEW_OCR',
   OCR_READ:   'OCR_READ',
   OCR_WRITE:  'OCR_WRITE',
+  OCR_SUBMIT: 'OCR_SUBMIT',
 };
 
 /**
@@ -155,6 +156,7 @@ export const ROUTE_PERMISSION = {
   '/settings':      PERMISSIONS.MANAGE_SETTINGS,
   '/theme-preview': PERMISSIONS.VIEW_DASHBOARD,
   '/ocr':           PERMISSIONS.VIEW_OCR,
+  '/ocr/cashier':   PERMISSIONS.OCR_SUBMIT,
 };
 
 export const REDIRECT_ONLY_PATHS = new Set([

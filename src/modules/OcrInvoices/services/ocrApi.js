@@ -10,10 +10,33 @@ export async function extractInvoice(imageBase64, mimeType = 'image/jpeg') {
   return apiPost('/api/v1/ocr/extract', { imageBase64, mimeType }, { timeout: 90000 });
 }
 
+/** كاشير: إرسال صورة للاستخراج في الخلفية — لا ينتظر الاستخراج */
+export async function submitOcrSubmission(imageBase64, mimeType = 'image/jpeg') {
+  return apiPost('/api/v1/ocr/submissions', { imageBase64, mimeType }, { timeout: 120000 });
+}
+
 // ─── Invoices ─────────────────────────────────────────────────────────────
+
+export async function getOcrReviewQueue() {
+  return apiGet('/api/v1/ocr/invoices/review-queue');
+}
 
 export async function getOcrInvoices() {
   return apiGet('/api/v1/ocr/invoices');
+}
+
+export async function getOcrInvoice(id) {
+  return apiGet(`/api/v1/ocr/invoices/${encodeURIComponent(id)}`);
+}
+
+/** اقتراح موردي المحاسبة لمطابقة مورد OCR */
+export async function getOcrAccountingSupplierSuggestions({ ocrSupplierId, q, limit } = {}) {
+  const params = new URLSearchParams();
+  if (ocrSupplierId) params.set('ocrSupplierId', ocrSupplierId);
+  if (q) params.set('q', q);
+  if (limit != null) params.set('limit', String(limit));
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+  return apiGet(`/api/v1/ocr/accounting-supplier-suggestions${suffix}`);
 }
 
 export async function saveOcrInvoice(data) {

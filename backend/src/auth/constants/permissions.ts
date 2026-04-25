@@ -84,6 +84,8 @@ export const PERMISSIONS = {
   VIEW_OCR:   'VIEW_OCR',
   OCR_READ:   'OCR_READ',
   OCR_WRITE:  'OCR_WRITE',
+  /** رفع صورة فاتورة للاستخراج في الخلفية (كاشير) */
+  OCR_SUBMIT: 'OCR_SUBMIT',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -188,7 +190,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   },
   {
     key: 'ocr', labelAr: 'OCR الفواتير (تجريبي)', labelEn: 'OCR Invoices (Beta)', icon: '🔍',
-    permissions: { view: 'VIEW_OCR', read: 'OCR_READ', write: 'OCR_WRITE' },
+    permissions: { view: 'VIEW_OCR', read: 'OCR_READ', write: 'OCR_WRITE', submit: 'OCR_SUBMIT' },
   },
 ];
 
@@ -236,6 +238,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.CHAT_PRESET_LEAVES, PERMISSIONS.CHAT_PRESET_DEDUCTIONS,
       PERMISSIONS.CHAT_PRESET_FAQ, PERMISSIONS.CHAT_PRESET_INCREASES,
       PERMISSIONS.CREATE_INVOICE,
+      PERMISSIONS.VIEW_OCR, PERMISSIONS.OCR_READ, PERMISSIONS.OCR_WRITE, PERMISSIONS.OCR_SUBMIT,
     ],
   },
   [ROLES.CASHIER]: {
@@ -249,6 +252,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.VIEW_PURCHASES, PERMISSIONS.PURCHASES_READ,
       PERMISSIONS.SMART_CHAT_READ, PERMISSIONS.CHAT_PRESET_FAQ,
       PERMISSIONS.CREATE_INVOICE,
+      PERMISSIONS.OCR_SUBMIT,
     ],
   },
 };

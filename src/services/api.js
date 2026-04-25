@@ -67,7 +67,7 @@ async function tryRefreshToken() {
 
   _refreshPromise = (async () => {
     try {
-      const url = new URL('/api/v1/auth/refresh', getBase());
+      const url = new URL('/api/v1/auth/refresh', getApiBaseUrl());
       const res = await safeFetch(url.toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -101,7 +101,7 @@ export async function refreshAuthSession() {
     return { success: false, error: 'لا يوجد رمز تجديد' };
   }
   try {
-    const url = new URL('/api/v1/auth/refresh', getBase());
+    const url = new URL('/api/v1/auth/refresh', getApiBaseUrl());
     const res = await safeFetch(url.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -177,7 +177,7 @@ export function throwIfApiFailed(res, fallbackMessage = 'طلب فشل') {
   throw err;
 }
 
-function getBase() {
+export function getApiBaseUrl() {
   return BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 }
 
@@ -186,7 +186,7 @@ function getBase() {
  * يعيد المحاولة تلقائياً عند 502/503/504 أو أخطاء الشبكة (سيرفر نائم / Bad Gateway).
  */
 export async function apiGet(path, params = {}) {
-  const url = new URL(path, getBase());
+  const url = new URL(path, getApiBaseUrl());
   Object.entries(params).forEach(([k, v]) => { if (v != null && v !== '') url.searchParams.set(k, v); });
 
   let lastFailure = { success: false, error: 'خطأ في الاتصال' };
@@ -227,7 +227,7 @@ export async function apiGet(path, params = {}) {
  */
 export async function apiPost(path, body = {}, opts = {}) {
   const timeout = opts.timeout ?? TIMEOUT_MS;
-  const url = new URL(path, getBase());
+  const url = new URL(path, getApiBaseUrl());
   const fetchOpts = { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body) };
   const doFetch = async () => {
     const res = await safeFetch(url.toString(), fetchOpts, timeout);
@@ -245,7 +245,7 @@ export async function apiPost(path, body = {}, opts = {}) {
  * استدعاء PATCH.
  */
 export async function apiPatch(path, body = {}) {
-  const url = new URL(path, getBase());
+  const url = new URL(path, getApiBaseUrl());
   const doFetch = async () => {
     const res = await safeFetch(url.toString(), { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(body) });
     return parseResponse(res);
@@ -262,7 +262,7 @@ export async function apiPatch(path, body = {}) {
  * استدعاء PUT.
  */
 export async function apiPut(path, body = {}) {
-  const url = new URL(path, getBase());
+  const url = new URL(path, getApiBaseUrl());
   const doFetch = async () => {
     const res = await safeFetch(url.toString(), { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(body) });
     return parseResponse(res);
@@ -279,7 +279,7 @@ export async function apiPut(path, body = {}) {
  * استدعاء DELETE.
  */
 export async function apiDelete(path) {
-  const url = new URL(path, getBase());
+  const url = new URL(path, getApiBaseUrl());
   const doFetch = async () => {
     const res = await safeFetch(url.toString(), { method: 'DELETE', headers: getAuthHeaders() });
     return parseResponse(res);
@@ -295,7 +295,7 @@ export async function apiDelete(path) {
 // ——— فحص الاتصال ———
 export async function checkApiConnection() {
   try {
-    const base = getBase();
+    const base = getApiBaseUrl();
     const url  = base ? `${base}/api/v1/health` : '/api/v1/health';
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 5000);
@@ -311,7 +311,7 @@ export async function checkApiConnection() {
 /** جلب حالة الصحة الكاملة (يتضمن geminiAvailable) */
 export async function getHealth() {
   try {
-    const base = getBase();
+    const base = getApiBaseUrl();
     const url  = base ? `${base}/api/v1/health` : '/api/v1/health';
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 8000);
@@ -1179,7 +1179,7 @@ export async function createDocument(body) {
   return apiPost('/api/v1/hr/documents', body);
 }
 export async function uploadDocument(formData) {
-  const url = new URL('/api/v1/hr/documents/upload', getBase());
+  const url = new URL('/api/v1/hr/documents/upload', getApiBaseUrl());
   const token = getAuthToken();
   const companyId = getActiveCompanyId();
   const h = {};
@@ -1194,7 +1194,7 @@ export async function uploadDocument(formData) {
 }
 
 export async function uploadDocumentFile({ companyId, employeeId, documentType, file }) {
-  const url = new URL('/api/v1/hr/documents/upload-file', getBase());
+  const url = new URL('/api/v1/hr/documents/upload-file', getApiBaseUrl());
   const formData = new FormData();
   formData.append('file', file);
   formData.append('companyId', companyId);
@@ -1215,7 +1215,7 @@ export async function uploadDocumentFile({ companyId, employeeId, documentType, 
   }
 }
 export async function downloadDocument(id, companyId) {
-  const url = new URL(`/api/v1/hr/documents/${id}/download`, getBase());
+  const url = new URL(`/api/v1/hr/documents/${id}/download`, getApiBaseUrl());
   url.searchParams.set('companyId', companyId);
   const h = getAuthHeaders();
   const res = await safeFetch(url.toString(), { method: 'GET', headers: h });
@@ -1294,7 +1294,7 @@ export async function deleteInvoice(id, companyId) {
 /** رفع صورة إيصال أو ملف PDF وربطه بالفاتورة (بعد الإنشاء أو من شاشة التعديل). */
 export async function uploadInvoiceAttachment(invoiceId, companyId, file) {
   if (!file) return { success: false, error: 'لم يُختر ملف' };
-  const url = new URL(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment`, getBase());
+  const url = new URL(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment`, getApiBaseUrl());
   url.searchParams.set('companyId', companyId);
   const formData = new FormData();
   formData.append('file', file);
@@ -1318,7 +1318,7 @@ export async function deleteInvoiceAttachment(invoiceId, companyId) {
 
 /** تنزيل مرفق الفاتورة المحفوظ على الخادم */
 export async function downloadInvoiceAttachment(invoiceId, companyId) {
-  const url = new URL(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment/download`, getBase());
+  const url = new URL(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment/download`, getApiBaseUrl());
   url.searchParams.set('companyId', companyId);
   const token = getAuthToken();
   const cid = companyId || getActiveCompanyId();
@@ -1433,7 +1433,7 @@ export async function backupRetryExternal(jobId) {
 /** تنزيل ملف النسخة (.json.gz) — يستخدم التوكن من authStore */
 export async function backupDownloadJobFile(jobId, suggestedName) {
   try {
-    const url = new URL(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/download`, getBase());
+    const url = new URL(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/download`, getApiBaseUrl());
     const res = await fetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
     if (res.status === 401) {
       handleUnauthorized();
@@ -1513,7 +1513,7 @@ export async function backupRestoreSystemFull(jobId, confirmPhrase) {
 /** تنزيل ملف نسخة القاعدة الكاملة (.dump.gz) — مالك/مدير نظام */
 export async function backupDownloadSystemJobFile(jobId, suggestedName) {
   try {
-    const url = new URL(`/api/v1/backup/system/jobs/${encodeURIComponent(jobId)}/download`, getBase());
+    const url = new URL(`/api/v1/backup/system/jobs/${encodeURIComponent(jobId)}/download`, getApiBaseUrl());
     const res = await fetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
     if (res.status === 401) {
       handleUnauthorized();
@@ -1542,7 +1542,7 @@ export async function backupDownloadSystemJobFile(jobId, suggestedName) {
 /** رفع أرشيف نظام (.tar.gz) من الجهاز — يتحقق الخادم ثم يضيفه لسجل نسخ النظام */
 export async function backupUploadSystemFullArchive(file) {
   if (!file) return { success: false, error: 'لم يُختر ملف' };
-  const url = new URL('/api/v1/backup/system/upload-full-archive', getBase());
+  const url = new URL('/api/v1/backup/system/upload-full-archive', getApiBaseUrl());
   const formData = new FormData();
   formData.append('file', file);
   const token = getAuthToken();
@@ -1559,7 +1559,7 @@ export async function backupUploadSystemFullArchive(file) {
 /** استرداد مباشر من أرشيف .tar.gz على الجهاز — خطير؛ يتطلب عبارة التأكيد */
 export async function backupRestoreSystemFromUpload(file, confirmPhrase) {
   if (!file) return { success: false, error: 'لم يُختر ملف' };
-  const url = new URL('/api/v1/backup/system/restore-upload', getBase());
+  const url = new URL('/api/v1/backup/system/restore-upload', getApiBaseUrl());
   const formData = new FormData();
   formData.append('file', file);
   formData.append('confirmPhrase', confirmPhrase || '');

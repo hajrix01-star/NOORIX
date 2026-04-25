@@ -79,6 +79,7 @@ model User {
   salesSummaries DailySalesSummary[] @relation("SalesCreatedBy")
   backupJobsCreated BackupJob[] @relation("BackupCreatedBy")
   invoicesCreated Invoice[] @relation("InvoiceCreatedBy")
+  ocrInvoicesSubmitted OcrInvoice[] @relation("OcrInvoiceSubmittedBy")
 
   @@index([tenantId])
   @@map("users")
@@ -135,6 +136,12 @@ model Company {
   companyAssets        CompanyAsset[]
   companyBackupConfig  CompanyBackupConfig?
   vatPlanningQuarters VatPlanningQuarter[]
+  ocrSuppliers        OcrSupplier[]
+  ocrItems            OcrItem[]
+  ocrInvoices         OcrInvoice[]
+  ocrPriceHistory     OcrPriceHistory[]
+  ocrCorrectionRules  OcrCorrectionRule[]
+  ocrExtractionLogs   OcrExtractionLog[]
 
   @@index([tenantId])
   @@map("companies")
@@ -961,6 +968,7 @@ model Invoice {
   vaultAllocations InvoiceVaultAllocation[]
   leaveSalarySettlement LeaveSalarySettlement?
   companyAssets    CompanyAsset[]
+  ocrInvoicesLinkedFromOcr OcrInvoice[] @relation("OcrInvoiceLinkedPurchase")
 
   @@unique([companyId, invoiceNumber])
   @@index([tenantId])
@@ -1232,6 +1240,7 @@ model OrderItem {
 model OcrSupplier {
   id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")
+  companyId   String   @map("company_id")
   nameAr      String   @map("name_ar")
   nameEn      String?  @map("name_en")
   taxNumber   String?  @map("tax_number")
@@ -1240,6 +1249,7 @@ model OcrSupplier {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt      @map("updated_at")
 
+  company         Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   aliases         OcrSupplierAlias[]
   invoices        OcrInvoice[]
   correctionRules OcrCorrectionRule[]
@@ -1247,6 +1257,8 @@ model OcrSupplier {
   extractionLogs  OcrExtractionLog[]
 
   @@index([tenantId])
+  @@index([tenantId, companyId])
+  @@index([companyId])
   @@map("ocr_suppliers")
 }
 
@@ -1267,6 +1279,7 @@ model OcrSupplierAlias {
 model OcrItem {
   id        String   @id @default(cuid())
   tenantId  String   @map("tenant_id")
+  companyId String   @map("company_id")
   nameAr    String   @map("name_ar")
   nameEn    String?  @map("name_en")
   category  String?
@@ -1276,11 +1289,14 @@ model OcrItem {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
 
+  company      Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   aliases      OcrItemAlias[]
   lines        OcrInvoiceLine[]
   priceHistory OcrPriceHistory[]
 
   @@index([tenantId])
+  @@index([tenantId, companyId])
+  @@index([companyId])
   @@map("ocr_items")
 }
 
@@ -1301,6 +1317,7 @@ model OcrItemAlias {
 model OcrInvoice {
   id            String    @id @default(cuid())
   tenantId      String    @map("tenant_id")
+  companyId     String    @map("company_id")
   supplierId    String?   @map("supplier_id")
   invoiceNumber String?   @map("invoice_number")
   invoiceDate   DateTime? @map("invoice_date")
@@ -1309,15 +1326,24 @@ model OcrInvoice {
   vatAmount      Decimal?  @map("vat_amount")      @db.Decimal(14, 2)
   imageUrl      String?   @map("image_url")
   rawExtraction Json?     @map("raw_extraction")
-  status        String    @default("pending")   // pending | confirmed | rejected
+  /// queued | extracting | pending_review | extraction_failed | pending | confirmed | rejected
+  status        String    @default("pending")
   notes         String?
+  submittedByUserId       String?  @map("submitted_by_user_id")
+  extractionError         String?  @map("extraction_error") @db.Text
+  linkedPurchaseInvoiceId String?  @map("linked_purchase_invoice_id")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt      @map("updated_at")
 
-  supplier OcrSupplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  company                 Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier                OcrSupplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  submittedBy             User?          @relation("OcrInvoiceSubmittedBy", fields: [submittedByUserId], references: [id], onDelete: SetNull)
+  linkedPurchaseInvoice   Invoice?       @relation("OcrInvoiceLinkedPurchase", fields: [linkedPurchaseInvoiceId], references: [id], onDelete: SetNull)
   lines    OcrInvoiceLine[]
 
   @@index([tenantId])
+  @@index([tenantId, companyId])
+  @@index([companyId])
   @@index([supplierId])
   @@map("ocr_invoices")
 }
@@ -1349,6 +1375,7 @@ model OcrInvoiceLine {
 model OcrPriceHistory {
   id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")
+  companyId   String   @map("company_id")
   itemId      String   @map("item_id")
   supplierId  String   @map("supplier_id")
   price       Decimal  @db.Decimal(14, 2)
@@ -1358,10 +1385,13 @@ model OcrPriceHistory {
   invoiceId   String?  @map("invoice_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
+  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   item     OcrItem     @relation(fields: [itemId],     references: [id], onDelete: Cascade)
   supplier OcrSupplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([tenantId, companyId])
+  @@index([companyId])
   @@index([itemId])
   @@index([supplierId])
   @@map("ocr_price_history")
@@ -1370,6 +1400,7 @@ model OcrPriceHistory {
 model OcrCorrectionRule {
   id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")
+  companyId   String   @map("company_id")
   entityType  String   @map("entity_type")  // supplier | item
   supplierId  String?  @map("supplier_id")  // supplier-scoped (null = global)
   wrongText   String   @map("wrong_text")
@@ -1380,9 +1411,12 @@ model OcrCorrectionRule {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt      @map("updated_at")
 
+  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   supplier OcrSupplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([tenantId, companyId])
+  @@index([companyId])
   @@index([supplierId])
   @@map("ocr_correction_rules")
 }
@@ -1390,6 +1424,7 @@ model OcrCorrectionRule {
 model OcrExtractionLog {
   id            String   @id @default(cuid())
   tenantId      String   @map("tenant_id")
+  companyId     String   @map("company_id")
   entityType    String   @map("entity_type")  // supplier | item
   supplierId    String?  @map("supplier_id")
   extractedText String   @map("extracted_text")
@@ -1401,9 +1436,12 @@ model OcrExtractionLog {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt      @map("updated_at")
 
+  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   supplier OcrSupplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([tenantId, companyId])
+  @@index([companyId])
   @@index([supplierId])
   @@map("ocr_extraction_logs")
 }

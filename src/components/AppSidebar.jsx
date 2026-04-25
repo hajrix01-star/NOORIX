@@ -51,6 +51,7 @@ const SIDEBAR_LINKS = [
     ],
   },
   { to: '/ocr', labelKey: 'ocrTitle', icon: IconOcr, permission: 'VIEW_OCR' },
+  { to: '/ocr/cashier', labelKey: 'ocrCashierSubmitNav', icon: IconOcr, permission: 'OCR_SUBMIT' },
   { to: '/settings', labelKey: 'settings', icon: IconSettings, permission: 'MANAGE_SETTINGS' },
   { to: '/theme-preview', labelKey: 'themePreview', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
 ];

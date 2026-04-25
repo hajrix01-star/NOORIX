@@ -3,8 +3,24 @@
  */
 export default {
   ocrTitle:            { ar: 'OCR الفواتير', en: 'Invoice OCR' },
+  ocrCashierSubmitNav: { ar: 'إرسال فاتورة (كاشير)', en: 'Submit invoice (cashier)' },
+  ocrCashierPageTitle: { ar: 'إرسال فاتورة مورد', en: 'Submit supplier invoice' },
+  ocrCashierPageHint: {
+    ar: 'يُرسل الطلب للخلفية للاستخراج. ستظهر للمحاسب في «مراجعة الاستخراج» عند الجاهزية.',
+    en: 'The request is queued for background extraction. It will appear in extraction review when ready.',
+  },
+  ocrCashierSentOk: {
+    ar: 'تم الإرسال بنجاح — رقم الطلب: {0}',
+    en: 'Sent successfully — reference: {0}',
+  },
   ocrBeta:             { ar: 'تجريبي', en: 'Beta' },
   ocrUploadTab:        { ar: 'رفع فاتورة', en: 'Upload Invoice' },
+  ocrReviewQueueTab:   { ar: 'مراجعة الاستخراج', en: 'Extraction review' },
+  ocrRefresh:          { ar: 'تحديث', en: 'Refresh' },
+  ocrQueueLoading:     { ar: 'جاري التحميل…', en: 'Loading…' },
+  ocrQueueEmpty:       { ar: 'لا توجد طلبات في الطابور.', en: 'No items in the queue.' },
+  ocrStatToReview:     { ar: 'للمراجعة', en: 'To review' },
+  ocrReviewAction:     { ar: 'مراجعة', en: 'Review' },
   ocrInvoicesTab:      { ar: 'الفواتير', en: 'Invoices' },
   ocrSuppliersTab:     { ar: 'الموردون', en: 'Suppliers' },
   ocrItemsTab:         { ar: 'الأصناف', en: 'Items' },
@@ -15,6 +31,43 @@ export default {
   ocrSupportedFormats: { ar: 'يدعم: JPG, PNG, WEBP', en: 'Supports: JPG, PNG, WEBP' },
   ocrExtract:          { ar: 'استخراج البيانات', en: 'Extract Data' },
   ocrExtracting:       { ar: 'جاري الاستخراج...', en: 'Extracting...' },
+  ocrPrefillLoading:   { ar: 'جاري تحميل فاتورة المراجعة…', en: 'Loading review invoice…' },
+
+  ocrLinkedPurchaseTitle: {
+    ar: 'فاتورة مشتريات محاسبية',
+    en: 'Accounting purchase invoice',
+  },
+  ocrLinkedPurchaseHint: {
+    ar: 'تاريخ العملية محاسبياً (يُسجَّل في الدفاتر). تاريخ فاتورة المورد يبقى كما في بيانات OCR أعلاه.',
+    en: 'Transaction date is for ledger posting. Supplier invoice date stays as in the OCR fields above.',
+  },
+  ocrCreateLinkedPurchase: { ar: 'إنشاء فاتورة مشتريات وربطها', en: 'Create and link purchase invoice' },
+  ocrPurchaseNoPermission: {
+    ar: 'لا تملك صلاحية تسجيل مشتريات محاسبية — اعتمد فقط سجل OCR.',
+    en: 'You cannot post accounting purchases — save OCR record only.',
+  },
+  ocrTransactionDate:    { ar: 'تاريخ العملية (محاسبي)', en: 'Transaction date (ledger)' },
+  ocrVaultSelect:        { ar: 'الخزنة', en: 'Vault' },
+  ocrSelectVault:        { ar: 'اختر الخزنة', en: 'Select vault' },
+  ocrSelectAccountingSupplier: { ar: 'اختر مورد المحاسبة', en: 'Select accounting supplier' },
+  ocrSupplierInvoiceNo:  { ar: 'رقم فاتورة المورد', en: 'Supplier invoice number' },
+  ocrPurchaseTaxable:    { ar: 'خاضعة للضريبة (15%)', en: 'Taxable (15%)' },
+  ocrPurchaseSuggestEmpty: {
+    ar: 'لا توجد مطابقات تلقائية — اختر من قائمة الموردين في المحاسبة أو أضف مورداً هناك.',
+    en: 'No auto-matches — pick an accounting supplier from your catalog or add one there.',
+  },
+  ocrLinkedPurchaseOpenList: {
+    ar: 'فتح قائمة الفواتير (مشتريات) بتاريخ العملية',
+    en: 'Open invoices list (purchases) for transaction date',
+  },
+  ocrPurchaseRecordedLinked: {
+    ar: 'تم تسجيل فاتورة المشتريات وربطها.',
+    en: 'Purchase invoice recorded and linked.',
+  },
+  ocrLinkedPurchaseAlready: {
+    ar: 'مرتبطة بفاتورة مشتريات محاسبية.',
+    en: 'Linked to an accounting purchase invoice.',
+  },
   ocrExtractSuccess:   { ar: 'تم الاستخراج بنجاح', en: 'Extracted successfully' },
   ocrExtractFailed:    { ar: 'فشل الاستخراج', en: 'Extraction failed' },
   ocrSaveInvoice:      { ar: 'حفظ الفاتورة', en: 'Save Invoice' },
