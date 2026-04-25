@@ -35,20 +35,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
     enabled: !!runId && !!companyId,
   });
 
-  if (isLoading || !run) {
-    return (
-      <AdaptiveSheet open={true} onClose={onClose} title={t('loading')} size="sm" side="start">
-        <p className="m-0">{t('loading')}</p>
-      </AdaptiveSheet>
-    );
-  }
-
-  const items = run.items || [];
-  const statusInfo = STATUS_MAP[run.status] || STATUS_MAP.draft;
-  const totalNet = new Decimal(run.totalAmount ?? 0);
-  const totalBeforeDeduction = items.reduce((s, row) => s.plus(row.grossSalary ?? 0).plus(row.allowancesAdd ?? 0), new Decimal(0));
-  const totalDeductions      = items.reduce((s, row) => s.plus(row.deductions   ?? 0).plus(row.advancesDeduct ?? 0), new Decimal(0));
-
+  /** يجب أن يبقى فوق أي return مبكر — قواعد الـ Hooks */
   const buildSlipLabels = useCallback(
     (runForPrint) => ({
       windowTitle: `${t('payrollSlipBatchPrint')} — ${runForPrint.runNumber || ''}`,
@@ -92,6 +79,20 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
     }),
     [t],
   );
+
+  if (isLoading || !run) {
+    return (
+      <AdaptiveSheet open={true} onClose={onClose} title={t('loading')} size="sm" side="start">
+        <p className="m-0">{t('loading')}</p>
+      </AdaptiveSheet>
+    );
+  }
+
+  const items = run.items || [];
+  const statusInfo = STATUS_MAP[run.status] || STATUS_MAP.draft;
+  const totalNet = new Decimal(run.totalAmount ?? 0);
+  const totalBeforeDeduction = items.reduce((s, row) => s.plus(row.grossSalary ?? 0).plus(row.allowancesAdd ?? 0), new Decimal(0));
+  const totalDeductions      = items.reduce((s, row) => s.plus(row.deductions   ?? 0).plus(row.advancesDeduct ?? 0), new Decimal(0));
 
   const handlePrint = () => {
     const monthLabel = formatSaudiDate(run.payrollMonth);
