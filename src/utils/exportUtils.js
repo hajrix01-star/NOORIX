@@ -349,7 +349,7 @@ function normalizeColumnDefs(columns) {
  *   exportToExcel({ data: rows, filename, title, companyName, columns, ... })
  *
  * columns يقبل: string[] (مفاتيح/تسميات) أو {key, label}[] (مفتاح للبيانات، label للعرض)
- * money2ColumnKeys + moneyColumnFractionDigits: 0 = مبالغ كأعداد صحيحة (تقارير موظفين)؛ 2 = بهللتان (الافتراضي عند التمرير)
+ * money2ColumnKeys + moneyColumnFractionDigits: 0 = مبالغ كأعداد صحيحة؛ 2 = بهللتان (الافتراضي) — القيم تُكتب كرقم في الخلية ليعمل SUM
  */
 export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
   const XLSXmod = await import('xlsx-js-style');
@@ -417,8 +417,8 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
   const titleRow   = title       ? 1 : 0;
   const headerRowR = companyRow + titleRow; // مؤشر صف رأس الأعمدة (0-indexed)
 
-  // أعمدة مالية (هللتان) كسلسلة نصية — يمنع إعادة تحويل xlsx/Excel لكسور عائمة طويلة
-  // حوّل القيم الرقمية من نص إلى number عند عدم تفعيل money2ColumnKeys لهذا العمود
+  // أعمدة مالية: نُرجع number حقيقي ليعمل Excel في SUM/المجاميع (النص يُعامل كـ ليس رقماً)
+  // التقريب عبر roundMoney2 يقلل ضوضاء double عند العرض
   const dataAoA = rows.map((row) =>
     dataKeys.map((k) => {
       const v = row[k];
@@ -427,8 +427,8 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
         const raw = typeof v === 'number' ? v : Number(String(v).replace(/,/g, '').trim());
         if (!Number.isFinite(raw)) return '';
         const m = roundMoney2(raw);
-        if (moneyFrac === 0) return String(Math.round(m));
-        return m.toFixed(moneyFrac);
+        if (moneyFrac === 0) return Math.round(m);
+        return Number.parseFloat(m.toFixed(moneyFrac));
       }
       if (typeof v === 'number') return v;
       const s = String(v).replace(/,/g, '').trim();
