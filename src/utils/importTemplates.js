@@ -128,6 +128,12 @@ export const EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS = [
   'الراتب الإجمالي',
 ];
 
+/** خيارات تصدير Excel للموظفين — مبالغ كأرقام صحيحة بلا عشريات */
+export const EMPLOYEE_EXCEL_EXPORT_OPTS = {
+  money2ColumnKeys: EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS,
+  moneyColumnFractionDigits: 0,
+};
+
 export async function downloadEmployeeTemplate() {
   const rows = [
     {
@@ -145,7 +151,7 @@ export async function downloadEmployeeTemplate() {
       'ملاحظات': 'مثال: «الراتب الإجمالي» اختياري — إن حدّدته يُحسب الراتب الأساسي تلقائياً (بدل تركه فارغاً وملء «الراتب الأساسي» فقط).',
     },
   ];
-  await exportToExcel(rows, 'template-employees.xlsx', { money2ColumnKeys: EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS });
+  await exportToExcel(rows, 'template-employees.xlsx', EMPLOYEE_EXCEL_EXPORT_OPTS);
 }
 
 // ─── Sales Template ──────────────────────────────────────────────────────────

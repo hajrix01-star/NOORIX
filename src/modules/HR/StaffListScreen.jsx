@@ -18,7 +18,7 @@ import { exportToExcel } from '../../utils/exportUtils';
 import ImportExportModal from '../../components/ImportExportModal';
 import {
   buildEmployeeAllowanceTotalsMap,
-  EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS,
+  EMPLOYEE_EXCEL_EXPORT_OPTS,
   formatEmployeeForExport,
 } from '../../utils/importTemplates';
 import {
@@ -272,7 +272,7 @@ export default function StaffListScreen({ embedded }) {
           'تاريخ إنهاء الخدمة': meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
         };
       });
-      exportToExcel(rows, 'employees.xlsx', { money2ColumnKeys: EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS });
+      exportToExcel(rows, 'employees.xlsx', EMPLOYEE_EXCEL_EXPORT_OPTS);
     } catch (e) {
       showToast(e?.message || t('saveFailed'), 'error');
     } finally {

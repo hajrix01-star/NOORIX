@@ -349,6 +349,7 @@ function normalizeColumnDefs(columns) {
  *   exportToExcel({ data: rows, filename, title, companyName, columns, ... })
  *
  * columns يقبل: string[] (مفاتيح/تسميات) أو {key, label}[] (مفتاح للبيانات، label للعرض)
+ * money2ColumnKeys + moneyColumnFractionDigits: 0 = مبالغ كأعداد صحيحة (تقارير موظفين)؛ 2 = بهللتان (الافتراضي عند التمرير)
  */
 export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
   const XLSXmod = await import('xlsx-js-style');
@@ -362,6 +363,7 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
       data: innerData, filename: cfgFile, title: cfgTitle,
       companyName: cfgCo, sheetName: cfgSheet, columns: cfgColumns,
       money2ColumnKeys: cfgMoney2,
+      moneyColumnFractionDigits: cfgMoneyFrac,
     } = data;
     if (cfgFile) filename = cfgFile;
     if (cfgCo && !configOpts.companyName) configOpts = { companyName: cfgCo, ...configOpts };
@@ -369,6 +371,9 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
     if (cfgSheet && !configOpts.sheetName) configOpts = { sheetName: cfgSheet, ...configOpts };
     if (cfgColumns?.length) columnDefs = cfgColumns;
     if (cfgMoney2) configOpts = { ...configOpts, money2ColumnKeys: cfgMoney2 };
+    if (typeof cfgMoneyFrac === 'number') {
+      configOpts = { ...configOpts, moneyColumnFractionDigits: cfgMoneyFrac };
+    }
     data = Array.isArray(innerData) ? innerData : [];
   }
 
@@ -379,11 +384,20 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
     rtl = true,
     headerColor = '185FA5',
     money2ColumnKeys: money2ColumnKeysOpt,
+    /** @type {number|undefined} 0 = ريال كامل في التقرير (بدون كسور)؛ 2 = بهللتان */
+    moneyColumnFractionDigits: moneyColumnFractionDigitsOpt,
   } = configOpts;
 
   const money2KeySet = new Set(
     Array.isArray(money2ColumnKeysOpt) ? money2ColumnKeysOpt.filter(Boolean) : [],
   );
+
+  const moneyFrac =
+    moneyColumnFractionDigitsOpt === 0
+      ? 0
+      : (typeof moneyColumnFractionDigitsOpt === 'number' && moneyColumnFractionDigitsOpt >= 0
+        ? moneyColumnFractionDigitsOpt
+        : 2);
 
   const rows = Array.isArray(data) ? data : [];
 
@@ -412,7 +426,9 @@ export async function exportToExcel(data, filename = 'export.xlsx', opts = {}) {
       if (money2KeySet.has(k)) {
         const raw = typeof v === 'number' ? v : Number(String(v).replace(/,/g, '').trim());
         if (!Number.isFinite(raw)) return '';
-        return roundMoney2(raw).toFixed(2);
+        const m = roundMoney2(raw);
+        if (moneyFrac === 0) return String(Math.round(m));
+        return m.toFixed(moneyFrac);
       }
       if (typeof v === 'number') return v;
       const s = String(v).replace(/,/g, '').trim();
