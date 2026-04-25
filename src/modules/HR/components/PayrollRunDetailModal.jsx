@@ -2,6 +2,7 @@
  * PayrollRunDetailModal — عرض تفاصيل مسيرة الراتب (جدول احترافي)
  */
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -14,6 +15,7 @@ import { Badge, Button, AdaptiveSheet, SmartTable, Modal } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSlipsPrint';
+import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
 
 const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
@@ -232,7 +234,14 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
         <Badge color={statusInfo.badgeColor}>{t(statusInfo.labelKey)}</Badge>
         {run.issuedSalaryInvoiceNumber ? (
           <p className="m-0 mt-2 text-[12px] text-noorix-muted nx-font-numbers" dir="ltr">
-            {t('payrollIssuedInvoiceNumber')}: <span className="font-semibold text-noorix-text">{run.issuedSalaryInvoiceNumber}</span>
+            {t('payrollIssuedInvoiceNumber')}:{' '}
+            <Link
+              to={payrollSalaryInvoiceListHref(run.id)}
+              className="font-semibold text-noorix-blue hover:underline"
+              title={t('payrollOpenIssuedInvoice')}
+            >
+              {run.issuedSalaryInvoiceNumber}
+            </Link>
           </p>
         ) : null}
       </div>

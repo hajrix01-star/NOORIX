@@ -187,6 +187,10 @@ export default {
   payrollApproved: { ar: 'معتمد', en: 'Approved' },
   payrollPaid: { ar: 'مدفوع', en: 'Paid' },
   payrollIssuedInvoiceNumber: { ar: 'رقم الفاتورة المصدرة', en: 'Issued invoice no.' },
+  payrollOpenIssuedInvoice: {
+    ar: 'عرض فاتورة صرف المسيرة في قائمة الفواتير',
+    en: 'Open payroll disbursement invoice in the invoice list',
+  },
   createPayrollRun: { ar: '+ إنشاء مسيرة راتب', en: '+ Create payroll run' },
   leaveType: { ar: 'نوع الإجازة', en: 'Leave type' },
   leaveAnnual: { ar: 'سنوية', en: 'Annual' },

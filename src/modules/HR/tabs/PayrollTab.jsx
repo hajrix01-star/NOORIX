@@ -2,6 +2,7 @@
  * PayrollTab — مسيرات الرواتب (احترافي كامل)
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
@@ -22,6 +23,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { Button, Badge, Input, ScreenShell, Modal , FmtNum, SmartTable } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
+import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
 
 const PAGE_SIZE = 50;
 
@@ -203,8 +205,19 @@ export default function PayrollTab() {
       width: 140,
       minWidth: 120,
       shrink: true,
-      render: (v) => (
-        <span className="nx-cell-num text-[12px] whitespace-nowrap" dir="ltr">{v || '—'}</span>
+      render: (v, row) => (
+        v ? (
+          <Link
+            to={payrollSalaryInvoiceListHref(row.id)}
+            className="nx-cell-num text-[12px] font-semibold text-noorix-blue hover:underline whitespace-nowrap"
+            dir="ltr"
+            title={t('payrollOpenIssuedInvoice')}
+          >
+            {v}
+          </Link>
+        ) : (
+          <span className="nx-cell-num text-[12px] whitespace-nowrap" dir="ltr">—</span>
+        )
       ),
     },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
@@ -263,7 +276,14 @@ export default function PayrollTab() {
         </div>
         {row.issuedInvoiceNumber && (
           <div className="nx-cell-muted mb-2 text-end text-[12px]" dir="ltr">
-            {t('payrollIssuedInvoiceNumber')}: {row.issuedInvoiceNumber}
+            {t('payrollIssuedInvoiceNumber')}:{' '}
+            <Link
+              to={payrollSalaryInvoiceListHref(row.id)}
+              className="font-semibold text-noorix-blue hover:underline"
+              title={t('payrollOpenIssuedInvoice')}
+            >
+              {row.issuedInvoiceNumber}
+            </Link>
           </div>
         )}
         <div className="flex flex items-center justify-end">
