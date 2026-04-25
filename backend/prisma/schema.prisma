@@ -1247,6 +1247,8 @@ model OcrSupplier {
   taxNumber   String?  @map("tax_number")
   phone       String?
   notes       String?
+  /// تصنيف اختياري (مواد غذائية، خدمات، …) للتقارير وتجميع الموردين يدوياً
+  supplierCategory String? @map("supplier_category")
   /// ربط اختياري بمورد المحاسبة (مورد المشتريات في Noorix) لتسريع الاقتراحات والتقارير
   accountingSupplierId String?  @map("accounting_supplier_id")
   createdAt   DateTime @default(now()) @map("created_at")

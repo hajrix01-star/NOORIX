@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
@@ -13,10 +13,37 @@ import {
 } from '../services/ocrApi';
 import { getSuppliers } from '../../../services/api';
 import { assertApiOk } from '../../../utils/apiResponse';
+import { OCR_SUPPLIER_CATEGORY_OPTIONS, ocrSupplierCategoryLabel } from '../constants/ocrSupplierCategories';
+
+/** ترتيب موردي المحاسبة حسب الاسم أو الرقم الضريبي (درجة أعلى = أقرب) */
+function scoreAccountingSupplierMatch(row, queryRaw) {
+  const q = queryRaw.trim().toLowerCase();
+  const qDigits = queryRaw.replace(/\D/g, '');
+  const ar = (row.nameAr || '').toLowerCase();
+  const en = (row.nameEn || '').toLowerCase();
+  const td = (row.taxNumber || '').replace(/\D/g, '');
+  let score = 0;
+  if (qDigits.length >= 5 && td) {
+    if (td === qDigits) score += 100000;
+    else if (td.endsWith(qDigits) || qDigits.endsWith(td)) score += 60000;
+    else if (td.includes(qDigits) || qDigits.includes(td)) score += 35000 + Math.min(qDigits.length, 15) * 400;
+  }
+  if (q.length >= 1) {
+    if (ar === q || en === q) score += 45000;
+    else if (ar.startsWith(q) || en.startsWith(q)) score += 28000;
+    else if (ar.includes(q) || en.includes(q)) score += 12000 + Math.min(q.length, 24) * 180;
+    const blob = `${ar} ${en}`;
+    if (blob.includes(q) && score < 8000) score += 8000;
+  }
+  return score;
+}
 
 function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
-  const { t } = useTranslation();
-  const [form, setForm] = useState({ nameAr: '', nameEn: '', taxNumber: '', phone: '', notes: '', ...initial });
+  const { t, lang } = useTranslation();
+  const isAr = lang === 'ar';
+  const [form, setForm] = useState({
+    nameAr: '', nameEn: '', taxNumber: '', phone: '', notes: '', supplierCategory: '', ...initial,
+  });
   const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   return (
     <div className="grid gap-3">
@@ -24,6 +51,20 @@ function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
       <Input placeholder={t('ocrSupplierNameEn')} value={form.nameEn} onChange={f('nameEn')} />
       <Input placeholder={t('ocrSupplierTax')} value={form.taxNumber} onChange={f('taxNumber')} />
       <Input placeholder={t('ocrSupplierPhone')} value={form.phone} onChange={f('phone')} />
+      <label className="flex flex-col gap-1 text-[12px]">
+        <span className="text-noorix-muted">{t('ocrSupplierCategory')}</span>
+        <select
+          className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
+          value={form.supplierCategory || ''}
+          onChange={f('supplierCategory')}
+        >
+          {OCR_SUPPLIER_CATEGORY_OPTIONS.map((opt) => (
+            <option key={opt.value || 'none'} value={opt.value}>
+              {opt.labelKey ? t(opt.labelKey) : (isAr ? '—' : '—')}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="flex gap-2">
         <Button onClick={() => onSave(form)} disabled={loading || !form.nameAr} variant="primary" className="flex-1 min-w-0">
           {loading ? '...' : t('ocrSave')}
@@ -49,9 +90,10 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   const [linkAccId, setLinkAccId] = useState('');
   const [linkSaving, setLinkSaving] = useState(false);
   const [linkSaveFlash, setLinkSaveFlash] = useState(false);
-  const [autoSuggestHint, setAutoSuggestHint] = useState(false);
-  const prevDrawerSupplierIdRef = useRef(null);
-  const autoSuggestDoneRef = useRef(false);
+  const [accSearchQuery, setAccSearchQuery] = useState('');
+  const [supplierCategoryLocal, setSupplierCategoryLocal] = useState('');
+  const [categorySaving, setCategorySaving] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('');
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   const { data: accountingSuppliers = [] } = useQuery({
@@ -96,36 +138,6 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     },
   });
 
-  useEffect(() => {
-    if (!viewing) {
-      prevDrawerSupplierIdRef.current = null;
-      return;
-    }
-    if (prevDrawerSupplierIdRef.current !== viewing.id) {
-      prevDrawerSupplierIdRef.current = viewing.id;
-      autoSuggestDoneRef.current = false;
-    }
-  }, [viewing]);
-
-  useEffect(() => {
-    if (!viewing?.id) return;
-    if (viewing.accountingSupplier?.id) return;
-    if (linkAccId) return;
-    if (autoSuggestDoneRef.current) return;
-    const top = accLinkSuggestions[0];
-    if (!top?.id) return;
-    const ms = top.matchScore ?? 0;
-    const pick =
-      !!top.linkedFromOcr ||
-      ms >= 100 ||
-      (ms >= 80 && accLinkSuggestions.length === 1) ||
-      (ms >= 72 && (accLinkSuggestions[1]?.matchScore ?? 0) < ms - 15);
-    if (!pick) return;
-    setLinkAccId(top.id);
-    autoSuggestDoneRef.current = true;
-    setAutoSuggestHint(true);
-  }, [viewing, linkAccId, accLinkSuggestions]);
-
   const toggleSelect = (id) => setSelected((prev) => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
   });
@@ -139,15 +151,31 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     onRefresh();
   };
 
-  const filtered = suppliers.filter((s) => {
+  const displayedSuppliers = useMemo(() => {
     const q = search.toLowerCase();
-    return !q || s.nameAr?.toLowerCase().includes(q) || s.nameEn?.toLowerCase().includes(q) || s.taxNumber?.includes(q);
-  });
+    const list = suppliers.filter((s) => {
+      const okSearch =
+        !q ||
+        s.nameAr?.toLowerCase().includes(q) ||
+        s.nameEn?.toLowerCase().includes(q) ||
+        s.taxNumber?.includes(q);
+      const okCat = !categoryFilter || (s.supplierCategory || '') === categoryFilter;
+      return okSearch && okCat;
+    });
+    return [...list].sort((a, b) => {
+      const ca = (a.supplierCategory || '').localeCompare(b.supplierCategory || '');
+      if (ca !== 0) return ca;
+      return (a.nameAr || '').localeCompare(b.nameAr || '', 'ar');
+    });
+  }, [suppliers, search, categoryFilter]);
 
   const handleCreate = async (data) => {
     setSaving(true);
     try {
-      const res = await createOcrSupplier(data);
+      const res = await createOcrSupplier({
+        ...data,
+        supplierCategory: data.supplierCategory || null,
+      });
       assertApiOk(res, t('saveFailed'));
       setAdding(false);
       onRefresh();
@@ -161,7 +189,10 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   const handleUpdate = async (data) => {
     setSaving(true);
     try {
-      const res = await updateOcrSupplier(editing.id, data);
+      const res = await updateOcrSupplier(editing.id, {
+        ...data,
+        supplierCategory: data.supplierCategory || null,
+      });
       assertApiOk(res, t('saveFailed'));
       setEditing(null);
       onRefresh();
@@ -191,7 +222,26 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     setViewing(s);
     setLinkAccId(s.accountingSupplier?.id || '');
     setLinkSaveFlash(false);
-    setAutoSuggestHint(false);
+    setAccSearchQuery(String(s.nameAr || s.nameEn || '').trim().slice(0, 96));
+    setSupplierCategoryLocal(s.supplierCategory || '');
+  };
+
+  const handleSaveSupplierCategory = async () => {
+    if (!viewing) return;
+    setCategorySaving(true);
+    try {
+      const res = await updateOcrSupplier(viewing.id, {
+        supplierCategory: supplierCategoryLocal || null,
+      });
+      assertApiOk(res, t('saveFailed'));
+      const next = res.data;
+      if (next && typeof next === 'object' && next.id) setViewing(next);
+      await onRefresh();
+    } catch (e) {
+      alert(e?.message || t('saveFailed'));
+    } finally {
+      setCategorySaving(false);
+    }
   };
 
   const handleSaveAccountingLink = async () => {
@@ -208,7 +258,6 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         setLinkAccId(next.accountingSupplier?.id || '');
       }
       await onRefresh();
-      setAutoSuggestHint(false);
       setLinkSaveFlash(true);
       window.setTimeout(() => setLinkSaveFlash(false), 5000);
     } catch (e) {
@@ -219,12 +268,36 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   };
 
   const isAr = language === 'ar';
-  const allChecked = filtered.length > 0 && filtered.every((s) => selected.has(s.id));
+  const allChecked = displayedSuppliers.length > 0 && displayedSuppliers.every((s) => selected.has(s.id));
 
   const accOptions = useMemo(
     () => [...accountingSuppliers].sort((a, b) => (a.nameAr || '').localeCompare(b.nameAr || '', 'ar')),
     [accountingSuppliers],
   );
+
+  const rankedAccountingForPicker = useMemo(() => {
+    const q = accSearchQuery.trim();
+    const suggestOrder = new Map(accLinkSuggestions.map((s, i) => [s.id, i]));
+    const boost = (id) => {
+      const sug = accLinkSuggestions.find((x) => x.id === id);
+      return (sug?.matchScore ?? 0) * 50 + (sug?.linkedFromOcr ? 500000 : 0);
+    };
+    if (!q) {
+      return [...accOptions]
+        .sort((a, b) => {
+          const ia = suggestOrder.has(a.id) ? suggestOrder.get(a.id) : 999;
+          const ib = suggestOrder.has(b.id) ? suggestOrder.get(b.id) : 999;
+          if (ia !== ib) return ia - ib;
+          return (a.nameAr || '').localeCompare(b.nameAr || '', 'ar');
+        })
+        .slice(0, 80);
+    }
+    const scored = accOptions
+      .map((row) => ({ row, score: scoreAccountingSupplierMatch(row, accSearchQuery) + boost(row.id) }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score);
+    return scored.map((x) => x.row).slice(0, 50);
+  }, [accOptions, accSearchQuery, accLinkSuggestions]);
 
   const selectedAccRow = useMemo(
     () => accOptions.find((a) => a.id === linkAccId) || null,
@@ -268,7 +341,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       {/* Toolbar */}
       <div className="inv-toolbar mb-4">
         <label className="nx-checkbox inv-select-all-wrap">
-          <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(filtered.map(s => s.id)))} className="inv-toolbar-checkbox" />
+          <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(displayedSuppliers.map(s => s.id)))} className="inv-toolbar-checkbox" />
           <span className="inv-select-all-label">
             {selected.size > 0 ? (isAr ? `${selected.size} محدد` : `${selected.size} selected`) : (isAr ? 'تحديد الكل' : 'Select all')}
           </span>
@@ -279,6 +352,20 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
           <Input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('ocrSearch')} className="inv-search-input" />
           {search && <Button className="inv-search-clear" onClick={() => setSearch('')}>✕</Button>}
         </div>
+
+        <label className="flex items-center gap-2 text-[12px] text-noorix-muted shrink-0">
+          <span>{t('ocrFilterByCategory')}</span>
+          <select
+            className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-1.5 text-[12px] text-noorix-text max-w-[160px]"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="">{t('ocrAllCategories')}</option>
+            {OCR_SUPPLIER_CATEGORY_OPTIONS.filter((o) => o.value).map((opt) => (
+              <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
+            ))}
+          </select>
+        </label>
 
         <Button onClick={() => setAdding(true)} variant="primary" size="sm">+ {t('ocrAddSupplier')}</Button>
 
@@ -296,14 +383,14 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {displayedSuppliers.length === 0 ? (
         <div className="ocr-empty">
           <div className="ocr-empty-icon">—</div>
           <div className="ocr-empty-text">{t('ocrNoSuppliers')}</div>
         </div>
       ) : (
         <div className="ocr-catalog-list">
-          {filtered.map((s) => (
+          {displayedSuppliers.map((s) => (
             <div key={s.id}>
               {editing?.id === s.id ? (
                 <div className="noorix-surface-card p-4">
@@ -318,6 +405,11 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
                   <div className="ocr-catalog-name cursor-pointer flex-1 min-w-0" onClick={() => openViewing(s)}>
                     <div className="ocr-catalog-name-primary flex items-center gap-2 flex-wrap">
                       <span>{isAr ? s.nameAr : (s.nameEn || s.nameAr)}</span>
+                      {!!s.supplierCategory && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded shrink-0 bg-noorix-bg-muted text-noorix-muted border border-noorix-border">
+                          {ocrSupplierCategoryLabel(s.supplierCategory, t)}
+                        </span>
+                      )}
                       {s.accountingSupplier?.id && (
                         <span
                           className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0"
@@ -366,6 +458,27 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         className="ocr-supplier-aliases-drawer"
       >
         <div dir={dir}>
+          <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 p-3 mb-4">
+            <div className="font-semibold text-[13px] mb-1">{t('ocrSupplierCategory')}</div>
+            <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('ocrSupplierCategoryHint')}</p>
+            <div className="flex flex-wrap gap-2 items-end">
+              <select
+                className="flex-1 min-w-[140px] rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
+                value={supplierCategoryLocal}
+                onChange={(e) => setSupplierCategoryLocal(e.target.value)}
+              >
+                {OCR_SUPPLIER_CATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'none'} value={opt.value}>
+                    {opt.labelKey ? t(opt.labelKey) : '—'}
+                  </option>
+                ))}
+              </select>
+              <Button type="button" size="sm" variant="primary" disabled={categorySaving} onClick={handleSaveSupplierCategory}>
+                {categorySaving ? '…' : t('ocrSaveCategory')}
+              </Button>
+            </div>
+          </div>
+
           <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 p-3 mb-4">
             <div className="font-semibold text-[13px] mb-1">{t('ocrLinkNoorixSupplier')}</div>
             <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('ocrLinkedNoorixHint')}</p>
@@ -427,22 +540,71 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
               </div>
             )}
 
-            {autoSuggestHint && !savedAccId && linkAccId && (
-              <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('ocrAutoLinkSuggestionHint')}</p>
+            {accLinkSuggestions.length > 0 && (
+              <div className="mb-3">
+                <div className="text-[11px] text-noorix-muted mb-1">{t('ocrAccountingQuickSuggestions')}</div>
+                <div className="flex flex-wrap gap-1">
+                  {accLinkSuggestions.slice(0, 8).map((sug) => (
+                    <button
+                      key={sug.id}
+                      type="button"
+                      className={`text-[11px] rounded-full border px-2 py-1 max-w-full truncate transition-colors ${
+                        linkAccId === sug.id
+                          ? 'border-noorix-blue bg-noorix-blue/10 text-noorix-blue font-semibold'
+                          : 'border-noorix-border bg-noorix-bg-surface text-noorix-text hover:bg-noorix-bg-muted'
+                      }`}
+                      onClick={() => setLinkAccId(sug.id)}
+                      title={sug.id}
+                    >
+                      {(isAr ? sug.nameAr : sug.nameEn) || sug.nameAr || sug.nameEn || sug.id.slice(0, 10)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
-            <select
-              className="w-full rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text mb-2"
-              value={linkAccId}
-              onChange={(e) => setLinkAccId(e.target.value)}
+            <Input
+              type="text"
+              value={accSearchQuery}
+              onChange={(e) => setAccSearchQuery(e.target.value)}
+              placeholder={t('ocrAccountingSearchPlaceholder')}
+              className="w-full mb-2"
+            />
+            <div className="flex flex-wrap gap-2 mb-2">
+              <Button type="button" size="sm" variant="secondary" onClick={() => setLinkAccId('')}>
+                {t('ocrAccountingClearPick')}
+              </Button>
+            </div>
+            <div
+              className="max-h-[220px] overflow-y-auto rounded-md border border-noorix-border bg-noorix-bg-surface mb-2"
+              role="listbox"
+              aria-label={t('ocrLinkNoorixSupplier')}
             >
-              <option value="">{isAr ? '— بدون ربط —' : '— No link —'}</option>
-              {accOptions.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {(a.nameAr || '') + (a.taxNumber ? ` — ${a.taxNumber}` : '')}
-                </option>
-              ))}
-            </select>
+              {rankedAccountingForPicker.length === 0 ? (
+                <div className="text-[12px] text-noorix-muted p-3">{t('ocrAccountingSearchNoResults')}</div>
+              ) : (
+                rankedAccountingForPicker.map((row) => (
+                  <button
+                    key={row.id}
+                    type="button"
+                    role="option"
+                    aria-selected={linkAccId === row.id}
+                    className={`w-full text-start px-3 py-2 text-[12px] border-b border-noorix-border last:border-b-0 transition-colors ${
+                      linkAccId === row.id ? 'bg-noorix-blue/10 font-semibold text-noorix-text' : 'text-noorix-text hover:bg-noorix-bg-muted'
+                    }`}
+                    onClick={() => setLinkAccId(row.id)}
+                  >
+                    <div className="font-medium">
+                      {(isAr ? row.nameAr : row.nameEn) || row.nameAr || row.nameEn}
+                      {row.taxNumber && (
+                        <span className="text-noorix-muted font-normal"> — {row.taxNumber}</span>
+                      )}
+                    </div>
+                    <code className="text-[10px] text-noorix-muted font-mono break-all">{row.id}</code>
+                  </button>
+                ))
+              )}
+            </div>
             <Button variant="primary" size="sm" onClick={handleSaveAccountingLink} disabled={linkSaving}>
               {linkSaving ? '…' : t('ocrSaveSupplierLink')}
             </Button>

@@ -62,10 +62,6 @@ export default {
     ar: 'تم حفظ الربط.',
     en: 'Link saved.',
   },
-  ocrAutoLinkSuggestionHint: {
-    ar: 'تم اقتراح مورد مطابق تلقائياً — راجع القائمة ثم احفظ إن كان صحيحاً.',
-    en: 'A matching supplier was suggested — review the list, then save if correct.',
-  },
 
   // Upload
   ocrDragDrop:         { ar: 'اسحب صورة الفاتورة هنا أو اضغط للاختيار', en: 'Drag invoice image here or click to select' },
@@ -172,6 +168,36 @@ export default {
   ocrSupplierNameEn:   { ar: 'الاسم بالإنجليزية', en: 'Name (English)' },
   ocrSupplierTax:      { ar: 'الرقم الضريبي', en: 'VAT Number' },
   ocrSupplierPhone:    { ar: 'الهاتف', en: 'Phone' },
+  ocrSupplierCategory: { ar: 'تصنيف المورد', en: 'Supplier category' },
+  ocrSupplierCategoryHint: {
+    ar: 'لتجميع الموردين في التقارير ومراجعة الاستخراج — يُحدَّد يدوياً.',
+    en: 'Manual grouping for reports and review (not inferred automatically).',
+  },
+  ocrSaveCategory:     { ar: 'حفظ التصنيف', en: 'Save category' },
+  ocrFilterByCategory: { ar: 'تصفية حسب التصنيف', en: 'Filter by category' },
+  ocrAllCategories:    { ar: 'كل التصنيفات', en: 'All categories' },
+  ocrAccountingSearchPlaceholder: {
+    ar: 'ابحث باسم مورد المحاسبة أو الرقم الضريبي…',
+    en: 'Search accounting supplier by name or VAT…',
+  },
+  ocrAccountingSearchNoResults: {
+    ar: 'لا توجد نتائج — جرّب جزءاً من الاسم أو أرقاماً أكثر من الرقم الضريبي.',
+    en: 'No matches — try part of the name or more VAT digits.',
+  },
+  ocrAccountingQuickSuggestions: {
+    ar: 'اقتراحات (اختيار سريع — يدوي)',
+    en: 'Quick picks (manual)',
+  },
+  ocrAccountingClearPick: { ar: 'بدون ربط', en: 'No link' },
+  ocrSupplierCatNone: { ar: 'بدون تصنيف', en: 'Uncategorized' },
+  ocrSupplierCatFoodBeverage: { ar: 'مواد غذائية ومشروبات', en: 'Food & beverages' },
+  ocrSupplierCatRetailWholesale: { ar: 'تجزئة / جملة', en: 'Retail / wholesale' },
+  ocrSupplierCatServices: { ar: 'خدمات', en: 'Services' },
+  ocrSupplierCatFuelTransport: { ar: 'وقود ونقل', en: 'Fuel & transport' },
+  ocrSupplierCatConstruction: { ar: 'تشييد ومواد بناء', en: 'Construction & materials' },
+  ocrSupplierCatItEquipment: { ar: 'تقنية وأجهزة', en: 'IT & equipment' },
+  ocrSupplierCatPackaging: { ar: 'تعبئة ومستهلكات', en: 'Packaging & consumables' },
+  ocrSupplierCatOther: { ar: 'أخرى', en: 'Other' },
   ocrNoSuppliers:      { ar: 'لا يوجد موردون بعد. أضف مورداً لتبدأ.', en: 'No suppliers yet. Add a supplier to start.' },
   ocrInvoiceCount:     { ar: 'فاتورة', en: 'invoice(s)' },
   ocrAliases:          { ar: 'أسماء بديلة', en: 'Aliases' },

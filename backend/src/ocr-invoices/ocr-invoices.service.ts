@@ -375,6 +375,8 @@ GENERAL RULES:
 - Return ONLY valid JSON starting with {
 - confidence 0.0–1.0 per field
 - null for unreadable fields
+- supplier.name: use the official seller / company name in the invoice header (الاسم التجاري أو اسم المنشأة كما في الترويسة)، not branch nicknames if both appear.
+- vatNumber: the seller VAT / tax registration number from the header (digits only in value).
 - Keep item names exactly as printed (Arabic, English, or mixed)
 - Date: YYYY-MM-DD format
 - Numbers only (no currency symbols, no commas)
@@ -1045,7 +1047,10 @@ export class OcrInvoicesService {
   }
 
   async createSupplier(tenantId: string, companyId: string, dto: CreateOcrSupplierDto) {
-    const { accountingSupplierId, ...rest } = dto as CreateOcrSupplierDto & { accountingSupplierId?: string | null };
+    const { accountingSupplierId, supplierCategory, ...rest } = dto as CreateOcrSupplierDto & {
+      accountingSupplierId?: string | null;
+      supplierCategory?: string | null;
+    };
     let accId: string | null = null;
     if (accountingSupplierId?.trim()) {
       const acc = await this.prisma.supplier.findFirst({
@@ -1054,11 +1059,16 @@ export class OcrInvoicesService {
       if (!acc) throw new BadRequestException('مورد المحاسبة غير موجود أو لا يخص هذه الشركة.');
       accId = acc.id;
     }
+    const cat =
+      supplierCategory != null && String(supplierCategory).trim()
+        ? String(supplierCategory).trim().slice(0, 64)
+        : null;
     return this.prisma.ocrSupplier.create({
       data: {
         tenantId,
         companyId,
         ...rest,
+        supplierCategory: cat,
         accountingSupplierId: accId,
       },
     });
@@ -1073,6 +1083,10 @@ export class OcrInvoicesService {
     if (dto.taxNumber !== undefined) data.taxNumber = dto.taxNumber;
     if (dto.phone !== undefined) data.phone = dto.phone;
     if (dto.notes !== undefined) data.notes = dto.notes;
+    if (dto.supplierCategory !== undefined) {
+      const c = dto.supplierCategory;
+      data.supplierCategory = c == null || c === '' ? null : String(c).trim().slice(0, 64);
+    }
     if (dto.accountingSupplierId !== undefined) {
       const v = dto.accountingSupplierId;
       if (v == null || v === '') {
