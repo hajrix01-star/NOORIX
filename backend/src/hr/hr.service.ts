@@ -87,15 +87,37 @@ export class HRService {
         lt: new Date(`${year + 1}-01-01`),
       };
     }
-    return this.prisma.payrollRun.findMany({
+    const runs = await this.prisma.payrollRun.findMany({
       where,
       include: { items: { include: { employee: true } } },
       orderBy: { payrollMonth: 'desc' },
     });
+    if (!runs.length) return runs;
+    const runIds = runs.map((r) => r.id);
+    const salaryInvoices = await this.prisma.invoice.findMany({
+      where: {
+        companyId,
+        kind: 'salary',
+        batchId: { in: runIds },
+        status: 'active',
+      },
+      select: { batchId: true, invoiceNumber: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    const invoiceNoByRunId = new Map<string, string>();
+    for (const inv of salaryInvoices) {
+      if (inv.batchId && !invoiceNoByRunId.has(inv.batchId)) {
+        invoiceNoByRunId.set(inv.batchId, inv.invoiceNumber);
+      }
+    }
+    return runs.map((r) => ({
+      ...r,
+      issuedSalaryInvoiceNumber: invoiceNoByRunId.get(r.id) ?? null,
+    }));
   }
 
   async findPayrollRunItemsByEmployee(companyId: string, employeeId: string) {
-    return this.prisma.payrollRunItem.findMany({
+    const items = await this.prisma.payrollRunItem.findMany({
       where: { employeeId, payrollRun: { companyId } },
       include: {
         payrollRun: {
@@ -109,6 +131,31 @@ export class HRService {
       },
       orderBy: { payrollRun: { payrollMonth: 'desc' } },
     });
+    if (!items.length) return items;
+    const runIds = [...new Set(items.map((i) => i.payrollRun.id))];
+    const salaryInvoices = await this.prisma.invoice.findMany({
+      where: {
+        companyId,
+        kind: 'salary',
+        batchId: { in: runIds },
+        status: 'active',
+      },
+      select: { batchId: true, invoiceNumber: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    const invoiceNoByRunId = new Map<string, string>();
+    for (const inv of salaryInvoices) {
+      if (inv.batchId && !invoiceNoByRunId.has(inv.batchId)) {
+        invoiceNoByRunId.set(inv.batchId, inv.invoiceNumber);
+      }
+    }
+    return items.map((row) => ({
+      ...row,
+      payrollRun: {
+        ...row.payrollRun,
+        issuedSalaryInvoiceNumber: invoiceNoByRunId.get(row.payrollRun.id) ?? null,
+      },
+    }));
   }
 
   async findPayrollRunById(id: string, companyId: string) {
@@ -125,7 +172,22 @@ export class HRService {
       },
     });
     if (!run) throw new NotFoundException(`مسيرة الرواتب ${id} غير موجودة.`);
-    return run;
+
+    const salaryInvoice = await this.prisma.invoice.findFirst({
+      where: {
+        companyId,
+        batchId: id,
+        kind: 'salary',
+        status: 'active',
+      },
+      select: { invoiceNumber: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      ...run,
+      issuedSalaryInvoiceNumber: salaryInvoice?.invoiceNumber ?? null,
+    };
   }
 
   /** YYYY-MM-DD بتوقيت السعودية — يجب أن يطابق منطق dateToSaudiYmd لتواريخ الإجازة المخزّنة */
@@ -723,6 +785,21 @@ export class HRService {
     if (!run) throw new NotFoundException('مسيرة الرواتب غير موجودة.');
     if (run.status !== 'completed') {
       throw new BadRequestException('يجب إكمال مسيرة الرواتب قبل إصدار الدفع.');
+    }
+
+    const existingSalaryInvoice = await this.prisma.invoice.findFirst({
+      where: {
+        companyId: run.companyId,
+        batchId: run.id,
+        kind: 'salary',
+        status: 'active',
+      },
+      select: { invoiceNumber: true },
+    });
+    if (existingSalaryInvoice) {
+      throw new BadRequestException(
+        `تم صرف هذه المسيرة مسبقاً (فاتورة ${existingSalaryInvoice.invoiceNumber}).`,
+      );
     }
 
     const txDate = dto.transactionDate.slice(0, 10);

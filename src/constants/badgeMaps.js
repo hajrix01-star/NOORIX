@@ -58,7 +58,8 @@ export function buildLeaveRequestStatusMap(t) {
 export function buildPayrollRunStatusMap(t) {
   return {
     draft: { color: 'gray', label: t('payrollDraft') },
-    completed: { color: 'green', label: t('payrollPaid') },
+    /** Approved run; treasury disbursement is separate (salary invoice on batchId). */
+    completed: { color: 'blue', label: t('payrollApproved') },
   };
 }
 

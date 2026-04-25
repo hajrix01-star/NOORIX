@@ -640,7 +640,15 @@ export default function EmployeeProfileScreen() {
             { key: 'netSalary', label: t('netSalary'), numeric: true, width: '12%',
               render: (v) => <FmtNum n={v} className="nx-cell-num font-bold text-noorix-green" /> },
             { key: 'payrollRun.status', label: t('payrollStatus'), width: '12%',
-              render: (_, row) => <Badge {...Badge.fromStatus(row.payrollRun?.status, payrollRunStatusMap)} size="sm" /> },
+              render: (_, row) => {
+                const pr = row.payrollRun;
+                const st = String(pr?.status || '').toLowerCase();
+                const badgeProps =
+                  st === 'completed' && pr?.issuedSalaryInvoiceNumber
+                    ? { color: 'green', children: t('payrollPaid') }
+                    : Badge.fromStatus(pr?.status, payrollRunStatusMap);
+                return <Badge {...badgeProps} size="sm" />;
+              } },
             { key: 'notes', label: t('invoiceNotesColumn'), width: '14%',
               render: (v) => <span className="nx-cell-ellipsis text-[11px]" title={v || ''}>{v || '—'}</span> },
           ]}
@@ -649,10 +657,17 @@ export default function EmployeeProfileScreen() {
           page={1}
           pageSize={50}
           emptyMessage={t('noDataInPeriod')}
-          renderMobileCard={(row) => (
+          renderMobileCard={(row) => {
+            const pr = row.payrollRun;
+            const stPr = String(pr?.status || '').toLowerCase();
+            const payrollBadgeProps =
+              stPr === 'completed' && pr?.issuedSalaryInvoiceNumber
+                ? { color: 'green', children: t('payrollPaid') }
+                : Badge.fromStatus(pr?.status, payrollRunStatusMap);
+            return (
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Badge {...Badge.fromStatus(row.payrollRun?.status, payrollRunStatusMap)} size="sm" />
+                <Badge {...payrollBadgeProps} size="sm" />
                 <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.payrollRun?.payrollMonth)}</span>
               </div>
               <div className="nx-mc__grid nx-mc__grid--3">
@@ -682,7 +697,8 @@ export default function EmployeeProfileScreen() {
                 <div className="text-[12px] text-noorix-muted break-words">{row.notes || '—'}</div>
               </div>
             </div>
-          )}
+            );
+          }}
         />
       </div>
 

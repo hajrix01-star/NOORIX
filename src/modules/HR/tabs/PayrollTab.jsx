@@ -79,6 +79,7 @@ export default function PayrollTab() {
           grossTotal,
           netTotal: Number(run.totalAmount ?? 0),
           status: run.status,
+          issuedInvoiceNumber: run.issuedSalaryInvoiceNumber ?? null,
           itemsCount: run.items?.length ?? 0,
         };
       });
@@ -151,9 +152,30 @@ export default function PayrollTab() {
   const items = data ?? [];
   const payrollStatusMap = useMemo(() => buildPayrollRunStatusMap(t), [t]);
 
+  const payrollRunBadgeProps = useCallback(
+    (row) => {
+      const st = String(row?.status || '').toLowerCase();
+      if (st === 'completed' && row?.issuedInvoiceNumber) {
+        return { color: 'green', children: t('payrollPaid') };
+      }
+      return Badge.fromStatus(row?.status, payrollStatusMap);
+    },
+    [t, payrollStatusMap],
+  );
+
+  const payrollRunExportStatusLabel = useCallback(
+    (row) => {
+      const st = String(row?.status || '').toLowerCase();
+      if (st === 'completed' && row?.issuedInvoiceNumber) return t('payrollPaid');
+      if (st === 'completed') return t('payrollApproved');
+      return payrollStatusMap[row.status]?.label ?? row.status ?? '';
+    },
+    [t, payrollStatusMap],
+  );
+
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
     useTableFilter(items, {
-      searchKeys: ['runNumber', 'month'],
+      searchKeys: ['runNumber', 'month', 'issuedInvoiceNumber'],
       pageSize: PAGE_SIZE,
       defaultSortKey: 'monthRaw',
       defaultSortDir: 'desc',
@@ -172,29 +194,43 @@ export default function PayrollTab() {
     { key: 'netTotal', label: t('payrollNet'), numeric: true, sortable: true, width: 130, minWidth: 120,
       render: (v) => <FmtNum n={v} className="nx-cell-num font-bold text-[13px]" /> },
     { key: 'status', label: t('payrollStatus'), width: 120, minWidth: 110,
-      render: (v) => (
-        <Badge {...Badge.fromStatus(v, payrollStatusMap)} size="sm" />
-      ) },
-    { key: 'actions', label: t('actions'), width: '5%', align: 'center',
       render: (_, row) => (
+        <Badge {...payrollRunBadgeProps(row)} size="sm" />
+      ) },
+    {
+      key: 'issuedInvoiceNumber',
+      label: t('payrollIssuedInvoiceNumber'),
+      width: 140,
+      minWidth: 120,
+      shrink: true,
+      render: (v) => (
+        <span className="nx-cell-num text-[12px] whitespace-nowrap" dir="ltr">{v || '—'}</span>
+      ),
+    },
+    { key: 'actions', label: t('actions'), width: '5%', align: 'center',
+      render: (_, row) => {
+        const st = String(row.status || '').toLowerCase();
+        const canPay = st === 'completed' && !row.issuedInvoiceNumber;
+        return (
         <HRActionsCell
           row={row}
           type="payroll"
           onView={() => setDetailRunId(row.id)}
-          onEdit={String(row.status || '').toLowerCase() === 'draft' ? () => setEditingRunId(row.id) : undefined}
+          onEdit={st === 'draft' ? () => setEditingRunId(row.id) : undefined}
           onDelete={canDeletePayroll ? () => handleDeletePayrollRun(row) : undefined}
-          onApprove={String(row.status || '').toLowerCase() === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
-          onPay={String(row.status || '').toLowerCase() === 'completed' ? () => openPayModal(row) : undefined}
+          onApprove={st === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
+          onPay={canPay ? () => openPayModal(row) : undefined}
         />
-      ) },
-  ], [t, payrollStatusMap, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll]);
+        );
+      } },
+  ], [t, payrollStatusMap, payrollRunBadgeProps, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll]);
 
   const footerCells = (
     <>
       <td colSpan={2} className="text-[12px] text-noorix-muted font-semibold py-1.5 px-3">{t('payrollTotal')} ({allFilteredData.length})</td>
       <td className="text-[13px] text-end py-1.5 px-3 nx-font-numbers">{hrFmt(allFilteredData.reduce((s, r) => s + (r.grossTotal ?? 0), 0))}</td>
       <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers">{hrFmt(totalNet)}</td>
-      <td colSpan={2} />
+      <td colSpan={3} />
     </>
   );
 
@@ -203,7 +239,8 @@ export default function PayrollTab() {
     month: r.month,
     grossTotal: hrFmt(r.grossTotal),
     netTotal: hrFmt(r.netTotal),
-    status: payrollStatusMap[r.status]?.label || r.status,
+    status: payrollRunExportStatusLabel(r),
+    issuedInvoiceNumber: r.issuedInvoiceNumber || '—',
   }));
 
   const renderMobileCard = useCallback((row) => {
@@ -211,7 +248,7 @@ export default function PayrollTab() {
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="nx-cell-num nx-cell-accent text-[14px]">{row.runNumber}</span>
-          <Badge {...Badge.fromStatus(row.status, payrollStatusMap)} size="sm" className="shrink-0" />
+          <Badge {...payrollRunBadgeProps(row)} size="sm" className="shrink-0" />
         </div>
         {row.month && <div className="nx-cell-muted mb-2 text-end">{row.month}</div>}
         <div className="nx-mc__grid nx-mc__grid--2 mb-2.5">
@@ -224,6 +261,11 @@ export default function PayrollTab() {
             <div className="nx-mc__stat-value text-[15px] font-extrabold text-noorix-green">{hrFmt(row.netTotal)}</div>
           </div>
         </div>
+        {row.issuedInvoiceNumber && (
+          <div className="nx-cell-muted mb-2 text-end text-[12px]" dir="ltr">
+            {t('payrollIssuedInvoiceNumber')}: {row.issuedInvoiceNumber}
+          </div>
+        )}
         <div className="flex flex items-center justify-end">
           <HRActionsCell
             row={row}
@@ -232,12 +274,12 @@ export default function PayrollTab() {
             onEdit={String(row.status || '').toLowerCase() === 'draft' ? () => setEditingRunId(row.id) : undefined}
             onDelete={canDeletePayroll ? () => handleDeletePayrollRun(row) : undefined}
             onApprove={String(row.status || '').toLowerCase() === 'draft' ? () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) : undefined}
-            onPay={String(row.status || '').toLowerCase() === 'completed' ? () => openPayModal(row) : undefined}
+            onPay={String(row.status || '').toLowerCase() === 'completed' && !row.issuedInvoiceNumber ? () => openPayModal(row) : undefined}
           />
         </div>
       </div>
     );
-  }, [payrollStatusMap, t, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll]);
+  }, [payrollStatusMap, payrollRunBadgeProps, t, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll]);
 
   function handleExportExcel() {
     exportToExcel(exportData, `payroll-runs-${year}.xlsx`);
@@ -245,13 +287,13 @@ export default function PayrollTab() {
 
   function handlePrint() {
     const rows = allFilteredData.map((r) =>
-      `<tr><td>${(r.runNumber || '').replace(/</g, '&lt;')}</td><td>${(r.month || '').replace(/</g, '&lt;')}</td><td>${hrFmt(r.grossTotal)}</td><td>${hrFmt(r.netTotal)}</td><td>${(payrollStatusMap[r.status]?.label || r.status).replace(/</g, '&lt;')}</td></tr>`
+      `<tr><td>${(r.runNumber || '').replace(/</g, '&lt;')}</td><td>${(r.month || '').replace(/</g, '&lt;')}</td><td>${hrFmt(r.grossTotal)}</td><td>${hrFmt(r.netTotal)}</td><td>${String(payrollRunExportStatusLabel(r)).replace(/</g, '&lt;')}</td><td>${String(r.issuedInvoiceNumber || '—').replace(/</g, '&lt;')}</td></tr>`
     ).join('');
     openPrintWindow({
       title: t('hrTabPayroll'),
       companyName: companyName || 'الشركة',
       subtitle: `${t('hrTabPayroll')} — ${year}`,
-      body: `<table><thead><tr><th>${t('payrollRunNumber')}</th><th>${t('payrollMonth')}</th><th>${t('payrollGross')}</th><th>${t('payrollNet')}</th><th>${t('payrollStatus')}</th></tr></thead><tbody>${rows || '<tr><td colspan="5">' + t('noDataInPeriod') + '</td></tr>'}</tbody></table>`,
+      body: `<table><thead><tr><th>${t('payrollRunNumber')}</th><th>${t('payrollMonth')}</th><th>${t('payrollGross')}</th><th>${t('payrollNet')}</th><th>${t('payrollStatus')}</th><th>${t('payrollIssuedInvoiceNumber')}</th></tr></thead><tbody>${rows || '<tr><td colspan="6">' + t('noDataInPeriod') + '</td></tr>'}</tbody></table>`,
     });
   }
 

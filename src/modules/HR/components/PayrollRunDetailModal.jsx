@@ -17,7 +17,6 @@ import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSl
 
 const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
-  completed: { labelKey: 'payrollPaid', badgeColor: 'green' },
 };
 
 export function PayrollRunDetailModal({ runId, companyId, companyName, companyNameEn, companyLogo, onClose }) {
@@ -89,7 +88,13 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
   }
 
   const items = run.items || [];
-  const statusInfo = STATUS_MAP[run.status] || STATUS_MAP.draft;
+  const st = String(run.status || '').toLowerCase();
+  const statusInfo =
+    st === 'completed' && run.issuedSalaryInvoiceNumber
+      ? { labelKey: 'payrollPaid', badgeColor: 'green' }
+      : st === 'completed'
+        ? { labelKey: 'payrollApproved', badgeColor: 'blue' }
+        : STATUS_MAP[st] || STATUS_MAP.draft;
   const totalNet = new Decimal(run.totalAmount ?? 0);
   const totalBeforeDeduction = items.reduce((s, row) => s.plus(row.grossSalary ?? 0).plus(row.allowancesAdd ?? 0), new Decimal(0));
   const totalDeductions      = items.reduce((s, row) => s.plus(row.deductions   ?? 0).plus(row.advancesDeduct ?? 0), new Decimal(0));
@@ -225,6 +230,11 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
           {formatSaudiDate(run.payrollMonth)} — {items.length} {t('employeesList')}
         </p>
         <Badge color={statusInfo.badgeColor}>{t(statusInfo.labelKey)}</Badge>
+        {run.issuedSalaryInvoiceNumber ? (
+          <p className="m-0 mt-2 text-[12px] text-noorix-muted nx-font-numbers" dir="ltr">
+            {t('payrollIssuedInvoiceNumber')}: <span className="font-semibold text-noorix-text">{run.issuedSalaryInvoiceNumber}</span>
+          </p>
+        ) : null}
       </div>
 
       <SmartTable
