@@ -126,6 +126,7 @@
 
 | التاريخ | المرحلة | الـ ID | الـ commit (short hash) | المنفّذ | نتيجة الاختبار (✓/✗) | ملاحظات |
 |---------|---------|--------|-------------------------|--------|---------------------|---------|
+| 2026-04-26 | C | C4 (استيراد/تصدير) | `8b8c493` | Cursor | ✓ | `importTemplates`: `getSaudiToday` + `parseDate` → `formatSaudiDateISO` (Riyadh)؛ `ImportExportModal` / `SupplierImportExport` / `BankCategoryTreePanel` — طوابع الملفات بـ `getSaudiToday()`. **الاختبارات:** vitest + vite build |
 | 2026-04-26 | C | C4 (HR) | `0d84f33` | Cursor | ✓ | `getSaudiToday()` بدل `toISOString().slice(0,10)` في: `SalaryCalcTab`، `EOSCalcTab` (تاريخ تقرير)، `AdvancesTab` (تاريخ التسوية)، `EmployeeDocModal` (تواريخ افتراضية). **الاختبارات:** vitest + vite build |
 | 2026-04-26 | C | C1 + chore | `248edef` | Cursor | ✓ | C1: `UpdateSystemBackupConfigDto` = `PartialType(SystemBackupConfigBaseDto)`؛ إزالة `preferQueryCompanyId` (غير مستخدم). **الاختبارات:** vitest + vite build + nest build + tsc |
 | 2026-04-26 | C | C3 + تطابق | `c7eee25` | Cursor | ✓ | `getCompanyIdFromHttpRequest` + `CompanyAccessGuard`: قراءة `body.companyId` لـ **PATCH** (مثل POST/PUT)؛ تبسيط `categories` PATCH. **الاختبارات:** vitest + vite build + nest build |
