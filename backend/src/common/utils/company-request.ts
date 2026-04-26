@@ -14,7 +14,7 @@ export function preferQueryCompanyId(query?: string, header?: string): string {
 /** يطابق ترتيب CompanyAccessGuard لاستخراج companyId من الطلب */
 export function getCompanyIdFromHttpRequest(request: Request): string {
   const method = (request.method || '').toUpperCase();
-  const readFromBody = method === 'POST' || method === 'PUT';
+  const readFromBody = method === 'POST' || method === 'PUT' || method === 'PATCH';
   const body = request.body as { companyId?: string } | undefined;
   const headerVal = request.headers['x-company-id'];
   const headerStr = Array.isArray(headerVal) ? headerVal[0] : headerVal;

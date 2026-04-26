@@ -49,8 +49,7 @@ export class CategoriesController {
       isActive?:  boolean;
     },
   ) {
-    /** PATCH: `getCompanyIdFromHttpRequest` لا يقرأ `body.companyId` — لذلك `|| body.companyId` */
-    return this.categoriesService.update(id, companyId || body.companyId || '', {
+    return this.categoriesService.update(id, companyId, {
       nameAr:    body.nameAr,
       nameEn:    body.nameEn,
       type:      body.type,
