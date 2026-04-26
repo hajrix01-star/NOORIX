@@ -10,6 +10,7 @@
  */
 import React, { useRef, useState } from 'react';
 import { Button } from '../../../ui';
+import { getSaudiToday } from '../../../utils/saudiDate';
 
 /* ─── ثوابت ─────────────────────────────────────────────────────────── */
 const CSV_HEADERS_AR = ['الاسم بالعربي *', 'الاسم بالإنجليزي', 'الرقم الضريبي', 'الهاتف', 'نوع المورد (purchases/expenses)'];
@@ -104,7 +105,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
         s.supplierType || 'purchases',
       ]),
     ];
-    downloadCsv(buildCsv(rows), `الموردين_${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCsv(buildCsv(rows), `الموردين_${getSaudiToday()}.csv`);
   }
 
   /* قراءة ملف الاستيراد */

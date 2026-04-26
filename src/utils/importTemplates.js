@@ -14,6 +14,14 @@ import {
   basicSalaryFromTargetTotalInclusiveOvertime,
 } from '../modules/HR/utils/employeeSalaryMath';
 import { roundMoney2 } from './moneyInput';
+import { formatSaudiDateISO, getSaudiToday } from './saudiDate';
+
+/** @param {Date} d */
+function toRiyadhYmdOrNull(d) {
+  if (!d || isNaN(d.getTime())) return null;
+  const y = formatSaudiDateISO(d);
+  return y === '—' ? null : y;
+}
 
 // ─── Low-level helpers ───────────────────────────────────────────────────────
 
@@ -28,7 +36,7 @@ function parseDate(val) {
   if (val == null || val === '') return null;
   if (typeof val === 'number') {
     const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-    return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+    return toRiyadhYmdOrNull(d);
   }
   const str = toWesternNum(String(val).trim());
   const dmy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -38,7 +46,7 @@ function parseDate(val) {
   const ymd = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (ymd) return `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
   const d = new Date(str);
-  return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+  return toRiyadhYmdOrNull(d);
 }
 
 /** Parse boolean from Arabic/English/numeric values → true | false | null (unrecognised) */
@@ -276,7 +284,7 @@ export function validateInvoiceRows(rows, { suppliers = [], vaults = [], categor
  * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
  */
 export function validateEmployeeRows(rows) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getSaudiToday();
 
   return rows.map((row, i) => {
     const errors = [];

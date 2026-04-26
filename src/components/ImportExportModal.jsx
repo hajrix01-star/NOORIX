@@ -27,6 +27,7 @@ import {
 import { Button, AdaptiveSheet, ScreenTabs } from '../ui';
 import { useTranslation } from '../i18n/useTranslation';
 import { rejectIfApiFailed } from '../utils/apiResponse';
+import { getSaudiToday } from '../utils/saudiDate';
 
 const ENTITY_CONFIG = {
   invoices: {
@@ -383,7 +384,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
         alert(t('importAlertNoDataToExport'));
         return;
       }
-      const stamp = new Date().toISOString().slice(0, 10);
+      const stamp = getSaudiToday();
       const base = String(cfg.exportFilename || 'export.xlsx').replace(/\.xlsx$/i, '');
       const excelOpts = entityType === 'employees' ? EMPLOYEE_EXCEL_EXPORT_OPTS : undefined;
       await exportToExcel(rows, `${base}-${stamp}.xlsx`, excelOpts);

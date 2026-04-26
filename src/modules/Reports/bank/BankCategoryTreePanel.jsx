@@ -21,6 +21,7 @@ import {
   throwIfApiFailed,
 } from '../../../services/api';
 import { TRANSACTION_TYPES, TRANSACTION_SIDES, getTransactionTypeInfo, getTransactionSideInfo } from './bankRuleConstants';
+import { getSaudiToday } from '../../../utils/saudiDate';
 
 const labelMuted = { fontSize: 12, color: 'var(--noorix-text-muted)' };
 
@@ -525,7 +526,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `noorix-bank-rules-${String(companyId).slice(-8)}-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `noorix-bank-rules-${String(companyId).slice(-8)}-${getSaudiToday()}.json`;
       a.rel = 'noopener';
       document.body.appendChild(a);
       a.click();
