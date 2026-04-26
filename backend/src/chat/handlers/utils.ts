@@ -42,9 +42,24 @@ export function monthToDateThroughYesterday(now: Date): { start: Date; end: Date
   };
 }
 
-/** مطابق لـ monthToDateThroughYesterday — للمعالجات التي تفترض «هذا الشهر» دون ذكر صريح */
+/** مطابق لـ monthToDateThroughYesterday — للمعالجات التي تفترض «هذا الشهر» دون ذكر صريح (النسب، إلخ) */
 export function thisMonthToDateRange(now: Date): { start: Date; end: Date; labelAr: string; labelEn: string } {
   return monthToDateThroughYesterday(now);
+}
+
+/** الشهر الحالي من اليوم 1 حتى نهاية اليوم — لمقارنة المبيعات مع الشهر الماضي لنفس رقم اليوم */
+export function thisMonthThroughTodayRange(now: Date): { start: Date; end: Date; labelAr: string; labelEn: string } {
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  const start = new Date(y, m, 1, 0, 0, 0, 0);
+  const end = new Date(y, m, d, 23, 59, 59, 999);
+  return {
+    start,
+    end,
+    labelAr: `الشهر الحالي (1–${d}/${m + 1}/${y}، حتى اليوم)`,
+    labelEn: `This month (1–${d}/${m + 1}/${y}, through today)`,
+  };
 }
 
 /** استخراج الفترة من السؤال — موسّع ليشمل أول أمس، الشهر الماضي، إلخ */
@@ -122,25 +137,15 @@ export function parsePeriod(
 }
 
 /**
- * الشهر الماضي من اليوم 1 حتى نفس عدد الأيام المكتملة في الشهر الحالي (حتى أمس)
- * لمقارنة عادلة مع «هذا الشهر حتى أمس».
+ * الشهر الماضي من اليوم 1 حتى نفس رقم يوم الشهر الحالي (مقصور على طول الشهر السابق)
+ * لمقارنة عادلة مع «هذا الشهر حتى اليوم».
  */
 export function lastMonthPartialMatchingMtd(now: Date): { start: Date; end: Date; labelAr: string; labelEn: string } {
   const y = now.getFullYear();
   const m = now.getMonth();
   const d = now.getDate();
   const daysInPrevMonth = new Date(y, m, 0).getDate();
-  const thruDay = d - 1;
-  if (thruDay < 1) {
-    const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
-    return {
-      start,
-      end: new Date(start.getTime() - 1),
-      labelAr: `الشهر الماضي — لا يوماً مكتملاً للمقارنة بعد في الشهر الحالي`,
-      labelEn: `Last month — no completed days yet in the current month to compare`,
-    };
-  }
-  const cappedDay = Math.min(thruDay, daysInPrevMonth);
+  const cappedDay = Math.min(d, daysInPrevMonth);
   const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
   const end = new Date(y, m - 1, cappedDay, 23, 59, 59, 999);
   const pm = end.getMonth() + 1;
@@ -148,7 +153,7 @@ export function lastMonthPartialMatchingMtd(now: Date): { start: Date; end: Date
   return {
     start,
     end,
-    labelAr: `الشهر الماضي (1–${cappedDay}/${pm}/${py}، حتى نفس عمق الشهر الحالي)`,
-    labelEn: `Last month (1–${cappedDay}/${pm}/${py}, same depth as current MTD)`,
+    labelAr: `الشهر الماضي (1–${cappedDay}/${pm}/${py}، حتى نفس تاريخ اليوم في الشهر الحالي)`,
+    labelEn: `Last month (1–${cappedDay}/${pm}/${py}, same calendar day as today)`,
   };
 }
